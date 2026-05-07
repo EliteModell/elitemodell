@@ -33,10 +33,8 @@ export default function Hero() {
           position: "absolute",
           top: 0,
           left: 0,
-          width: "6vw",
-          height: "6vw",
-          minWidth: 40,
-          minHeight: 40,
+          width: "clamp(28px, 8vw, 115px)",
+          height: "clamp(28px, 8vw, 115px)",
           background: "#0a0100",
           zIndex: 2,
         }}
