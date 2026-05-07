@@ -1,3 +1,4 @@
+﻿export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
@@ -14,7 +15,7 @@ const createSchema = z.object({
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "NÃ£o autorizado." }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "NÃ£o autorizado." }, { status: 401 });
 
   try {
     const body = await req.json();
@@ -62,11 +63,11 @@ export async function POST(req: NextRequest) {
       where: { slug: data.professionalSlug },
     });
     if (!professional || professional.status !== "ACTIVE") {
-      return NextResponse.json({ error: "Profissional não disponível." }, { status: 404 });
+      return NextResponse.json({ error: "Profissional nÃ£o disponÃ­vel." }, { status: 404 });
     }
 
     if (professional.userId === session.user.id) {
-      return NextResponse.json({ error: "Você não pode agendar com você mesmo." }, { status: 400 });
+      return NextResponse.json({ error: "VocÃª nÃ£o pode agendar com vocÃª mesmo." }, { status: 400 });
     }
 
     const appointment = await prisma.appointment.create({
@@ -95,3 +96,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });
   }
 }
+

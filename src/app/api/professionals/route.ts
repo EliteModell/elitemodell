@@ -1,3 +1,4 @@
+﻿export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
@@ -22,7 +23,7 @@ function slugify(text: string) {
   return text
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[Ì€-Í¯]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }
@@ -75,10 +76,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "NÃ£o autorizado." }, { status: 401 });
 
   const existing = await prisma.professional.findUnique({ where: { userId: session.user.id } });
-  if (existing) return NextResponse.json({ error: "Você já tem um perfil profissional." }, { status: 409 });
+  if (existing) return NextResponse.json({ error: "VocÃª jÃ¡ tem um perfil profissional." }, { status: 409 });
 
   try {
     const body = await req.json();
@@ -108,3 +109,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });
   }
 }
+

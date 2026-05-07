@@ -1,3 +1,4 @@
+﻿export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     const existing = await prisma.user.findUnique({ where: { email: data.email } });
     if (existing) {
-      return NextResponse.json({ error: "Email já cadastrado." }, { status: 409 });
+      return NextResponse.json({ error: "Email jÃ¡ cadastrado." }, { status: 409 });
     }
 
     const hashed = await bcrypt.hash(data.password, 12);
@@ -45,3 +46,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });
   }
 }
+

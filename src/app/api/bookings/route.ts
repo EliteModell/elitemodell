@@ -1,3 +1,4 @@
+﻿export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
@@ -17,7 +18,7 @@ const createSchema = z.object({
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "NÃ£o autorizado." }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const role = session.user.role;
@@ -44,7 +45,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "NÃ£o autorizado." }, { status: 401 });
 
   try {
     const body = await req.json();
@@ -55,16 +56,16 @@ export async function POST(req: NextRequest) {
     const nights = differenceInCalendarDays(checkOut, checkIn);
 
     if (nights < 1) {
-      return NextResponse.json({ error: "Datas inválidas." }, { status: 400 });
+      return NextResponse.json({ error: "Datas invÃ¡lidas." }, { status: 400 });
     }
 
     const property = await prisma.property.findUnique({ where: { id: data.propertyId } });
     if (!property || property.status !== "ACTIVE") {
-      return NextResponse.json({ error: "Imóvel não disponível." }, { status: 404 });
+      return NextResponse.json({ error: "ImÃ³vel nÃ£o disponÃ­vel." }, { status: 404 });
     }
 
     if (nights < property.minNights) {
-      return NextResponse.json({ error: `Mínimo de ${property.minNights} noites.` }, { status: 400 });
+      return NextResponse.json({ error: `MÃ­nimo de ${property.minNights} noites.` }, { status: 400 });
     }
 
     // Check conflicts
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
       },
     });
     if (conflict) {
-      return NextResponse.json({ error: "Imóvel já reservado nestas datas." }, { status: 409 });
+      return NextResponse.json({ error: "ImÃ³vel jÃ¡ reservado nestas datas." }, { status: 409 });
     }
 
     // Coupon
@@ -125,3 +126,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });
   }
 }
+

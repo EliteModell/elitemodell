@@ -1,3 +1,4 @@
+﻿export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
@@ -73,9 +74,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "NÃ£o autorizado." }, { status: 401 });
   if (session.user.role !== "HOST" && session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Apenas anfitriões podem cadastrar imóveis." }, { status: 403 });
+    return NextResponse.json({ error: "Apenas anfitriÃµes podem cadastrar imÃ³veis." }, { status: 403 });
   }
 
   try {
@@ -101,3 +102,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });
   }
 }
+
