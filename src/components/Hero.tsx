@@ -12,6 +12,7 @@ export default function Hero() {
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/hero-model.jpeg"
         alt=""
@@ -19,6 +20,9 @@ export default function Hero() {
         style={{
           width: "100%",
           height: "auto",
+          minHeight: 320,
+          objectFit: "cover",
+          objectPosition: "center top",
           display: "block",
         }}
       />
@@ -29,8 +33,10 @@ export default function Hero() {
           position: "absolute",
           top: 0,
           left: 0,
-          width: 110,
-          height: 110,
+          width: "6vw",
+          height: "6vw",
+          minWidth: 40,
+          minHeight: 40,
           background: "#0a0100",
           zIndex: 2,
         }}
