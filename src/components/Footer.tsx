@@ -177,7 +177,7 @@ export default function Footer() {
           }}
         >
           <span style={{ color: "#444", fontSize: 13 }}>
-            © 2024 Elite Modell. Todos os direitos reservados.
+            © 2026 Elite Modell. Todos os direitos reservados.
           </span>
           <span style={{ color: "#333", fontSize: 13 }}>
             Feito com tecnologia de ponta
