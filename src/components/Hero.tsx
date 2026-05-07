@@ -17,12 +17,10 @@ export default function Hero() {
         src="/hero-model.jpeg"
         alt=""
         aria-hidden="true"
+        className="hero-img"
         style={{
           width: "100%",
           height: "auto",
-          minHeight: 320,
-          objectFit: "cover",
-          objectPosition: "center top",
           display: "block",
         }}
       />
@@ -52,6 +50,16 @@ export default function Hero() {
           zIndex: 1,
         }}
       />
+
+      <style>{`
+        @media (max-width: 767px) {
+          .hero-img {
+            min-height: 520px !important;
+            object-fit: cover !important;
+            object-position: 65% top !important;
+          }
+        }
+      `}</style>
     </section>
   );
 }
