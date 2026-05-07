@@ -4,6 +4,7 @@ export default function Hero() {
   return (
     <>
       <section
+        className="hero-section-wrap"
         style={{
           position: "relative",
           width: "100%",
@@ -86,6 +87,13 @@ export default function Hero() {
 
       <style>{`
         @media (max-width: 767px) {
+          .hero-section-wrap {
+            padding: 0 10px;
+            background: #0d0d0d;
+          }
+          .hero-section-wrap img {
+            border-radius: 10px;
+          }
           .hero-mobile-btns {
             display: flex !important;
             flex-direction: column;
