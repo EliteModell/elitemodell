@@ -1,0 +1,97 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { authOptions } from "@/lib/auth";
+
+const createSchema = z.object({
+  professionalSlug: z.string(),
+  date: z.string(),
+  duration: z.number().int().positive().default(60),
+  contactMethod: z.string().default("whatsapp"),
+  notes: z.string().optional(),
+});
+
+export async function GET(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const status = searchParams.get("status");
+  const role = session.user.role;
+
+  const where: any = {};
+
+  if (role === "ADMIN") {
+    // admin sees all
+  } else {
+    const professional = await prisma.professional.findUnique({ where: { userId: session.user.id } });
+    if (professional) {
+      where.OR = [
+        { clientId: session.user.id },
+        { professionalId: professional.id },
+      ];
+    } else {
+      where.clientId = session.user.id;
+    }
+  }
+
+  if (status) where.status = status;
+
+  const appointments = await prisma.appointment.findMany({
+    where,
+    include: {
+      professional: { select: { displayName: true, slug: true } },
+      client: { select: { name: true, email: true, image: true } },
+    },
+    orderBy: { date: "desc" },
+  });
+
+  return NextResponse.json(appointments);
+}
+
+export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+
+  try {
+    const body = await req.json();
+    const data = createSchema.parse(body);
+
+    const professional = await prisma.professional.findUnique({
+      where: { slug: data.professionalSlug },
+    });
+    if (!professional || professional.status !== "ACTIVE") {
+      return NextResponse.json({ error: "Profissional não disponível." }, { status: 404 });
+    }
+
+    if (professional.userId === session.user.id) {
+      return NextResponse.json({ error: "Você não pode agendar com você mesmo." }, { status: 400 });
+    }
+
+    const appointment = await prisma.appointment.create({
+      data: {
+        professionalId: professional.id,
+        clientId: session.user.id,
+        date: new Date(data.date),
+        duration: data.duration,
+        contactMethod: data.contactMethod,
+        notes: data.notes,
+        status: "PENDING",
+      },
+    });
+
+    // Increment total appointments counter
+    await prisma.professional.update({
+      where: { id: professional.id },
+      data: { totalAppointments: { increment: 1 } },
+    });
+
+    return NextResponse.json(appointment, { status: 201 });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return NextResponse.json({ error: err.issues }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Erro interno." }, { status: 500 });
+  }
+}
