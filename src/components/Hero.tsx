@@ -49,9 +49,8 @@ export default function Hero() {
       <style>{`
         @media (max-width: 767px) {
           .hero-img {
-            min-height: 343px !important;
-            object-fit: cover !important;
-            object-position: center top !important;
+            width: 100% !important;
+            height: auto !important;
           }
         }
       `}</style>
