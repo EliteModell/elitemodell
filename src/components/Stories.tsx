@@ -40,14 +40,8 @@ export default function Stories() {
   return (
     <>
       <div style={{ position: "relative", marginBottom: 24 }}>
-        {/* Botão esquerda */}
-        <button onClick={() => scroll("left")}
-          style={{ position: "absolute", left: -16, top: "50%", transform: "translateY(-50%)", zIndex: 2, width: 32, height: 32, borderRadius: "50%", background: "#1a1a1a", border: "1px solid #333", color: "#fff", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          ‹
-        </button>
-
-        {/* Row */}
-        <div ref={rowRef} style={{ display: "flex", gap: 16, overflowX: "auto", scrollbarWidth: "none", padding: "4px 8px" }}>
+        {/* Row com padding para as setas ficarem por cima */}
+        <div ref={rowRef} style={{ display: "flex", gap: 16, overflowX: "auto", scrollbarWidth: "none", padding: "4px 36px" }}>
           {STORIES.map((s) => {
             const visto = vistos.has(s.id) || s.visto;
             return (
@@ -74,9 +68,15 @@ export default function Stories() {
           })}
         </div>
 
+        {/* Botão esquerda */}
+        <button onClick={() => scroll("left")}
+          style={{ position: "absolute", left: 0, top: "38%", transform: "translateY(-50%)", zIndex: 2, width: 28, height: 28, borderRadius: "50%", background: "rgba(20,20,20,0.9)", border: "1px solid #333", color: "#fff", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          ‹
+        </button>
+
         {/* Botão direita */}
         <button onClick={() => scroll("right")}
-          style={{ position: "absolute", right: -16, top: "50%", transform: "translateY(-50%)", zIndex: 2, width: 32, height: 32, borderRadius: "50%", background: "#1a1a1a", border: "1px solid #333", color: "#fff", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          style={{ position: "absolute", right: 0, top: "38%", transform: "translateY(-50%)", zIndex: 2, width: 28, height: 28, borderRadius: "50%", background: "rgba(20,20,20,0.9)", border: "1px solid #333", color: "#fff", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
           ›
         </button>
       </div>

@@ -90,47 +90,35 @@ function HomeContent() {
       {showFilters && <FiltersModal onClose={() => setShowFilters(false)} onApply={(f) => { setShowFilters(false); console.log(f); }} />}
       <Navbar />
 
-      {/* Search hero — Premium */}
-      <div style={{ paddingTop: 64, background: "#0d0d0d", borderBottom: "1px solid #1a1a1a", position: "relative", overflow: "hidden" }}>
-        {/* Glow decorativo */}
-        <div style={{ position: "absolute", top: -60, left: "50%", transform: "translateX(-50%)", width: 700, height: 200, background: "radial-gradient(ellipse, rgba(204,0,0,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
+      {/* Search hero */}
+      <div style={{ paddingTop: 64, background: "#0d0d0d", borderBottom: "1px solid #1a1a1a" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "20px 24px 16px" }}>
 
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "36px 24px 24px", position: "relative" }}>
-
-          {/* Label premium */}
-          <p style={{ fontSize: 10, fontWeight: 800, letterSpacing: 4, color: "#c9963a", textTransform: "uppercase", marginBottom: 6 }}>
-            ✦ Plataforma Exclusiva
-          </p>
-
-          {/* Main tabs + stats */}
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4, border: "1px solid #1e1e1e", width: "fit-content" }}>
+          {/* Main tabs + search na mesma linha */}
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: 3, border: "1px solid #1e1e1e", flexShrink: 0 }}>
               {([["acompanhantes", "Acompanhantes"], ["imoveis", "Imóveis"]] as const).map(([tab, label]) => (
                 <button key={tab} onClick={() => setMainTab(tab)}
-                  style={{ padding: "9px 22px", borderRadius: 9, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 14, background: mainTab === tab ? "#cc0000" : "transparent", color: mainTab === tab ? "#fff" : "#555", transition: "all 0.2s" }}>
+                  style={{ padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, background: mainTab === tab ? "#cc0000" : "transparent", color: mainTab === tab ? "#fff" : "#555", transition: "all 0.2s" }}>
                   {label}
                 </button>
               ))}
             </div>
-          </div>
 
-          {/* Search bar premium */}
-          <div style={{ display: "flex", gap: 10, maxWidth: 680, alignItems: "stretch" }}>
-            <div style={{ flex: 1, position: "relative" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
-                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input value={busca} onChange={(e) => setBusca(e.target.value)}
-                placeholder={mainTab === "acompanhantes" ? "Cidade, nome ou serviço..." : "Cidade ou tipo de imóvel..."}
-                style={{ width: "100%", padding: "14px 16px 14px 46px", background: "#111", border: "1px solid #2a2a2a", borderRadius: 12, color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box", letterSpacing: "0.2px" }} />
+            <div style={{ flex: 1, display: "flex", gap: 8, minWidth: 200 }}>
+              <div style={{ flex: 1, position: "relative" }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input value={busca} onChange={(e) => setBusca(e.target.value)}
+                  placeholder={mainTab === "acompanhantes" ? "Cidade, nome ou serviço..." : "Cidade ou tipo de imóvel..."}
+                  style={{ width: "100%", padding: "10px 14px 10px 40px", background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+              </div>
+              <button style={{ padding: "0 20px", background: "#cc0000", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+                Buscar
+              </button>
             </div>
-            <button style={{ padding: "0 28px", background: "#cc0000", color: "#fff", border: "none", borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", letterSpacing: "0.5px" }}>
-              Buscar
-            </button>
           </div>
-
-          {/* Divisor */}
-          <div style={{ marginTop: 28, borderTop: "1px solid #161616" }} />
         </div>
       </div>
 
@@ -140,9 +128,7 @@ function HomeContent() {
         {mainTab === "acompanhantes" && (
           <>
             {/* Stories */}
-            <div style={{ marginTop: 8, marginBottom: 4 }}>
-              <Stories />
-            </div>
+            <Stories />
 
             {/* Sub tabs */}
             <div style={{ display: "flex", gap: 0, marginBottom: 20, borderBottom: "1px solid #1e1e1e" }}>
