@@ -12,25 +12,28 @@ type SubTab = "mulheres" | "trans" | "homens";
 
 const acompanhantes = {
   mulheres: [
-    { id: 1, nome: "Amanda R.", cidade: "São Paulo, SP", preco: 350, foto: "/model1.jpg", online: true, avaliacao: 4.9, total: 87, servicos: ["Acompanhamento", "Viagens", "Jantar"] },
-    { id: 2, nome: "Letícia M.", cidade: "Rio de Janeiro, RJ", preco: 400, foto: "/model2.jpg", online: false, avaliacao: 4.8, total: 63, servicos: ["Massagem", "Eventos", "Local próprio"] },
-    { id: 3, nome: "Bruna S.", cidade: "Curitiba, PR", preco: 280, foto: "/model1.jpg", online: true, avaliacao: 5.0, total: 120, servicos: ["Acompanhamento", "Hotéis"] },
-    { id: 4, nome: "Fernanda K.", cidade: "São Paulo, SP", preco: 500, foto: "/model2.jpg", online: true, avaliacao: 4.7, total: 45, servicos: ["VIP", "Viagens", "Eventos"] },
+    { id: 1, nome: "Amanda R.", cidade: "São Paulo, SP", preco: 150, foto: "/model1.jpg", online: true, avaliacao: 4.9, total: 87, servicos: ["Acompanhamento", "Viagens", "Jantar"] },
+    { id: 2, nome: "Letícia M.", cidade: "Rio de Janeiro, RJ", preco: 250, foto: "/model2.jpg", online: false, avaliacao: 4.8, total: 63, servicos: ["Massagem", "Eventos", "Local próprio"] },
+    { id: 3, nome: "Bruna S.", cidade: "Curitiba, PR", preco: 120, foto: "/model1.jpg", online: true, avaliacao: 5.0, total: 120, servicos: ["Acompanhamento", "Hotéis"] },
+    { id: 4, nome: "Fernanda K.", cidade: "São Paulo, SP", preco: 800, foto: "/model2.jpg", online: true, avaliacao: 4.7, total: 45, servicos: ["VIP", "Viagens", "Eventos"] },
     { id: 5, nome: "Isabela C.", cidade: "Belo Horizonte, MG", preco: 320, foto: "/model1.jpg", online: false, avaliacao: 4.9, total: 92, servicos: ["Massagem tântrica", "Local próprio"] },
+    { id: 16, nome: "Carolina V.", cidade: "São Paulo, SP", preco: 180, foto: "/model2.jpg", online: true, avaliacao: 4.7, total: 54, servicos: ["Acompanhamento", "Local próprio"] },
+    { id: 17, nome: "Juliana T.", cidade: "Recife, PE", preco: 1200, foto: "/model1.jpg", online: true, avaliacao: 5.0, total: 31, servicos: ["VIP", "Viagens", "Eventos"] },
+    { id: 18, nome: "Patricia L.", cidade: "Brasília, DF", preco: 200, foto: "/model2.jpg", online: false, avaliacao: 4.6, total: 77, servicos: ["Acompanhamento", "Jantar"] },
   ],
   trans: [
-    { id: 6, nome: "Valentina G.", cidade: "São Paulo, SP", preco: 420, foto: "/model2.jpg", online: true, avaliacao: 4.9, total: 78, servicos: ["Acompanhamento", "Viagens"] },
-    { id: 7, nome: "Melissa F.", cidade: "Rio de Janeiro, RJ", preco: 380, foto: "/model1.jpg", online: true, avaliacao: 4.8, total: 55, servicos: ["Eventos", "Hotéis"] },
-    { id: 8, nome: "Sophia A.", cidade: "Curitiba, PR", preco: 300, foto: "/model2.jpg", online: false, avaliacao: 5.0, total: 101, servicos: ["Local próprio", "Massagem"] },
-    { id: 9, nome: "Luna P.", cidade: "Salvador, BA", preco: 350, foto: "/model1.jpg", online: true, avaliacao: 4.7, total: 42, servicos: ["Acompanhamento"] },
-    { id: 10, nome: "Bianca T.", cidade: "Florianópolis, SC", preco: 450, foto: "/model2.jpg", online: true, avaliacao: 4.9, total: 67, servicos: ["VIP", "Viagens"] },
+    { id: 6, nome: "Valentina G.", cidade: "São Paulo, SP", preco: 200, foto: "/model2.jpg", online: true, avaliacao: 4.9, total: 78, servicos: ["Acompanhamento", "Viagens"] },
+    { id: 7, nome: "Melissa F.", cidade: "Rio de Janeiro, RJ", preco: 180, foto: "/model1.jpg", online: true, avaliacao: 4.8, total: 55, servicos: ["Eventos", "Hotéis"] },
+    { id: 8, nome: "Sophia A.", cidade: "Curitiba, PR", preco: 600, foto: "/model2.jpg", online: false, avaliacao: 5.0, total: 101, servicos: ["Local próprio", "Massagem"] },
+    { id: 9, nome: "Luna P.", cidade: "Salvador, BA", preco: 150, foto: "/model1.jpg", online: true, avaliacao: 4.7, total: 42, servicos: ["Acompanhamento"] },
+    { id: 10, nome: "Bianca T.", cidade: "Florianópolis, SC", preco: 1500, foto: "/model2.jpg", online: true, avaliacao: 4.9, total: 67, servicos: ["VIP", "Viagens"] },
   ],
   homens: [
-    { id: 11, nome: "Rafael M.", cidade: "São Paulo, SP", preco: 300, foto: "/model1.jpg", online: true, avaliacao: 4.8, total: 65, servicos: ["Acompanhamento", "Eventos"] },
+    { id: 11, nome: "Rafael M.", cidade: "São Paulo, SP", preco: 200, foto: "/model1.jpg", online: true, avaliacao: 4.8, total: 65, servicos: ["Acompanhamento", "Eventos"] },
     { id: 12, nome: "Gabriel T.", cidade: "Rio de Janeiro, RJ", preco: 350, foto: "/model2.jpg", online: false, avaliacao: 4.9, total: 48, servicos: ["Massagem", "Viagens"] },
-    { id: 13, nome: "Lucas V.", cidade: "Florianópolis, SC", preco: 280, foto: "/model1.jpg", online: true, avaliacao: 4.7, total: 33, servicos: ["Acompanhamento"] },
-    { id: 14, nome: "Diego S.", cidade: "Belo Horizonte, MG", preco: 320, foto: "/model2.jpg", online: true, avaliacao: 5.0, total: 89, servicos: ["VIP", "Eventos"] },
-    { id: 15, nome: "Thiago N.", cidade: "São Paulo, SP", preco: 400, foto: "/model1.jpg", online: false, avaliacao: 4.8, total: 55, servicos: ["Viagens", "Hotéis"] },
+    { id: 13, nome: "Lucas V.", cidade: "Florianópolis, SC", preco: 130, foto: "/model1.jpg", online: true, avaliacao: 4.7, total: 33, servicos: ["Acompanhamento"] },
+    { id: 14, nome: "Diego S.", cidade: "Belo Horizonte, MG", preco: 900, foto: "/model2.jpg", online: true, avaliacao: 5.0, total: 89, servicos: ["VIP", "Eventos"] },
+    { id: 15, nome: "Thiago N.", cidade: "São Paulo, SP", preco: 250, foto: "/model1.jpg", online: false, avaliacao: 4.8, total: 55, servicos: ["Viagens", "Hotéis"] },
   ],
 };
 
