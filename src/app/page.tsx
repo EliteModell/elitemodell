@@ -98,23 +98,13 @@ function HomeContent() {
           </p>
 
           {/* Main tabs + stats */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
-            <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4, border: "1px solid #1e1e1e" }}>
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4, border: "1px solid #1e1e1e", width: "fit-content" }}>
               {([["acompanhantes", "Acompanhantes"], ["imoveis", "Imóveis"]] as const).map(([tab, label]) => (
                 <button key={tab} onClick={() => setMainTab(tab)}
                   style={{ padding: "9px 22px", borderRadius: 9, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 14, background: mainTab === tab ? "#cc0000" : "transparent", color: mainTab === tab ? "#fff" : "#555", transition: "all 0.2s" }}>
                   {label}
                 </button>
-              ))}
-            </div>
-
-            {/* Stats */}
-            <div style={{ display: "flex", gap: 24 }}>
-              {[["1.2k+", "Perfis"], ["98%", "Verificados"], ["4.9★", "Avaliação"]].map(([val, label]) => (
-                <div key={label} style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{val}</div>
-                  <div style={{ fontSize: 10, color: "#555", marginTop: 2, letterSpacing: 1 }}>{label.toUpperCase()}</div>
-                </div>
               ))}
             </div>
           </div>
