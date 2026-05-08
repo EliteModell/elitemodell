@@ -34,12 +34,12 @@ const acompanhantes = {
 };
 
 const imoveis = [
-  { id: 1, titulo: "Cobertura Premium", cidade: "São Paulo, SP", preco: 890, foto: "/hero-model.jpeg", quartos: 3, avaliacao: 4.9 },
-  { id: 2, titulo: "Flat Executivo", cidade: "Rio de Janeiro, RJ", preco: 650, foto: "/hero-model.jpeg", quartos: 1, avaliacao: 4.8 },
-  { id: 3, titulo: "Studio Moderno", cidade: "Curitiba, PR", preco: 420, foto: "/hero-model.jpeg", quartos: 1, avaliacao: 4.7 },
-  { id: 4, titulo: "Casa de Luxo", cidade: "Florianópolis, SC", preco: 1200, foto: "/hero-model.jpeg", quartos: 4, avaliacao: 5.0 },
-  { id: 5, titulo: "Apartamento Central", cidade: "Belo Horizonte, MG", preco: 380, foto: "/hero-model.jpeg", quartos: 2, avaliacao: 4.6 },
-  { id: 6, titulo: "Loft Exclusivo", cidade: "Porto Alegre, RS", preco: 550, foto: "/hero-model.jpeg", quartos: 1, avaliacao: 4.9 },
+  { id: 1, titulo: "Cobertura Premium", cidade: "São Paulo, SP", preco: 890, foto: "/hero-model.jpeg", quartos: 3, avaliacao: 4.9, tipo: "Cobertura", tags: ["Com piscina"] },
+  { id: 2, titulo: "Flat Executivo", cidade: "Rio de Janeiro, RJ", preco: 650, foto: "/hero-model.jpeg", quartos: 1, avaliacao: 4.8, tipo: "Flat", tags: [] },
+  { id: 3, titulo: "Studio Moderno", cidade: "Curitiba, PR", preco: 420, foto: "/hero-model.jpeg", quartos: 1, avaliacao: 4.7, tipo: "Studio", tags: ["Pet friendly"] },
+  { id: 4, titulo: "Casa de Luxo", cidade: "Florianópolis, SC", preco: 1200, foto: "/hero-model.jpeg", quartos: 4, avaliacao: 5.0, tipo: "Casa", tags: ["Com piscina", "Pet friendly"] },
+  { id: 5, titulo: "Apartamento Central", cidade: "Belo Horizonte, MG", preco: 380, foto: "/hero-model.jpeg", quartos: 2, avaliacao: 4.6, tipo: "Apartamento", tags: [] },
+  { id: 6, titulo: "Loft Exclusivo", cidade: "Porto Alegre, RS", preco: 550, foto: "/hero-model.jpeg", quartos: 1, avaliacao: 4.9, tipo: "Apartamento", tags: ["Pet friendly"] },
 ];
 
 const FILTROS_RAPIDOS = ["Online agora", "Com avaliações", "Com local", "Até R$300", "Fotos verificadas", "Exclusivas"] as const;
@@ -61,6 +61,7 @@ function HomeContent() {
   const [busca, setBusca] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filtrosAtivos, setFiltrosAtivos] = useState<Set<FiltroRapido>>(new Set());
+  const [filtroImovel, setFiltroImovel] = useState<string | null>(null);
 
   function toggleFiltro(f: FiltroRapido) {
     setFiltrosAtivos((prev) => {
@@ -224,17 +225,23 @@ function HomeContent() {
         {mainTab === "imoveis" && (
           <>
             <div style={{ display: "flex", gap: 8, marginBottom: 24, overflowX: "auto", paddingBottom: 4 }}>
-              {["Apartamento", "Casa", "Studio", "Cobertura", "Flat", "Com piscina", "Pet friendly"].map((f) => (
-                <button key={f}
-                  style={{ padding: "7px 16px", background: "#111", border: "1px solid #222", borderRadius: 20, color: "#888", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#cc0000"; (e.currentTarget as HTMLElement).style.color = "#fff"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#222"; (e.currentTarget as HTMLElement).style.color = "#888"; }}>
-                  {f}
-                </button>
-              ))}
+              {["Apartamento", "Casa", "Studio", "Cobertura", "Flat", "Com piscina", "Pet friendly"].map((f) => {
+                const ativo = filtroImovel === f;
+                return (
+                  <button key={f} onClick={() => setFiltroImovel(ativo ? null : f)}
+                    style={{ padding: "7px 16px", background: ativo ? "rgba(204,0,0,0.15)" : "#111", border: `1px solid ${ativo ? "#cc0000" : "#222"}`, borderRadius: 20, color: ativo ? "#fff" : "#888", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", fontWeight: ativo ? 700 : 400, transition: "all 0.2s", flexShrink: 0 }}>
+                    {f}
+                  </button>
+                );
+              })}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
-              {imoveis.filter((i) => !busca || i.cidade.toLowerCase().includes(busca.toLowerCase()) || i.titulo.toLowerCase().includes(busca.toLowerCase())).map((im) => (
+              {imoveis.filter((i) => {
+                if (busca && !i.cidade.toLowerCase().includes(busca.toLowerCase()) && !i.titulo.toLowerCase().includes(busca.toLowerCase())) return false;
+                if (filtroImovel === "Com piscina" || filtroImovel === "Pet friendly") return i.tags.includes(filtroImovel);
+                if (filtroImovel) return i.tipo === filtroImovel;
+                return true;
+              }).map((im) => (
                 <Link key={im.id} href={`/imoveis/${im.id}`} style={{ textDecoration: "none" }}>
                   <div style={{ borderRadius: 14, overflow: "hidden", background: "#111", border: "1px solid #1e1e1e", cursor: "pointer", transition: "transform 0.2s, border-color 0.2s" }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-4px)"; (e.currentTarget as HTMLElement).style.borderColor = "#cc0000"; }}
