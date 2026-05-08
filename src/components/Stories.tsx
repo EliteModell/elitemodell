@@ -81,8 +81,8 @@ export default function Stories() {
       <div style={{ position: "relative", marginBottom: 20 }}>
         <div ref={rowRef} style={{ display: "flex", gap: 14, overflowX: "auto", scrollbarWidth: "none", padding: "4px 32px" }}>
 
-          {/* Botão adicionar story (só para logados) */}
-          {session && (
+          {/* Botão adicionar story (só para profissionais) */}
+          {session && (session.user as any).isProfessional && (
             <div onClick={() => fileRef.current?.click()}
               style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: uploading ? "wait" : "pointer", flexShrink: 0, opacity: uploading ? 0.6 : 1 }}>
               <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#1a1a1a", border: "2px dashed #333", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, color: "#555", transition: "border-color 0.2s" }}

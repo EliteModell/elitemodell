@@ -1,6 +1,5 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 
 export const authOptions: NextAuthOptions = {
@@ -11,30 +10,64 @@ export const authOptions: NextAuthOptions = {
   },
   providers: [
     CredentialsProvider({
-      name: "credentials",
+      id: "firebase",
+      name: "Firebase",
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Senha", type: "password" },
+        idToken: { label: "Firebase ID Token", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.idToken) return null;
+        try {
+          const { adminAuth } = await import("./firebase-admin");
+          const decoded = await adminAuth.verifyIdToken(credentials.idToken);
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+          const email = decoded.email
+            ?? `phone_${decoded.phone_number?.replace(/\D/g, "").replace(/^55/, "")}@sms.elitemodell.local`;
 
-        if (!user || !user.password) return null;
+          const phone = decoded.phone_number
+            ?.replace(/\D/g, "")
+            .replace(/^55/, "");
 
-        const valid = await bcrypt.compare(credentials.password, user.password);
-        if (!valid) return null;
+          let user = await prisma.user.findFirst({
+            where: {
+              OR: [{ email }, ...(phone ? [{ phone }] : [])],
+            },
+          });
 
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          image: user.image,
-          role: user.role,
-        };
+          if (!user) {
+            user = await prisma.user.create({
+              data: {
+                email,
+                name: decoded.name ?? null,
+                image: decoded.picture ?? null,
+                phone: phone ?? null,
+                emailVerified: decoded.email_verified ? new Date() : null,
+              },
+            });
+          } else {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: {
+                name: user.name ?? decoded.name ?? null,
+                image: user.image ?? decoded.picture ?? null,
+                emailVerified:
+                  decoded.email_verified && !user.emailVerified
+                    ? new Date()
+                    : user.emailVerified,
+              },
+            });
+          }
+
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            image: user.image,
+            role: user.role,
+          } as any;
+        } catch {
+          return null;
+        }
       },
     }),
   ],
@@ -44,12 +77,23 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = (user as any).role;
       }
+      if (token.id && !token.role) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true, professional: { select: { id: true } } },
+        });
+        if (dbUser) {
+          token.role = dbUser.role;
+          token.isProfessional = !!dbUser.professional;
+        }
+      }
       return token;
     },
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        (session.user as any).isProfessional = token.isProfessional ?? false;
       }
       return session;
     },
