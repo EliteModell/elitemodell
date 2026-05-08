@@ -25,10 +25,10 @@ export default function DashboardPage() {
       {/* Header */}
       <div style={{ marginBottom: 32 }}>
         <h1 style={{ fontSize: 26, fontWeight: 800, color: "#fff", marginBottom: 6 }}>
-          Olá, {firstName} 👋
+          Olá, {firstName}
         </h1>
         <p style={{ color: "#666", fontSize: 15 }}>
-          Bem-vindo ao seu painel. O que vamos fazer hoje?
+          Bem-vindo ao seu painel.
         </p>
       </div>
 

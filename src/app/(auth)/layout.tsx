@@ -12,34 +12,70 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         overflow: "hidden",
       }}
     >
-      {/* Background glow */}
+      {/* Foto esquerda */}
       <div
         style={{
           position: "absolute",
-          top: "-10%",
-          right: "-5%",
-          width: 500,
-          height: 500,
+          left: 0,
+          top: 0,
+          width: "38%",
+          height: "100%",
+          backgroundImage: "url(/model1.jpg)",
+          backgroundSize: "cover",
+          backgroundPosition: "center top",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(to right, rgba(13,13,13,0.2) 0%, rgba(13,13,13,0.85) 100%)",
+          }}
+        />
+      </div>
+
+      {/* Foto direita */}
+      <div
+        style={{
+          position: "absolute",
+          right: 0,
+          top: 0,
+          width: "38%",
+          height: "100%",
+          backgroundImage: "url(/model2.jpg)",
+          backgroundSize: "cover",
+          backgroundPosition: "center top",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(to left, rgba(13,13,13,0.2) 0%, rgba(13,13,13,0.85) 100%)",
+          }}
+        />
+      </div>
+
+      {/* Glow vermelho sutil */}
+      <div
+        style={{
+          position: "absolute",
+          top: "20%",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 600,
+          height: 400,
           borderRadius: "50%",
           background: "rgba(204,0,0,0.06)",
           filter: "blur(80px)",
           pointerEvents: "none",
         }}
       />
-      <div
-        style={{
-          position: "absolute",
-          bottom: "-10%",
-          left: "-5%",
-          width: 400,
-          height: 400,
-          borderRadius: "50%",
-          background: "rgba(204,0,0,0.04)",
-          filter: "blur(60px)",
-          pointerEvents: "none",
-        }}
-      />
-      {children}
+
+      {/* Card */}
+      <div style={{ position: "relative", zIndex: 10, width: "100%" , display: "flex", justifyContent: "center" }}>
+        {children}
+      </div>
     </div>
   );
 }
