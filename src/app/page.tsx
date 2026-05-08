@@ -5,6 +5,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FiltersModal from "@/components/FiltersModal";
+import Stories from "@/components/Stories";
 
 type MainTab = "acompanhantes" | "imoveis";
 type SubTab = "mulheres" | "trans" | "homens";
@@ -135,6 +136,11 @@ function HomeContent() {
         {/* ACOMPANHANTES */}
         {mainTab === "acompanhantes" && (
           <>
+            {/* Stories */}
+            <div style={{ marginTop: 8, marginBottom: 4 }}>
+              <Stories />
+            </div>
+
             {/* Sub tabs */}
             <div style={{ display: "flex", gap: 0, marginBottom: 20, borderBottom: "1px solid #1e1e1e" }}>
               {([["mulheres", "Mulheres"], ["trans", "Trans"], ["homens", "Homens"]] as const).map(([tab, label]) => (
