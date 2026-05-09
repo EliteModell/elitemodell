@@ -7,49 +7,56 @@ import toast from "react-hot-toast";
 import Navbar from "@/components/Navbar";
 
 const mockPro = {
-  slug: "juliana-oliveira",
-  displayName: "Juliana Oliveira",
-  bio: `Sou modelo fotográfica e publicitária com 6 anos de experiência no mercado da moda e publicidade. Trabalho com marcas nacionais e internacionais, editoriais para revistas, campanhas comerciais e ensaios artísticos.
+  slug: "amanda-r",
+  displayName: "Amanda R.",
+  image: "/model1.jpg",
+  online: true,
+  bio: `Olá, seja bem-vindo ao meu perfil. Sou uma acompanhante sofisticada, discreta e de alto nível. Ofereço momentos únicos e inesquecíveis para homens que valorizam qualidade e elegância.
 
-Tenho experiência em moda praia, moda festa, editorial de arte, campanhas publicitárias para TV e digital. Disponível para viagens e trabalhos externos.
+Atendo em local próprio, hotéis e aceito viagens. Cuido bem de cada detalhe para que você se sinta à vontade e especial em cada encontro.
 
-Me destaco pela seriedade, pontualidade e comprometimento com cada projeto. Acredito que a beleza está na autenticidade de cada momento capturado.`,
+Pontualidade, discrição e higiene são fundamentais para mim. Aguardo seu contato.`,
   city: "São Paulo",
   state: "SP",
   phone: "11999999999",
   whatsapp: "11999999999",
-  instagram: "@juliana.oliveira",
-  website: "www.julianaoliveira.com.br",
-  priceMin: 500,
-  priceMax: 2000,
-  specialties: ["Modelo Fotográfico", "Modelo Editorial", "Modelo Publicitário", "Modelo Praia"],
+  instagram: "@amanda.elite",
+  website: "",
+  pricePerHour: 350,
+  price2h: 600,
+  priceOvernight: 1500,
+  priceMin: 350,
+  priceMax: 1500,
+  specialties: ["Acompanhamento", "Viagens", "Jantar a dois", "Hotéis", "Local próprio"],
+  attendanceTypes: ["Local próprio", "Hotéis", "Aceita viajar"],
+  paymentMethods: ["Pix", "Dinheiro"],
   rating: 4.9,
-  totalReviews: 38,
-  totalAppointments: 124,
+  totalReviews: 87,
+  totalAppointments: 203,
   verified: true,
   featured: true,
-  memberSince: "2022",
+  memberSince: "2023",
   photos: [
-    { id: "1", caption: "Editorial Outono/Inverno" },
-    { id: "2", caption: "Campanha Comercial" },
-    { id: "3", caption: "Ensaio Artístico" },
-    { id: "4", caption: "Moda Praia" },
-    { id: "5", caption: "Editorial Revista" },
-    { id: "6", caption: "Backstage" },
+    { id: "1", url: "/model1.jpg", caption: "" },
+    { id: "2", url: "/model2.jpg", caption: "" },
+    { id: "3", url: "/model1.jpg", caption: "" },
+    { id: "4", url: "/model2.jpg", caption: "" },
+    { id: "5", url: "/model1.jpg", caption: "" },
+    { id: "6", url: "/model2.jpg", caption: "" },
   ],
   schedule: [
-    { day: "Segunda", available: true, time: "09:00 – 18:00" },
-    { day: "Terça", available: true, time: "09:00 – 18:00" },
-    { day: "Quarta", available: true, time: "09:00 – 18:00" },
-    { day: "Quinta", available: true, time: "09:00 – 18:00" },
-    { day: "Sexta", available: true, time: "09:00 – 17:00" },
-    { day: "Sábado", available: true, time: "10:00 – 14:00" },
+    { day: "Segunda", available: true, time: "14:00 – 00:00" },
+    { day: "Terça", available: true, time: "14:00 – 00:00" },
+    { day: "Quarta", available: true, time: "14:00 – 00:00" },
+    { day: "Quinta", available: true, time: "14:00 – 00:00" },
+    { day: "Sexta", available: true, time: "14:00 – 02:00" },
+    { day: "Sábado", available: true, time: "16:00 – 02:00" },
     { day: "Domingo", available: false, time: "" },
   ],
   reviews: [
-    { author: "Carlos F.", rating: 5, comment: "Profissional incrível! Pontual, dedicada e entregou muito além do esperado. Com certeza vou trabalhar novamente.", date: "Nov 2024" },
-    { author: "Studio Arte", rating: 5, comment: "Trabalhamos em editorial para revista e foi perfeito. Muito profissional e versátil.", date: "Out 2024" },
-    { author: "Marca XYZ", rating: 4, comment: "Excelente trabalho para nossa campanha de verão. Recomendo!", date: "Set 2024" },
+    { author: "Rodrigo M.", rating: 5, comment: "Atendimento impecável, muito discreta e elegante. Superou todas as expectativas. Com certeza voltarei.", date: "Abr 2025" },
+    { author: "Felipe S.", rating: 5, comment: "Pontual, educada e muito agradável. Faz você se sentir especial desde o primeiro momento.", date: "Mar 2025" },
+    { author: "Lucas A.", rating: 5, comment: "Melhor companhia que já tive. Recomendo sem hesitar.", date: "Fev 2025" },
   ],
 };
 
@@ -220,8 +227,17 @@ export default function ProfissionalProfilePage() {
           <div>
             {/* Header */}
             <div style={{ display: "flex", gap: 24, alignItems: "flex-start", marginBottom: 28, flexWrap: "wrap" }}>
-              <div style={{ width: 100, height: 100, borderRadius: "50%", background: "#cc0000", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, fontWeight: 800, color: "#fff", flexShrink: 0, border: "3px solid #1e1e1e" }}>
-                {pro.displayName.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+              <div style={{ width: 100, height: 100, borderRadius: "50%", flexShrink: 0, border: "3px solid #cc0000", overflow: "hidden", position: "relative" }}>
+                {(pro as any).image ? (
+                  <img src={(pro as any).image} alt={pro.displayName} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+                ) : (
+                  <div style={{ width: "100%", height: "100%", background: "#cc0000", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, fontWeight: 800, color: "#fff" }}>
+                    {pro.displayName.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+                  </div>
+                )}
+                {(pro as any).online && (
+                  <div style={{ position: "absolute", bottom: 4, right: 4, width: 14, height: 14, borderRadius: "50%", background: "#22c55e", border: "2px solid #0d0d0d" }} />
+                )}
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
@@ -272,33 +288,20 @@ export default function ProfissionalProfilePage() {
               <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 18 }}>Portfólio</h2>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                 {pro.photos.map((photo, i) => (
-                  <div
-                    key={photo.id}
-                    onClick={() => setActivePhoto(i)}
-                    style={{
-                      aspectRatio: "1",
-                      background: `linear-gradient(${135 + i * 25}deg, #1a0000 0%, #111 50%, #0d0d1a 100%)`,
-                      borderRadius: 8,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      position: "relative",
-                      overflow: "hidden",
-                      border: "1px solid #1e1e1e",
-                    }}
+                  <div key={photo.id} onClick={() => setActivePhoto(i)}
+                    style={{ aspectRatio: "1", borderRadius: 8, overflow: "hidden", cursor: "pointer", position: "relative", border: "1px solid #1e1e1e" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = "0.85"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
                   >
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="1.5">
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <polyline points="21 15 16 10 5 21" />
-                    </svg>
-                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)", padding: "20px 8px 8px", opacity: 0, transition: "opacity 0.2s" }}
-                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = "1")}
-                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.opacity = "0")}
-                    >
-                      <p style={{ fontSize: 11, color: "#fff", textAlign: "center" }}>{photo.caption}</p>
-                    </div>
+                    {(photo as any).url ? (
+                      <img src={(photo as any).url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+                    ) : (
+                      <div style={{ width: "100%", height: "100%", background: `linear-gradient(${135 + i * 25}deg, #1a0000 0%, #111 100%)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="1.5">
+                          <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
+                        </svg>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -358,19 +361,20 @@ export default function ProfissionalProfilePage() {
             <div style={{ background: "#111", border: "1px solid #222", borderRadius: 14, padding: "24px", position: "sticky", top: 90 }}>
               <div style={{ marginBottom: 20 }}>
                 <div style={{ fontSize: 14, color: "#888", marginBottom: 6 }}>Faixa de preço</div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: "#cc0000" }}>
-                  R$ {pro.priceMin?.toLocaleString("pt-BR")} – R$ {pro.priceMax?.toLocaleString("pt-BR")}
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {(pro as any).pricePerHour && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}><span style={{ color: "#666" }}>1 hora</span><span style={{ color: "#cc0000", fontWeight: 700 }}>R$ {(pro as any).pricePerHour}</span></div>}
+                  {(pro as any).price2h && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}><span style={{ color: "#666" }}>2 horas</span><span style={{ color: "#cc0000", fontWeight: 700 }}>R$ {(pro as any).price2h}</span></div>}
+                  {(pro as any).priceOvernight && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}><span style={{ color: "#666" }}>Pernoite</span><span style={{ color: "#cc0000", fontWeight: 700 }}>R$ {(pro as any).priceOvernight}</span></div>}
                 </div>
-                <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>Valor negociado por projeto</div>
               </div>
 
               <button
                 onClick={() => setShowModal(true)}
-                style={{ width: "100%", padding: "14px", background: "#cc0000", color: "#fff", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: "pointer", marginBottom: 12, transition: "background 0.2s" }}
+                style={{ width: "100%", padding: "14px", background: "#cc0000", color: "#fff", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: "pointer", marginBottom: 12, transition: "background 0.2s", letterSpacing: "0.5px" }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#e00000")}
                 onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "#cc0000")}
               >
-                📅 Solicitar agendamento
+                Solicitar encontro
               </button>
 
               <a
@@ -413,7 +417,7 @@ export default function ProfissionalProfilePage() {
 
               <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #1a1a1a" }}>
                 <p style={{ fontSize: 12, color: "#555", lineHeight: 1.6, textAlign: "center" }}>
-                  🔒 Perfil verificado pela Elite Modell.<br />Seus dados são protegidos.
+                  Perfil verificado pela Elite Modell.<br />Seus dados são protegidos.
                 </p>
               </div>
             </div>

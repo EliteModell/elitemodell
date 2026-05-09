@@ -3,14 +3,60 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
-const SPECIALTIES = [
-  "Modelo Fotográfico", "Modelo Editorial", "Modelo Fitness", "Modelo Plus Size",
-  "Modelo Comercial", "Modelo Infantil", "Ator / Atriz", "Influencer Digital",
-  "Fotógrafo(a)", "Videomaker", "Make Artist", "Stylist", "Designer Gráfico",
-  "Produtor(a) Musical", "DJ", "Coreógrafo(a)",
+const STEPS = ["Identidade", "Aparência", "Atendimento", "Serviços", "Valores", "Contato"];
+
+const SERVICOS = [
+  "Acompanhamento", "Jantar a dois", "Viagens", "Festas e eventos",
+  "Massagem", "Massagem tântrica", "Ensaio fotográfico", "Vídeo chamada",
+  "Pernoite", "Final de semana", "Hotéis", "Local próprio",
 ];
 
-const STEPS = ["Informações", "Especialidades", "Preços", "Contato"];
+const FETICHES = [
+  "Striptease", "Dominação", "Roleplay", "Bondage", "Voyeurismo",
+  "Podolatria", "Fantasias/uniformes", "Acessórios eróticos", "Squirt",
+  "Ativo", "Passivo", "Versátil", "Permite filmagem", "Faz sexo virtual",
+];
+
+const ATENDIMENTO = ["A domicílio", "Local próprio", "Hotéis", "Motéis", "Aceita viajar", "Festas e eventos"];
+const ATENDE = ["Homens", "Mulheres", "Casais", "Homens trans", "Mulheres trans", "Não binário"];
+const GRUPOS = ["1 pessoa", "2 pessoas", "3 pessoas", "4 ou mais"];
+const PAGAMENTO = ["Pix", "Dinheiro", "Cartão de crédito", "Cartão de débito", "Transferência"];
+const CABELOS = ["Loira", "Morena", "Ruiva", "Castanho", "Colorido", "Preto", "Sem cabelo"];
+const OLHOS = ["Azul", "Castanho", "Verde", "Mel", "Cinza", "Preto"];
+const ETNIAS = ["Branca", "Negra", "Parda", "Oriental", "Indígena", "Latina", "Outra"];
+
+const inputStyle: React.CSSProperties = {
+  width: "100%", padding: "12px 14px", background: "#0d0d0d",
+  border: "1px solid #2a2a2a", borderRadius: 8, color: "#fff",
+  fontSize: 14, outline: "none", boxSizing: "border-box",
+};
+
+const labelStyle: React.CSSProperties = {
+  display: "block", fontSize: 11, color: "#888", fontWeight: 700,
+  textTransform: "uppercase", letterSpacing: 1, marginBottom: 8,
+};
+
+function Tag({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} style={{
+      padding: "8px 16px", borderRadius: 20, cursor: "pointer", fontSize: 13, fontWeight: active ? 600 : 400,
+      border: `1.5px solid ${active ? "#cc0000" : "#2a2a2a"}`,
+      background: active ? "rgba(204,0,0,0.1)" : "transparent",
+      color: active ? "#fff" : "#777", transition: "all 0.15s",
+    }}>
+      {label}
+    </button>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <h3 style={{ color: "#fff", fontSize: 14, fontWeight: 700, margin: "0 0 16px", paddingBottom: 10, borderBottom: "1px solid #1e1e1e", textTransform: "uppercase", letterSpacing: 1 }}>{title}</h3>
+      {children}
+    </div>
+  );
+}
 
 export default function ProfissionalNovoPage() {
   const router = useRouter();
@@ -18,66 +64,33 @@ export default function ProfissionalNovoPage() {
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
-    displayName: "",
-    bio: "",
-    city: "",
-    state: "",
-    phone: "",
-    whatsapp: "",
-    instagram: "",
-    website: "",
-    priceMin: "",
-    priceMax: "",
-    specialties: [] as string[],
+    displayName: "", bio: "", city: "", state: "", escortCategory: "",
+    birthDate: "", height: "", weight: "",
+    hairColor: "", eyeColor: "", ethnicity: "",
+    hasTattoos: false, hasSilicone: false,
+    attendanceTypes: [] as string[], servesGenders: [] as string[], grupos: [] as string[],
+    services: [] as string[], fetishes: [] as string[],
+    pricePerHour: "", price30min: "", price2h: "", priceOvernight: "",
+    paymentMethods: [] as string[],
+    phone: "", whatsapp: "", instagram: "", website: "",
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  function set(field: string, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => ({ ...prev, [field]: "" }));
+  function set(field: string, value: any) {
+    setForm((f) => ({ ...f, [field]: value }));
   }
 
-  function toggleSpecialty(sp: string) {
-    setForm((prev) => ({
-      ...prev,
-      specialties: prev.specialties.includes(sp)
-        ? prev.specialties.filter((s) => s !== sp)
-        : [...prev.specialties, sp],
-    }));
-    setErrors((prev) => ({ ...prev, specialties: "" }));
+  function toggleArr(field: string, val: string) {
+    setForm((f) => {
+      const arr = (f as any)[field] as string[];
+      return { ...f, [field]: arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val] };
+    });
   }
 
-  function validateStep(): boolean {
-    const e: Record<string, string> = {};
-    if (step === 0) {
-      if (!form.displayName || form.displayName.length < 2) e.displayName = "Nome deve ter pelo menos 2 caracteres.";
-      if (!form.bio || form.bio.length < 20) e.bio = "Bio deve ter pelo menos 20 caracteres.";
-      if (!form.city || form.city.length < 2) e.city = "Informe sua cidade.";
-      if (!form.state || form.state.length < 2) e.state = "Informe seu estado.";
-    }
-    if (step === 1) {
-      if (form.specialties.length === 0) e.specialties = "Selecione pelo menos uma especialidade.";
-    }
-    if (step === 2) {
-      if (form.priceMin && form.priceMax && Number(form.priceMin) > Number(form.priceMax)) {
-        e.priceMax = "Preço máximo deve ser maior que o mínimo.";
-      }
-    }
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  }
-
-  function nextStep() {
-    if (validateStep()) setStep((s) => Math.min(s + 1, STEPS.length - 1));
-  }
-
-  function prevStep() {
-    setStep((s) => Math.max(s - 1, 0));
+  function toggleSingle(field: string, val: string) {
+    setForm((f) => ({ ...f, [field]: (f as any)[field] === val ? "" : val }));
   }
 
   async function submit() {
-    if (!validateStep()) return;
     setLoading(true);
     try {
       const res = await fetch("/api/professionals", {
@@ -85,8 +98,15 @@ export default function ProfissionalNovoPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          priceMin: form.priceMin ? Number(form.priceMin) : undefined,
-          priceMax: form.priceMax ? Number(form.priceMax) : undefined,
+          priceMin: form.pricePerHour ? Number(form.pricePerHour) : undefined,
+          priceMax: form.pricePerHour ? Number(form.pricePerHour) : undefined,
+          pricePerHour: form.pricePerHour ? Number(form.pricePerHour) : undefined,
+          price30min: form.price30min ? Number(form.price30min) : undefined,
+          price2h: form.price2h ? Number(form.price2h) : undefined,
+          priceOvernight: form.priceOvernight ? Number(form.priceOvernight) : undefined,
+          height: form.height ? Number(form.height) : undefined,
+          weight: form.weight ? Number(form.weight) : undefined,
+          specialties: form.services,
         }),
       });
       if (!res.ok) {
@@ -94,7 +114,7 @@ export default function ProfissionalNovoPage() {
         toast.error(data.error ?? "Erro ao criar perfil.");
         return;
       }
-      toast.success("Perfil criado! Aguarde a aprovação.");
+      toast.success("Perfil criado! Aguardando aprovação.");
       router.push("/profissional");
     } catch {
       toast.error("Erro ao criar perfil.");
@@ -103,185 +123,255 @@ export default function ProfissionalNovoPage() {
     }
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "10px 12px",
-    background: "#111",
-    border: "1px solid #222",
-    borderRadius: 8,
-    color: "#fff",
-    fontSize: 14,
-    outline: "none",
-    boxSizing: "border-box",
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: "block",
-    fontSize: 12,
-    color: "#666",
-    fontWeight: 700,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 6,
-  };
-
-  const errorStyle: React.CSSProperties = {
-    fontSize: 12,
-    color: "#cc4444",
-    marginTop: 4,
-  };
+  const progress = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto" }}>
-      <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Criar Perfil Profissional</h1>
-        <p style={{ color: "#666", fontSize: 14 }}>Preencha seu perfil para aparecer no marketplace. Após envio, nossa equipe fará a revisão.</p>
+    <div style={{ maxWidth: 680, margin: "0 auto" }}>
+      {/* Header */}
+      <div style={{ marginBottom: 32 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", margin: "0 0 6px", letterSpacing: "-0.5px" }}>
+          Criar Perfil
+        </h1>
+        <p style={{ color: "#555", fontSize: 14 }}>
+          Preencha com atenção — essas informações aparecem nos filtros de busca.
+        </p>
       </div>
 
-      {/* Step indicator */}
-      <div style={{ display: "flex", gap: 0, marginBottom: 32, background: "#111", border: "1px solid #1e1e1e", borderRadius: 10, overflow: "hidden" }}>
-        {STEPS.map((label, i) => (
-          <div key={label} style={{ flex: 1, padding: "10px 4px", textAlign: "center", background: i === step ? "rgba(204,0,0,0.12)" : "transparent", borderRight: i < STEPS.length - 1 ? "1px solid #1e1e1e" : "none" }}>
-            <div style={{ fontSize: 10, color: i === step ? "#cc4444" : i < step ? "#00cc66" : "#333", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
-              {i < step ? "✓" : i + 1}. {label}
+      {/* Progress */}
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+          <span style={{ fontSize: 12, color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>
+            Etapa {step + 1} de {STEPS.length} — {STEPS[step]}
+          </span>
+          <span style={{ fontSize: 12, color: "#cc0000", fontWeight: 700 }}>{Math.round(progress)}%</span>
+        </div>
+        <div style={{ height: 3, background: "#1a1a1a", borderRadius: 3 }}>
+          <div style={{ height: "100%", width: `${progress}%`, background: "#cc0000", borderRadius: 3, transition: "width 0.3s" }} />
+        </div>
+        <div style={{ display: "flex", gap: 0, marginTop: 16 }}>
+          {STEPS.map((s, i) => (
+            <div key={s} style={{ flex: 1, textAlign: "center" }}>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: i < step ? "#cc0000" : i === step ? "#cc0000" : "#1a1a1a", border: `2px solid ${i <= step ? "#cc0000" : "#2a2a2a"}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 4px", fontSize: 11, fontWeight: 700, color: i <= step ? "#fff" : "#444" }}>
+                {i < step ? "✓" : i + 1}
+              </div>
+              <span style={{ fontSize: 10, color: i === step ? "#fff" : "#444", fontWeight: i === step ? 700 : 400, textTransform: "uppercase", letterSpacing: 0.5 }}>{s}</span>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
-      {/* Step 0: Info */}
+      {/* STEP 0 — Identidade */}
       {step === 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div>
-            <label style={labelStyle}>Nome artístico / profissional *</label>
-            <input value={form.displayName} onChange={(e) => set("displayName", e.target.value)} style={inputStyle} placeholder="Ex: Juliana Oliveira" />
-            {errors.displayName && <div style={errorStyle}>{errors.displayName}</div>}
-          </div>
-          <div>
-            <label style={labelStyle}>Bio profissional *</label>
-            <textarea value={form.bio} onChange={(e) => set("bio", e.target.value)} rows={4}
-              style={{ ...inputStyle, resize: "vertical", lineHeight: 1.5 }}
-              placeholder="Conte sobre sua experiência, estilo de trabalho, projetos anteriores..." />
-            <div style={{ fontSize: 11, color: form.bio.length < 20 ? "#555" : "#00cc66", marginTop: 4 }}>
-              {form.bio.length}/20 caracteres mínimos
+        <div>
+          <Section title="Dados básicos">
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <label style={labelStyle}>Nome artístico</label>
+                <input value={form.displayName} onChange={(e) => set("displayName", e.target.value)} style={inputStyle} placeholder="Como quer ser chamada(o)" />
+              </div>
+              <div>
+                <label style={labelStyle}>Biografia</label>
+                <textarea value={form.bio} onChange={(e) => set("bio", e.target.value)} rows={4}
+                  style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
+                  placeholder="Conte sobre você, seus diferenciais, o que oferece de especial..." />
+                <div style={{ fontSize: 11, color: "#555", marginTop: 4 }}>{form.bio.length} caracteres</div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={labelStyle}>Cidade</label>
+                  <input value={form.city} onChange={(e) => set("city", e.target.value)} style={inputStyle} placeholder="São Paulo" />
+                </div>
+                <div>
+                  <label style={labelStyle}>Estado</label>
+                  <input value={form.state} onChange={(e) => set("state", e.target.value)} style={inputStyle} placeholder="SP" maxLength={2} />
+                </div>
+              </div>
             </div>
-            {errors.bio && <div style={errorStyle}>{errors.bio}</div>}
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div>
-              <label style={labelStyle}>Cidade *</label>
-              <input value={form.city} onChange={(e) => set("city", e.target.value)} style={inputStyle} placeholder="São Paulo" />
-              {errors.city && <div style={errorStyle}>{errors.city}</div>}
+          </Section>
+
+          <Section title="Categoria">
+            <div style={{ display: "flex", gap: 10 }}>
+              {["MULHER", "TRANS", "HOMEM"].map((c) => (
+                <button key={c} type="button" onClick={() => toggleSingle("escortCategory", c)}
+                  style={{ flex: 1, padding: "14px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13, textTransform: "uppercase", letterSpacing: 1, border: `2px solid ${form.escortCategory === c ? "#cc0000" : "#2a2a2a"}`, background: form.escortCategory === c ? "rgba(204,0,0,0.1)" : "#0d0d0d", color: form.escortCategory === c ? "#fff" : "#555" }}>
+                  {c === "MULHER" ? "Mulher" : c === "TRANS" ? "Trans" : "Homem"}
+                </button>
+              ))}
             </div>
-            <div>
-              <label style={labelStyle}>Estado *</label>
-              <input value={form.state} onChange={(e) => set("state", e.target.value)} style={inputStyle} placeholder="SP" maxLength={2} />
-              {errors.state && <div style={errorStyle}>{errors.state}</div>}
-            </div>
-          </div>
+          </Section>
         </div>
       )}
 
-      {/* Step 1: Specialties */}
+      {/* STEP 1 — Aparência */}
       {step === 1 && (
         <div>
-          <div style={{ fontSize: 14, color: "#888", marginBottom: 16 }}>
-            Selecione todas as especialidades que se aplicam ao seu perfil.
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {SPECIALTIES.map((sp) => {
-              const selected = form.specialties.includes(sp);
-              return (
-                <button key={sp} onClick={() => toggleSpecialty(sp)}
-                  style={{
-                    padding: "8px 14px",
-                    background: selected ? "rgba(204,0,0,0.12)" : "#111",
-                    border: `1.5px solid ${selected ? "#cc0000" : "#1e1e1e"}`,
-                    borderRadius: 20,
-                    color: selected ? "#fff" : "#666",
-                    fontSize: 13,
-                    cursor: "pointer",
-                    fontWeight: selected ? 600 : 400,
-                    transition: "all 0.15s",
-                  }}>
-                  {selected && "✓ "}{sp}
-                </button>
-              );
-            })}
-          </div>
-          {errors.specialties && <div style={{ ...errorStyle, marginTop: 12 }}>{errors.specialties}</div>}
-          {form.specialties.length > 0 && (
-            <div style={{ marginTop: 16, padding: "10px 14px", background: "rgba(0,200,100,0.05)", border: "1px solid rgba(0,200,100,0.15)", borderRadius: 8, fontSize: 13, color: "#00cc66" }}>
-              {form.specialties.length} especialidade(s) selecionada(s)
+          <Section title="Medidas">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+              <div>
+                <label style={labelStyle}>Idade</label>
+                <input type="date" value={form.birthDate} onChange={(e) => set("birthDate", e.target.value)} style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Altura (cm)</label>
+                <input type="number" value={form.height} onChange={(e) => set("height", e.target.value)} style={inputStyle} placeholder="170" min={140} max={220} />
+              </div>
+              <div>
+                <label style={labelStyle}>Peso (kg)</label>
+                <input type="number" value={form.weight} onChange={(e) => set("weight", e.target.value)} style={inputStyle} placeholder="60" min={40} max={200} />
+              </div>
             </div>
-          )}
+          </Section>
+
+          <Section title="Cabelo">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {CABELOS.map((c) => <Tag key={c} label={c} active={form.hairColor === c} onClick={() => toggleSingle("hairColor", c)} />)}
+            </div>
+          </Section>
+
+          <Section title="Cor dos olhos">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {OLHOS.map((c) => <Tag key={c} label={c} active={form.eyeColor === c} onClick={() => toggleSingle("eyeColor", c)} />)}
+            </div>
+          </Section>
+
+          <Section title="Etnia">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {ETNIAS.map((c) => <Tag key={c} label={c} active={form.ethnicity === c} onClick={() => toggleSingle("ethnicity", c)} />)}
+            </div>
+          </Section>
+
+          <Section title="Outros">
+            <div style={{ display: "flex", gap: 12 }}>
+              <button type="button" onClick={() => set("hasTattoos", !form.hasTattoos)}
+                style={{ flex: 1, padding: "12px", borderRadius: 10, cursor: "pointer", fontWeight: 600, fontSize: 13, border: `2px solid ${form.hasTattoos ? "#cc0000" : "#2a2a2a"}`, background: form.hasTattoos ? "rgba(204,0,0,0.1)" : "#0d0d0d", color: form.hasTattoos ? "#fff" : "#555" }}>
+                {form.hasTattoos ? "Com tatuagens" : "Sem tatuagens"}
+              </button>
+              <button type="button" onClick={() => set("hasSilicone", !form.hasSilicone)}
+                style={{ flex: 1, padding: "12px", borderRadius: 10, cursor: "pointer", fontWeight: 600, fontSize: 13, border: `2px solid ${form.hasSilicone ? "#cc0000" : "#2a2a2a"}`, background: form.hasSilicone ? "rgba(204,0,0,0.1)" : "#0d0d0d", color: form.hasSilicone ? "#fff" : "#555" }}>
+                {form.hasSilicone ? "Com silicone" : "Sem silicone"}
+              </button>
+            </div>
+          </Section>
         </div>
       )}
 
-      {/* Step 2: Prices */}
+      {/* STEP 2 — Atendimento */}
       {step === 2 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ padding: "14px 16px", background: "#111", border: "1px solid #1e1e1e", borderRadius: 10, fontSize: 13, color: "#666", lineHeight: 1.6 }}>
-            Defina uma faixa de preço por hora ou por sessão. Este valor é indicativo e pode ser negociado diretamente com o cliente. Deixe em branco se preferir não exibir.
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div>
-              <label style={labelStyle}>Preço mínimo (R$)</label>
-              <input type="number" min="0" value={form.priceMin} onChange={(e) => set("priceMin", e.target.value)}
-                style={inputStyle} placeholder="Ex: 150" />
+        <div>
+          <Section title="Tipo de atendimento">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {ATENDIMENTO.map((a) => <Tag key={a} label={a} active={form.attendanceTypes.includes(a)} onClick={() => toggleArr("attendanceTypes", a)} />)}
             </div>
-            <div>
-              <label style={labelStyle}>Preço máximo (R$)</label>
-              <input type="number" min="0" value={form.priceMax} onChange={(e) => set("priceMax", e.target.value)}
-                style={inputStyle} placeholder="Ex: 500" />
-              {errors.priceMax && <div style={errorStyle}>{errors.priceMax}</div>}
+          </Section>
+
+          <Section title="Atendo">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {ATENDE.map((a) => <Tag key={a} label={a} active={form.servesGenders.includes(a)} onClick={() => toggleArr("servesGenders", a)} />)}
             </div>
-          </div>
+          </Section>
+
+          <Section title="Grupos">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {GRUPOS.map((g) => <Tag key={g} label={g} active={form.grupos.includes(g)} onClick={() => toggleArr("grupos", g)} />)}
+            </div>
+          </Section>
         </div>
       )}
 
-      {/* Step 3: Contact */}
+      {/* STEP 3 — Serviços */}
       {step === 3 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div>
-            <label style={labelStyle}>Telefone</label>
-            <input value={form.phone} onChange={(e) => set("phone", e.target.value)} style={inputStyle} placeholder="(11) 9 0000-0000" />
-          </div>
-          <div>
-            <label style={labelStyle}>WhatsApp</label>
-            <input value={form.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} style={inputStyle} placeholder="5511900000000" />
-            <div style={{ fontSize: 11, color: "#444", marginTop: 4 }}>Formato internacional, sem espaços (ex: 5511912345678)</div>
-          </div>
-          <div>
-            <label style={labelStyle}>Instagram</label>
-            <input value={form.instagram} onChange={(e) => set("instagram", e.target.value)} style={inputStyle} placeholder="@seuperfil" />
-          </div>
-          <div>
-            <label style={labelStyle}>Website / Portfólio</label>
-            <input value={form.website} onChange={(e) => set("website", e.target.value)} style={inputStyle} placeholder="https://seusite.com" />
-          </div>
+        <div>
+          <Section title="Serviços oferecidos">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {SERVICOS.map((s) => <Tag key={s} label={s} active={form.services.includes(s)} onClick={() => toggleArr("services", s)} />)}
+            </div>
+          </Section>
 
-          <div style={{ marginTop: 8, padding: "14px 16px", background: "rgba(204,0,0,0.04)", border: "1px solid rgba(204,0,0,0.15)", borderRadius: 10, fontSize: 13, color: "#888", lineHeight: 1.6 }}>
-            <strong style={{ color: "#cc4444" }}>Revisão obrigatória:</strong> Após envio, seu perfil passará por revisão da nossa equipe antes de aparecer publicamente. O processo leva até 48 horas.
+          <Section title="Comportamento e fetiches">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {FETICHES.map((f) => <Tag key={f} label={f} active={form.fetishes.includes(f)} onClick={() => toggleArr("fetishes", f)} />)}
+            </div>
+          </Section>
+        </div>
+      )}
+
+      {/* STEP 4 — Valores */}
+      {step === 4 && (
+        <div>
+          <Section title="Tabela de preços (R$)">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              {[
+                { field: "price30min", label: "30 minutos" },
+                { field: "pricePerHour", label: "1 hora" },
+                { field: "price2h", label: "2 horas" },
+                { field: "priceOvernight", label: "Pernoite" },
+              ].map(({ field, label }) => (
+                <div key={field}>
+                  <label style={labelStyle}>{label}</label>
+                  <div style={{ position: "relative" }}>
+                    <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#555", fontSize: 14 }}>R$</span>
+                    <input type="number" min={0} value={(form as any)[field]} onChange={(e) => set(field, e.target.value)}
+                      style={{ ...inputStyle, paddingLeft: 36 }} placeholder="0" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
+
+          <Section title="Formas de pagamento">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {PAGAMENTO.map((p) => <Tag key={p} label={p} active={form.paymentMethods.includes(p)} onClick={() => toggleArr("paymentMethods", p)} />)}
+            </div>
+          </Section>
+        </div>
+      )}
+
+      {/* STEP 5 — Contato */}
+      {step === 5 && (
+        <div>
+          <Section title="Contato">
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <label style={labelStyle}>WhatsApp</label>
+                <input value={form.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} style={inputStyle} placeholder="5511900000000" />
+                <div style={{ fontSize: 11, color: "#444", marginTop: 4 }}>Formato: 55 + DDD + número (ex: 5511912345678)</div>
+              </div>
+              <div>
+                <label style={labelStyle}>Telefone</label>
+                <input value={form.phone} onChange={(e) => set("phone", e.target.value)} style={inputStyle} placeholder="(11) 9 0000-0000" />
+              </div>
+              <div>
+                <label style={labelStyle}>Instagram</label>
+                <input value={form.instagram} onChange={(e) => set("instagram", e.target.value)} style={inputStyle} placeholder="@seuperfil" />
+              </div>
+              <div>
+                <label style={labelStyle}>Site / Portfólio</label>
+                <input value={form.website} onChange={(e) => set("website", e.target.value)} style={inputStyle} placeholder="https://" />
+              </div>
+            </div>
+          </Section>
+
+          <div style={{ padding: "16px 20px", background: "rgba(204,0,0,0.05)", border: "1px solid rgba(204,0,0,0.2)", borderRadius: 10, fontSize: 13, color: "#888", lineHeight: 1.7 }}>
+            Após envio, seu perfil passará por revisão da nossa equipe em até 48 horas antes de aparecer publicamente.
           </div>
         </div>
       )}
 
       {/* Navigation */}
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 28 }}>
-        <button onClick={prevStep} disabled={step === 0}
-          style={{ padding: "10px 20px", background: "transparent", border: "1px solid #222", borderRadius: 8, color: step === 0 ? "#333" : "#888", fontSize: 14, cursor: step === 0 ? "default" : "pointer" }}>
-          ← Voltar
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 40, paddingTop: 24, borderTop: "1px solid #1a1a1a" }}>
+        <button onClick={() => setStep((s) => Math.max(s - 1, 0))} disabled={step === 0}
+          style={{ padding: "12px 24px", background: "transparent", border: "1px solid #2a2a2a", borderRadius: 8, color: step === 0 ? "#333" : "#888", fontSize: 14, cursor: step === 0 ? "default" : "pointer", fontWeight: 600 }}>
+          Voltar
         </button>
 
         {step < STEPS.length - 1 ? (
-          <button onClick={nextStep}
-            style={{ padding: "10px 24px", background: "#cc0000", border: "none", borderRadius: 8, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
-            Continuar →
+          <button onClick={() => setStep((s) => Math.min(s + 1, STEPS.length - 1))}
+            style={{ padding: "12px 32px", background: "#cc0000", border: "none", borderRadius: 8, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", letterSpacing: "0.5px" }}>
+            Continuar
           </button>
         ) : (
           <button onClick={submit} disabled={loading}
-            style={{ padding: "10px 24px", background: loading ? "#444" : "#cc0000", border: "none", borderRadius: 8, color: "#fff", fontSize: 14, fontWeight: 700, cursor: loading ? "default" : "pointer" }}>
+            style={{ padding: "12px 32px", background: loading ? "#5a0000" : "#cc0000", border: "none", borderRadius: 8, color: "#fff", fontSize: 14, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", letterSpacing: "0.5px" }}>
             {loading ? "Enviando..." : "Criar perfil"}
           </button>
         )}

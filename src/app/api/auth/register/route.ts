@@ -1,40 +1,43 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
 const schema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(6),
-  role: z.enum(["GUEST", "HOST"]).optional().default("GUEST"),
-  referralCode: z.string().optional(),
+  idToken: z.string(),
+  role: z.enum(["GUEST", "HOST"]).default("GUEST"),
+  category: z.enum(["HETERO", "TRANS", "MULHER"]).optional(),
 });
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const data = schema.parse(body);
+    const { idToken, role, category } = schema.parse(body);
 
-    const existing = await prisma.user.findUnique({ where: { email: data.email } });
-    if (existing) {
-      return NextResponse.json({ error: "Email jÃ¡ cadastrado." }, { status: 409 });
+    const { adminAuth } = await import("@/lib/firebase-admin");
+    const decoded = await adminAuth.verifyIdToken(idToken);
+
+    if (!decoded.email) {
+      return NextResponse.json({ error: "Email não encontrado" }, { status: 400 });
     }
 
-    const hashed = await bcrypt.hash(data.password, 12);
+    const existing = await prisma.user.findUnique({ where: { email: decoded.email } });
+    if (existing) {
+      return NextResponse.json(existing, { status: 200 });
+    }
 
     const user = await prisma.user.create({
       data: {
-        name: data.name,
-        email: data.email,
-        password: hashed,
-        role: data.role,
+        email: decoded.email,
+        name: decoded.name ?? null,
+        image: decoded.picture ?? null,
+        role,
+        category: category ?? null,
       },
       select: { id: true, name: true, email: true, role: true },
     });
 
-    if (data.role === "HOST") {
+    if (role === "HOST") {
       await prisma.hostProfile.create({ data: { userId: user.id } });
     }
 
@@ -43,7 +46,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues }, { status: 400 });
     }
+    console.error("[register]", err);
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });
   }
 }
-
