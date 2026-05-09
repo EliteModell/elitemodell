@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { Inter, Cormorant_Garant } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import AgeGate from "@/components/AgeGate";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const cormorant = Cormorant_Garant({
+const playfair = Playfair_Display({
   subsets: ["latin"],
   weight: ["700"],
-  variable: "--font-cormorant",
+  variable: "--font-playfair",
 });
 
 export const metadata: Metadata = {
@@ -29,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${cormorant.variable}`}>
+    <html lang="pt-BR" className={`${inter.variable} ${playfair.variable}`}>
       <body className="min-h-screen">
         <Providers>
           <AgeGate />
