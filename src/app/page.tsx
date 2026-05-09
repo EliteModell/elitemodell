@@ -165,7 +165,7 @@ function HomeContent() {
   });
 
   return (
-    <div style={{ background: "#0a0a0a", minHeight: "100vh", color: "#fff" }}>
+    <div style={{ background: "#060e1b", minHeight: "100vh", color: "#f1f5f9" }}>
       <AgeGate />
       {showFilters && <FiltersModal onClose={() => setShowFilters(false)} onApply={(f) => { setShowFilters(false); console.log(f); }} />}
       <Navbar />
@@ -230,7 +230,7 @@ function HomeContent() {
               ].map(({ num, label }) => (
                 <div key={label}>
                   <div style={{ fontSize: "clamp(20px, 3vw, 26px)", fontWeight: 900, color: "#fff", lineHeight: 1 }}>{num}</div>
-                  <div style={{ fontSize: 12, color: "#555", marginTop: 5 }}>{label}</div>
+                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 5 }}>{label}</div>
                 </div>
               ))}
             </div>
@@ -239,9 +239,9 @@ function HomeContent() {
       </section>
 
       {/* ─── BUSCA ─── */}
-      <section style={{ background: "#0d0d0d", borderTop: "1px solid #151515", borderBottom: "1px solid #151515" }}>
+      <section style={{ background: "#0b1420", borderTop: "1px solid #1e293b", borderBottom: "1px solid #1e293b" }}>
         <div style={{ maxWidth: 720, margin: "0 auto", padding: "36px 24px" }}>
-          <p style={{ textAlign: "center", color: "#555", fontSize: 13, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", marginBottom: 20 }}>
+          <p style={{ textAlign: "center", color: "#64748b", fontSize: 13, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", marginBottom: 20 }}>
             Buscar na plataforma
           </p>
           <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
@@ -255,7 +255,7 @@ function HomeContent() {
                 onChange={(e) => setHeroBusca(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleHeroBusca()}
                 placeholder="Cidade, nome ou tipo de serviço..."
-                style={{ width: "100%", padding: "16px 18px 16px 50px", background: "#111", border: "1px solid #2a2a2a", borderRadius: 12, color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box", height: "100%" }}
+                style={{ width: "100%", padding: "16px 18px 16px 50px", background: "#0f172a", border: "1px solid #334155", borderRadius: 12, color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box", height: "100%" }}
                 onFocus={(e) => ((e.target as HTMLElement).style.borderColor = "#cc0000")}
                 onBlur={(e) => ((e.target as HTMLElement).style.borderColor = "#2a2a2a")}
               />
@@ -276,7 +276,7 @@ function HomeContent() {
               <button
                 key={s}
                 onClick={() => { setHeroBusca(s); setBusca(s); goToListings(); }}
-                style={{ padding: "5px 14px", background: "transparent", border: "1px solid #222", borderRadius: 20, color: "#555", fontSize: 12, cursor: "pointer", transition: "all 0.2s" }}
+                style={{ padding: "5px 14px", background: "transparent", border: "1px solid #253550", borderRadius: 20, color: "#64748b", fontSize: 12, cursor: "pointer", transition: "all 0.2s" }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#cc000050"; (e.currentTarget as HTMLElement).style.color = "#ccc"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#222"; (e.currentTarget as HTMLElement).style.color = "#555"; }}
               >
@@ -288,7 +288,7 @@ function HomeContent() {
       </section>
 
       {/* ─── CATEGORIAS ─── */}
-      <section style={{ background: "#0a0a0a", padding: "72px 24px" }}>
+      <section style={{ background: "#060e1b", padding: "72px 24px" }}>
         <div style={{ maxWidth: 1280, margin: "0 auto" }}>
           <div style={{ marginBottom: 40, textAlign: "center" }}>
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: "#c9a84c", textTransform: "uppercase", marginBottom: 12 }}>
@@ -304,7 +304,7 @@ function HomeContent() {
               <button
                 key={cat.label}
                 onClick={() => goToListings(cat.tab, cat.subTab ?? undefined)}
-                style={{ textAlign: "left", background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: 16, padding: "28px 24px", cursor: "pointer", transition: "border-color 0.2s, transform 0.2s", display: "flex", flexDirection: "column", gap: 12 }}
+                style={{ textAlign: "left", background: "#0b1420", border: "1px solid #1e293b", borderRadius: 16, padding: "28px 24px", cursor: "pointer", transition: "border-color 0.2s, transform 0.2s", display: "flex", flexDirection: "column", gap: 12 }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = cat.accent + "60"; (e.currentTarget as HTMLElement).style.transform = "translateY(-4px)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#1a1a1a"; (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
               >
@@ -315,7 +315,7 @@ function HomeContent() {
                   <span style={{ fontSize: 12, color: "#333", fontWeight: 600 }}>{cat.count}</span>
                 </div>
                 <h3 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, lineHeight: 1.2 }}>{cat.label}</h3>
-                <p style={{ fontSize: 12, color: "#444", margin: 0, lineHeight: 1.6 }}>{cat.cidades}</p>
+                <p style={{ fontSize: 12, color: "#475569", margin: 0, lineHeight: 1.6 }}>{cat.cidades}</p>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, color: cat.accent, fontSize: 13, fontWeight: 700, marginTop: 4 }}>
                   Ver todos
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -329,7 +329,7 @@ function HomeContent() {
       </section>
 
       {/* ─── FEATURES ─── */}
-      <section style={{ background: "#080808", borderTop: "1px solid #111", borderBottom: "1px solid #111", padding: "72px 24px" }}>
+      <section style={{ background: "#060e1b", borderTop: "1px solid #111", borderBottom: "1px solid #111", padding: "72px 24px" }}>
         <div style={{ maxWidth: 1280, margin: "0 auto" }}>
           <div style={{ marginBottom: 48, textAlign: "center" }}>
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: "#c9a84c", textTransform: "uppercase", marginBottom: 12 }}>
@@ -338,7 +338,7 @@ function HomeContent() {
             <h2 style={{ fontSize: "clamp(24px, 4vw, 40px)", fontWeight: 900, color: "#fff", margin: "0 0 12px", letterSpacing: "-1px" }}>
               A experiência mais premium do Brasil
             </h2>
-            <p style={{ color: "#444", fontSize: 15, margin: 0, maxWidth: 480, marginLeft: "auto", marginRight: "auto" }}>
+            <p style={{ color: "#475569", fontSize: 15, margin: 0, maxWidth: 480, marginLeft: "auto", marginRight: "auto" }}>
               Construída para quem exige qualidade, segurança e discrição acima de tudo.
             </p>
           </div>
@@ -347,11 +347,11 @@ function HomeContent() {
             {FEATURES.map((f, i) => (
               <div
                 key={f.title}
-                style={{ padding: "36px 28px", background: i % 2 === 0 ? "#0d0d0d" : "#090909", borderRight: "1px solid #151515", borderBottom: "1px solid #151515" }}
+                style={{ padding: "36px 28px", background: i % 2 === 0 ? "#0d0d0d" : "#090909", borderRight: "1px solid #151515", borderBottom: "1px solid #1e293b" }}
               >
                 <div style={{ width: 40, height: 3, background: "#cc0000", borderRadius: 2, marginBottom: 20 }} />
                 <h3 style={{ fontSize: 17, fontWeight: 800, color: "#fff", margin: "0 0 10px" }}>{f.title}</h3>
-                <p style={{ fontSize: 13, color: "#555", lineHeight: 1.7, margin: 0 }}>{f.desc}</p>
+                <p style={{ fontSize: 13, color: "#64748b", lineHeight: 1.7, margin: 0 }}>{f.desc}</p>
               </div>
             ))}
           </div>
@@ -359,7 +359,7 @@ function HomeContent() {
       </section>
 
       {/* ─── CONCEITO AIRBNB ─── */}
-      <section style={{ background: "#0a0a0a", padding: "72px 24px" }}>
+      <section style={{ background: "#060e1b", padding: "72px 24px" }}>
         <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", gap: 48, alignItems: "center", flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 280 }}>
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: "#c9a84c", textTransform: "uppercase", marginBottom: 16 }}>
@@ -370,13 +370,13 @@ function HomeContent() {
               <span style={{ color: "#cc0000" }}>perfeito para</span><br />
               sua experiência
             </h2>
-            <p style={{ color: "#555", fontSize: 14, lineHeight: 1.8, margin: "0 0 28px" }}>
+            <p style={{ color: "#64748b", fontSize: 14, lineHeight: 1.8, margin: "0 0 28px" }}>
               Coberturas, flats executivos, casas de temporada e studios modernos.
               Pague via Pix, cartão ou boleto. Check-in configurável, reserva instantânea.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 32 }}>
               {["Piscina", "Pet friendly", "Wi-Fi", "Churrasco", "Check-in flexível", "Estacionamento"].map((tag) => (
-                <span key={tag} style={{ padding: "5px 14px", border: "1px solid #1e1e1e", borderRadius: 20, fontSize: 12, color: "#555" }}>
+                <span key={tag} style={{ padding: "5px 14px", border: "1px solid #253550", borderRadius: 20, fontSize: 12, color: "#64748b" }}>
                   {tag}
                 </span>
               ))}
@@ -396,7 +396,7 @@ function HomeContent() {
             {imoveis.slice(0, 4).map((im) => (
               <div
                 key={im.id}
-                style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: 12, overflow: "hidden", cursor: "pointer", transition: "border-color 0.2s" }}
+                style={{ background: "#0b1420", border: "1px solid #1e293b", borderRadius: 12, overflow: "hidden", cursor: "pointer", transition: "border-color 0.2s" }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "#c9a84c40")}
                 onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "#1a1a1a")}
                 onClick={() => goToListings("imoveis")}
@@ -408,8 +408,8 @@ function HomeContent() {
                   </div>
                 </div>
                 <div style={{ padding: "10px 12px" }}>
-                  <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#ccc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{im.titulo}</p>
-                  <p style={{ margin: "2px 0 0", fontSize: 11, color: "#444" }}>{im.cidade}</p>
+                  <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#cbd5e1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{im.titulo}</p>
+                  <p style={{ margin: "2px 0 0", fontSize: 11, color: "#475569" }}>{im.cidade}</p>
                 </div>
               </div>
             ))}
@@ -418,9 +418,9 @@ function HomeContent() {
       </section>
 
       {/* ─── LISTINGS ─── */}
-      <div ref={listingsRef} id="buscar" style={{ background: "#0a0a0a", scrollMarginTop: 64 }}>
+      <div ref={listingsRef} id="buscar" style={{ background: "#060e1b", scrollMarginTop: 64 }}>
         {/* Barra de tabs */}
-        <div style={{ background: "#0d0d0d", borderTop: "1px solid #151515", borderBottom: "1px solid #151515" }}>
+        <div style={{ background: "#0b1420", borderTop: "1px solid #1e293b", borderBottom: "1px solid #1e293b" }}>
           <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px", display: "flex", gap: 4, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
             <div style={{ display: "flex" }}>
               {([["acompanhantes", "Acompanhantes"], ["imoveis", "Imóveis"]] as const).map(([tab, label]) => (
@@ -438,7 +438,7 @@ function HomeContent() {
                 </svg>
                 <input value={busca} onChange={(e) => setBusca(e.target.value)}
                   placeholder={mainTab === "acompanhantes" ? "Filtrar por cidade ou nome..." : "Filtrar imóveis..."}
-                  style={{ padding: "9px 14px 9px 36px", background: "#111", border: "1px solid #2a2a2a", borderRadius: 8, color: "#fff", fontSize: 13, outline: "none", width: 220 }} />
+                  style={{ padding: "9px 14px 9px 36px", background: "#0f172a", border: "1px solid #334155", borderRadius: 8, color: "#fff", fontSize: 13, outline: "none", width: 220 }} />
               </div>
             </div>
           </div>
@@ -477,17 +477,17 @@ function HomeContent() {
                 })}
               </div>
 
-              <p style={{ fontSize: 12, color: "#555", marginBottom: 16, letterSpacing: "0.5px" }}>
+              <p style={{ fontSize: 12, color: "#64748b", marginBottom: 16, letterSpacing: "0.5px" }}>
                 {lista.length} perfil{lista.length !== 1 ? "is" : ""} encontrado{lista.length !== 1 ? "s" : ""}
               </p>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
                 {lista.map((a) => (
                   <Link key={a.id} href={`/profissionais/${a.id}`} style={{ textDecoration: "none" }}>
-                    <div style={{ borderRadius: 10, overflow: "hidden", background: "#111", cursor: "pointer", transition: "transform 0.2s", position: "relative" }}
+                    <div style={{ borderRadius: 10, overflow: "hidden", background: "#0f172a", cursor: "pointer", transition: "transform 0.2s", position: "relative" }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-3px)"; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}>
-                      <div style={{ position: "relative", paddingTop: "140%", background: "#1a1a1a" }}>
+                      <div style={{ position: "relative", paddingTop: "140%", background: "#1a2a40" }}>
                         <img src={a.foto} alt={a.nome} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 50%)" }} />
                         {a.online ? (
@@ -495,18 +495,18 @@ function HomeContent() {
                             <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#fff" }} /> Online
                           </div>
                         ) : (
-                          <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(0,0,0,0.6)", color: "#aaa", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20 }}>
+                          <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(0,0,0,0.6)", color: "#94a3b8", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20 }}>
                             Offline
                           </div>
                         )}
                         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 14px" }}>
                           <p style={{ margin: 0, fontWeight: 800, fontSize: 16, color: "#fff" }}>{a.nome}</p>
-                          <p style={{ margin: "2px 0 6px", fontSize: 12, color: "#ccc" }}>{a.cidade}</p>
+                          <p style={{ margin: "2px 0 6px", fontSize: 12, color: "#cbd5e1" }}>{a.cidade}</p>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                               <StarIcon />
                               <span style={{ fontSize: 12, color: "#f59e0b", fontWeight: 700 }}>{a.avaliacao}</span>
-                              <span style={{ fontSize: 11, color: "#888" }}>({a.total})</span>
+                              <span style={{ fontSize: 11, color: "#7b8fa8" }}>({a.total})</span>
                             </div>
                             <span style={{ fontSize: 13, color: "#cc0000", fontWeight: 800 }}>R${a.preco}/h</span>
                           </div>
@@ -523,7 +523,7 @@ function HomeContent() {
               </div>
 
               {lista.length === 0 && (
-                <div style={{ textAlign: "center", padding: "60px 20px", color: "#444" }}>
+                <div style={{ textAlign: "center", padding: "60px 20px", color: "#475569" }}>
                   <p style={{ fontSize: 16 }}>Nenhum perfil encontrado com os filtros selecionados.</p>
                   <button onClick={() => { setFiltrosAtivos(new Set()); setBusca(""); }} style={{ marginTop: 12, padding: "8px 20px", background: "#cc0000", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14 }}>
                     Limpar filtros
@@ -555,17 +555,17 @@ function HomeContent() {
                   return true;
                 }).map((im) => (
                   <Link key={im.id} href={`/imoveis/${im.id}`} style={{ textDecoration: "none" }}>
-                    <div style={{ borderRadius: 14, overflow: "hidden", background: "#111", border: "1px solid #1e1e1e", cursor: "pointer", transition: "transform 0.2s, border-color 0.2s" }}
+                    <div style={{ borderRadius: 14, overflow: "hidden", background: "#0f172a", border: "1px solid #253550", cursor: "pointer", transition: "transform 0.2s, border-color 0.2s" }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-4px)"; (e.currentTarget as HTMLElement).style.borderColor = "#cc0000"; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.borderColor = "#1e1e1e"; }}>
-                      <div style={{ position: "relative", paddingTop: "65%", background: "#1a1a1a" }}>
+                      <div style={{ position: "relative", paddingTop: "65%", background: "#1a2a40" }}>
                         <img src={im.foto} alt={im.titulo} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                       </div>
                       <div style={{ padding: "14px 16px" }}>
                         <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: "#fff" }}>{im.titulo}</p>
-                        <p style={{ margin: "4px 0 10px", fontSize: 13, color: "#666" }}>{im.cidade} · {im.quartos} {im.quartos === 1 ? "quarto" : "quartos"}</p>
+                        <p style={{ margin: "4px 0 10px", fontSize: 13, color: "#64748b" }}>{im.cidade} · {im.quartos} {im.quartos === 1 ? "quarto" : "quartos"}</p>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <span style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>R${im.preco}<span style={{ color: "#666", fontSize: 12, fontWeight: 400 }}>/noite</span></span>
+                          <span style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>R${im.preco}<span style={{ color: "#64748b", fontSize: 12, fontWeight: 400 }}>/noite</span></span>
                           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                             <StarIcon />
                             <span style={{ fontSize: 13, color: "#f59e0b", fontWeight: 600 }}>{im.avaliacao}</span>

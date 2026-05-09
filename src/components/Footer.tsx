@@ -45,8 +45,8 @@ export default function Footer() {
   return (
     <footer
       style={{
-        background: "#080808",
-        borderTop: "1px solid #181818",
+        background: "#060e1b",
+        borderTop: "1px solid #1e293b",
         padding: "48px 24px 32px",
       }}
     >
@@ -63,14 +63,14 @@ export default function Footer() {
         >
           {/* Brand */}
           <div style={{ maxWidth: 280 }}>
-            <a href="#" style={{ textDecoration: "none", position: "relative", display: "inline-block", padding: "6px 16px", border: "1.5px solid rgba(212,170,99,0.5)", borderRadius: 8, background: "rgba(8,4,0,0.6)", marginBottom: 12 }}>
+            <a href="#" style={{ textDecoration: "none", position: "relative", display: "inline-block", padding: "6px 16px", border: "1.5px solid rgba(212,170,99,0.5)", borderRadius: 8, background: "rgba(201,168,76,0.04)", marginBottom: 12 }}>
               <span style={{ position: "absolute", top: -10, right: -5, color: "#d4a843", fontSize: 16, lineHeight: 1, userSelect: "none" }}>✦</span>
               <span style={{ fontWeight: 900, fontSize: 24, letterSpacing: "-1px" }}>
                 <span style={{ color: "#cc0000" }}>elite</span>
                 <span style={{ color: "#fff" }}>modell</span>
               </span>
             </a>
-            <p style={{ color: "#666", fontSize: 13, lineHeight: 1.7 }}>
+            <p style={{ color: "#64748b", fontSize: 13, lineHeight: 1.7 }}>
               A plataforma que conecta modelos, clientes e imóveis com
               segurança, privacidade e controle total.
             </p>
@@ -88,7 +88,7 @@ export default function Footer() {
                   href="#"
                   style={{
                     display: "block",
-                    color: "#666",
+                    color: "#64748b",
                     textDecoration: "none",
                     fontSize: 14,
                     marginBottom: 8,
@@ -111,7 +111,7 @@ export default function Footer() {
                   href="#"
                   style={{
                     display: "block",
-                    color: "#666",
+                    color: "#64748b",
                     textDecoration: "none",
                     fontSize: 14,
                     marginBottom: 8,
@@ -141,11 +141,11 @@ export default function Footer() {
                     width: 40,
                     height: 40,
                     borderRadius: 8,
-                    border: "1px solid #222",
+                    border: "1px solid #1e293b",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "#666",
+                    color: "#64748b",
                     transition: "color 0.2s, border-color 0.2s",
                   }}
                   onMouseEnter={(e) => {
@@ -167,7 +167,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div
           style={{
-            borderTop: "1px solid #181818",
+            borderTop: "1px solid #1e293b",
             paddingTop: 24,
             display: "flex",
             justifyContent: "space-between",
@@ -176,10 +176,10 @@ export default function Footer() {
             gap: 8,
           }}
         >
-          <span style={{ color: "#444", fontSize: 13 }}>
+          <span style={{ color: "#475569", fontSize: 13 }}>
             © 2026 Elite Modell. Todos os direitos reservados.
           </span>
-          <span style={{ color: "#333", fontSize: 13 }}>
+          <span style={{ color: "#334155", fontSize: 13 }}>
             Feito com tecnologia de ponta
           </span>
         </div>
