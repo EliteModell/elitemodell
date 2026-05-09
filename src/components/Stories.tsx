@@ -79,12 +79,6 @@ export default function Stories() {
   const demoStories = [
     { id: "d1", nome: "Elite Stories", foto: "/model2.jpg", badge: true },
     { id: "d2", nome: "Amanda R.", foto: "/model1.jpg", badge: false },
-    { id: "d3", nome: "Letícia M.", foto: "/model2.jpg", badge: false },
-    { id: "d4", nome: "Bruna S.", foto: "/model1.jpg", badge: false },
-    { id: "d5", nome: "Fernanda K.", foto: "/model2.jpg", badge: false },
-    { id: "d6", nome: "Isabela C.", foto: "/model1.jpg", badge: false },
-    { id: "d7", nome: "Carolina V.", foto: "/model2.jpg", badge: false },
-    { id: "d8", nome: "Juliana T.", foto: "/model1.jpg", badge: false },
   ];
 
   const listaFinal = grupos.length > 0 ? null : demoStories;

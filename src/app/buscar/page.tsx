@@ -89,15 +89,15 @@ function BuscarContent() {
           grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
           gap: 14px;
         }
-        .perfil-card { border-radius: 14px; overflow: hidden; background: #0b1420; border: 1px solid #1e293b; transition: transform 0.2s, border-color 0.2s; }
+        .perfil-card { border-radius: 16px; overflow: hidden; background: #0b1420; border: 1px solid #1e293b; transition: transform 0.2s, border-color 0.2s; cursor: pointer; }
         .perfil-card:hover { transform: translateY(-3px); border-color: rgba(212,168,67,0.3); }
         .perfil-foto { position: relative; padding-top: 130%; }
         .perfil-info { padding: 14px 16px; }
         @media (max-width: 640px) {
-          .perfil-grid { grid-template-columns: 1fr; gap: 12px; }
-          .perfil-card { display: flex; flex-direction: row; min-height: 200px; }
-          .perfil-foto { padding-top: 0; width: 150px; flex-shrink: 0; min-height: 200px; }
-          .perfil-info { flex: 1; padding: 14px 16px; display: flex; flex-direction: column; }
+          .perfil-grid { grid-template-columns: 1fr; gap: 14px; }
+          .perfil-card { display: flex; flex-direction: column; }
+          .perfil-foto { padding-top: 0; width: 100%; height: 320px; flex-shrink: 0; }
+          .perfil-info { padding: 16px 18px; }
         }
         .imovel-grid {
           display: grid;
