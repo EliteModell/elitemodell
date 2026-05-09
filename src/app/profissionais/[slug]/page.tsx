@@ -185,11 +185,43 @@ export default function ProfissionalProfilePage() {
             ))}
           </div>
 
-          {/* Verificação + Denunciar */}
+          {/* Mídia de verificação */}
+          {pro.verificacaoMedia && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#f1f5f9", fontFamily: PLAYFAIR }}>Mídia de verificação</span>
+              </div>
+              <div style={{ position: "relative", borderRadius: 14, overflow: "hidden", border: `1px solid ${GOLD_MID}` }}>
+                <img src={pro.verificacaoMedia.url} alt="Verificação" style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", objectPosition: "top", display: "block" }} />
+                {/* Overlay escuro */}
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(6,14,27,0.7) 0%, transparent 60%)" }} />
+                {/* Selo EliteModell */}
+                <div style={{ position: "absolute", top: 12, right: 12, display: "flex", alignItems: "center", gap: 6, background: "rgba(6,14,27,0.85)", border: `1px solid ${GOLD_MID}`, borderRadius: 20, padding: "4px 12px" }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                  <span style={{ fontSize: 10, fontWeight: 800, color: GOLD, letterSpacing: 1 }}>ELITEMODELL VERIFICADA</span>
+                </div>
+                {/* Avaliação mais recente na base */}
+                <div style={{ position: "absolute", bottom: 12, left: 12, right: 12 }}>
+                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", margin: "0 0 3px" }}>Avaliação mais recente</p>
+                  <div style={{ display: "flex", gap: 2 }}>
+                    {[1,2,3,4,5].map(n => (
+                      <svg key={n} width="12" height="12" viewBox="0 0 24 24" fill={n <= Math.round(pro.rating) ? GOLD : "rgba(255,255,255,0.3)"}>
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                      </svg>
+                    ))}
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginLeft: 6 }}>· há 1 mês</span>
+                  </div>
+                </div>
+              </div>
+              <p style={{ fontSize: 12, color: "#475569", textAlign: "center", marginTop: 8 }}>
+                Verificada em <strong style={{ color: "#94a3b8" }}>{pro.verificacaoMedia.data}</strong>
+              </p>
+            </div>
+          )}
+
+          {/* Denunciar */}
           <div style={{ marginBottom: 28 }}>
-            <p style={{ fontSize: 12, color: "#475569", textAlign: "center", marginBottom: 14 }}>
-              Verificada em <strong style={{ color: "#94a3b8" }}>Mai/2025</strong>
-            </p>
             <button style={{ width: "100%", padding: "13px", background: "rgba(204,0,0,0.08)", border: "1px solid rgba(204,0,0,0.25)", borderRadius: 10, color: "#cc0000", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               Denunciar anonimamente este perfil

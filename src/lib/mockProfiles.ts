@@ -4,6 +4,7 @@ export type Perfil = {
   displayName: string;
   image: string;
   coverImage: string;
+  verificacaoMedia?: { url: string; tipo: "foto" | "video"; data: string };
   online: boolean;
   idade: number;
   city: string;
@@ -37,6 +38,7 @@ export const mockProfiles: Perfil[] = [
     displayName: "Lora",
     image: "/model.jpeg",
     coverImage: "/model.jpeg",
+    verificacaoMedia: { url: "/model.jpeg", tipo: "foto", data: "Mai/2025" },
     online: true,
     idade: 27,
     city: "São Paulo",
@@ -79,6 +81,7 @@ export const mockProfiles: Perfil[] = [
     displayName: "Amanda R.",
     image: "/model1.jpg",
     coverImage: "/model2.jpg",
+    verificacaoMedia: { url: "/model1.jpg", tipo: "foto", data: "Abr/2025" },
     online: true,
     idade: 26,
     city: "São Paulo",
