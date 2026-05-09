@@ -76,21 +76,34 @@ export default function Stories() {
 
   const story = aberto ? aberto.grupo.stories[aberto.idx] : null;
 
+  const demoStories = [
+    { id: "d1", nome: "Elite Stories", foto: "/model2.jpg", badge: true },
+    { id: "d2", nome: "Amanda R.", foto: "/model1.jpg", badge: false },
+    { id: "d3", nome: "Letícia M.", foto: "/model2.jpg", badge: false },
+    { id: "d4", nome: "Bruna S.", foto: "/model1.jpg", badge: false },
+    { id: "d5", nome: "Fernanda K.", foto: "/model2.jpg", badge: false },
+    { id: "d6", nome: "Isabela C.", foto: "/model1.jpg", badge: false },
+    { id: "d7", nome: "Carolina V.", foto: "/model2.jpg", badge: false },
+    { id: "d8", nome: "Juliana T.", foto: "/model1.jpg", badge: false },
+  ];
+
+  const listaFinal = grupos.length > 0 ? null : demoStories;
+
   return (
     <>
-      <div style={{ position: "relative", marginBottom: 20 }}>
-        <div ref={rowRef} style={{ display: "flex", gap: 14, overflowX: "auto", scrollbarWidth: "none", padding: "4px 32px" }}>
+      <div style={{ position: "relative", marginBottom: 24 }}>
+        <div ref={rowRef} style={{ display: "flex", gap: 16, overflowX: "auto", scrollbarWidth: "none", padding: "6px 8px 6px 4px" }}>
 
           {/* Botão adicionar story (só para profissionais) */}
           {session && (session.user as any).isProfessional && (
             <div onClick={() => fileRef.current?.click()}
               style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: uploading ? "wait" : "pointer", flexShrink: 0, opacity: uploading ? 0.6 : 1 }}>
-              <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#1a1a1a", border: "2px dashed #333", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, color: "#555", transition: "border-color 0.2s" }}
+              <div style={{ width: 70, height: 70, borderRadius: "50%", background: "#0f172a", border: "2px dashed rgba(212,168,67,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: "#475569" }}
                 onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#d4a843")}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#333")}>
-                {uploading ? "⏳" : "+"}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(212,168,67,0.3)")}>
+                {uploading ? "..." : "+"}
               </div>
-              <span style={{ fontSize: 10, color: "#555", fontWeight: 500 }}>Seu story</span>
+              <span style={{ fontSize: 10, color: "#475569", fontWeight: 600, fontFamily: "var(--font-playfair), serif" }}>Seu story</span>
               <input ref={fileRef} type="file" accept="image/*,video/*" style={{ display: "none" }} onChange={handleUpload} />
             </div>
           )}
@@ -101,29 +114,51 @@ export default function Stories() {
             return (
               <div key={g.userId} onClick={() => abrirGrupo(g)}
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer", flexShrink: 0 }}>
-                <div style={{ width: 64, height: 64, borderRadius: "50%", padding: 2, background: visto ? "linear-gradient(135deg,#333,#555)" : "linear-gradient(135deg,#d4a843,#f0c060,#c9963a)" }}>
-                  <div style={{ width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden", border: "2px solid #0a0a0a", background: "#1a1a1a" }}>
+                <div style={{ width: 70, height: 70, borderRadius: "50%", padding: 2.5, background: visto ? "linear-gradient(135deg,#334155,#475569)" : "linear-gradient(135deg,#ffe5a0,#d4a843,#f0c060,#9e7b2a)" }}>
+                  <div style={{ width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden", border: "2.5px solid #060e1b", background: "#0f172a" }}>
                     {g.foto
                       ? <img src={g.foto} alt={g.nome} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
-                      : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: "#555" }}>👤</div>
+                      : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: "#475569" }}>✦</div>
                     }
                   </div>
                 </div>
-                <span style={{ fontSize: 10, color: visto ? "#555" : "#ccc", fontWeight: visto ? 400 : 600, maxWidth: 64, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <span style={{ fontSize: 10, color: visto ? "#475569" : "#cbd5e1", fontWeight: 600, maxWidth: 70, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "var(--font-playfair), serif" }}>
                   {g.nome.split(" ")[0]}
                 </span>
               </div>
             );
           })}
 
-          {/* Placeholder quando vazio */}
-          {grupos.length === 0 && !session && (
-            <p style={{ fontSize: 12, color: "#333", alignSelf: "center", padding: "0 8px" }}>Nenhum story ativo</p>
-          )}
+          {/* Demo stories — exibidos quando não há stories da API */}
+          {listaFinal && listaFinal.map((d, i) => (
+            <div key={d.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0, cursor: "pointer" }}>
+              <div style={{
+                width: 70, height: 70, borderRadius: "50%", padding: 2.5,
+                background: d.badge
+                  ? "linear-gradient(135deg,#ffe5a0 0%,#d4a843 30%,#f0c060 60%,#9e7b2a 100%)"
+                  : i % 2 === 0
+                    ? "linear-gradient(135deg,#d4a843,#f0c060,#c9963a)"
+                    : "linear-gradient(135deg,#b8923a,#d4a843,#e8c97a)",
+              }}>
+                <div style={{ width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden", border: "2.5px solid #060e1b", background: "#0f172a", position: "relative" }}>
+                  <img src={d.foto} alt={d.nome} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+                  {d.badge && (
+                    <div style={{ position: "absolute", inset: 0, background: "rgba(6,14,27,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ fontSize: 14, color: "#d4a843" }}>✦</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <span style={{ fontSize: 10, color: "#cbd5e1", fontWeight: 600, maxWidth: 70, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "var(--font-playfair), serif" }}>
+                {d.nome.split(" ")[0]}
+              </span>
+            </div>
+          ))}
         </div>
 
-        <button onClick={() => scroll("left")} style={{ position: "absolute", left: 0, top: "38%", transform: "translateY(-50%)", width: 26, height: 26, borderRadius: "50%", background: "rgba(20,20,20,0.95)", border: "1px solid #2a2a2a", color: "#fff", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>‹</button>
-        <button onClick={() => scroll("right")} style={{ position: "absolute", right: 0, top: "38%", transform: "translateY(-50%)", width: 26, height: 26, borderRadius: "50%", background: "rgba(20,20,20,0.95)", border: "1px solid #2a2a2a", color: "#fff", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>›</button>
+        {/* Setas navegação */}
+        <button onClick={() => scroll("left")} style={{ position: "absolute", left: 0, top: "40%", transform: "translateY(-50%)", width: 28, height: 28, borderRadius: "50%", background: "rgba(6,14,27,0.9)", border: "1px solid rgba(212,168,67,0.2)", color: "#d4a843", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>‹</button>
+        <button onClick={() => scroll("right")} style={{ position: "absolute", right: 0, top: "40%", transform: "translateY(-50%)", width: 28, height: 28, borderRadius: "50%", background: "rgba(6,14,27,0.9)", border: "1px solid rgba(212,168,67,0.2)", color: "#d4a843", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>›</button>
       </div>
 
       {/* Viewer */}
