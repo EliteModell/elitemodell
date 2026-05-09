@@ -115,7 +115,7 @@ function BuscarContent() {
       <Navbar />
 
       {/* ── BARRA DE BUSCA PREMIUM ── */}
-      <div style={{ position: "sticky", top: 64, zIndex: 50, background: "rgba(6,14,27,0.97)", backdropFilter: "blur(16px)", borderBottom: `1px solid ${GOLD_DIM}` }}>
+      <div style={{ background: "#0b1420", borderBottom: `1px solid ${GOLD_DIM}` }}>
         {/* linha dourada */}
         <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${GOLD}, rgba(212,168,67,0.3), transparent)` }} />
         <div style={{ maxWidth: 1280, margin: "0 auto", padding: "12px 16px" }}>
