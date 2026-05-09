@@ -103,8 +103,8 @@ export default function HomePage() {
               A plataforma premium do Brasil
             </p>
 
-            <h1 style={{ fontSize: "clamp(38px, 6vw, 72px)", fontWeight: 900, color: "#f1f5f9", margin: "0 0 20px", letterSpacing: "-2px", lineHeight: 1.0 }}>
-              Acompanhan<wbr />tes<br />
+            <h1 style={{ fontSize: "clamp(32px, 5.2vw, 66px)", fontWeight: 900, color: "#f1f5f9", margin: "0 0 20px", letterSpacing: "-2px", lineHeight: 1.05, wordBreak: "keep-all", hyphens: "none" }}>
+              Acompanhantes<br />
               <span style={{ color: GOLD }}>de luxo.</span>
               <br />
               Imóveis exclusivos.
