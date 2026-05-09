@@ -26,7 +26,7 @@ export default function Navbar() {
         </Link>
 
         {/* Nav links */}
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <Link href="/buscar?tab=acompanhantes"
             style={{ padding: "8px 16px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14, fontWeight: 500, transition: "all 0.2s" }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#f1f5f9"; (e.currentTarget as HTMLElement).style.background = "rgba(212,168,67,0.06)"; }}
@@ -101,6 +101,7 @@ export default function Navbar() {
       <style>{`
         @media (max-width: 768px) {
           .mobile-menu-btn { display: flex !important; }
+          .desktop-nav { display: none !important; }
         }
       `}</style>
     </nav>

@@ -7,6 +7,10 @@ import Footer from "@/components/Footer";
 import FiltersModal from "@/components/FiltersModal";
 import Stories from "@/components/Stories";
 
+const GOLD = "#d4a843";
+const GOLD_DIM = "rgba(212,168,67,0.12)";
+const PLAYFAIR = "var(--font-playfair), serif";
+
 type MainTab = "acompanhantes" | "imoveis";
 type SubTab = "mulheres" | "trans" | "homens";
 
@@ -46,16 +50,8 @@ const imoveis = [
   { id: 6, titulo: "Loft Exclusivo", cidade: "Porto Alegre, RS", preco: 550, foto: "/hero-model.jpeg", quartos: 1, avaliacao: 4.9, tipo: "Apartamento", tags: ["Pet friendly"] },
 ];
 
-const FILTROS = ["Online agora", "Com avaliações", "Com local", "Até R$300", "Fotos verificadas", "Exclusivas"] as const;
+const FILTROS = ["Online agora", "Com avaliações", "Com local", "Até R$300", "Exclusivas"] as const;
 type Filtro = typeof FILTROS[number];
-
-function StarIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" style={{ flexShrink: 0 }}>
-      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-    </svg>
-  );
-}
 
 function BuscarContent() {
   const params = useSearchParams();
@@ -86,37 +82,66 @@ function BuscarContent() {
 
   return (
     <div style={{ background: "#060e1b", minHeight: "100vh", color: "#f1f5f9" }}>
+      <style>{`
+        .buscar-tabs-bar { display: flex; gap: 4px; }
+        .perfil-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 12px;
+        }
+        .perfil-card { border-radius: 12px; overflow: hidden; background: #0f172a; border: 1px solid #1e293b; transition: transform 0.2s, border-color 0.2s; }
+        .perfil-card:hover { transform: translateY(-3px); border-color: rgba(212,168,67,0.3); }
+        .perfil-foto { position: relative; padding-top: 140%; }
+        .perfil-info { padding: 14px; }
+        @media (max-width: 640px) {
+          .perfil-grid { grid-template-columns: 1fr; gap: 10px; }
+          .perfil-card { display: flex; flex-direction: row; min-height: 160px; }
+          .perfil-foto { padding-top: 0; width: 140px; flex-shrink: 0; height: auto; min-height: 160px; }
+          .perfil-info { flex: 1; padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; }
+        }
+        .imovel-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 20px;
+        }
+        @media (max-width: 640px) {
+          .imovel-grid { grid-template-columns: 1fr; }
+        }
+        .filtros-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; align-items: center; -webkit-overflow-scrolling: touch; }
+        .filtros-scroll::-webkit-scrollbar { display: none; }
+      `}</style>
+
       {showFilters && <FiltersModal onClose={() => setShowFilters(false)} onApply={() => setShowFilters(false)} />}
       <Navbar />
 
-      {/* Barra de busca + tabs */}
-      <div style={{ paddingTop: 64, background: "#0b1420", borderBottom: "1px solid #1e293b" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "20px 24px 0" }}>
+      {/* ── BARRA DE BUSCA ── */}
+      <div style={{ paddingTop: 64, background: "#0b1420", borderBottom: `1px solid ${GOLD_DIM}` }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "16px 16px 0" }}>
 
-          {/* Search + tabs inline */}
-          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", marginBottom: 0 }}>
-            <div style={{ display: "flex", background: "#0f172a", border: "1px solid #1e293b", borderRadius: 10, padding: 3, flexShrink: 0 }}>
+          {/* Tabs + search */}
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 0 }}>
+            <div style={{ display: "flex", background: "#0f172a", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, padding: 3, flexShrink: 0 }}>
               {([["acompanhantes", "Acompanhantes"], ["imoveis", "Imóveis"]] as const).map(([tab, label]) => (
                 <button key={tab} onClick={() => setMainTab(tab)}
-                  style={{ padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, background: mainTab === tab ? "#cc0000" : "transparent", color: mainTab === tab ? "#fff" : "#475569", transition: "all 0.2s" }}>
+                  style={{ padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, background: mainTab === tab ? GOLD : "transparent", color: mainTab === tab ? "#060e1b" : "#475569", transition: "all 0.2s" }}>
                   {label}
                 </button>
               ))}
             </div>
 
-            <div style={{ flex: 1, display: "flex", gap: 8, minWidth: 200 }}>
+            <div style={{ flex: 1, display: "flex", gap: 8, minWidth: 180 }}>
               <div style={{ flex: 1, position: "relative" }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2"
-                  style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2"
+                  style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
                   <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
                 <input value={busca} onChange={(e) => setBusca(e.target.value)}
-                  placeholder={mainTab === "acompanhantes" ? "Cidade, nome ou serviço..." : "Cidade ou tipo de imóvel..."}
-                  style={{ width: "100%", padding: "10px 14px 10px 40px", background: "#0f172a", border: "1px solid #1e293b", borderRadius: 10, color: "#f1f5f9", fontSize: 14, outline: "none", boxSizing: "border-box" }}
-                  onFocus={(e) => ((e.target as HTMLElement).style.borderColor = "#cc0000")}
-                  onBlur={(e) => ((e.target as HTMLElement).style.borderColor = "#1e293b")} />
+                  placeholder="Cidade, nome ou serviço..."
+                  style={{ width: "100%", padding: "10px 12px 10px 36px", background: "#0f172a", border: `1px solid ${GOLD_DIM}`, borderRadius: 8, color: "#f1f5f9", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                  onFocus={(e) => ((e.target as HTMLElement).style.borderColor = GOLD)}
+                  onBlur={(e) => ((e.target as HTMLElement).style.borderColor = GOLD_DIM)} />
               </div>
-              <button style={{ padding: "0 20px", background: "#cc0000", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+              <button style={{ padding: "0 18px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}>
                 Buscar
               </button>
             </div>
@@ -124,32 +149,34 @@ function BuscarContent() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "24px 24px 80px" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "20px 16px 80px" }}>
 
-        {/* ACOMPANHANTES */}
+        {/* ── ACOMPANHANTES ── */}
         {mainTab === "acompanhantes" && (
           <>
             <Stories />
 
-            <div style={{ display: "flex", gap: 0, marginBottom: 20, borderBottom: "1px solid #1e293b" }}>
+            {/* Sub-tabs */}
+            <div style={{ display: "flex", marginBottom: 16, borderBottom: `1px solid ${GOLD_DIM}` }}>
               {([["mulheres", "Mulheres"], ["trans", "Trans"], ["homens", "Homens"]] as const).map(([tab, label]) => (
                 <button key={tab} onClick={() => setSubTab(tab)}
-                  style={{ padding: "11px 24px", border: "none", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 14, color: subTab === tab ? "#f1f5f9" : "#475569", borderBottom: `2px solid ${subTab === tab ? "#cc0000" : "transparent"}`, transition: "all 0.2s" }}>
+                  style={{ padding: "11px 20px", border: "none", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 14, color: subTab === tab ? "#f1f5f9" : "#475569", borderBottom: `2px solid ${subTab === tab ? GOLD : "transparent"}`, transition: "all 0.2s" }}>
                   {label}
                 </button>
               ))}
             </div>
 
-            <div style={{ display: "flex", gap: 8, marginBottom: 24, overflowX: "auto", paddingBottom: 4, alignItems: "center" }}>
+            {/* Filtros */}
+            <div className="filtros-scroll" style={{ marginBottom: 20 }}>
               <button onClick={() => setShowFilters(true)}
-                style={{ padding: "7px 18px", background: "transparent", border: "1.5px solid #cc0000", borderRadius: 20, color: "#cc0000", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
+                style={{ padding: "7px 16px", background: "transparent", border: `1.5px solid ${GOLD}`, borderRadius: 20, color: GOLD, fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
                 Filtros
               </button>
               {FILTROS.map((f) => {
                 const ativo = filtros.has(f);
                 return (
                   <button key={f} onClick={() => toggleFiltro(f)}
-                    style={{ padding: "7px 16px", background: ativo ? "rgba(204,0,0,0.15)" : "#0f172a", border: `1px solid ${ativo ? "#cc0000" : "#1e293b"}`, borderRadius: 20, color: ativo ? "#f1f5f9" : "#64748b", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.2s", flexShrink: 0, fontWeight: ativo ? 700 : 400 }}>
+                    style={{ padding: "7px 14px", background: ativo ? "rgba(212,168,67,0.15)" : "#0f172a", border: `1px solid ${ativo ? GOLD : "#1e293b"}`, borderRadius: 20, color: ativo ? "#f1f5f9" : "#64748b", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.2s", flexShrink: 0, fontWeight: ativo ? 700 : 400 }}>
                     {f === "Online agora" && <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: ativo ? "#22c55e" : "#334155", marginRight: 6, verticalAlign: "middle" }} />}
                     {f}
                   </button>
@@ -157,43 +184,62 @@ function BuscarContent() {
               })}
             </div>
 
-            <p style={{ fontSize: 12, color: "#475569", marginBottom: 16 }}>
+            <p style={{ fontSize: 12, color: "#475569", marginBottom: 14 }}>
               {lista.length} perfil{lista.length !== 1 ? "is" : ""} encontrado{lista.length !== 1 ? "s" : ""}
             </p>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+            {/* Grid de perfis */}
+            <div className="perfil-grid">
               {lista.map((a) => (
                 <Link key={a.id} href={`/profissionais/${a.id}`} style={{ textDecoration: "none" }}>
-                  <div style={{ borderRadius: 10, overflow: "hidden", background: "#0f172a", cursor: "pointer", transition: "transform 0.2s" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-3px)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}>
-                    <div style={{ position: "relative", paddingTop: "140%", background: "#1a2a40" }}>
-                      <img src={a.foto} alt={a.nome} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(6,14,27,0.9) 0%, transparent 50%)" }} />
-                      {a.online ? (
-                        <div style={{ position: "absolute", top: 10, left: 10, background: "#22c55e", color: "#fff", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, display: "flex", alignItems: "center", gap: 4 }}>
-                          <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#fff" }} /> Online
-                        </div>
-                      ) : (
-                        <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(6,14,27,0.7)", color: "#64748b", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20 }}>
-                          Offline
-                        </div>
-                      )}
-                      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 14px" }}>
-                        <p style={{ margin: 0, fontWeight: 800, fontSize: 16, color: "#f1f5f9" }}>{a.nome}</p>
-                        <p style={{ margin: "2px 0 6px", fontSize: 12, color: "#94a3b8" }}>{a.cidade}</p>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                            <StarIcon />
-                            <span style={{ fontSize: 12, color: "#f59e0b", fontWeight: 700 }}>{a.avaliacao}</span>
-                            <span style={{ fontSize: 11, color: "#475569" }}>({a.total})</span>
+                  <div className="perfil-card">
+                    {/* Foto */}
+                    <div className="perfil-foto" style={{ background: "#1a2a40", position: "relative" }}>
+                      <img src={a.foto} alt={a.nome}
+                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(6,14,27,0.92) 0%, rgba(6,14,27,0.2) 50%, transparent 100%)" }} />
+                      {/* Badge online - visível só no desktop */}
+                      <div className="desktop-badge" style={{ position: "absolute", top: 10, left: 10 }}>
+                        {a.online
+                          ? <span style={{ background: "#22c55e", color: "#fff", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                              <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#fff", display: "inline-block" }} /> Online
+                            </span>
+                          : <span style={{ background: "rgba(6,14,27,0.75)", color: "#64748b", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20 }}>Offline</span>
+                        }
+                      </div>
+                    </div>
+
+                    {/* Info */}
+                    <div className="perfil-info">
+                      {/* Status online - visível só no mobile (dentro do info panel) */}
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ width: 8, height: 8, borderRadius: "50%", background: a.online ? "#22c55e" : "#475569", display: "inline-block", flexShrink: 0 }} />
+                            <span style={{ fontSize: 11, color: a.online ? "#22c55e" : "#475569", fontWeight: 600 }}>{a.online ? "Online agora" : "Offline"}</span>
                           </div>
-                          <span style={{ fontSize: 13, color: "#cc0000", fontWeight: 800 }}>R${a.preco}/h</span>
+                          <span style={{ fontSize: 15, color: GOLD, fontWeight: 800, fontFamily: PLAYFAIR }}>R${a.preco}/h</span>
                         </div>
-                        <div style={{ display: "flex", gap: 4, marginTop: 8, flexWrap: "wrap" }}>
-                          {a.servicos?.slice(0, 2).map((s) => (
-                            <span key={s} style={{ fontSize: 10, background: "rgba(255,255,255,0.07)", color: "#94a3b8", padding: "2px 7px", borderRadius: 10 }}>{s}</span>
+
+                        <p style={{ margin: "0 0 2px", fontWeight: 800, fontSize: 17, color: "#f1f5f9", fontFamily: PLAYFAIR, lineHeight: 1.2 }}>{a.nome}</p>
+                        <p style={{ margin: "0 0 8px", fontSize: 12, color: "#64748b" }}>{a.cidade}</p>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 10 }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                          <span style={{ fontSize: 13, color: "#f59e0b", fontWeight: 700 }}>{a.avaliacao}</span>
+                          <span style={{ fontSize: 11, color: "#475569" }}>({a.total})</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 10 }}>
+                          {a.servicos.slice(0, 3).map((s) => (
+                            <span key={s} style={{ fontSize: 10, background: GOLD_DIM, border: `1px solid rgba(212,168,67,0.2)`, color: "#94a3b8", padding: "3px 8px", borderRadius: 10 }}>{s}</span>
                           ))}
+                        </div>
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: 6, color: GOLD, fontSize: 12, fontWeight: 700 }}>
+                          Ver perfil
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                         </div>
                       </div>
                     </div>
@@ -206,7 +252,7 @@ function BuscarContent() {
               <div style={{ textAlign: "center", padding: "60px 20px" }}>
                 <p style={{ fontSize: 16, color: "#475569" }}>Nenhum perfil encontrado com os filtros selecionados.</p>
                 <button onClick={() => { setFiltros(new Set()); setBusca(""); }}
-                  style={{ marginTop: 12, padding: "8px 20px", background: "#cc0000", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14 }}>
+                  style={{ marginTop: 12, padding: "10px 24px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 700 }}>
                   Limpar filtros
                 </button>
               </div>
@@ -214,21 +260,22 @@ function BuscarContent() {
           </>
         )}
 
-        {/* IMÓVEIS */}
+        {/* ── IMÓVEIS ── */}
         {mainTab === "imoveis" && (
           <>
-            <div style={{ display: "flex", gap: 8, marginBottom: 24, overflowX: "auto", paddingBottom: 4 }}>
+            <div className="filtros-scroll" style={{ marginBottom: 20 }}>
               {["Apartamento", "Casa", "Studio", "Cobertura", "Flat", "Com piscina", "Pet friendly"].map((f) => {
                 const ativo = filtroImovel === f;
                 return (
                   <button key={f} onClick={() => setFiltroImovel(ativo ? null : f)}
-                    style={{ padding: "7px 16px", background: ativo ? "rgba(204,0,0,0.15)" : "#0f172a", border: `1px solid ${ativo ? "#cc0000" : "#1e293b"}`, borderRadius: 20, color: ativo ? "#f1f5f9" : "#64748b", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", fontWeight: ativo ? 700 : 400, transition: "all 0.2s", flexShrink: 0 }}>
+                    style={{ padding: "7px 14px", background: ativo ? "rgba(212,168,67,0.15)" : "#0f172a", border: `1px solid ${ativo ? GOLD : "#1e293b"}`, borderRadius: 20, color: ativo ? "#f1f5f9" : "#64748b", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", fontWeight: ativo ? 700 : 400, transition: "all 0.2s", flexShrink: 0 }}>
                     {f}
                   </button>
                 );
               })}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
+
+            <div className="imovel-grid">
               {imoveis.filter((i) => {
                 if (busca && !i.cidade.toLowerCase().includes(busca.toLowerCase()) && !i.titulo.toLowerCase().includes(busca.toLowerCase())) return false;
                 if (filtroImovel === "Com piscina" || filtroImovel === "Pet friendly") return i.tags.includes(filtroImovel);
@@ -236,19 +283,24 @@ function BuscarContent() {
                 return true;
               }).map((im) => (
                 <Link key={im.id} href={`/imoveis/${im.id}`} style={{ textDecoration: "none" }}>
-                  <div style={{ borderRadius: 14, overflow: "hidden", background: "#0f172a", border: "1px solid #1e293b", cursor: "pointer", transition: "transform 0.2s, border-color 0.2s" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-4px)"; (e.currentTarget as HTMLElement).style.borderColor = "#cc0000"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.borderColor = "#1e293b"; }}>
-                    <div style={{ position: "relative", paddingTop: "65%", background: "#1a2a40" }}>
-                      <img src={im.foto} alt={im.titulo} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                  <div style={{ borderRadius: 14, overflow: "hidden", background: "#0f172a", border: `1px solid ${GOLD_DIM}`, cursor: "pointer", transition: "transform 0.2s, border-color 0.2s" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-4px)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(212,168,67,0.3)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.borderColor = GOLD_DIM; }}>
+                    <div style={{ position: "relative", paddingTop: "60%", background: "#1a2a40" }}>
+                      <img src={im.foto} alt={im.titulo} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.7 }} />
+                      <div style={{ position: "absolute", top: 10, right: 10, background: "rgba(6,14,27,0.85)", padding: "4px 10px", borderRadius: 8, fontSize: 12, color: GOLD, fontWeight: 700 }}>
+                        {im.tipo}
+                      </div>
                     </div>
                     <div style={{ padding: "14px 16px" }}>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: "#f1f5f9" }}>{im.titulo}</p>
-                      <p style={{ margin: "4px 0 10px", fontSize: 13, color: "#475569" }}>{im.cidade} · {im.quartos} {im.quartos === 1 ? "quarto" : "quartos"}</p>
+                      <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: 16, color: "#f1f5f9", fontFamily: PLAYFAIR }}>{im.titulo}</p>
+                      <p style={{ margin: "0 0 10px", fontSize: 13, color: "#475569" }}>{im.cidade} · {im.quartos} {im.quartos === 1 ? "quarto" : "quartos"}</p>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span style={{ color: "#f1f5f9", fontWeight: 700, fontSize: 15 }}>R${im.preco}<span style={{ color: "#475569", fontSize: 12, fontWeight: 400 }}>/noite</span></span>
+                        <span style={{ color: GOLD, fontWeight: 800, fontSize: 16, fontFamily: PLAYFAIR }}>
+                          R${im.preco}<span style={{ color: "#475569", fontSize: 12, fontWeight: 400, fontFamily: "var(--font-inter), sans-serif" }}>/noite</span>
+                        </span>
                         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          <StarIcon />
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
                           <span style={{ fontSize: 13, color: "#f59e0b", fontWeight: 600 }}>{im.avaliacao}</span>
                         </div>
                       </div>
