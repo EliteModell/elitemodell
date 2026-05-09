@@ -1,11 +1,12 @@
 "use client";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FiltersModal from "@/components/FiltersModal";
 import Stories from "@/components/Stories";
+import AgeGate from "@/components/AgeGate";
 
 type MainTab = "acompanhantes" | "imoveis";
 type SubTab = "mulheres" | "trans" | "homens";
@@ -49,6 +50,69 @@ const imoveis = [
 const FILTROS_RAPIDOS = ["Online agora", "Com avaliações", "Com local", "Até R$300", "Fotos verificadas", "Exclusivas"] as const;
 type FiltroRapido = typeof FILTROS_RAPIDOS[number];
 
+const CATEGORIAS = [
+  {
+    label: "Acompanhantes Femininas",
+    sub: "Mulheres",
+    count: "+1.400 perfis",
+    cidades: "São Paulo · Rio · Curitiba · BH · Brasília",
+    tab: "acompanhantes" as MainTab,
+    subTab: "mulheres" as SubTab,
+    accent: "#cc0000",
+  },
+  {
+    label: "Acompanhantes Trans",
+    sub: "Trans",
+    count: "+320 perfis",
+    cidades: "São Paulo · Rio · Salvador · Florianópolis",
+    tab: "acompanhantes" as MainTab,
+    subTab: "trans" as SubTab,
+    accent: "#9333ea",
+  },
+  {
+    label: "Acompanhantes Masculinos",
+    sub: "Homens",
+    count: "+280 perfis",
+    cidades: "São Paulo · Rio · BH · Porto Alegre",
+    tab: "acompanhantes" as MainTab,
+    subTab: "homens" as SubTab,
+    accent: "#0ea5e9",
+  },
+  {
+    label: "Imóveis de Luxo",
+    sub: "Hospedagem",
+    count: "+600 imóveis",
+    cidades: "São Paulo · Rio · Florianópolis · Campos",
+    tab: "imoveis" as MainTab,
+    subTab: null,
+    accent: "#c9a84c",
+  },
+];
+
+const FEATURES = [
+  {
+    title: "100% Verificadas",
+    desc: "Todos os perfis passam por verificação de documentos e fotos reais antes de serem publicados.",
+  },
+  {
+    title: "Pagamento Seguro",
+    desc: "Pix, cartão e boleto com ambiente criptografado. Reembolso garantido em casos de cancelamento.",
+  },
+  {
+    title: "Discrição Total",
+    desc: "Seus dados são protegidos com criptografia de ponta e nunca compartilhados com terceiros.",
+  },
+  {
+    title: "Avaliações Reais",
+    desc: "Só quem realizou o serviço pode avaliar. Transparência total para sua segurança.",
+  },
+];
+
+const SERVICOS_POPULARES = [
+  "Com local", "VIP", "Viagens", "Eventos", "Jantar", "Massagem",
+  "Hotéis", "A domicílio", "Jovem", "Madura", "Dupla", "BDSM",
+];
+
 function StarIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" style={{ flexShrink: 0 }}>
@@ -63,9 +127,24 @@ function HomeContent() {
   const [mainTab, setMainTab] = useState<MainTab>(initialTab);
   const [subTab, setSubTab] = useState<SubTab>("mulheres");
   const [busca, setBusca] = useState("");
+  const [heroBusca, setHeroBusca] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filtrosAtivos, setFiltrosAtivos] = useState<Set<FiltroRapido>>(new Set());
   const [filtroImovel, setFiltroImovel] = useState<string | null>(null);
+  const listingsRef = useRef<HTMLDivElement>(null);
+
+  function goToListings(tab?: MainTab, sub?: SubTab) {
+    if (tab) setMainTab(tab);
+    if (sub) setSubTab(sub);
+    setTimeout(() => {
+      listingsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }
+
+  function handleHeroBusca() {
+    setBusca(heroBusca);
+    goToListings();
+  }
 
   function toggleFiltro(f: FiltroRapido) {
     setFiltrosAtivos((prev) => {
@@ -87,221 +166,419 @@ function HomeContent() {
 
   return (
     <div style={{ background: "#0a0a0a", minHeight: "100vh", color: "#fff" }}>
+      <AgeGate />
       {showFilters && <FiltersModal onClose={() => setShowFilters(false)} onApply={(f) => { setShowFilters(false); console.log(f); }} />}
       <Navbar />
 
-      {/* Hero section */}
-      <div style={{ paddingTop: 64, background: "#0a0a0a", borderBottom: "1px solid #151515" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "48px 24px 36px", textAlign: "center" }}>
+      {/* ─── HERO ─── */}
+      <section style={{ position: "relative", minHeight: "92vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
+        <img
+          src="/model2.jpg"
+          alt=""
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
+        />
+        {/* Overlay: escuro na esquerda, revela a modelo na direita */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(100deg, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.88) 40%, rgba(0,0,0,0.55) 65%, rgba(0,0,0,0.2) 100%)" }} />
+        {/* Linha dourada no topo */}
+        <div style={{ position: "absolute", top: 64, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, transparent, rgba(201,168,76,0.15), transparent)" }} />
 
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: "#c9a84c", textTransform: "uppercase", marginBottom: 14 }}>
-            A plataforma premium do Brasil
-          </p>
+        <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 1280, margin: "0 auto", padding: "100px 24px 80px" }}>
+          <div style={{ maxWidth: 580 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: "#c9a84c", textTransform: "uppercase", marginBottom: 20 }}>
+              A plataforma premium do Brasil
+            </p>
 
-          <h1 style={{ fontSize: "clamp(26px, 4.5vw, 48px)", fontWeight: 900, color: "#fff", margin: "0 0 12px", letterSpacing: "-1px", lineHeight: 1.1 }}>
-            Encontre acompanhantes{" "}
-            <span style={{ color: "#cc0000" }}>de luxo</span>
-            <br />
-            em qualquer cidade
-          </h1>
+            <h1 style={{ fontSize: "clamp(34px, 6vw, 68px)", fontWeight: 900, color: "#fff", margin: "0 0 20px", letterSpacing: "-2px", lineHeight: 1.0 }}>
+              Acompanhantes<br />
+              <span style={{ color: "#cc0000" }}>de luxo.</span>
+              <br />
+              Imóveis exclusivos.
+            </h1>
 
-          <p style={{ color: "#555", fontSize: 15, margin: "0 0 28px" }}>
-            Perfis verificados, avaliações reais e imóveis exclusivos.
-          </p>
+            <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 16, margin: "0 0 40px", lineHeight: 1.7, maxWidth: 440 }}>
+              Perfis verificados, experiências premium e total discrição.
+              Conectamos você às melhores acompanhantes e imóveis do país.
+            </p>
 
-          {/* Stats */}
-          <div style={{ display: "flex", justifyContent: "center", gap: "clamp(24px, 5vw, 64px)", flexWrap: "wrap", marginBottom: 32 }}>
-            {[
-              { num: "+2 mil", label: "acompanhantes" },
-              { num: "+50", label: "cidades" },
-              { num: "+8 mil", label: "avaliações" },
-              { num: "100%", label: "verificadas" },
-            ].map(({ num, label }) => (
-              <div key={label} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{num}</div>
-                <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>{label}</div>
-              </div>
-            ))}
+            {/* CTAs */}
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 52 }}>
+              <button
+                onClick={() => goToListings("acompanhantes")}
+                style={{ padding: "15px 32px", background: "#cc0000", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 800, cursor: "pointer", letterSpacing: "0.2px", transition: "background 0.2s" }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#e00000")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "#cc0000")}
+              >
+                Ver Acompanhantes
+              </button>
+              <button
+                onClick={() => goToListings("imoveis")}
+                style={{ padding: "15px 32px", background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: "pointer", backdropFilter: "blur(8px)", transition: "border-color 0.2s, background 0.2s" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(201,168,76,0.5)"; (e.currentTarget as HTMLElement).style.background = "rgba(201,168,76,0.05)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.2)"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+              >
+                Imóveis de Luxo
+              </button>
+            </div>
+
+            {/* Stats */}
+            <div style={{ display: "flex", gap: "clamp(20px, 4vw, 48px)", flexWrap: "wrap", paddingTop: 28, borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+              {[
+                { num: "+2 mil", label: "acompanhantes" },
+                { num: "+50", label: "cidades" },
+                { num: "+8 mil", label: "avaliações" },
+                { num: "100%", label: "verificadas" },
+              ].map(({ num, label }) => (
+                <div key={label}>
+                  <div style={{ fontSize: "clamp(20px, 3vw, 26px)", fontWeight: 900, color: "#fff", lineHeight: 1 }}>{num}</div>
+                  <div style={{ fontSize: 12, color: "#555", marginTop: 5 }}>{label}</div>
+                </div>
+              ))}
+            </div>
           </div>
+        </div>
+      </section>
 
-          {/* Search bar principal */}
-          <div style={{ maxWidth: 540, margin: "0 auto", display: "flex", gap: 8 }}>
+      {/* ─── BUSCA ─── */}
+      <section style={{ background: "#0d0d0d", borderTop: "1px solid #151515", borderBottom: "1px solid #151515" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto", padding: "36px 24px" }}>
+          <p style={{ textAlign: "center", color: "#555", fontSize: 13, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", marginBottom: 20 }}>
+            Buscar na plataforma
+          </p>
+          <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
             <div style={{ flex: 1, position: "relative" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2"
-                style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2"
+                style={{ position: "absolute", left: 18, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
                 <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
               <input
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                placeholder="Buscar por cidade, nome ou serviço..."
-                style={{ width: "100%", padding: "14px 16px 14px 44px", background: "#111", border: "1px solid #2a2a2a", borderRadius: 12, color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box" }}
+                value={heroBusca}
+                onChange={(e) => setHeroBusca(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleHeroBusca()}
+                placeholder="Cidade, nome ou tipo de serviço..."
+                style={{ width: "100%", padding: "16px 18px 16px 50px", background: "#111", border: "1px solid #2a2a2a", borderRadius: 12, color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box", height: "100%" }}
                 onFocus={(e) => ((e.target as HTMLElement).style.borderColor = "#cc0000")}
                 onBlur={(e) => ((e.target as HTMLElement).style.borderColor = "#2a2a2a")}
               />
             </div>
             <button
-              style={{ padding: "0 24px", background: "#cc0000", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}
+              onClick={handleHeroBusca}
+              style={{ padding: "0 32px", background: "#cc0000", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", transition: "background 0.2s" }}
               onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#e00000")}
               onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "#cc0000")}
             >
               Buscar
             </button>
           </div>
-        </div>
 
-        {/* Tabs bar */}
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px" }}>
-          <div style={{ display: "flex", gap: 4, borderTop: "1px solid #151515" }}>
-            {([["acompanhantes", "Acompanhantes"], ["imoveis", "Imóveis"]] as const).map(([tab, label]) => (
-              <button key={tab} onClick={() => setMainTab(tab)}
-                style={{ padding: "14px 22px", border: "none", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 14, color: mainTab === tab ? "#fff" : "#444", borderBottom: `2px solid ${mainTab === tab ? "#cc0000" : "transparent"}`, transition: "all 0.2s" }}>
-                {label}
+          {/* Serviços populares */}
+          <div style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+            {SERVICOS_POPULARES.map((s) => (
+              <button
+                key={s}
+                onClick={() => { setHeroBusca(s); setBusca(s); goToListings(); }}
+                style={{ padding: "5px 14px", background: "transparent", border: "1px solid #222", borderRadius: 20, color: "#555", fontSize: 12, cursor: "pointer", transition: "all 0.2s" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#cc000050"; (e.currentTarget as HTMLElement).style.color = "#ccc"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#222"; (e.currentTarget as HTMLElement).style.color = "#555"; }}
+              >
+                {s}
               </button>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "20px 24px 60px" }}>
+      {/* ─── CATEGORIAS ─── */}
+      <section style={{ background: "#0a0a0a", padding: "72px 24px" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+          <div style={{ marginBottom: 40, textAlign: "center" }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: "#c9a84c", textTransform: "uppercase", marginBottom: 12 }}>
+              Explore
+            </p>
+            <h2 style={{ fontSize: "clamp(24px, 4vw, 40px)", fontWeight: 900, color: "#fff", margin: 0, letterSpacing: "-1px" }}>
+              Toda a plataforma em um só lugar
+            </h2>
+          </div>
 
-        {/* ACOMPANHANTES */}
-        {mainTab === "acompanhantes" && (
-          <>
-            {/* Stories */}
-            <Stories />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
+            {CATEGORIAS.map((cat) => (
+              <button
+                key={cat.label}
+                onClick={() => goToListings(cat.tab, cat.subTab ?? undefined)}
+                style={{ textAlign: "left", background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: 16, padding: "28px 24px", cursor: "pointer", transition: "border-color 0.2s, transform 0.2s", display: "flex", flexDirection: "column", gap: 12 }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = cat.accent + "60"; (e.currentTarget as HTMLElement).style.transform = "translateY(-4px)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#1a1a1a"; (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: cat.accent, textTransform: "uppercase" }}>
+                    {cat.sub}
+                  </span>
+                  <span style={{ fontSize: 12, color: "#333", fontWeight: 600 }}>{cat.count}</span>
+                </div>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, lineHeight: 1.2 }}>{cat.label}</h3>
+                <p style={{ fontSize: 12, color: "#444", margin: 0, lineHeight: 1.6 }}>{cat.cidades}</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, color: cat.accent, fontSize: 13, fontWeight: 700, marginTop: 4 }}>
+                  Ver todos
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            {/* Sub tabs */}
-            <div style={{ display: "flex", gap: 0, marginBottom: 20, borderBottom: "1px solid #1e1e1e" }}>
-              {([["mulheres", "Mulheres"], ["trans", "Trans"], ["homens", "Homens"]] as const).map(([tab, label]) => (
-                <button key={tab} onClick={() => setSubTab(tab)}
-                  style={{ padding: "11px 24px", border: "none", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 14, color: subTab === tab ? "#fff" : "#555", borderBottom: `2px solid ${subTab === tab ? "#cc0000" : "transparent"}`, transition: "all 0.2s" }}>
+      {/* ─── FEATURES ─── */}
+      <section style={{ background: "#080808", borderTop: "1px solid #111", borderBottom: "1px solid #111", padding: "72px 24px" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+          <div style={{ marginBottom: 48, textAlign: "center" }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: "#c9a84c", textTransform: "uppercase", marginBottom: 12 }}>
+              Por que escolher
+            </p>
+            <h2 style={{ fontSize: "clamp(24px, 4vw, 40px)", fontWeight: 900, color: "#fff", margin: "0 0 12px", letterSpacing: "-1px" }}>
+              A experiência mais premium do Brasil
+            </h2>
+            <p style={{ color: "#444", fontSize: 15, margin: 0, maxWidth: 480, marginLeft: "auto", marginRight: "auto" }}>
+              Construída para quem exige qualidade, segurança e discrição acima de tudo.
+            </p>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 1, border: "1px solid #151515", borderRadius: 20, overflow: "hidden" }}>
+            {FEATURES.map((f, i) => (
+              <div
+                key={f.title}
+                style={{ padding: "36px 28px", background: i % 2 === 0 ? "#0d0d0d" : "#090909", borderRight: "1px solid #151515", borderBottom: "1px solid #151515" }}
+              >
+                <div style={{ width: 40, height: 3, background: "#cc0000", borderRadius: 2, marginBottom: 20 }} />
+                <h3 style={{ fontSize: 17, fontWeight: 800, color: "#fff", margin: "0 0 10px" }}>{f.title}</h3>
+                <p style={{ fontSize: 13, color: "#555", lineHeight: 1.7, margin: 0 }}>{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── CONCEITO AIRBNB ─── */}
+      <section style={{ background: "#0a0a0a", padding: "72px 24px" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", gap: 48, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 280 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: "#c9a84c", textTransform: "uppercase", marginBottom: 16 }}>
+              Módulo imóveis
+            </p>
+            <h2 style={{ fontSize: "clamp(24px, 4vw, 42px)", fontWeight: 900, color: "#fff", margin: "0 0 16px", letterSpacing: "-1px", lineHeight: 1.1 }}>
+              Reserve o imóvel<br />
+              <span style={{ color: "#cc0000" }}>perfeito para</span><br />
+              sua experiência
+            </h2>
+            <p style={{ color: "#555", fontSize: 14, lineHeight: 1.8, margin: "0 0 28px" }}>
+              Coberturas, flats executivos, casas de temporada e studios modernos.
+              Pague via Pix, cartão ou boleto. Check-in configurável, reserva instantânea.
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 32 }}>
+              {["Piscina", "Pet friendly", "Wi-Fi", "Churrasco", "Check-in flexível", "Estacionamento"].map((tag) => (
+                <span key={tag} style={{ padding: "5px 14px", border: "1px solid #1e1e1e", borderRadius: 20, fontSize: 12, color: "#555" }}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+            <button
+              onClick={() => goToListings("imoveis")}
+              style={{ padding: "14px 28px", background: "transparent", color: "#c9a84c", border: "1px solid #c9a84c30", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", transition: "background 0.2s" }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "rgba(201,168,76,0.07)")}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "transparent")}
+            >
+              Explorar Imóveis
+            </button>
+          </div>
+
+          {/* Preview cards de imóveis */}
+          <div style={{ flex: 1, minWidth: 280, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {imoveis.slice(0, 4).map((im) => (
+              <div
+                key={im.id}
+                style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: 12, overflow: "hidden", cursor: "pointer", transition: "border-color 0.2s" }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "#c9a84c40")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "#1a1a1a")}
+                onClick={() => goToListings("imoveis")}
+              >
+                <div style={{ height: 90, background: "linear-gradient(135deg, #1a0a0a, #111)", position: "relative", overflow: "hidden" }}>
+                  <img src={im.foto} alt={im.titulo} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.5 }} />
+                  <div style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.7)", padding: "2px 8px", borderRadius: 6, fontSize: 11, color: "#c9a84c", fontWeight: 700 }}>
+                    R${im.preco}/noite
+                  </div>
+                </div>
+                <div style={{ padding: "10px 12px" }}>
+                  <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#ccc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{im.titulo}</p>
+                  <p style={{ margin: "2px 0 0", fontSize: 11, color: "#444" }}>{im.cidade}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── LISTINGS ─── */}
+      <div ref={listingsRef} id="buscar" style={{ background: "#0a0a0a", scrollMarginTop: 64 }}>
+        {/* Barra de tabs */}
+        <div style={{ background: "#0d0d0d", borderTop: "1px solid #151515", borderBottom: "1px solid #151515" }}>
+          <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px", display: "flex", gap: 4, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+            <div style={{ display: "flex" }}>
+              {([["acompanhantes", "Acompanhantes"], ["imoveis", "Imóveis"]] as const).map(([tab, label]) => (
+                <button key={tab} onClick={() => setMainTab(tab)}
+                  style={{ padding: "16px 22px", border: "none", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 14, color: mainTab === tab ? "#fff" : "#444", borderBottom: `2px solid ${mainTab === tab ? "#cc0000" : "transparent"}`, transition: "all 0.2s" }}>
                   {label}
                 </button>
               ))}
             </div>
-
-            {/* Filtros rápidos */}
-            <div style={{ display: "flex", gap: 8, marginBottom: 24, overflowX: "auto", paddingBottom: 4, alignItems: "center" }}>
-              <button onClick={() => setShowFilters(true)}
-                style={{ padding: "7px 18px", background: "transparent", border: "1.5px solid #cc0000", borderRadius: 20, color: "#cc0000", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", letterSpacing: "0.5px", flexShrink: 0 }}>
-                ⚙ Filtros
-              </button>
-              {FILTROS_RAPIDOS.map((f) => {
-                const ativo = filtrosAtivos.has(f);
-                return (
-                  <button key={f} onClick={() => toggleFiltro(f)}
-                    style={{ padding: "7px 16px", background: ativo ? "rgba(204,0,0,0.15)" : "#111", border: `1px solid ${ativo ? "#cc0000" : "#222"}`, borderRadius: 20, color: ativo ? "#fff" : "#888", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.2s", flexShrink: 0, fontWeight: ativo ? 700 : 400 }}>
-                    {f === "Online agora" && <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: ativo ? "#22c55e" : "#555", marginRight: 6, verticalAlign: "middle" }} />}
-                    {f}
-                  </button>
-                );
-              })}
+            <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "10px 0" }}>
+              <div style={{ position: "relative" }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2"
+                  style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input value={busca} onChange={(e) => setBusca(e.target.value)}
+                  placeholder={mainTab === "acompanhantes" ? "Filtrar por cidade ou nome..." : "Filtrar imóveis..."}
+                  style={{ padding: "9px 14px 9px 36px", background: "#111", border: "1px solid #2a2a2a", borderRadius: 8, color: "#fff", fontSize: 13, outline: "none", width: 220 }} />
+              </div>
             </div>
+          </div>
+        </div>
 
-            {/* Contador */}
-            <p style={{ fontSize: 12, color: "#555", marginBottom: 16, letterSpacing: "0.5px" }}>
-              {lista.length} perfil{lista.length !== 1 ? "is" : ""} encontrado{lista.length !== 1 ? "s" : ""}
-            </p>
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "24px 24px 80px" }}>
 
-            {/* Grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-              {lista.map((a) => (
-                <Link key={a.id} href={`/profissionais/${a.id}`} style={{ textDecoration: "none" }}>
-                  <div style={{ borderRadius: 10, overflow: "hidden", background: "#111", cursor: "pointer", transition: "transform 0.2s", position: "relative" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-3px)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}>
-                    <div style={{ position: "relative", paddingTop: "140%", background: "#1a1a1a" }}>
-                      <img src={a.foto} alt={a.nome} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 50%)" }} />
-                      {a.online ? (
-                        <div style={{ position: "absolute", top: 10, left: 10, background: "#22c55e", color: "#fff", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, display: "flex", alignItems: "center", gap: 4 }}>
-                          <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#fff" }} /> Online
+          {/* ACOMPANHANTES */}
+          {mainTab === "acompanhantes" && (
+            <>
+              <Stories />
+
+              <div style={{ display: "flex", gap: 0, marginBottom: 20, borderBottom: "1px solid #1e1e1e" }}>
+                {([["mulheres", "Mulheres"], ["trans", "Trans"], ["homens", "Homens"]] as const).map(([tab, label]) => (
+                  <button key={tab} onClick={() => setSubTab(tab)}
+                    style={{ padding: "11px 24px", border: "none", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 14, color: subTab === tab ? "#fff" : "#555", borderBottom: `2px solid ${subTab === tab ? "#cc0000" : "transparent"}`, transition: "all 0.2s" }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", gap: 8, marginBottom: 24, overflowX: "auto", paddingBottom: 4, alignItems: "center" }}>
+                <button onClick={() => setShowFilters(true)}
+                  style={{ padding: "7px 18px", background: "transparent", border: "1.5px solid #cc0000", borderRadius: 20, color: "#cc0000", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", letterSpacing: "0.5px", flexShrink: 0 }}>
+                  Filtros
+                </button>
+                {FILTROS_RAPIDOS.map((f) => {
+                  const ativo = filtrosAtivos.has(f);
+                  return (
+                    <button key={f} onClick={() => toggleFiltro(f)}
+                      style={{ padding: "7px 16px", background: ativo ? "rgba(204,0,0,0.15)" : "#111", border: `1px solid ${ativo ? "#cc0000" : "#222"}`, borderRadius: 20, color: ativo ? "#fff" : "#888", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.2s", flexShrink: 0, fontWeight: ativo ? 700 : 400 }}>
+                      {f === "Online agora" && <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: ativo ? "#22c55e" : "#555", marginRight: 6, verticalAlign: "middle" }} />}
+                      {f}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p style={{ fontSize: 12, color: "#555", marginBottom: 16, letterSpacing: "0.5px" }}>
+                {lista.length} perfil{lista.length !== 1 ? "is" : ""} encontrado{lista.length !== 1 ? "s" : ""}
+              </p>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+                {lista.map((a) => (
+                  <Link key={a.id} href={`/profissionais/${a.id}`} style={{ textDecoration: "none" }}>
+                    <div style={{ borderRadius: 10, overflow: "hidden", background: "#111", cursor: "pointer", transition: "transform 0.2s", position: "relative" }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-3px)"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}>
+                      <div style={{ position: "relative", paddingTop: "140%", background: "#1a1a1a" }}>
+                        <img src={a.foto} alt={a.nome} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 50%)" }} />
+                        {a.online ? (
+                          <div style={{ position: "absolute", top: 10, left: 10, background: "#22c55e", color: "#fff", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, display: "flex", alignItems: "center", gap: 4 }}>
+                            <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#fff" }} /> Online
+                          </div>
+                        ) : (
+                          <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(0,0,0,0.6)", color: "#aaa", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20 }}>
+                            Offline
+                          </div>
+                        )}
+                        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 14px" }}>
+                          <p style={{ margin: 0, fontWeight: 800, fontSize: 16, color: "#fff" }}>{a.nome}</p>
+                          <p style={{ margin: "2px 0 6px", fontSize: 12, color: "#ccc" }}>{a.cidade}</p>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                              <StarIcon />
+                              <span style={{ fontSize: 12, color: "#f59e0b", fontWeight: 700 }}>{a.avaliacao}</span>
+                              <span style={{ fontSize: 11, color: "#888" }}>({a.total})</span>
+                            </div>
+                            <span style={{ fontSize: 13, color: "#cc0000", fontWeight: 800 }}>R${a.preco}/h</span>
+                          </div>
+                          <div style={{ display: "flex", gap: 4, marginTop: 8, flexWrap: "wrap" }}>
+                            {a.servicos?.slice(0, 2).map((s: string) => (
+                              <span key={s} style={{ fontSize: 10, background: "rgba(255,255,255,0.1)", color: "#ddd", padding: "2px 7px", borderRadius: 10 }}>{s}</span>
+                            ))}
+                          </div>
                         </div>
-                      ) : (
-                        <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(0,0,0,0.6)", color: "#aaa", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20 }}>
-                          Offline
-                        </div>
-                      )}
-                      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 14px" }}>
-                        <p style={{ margin: 0, fontWeight: 800, fontSize: 16, color: "#fff" }}>{a.nome}</p>
-                        <p style={{ margin: "2px 0 6px", fontSize: 12, color: "#ccc" }}>{a.cidade}</p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              {lista.length === 0 && (
+                <div style={{ textAlign: "center", padding: "60px 20px", color: "#444" }}>
+                  <p style={{ fontSize: 16 }}>Nenhum perfil encontrado com os filtros selecionados.</p>
+                  <button onClick={() => { setFiltrosAtivos(new Set()); setBusca(""); }} style={{ marginTop: 12, padding: "8px 20px", background: "#cc0000", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14 }}>
+                    Limpar filtros
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* IMÓVEIS */}
+          {mainTab === "imoveis" && (
+            <>
+              <div style={{ display: "flex", gap: 8, marginBottom: 24, overflowX: "auto", paddingBottom: 4 }}>
+                {["Apartamento", "Casa", "Studio", "Cobertura", "Flat", "Com piscina", "Pet friendly"].map((f) => {
+                  const ativo = filtroImovel === f;
+                  return (
+                    <button key={f} onClick={() => setFiltroImovel(ativo ? null : f)}
+                      style={{ padding: "7px 16px", background: ativo ? "rgba(204,0,0,0.15)" : "#111", border: `1px solid ${ativo ? "#cc0000" : "#222"}`, borderRadius: 20, color: ativo ? "#fff" : "#888", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", fontWeight: ativo ? 700 : 400, transition: "all 0.2s", flexShrink: 0 }}>
+                      {f}
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
+                {imoveis.filter((i) => {
+                  if (busca && !i.cidade.toLowerCase().includes(busca.toLowerCase()) && !i.titulo.toLowerCase().includes(busca.toLowerCase())) return false;
+                  if (filtroImovel === "Com piscina" || filtroImovel === "Pet friendly") return i.tags.includes(filtroImovel);
+                  if (filtroImovel) return i.tipo === filtroImovel;
+                  return true;
+                }).map((im) => (
+                  <Link key={im.id} href={`/imoveis/${im.id}`} style={{ textDecoration: "none" }}>
+                    <div style={{ borderRadius: 14, overflow: "hidden", background: "#111", border: "1px solid #1e1e1e", cursor: "pointer", transition: "transform 0.2s, border-color 0.2s" }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-4px)"; (e.currentTarget as HTMLElement).style.borderColor = "#cc0000"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.borderColor = "#1e1e1e"; }}>
+                      <div style={{ position: "relative", paddingTop: "65%", background: "#1a1a1a" }}>
+                        <img src={im.foto} alt={im.titulo} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                      </div>
+                      <div style={{ padding: "14px 16px" }}>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: "#fff" }}>{im.titulo}</p>
+                        <p style={{ margin: "4px 0 10px", fontSize: 13, color: "#666" }}>{im.cidade} · {im.quartos} {im.quartos === 1 ? "quarto" : "quartos"}</p>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <span style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>R${im.preco}<span style={{ color: "#666", fontSize: 12, fontWeight: 400 }}>/noite</span></span>
                           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                             <StarIcon />
-                            <span style={{ fontSize: 12, color: "#f59e0b", fontWeight: 700 }}>{a.avaliacao}</span>
-                            <span style={{ fontSize: 11, color: "#888" }}>({a.total})</span>
+                            <span style={{ fontSize: 13, color: "#f59e0b", fontWeight: 600 }}>{im.avaliacao}</span>
                           </div>
-                          <span style={{ fontSize: 13, color: "#cc0000", fontWeight: 800 }}>R${a.preco}/h</span>
-                        </div>
-                        <div style={{ display: "flex", gap: 4, marginTop: 8, flexWrap: "wrap" }}>
-                          {a.servicos?.slice(0, 2).map((s: string) => (
-                            <span key={s} style={{ fontSize: 10, background: "rgba(255,255,255,0.1)", color: "#ddd", padding: "2px 7px", borderRadius: 10 }}>{s}</span>
-                          ))}
                         </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-
-            {lista.length === 0 && (
-              <div style={{ textAlign: "center", padding: "60px 20px", color: "#444" }}>
-                <p style={{ fontSize: 16 }}>Nenhum perfil encontrado com os filtros selecionados.</p>
-                <button onClick={() => { setFiltrosAtivos(new Set()); setBusca(""); }} style={{ marginTop: 12, padding: "8px 20px", background: "#cc0000", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14 }}>
-                  Limpar filtros
-                </button>
+                  </Link>
+                ))}
               </div>
-            )}
-          </>
-        )}
-
-        {/* IMÓVEIS */}
-        {mainTab === "imoveis" && (
-          <>
-            <div style={{ display: "flex", gap: 8, marginBottom: 24, overflowX: "auto", paddingBottom: 4 }}>
-              {["Apartamento", "Casa", "Studio", "Cobertura", "Flat", "Com piscina", "Pet friendly"].map((f) => {
-                const ativo = filtroImovel === f;
-                return (
-                  <button key={f} onClick={() => setFiltroImovel(ativo ? null : f)}
-                    style={{ padding: "7px 16px", background: ativo ? "rgba(204,0,0,0.15)" : "#111", border: `1px solid ${ativo ? "#cc0000" : "#222"}`, borderRadius: 20, color: ativo ? "#fff" : "#888", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", fontWeight: ativo ? 700 : 400, transition: "all 0.2s", flexShrink: 0 }}>
-                    {f}
-                  </button>
-                );
-              })}
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
-              {imoveis.filter((i) => {
-                if (busca && !i.cidade.toLowerCase().includes(busca.toLowerCase()) && !i.titulo.toLowerCase().includes(busca.toLowerCase())) return false;
-                if (filtroImovel === "Com piscina" || filtroImovel === "Pet friendly") return i.tags.includes(filtroImovel);
-                if (filtroImovel) return i.tipo === filtroImovel;
-                return true;
-              }).map((im) => (
-                <Link key={im.id} href={`/imoveis/${im.id}`} style={{ textDecoration: "none" }}>
-                  <div style={{ borderRadius: 14, overflow: "hidden", background: "#111", border: "1px solid #1e1e1e", cursor: "pointer", transition: "transform 0.2s, border-color 0.2s" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-4px)"; (e.currentTarget as HTMLElement).style.borderColor = "#cc0000"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.borderColor = "#1e1e1e"; }}>
-                    <div style={{ position: "relative", paddingTop: "65%", background: "#1a1a1a" }}>
-                      <img src={im.foto} alt={im.titulo} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                    </div>
-                    <div style={{ padding: "14px 16px" }}>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: "#fff" }}>{im.titulo}</p>
-                      <p style={{ margin: "4px 0 10px", fontSize: 13, color: "#666" }}>{im.cidade} · {im.quartos} {im.quartos === 1 ? "quarto" : "quartos"}</p>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>R${im.preco}<span style={{ color: "#666", fontSize: 12, fontWeight: 400 }}>/noite</span></span>
-                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          <StarIcon />
-                          <span style={{ fontSize: 13, color: "#f59e0b", fontWeight: 600 }}>{im.avaliacao}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       <Footer />
