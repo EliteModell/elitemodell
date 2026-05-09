@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import FiltersModal from "@/components/FiltersModal";
 import Stories from "@/components/Stories";
 import BottomNav from "@/components/BottomNav";
+import { mockProfiles } from "@/lib/mockProfiles";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
@@ -15,31 +16,29 @@ const PLAYFAIR = "var(--font-playfair), serif";
 type MainTab = "acompanhantes" | "imoveis";
 type SubTab = "mulheres" | "trans" | "homens";
 
+// Converte mockProfiles para o formato do buscar
 const acompanhantes = {
-  mulheres: [
-    { id: 1, nome: "Amanda R.", cidade: "São Paulo, SP", preco: 150, foto: "/model1.jpg", online: true, avaliacao: 4.9, total: 87, idade: 26, local: "Com local", servicos: ["Acompanhamento", "Viagens", "Jantar"], bio: "Morena sofisticada, discreta e elegante. Atendo em hotel ou local próprio. Experiências únicas com muito carinho." },
-    { id: 2, nome: "Letícia M.", cidade: "Rio de Janeiro, RJ", preco: 250, foto: "/model2.jpg", online: false, avaliacao: 4.8, total: 63, idade: 24, local: "Com local", servicos: ["Massagem", "Eventos", "Local próprio"], bio: "Especialista em massagem relaxante e tântrica. Ambiente reservado e climatizado. Atendo com hora marcada." },
-    { id: 3, nome: "Bruna S.", cidade: "Curitiba, PR", preco: 120, foto: "/model1.jpg", online: true, avaliacao: 5.0, total: 120, idade: 22, local: "A domicílio", servicos: ["Acompanhamento", "Hotéis"], bio: "Jovem e divertida, corpo sarado, muito carinhosa. Aceito hotéis e motéis. Discrição total garantida." },
-    { id: 4, nome: "Fernanda K.", cidade: "São Paulo, SP", preco: 800, foto: "/model2.jpg", online: true, avaliacao: 4.7, total: 45, idade: 29, local: "Com local", servicos: ["VIP", "Viagens", "Eventos"], bio: "Perfil VIP para clientes exigentes. Disponível para viagens e eventos exclusivos. Fluente em inglês." },
-    { id: 5, nome: "Isabela C.", cidade: "Belo Horizonte, MG", preco: 320, foto: "/model1.jpg", online: false, avaliacao: 4.9, total: 92, idade: 27, local: "Com local", servicos: ["Massagem tântrica", "Local próprio"], bio: "Especialista em massagem tântrica e relaxamento total. Ambiente luxuoso e sigiloso no centro da cidade." },
-    { id: 6, nome: "Carolina V.", cidade: "São Paulo, SP", preco: 180, foto: "/model2.jpg", online: true, avaliacao: 4.7, total: 54, idade: 25, local: "Com local", servicos: ["Acompanhamento", "Local próprio"], bio: "Loira natural, olhos verdes, muito simpática. Local próprio na zona sul. Disponível todos os dias." },
-    { id: 7, nome: "Juliana T.", cidade: "Recife, PE", preco: 1200, foto: "/model1.jpg", online: true, avaliacao: 5.0, total: 31, idade: 31, local: "Aceita viajar", servicos: ["VIP", "Viagens", "Eventos"], bio: "Executiva sofisticada, discreta e culta. Acompanho em viagens nacionais e internacionais." },
-    { id: 8, nome: "Patricia L.", cidade: "Brasília, DF", preco: 200, foto: "/model2.jpg", online: false, avaliacao: 4.6, total: 77, idade: 28, local: "Com local", servicos: ["Acompanhamento", "Jantar"], bio: "Companhia para jantar, eventos e momentos especiais. Apresentável e bem relacionada." },
-  ],
-  trans: [
-    { id: 9, nome: "Valentina G.", cidade: "São Paulo, SP", preco: 200, foto: "/model2.jpg", online: true, avaliacao: 4.9, total: 78, idade: 23, local: "Com local", servicos: ["Acompanhamento", "Viagens"], bio: "Trans feminina, corpo perfeito, muita simpatia. Local próprio no centro. Sigilo absoluto." },
-    { id: 10, nome: "Melissa F.", cidade: "Rio de Janeiro, RJ", preco: 180, foto: "/model1.jpg", online: true, avaliacao: 4.8, total: 55, idade: 25, local: "Hotéis", servicos: ["Eventos", "Hotéis"], bio: "Elegante e sofisticada. Disponível para eventos, festas e hotéis de luxo no Rio." },
-    { id: 11, nome: "Sophia A.", cidade: "Curitiba, PR", preco: 600, foto: "/model2.jpg", online: false, avaliacao: 5.0, total: 101, idade: 27, local: "Com local", servicos: ["Local próprio", "Massagem"], bio: "Premium, linda e siliconada. Local próprio climatizado. Massagem relaxante inclusa." },
-    { id: 12, nome: "Luna P.", cidade: "Salvador, BA", preco: 150, foto: "/model1.jpg", online: true, avaliacao: 4.7, total: 42, idade: 22, local: "A domicílio", servicos: ["Acompanhamento"], bio: "Jovem e animada, atendo a domicílio e hotéis. Preço acessível, qualidade garantida." },
-    { id: 13, nome: "Bianca T.", cidade: "Florianópolis, SC", preco: 1500, foto: "/model2.jpg", online: true, avaliacao: 4.9, total: 67, idade: 30, local: "Aceita viajar", servicos: ["VIP", "Viagens"], bio: "Perfil ultra VIP, disponível para viagens e experiências exclusivas pelo Brasil e exterior." },
-  ],
-  homens: [
-    { id: 14, nome: "Rafael M.", cidade: "São Paulo, SP", preco: 200, foto: "/model1.jpg", online: true, avaliacao: 4.8, total: 65, idade: 28, local: "Hotéis", servicos: ["Acompanhamento", "Eventos"], bio: "Alto, moreno, bem humorado. Companhia para eventos e jantares. Discreto e bem apresentável." },
-    { id: 15, nome: "Gabriel T.", cidade: "Rio de Janeiro, RJ", preco: 350, foto: "/model2.jpg", online: false, avaliacao: 4.9, total: 48, idade: 30, local: "Com local", servicos: ["Massagem", "Viagens"], bio: "Especialista em massagem relaxante e tântrica para mulheres e casais. Local próprio no Leblon." },
-    { id: 16, nome: "Lucas V.", cidade: "Florianópolis, SC", preco: 130, foto: "/model1.jpg", online: true, avaliacao: 4.7, total: 33, idade: 24, local: "A domicílio", servicos: ["Acompanhamento"], bio: "Jovem, simpático e discreto. Atendo mulheres, casais e homens. Sem julgamentos." },
-    { id: 17, nome: "Diego S.", cidade: "Belo Horizonte, MG", preco: 900, foto: "/model2.jpg", online: true, avaliacao: 5.0, total: 89, idade: 33, local: "Aceita viajar", servicos: ["VIP", "Eventos"], bio: "Executivo, culto e sofisticado. Disponível para viagens e eventos de alto padrão." },
-    { id: 18, nome: "Thiago N.", cidade: "São Paulo, SP", preco: 250, foto: "/model1.jpg", online: false, avaliacao: 4.8, total: 55, idade: 27, local: "Hotéis", servicos: ["Viagens", "Hotéis"], bio: "Acompanho em viagens nacionais e estadias em hotéis de luxo. Inglês fluente." },
-  ],
+  mulheres: mockProfiles.filter(p => p.categoria === "mulheres").map(p => ({
+    id: p.id, nome: p.displayName, cidade: `${p.city}, ${p.state}`,
+    preco: p.priceMin, foto: p.image, online: p.online,
+    avaliacao: p.rating, total: p.totalReviews,
+    idade: p.idade, local: p.local,
+    servicos: p.specialties, bio: p.bio.split("\n")[0],
+  })),
+  trans: mockProfiles.filter(p => p.categoria === "trans").map(p => ({
+    id: p.id, nome: p.displayName, cidade: `${p.city}, ${p.state}`,
+    preco: p.priceMin, foto: p.image, online: p.online,
+    avaliacao: p.rating, total: p.totalReviews,
+    idade: p.idade, local: p.local,
+    servicos: p.specialties, bio: p.bio.split("\n")[0],
+  })),
+  homens: mockProfiles.filter(p => p.categoria === "homens").map(p => ({
+    id: p.id, nome: p.displayName, cidade: `${p.city}, ${p.state}`,
+    preco: p.priceMin, foto: p.image, online: p.online,
+    avaliacao: p.rating, total: p.totalReviews,
+    idade: p.idade, local: p.local,
+    servicos: p.specialties, bio: p.bio.split("\n")[0],
+  })),
 };
 
 const imoveis = [
