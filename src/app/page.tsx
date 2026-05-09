@@ -90,34 +90,75 @@ function HomeContent() {
       {showFilters && <FiltersModal onClose={() => setShowFilters(false)} onApply={(f) => { setShowFilters(false); console.log(f); }} />}
       <Navbar />
 
-      {/* Search hero */}
-      <div style={{ paddingTop: 64, background: "#0d0d0d", borderBottom: "1px solid #1a1a1a" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "20px 24px 16px" }}>
+      {/* Hero section */}
+      <div style={{ paddingTop: 64, background: "#0a0a0a", borderBottom: "1px solid #151515" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "48px 24px 36px", textAlign: "center" }}>
 
-          {/* Main tabs + search na mesma linha */}
-          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-            <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: 3, border: "1px solid #1e1e1e", flexShrink: 0 }}>
-              {([["acompanhantes", "Acompanhantes"], ["imoveis", "Imóveis"]] as const).map(([tab, label]) => (
-                <button key={tab} onClick={() => setMainTab(tab)}
-                  style={{ padding: "8px 18px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, background: mainTab === tab ? "#cc0000" : "transparent", color: mainTab === tab ? "#fff" : "#555", transition: "all 0.2s" }}>
-                  {label}
-                </button>
-              ))}
-            </div>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: "#c9a84c", textTransform: "uppercase", marginBottom: 14 }}>
+            A plataforma premium do Brasil
+          </p>
 
-            <div style={{ flex: 1, display: "flex", gap: 8, minWidth: 200 }}>
-              <div style={{ flex: 1, position: "relative" }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
-                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-                <input value={busca} onChange={(e) => setBusca(e.target.value)}
-                  placeholder={mainTab === "acompanhantes" ? "Cidade, nome ou serviço..." : "Cidade ou tipo de imóvel..."}
-                  style={{ width: "100%", padding: "10px 14px 10px 40px", background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+          <h1 style={{ fontSize: "clamp(26px, 4.5vw, 48px)", fontWeight: 900, color: "#fff", margin: "0 0 12px", letterSpacing: "-1px", lineHeight: 1.1 }}>
+            Encontre acompanhantes{" "}
+            <span style={{ color: "#cc0000" }}>de luxo</span>
+            <br />
+            em qualquer cidade
+          </h1>
+
+          <p style={{ color: "#555", fontSize: 15, margin: "0 0 28px" }}>
+            Perfis verificados, avaliações reais e imóveis exclusivos.
+          </p>
+
+          {/* Stats */}
+          <div style={{ display: "flex", justifyContent: "center", gap: "clamp(24px, 5vw, 64px)", flexWrap: "wrap", marginBottom: 32 }}>
+            {[
+              { num: "+2 mil", label: "acompanhantes" },
+              { num: "+50", label: "cidades" },
+              { num: "+8 mil", label: "avaliações" },
+              { num: "100%", label: "verificadas" },
+            ].map(({ num, label }) => (
+              <div key={label} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{num}</div>
+                <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>{label}</div>
               </div>
-              <button style={{ padding: "0 20px", background: "#cc0000", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
-                Buscar
-              </button>
+            ))}
+          </div>
+
+          {/* Search bar principal */}
+          <div style={{ maxWidth: 540, margin: "0 auto", display: "flex", gap: 8 }}>
+            <div style={{ flex: 1, position: "relative" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2"
+                style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder="Buscar por cidade, nome ou serviço..."
+                style={{ width: "100%", padding: "14px 16px 14px 44px", background: "#111", border: "1px solid #2a2a2a", borderRadius: 12, color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box" }}
+                onFocus={(e) => ((e.target as HTMLElement).style.borderColor = "#cc0000")}
+                onBlur={(e) => ((e.target as HTMLElement).style.borderColor = "#2a2a2a")}
+              />
             </div>
+            <button
+              style={{ padding: "0 24px", background: "#cc0000", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#e00000")}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "#cc0000")}
+            >
+              Buscar
+            </button>
+          </div>
+        </div>
+
+        {/* Tabs bar */}
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px" }}>
+          <div style={{ display: "flex", gap: 4, borderTop: "1px solid #151515" }}>
+            {([["acompanhantes", "Acompanhantes"], ["imoveis", "Imóveis"]] as const).map(([tab, label]) => (
+              <button key={tab} onClick={() => setMainTab(tab)}
+                style={{ padding: "14px 22px", border: "none", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 14, color: mainTab === tab ? "#fff" : "#444", borderBottom: `2px solid ${mainTab === tab ? "#cc0000" : "transparent"}`, transition: "all 0.2s" }}>
+                {label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
