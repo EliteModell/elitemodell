@@ -43,7 +43,7 @@ export default function ProfissionalProfilePage() {
       {/* ── COVER com nome overlay ── */}
       <div style={{ paddingTop: 64 }}>
         <div style={{ height: 380, position: "relative", overflow: "hidden" }}>
-          <img src={pro.coverImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }} />
+          <img src={pro.coverImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 30%" }} />
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(6,14,27,0.1) 0%, rgba(6,14,27,0.5) 45%, rgba(6,14,27,0.93) 100%)" }} />
           {/* Nome em destaque na cover */}
           <div style={{ position: "absolute", bottom: 20, left: 16 }}>

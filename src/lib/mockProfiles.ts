@@ -37,7 +37,7 @@ export const mockProfiles: Perfil[] = [
     slug: "lora",
     displayName: "Lora",
     image: "/model.jpeg",
-    coverImage: "/model.jpeg",
+    coverImage: "/model2.jpg",
     verificacaoMedia: { url: "/model.jpeg", tipo: "foto", data: "Mai/2025" },
     online: true,
     idade: 27,
