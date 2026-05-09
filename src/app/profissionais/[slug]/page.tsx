@@ -40,33 +40,43 @@ export default function ProfissionalProfilePage() {
     <div style={{ background: "#060e1b", minHeight: "100vh", color: "#f1f5f9", paddingBottom: 72 }}>
       <Navbar />
 
-      {/* ── COVER ── */}
+      {/* ── COVER com nome overlay ── */}
       <div style={{ paddingTop: 64 }}>
-        <div style={{ height: 220, position: "relative", overflow: "hidden" }}>
-          <img src={pro.coverImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 25%" }} />
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(6,14,27,0.2) 0%, rgba(6,14,27,0.85) 100%)" }} />
+        <div style={{ height: 280, position: "relative", overflow: "hidden" }}>
+          <img src={pro.coverImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 20%" }} />
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(6,14,27,0.1) 0%, rgba(6,14,27,0.5) 45%, rgba(6,14,27,0.93) 100%)" }} />
+          {/* Nome em destaque na cover */}
+          <div style={{ position: "absolute", bottom: 20, left: 16 }}>
+            <h1 style={{ fontSize: "clamp(34px, 9vw, 56px)", fontWeight: 700, color: "#f1f5f9", margin: 0, fontFamily: PLAYFAIR, letterSpacing: "-1px", lineHeight: 1, textShadow: "0 2px 16px rgba(0,0,0,0.6)" }}>
+              {pro.displayName}
+            </h1>
+            <p style={{ fontSize: 10, color: "rgba(212,168,67,0.8)", fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", margin: "7px 0 0" }}>
+              Exclusiva · Verificada · Premium
+            </p>
+          </div>
+          {/* Online badge */}
+          {pro.online && (
+            <div style={{ position: "absolute", top: 14, right: 14, display: "flex", alignItems: "center", gap: 5, background: "rgba(6,14,27,0.75)", border: "1px solid rgba(34,197,94,0.4)", borderRadius: 20, padding: "4px 10px" }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e" }} />
+              <span style={{ fontSize: 11, color: "#22c55e", fontWeight: 700 }}>Online</span>
+            </div>
+          )}
         </div>
 
-        {/* Profile header */}
+        {/* Avatar + badges abaixo da cover */}
         <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 16px" }}>
-          <div style={{ display: "flex", gap: 14, alignItems: "flex-end", marginTop: -44, marginBottom: 16 }}>
-            <div style={{ width: 90, height: 90, borderRadius: "50%", flexShrink: 0, border: `3px solid ${GOLD}`, overflow: "hidden", background: "#0b1420", boxShadow: `0 0 20px rgba(212,168,67,0.25)`, position: "relative" }}>
+          <div style={{ display: "flex", gap: 14, alignItems: "center", marginTop: -38, marginBottom: 16 }}>
+            <div style={{ width: 84, height: 84, borderRadius: "50%", flexShrink: 0, border: `3px solid ${GOLD}`, overflow: "hidden", background: "#0b1420", boxShadow: `0 0 24px rgba(212,168,67,0.3)` }}>
               <img src={pro.image} alt={pro.displayName} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
-              {pro.online && (
-                <div style={{ position: "absolute", bottom: 4, right: 4, width: 14, height: 14, borderRadius: "50%", background: "#22c55e", border: "2px solid #060e1b" }} />
-              )}
             </div>
-            <div style={{ flex: 1, paddingBottom: 4 }}>
-              <h1 style={{ fontSize: 22, fontWeight: 700, color: "#f1f5f9", margin: "0 0 6px", fontFamily: PLAYFAIR }}>{pro.displayName}</h1>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
-                {pro.verified && <span style={{ padding: "2px 9px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 20, fontSize: 11, color: GOLD, fontWeight: 700 }}>✓ Verificada</span>}
-                {pro.featured && <span style={{ padding: "2px 9px", background: "rgba(204,0,0,0.15)", border: "1px solid rgba(204,0,0,0.3)", borderRadius: 20, fontSize: 11, color: "#cc0000", fontWeight: 700 }}>★ Destaque</span>}
+            <div style={{ flex: 1, paddingTop: 40 }}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+                {pro.verified && <span style={{ padding: "3px 10px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 20, fontSize: 11, color: GOLD, fontWeight: 700 }}>✓ Verificada</span>}
+                {pro.featured && <span style={{ padding: "3px 10px", background: "rgba(204,0,0,0.15)", border: "1px solid rgba(204,0,0,0.3)", borderRadius: 20, fontSize: 11, color: "#cc0000", fontWeight: 700 }}>★ Destaque</span>}
               </div>
-              <div style={{ display: "flex", gap: 10, marginTop: 5, flexWrap: "wrap", fontSize: 12, color: "#64748b" }}>
-                <span>{pro.idade} anos</span>
-                <span>·</span>
-                <span>{pro.city}, {pro.state}</span>
-                <span>·</span>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", fontSize: 12, color: "#64748b", alignItems: "center" }}>
+                <span>{pro.idade} anos</span><span>·</span>
+                <span>{pro.city}, {pro.state}</span><span>·</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="#f59e0b"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                   <span style={{ color: "#f59e0b", fontWeight: 700 }}>{pro.rating}</span>
