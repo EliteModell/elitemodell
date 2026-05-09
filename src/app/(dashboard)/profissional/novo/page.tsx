@@ -25,24 +25,30 @@ const CABELOS = ["Loira", "Morena", "Ruiva", "Castanho", "Colorido", "Preto", "S
 const OLHOS = ["Azul", "Castanho", "Verde", "Mel", "Cinza", "Preto"];
 const ETNIAS = ["Branca", "Negra", "Parda", "Oriental", "Indígena", "Latina", "Outra"];
 
+const GOLD = "#d4a843";
+const GOLD_DIM = "rgba(212,168,67,0.12)";
+const GOLD_MID = "rgba(212,168,67,0.28)";
+const PLAYFAIR = "var(--font-playfair), serif";
+
 const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "12px 14px", background: "#0d0d0d",
-  border: "1px solid #2a2a2a", borderRadius: 8, color: "#fff",
+  width: "100%", padding: "12px 14px", background: "#0b1420",
+  border: "1px solid #1e293b", borderRadius: 10, color: "#f1f5f9",
   fontSize: 14, outline: "none", boxSizing: "border-box",
+  transition: "border-color 0.2s",
 };
 
 const labelStyle: React.CSSProperties = {
-  display: "block", fontSize: 11, color: "#888", fontWeight: 700,
-  textTransform: "uppercase", letterSpacing: 1, marginBottom: 8,
+  display: "block", fontSize: 11, color: "#64748b", fontWeight: 700,
+  textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8,
 };
 
 function Tag({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} style={{
-      padding: "8px 16px", borderRadius: 20, cursor: "pointer", fontSize: 13, fontWeight: active ? 600 : 400,
-      border: `1.5px solid ${active ? "#cc0000" : "#2a2a2a"}`,
-      background: active ? "rgba(204,0,0,0.1)" : "transparent",
-      color: active ? "#fff" : "#777", transition: "all 0.15s",
+      padding: "8px 16px", borderRadius: 20, cursor: "pointer", fontSize: 13, fontWeight: active ? 700 : 400,
+      border: `1.5px solid ${active ? GOLD : "#1e293b"}`,
+      background: active ? GOLD_DIM : "transparent",
+      color: active ? "#f1f5f9" : "#475569", transition: "all 0.15s",
     }}>
       {label}
     </button>
@@ -52,7 +58,10 @@ function Tag({ label, active, onClick }: { label: string; active: boolean; onCli
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 32 }}>
-      <h3 style={{ color: "#fff", fontSize: 14, fontWeight: 700, margin: "0 0 16px", paddingBottom: 10, borderBottom: "1px solid #1e1e1e", textTransform: "uppercase", letterSpacing: 1 }}>{title}</h3>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${GOLD_DIM}` }}>
+        <div style={{ width: 24, height: 2, background: GOLD, borderRadius: 2 }} />
+        <h3 style={{ color: "#f1f5f9", fontSize: 13, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.5, fontFamily: PLAYFAIR }}>{title}</h3>
+      </div>
       {children}
     </div>
   );
@@ -126,13 +135,14 @@ export default function ProfissionalNovoPage() {
   const progress = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <div style={{ maxWidth: 680, margin: "0 auto" }}>
+    <div style={{ maxWidth: 680, margin: "0 auto", background: "#060e1b", minHeight: "100vh", padding: "32px 20px 80px" }}>
       {/* Header */}
       <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", margin: "0 0 6px", letterSpacing: "-0.5px" }}>
+        <p style={{ fontSize: 11, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", margin: "0 0 10px" }}>EliteModell</p>
+        <h1 style={{ fontSize: 28, fontWeight: 700, color: "#f1f5f9", margin: "0 0 8px", fontFamily: PLAYFAIR }}>
           Criar Perfil
         </h1>
-        <p style={{ color: "#555", fontSize: 14 }}>
+        <p style={{ color: "#475569", fontSize: 14 }}>
           Preencha com atenção — essas informações aparecem nos filtros de busca.
         </p>
       </div>
@@ -358,21 +368,21 @@ export default function ProfissionalNovoPage() {
       )}
 
       {/* Navigation */}
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 40, paddingTop: 24, borderTop: "1px solid #1a1a1a" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 40, paddingTop: 24, borderTop: `1px solid ${GOLD_DIM}` }}>
         <button onClick={() => setStep((s) => Math.max(s - 1, 0))} disabled={step === 0}
-          style={{ padding: "12px 24px", background: "transparent", border: "1px solid #2a2a2a", borderRadius: 8, color: step === 0 ? "#333" : "#888", fontSize: 14, cursor: step === 0 ? "default" : "pointer", fontWeight: 600 }}>
-          Voltar
+          style={{ padding: "12px 24px", background: "transparent", border: `1px solid ${step === 0 ? "#1e293b" : GOLD_MID}`, borderRadius: 10, color: step === 0 ? "#334155" : GOLD, fontSize: 14, cursor: step === 0 ? "default" : "pointer", fontWeight: 600, fontFamily: PLAYFAIR }}>
+          ← Voltar
         </button>
 
         {step < STEPS.length - 1 ? (
           <button onClick={() => setStep((s) => Math.min(s + 1, STEPS.length - 1))}
-            style={{ padding: "12px 32px", background: "#cc0000", border: "none", borderRadius: 8, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", letterSpacing: "0.5px" }}>
-            Continuar
+            style={{ padding: "12px 32px", background: GOLD, border: "none", borderRadius: 10, color: "#060e1b", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: PLAYFAIR }}>
+            Continuar →
           </button>
         ) : (
           <button onClick={submit} disabled={loading}
-            style={{ padding: "12px 32px", background: loading ? "#5a0000" : "#cc0000", border: "none", borderRadius: 8, color: "#fff", fontSize: 14, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", letterSpacing: "0.5px" }}>
-            {loading ? "Enviando..." : "Criar perfil"}
+            style={{ padding: "12px 32px", background: loading ? "#9e7b2a" : GOLD, border: "none", borderRadius: 10, color: "#060e1b", fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer", fontFamily: PLAYFAIR }}>
+            {loading ? "Enviando..." : "Criar perfil ✦"}
           </button>
         )}
       </div>
