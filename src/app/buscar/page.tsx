@@ -114,37 +114,46 @@ function BuscarContent() {
       {showFilters && <FiltersModal onClose={() => setShowFilters(false)} onApply={() => setShowFilters(false)} />}
       <Navbar />
 
-      {/* ── BARRA DE BUSCA ── */}
-      <div style={{ paddingTop: 64, background: "#0b1420", borderBottom: `1px solid ${GOLD_DIM}` }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "16px 16px 0" }}>
+      {/* ── BARRA DE BUSCA PREMIUM ── */}
+      <div style={{ position: "sticky", top: 64, zIndex: 50, background: "rgba(6,14,27,0.97)", backdropFilter: "blur(16px)", borderBottom: `1px solid ${GOLD_DIM}` }}>
+        {/* linha dourada */}
+        <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${GOLD}, rgba(212,168,67,0.3), transparent)` }} />
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "12px 16px" }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
 
-          {/* Tabs + search */}
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 0 }}>
-            <div style={{ display: "flex", background: "#0f172a", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, padding: 3, flexShrink: 0 }}>
+            {/* Tipo toggle */}
+            <div style={{ display: "flex", gap: 0, background: "#0f172a", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, overflow: "hidden", flexShrink: 0 }}>
               {([["acompanhantes", "Acompanhantes"], ["imoveis", "Imóveis"]] as const).map(([tab, label]) => (
                 <button key={tab} onClick={() => setMainTab(tab)}
-                  style={{ padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, background: mainTab === tab ? GOLD : "transparent", color: mainTab === tab ? "#060e1b" : "#475569", transition: "all 0.2s" }}>
+                  style={{ padding: "9px 16px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, background: mainTab === tab ? GOLD : "transparent", color: mainTab === tab ? "#060e1b" : "#475569", transition: "all 0.2s", fontFamily: PLAYFAIR }}>
                   {label}
                 </button>
               ))}
             </div>
 
-            <div style={{ flex: 1, display: "flex", gap: 8, minWidth: 180 }}>
-              <div style={{ flex: 1, position: "relative" }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2"
-                  style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
-                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-                <input value={busca} onChange={(e) => setBusca(e.target.value)}
-                  placeholder="Cidade, nome ou serviço..."
-                  style={{ width: "100%", padding: "10px 12px 10px 36px", background: "#0f172a", border: `1px solid ${GOLD_DIM}`, borderRadius: 8, color: "#f1f5f9", fontSize: 14, outline: "none", boxSizing: "border-box" }}
-                  onFocus={(e) => ((e.target as HTMLElement).style.borderColor = GOLD)}
-                  onBlur={(e) => ((e.target as HTMLElement).style.borderColor = GOLD_DIM)} />
-              </div>
-              <button style={{ padding: "0 18px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}>
-                Buscar
-              </button>
+            {/* Input de busca */}
+            <div style={{ flex: 1, position: "relative", minWidth: 0 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2"
+                style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input value={busca} onChange={(e) => setBusca(e.target.value)}
+                placeholder={mainTab === "acompanhantes" ? "Nome, serviço ou especialidade..." : "Cidade, tipo ou comodidade..."}
+                style={{ width: "100%", padding: "10px 14px 10px 36px", background: "#0f172a", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, color: "#f1f5f9", fontSize: 14, outline: "none", boxSizing: "border-box", transition: "border-color 0.2s" }}
+                onFocus={(e) => ((e.target as HTMLElement).style.borderColor = GOLD)}
+                onBlur={(e) => ((e.target as HTMLElement).style.borderColor = GOLD_DIM)} />
             </div>
+
+            {/* Botão buscar — círculo com ícone */}
+            <button
+              style={{ width: 42, height: 42, borderRadius: "50%", background: GOLD, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "background 0.2s, transform 0.15s" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#e8bb47"; (e.currentTarget as HTMLElement).style.transform = "scale(1.08)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = GOLD; (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#060e1b" strokeWidth="2.5">
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
