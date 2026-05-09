@@ -43,7 +43,7 @@ export default function ProfissionalProfilePage() {
       {/* ── COVER com nome overlay ── */}
       <div style={{ paddingTop: 64 }}>
         <div style={{ height: 380, position: "relative", overflow: "hidden" }}>
-          <img src={pro.coverImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 30%" }} />
+          <img src={pro.coverImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 15%" }} />
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(6,14,27,0.1) 0%, rgba(6,14,27,0.5) 45%, rgba(6,14,27,0.93) 100%)" }} />
           {/* Nome em destaque na cover */}
           <div style={{ position: "absolute", bottom: 20, left: 16 }}>
@@ -65,11 +65,11 @@ export default function ProfissionalProfilePage() {
 
         {/* Avatar + badges abaixo da cover */}
         <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 16px" }}>
-          <div style={{ display: "flex", gap: 14, alignItems: "center", marginTop: -38, marginBottom: 16 }}>
-            <div style={{ width: 84, height: 84, borderRadius: "50%", flexShrink: 0, border: `3px solid ${GOLD}`, overflow: "hidden", background: "#0b1420", boxShadow: `0 0 24px rgba(212,168,67,0.3)` }}>
+          <div style={{ display: "flex", gap: 14, alignItems: "center", marginTop: -48, marginBottom: 16 }}>
+            <div style={{ width: 88, height: 88, borderRadius: "50%", flexShrink: 0, border: `3px solid ${GOLD}`, overflow: "hidden", background: "#0b1420", boxShadow: `0 0 24px rgba(212,168,67,0.3)`, position: "relative", zIndex: 10 }}>
               <img src={pro.image} alt={pro.displayName} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
             </div>
-            <div style={{ flex: 1, paddingTop: 40 }}>
+            <div style={{ flex: 1, paddingTop: 52 }}>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
                 {pro.verified && <span style={{ padding: "3px 10px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 20, fontSize: 11, color: GOLD, fontWeight: 700 }}>✓ Verificada</span>}
                 {pro.featured && <span style={{ padding: "3px 10px", background: "rgba(204,0,0,0.15)", border: "1px solid rgba(204,0,0,0.3)", borderRadius: 20, fontSize: 11, color: "#cc0000", fontWeight: 700 }}>★ Destaque</span>}
