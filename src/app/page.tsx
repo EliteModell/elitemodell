@@ -25,9 +25,9 @@ const TRUST = [
     title: "Discrição Garantida",
     desc: "Sua privacidade é nossa prioridade",
     icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-        <polyline points="9 12 11 14 15 10" />
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="rgba(212,168,67,0.15)" stroke={GOLD} strokeWidth="1.8" />
+        <polyline points="9 12 11 14 15 10" stroke={GOLD} strokeWidth="2" fill="none" />
       </svg>
     ),
   },
@@ -35,8 +35,9 @@ const TRUST = [
     title: "Experiências Premium",
     desc: "Momentos únicos com os melhores perfis",
     icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+      <svg width="26" height="26" viewBox="0 0 24 24">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+          fill="rgba(212,168,67,0.2)" stroke={GOLD} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
@@ -44,8 +45,9 @@ const TRUST = [
     title: "Perfis Verificados",
     desc: "Todos os perfis passam por verificação rigorosa",
     icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z" />
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" fill="rgba(212,168,67,0.12)" stroke={GOLD} strokeWidth="1.8" />
+        <polyline points="9 12 11 14 15 10" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
@@ -53,9 +55,10 @@ const TRUST = [
     title: "Suporte 24h",
     desc: "Atendimento humanizado sempre que precisar",
     icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
-        <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 18v-6a9 9 0 0 1 18 0v6" stroke={GOLD} strokeWidth="1.8" fill="rgba(212,168,67,0.1)" />
+        <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z" fill="rgba(212,168,67,0.15)" stroke={GOLD} strokeWidth="1.8" />
+        <path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" fill="rgba(212,168,67,0.15)" stroke={GOLD} strokeWidth="1.8" />
       </svg>
     ),
   },
@@ -150,74 +153,62 @@ export default function HomePage() {
       </section>
 
       {/* ── SEARCH BAR ── */}
-      <section style={{ background: "#060e1b", padding: "0 24px" }}>
+      <section style={{ background: "#060e1b", padding: "0 16px" }}>
+        <style>{`
+          .search-card { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; align-items: stretch; }
+          @media (max-width: 700px) {
+            .search-card { grid-template-columns: 1fr 1fr; }
+            .search-buscar-btn { grid-column: 1 / -1; padding: 16px !important; justify-content: center; border-top: 1px solid rgba(212,168,67,0.12); }
+            .search-col { border-bottom: 1px solid rgba(212,168,67,0.12); }
+          }
+          @media (min-width: 701px) {
+            .search-buscar-btn { border-top: none !important; }
+          }
+        `}</style>
         <div style={{ maxWidth: 1100, margin: "0 auto", transform: "translateY(-32px)" }}>
           <div style={{ background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 16, overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.4)" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr auto", alignItems: "stretch" }}>
-
-              {/* O que procura */}
-              <div style={{ padding: "20px 24px", borderRight: `1px solid ${GOLD_DIM}` }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>O que você procura?</p>
-                <select
-                  value={categoria}
-                  onChange={(e) => setCategoria(e.target.value)}
-                  style={{ width: "100%", background: "transparent", border: "none", color: "#f1f5f9", fontSize: 15, fontWeight: 600, outline: "none", cursor: "pointer", appearance: "none", WebkitAppearance: "none" }}
-                >
+            <div className="search-card">
+              <div className="search-col" style={{ padding: "18px 20px", borderRight: `1px solid ${GOLD_DIM}` }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 6 }}>O que você procura?</p>
+                <select value={categoria} onChange={(e) => setCategoria(e.target.value)}
+                  style={{ width: "100%", background: "transparent", border: "none", color: "#f1f5f9", fontSize: 14, fontWeight: 700, outline: "none", cursor: "pointer", appearance: "none", WebkitAppearance: "none", fontFamily: PLAYFAIR }}>
                   <option value="Acompanhantes" style={{ background: "#0b1420" }}>Acompanhantes</option>
                   <option value="Trans" style={{ background: "#0b1420" }}>Trans</option>
                   <option value="Homens" style={{ background: "#0b1420" }}>Homens</option>
                   <option value="Imóveis" style={{ background: "#0b1420" }}>Imóveis</option>
                 </select>
               </div>
-
-              {/* Localização */}
-              <div style={{ padding: "20px 24px", borderRight: `1px solid ${GOLD_DIM}`, position: "relative" }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Localização</p>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                  <input
-                    value={localizacao}
-                    onChange={(e) => setLocalizacao(e.target.value)}
-                    placeholder="Cidade, estado ou país"
-                    style={{ background: "transparent", border: "none", color: "#f1f5f9", fontSize: 15, fontWeight: 600, outline: "none", width: "100%" }}
-                  />
+              <div className="search-col" style={{ padding: "18px 20px", borderRight: `1px solid ${GOLD_DIM}` }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 6 }}>Localização</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                  <input value={localizacao} onChange={(e) => setLocalizacao(e.target.value)} placeholder="Cidade ou estado"
+                    style={{ background: "transparent", border: "none", color: "#f1f5f9", fontSize: 14, fontWeight: 700, outline: "none", width: "100%", fontFamily: PLAYFAIR }} />
                 </div>
               </div>
-
-              {/* Categoria */}
-              <div style={{ padding: "20px 24px", borderRight: `1px solid ${GOLD_DIM}` }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Categoria</p>
-                <select style={{ width: "100%", background: "transparent", border: "none", color: "#f1f5f9", fontSize: 15, fontWeight: 600, outline: "none", cursor: "pointer", appearance: "none", WebkitAppearance: "none" }}>
-                  <option style={{ background: "#0b1420" }}>Todas as categorias</option>
+              <div className="search-col" style={{ padding: "18px 20px", borderRight: `1px solid ${GOLD_DIM}` }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 6 }}>Categoria</p>
+                <select style={{ width: "100%", background: "transparent", border: "none", color: "#f1f5f9", fontSize: 14, fontWeight: 700, outline: "none", cursor: "pointer", appearance: "none", WebkitAppearance: "none", fontFamily: PLAYFAIR }}>
+                  <option style={{ background: "#0b1420" }}>Todas</option>
                   <option style={{ background: "#0b1420" }}>VIP</option>
                   <option style={{ background: "#0b1420" }}>Com local</option>
                   <option style={{ background: "#0b1420" }}>Viagens</option>
-                  <option style={{ background: "#0b1420" }}>Eventos</option>
                 </select>
               </div>
-
-              {/* Faixa etária */}
-              <div style={{ padding: "20px 24px", borderRight: `1px solid ${GOLD_DIM}` }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Faixa etária</p>
-                <select
-                  value={faixaEtaria}
-                  onChange={(e) => setFaixaEtaria(e.target.value)}
-                  style={{ width: "100%", background: "transparent", border: "none", color: "#f1f5f9", fontSize: 15, fontWeight: 600, outline: "none", cursor: "pointer", appearance: "none", WebkitAppearance: "none" }}
-                >
+              <div className="search-col" style={{ padding: "18px 20px", borderRight: `1px solid ${GOLD_DIM}` }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 6 }}>Faixa etária</p>
+                <select value={faixaEtaria} onChange={(e) => setFaixaEtaria(e.target.value)}
+                  style={{ width: "100%", background: "transparent", border: "none", color: "#f1f5f9", fontSize: 14, fontWeight: 700, outline: "none", cursor: "pointer", appearance: "none", WebkitAppearance: "none", fontFamily: PLAYFAIR }}>
                   {["18 - 45+", "18 - 25", "26 - 35", "36 - 45", "45+"].map(v => (
                     <option key={v} value={v} style={{ background: "#0b1420" }}>{v}</option>
                   ))}
                 </select>
               </div>
-
-              {/* Buscar */}
-              <button
-                onClick={handleBuscar}
-                style={{ padding: "0 32px", background: GOLD, color: "#060e1b", border: "none", fontSize: 15, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, transition: "background 0.2s", whiteSpace: "nowrap" }}
+              <button className="search-buscar-btn" onClick={handleBuscar}
+                style={{ padding: "0 28px", background: GOLD, color: "#060e1b", border: "none", fontSize: 14, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, transition: "background 0.2s", whiteSpace: "nowrap", fontFamily: PLAYFAIR }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#e8bb47")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = GOLD)}
-              >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = GOLD)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
                 Buscar
               </button>
             </div>
@@ -226,18 +217,30 @@ export default function HomePage() {
       </section>
 
       {/* ── TRUST BADGES ── */}
-      <section style={{ background: "#060e1b", padding: "0 24px 72px" }}>
+      <section style={{ background: "#060e1b", padding: "0 16px 72px" }}>
+        <style>{`
+          .trust-grid { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid rgba(212,168,67,0.12); border-radius: 16px; overflow: hidden; }
+          @media (max-width: 700px) { .trust-grid { grid-template-columns: 1fr 1fr; } }
+          @media (max-width: 400px) { .trust-grid { grid-template-columns: 1fr; } }
+          .trust-item { padding: 24px 22px; display: flex; flex-direction: column; align-items: flex-start; gap: 14px; border-right: 1px solid rgba(212,168,67,0.12); border-bottom: 1px solid rgba(212,168,67,0.12); }
+        `}</style>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", border: `1px solid ${GOLD_DIM}`, borderRadius: 14, overflow: "hidden" }}>
-            {TRUST.map((t, i) => (
-              <div
-                key={t.title}
-                style={{ padding: "28px 28px", display: "flex", alignItems: "flex-start", gap: 16, borderRight: i < TRUST.length - 1 ? `1px solid ${GOLD_DIM}` : "none", background: i % 2 === 0 ? "#060e1b" : "rgba(212,168,67,0.02)" }}
-              >
-                <div style={{ flexShrink: 0, marginTop: 2 }}>{t.icon}</div>
+          <div className="trust-grid">
+            {TRUST.map((t) => (
+              <div key={t.title} className="trust-item">
+                {/* Ícone com halo dourado */}
+                <div style={{
+                  width: 54, height: 54, borderRadius: 14,
+                  background: "rgba(212,168,67,0.08)",
+                  border: `1px solid rgba(212,168,67,0.2)`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 0 20px rgba(212,168,67,0.08)",
+                }}>
+                  {t.icon}
+                </div>
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 800, color: "#f1f5f9", margin: "0 0 5px" }}>{t.title}</p>
-                  <p style={{ fontSize: 12, color: "#475569", margin: 0, lineHeight: 1.6 }}>{t.desc}</p>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: "#f1f5f9", margin: "0 0 6px", fontFamily: PLAYFAIR, lineHeight: 1.3 }}>{t.title}</p>
+                  <p style={{ fontSize: 12, color: "#475569", margin: 0, lineHeight: 1.65 }}>{t.desc}</p>
                 </div>
               </div>
             ))}
