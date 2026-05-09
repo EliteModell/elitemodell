@@ -141,89 +141,58 @@ export default function HomePage() {
 
       {/* ── O QUE VOCÊ PROCURA ── */}
       <section style={{ background: "#060e1b", padding: "0 16px 16px" }}>
+        <style>{`
+          .procura-grid { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid rgba(212,168,67,0.28); border-radius: 20px; overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,0.4); }
+          .procura-item { padding: 24px 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; border-right: 1px solid rgba(212,168,67,0.12); border-bottom: 1px solid rgba(212,168,67,0.12); background: #0b1420; text-decoration: none; transition: background 0.2s; }
+          .procura-item:hover { background: rgba(212,168,67,0.04) !important; }
+        `}</style>
         <div style={{ maxWidth: 600, margin: "0 auto", transform: "translateY(-32px)" }}>
-          {/* Card container */}
-          <div style={{ background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 20, overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.4)" }}>
-            {/* Título */}
-            <div style={{ padding: "20px 24px 16px", textAlign: "center", borderBottom: `1px solid ${GOLD_DIM}` }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 3, margin: 0 }}>
-                O que você procura?
-              </p>
-            </div>
-
-            {/* Opções */}
+          <p style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 3, textAlign: "center", marginBottom: 14 }}>
+            O que você procura?
+          </p>
+          <div className="procura-grid">
             {[
               {
                 href: "/buscar?tab=acompanhantes",
                 title: "Busco prazer",
-                desc: "Encontre companhia para momentos especiais e discretos.",
-                iconBg: "rgba(204,0,0,0.15)",
-                iconBorder: "rgba(204,0,0,0.3)",
-                icon: (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="#cc0000">
-                    <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-                  </svg>
-                ),
+                desc: "Companhia para momentos especiais e discretos.",
+                iconBg: "rgba(204,0,0,0.12)",
+                iconBorder: "rgba(204,0,0,0.25)",
+                icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="#cc0000"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
               },
               {
                 href: "/buscar?tab=imoveis",
                 title: "Imóveis",
-                desc: "Encontre os melhores imóveis para estadias e experiências exclusivas.",
+                desc: "Os melhores imóveis para estadias exclusivas.",
                 iconBg: GOLD_DIM,
                 iconBorder: GOLD_MID,
-                icon: (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
-                    <path d="M9 21V12h6v9"/>
-                  </svg>
-                ),
+                icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>,
               },
               {
                 href: "/buscar?tab=imoveis",
                 title: "Locar imóveis",
-                desc: "Alugue imóveis de forma rápida, segura e sem burocracia.",
+                desc: "Alugue rápido, seguro e sem burocracia.",
                 iconBg: GOLD_DIM,
                 iconBorder: GOLD_MID,
-                icon: (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
-                  </svg>
-                ),
+                icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
               },
               {
                 href: "/cadastro",
-                title: "Profissional se cadastrar",
-                desc: "Seja um profissional e faça parte da nossa plataforma.",
+                title: "Sou profissional",
+                desc: "Cadastre seu perfil e alcance novos clientes.",
                 iconBg: GOLD_DIM,
                 iconBorder: GOLD_MID,
-                icon: (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                  </svg>
-                ),
+                icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
               },
-            ].map((opt, i) => (
-              <Link
-                key={opt.title}
-                href={opt.href}
-                style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 16, padding: "18px 22px", borderBottom: i < 3 ? `1px solid ${GOLD_DIM}` : "none", transition: "background 0.2s" }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "rgba(212,168,67,0.04)")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "transparent")}
-              >
-                {/* Ícone circular */}
-                <div style={{ width: 48, height: 48, borderRadius: "50%", background: opt.iconBg, border: `1px solid ${opt.iconBorder}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            ].map((opt) => (
+              <Link key={opt.title} href={opt.href} className="procura-item">
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: opt.iconBg, border: `1px solid ${opt.iconBorder}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 16px ${opt.iconBg}` }}>
                   {opt.icon}
                 </div>
-                {/* Texto */}
-                <div style={{ flex: 1 }}>
-                  <p style={{ margin: "0 0 3px", fontSize: 15, fontWeight: 700, color: "#f1f5f9", fontFamily: PLAYFAIR }}>{opt.title}</p>
-                  <p style={{ margin: 0, fontSize: 12, color: "#475569", lineHeight: 1.5 }}>{opt.desc}</p>
+                <div>
+                  <p style={{ margin: "0 0 5px", fontSize: 14, fontWeight: 700, color: "#f1f5f9", fontFamily: PLAYFAIR, lineHeight: 1.2 }}>{opt.title}</p>
+                  <p style={{ margin: 0, fontSize: 12, color: "#475569", lineHeight: 1.6 }}>{opt.desc}</p>
                 </div>
-                {/* Seta */}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2.5" style={{ flexShrink: 0 }}>
-                  <path d="M9 18l6-6-6-6"/>
-                </svg>
               </Link>
             ))}
           </div>
