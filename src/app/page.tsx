@@ -9,6 +9,7 @@ import AgeGate from "@/components/AgeGate";
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
 const PEARL_GRADIENT = "linear-gradient(135deg, #ffffff 0%, #e8dfc8 20%, #ffffff 48%, #cfc5b5 72%, #ffffff 100%)";
+const PLAYFAIR = "var(--font-playfair), serif";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
 const GOLD_MID = "rgba(212,168,67,0.28)";
 
@@ -250,7 +251,7 @@ export default function HomePage() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 44, flexWrap: "wrap", gap: 12 }}>
             <div>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: "uppercase", marginBottom: 10 }}>Explore</p>
-              <h2 style={{ fontSize: "clamp(24px, 4vw, 40px)", fontWeight: 900, color: "#f1f5f9", margin: 0, letterSpacing: "-1px" }}>
+              <h2 style={{ fontSize: "clamp(24px, 4vw, 40px)", fontWeight: 700, color: "#f1f5f9", margin: 0, letterSpacing: "-1px", fontFamily: PLAYFAIR }}>
                 Categorias em destaque
               </h2>
             </div>
@@ -275,7 +276,7 @@ export default function HomePage() {
                     <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#475569", textTransform: "uppercase" }}>{cat.sub}</span>
                     <span style={{ fontSize: 12, color: "#334155", fontWeight: 600 }}>{cat.count}</span>
                   </div>
-                  <h3 style={{ fontSize: 19, fontWeight: 800, color: "#f1f5f9", margin: "0 0 8px", lineHeight: 1.2 }}>{cat.label}</h3>
+                  <h3 style={{ fontSize: 19, fontWeight: 700, color: "#f1f5f9", margin: "0 0 8px", lineHeight: 1.2, fontFamily: PLAYFAIR }}>{cat.label}</h3>
                   <p style={{ fontSize: 12, color: "#334155", margin: "0 0 16px", lineHeight: 1.7 }}>{cat.cidades}</p>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, color: GOLD, fontSize: 13, fontWeight: 700 }}>
                     Ver todos
@@ -293,7 +294,7 @@ export default function HomePage() {
         <div style={{ maxWidth: 1280, margin: "0 auto" }}>
           <div style={{ marginBottom: 52, textAlign: "center" }}>
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: "uppercase", marginBottom: 14 }}>Por que escolher</p>
-            <h2 style={{ fontSize: "clamp(26px, 4vw, 42px)", fontWeight: 900, color: "#f1f5f9", margin: "0 0 14px", letterSpacing: "-1px" }}>A experiência mais premium do Brasil</h2>
+            <h2 style={{ fontSize: "clamp(26px, 4vw, 42px)", fontWeight: 700, color: "#f1f5f9", margin: "0 0 14px", letterSpacing: "-1px", fontFamily: PLAYFAIR }}>A experiência mais premium do Brasil</h2>
             <p style={{ color: "#475569", fontSize: 15, margin: 0, maxWidth: 460, marginLeft: "auto", marginRight: "auto" }}>
               Construída para quem exige qualidade, segurança e discrição acima de tudo.
             </p>
@@ -302,7 +303,7 @@ export default function HomePage() {
             {FEATURES.map((f, i) => (
               <div key={f.title} style={{ padding: "36px 30px", background: i % 2 === 0 ? "#0b1420" : "#0a1323", borderRight: `1px solid ${GOLD_DIM}`, borderBottom: `1px solid ${GOLD_DIM}` }}>
                 <div style={{ width: 36, height: 3, background: GOLD, borderRadius: 2, marginBottom: 20 }} />
-                <h3 style={{ fontSize: 17, fontWeight: 800, color: "#f1f5f9", margin: "0 0 10px" }}>{f.title}</h3>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: "#f1f5f9", margin: "0 0 10px", fontFamily: PLAYFAIR }}>{f.title}</h3>
                 <p style={{ fontSize: 13, color: "#475569", lineHeight: 1.75, margin: 0 }}>{f.desc}</p>
               </div>
             ))}
@@ -315,10 +316,12 @@ export default function HomePage() {
         <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", gap: 56, alignItems: "center", flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 280 }}>
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: "uppercase", marginBottom: 18 }}>Módulo imóveis</p>
-            <h2 style={{ fontSize: "clamp(26px, 4vw, 44px)", fontWeight: 900, color: "#f1f5f9", margin: "0 0 18px", letterSpacing: "-1px", lineHeight: 1.1 }}>
-              Reserve o imóvel<br />
-              <span style={{ color: GOLD }}>perfeito para</span><br />
-              sua experiência
+            <h2 style={{ fontSize: "clamp(26px, 4vw, 44px)", fontWeight: 700, margin: "0 0 18px", letterSpacing: "-1px", lineHeight: 1.1, fontFamily: PLAYFAIR }}>
+              <span style={{ background: PEARL_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block" }}>Reserve o imóvel</span>
+              <br />
+              <span style={{ background: GOLD_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block" }}>perfeito para</span>
+              <br />
+              <span style={{ background: PEARL_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block" }}>sua experiência</span>
             </h2>
             <p style={{ color: "#475569", fontSize: 14, lineHeight: 1.85, margin: "0 0 30px" }}>
               Coberturas, flats executivos, casas de temporada e studios modernos.

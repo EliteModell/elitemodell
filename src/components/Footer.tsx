@@ -84,7 +84,7 @@ export default function Footer() {
           {/* Nav */}
           <div style={{ display: "flex", gap: 48, flexWrap: "wrap" }}>
             <div>
-              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#cc0000", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>
+              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#d4a843", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16, fontFamily: "var(--font-playfair), serif" }}>
                 Plataforma
               </h4>
               {["Para quem é", "A Solução", "Como funciona", "Visão"].map((l) => (
@@ -107,7 +107,7 @@ export default function Footer() {
               ))}
             </div>
             <div>
-              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#cc0000", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>
+              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#d4a843", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16, fontFamily: "var(--font-playfair), serif" }}>
                 Legal
               </h4>
               {["Política de privacidade", "Termos de uso", "LGPD"].map((l) => (
@@ -133,7 +133,7 @@ export default function Footer() {
 
           {/* Social */}
           <div>
-            <h4 style={{ fontSize: 12, fontWeight: 700, color: "#cc0000", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>
+            <h4 style={{ fontSize: 12, fontWeight: 700, color: "#d4a843", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16, fontFamily: "var(--font-playfair), serif" }}>
               Redes sociais
             </h4>
             <div style={{ display: "flex", gap: 12 }}>
