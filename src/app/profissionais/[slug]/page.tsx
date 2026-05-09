@@ -1,55 +1,22 @@
 "use client";
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import BottomNav from "@/components/BottomNav";
+import { getPerfil } from "@/lib/mockProfiles";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
 const GOLD_MID = "rgba(212,168,67,0.28)";
 const PLAYFAIR = "var(--font-playfair), serif";
 
-const pro = {
-  displayName: "Amanda R.",
-  image: "/model1.jpg",
-  coverImage: "/model2.jpg",
-  online: true,
-  idade: 26,
-  city: "São Paulo", state: "SP",
-  whatsapp: "11999999999",
-  instagram: "@amanda.elite",
-  priceMin: 150,
-  price1h: 150, price2h: 280, priceOvernight: 1200,
-  local: "Com local próprio",
-  rating: 4.9, totalReviews: 87, totalAppointments: 203,
-  verified: true, featured: true,
-  memberSince: "2023",
-  bio: `Olá, seja bem-vindo ao meu perfil. Sou uma acompanhante sofisticada, discreta e de alto nível. Ofereço momentos únicos e inesquecíveis para homens que valorizam qualidade e elegância.\n\nAtendo em local próprio, hotéis e aceito viagens. Cuido bem de cada detalhe para que você se sinta à vontade e especial em cada encontro.\n\nPontualidade, discrição e higiene são fundamentais para mim. Aguardo seu contato.`,
-  specialties: ["Acompanhamento", "Viagens", "Jantar a dois", "Hotéis", "Local próprio"],
-  atende: ["Homens", "Casais"],
-  photos: [
-    "/model1.jpg", "/model2.jpg", "/model1.jpg",
-    "/model2.jpg", "/model1.jpg", "/model2.jpg",
-  ],
-  schedule: [
-    { day: "Segunda", time: "14:00 – 00:00", available: true },
-    { day: "Terça", time: "14:00 – 00:00", available: true },
-    { day: "Quarta", time: "14:00 – 00:00", available: true },
-    { day: "Quinta", time: "14:00 – 00:00", available: true },
-    { day: "Sexta", time: "14:00 – 02:00", available: true },
-    { day: "Sábado", time: "16:00 – 02:00", available: true },
-    { day: "Domingo", time: "", available: false },
-  ],
-  fisico: { altura: "1,68m", peso: "56 kg", cabelo: "Morena", olhos: "Castanho", etnia: "Parda" },
-  reviews: [
-    { author: "Rodrigo M.", rating: 5, comment: "Atendimento impecável, muito discreta e elegante. Superou todas as expectativas. Com certeza voltarei.", date: "Abr 2025" },
-    { author: "Felipe S.", rating: 5, comment: "Pontual, educada e muito agradável. Faz você se sentir especial desde o primeiro momento.", date: "Mar 2025" },
-    { author: "Lucas A.", rating: 5, comment: "Melhor companhia que já tive. Recomendo sem hesitar.", date: "Fev 2025" },
-  ],
-};
-
 type Tab = "fotos" | "sobre" | "avaliacoes";
 
 export default function ProfissionalProfilePage() {
+  const params = useParams();
+  const pro = getPerfil(params.slug as string);
+  const photos = [pro.image, pro.coverImage, pro.image, pro.coverImage, pro.image, pro.coverImage];
   const [tab, setTab] = useState<Tab>("fotos");
   const [photoOpen, setPhotoOpen] = useState<number | null>(null);
 
@@ -170,7 +137,7 @@ export default function ProfissionalProfilePage() {
       <div style={{ position: "sticky", top: 64, zIndex: 40, background: "rgba(6,14,27,0.97)", backdropFilter: "blur(12px)", borderBottom: `1px solid ${GOLD_DIM}` }}>
         <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", padding: "0 16px" }}>
           {([
-            ["fotos", `Fotos e vídeos (${pro.photos.length})`],
+            ["fotos", `Fotos e vídeos (${photos.length})`],
             ["sobre", "Sobre mim"],
             ["avaliacoes", `Avaliações (${pro.totalReviews})`],
           ] as [Tab, string][]).map(([t, label]) => (
@@ -189,7 +156,7 @@ export default function ProfissionalProfilePage() {
         {tab === "fotos" && (
           <div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4 }}>
-              {pro.photos.map((url, i) => (
+              {photos.map((url, i) => (
                 <div key={i} onClick={() => setPhotoOpen(i)}
                   style={{ aspectRatio: "3/4", overflow: "hidden", borderRadius: 8, cursor: "pointer", position: "relative", background: "#0b1420" }}>
                   <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", transition: "transform 0.2s" }}
@@ -337,15 +304,17 @@ export default function ProfissionalProfilePage() {
         </a>
       </div>
 
+      <BottomNav />
+
       {/* Lightbox */}
       {photoOpen !== null && (
         <div onClick={() => setPhotoOpen(null)} style={{ position: "fixed", inset: 0, background: "rgba(4,10,20,0.97)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <img src={pro.photos[photoOpen]} alt="" style={{ maxHeight: "90vh", maxWidth: "95vw", objectFit: "contain", borderRadius: 8 }} />
+          <img src={pro.photos[photoOpen!]} alt="" style={{ maxHeight: "90vh", maxWidth: "95vw", objectFit: "contain", borderRadius: 8 }} />
           <button onClick={() => setPhotoOpen(null)} style={{ position: "absolute", top: 20, right: 20, background: "rgba(212,168,67,0.15)", border: `1px solid ${GOLD_MID}`, color: GOLD, width: 36, height: 36, borderRadius: "50%", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
           {photoOpen > 0 && (
             <button onClick={(e) => { e.stopPropagation(); setPhotoOpen(photoOpen - 1); }} style={{ position: "absolute", left: 16, background: "rgba(212,168,67,0.15)", border: `1px solid ${GOLD_MID}`, color: GOLD, width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>
           )}
-          {photoOpen < pro.photos.length - 1 && (
+          {photoOpen < photos.length - 1 && (
             <button onClick={(e) => { e.stopPropagation(); setPhotoOpen(photoOpen + 1); }} style={{ position: "absolute", right: 16, background: "rgba(212,168,67,0.15)", border: `1px solid ${GOLD_MID}`, color: GOLD, width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>›</button>
           )}
         </div>

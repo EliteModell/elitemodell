@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FiltersModal from "@/components/FiltersModal";
 import Stories from "@/components/Stories";
+import BottomNav from "@/components/BottomNav";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
@@ -348,6 +349,7 @@ function BuscarContent() {
         )}
       </div>
 
+      <BottomNav />
       <Footer />
     </div>
   );
