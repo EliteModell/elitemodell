@@ -8,6 +8,7 @@ import AgeGate from "@/components/AgeGate";
 
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
+const PEARL_GRADIENT = "linear-gradient(135deg, #ffffff 0%, #e8dfc8 20%, #ffffff 48%, #cfc5b5 72%, #ffffff 100%)";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
 const GOLD_MID = "rgba(212,168,67,0.28)";
 
@@ -104,17 +105,18 @@ export default function HomePage() {
               A plataforma premium do Brasil
             </p>
 
-            <h1 style={{ fontSize: "clamp(32px, 5.2vw, 66px)", fontWeight: 900, color: "#f1f5f9", margin: "0 0 20px", letterSpacing: "-2px", lineHeight: 1.05, wordBreak: "keep-all", hyphens: "none" }}>
-              Acompanhantes<br />
-              <span style={{
-                background: GOLD_GRADIENT,
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                display: "inline-block",
-              }}>de luxo.</span>
+            <h1 style={{ fontSize: "clamp(32px, 5.2vw, 66px)", fontWeight: 700, margin: "0 0 20px", letterSpacing: "-1px", lineHeight: 1.0, wordBreak: "keep-all", hyphens: "none", fontFamily: "var(--font-cormorant), serif" }}>
+              <span style={{ background: PEARL_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block" }}>
+                Acompanhantes
+              </span>
               <br />
-              Imóveis exclusivos.
+              <span style={{ background: GOLD_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block" }}>
+                de luxo.
+              </span>
+              <br />
+              <span style={{ background: PEARL_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block" }}>
+                Imóveis exclusivos.
+              </span>
             </h1>
 
             <p style={{ color: "rgba(241,245,249,0.45)", fontSize: 16, margin: "0 0 44px", lineHeight: 1.75, maxWidth: 400 }}>

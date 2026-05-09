@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Cormorant_Garant } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import AgeGate from "@/components/AgeGate";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const cormorant = Cormorant_Garant({
+  subsets: ["latin"],
+  weight: ["700"],
+  variable: "--font-cormorant",
+});
 
 export const metadata: Metadata = {
   title: "Elite Modell — Conectando pessoas, locais e oportunidades",
@@ -24,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={inter.variable}>
+    <html lang="pt-BR" className={`${inter.variable} ${cormorant.variable}`}>
       <body className="min-h-screen">
         <Providers>
           <AgeGate />
