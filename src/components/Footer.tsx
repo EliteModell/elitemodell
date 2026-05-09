@@ -66,8 +66,13 @@ export default function Footer() {
             <a href="#" style={{ textDecoration: "none", position: "relative", display: "inline-block", padding: "6px 16px", border: "1.5px solid rgba(212,170,99,0.5)", borderRadius: 8, background: "rgba(201,168,76,0.04)", marginBottom: 12 }}>
               <span style={{ position: "absolute", top: -10, right: -5, color: "#d4a843", fontSize: 16, lineHeight: 1, userSelect: "none" }}>✦</span>
               <span style={{ fontWeight: 900, fontSize: 24, letterSpacing: "-1px" }}>
-                <span style={{ color: "#cc0000" }}>elite</span>
-                <span style={{ color: "#fff" }}>modell</span>
+                <span style={{
+                  background: "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 50%, #9e7b2a 75%, #d4a843 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}>elite</span>
+                <span style={{ color: "#f1f5f9" }}>modell</span>
               </span>
             </a>
             <p style={{ color: "#64748b", fontSize: 13, lineHeight: 1.7 }}>

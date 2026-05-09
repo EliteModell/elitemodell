@@ -15,7 +15,12 @@ export default function Navbar() {
         <Link href="/" style={{ textDecoration: "none", position: "relative", display: "inline-block", padding: "6px 16px", border: "1.5px solid rgba(212,168,67,0.35)", borderRadius: 8, background: "rgba(212,168,67,0.04)" }}>
           <span style={{ position: "absolute", top: -10, right: -5, color: "#d4a843", fontSize: 16, lineHeight: 1, userSelect: "none" }}>✦</span>
           <span style={{ fontWeight: 900, fontSize: 22, letterSpacing: "-1px" }}>
-            <span style={{ color: "#d4a843" }}>elite</span>
+            <span style={{
+              background: "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 50%, #9e7b2a 75%, #d4a843 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}>elite</span>
             <span style={{ color: "#f1f5f9" }}>modell</span>
           </span>
         </Link>

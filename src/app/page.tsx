@@ -7,8 +7,9 @@ import Footer from "@/components/Footer";
 import AgeGate from "@/components/AgeGate";
 
 const GOLD = "#d4a843";
+const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
-const GOLD_MID = "rgba(212,168,67,0.25)";
+const GOLD_MID = "rgba(212,168,67,0.28)";
 
 const imovelPreview = [
   { id: 1, titulo: "Cobertura Premium", cidade: "São Paulo, SP", preco: 890, foto: "/hero-model.jpeg" },
@@ -105,7 +106,13 @@ export default function HomePage() {
 
             <h1 style={{ fontSize: "clamp(32px, 5.2vw, 66px)", fontWeight: 900, color: "#f1f5f9", margin: "0 0 20px", letterSpacing: "-2px", lineHeight: 1.05, wordBreak: "keep-all", hyphens: "none" }}>
               Acompanhantes<br />
-              <span style={{ color: GOLD }}>de luxo.</span>
+              <span style={{
+                background: GOLD_GRADIENT,
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                display: "inline-block",
+              }}>de luxo.</span>
               <br />
               Imóveis exclusivos.
             </h1>
