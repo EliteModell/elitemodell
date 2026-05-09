@@ -26,7 +26,7 @@ export default function ProfissionalProfilePage() {
   const refSobre = useRef<HTMLDivElement>(null);
   const refAvaliacoes = useRef<HTMLDivElement>(null);
 
-  function scrollTo(ref: React.RefObject<HTMLDivElement>) {
+  function scrollTo(ref: React.RefObject<HTMLDivElement | null>) {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
