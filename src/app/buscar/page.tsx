@@ -158,7 +158,7 @@ function BuscarContent() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "20px 16px 80px" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "24px 16px 80px" }}>
 
         {/* ── ACOMPANHANTES ── */}
         {mainTab === "acompanhantes" && (

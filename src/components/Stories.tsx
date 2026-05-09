@@ -85,8 +85,8 @@ export default function Stories() {
 
   return (
     <>
-      <div style={{ position: "relative", marginBottom: 24 }}>
-        <div ref={rowRef} style={{ display: "flex", gap: 16, overflowX: "auto", scrollbarWidth: "none", padding: "6px 8px 6px 4px" }}>
+      <div style={{ position: "relative", marginBottom: 24, overflowX: "clip", overflowY: "visible" }}>
+        <div ref={rowRef} style={{ display: "flex", gap: 16, overflowX: "auto", overflowY: "visible", scrollbarWidth: "none", padding: "14px 8px 10px 4px" }}>
 
           {/* Botão adicionar story (só para profissionais) */}
           {session && (session.user as any).isProfessional && (
