@@ -22,13 +22,13 @@ export default function Navbar() {
 
         {/* Nav links — desktop */}
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <Link href="/?tab=acompanhantes"
+          <Link href="/buscar?tab=acompanhantes"
             style={{ padding: "8px 16px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14, fontWeight: 500, transition: "all 0.2s" }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#f1f5f9"; (e.currentTarget as HTMLElement).style.background = "#1e293b"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#94a3b8"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
             Acompanhantes
           </Link>
-          <Link href="/?tab=imoveis"
+          <Link href="/buscar?tab=imoveis"
             style={{ padding: "8px 16px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14, fontWeight: 500, transition: "all 0.2s" }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#f1f5f9"; (e.currentTarget as HTMLElement).style.background = "#1e293b"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#94a3b8"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
@@ -82,10 +82,10 @@ export default function Navbar() {
       {/* Mobile dropdown */}
       {menuOpen && (
         <div style={{ background: "#0b1420", borderBottom: "1px solid #1e293b", padding: "16px 24px", display: "flex", flexDirection: "column", gap: 8 }}>
-          <Link href="/?tab=acompanhantes" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>
+          <Link href="/buscar?tab=acompanhantes" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>
             Acompanhantes
           </Link>
-          <Link href="/?tab=imoveis" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>
+          <Link href="/buscar?tab=imoveis" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>
             Imóveis
           </Link>
           {!session && (
