@@ -1,7 +1,5 @@
 "use client";
-import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AgeGate from "@/components/AgeGate";
@@ -79,17 +77,6 @@ const FEATURES = [
 ];
 
 export default function HomePage() {
-  const router = useRouter();
-  const [busca, setBusca] = useState("");
-  const [categoria, setCategoria] = useState("Acompanhantes");
-  const [localizacao, setLocalizacao] = useState("");
-  const [faixaEtaria, setFaixaEtaria] = useState("18 - 45+");
-
-  function handleBuscar() {
-    const tab = categoria === "Imóveis" ? "imoveis" : "acompanhantes";
-    const q = [busca, localizacao].filter(Boolean).join(" ");
-    router.push(`/buscar?tab=${tab}${q ? `&q=${encodeURIComponent(q)}` : ""}`);
-  }
 
   return (
     <div style={{ background: "#060e1b", minHeight: "100vh", color: "#f1f5f9" }}>
@@ -152,66 +139,93 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── SEARCH BAR ── */}
-      <section style={{ background: "#060e1b", padding: "0 16px" }}>
-        <style>{`
-          .search-card { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; align-items: stretch; }
-          @media (max-width: 700px) {
-            .search-card { grid-template-columns: 1fr 1fr; }
-            .search-buscar-btn { grid-column: 1 / -1; padding: 16px !important; justify-content: center; border-top: 1px solid rgba(212,168,67,0.12); }
-            .search-col { border-bottom: 1px solid rgba(212,168,67,0.12); }
-          }
-          @media (min-width: 701px) {
-            .search-buscar-btn { border-top: none !important; }
-          }
-        `}</style>
-        <div style={{ maxWidth: 1100, margin: "0 auto", transform: "translateY(-32px)" }}>
-          <div style={{ background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 16, overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.4)" }}>
-            <div className="search-card">
-              <div className="search-col" style={{ padding: "18px 20px", borderRight: `1px solid ${GOLD_DIM}` }}>
-                <p style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 6 }}>O que você procura?</p>
-                <select value={categoria} onChange={(e) => setCategoria(e.target.value)}
-                  style={{ width: "100%", background: "transparent", border: "none", color: "#f1f5f9", fontSize: 14, fontWeight: 700, outline: "none", cursor: "pointer", appearance: "none", WebkitAppearance: "none", fontFamily: PLAYFAIR }}>
-                  <option value="Acompanhantes" style={{ background: "#0b1420" }}>Acompanhantes</option>
-                  <option value="Trans" style={{ background: "#0b1420" }}>Trans</option>
-                  <option value="Homens" style={{ background: "#0b1420" }}>Homens</option>
-                  <option value="Imóveis" style={{ background: "#0b1420" }}>Imóveis</option>
-                </select>
-              </div>
-              <div className="search-col" style={{ padding: "18px 20px", borderRight: `1px solid ${GOLD_DIM}` }}>
-                <p style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 6 }}>Localização</p>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                  <input value={localizacao} onChange={(e) => setLocalizacao(e.target.value)} placeholder="Cidade ou estado"
-                    style={{ background: "transparent", border: "none", color: "#f1f5f9", fontSize: 14, fontWeight: 700, outline: "none", width: "100%", fontFamily: PLAYFAIR }} />
-                </div>
-              </div>
-              <div className="search-col" style={{ padding: "18px 20px", borderRight: `1px solid ${GOLD_DIM}` }}>
-                <p style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 6 }}>Categoria</p>
-                <select style={{ width: "100%", background: "transparent", border: "none", color: "#f1f5f9", fontSize: 14, fontWeight: 700, outline: "none", cursor: "pointer", appearance: "none", WebkitAppearance: "none", fontFamily: PLAYFAIR }}>
-                  <option style={{ background: "#0b1420" }}>Todas</option>
-                  <option style={{ background: "#0b1420" }}>VIP</option>
-                  <option style={{ background: "#0b1420" }}>Com local</option>
-                  <option style={{ background: "#0b1420" }}>Viagens</option>
-                </select>
-              </div>
-              <div className="search-col" style={{ padding: "18px 20px", borderRight: `1px solid ${GOLD_DIM}` }}>
-                <p style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 6 }}>Faixa etária</p>
-                <select value={faixaEtaria} onChange={(e) => setFaixaEtaria(e.target.value)}
-                  style={{ width: "100%", background: "transparent", border: "none", color: "#f1f5f9", fontSize: 14, fontWeight: 700, outline: "none", cursor: "pointer", appearance: "none", WebkitAppearance: "none", fontFamily: PLAYFAIR }}>
-                  {["18 - 45+", "18 - 25", "26 - 35", "36 - 45", "45+"].map(v => (
-                    <option key={v} value={v} style={{ background: "#0b1420" }}>{v}</option>
-                  ))}
-                </select>
-              </div>
-              <button className="search-buscar-btn" onClick={handleBuscar}
-                style={{ padding: "0 28px", background: GOLD, color: "#060e1b", border: "none", fontSize: 14, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, transition: "background 0.2s", whiteSpace: "nowrap", fontFamily: PLAYFAIR }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#e8bb47")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = GOLD)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-                Buscar
-              </button>
+      {/* ── O QUE VOCÊ PROCURA ── */}
+      <section style={{ background: "#060e1b", padding: "0 16px 16px" }}>
+        <div style={{ maxWidth: 600, margin: "0 auto", transform: "translateY(-32px)" }}>
+          {/* Card container */}
+          <div style={{ background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 20, overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.4)" }}>
+            {/* Título */}
+            <div style={{ padding: "20px 24px 16px", textAlign: "center", borderBottom: `1px solid ${GOLD_DIM}` }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 3, margin: 0 }}>
+                O que você procura?
+              </p>
             </div>
+
+            {/* Opções */}
+            {[
+              {
+                href: "/buscar?tab=acompanhantes",
+                title: "Busco prazer",
+                desc: "Encontre companhia para momentos especiais e discretos.",
+                iconBg: "rgba(204,0,0,0.15)",
+                iconBorder: "rgba(204,0,0,0.3)",
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="#cc0000">
+                    <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+                  </svg>
+                ),
+              },
+              {
+                href: "/buscar?tab=imoveis",
+                title: "Imóveis",
+                desc: "Encontre os melhores imóveis para estadias e experiências exclusivas.",
+                iconBg: GOLD_DIM,
+                iconBorder: GOLD_MID,
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+                    <path d="M9 21V12h6v9"/>
+                  </svg>
+                ),
+              },
+              {
+                href: "/buscar?tab=imoveis",
+                title: "Locar imóveis",
+                desc: "Alugue imóveis de forma rápida, segura e sem burocracia.",
+                iconBg: GOLD_DIM,
+                iconBorder: GOLD_MID,
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                  </svg>
+                ),
+              },
+              {
+                href: "/cadastro",
+                title: "Profissional se cadastrar",
+                desc: "Seja um profissional e faça parte da nossa plataforma.",
+                iconBg: GOLD_DIM,
+                iconBorder: GOLD_MID,
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                ),
+              },
+            ].map((opt, i) => (
+              <Link
+                key={opt.title}
+                href={opt.href}
+                style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 16, padding: "18px 22px", borderBottom: i < 3 ? `1px solid ${GOLD_DIM}` : "none", transition: "background 0.2s" }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "rgba(212,168,67,0.04)")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "transparent")}
+              >
+                {/* Ícone circular */}
+                <div style={{ width: 48, height: 48, borderRadius: "50%", background: opt.iconBg, border: `1px solid ${opt.iconBorder}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {opt.icon}
+                </div>
+                {/* Texto */}
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: "0 0 3px", fontSize: 15, fontWeight: 700, color: "#f1f5f9", fontFamily: PLAYFAIR }}>{opt.title}</p>
+                  <p style={{ margin: 0, fontSize: 12, color: "#475569", lineHeight: 1.5 }}>{opt.desc}</p>
+                </div>
+                {/* Seta */}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2.5" style={{ flexShrink: 0 }}>
+                  <path d="M9 18l6-6-6-6"/>
+                </svg>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
