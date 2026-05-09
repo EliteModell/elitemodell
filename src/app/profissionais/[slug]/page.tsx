@@ -20,7 +20,7 @@ export default function ProfissionalProfilePage() {
   const [galeriaFiltro, setGaleriaFiltro] = useState<GaleriaFiltro>("todas");
   const [photoOpen, setPhotoOpen] = useState<number | null>(null);
   const [servicosAbertos, setServicosAbertos] = useState(false);
-  const [caracteristicasAbertas, setCaracteristicasAbertas] = useState(false);
+  const [caracteristicasAbertas, setCaracteristicasAbertas] = useState(true);
 
   const refGaleria = useRef<HTMLDivElement>(null);
   const refSobre = useRef<HTMLDivElement>(null);
@@ -57,8 +57,8 @@ export default function ProfissionalProfilePage() {
               )}
             </div>
             <div style={{ flex: 1, paddingBottom: 4 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <h1 style={{ fontSize: 22, fontWeight: 700, color: "#f1f5f9", margin: 0, fontFamily: PLAYFAIR }}>{pro.displayName}</h1>
+              <h1 style={{ fontSize: 22, fontWeight: 700, color: "#f1f5f9", margin: "0 0 6px", fontFamily: PLAYFAIR }}>{pro.displayName}</h1>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
                 {pro.verified && <span style={{ padding: "2px 9px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 20, fontSize: 11, color: GOLD, fontWeight: 700 }}>✓ Verificada</span>}
                 {pro.featured && <span style={{ padding: "2px 9px", background: "rgba(204,0,0,0.15)", border: "1px solid rgba(204,0,0,0.3)", borderRadius: 20, fontSize: 11, color: "#cc0000", fontWeight: 700 }}>★ Destaque</span>}
               </div>
