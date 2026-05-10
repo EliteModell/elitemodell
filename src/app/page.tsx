@@ -86,17 +86,36 @@ export default function HomePage() {
       {/* ── HERO ── */}
       <style>{`
         @media (max-width: 640px) {
-          .hero-section { min-height: 46vh !important; }
-          .hero-content { padding: 72px 20px 20px !important; }
+          .hero-section { min-height: 52vh !important; }
+          .hero-content { padding: 72px 20px 24px !important; }
           .hero-subtitle { display: none !important; }
           .hero-btns { display: none !important; }
-          .hero-title { font-size: 30px !important; margin-bottom: 8px !important; }
-          .hero-tag { margin-bottom: 10px !important; }
+          .hero-title { font-size: clamp(28px, 9vw, 38px) !important; margin-bottom: 10px !important; letter-spacing: -1px !important; }
+          .hero-tag { margin-bottom: 12px !important; }
+          .hero-lora { display: none !important; }
         }
       `}</style>
       <section className="hero-section" style={{ position: "relative", minHeight: "90vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
+        {/* Modelo principal — fundo */}
         <img src="/model2.jpg" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(105deg, rgba(6,14,27,0.97) 0%, rgba(6,14,27,0.90) 40%, rgba(6,14,27,0.55) 65%, rgba(6,14,27,0.1) 100%)" }} />
+        {/* Overlay gradiente — escuro na esquerda, abre na direita */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(100deg, rgba(6,14,27,0.97) 0%, rgba(6,14,27,0.88) 38%, rgba(6,14,27,0.45) 62%, rgba(6,14,27,0.15) 100%)" }} />
+        {/* Lora — portrait flutuante na direita */}
+        <div className="hero-lora" style={{
+          position: "absolute", right: "4%", bottom: 0, top: 64,
+          width: "clamp(160px, 26vw, 320px)",
+          overflow: "hidden",
+          borderLeft: `2px solid rgba(212,168,67,0.3)`,
+          WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 8%, black 85%, transparent 100%)",
+          maskImage: "linear-gradient(to bottom, transparent 0%, black 8%, black 85%, transparent 100%)",
+        }}>
+          <img src="/model.jpeg" alt="Lora" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", filter: "brightness(0.85)" }} />
+          {/* Nome Lora sobre a foto */}
+          <div style={{ position: "absolute", bottom: 32, left: 16, right: 16 }}>
+            <p style={{ fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 700, color: "#f1f5f9", fontFamily: PLAYFAIR, margin: "0 0 3px", textShadow: "0 2px 12px rgba(0,0,0,0.7)" }}>Lora</p>
+            <p style={{ fontSize: 10, color: GOLD, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", margin: 0 }}>VIP · Verificada</p>
+          </div>
+        </div>
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${GOLD_MID}, transparent)` }} />
 
         <div className="hero-content" style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 1280, margin: "0 auto", padding: "110px 24px 60px" }}>
