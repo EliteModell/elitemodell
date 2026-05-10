@@ -91,10 +91,10 @@ export default function HomePage() {
         }
       `}</style>
       <section className="hero-section" style={{ position: "relative", minHeight: "92vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
-        {/* Foto da Lora como fundo principal */}
-        <img src="/model.jpeg" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
-        {/* Overlay: escuro forte na esquerda para o texto, abre na direita para ver a modelo */}
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(105deg, rgba(6,14,27,0.96) 0%, rgba(6,14,27,0.88) 35%, rgba(6,14,27,0.55) 58%, rgba(6,14,27,0.1) 100%)" }} />
+        {/* Foto da Lora — posicionada à direita para aparecer melhor no mobile */}
+        <img src="/model.jpeg" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "65% top" }} />
+        {/* Overlay: escuro na esquerda, modelo visível na direita */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(100deg, rgba(6,14,27,0.97) 0%, rgba(6,14,27,0.90) 32%, rgba(6,14,27,0.50) 55%, rgba(6,14,27,0.05) 100%)" }} />
         {/* Linha dourada na base */}
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${GOLD_MID}, transparent)` }} />
 
@@ -183,9 +183,6 @@ export default function HomePage() {
           .procura-item:hover .procura-cta svg { transform: translateX(4px); }
         `}</style>
         <div style={{ maxWidth: 600, margin: "0 auto", transform: "translateY(-32px)" }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 3, textAlign: "center", marginBottom: 14 }}>
-            O que você procura?
-          </p>
           <div className="procura-grid">
             {[
               {
