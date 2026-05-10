@@ -9,19 +9,18 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// profiles/main  → bucket "profiles"  (público)
-// profiles/gallery → bucket "profiles" (público)
-// documentos     → bucket "documentos" (privado)
-// verificacao    → bucket "documentos" (privado)
-// stories        → bucket "stories"    (público, legado)
+// Supabase criou os buckets com nomes traduzidos para PT-BR:
+// "Perfis" (público)  → fotos de perfil e galeria
+// "documentos"        → documentos privados de identidade
+// "Histórias" (público) → stories legado
 function resolveBucket(folder: string): { bucket: string; isPrivate: boolean } {
   if (folder.startsWith("documentos") || folder.startsWith("verificacao")) {
     return { bucket: "documentos", isPrivate: true };
   }
   if (folder.startsWith("profiles")) {
-    return { bucket: "profiles", isPrivate: false };
+    return { bucket: "Perfis", isPrivate: false };
   }
-  return { bucket: "stories", isPrivate: false };
+  return { bucket: "Histórias", isPrivate: false };
 }
 
 export async function POST(req: NextRequest) {
