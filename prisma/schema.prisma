@@ -432,16 +432,23 @@ model Professional {
   bio          String             @db.Text
   city         String
   state        String
+  bairro           String?
   phone        String?
   whatsapp     String?
   instagram    String?
   website      String?
+
+  // Preços
   priceMin         Float?
   priceMax         Float?
   pricePerHour     Float?
   price30min       Float?
   price2h          Float?
   priceOvernight   Float?
+  priceWebcam      Float?
+  paymentMethods   String[]
+
+  // Perfil físico
   escortCategory   String?
   birthDate        DateTime?
   height           Int?
@@ -449,21 +456,47 @@ model Professional {
   hairColor        String?
   eyeColor         String?
   ethnicity        String?
+  signo            String?
   hasTattoos       Boolean  @default(false)
   hasSilicone      Boolean  @default(false)
+  isDepilada       Boolean  @default(true)
+
+  // Atendimento
   attendanceTypes  String[]
   servesGenders    String[]
-  paymentMethods   String[]
+  idiomas          String[]
+  diasDisponiveis  String[]
+  horarioInicio    String?
+  horarioFim       String?
+
+  // Serviços
   services         String[]
   fetishes         String[]
-  status           ProfessionalStatus @default(PENDING_REVIEW)
-  verified         Boolean            @default(false)
-  featured         Boolean            @default(false)
-  rating           Float              @default(0)
-  totalReviews     Int                @default(0)
-  totalAppointments Int               @default(0)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+
+  // Fotos
+  image            String?
+  galleryUrls      String[]
+
+  // Verificação de documentos (privado — nunca exposto ao cliente)
+  docType          String?
+  docFrenteUrl     String?
+  docVersoUrl      String?
+  docStatus        String   @default("NOT_SENT")  // NOT_SENT | PENDING | APPROVED | REJECTED
+  verifStatus      String   @default("NOT_SENT")  // NOT_SENT | PENDING | APPROVED | REJECTED
+  verificationUrl  String?
+  verificationType String?
+  verificationCode String?
+  rejectReason     String?
+
+  // Status e métricas
+  status            ProfessionalStatus @default(PENDING_REVIEW)
+  verified          Boolean            @default(false)
+  featured          Boolean            @default(false)
+  rating            Float              @default(0)
+  totalReviews      Int                @default(0)
+  totalAppointments Int                @default(0)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   user         User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
   photos       ProfessionalPhoto[]
