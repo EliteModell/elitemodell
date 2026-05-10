@@ -90,15 +90,15 @@ export default function HomePage() {
           .hero-title { font-size: clamp(30px, 9.5vw, 42px) !important; letter-spacing: -1px !important; line-height: 1.05 !important; }
         }
       `}</style>
-      <section className="hero-section" style={{ position: "relative", minHeight: "92vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
-        {/* Foto da Lora — posicionada à direita para aparecer melhor no mobile */}
-        <img src="/model.jpeg" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "38% 5%" }} />
+      <section className="hero-section" style={{ position: "relative", minHeight: "92vh", display: "flex", alignItems: "center", overflow: "hidden", marginTop: 64 }}>
+        {/* Foto da Lora */}
+        <img src="/model.jpeg" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "38% top" }} />
         {/* Overlay: escuro na esquerda, modelo visível na direita */}
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(100deg, rgba(6,14,27,0.97) 0%, rgba(6,14,27,0.90) 32%, rgba(6,14,27,0.50) 55%, rgba(6,14,27,0.05) 100%)" }} />
         {/* Linha dourada na base */}
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${GOLD_MID}, transparent)` }} />
 
-        <div className="hero-content" style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 1280, margin: "0 auto", padding: "120px 32px 80px" }}>
+        <div className="hero-content" style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 1280, margin: "0 auto", padding: "56px 32px 80px" }}>
           <div style={{ maxWidth: 600 }}>
             {/* Tag */}
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, textTransform: "uppercase", marginBottom: 20 }}>
