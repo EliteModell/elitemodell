@@ -77,6 +77,8 @@ export default function AdminProfissionaisPage() {
   const [selected, setSelected] = useState<Prof | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [docModal, setDocModal] = useState<Prof | null>(null);
+  const [signedDocUrl, setSignedDocUrl] = useState<string | null>(null);
+  const [loadingDoc, setLoadingDoc] = useState(false);
 
   const filtered = professionals.filter((p) => {
     const matchSearch = !search || p.displayName.toLowerCase().includes(search.toLowerCase()) || p.city.toLowerCase().includes(search.toLowerCase());
@@ -96,6 +98,19 @@ export default function AdminProfissionaisPage() {
     if (selected?.id === id) setSelected(s => s ? { ...s, docStatus: "APPROVED", verifStatus: "APPROVED", status: "ACTIVE", verified: true } : s);
     setDocModal(null);
     toast.success("Documentos aprovados! Perfil ativado.");
+  }
+
+  async function loadSignedDoc(path: string) {
+    setLoadingDoc(true);
+    setSignedDocUrl(null);
+    try {
+      const res = await fetch(`/api/admin/documento?path=${encodeURIComponent(path)}`);
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error);
+      setSignedDocUrl(d.url);
+      setTimeout(() => setSignedDocUrl(null), 58000); // expira em 58s
+    } catch { toast.error("Erro ao carregar documento."); }
+    finally { setLoadingDoc(false); }
   }
 
   function rejectDoc(id: string) {
@@ -315,8 +330,18 @@ export default function AdminProfissionaisPage() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12, marginBottom: 20 }}>
                   <div>
                     <div style={{ fontSize: 11, color: "#475569", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Documento ({docModal.docType})</div>
-                    <div style={{ background: "#060e1b", borderRadius: 8, height: 120, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${GOLD_MID}` }}>
-                      <span style={{ color: "#475569", fontSize: 12 }}>🔒 Documento privado — acesso restrito</span>
+                    <div style={{ background: "#060e1b", borderRadius: 8, minHeight: 120, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: `1px solid ${GOLD_MID}`, overflow: "hidden" }}>
+                      {signedDocUrl ? (
+                        <img src={signedDocUrl} alt="documento" style={{ width: "100%", maxHeight: 200, objectFit: "contain" }} />
+                      ) : (
+                        <div style={{ textAlign: "center", padding: 16 }}>
+                          <p style={{ color: "#475569", fontSize: 12, margin: "0 0 10px" }}>🔒 Documento criptografado</p>
+                          <button onClick={() => docModal?.docFrenteUrl && loadSignedDoc(docModal.docFrenteUrl)} disabled={loadingDoc}
+                            style={{ padding: "8px 16px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 8, color: GOLD, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                            {loadingDoc ? "Carregando..." : "🔓 Ver documento (60s)"}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                   {docModal.verificationUrl && (

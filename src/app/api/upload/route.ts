@@ -9,40 +9,64 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Supabase criou os buckets com nomes traduzidos para PT-BR:
-// "Perfis" (público)  → fotos de perfil e galeria
-// "documentos"        → documentos privados de identidade
-// "Histórias" (público) → stories legado
-function resolveBucket(folder: string): { bucket: string; isPrivate: boolean } {
+// Tipos MIME permitidos por contexto
+const ALLOWED_IMAGE = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const ALLOWED_DOC   = [...ALLOWED_IMAGE, "application/pdf"];
+const ALLOWED_VIDEO = [...ALLOWED_IMAGE, "video/mp4", "video/webm", "video/quicktime"];
+
+// Mapeamento folder → bucket + configurações
+function resolveBucket(folder: string): {
+  bucket: string;
+  isPrivate: boolean;
+  maxBytes: number;
+  allowedTypes: string[];
+} {
   if (folder.startsWith("documentos") || folder.startsWith("verificacao")) {
-    return { bucket: "documentos", isPrivate: true };
+    return { bucket: "documentos", isPrivate: true,  maxBytes: 10 * 1024 * 1024, allowedTypes: ALLOWED_DOC   };
   }
   if (folder.startsWith("profiles")) {
-    return { bucket: "Perfis", isPrivate: false };
+    return { bucket: "profiles",   isPrivate: false, maxBytes: 10 * 1024 * 1024, allowedTypes: ALLOWED_IMAGE };
   }
-  return { bucket: "Histórias", isPrivate: false };
+  // stories (legado + novos)
+  return   { bucket: "stories",    isPrivate: false, maxBytes: 50 * 1024 * 1024, allowedTypes: ALLOWED_VIDEO };
 }
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  }
 
-  const url = new URL(req.url);
+  const url    = new URL(req.url);
   const folder = url.searchParams.get("folder") ?? "stories";
 
   const formData = await req.formData();
-  const file = formData.get("file") as File;
+  const file = formData.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "Nenhum arquivo enviado." }, { status: 400 });
 
-  // Valida tamanho: fotos ≤ 10MB, vídeos ≤ 100MB
-  const isVideo = file.type.startsWith("video/");
-  const maxSize = isVideo ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
-  if (file.size > maxSize) {
-    return NextResponse.json({ error: `Arquivo muito grande. Máximo: ${isVideo ? "100MB" : "10MB"}.` }, { status: 400 });
+  const { bucket, isPrivate, maxBytes, allowedTypes } = resolveBucket(folder);
+
+  // Valida tipo MIME
+  if (!allowedTypes.includes(file.type)) {
+    return NextResponse.json(
+      { error: `Tipo de arquivo não permitido: ${file.type}. Aceitos: ${allowedTypes.join(", ")}` },
+      { status: 400 }
+    );
   }
 
-  const { bucket, isPrivate } = resolveBucket(folder);
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? (isVideo ? "mp4" : "jpg");
+  // Valida tamanho
+  if (file.size > maxBytes) {
+    const mb = Math.round(maxBytes / 1024 / 1024);
+    return NextResponse.json({ error: `Arquivo muito grande. Máximo: ${mb}MB.` }, { status: 400 });
+  }
+
+  // Sanitiza extensão
+  const mimeToExt: Record<string, string> = {
+    "image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png", "image/webp": "webp",
+    "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov",
+    "application/pdf": "pdf",
+  };
+  const ext  = mimeToExt[file.type] ?? "bin";
   const path = `${folder}/${session.user.id}/${Date.now()}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
 
@@ -51,31 +75,19 @@ export async function POST(req: NextRequest) {
     .upload(path, buffer, { contentType: file.type, upsert: false });
 
   if (error) {
-    // Tenta criar o bucket se não existir e reenviar
-    if (error.message?.includes("Bucket not found")) {
-      await supabase.storage.createBucket(bucket, { public: !isPrivate });
-      const { error: e2 } = await supabase.storage
-        .from(bucket)
-        .upload(path, buffer, { contentType: file.type, upsert: false });
-      if (e2) return NextResponse.json({ error: e2.message }, { status: 500 });
-    } else {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    console.error(`[upload] bucket=${bucket} path=${path} err=${error.message}`);
+    return NextResponse.json({ error: "Erro ao salvar arquivo. Tente novamente." }, { status: 500 });
   }
 
-  // Documentos/verificação: não retorna URL pública
+  // Documentos privados: retorna apenas o path (URL gerada via signed URL na hora de exibir)
   if (isPrivate) {
-    return NextResponse.json({
-      path,
-      url: `[private:${bucket}/${path}]`,
-      type: isVideo ? "video" : "image",
-    });
+    return NextResponse.json({ path, url: null, type: file.type.startsWith("video/") ? "video" : "image" });
   }
 
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return NextResponse.json({
-    url: data.publicUrl,
-    type: isVideo ? "video" : "image",
+    url:  data.publicUrl,
     path,
+    type: file.type.startsWith("video/") ? "video" : "image",
   });
 }
