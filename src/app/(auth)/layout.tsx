@@ -6,7 +6,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#0d0d0d",
+        background: "#060e1b",
         padding: "24px",
         position: "relative",
         overflow: "hidden",
@@ -29,7 +29,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           style={{
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(to right, rgba(13,13,13,0.2) 0%, rgba(13,13,13,0.85) 100%)",
+            background: "linear-gradient(to right, rgba(6,14,27,0.2) 0%, rgba(6,14,27,0.92) 100%)",
           }}
         />
       </div>
@@ -51,12 +51,12 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           style={{
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(to left, rgba(13,13,13,0.2) 0%, rgba(13,13,13,0.85) 100%)",
+            background: "linear-gradient(to left, rgba(6,14,27,0.2) 0%, rgba(6,14,27,0.92) 100%)",
           }}
         />
       </div>
 
-      {/* Glow vermelho sutil */}
+      {/* Glow dourado sutil */}
       <div
         style={{
           position: "absolute",
@@ -66,14 +66,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           width: 600,
           height: 400,
           borderRadius: "50%",
-          background: "rgba(204,0,0,0.06)",
+          background: "rgba(212,168,67,0.05)",
           filter: "blur(80px)",
           pointerEvents: "none",
         }}
       />
 
       {/* Card */}
-      <div style={{ position: "relative", zIndex: 10, width: "100%" , display: "flex", justifyContent: "center" }}>
+      <div style={{ position: "relative", zIndex: 10, width: "100%", display: "flex", justifyContent: "center" }}>
         {children}
       </div>
     </div>

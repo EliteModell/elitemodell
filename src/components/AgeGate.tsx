@@ -59,7 +59,7 @@ export default function AgeGate() {
           <div style={{ marginBottom: 32, display: "inline-block", position: "relative", padding: "6px 20px", border: "1.5px solid rgba(201,168,76,0.3)", borderRadius: 10, background: "rgba(201,168,76,0.04)" }}>
             <span style={{ position: "absolute", top: -10, right: -4, color: "#c9a84c", fontSize: 15, lineHeight: 1 }}>✦</span>
             <span style={{ fontWeight: 900, fontSize: 22, letterSpacing: "-0.5px" }}>
-              <span style={{ color: "#cc0000" }}>elite</span>
+              <span style={{ background: "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>elite</span>
               <span style={{ color: "#f1f5f9" }}>modell</span>
             </span>
           </div>
@@ -101,8 +101,8 @@ export default function AgeGate() {
             style={{
               width: "100%",
               padding: "15px",
-              background: "#cc0000",
-              color: "#fff",
+              background: "#d4a843",
+              color: "#060e1b",
               border: "none",
               borderRadius: 10,
               fontSize: 15,
@@ -112,8 +112,8 @@ export default function AgeGate() {
               letterSpacing: "0.2px",
               transition: "background 0.2s",
             }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#e00000")}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "#cc0000")}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#e8bb47")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "#d4a843")}
           >
             Tenho 18 anos ou mais
           </button>
