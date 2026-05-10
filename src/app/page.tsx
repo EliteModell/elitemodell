@@ -84,13 +84,19 @@ export default function HomePage() {
       <Navbar />
 
       {/* ── HERO ── */}
-      <section style={{ position: "relative", minHeight: "90vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .hero-section { min-height: 62vh !important; }
+          .hero-content { padding: 80px 20px 32px !important; }
+          .hero-stats { display: none !important; }
+        }
+      `}</style>
+      <section className="hero-section" style={{ position: "relative", minHeight: "90vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
         <img src="/model2.jpg" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(105deg, rgba(6,14,27,0.97) 0%, rgba(6,14,27,0.90) 40%, rgba(6,14,27,0.55) 65%, rgba(6,14,27,0.1) 100%)" }} />
-        {/* linha dourada */}
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${GOLD_MID}, transparent)` }} />
 
-        <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 1280, margin: "0 auto", padding: "110px 24px 60px" }}>
+        <div className="hero-content" style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 1280, margin: "0 auto", padding: "110px 24px 60px" }}>
           <div style={{ maxWidth: 560 }}>
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, textTransform: "uppercase", marginBottom: 22 }}>
               A plataforma premium do Brasil
@@ -143,10 +149,13 @@ export default function HomePage() {
       <section style={{ background: "#060e1b", padding: "0 16px 16px" }}>
         <style>{`
           .procura-grid { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid rgba(212,168,67,0.28); border-radius: 20px; overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,0.4); }
-          .procura-item { padding: 22px 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; border-right: 1px solid rgba(212,168,67,0.12); border-bottom: 1px solid rgba(212,168,67,0.12); background: #0b1420; text-decoration: none; transition: all 0.2s; cursor: pointer; position: relative; }
-          .procura-item:hover { background: rgba(212,168,67,0.06) !important; border-color: rgba(212,168,67,0.3) !important; transform: scale(0.98); }
-          .procura-arrow { position: absolute; bottom: 14px; right: 14px; color: rgba(212,168,67,0.4); font-size: 16px; transition: all 0.2s; }
-          .procura-item:hover .procura-arrow { color: #d4a843; transform: translateX(3px); }
+          .procura-item { padding: 20px 16px 44px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; border-right: 1px solid rgba(212,168,67,0.12); border-bottom: 1px solid rgba(212,168,67,0.12); background: #0b1420; text-decoration: none; transition: all 0.18s; cursor: pointer; position: relative; -webkit-tap-highlight-color: rgba(212,168,67,0.15); }
+          .procura-item:hover, .procura-item:active { background: rgba(212,168,67,0.08) !important; }
+          .procura-cta { position: absolute; bottom: 0; left: 0; right: 0; padding: 9px 16px; background: rgba(212,168,67,0.08); border-top: 1px solid rgba(212,168,67,0.12); display: flex; align-items: center; justify-content: space-between; transition: background 0.18s; }
+          .procura-item:hover .procura-cta, .procura-item:active .procura-cta { background: rgba(212,168,67,0.18); }
+          .procura-cta span { font-size: 11px; font-weight: 700; color: #d4a843; letter-spacing: 0.5px; text-transform: uppercase; }
+          .procura-cta svg { transition: transform 0.18s; }
+          .procura-item:hover .procura-cta svg { transform: translateX(4px); }
         `}</style>
         <div style={{ maxWidth: 600, margin: "0 auto", transform: "translateY(-32px)" }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 3, textAlign: "center", marginBottom: 14 }}>
@@ -191,11 +200,17 @@ export default function HomePage() {
                 <div style={{ width: 52, height: 52, borderRadius: 14, background: opt.iconBg, border: `1px solid ${opt.iconBorder}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {opt.icon}
                 </div>
-                <div style={{ paddingRight: 24 }}>
-                  <p style={{ margin: "0 0 5px", fontSize: 14, fontWeight: 700, color: "#f1f5f9", fontFamily: PLAYFAIR, lineHeight: 1.2 }}>{opt.title}</p>
-                  <p style={{ margin: 0, fontSize: 12, color: "#475569", lineHeight: 1.6 }}>{opt.desc}</p>
+                <div>
+                  <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: "#f1f5f9", fontFamily: PLAYFAIR, lineHeight: 1.2 }}>{opt.title}</p>
+                  <p style={{ margin: 0, fontSize: 11, color: "#475569", lineHeight: 1.55 }}>{opt.desc}</p>
                 </div>
-                <span className="procura-arrow">→</span>
+                {/* Barra inferior clicável */}
+                <div className="procura-cta">
+                  <span>Acessar</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d4a843" strokeWidth="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </div>
               </Link>
             ))}
           </div>
