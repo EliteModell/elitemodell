@@ -66,7 +66,7 @@ const CATEGORIAS = [
   { label: "Acompanhantes Femininas", sub: "Mulheres", count: "+1.400 perfis", cidades: "São Paulo · Rio · Curitiba · BH · Brasília", href: "/buscar?tab=acompanhantes&sub=mulheres" },
   { label: "Acompanhantes Trans", sub: "Trans", count: "+320 perfis", cidades: "São Paulo · Rio · Salvador · Florianópolis", href: "/buscar?tab=acompanhantes&sub=trans" },
   { label: "Acompanhantes Masculinos", sub: "Homens", count: "+280 perfis", cidades: "São Paulo · Rio · BH · Porto Alegre", href: "/buscar?tab=acompanhantes&sub=homens" },
-  { label: "Imóveis de Luxo", sub: "Hospedagem", count: "+600 imóveis", cidades: "São Paulo · Rio · Florianópolis · Campos", href: "/buscar?tab=imoveis" },
+  { label: "Imóveis", sub: "Hospedagem", count: "+600 imóveis", cidades: "São Paulo · Rio · Florianópolis · Campos", href: "/buscar?tab=imoveis" },
 ];
 
 const FEATURES = [
@@ -132,7 +132,7 @@ export default function HomePage() {
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = GOLD_MID; (e.currentTarget as HTMLElement).style.background = "transparent"; }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.8"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" /><path d="M9 21V12h6v9" /></svg>
-                Imóveis de Luxo
+                Imóveis
               </Link>
             </div>
           </div>
@@ -143,8 +143,10 @@ export default function HomePage() {
       <section style={{ background: "#060e1b", padding: "0 16px 16px" }}>
         <style>{`
           .procura-grid { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid rgba(212,168,67,0.28); border-radius: 20px; overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,0.4); }
-          .procura-item { padding: 24px 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; border-right: 1px solid rgba(212,168,67,0.12); border-bottom: 1px solid rgba(212,168,67,0.12); background: #0b1420; text-decoration: none; transition: background 0.2s; }
-          .procura-item:hover { background: rgba(212,168,67,0.04) !important; }
+          .procura-item { padding: 22px 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; border-right: 1px solid rgba(212,168,67,0.12); border-bottom: 1px solid rgba(212,168,67,0.12); background: #0b1420; text-decoration: none; transition: all 0.2s; cursor: pointer; position: relative; }
+          .procura-item:hover { background: rgba(212,168,67,0.06) !important; border-color: rgba(212,168,67,0.3) !important; transform: scale(0.98); }
+          .procura-arrow { position: absolute; bottom: 14px; right: 14px; color: rgba(212,168,67,0.4); font-size: 16px; transition: all 0.2s; }
+          .procura-item:hover .procura-arrow { color: #d4a843; transform: translateX(3px); }
         `}</style>
         <div style={{ maxWidth: 600, margin: "0 auto", transform: "translateY(-32px)" }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 3, textAlign: "center", marginBottom: 14 }}>
@@ -155,23 +157,23 @@ export default function HomePage() {
               {
                 href: "/buscar?tab=acompanhantes",
                 title: "Busco prazer",
-                desc: "Companhia para momentos especiais e discretos.",
+                desc: "Encontre companhia para momentos especiais e discretos.",
                 iconBg: "rgba(204,0,0,0.12)",
                 iconBorder: "rgba(204,0,0,0.25)",
                 icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="#cc0000"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
               },
               {
-                href: "/buscar?tab=imoveis",
-                title: "Imóveis",
-                desc: "Os melhores imóveis para estadias exclusivas.",
+                href: "/anfitriao/imoveis/novo",
+                title: "Anunciar imóvel",
+                desc: "Cadastre seu imóvel e alcance mais clientes.",
                 iconBg: GOLD_DIM,
                 iconBorder: GOLD_MID,
-                icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>,
+                icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,
               },
               {
                 href: "/buscar?tab=imoveis",
-                title: "Locar imóveis",
-                desc: "Alugue rápido, seguro e sem burocracia.",
+                title: "Alugar imóvel",
+                desc: "Encontre o espaço perfeito para sua estadia.",
                 iconBg: GOLD_DIM,
                 iconBorder: GOLD_MID,
                 icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
@@ -186,13 +188,14 @@ export default function HomePage() {
               },
             ].map((opt) => (
               <Link key={opt.title} href={opt.href} className="procura-item">
-                <div style={{ width: 52, height: 52, borderRadius: 14, background: opt.iconBg, border: `1px solid ${opt.iconBorder}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 16px ${opt.iconBg}` }}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: opt.iconBg, border: `1px solid ${opt.iconBorder}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {opt.icon}
                 </div>
-                <div>
+                <div style={{ paddingRight: 24 }}>
                   <p style={{ margin: "0 0 5px", fontSize: 14, fontWeight: 700, color: "#f1f5f9", fontFamily: PLAYFAIR, lineHeight: 1.2 }}>{opt.title}</p>
                   <p style={{ margin: 0, fontSize: 12, color: "#475569", lineHeight: 1.6 }}>{opt.desc}</p>
                 </div>
+                <span className="procura-arrow">→</span>
               </Link>
             ))}
           </div>

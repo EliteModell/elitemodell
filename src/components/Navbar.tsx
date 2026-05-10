@@ -37,7 +37,7 @@ export default function Navbar() {
             style={{ padding: "8px 16px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14, fontWeight: 500, transition: "all 0.2s" }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#f1f5f9"; (e.currentTarget as HTMLElement).style.background = "rgba(212,168,67,0.06)"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#94a3b8"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-            Imóveis de Luxo
+            Imóveis
           </Link>
         </div>
 
@@ -88,7 +88,7 @@ export default function Navbar() {
       {menuOpen && (
         <div style={{ background: "#0b1420", borderBottom: "1px solid rgba(212,168,67,0.12)", padding: "16px 24px", display: "flex", flexDirection: "column", gap: 8 }}>
           <Link href="/buscar?tab=acompanhantes" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14 }}>Acompanhantes</Link>
-          <Link href="/buscar?tab=imoveis" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14 }}>Imóveis de Luxo</Link>
+          <Link href="/buscar?tab=imoveis" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14 }}>Imóveis</Link>
           {!session && (
             <>
               <Link href="/login" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, color: "#d4a843", textDecoration: "none", fontSize: 14, border: "1px solid rgba(212,168,67,0.2)" }}>Entrar</Link>
