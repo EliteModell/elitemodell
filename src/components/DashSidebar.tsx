@@ -101,6 +101,11 @@ const professionalNav: NavItem[] = [
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>,
   },
   {
+    label: "Planos e assinaturas",
+    href: "/profissional/planos",
+    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
+  },
+  {
     label: "Fotos",
     href: "/profissional/fotos",
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
@@ -166,10 +171,11 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
         className={`dash-sidebar ${mobileOpen ? "mobile-open" : ""}`}
       >
         {/* Logo */}
-        <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid #1a1a1a" }}>
+        <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid rgba(212,168,67,0.12)" }}>
           <Link href="/" style={{ textDecoration: "none" }}>
-            <span style={{ fontWeight: 800, fontSize: 20, color: "#fff" }}>
-              elite<span style={{ color: "#cc0000" }}>modell</span>
+            <span style={{ fontWeight: 900, fontSize: 20, letterSpacing: "-0.5px" }}>
+              <span style={{ background: "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>elite</span>
+              <span style={{ color: "#f1f5f9" }}>modell</span>
             </span>
           </Link>
         </div>
@@ -182,7 +188,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                 width: 36,
                 height: 36,
                 borderRadius: "50%",
-                background: "#cc0000",
+                background: "#d4a843",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -222,7 +228,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                   borderRadius: 8,
                   textDecoration: "none",
                   color: active ? "#fff" : "#777",
-                  background: active ? "rgba(204,0,0,0.12)" : "transparent",
+                  background: active ? "rgba(212,168,67,0.12)" : "transparent",
                   fontSize: 14,
                   fontWeight: active ? 600 : 400,
                   marginBottom: 2,
@@ -235,7 +241,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                   if (!active) (e.currentTarget as HTMLElement).style.color = "#777";
                 }}
               >
-                <span style={{ color: active ? "#cc0000" : "inherit" }}>{item.icon}</span>
+                <span style={{ color: active ? "#d4a843" : "inherit" }}>{item.icon}</span>
                 {item.label}
               </Link>
             );
@@ -282,7 +288,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
               width: "100%",
               transition: "color 0.2s",
             }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#cc0000")}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#d4a843")}
             onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#666")}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

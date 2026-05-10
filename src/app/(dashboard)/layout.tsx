@@ -18,14 +18,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (status === "loading") {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0d0d0d" }}>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#060e1b" }}>
         <div style={{ textAlign: "center" }}>
           <div
             style={{
               width: 40,
               height: 40,
               border: "3px solid #222",
-              borderTopColor: "#cc0000",
+              borderTopColor: "#d4a843",
               borderRadius: "50%",
               animation: "spin 0.8s linear infinite",
               margin: "0 auto 16px",
@@ -63,7 +63,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             justifyContent: "space-between",
             padding: "0 20px",
             height: 56,
-            background: "#0d0d0d",
+            background: "#060e1b",
             borderBottom: "1px solid #1e1e1e",
             position: "sticky",
             top: 0,
@@ -81,8 +81,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <line x1="3" y1="18" x2="21" y2="18"/>
             </svg>
           </button>
-          <span style={{ fontWeight: 800, fontSize: 18, color: "#fff" }}>
-            elite<span style={{ color: "#cc0000" }}>modell</span>
+          <span style={{ fontWeight: 900, fontSize: 18, letterSpacing: "-0.5px" }}>
+            <span style={{ background: "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>elite</span>
+            <span style={{ color: "#f1f5f9" }}>modell</span>
           </span>
           <div style={{ width: 30 }} />
         </header>
