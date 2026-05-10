@@ -86,9 +86,12 @@ export default function HomePage() {
       {/* ── HERO ── */}
       <style>{`
         @media (max-width: 640px) {
-          .hero-section { min-height: 62vh !important; }
-          .hero-content { padding: 80px 20px 32px !important; }
-          .hero-stats { display: none !important; }
+          .hero-section { min-height: 46vh !important; }
+          .hero-content { padding: 72px 20px 20px !important; }
+          .hero-subtitle { display: none !important; }
+          .hero-btns { display: none !important; }
+          .hero-title { font-size: 30px !important; margin-bottom: 8px !important; }
+          .hero-tag { margin-bottom: 10px !important; }
         }
       `}</style>
       <section className="hero-section" style={{ position: "relative", minHeight: "90vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
@@ -98,11 +101,11 @@ export default function HomePage() {
 
         <div className="hero-content" style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 1280, margin: "0 auto", padding: "110px 24px 60px" }}>
           <div style={{ maxWidth: 560 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, textTransform: "uppercase", marginBottom: 22 }}>
+            <p className="hero-tag" style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, textTransform: "uppercase", marginBottom: 22 }}>
               A plataforma premium do Brasil
             </p>
 
-            <h1 style={{ fontSize: "clamp(32px, 5.2vw, 66px)", fontWeight: 700, margin: "0 0 20px", letterSpacing: "-1px", lineHeight: 1.0, wordBreak: "keep-all", hyphens: "none", fontFamily: "var(--font-playfair), serif" }}>
+            <h1 className="hero-title" style={{ fontSize: "clamp(32px, 5.2vw, 66px)", fontWeight: 700, margin: "0 0 20px", letterSpacing: "-1px", lineHeight: 1.0, wordBreak: "keep-all", hyphens: "none", fontFamily: "var(--font-playfair), serif" }}>
               <span style={{ background: PEARL_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block" }}>
                 Acompanhantes
               </span>
@@ -116,12 +119,12 @@ export default function HomePage() {
               </span>
             </h1>
 
-            <p style={{ color: "rgba(241,245,249,0.45)", fontSize: 16, margin: "0 0 44px", lineHeight: 1.75, maxWidth: 400 }}>
+            <p className="hero-subtitle" style={{ color: "rgba(241,245,249,0.45)", fontSize: 16, margin: "0 0 44px", lineHeight: 1.75, maxWidth: 400 }}>
               Perfis verificados, experiências premium e total discrição.
               Conectamos você às melhores acompanhantes e imóveis do país.
             </p>
 
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <div className="hero-btns" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               <Link
                 href="/buscar?tab=acompanhantes"
                 style={{ padding: "14px 30px", background: GOLD, color: "#060e1b", textDecoration: "none", borderRadius: 10, fontSize: 15, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 10, transition: "background 0.2s" }}
