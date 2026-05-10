@@ -92,7 +92,7 @@ export default function HomePage() {
       `}</style>
       <section className="hero-section" style={{ position: "relative", minHeight: "92vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
         {/* Foto da Lora — posicionada à direita para aparecer melhor no mobile */}
-        <img src="/model.jpeg" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "65% top" }} />
+        <img src="/model.jpeg" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "78% top" }} />
         {/* Overlay: escuro na esquerda, modelo visível na direita */}
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(100deg, rgba(6,14,27,0.97) 0%, rgba(6,14,27,0.90) 32%, rgba(6,14,27,0.50) 55%, rgba(6,14,27,0.05) 100%)" }} />
         {/* Linha dourada na base */}
