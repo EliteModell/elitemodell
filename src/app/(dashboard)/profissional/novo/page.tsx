@@ -1,51 +1,47 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
-const STEPS = ["Identidade", "Aparência", "Atendimento", "Serviços", "Valores", "Contato"];
-
-const SERVICOS = [
-  "Acompanhamento", "Jantar a dois", "Viagens", "Festas e eventos",
-  "Massagem", "Massagem tântrica", "Ensaio fotográfico", "Vídeo chamada",
-  "Pernoite", "Final de semana", "Hotéis", "Local próprio",
-];
-
-const FETICHES = [
-  "Striptease", "Dominação", "Roleplay", "Bondage", "Voyeurismo",
-  "Podolatria", "Fantasias/uniformes", "Acessórios eróticos", "Squirt",
-  "Ativo", "Passivo", "Versátil", "Permite filmagem", "Faz sexo virtual",
-];
-
-const ATENDIMENTO = ["A domicílio", "Local próprio", "Hotéis", "Motéis", "Aceita viajar", "Festas e eventos"];
-const ATENDE = ["Homens", "Mulheres", "Casais", "Homens trans", "Mulheres trans", "Não binário"];
-const GRUPOS = ["1 pessoa", "2 pessoas", "3 pessoas", "4 ou mais"];
-const PAGAMENTO = ["Pix", "Dinheiro", "Cartão de crédito", "Cartão de débito", "Transferência"];
-const CABELOS = ["Loira", "Morena", "Ruiva", "Castanho", "Colorido", "Preto", "Sem cabelo"];
-const OLHOS = ["Azul", "Castanho", "Verde", "Mel", "Cinza", "Preto"];
-const ETNIAS = ["Branca", "Negra", "Parda", "Oriental", "Indígena", "Latina", "Outra"];
-
+/* ── constantes de tema ─────────────────────────────────── */
 const GOLD = "#d4a843";
-const GOLD_DIM = "rgba(212,168,67,0.12)";
+const GOLD_DIM = "rgba(212,168,67,0.10)";
 const GOLD_MID = "rgba(212,168,67,0.28)";
 const PLAYFAIR = "var(--font-playfair), serif";
 
 const inputStyle: React.CSSProperties = {
   width: "100%", padding: "12px 14px", background: "#0b1420",
   border: "1px solid #1e293b", borderRadius: 10, color: "#f1f5f9",
-  fontSize: 14, outline: "none", boxSizing: "border-box",
-  transition: "border-color 0.2s",
+  fontSize: 14, outline: "none", boxSizing: "border-box", transition: "border-color 0.2s",
 };
-
 const labelStyle: React.CSSProperties = {
   display: "block", fontSize: 11, color: "#64748b", fontWeight: 700,
   textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8,
 };
 
+/* ── listas de opções ───────────────────────────────────── */
+const CABELOS   = ["Loira", "Morena", "Ruiva", "Castanho", "Colorido", "Preto", "Sem cabelo"];
+const OLHOS     = ["Azul", "Castanho", "Verde", "Mel", "Cinza", "Preto"];
+const ETNIAS    = ["Branca", "Negra", "Parda", "Oriental", "Indígena", "Latina", "Outra"];
+const SIGNOS    = ["Áries","Touro","Gêmeos","Câncer","Leão","Virgem","Libra","Escorpião","Sagitário","Capricórnio","Aquário","Peixes"];
+const ATENDIMENTO = ["A domicílio", "Local próprio", "Hotéis", "Motéis", "Aceita viajar", "Festas e eventos"];
+const ATENDE    = ["Homens", "Mulheres", "Casais", "Homens trans", "Mulheres trans", "Não binário"];
+const IDIOMAS   = ["Português", "Inglês", "Espanhol", "Francês", "Italiano", "Alemão"];
+const SERVICOS  = ["Acompanhamento", "Jantar a dois", "Viagens", "Festas e eventos", "Massagem", "Massagem tântrica", "Vídeo chamada", "Pernoite", "Final de semana", "Hotéis", "Local próprio"];
+const FETICHES  = ["Striptease", "Dominação", "Roleplay", "Bondage", "Fantasias/uniformes", "Acessórios eróticos", "Ativo", "Passivo", "Versátil", "Permite filmagem", "Faz sexo virtual"];
+const PAGAMENTO = ["Pix", "Dinheiro", "Cartão de crédito", "Cartão de débito", "Transferência"];
+const DIAS_SEMANA = ["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"];
+const DOCS_ACEITOS = ["RG / DNI", "CNH", "Passaporte", "CTPS", "OAB / CRM / CRO"];
+const ESTADOS_BR = ["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN","RO","RR","RS","SC","SE","SP","TO"];
+
+const STEPS = ["Dados", "Aparência", "Atendimento", "Serviços", "Valores", "Contato", "Fotos", "Documentos", "Verificação"];
+
+/* ── sub-componentes reutilizáveis ──────────────────────── */
 function Tag({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} style={{
-      padding: "8px 16px", borderRadius: 20, cursor: "pointer", fontSize: 13, fontWeight: active ? 700 : 400,
+      padding: "7px 15px", borderRadius: 20, cursor: "pointer", fontSize: 13,
+      fontWeight: active ? 700 : 400,
       border: `1.5px solid ${active ? GOLD : "#1e293b"}`,
       background: active ? GOLD_DIM : "transparent",
       color: active ? "#f1f5f9" : "#475569", transition: "all 0.15s",
@@ -55,156 +51,330 @@ function Tag({ label, active, onClick }: { label: string; active: boolean; onCli
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 32 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${GOLD_DIM}` }}>
-        <div style={{ width: 24, height: 2, background: GOLD, borderRadius: 2 }} />
-        <h3 style={{ color: "#f1f5f9", fontSize: 13, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.5, fontFamily: PLAYFAIR }}>{title}</h3>
+    <div style={{ marginBottom: 28 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: desc ? 6 : 14, paddingBottom: 10, borderBottom: `1px solid ${GOLD_DIM}` }}>
+        <div style={{ width: 20, height: 2, background: GOLD, borderRadius: 2, flexShrink: 0 }} />
+        <h3 style={{ color: "#f1f5f9", fontSize: 12, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.5 }}>{title}</h3>
       </div>
+      {desc && <p style={{ color: "#475569", fontSize: 12, margin: "0 0 14px", lineHeight: 1.6 }}>{desc}</p>}
       {children}
     </div>
   );
 }
 
+function UploadZone({ label, accept, preview, onFile, loading }: {
+  label: string; accept: string; preview?: string | null; onFile: (f: File) => void; loading?: boolean;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <div>
+      <label style={labelStyle}>{label}</label>
+      <div
+        onClick={() => ref.current?.click()}
+        style={{
+          border: `2px dashed ${preview ? GOLD_MID : "#1e293b"}`,
+          borderRadius: 12, padding: preview ? 0 : "28px 16px",
+          textAlign: "center", cursor: "pointer", background: GOLD_DIM,
+          overflow: "hidden", minHeight: preview ? 120 : "auto",
+          transition: "border-color 0.2s",
+        }}
+      >
+        {loading ? (
+          <div style={{ padding: "28px 0", color: "#475569", fontSize: 13 }}>Enviando...</div>
+        ) : preview ? (
+          <img src={preview} alt="preview" style={{ width: "100%", maxHeight: 220, objectFit: "cover", display: "block" }} />
+        ) : (
+          <>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.5" style={{ marginBottom: 8 }}>
+              <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <p style={{ color: "#475569", fontSize: 13, margin: 0 }}>Clique para selecionar</p>
+            <p style={{ color: "#334155", fontSize: 11, margin: "4px 0 0" }}>{accept.replace("image/*,video/*", "JPG, PNG ou MP4")}</p>
+          </>
+        )}
+      </div>
+      <input ref={ref} type="file" accept={accept} style={{ display: "none" }} onChange={(e) => { if (e.target.files?.[0]) onFile(e.target.files[0]); }} />
+    </div>
+  );
+}
+
+/* ── componente principal ───────────────────────────────── */
 export default function ProfissionalNovoPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
 
+  /* código único de verificação – gerado 1x por sessão */
+  const verificationCode = useMemo(() => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("-").slice(0, 4) + "-" + Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  }, []);
+
+  /* ── estado do formulário ─────────────────────────────── */
   const [form, setForm] = useState({
-    displayName: "", bio: "", city: "", state: "", escortCategory: "",
-    birthDate: "", height: "", weight: "",
-    hairColor: "", eyeColor: "", ethnicity: "",
-    hasTattoos: false, hasSilicone: false,
-    attendanceTypes: [] as string[], servesGenders: [] as string[], grupos: [] as string[],
+    /* etapa 1 */
+    displayName: "", bio: "", city: "", state: "", escortCategory: "", birthDate: "", signo: "",
+    /* etapa 2 */
+    height: "", weight: "", hairColor: "", eyeColor: "", ethnicity: "",
+    hasTattoos: false, hasSilicone: false, isDepilada: true,
+    /* etapa 3 */
+    attendanceTypes: [] as string[], servesGenders: [] as string[], idiomas: [] as string[],
+    diasDisponiveis: [] as string[], horarioInicio: "08:00", horarioFim: "22:00",
+    /* etapa 4 */
     services: [] as string[], fetishes: [] as string[],
-    pricePerHour: "", price30min: "", price2h: "", priceOvernight: "",
+    /* etapa 5 */
+    pricePerHour: "", price30min: "", price2h: "", priceOvernight: "", priceWebcam: "",
     paymentMethods: [] as string[],
+    /* etapa 6 */
     phone: "", whatsapp: "", instagram: "", website: "",
+    /* etapa 7 – fotos */
+    mainPhotoUrl: "", galleryUrls: [] as string[],
+    /* etapa 8 – documentos */
+    docType: "", docFrenteUrl: "", docVersoUrl: "",
+    docFrenteFile: null as File | null, docVersoFile: null as File | null,
+    /* etapa 9 – verificação */
+    verificationUrl: "", verificationFile: null as File | null, verificationType: "foto" as "foto" | "video",
   });
 
-  function set(field: string, value: any) {
+  function set<K extends keyof typeof form>(field: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [field]: value }));
   }
-
   function toggleArr(field: string, val: string) {
     setForm((f) => {
       const arr = (f as any)[field] as string[];
       return { ...f, [field]: arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val] };
     });
   }
-
   function toggleSingle(field: string, val: string) {
     setForm((f) => ({ ...f, [field]: (f as any)[field] === val ? "" : val }));
   }
 
+  /* ── upload helper ────────────────────────────────────── */
+  async function uploadFile(file: File, folder: string): Promise<string> {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch(`/api/upload?folder=${folder}`, { method: "POST", body: fd });
+    if (!res.ok) {
+      const d = await res.json();
+      throw new Error(d.error ?? "Erro no upload");
+    }
+    const d = await res.json();
+    return d.url;
+  }
+
+  /* upload da foto principal */
+  async function handleMainPhoto(file: File) {
+    setUploadingIdx(-1);
+    try {
+      const url = await uploadFile(file, "profiles/main");
+      set("mainPhotoUrl", url);
+      toast.success("Foto principal enviada!");
+    } catch { toast.error("Erro ao enviar foto."); }
+    finally { setUploadingIdx(null); }
+  }
+
+  /* upload de foto de galeria */
+  async function handleGalleryPhoto(file: File) {
+    if (form.galleryUrls.length >= 10) return toast.error("Máximo 10 fotos na galeria.");
+    setUploadingIdx(form.galleryUrls.length);
+    try {
+      const url = await uploadFile(file, "profiles/gallery");
+      set("galleryUrls", [...form.galleryUrls, url]);
+    } catch { toast.error("Erro ao enviar foto."); }
+    finally { setUploadingIdx(null); }
+  }
+
+  /* upload de documento (privado) */
+  async function handleDocUpload(file: File, side: "frente" | "verso") {
+    setUploadingIdx(side === "frente" ? 90 : 91);
+    try {
+      const url = await uploadFile(file, "documentos");
+      if (side === "frente") { set("docFrenteUrl", url); set("docFrenteFile", file); }
+      else { set("docVersoUrl", url); set("docVersoFile", file); }
+      toast.success(`Documento (${side}) enviado com segurança.`);
+    } catch { toast.error("Erro ao enviar documento."); }
+    finally { setUploadingIdx(null); }
+  }
+
+  /* upload da mídia de verificação */
+  async function handleVerifMedia(file: File) {
+    setUploadingIdx(99);
+    try {
+      const url = await uploadFile(file, "verificacao");
+      set("verificationUrl", url);
+      set("verificationFile", file);
+      set("verificationType", file.type.startsWith("video/") ? "video" : "foto");
+      toast.success("Mídia de verificação enviada!");
+    } catch { toast.error("Erro ao enviar mídia."); }
+    finally { setUploadingIdx(null); }
+  }
+
+  /* ── submit final ─────────────────────────────────────── */
   async function submit() {
     setLoading(true);
     try {
+      const payload = {
+        displayName: form.displayName,
+        bio: form.bio,
+        city: form.city,
+        state: form.state,
+        escortCategory: form.escortCategory,
+        birthDate: form.birthDate,
+        height: form.height ? Number(form.height) : undefined,
+        weight: form.weight ? Number(form.weight) : undefined,
+        hairColor: form.hairColor, eyeColor: form.eyeColor, ethnicity: form.ethnicity,
+        hasTattoos: form.hasTattoos, hasSilicone: form.hasSilicone,
+        attendanceTypes: form.attendanceTypes, servesGenders: form.servesGenders,
+        services: form.services, fetishes: form.fetishes,
+        specialties: form.services,
+        pricePerHour: form.pricePerHour ? Number(form.pricePerHour) : undefined,
+        price30min: form.price30min ? Number(form.price30min) : undefined,
+        price2h: form.price2h ? Number(form.price2h) : undefined,
+        priceOvernight: form.priceOvernight ? Number(form.priceOvernight) : undefined,
+        priceMin: form.pricePerHour ? Number(form.pricePerHour) : undefined,
+        paymentMethods: form.paymentMethods,
+        phone: form.phone, whatsapp: form.whatsapp, instagram: form.instagram,
+        image: form.mainPhotoUrl || undefined,
+        galleryUrls: form.galleryUrls,
+        docType: form.docType,
+        docFrenteUrl: form.docFrenteUrl, docVersoUrl: form.docVersoUrl,
+        verificationUrl: form.verificationUrl,
+        verificationType: form.verificationType,
+        verificationCode,
+        status: "PENDING_REVIEW",
+      };
       const res = await fetch("/api/professionals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          priceMin: form.pricePerHour ? Number(form.pricePerHour) : undefined,
-          priceMax: form.pricePerHour ? Number(form.pricePerHour) : undefined,
-          pricePerHour: form.pricePerHour ? Number(form.pricePerHour) : undefined,
-          price30min: form.price30min ? Number(form.price30min) : undefined,
-          price2h: form.price2h ? Number(form.price2h) : undefined,
-          priceOvernight: form.priceOvernight ? Number(form.priceOvernight) : undefined,
-          height: form.height ? Number(form.height) : undefined,
-          weight: form.weight ? Number(form.weight) : undefined,
-          specialties: form.services,
-        }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.error ?? "Erro ao criar perfil.");
+        const d = await res.json();
+        toast.error(d.error ?? "Erro ao criar perfil.");
         return;
       }
-      toast.success("Perfil criado! Aguardando aprovação.");
+      toast.success("Perfil enviado! Aguarde a aprovação em até 3 dias úteis.");
       router.push("/profissional");
-    } catch {
-      toast.error("Erro ao criar perfil.");
-    } finally {
-      setLoading(false);
-    }
+    } catch { toast.error("Erro ao enviar perfil."); }
+    finally { setLoading(false); }
   }
 
   const progress = ((step + 1) / STEPS.length) * 100;
+  const isLast = step === STEPS.length - 1;
 
+  function next() {
+    if (step === 0 && !form.displayName) { toast.error("Informe seu nome artístico."); return; }
+    if (step === 0 && !form.escortCategory) { toast.error("Selecione uma categoria."); return; }
+    if (step === 0 && !form.city) { toast.error("Informe sua cidade."); return; }
+    setStep((s) => Math.min(s + 1, STEPS.length - 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function back() { setStep((s) => Math.max(s - 1, 0)); window.scrollTo({ top: 0, behavior: "smooth" }); }
+
+  /* ── render ───────────────────────────────────────────── */
   return (
-    <div style={{ maxWidth: 680, margin: "0 auto", background: "#060e1b", minHeight: "100vh", padding: "32px 20px 80px" }}>
-      {/* Header */}
-      <div style={{ marginBottom: 32 }}>
-        <p style={{ fontSize: 11, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", margin: "0 0 10px" }}>EliteModell</p>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: "#f1f5f9", margin: "0 0 8px", fontFamily: PLAYFAIR }}>
-          Criar Perfil
+    <div style={{ maxWidth: 680, margin: "0 auto", paddingBottom: 80 }}>
+
+      {/* ── Header ── */}
+      <div style={{ marginBottom: 28 }}>
+        <p style={{ fontSize: 11, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", margin: "0 0 8px" }}>EliteModell — Novo anúncio</p>
+        <h1 style={{ fontSize: "clamp(22px, 4vw, 30px)", fontWeight: 700, color: "#f1f5f9", margin: "0 0 6px", fontFamily: PLAYFAIR }}>
+          Criar perfil de acompanhante
         </h1>
-        <p style={{ color: "#475569", fontSize: 14 }}>
-          Preencha com atenção — essas informações aparecem nos filtros de busca.
+        <p style={{ color: "#475569", fontSize: 13, margin: 0 }}>
+          Preencha com atenção. Seu perfil é revisado em até 3 dias úteis antes de aparecer publicamente.
         </p>
       </div>
 
-      {/* Progress */}
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-          <span style={{ fontSize: 12, color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>
-            Etapa {step + 1} de {STEPS.length} — {STEPS[step]}
-          </span>
-          <span style={{ fontSize: 12, color: "#cc0000", fontWeight: 700 }}>{Math.round(progress)}%</span>
+      {/* ── Progresso ── */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+          <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Etapa {step + 1} de {STEPS.length} — {STEPS[step]}</span>
+          <span style={{ fontSize: 12, color: GOLD, fontWeight: 700 }}>{Math.round(progress)}%</span>
         </div>
-        <div style={{ height: 3, background: "#1a1a1a", borderRadius: 3 }}>
-          <div style={{ height: "100%", width: `${progress}%`, background: "#cc0000", borderRadius: 3, transition: "width 0.3s" }} />
+        <div style={{ height: 3, background: "#1e293b", borderRadius: 3 }}>
+          <div style={{ height: "100%", width: `${progress}%`, background: GOLD, borderRadius: 3, transition: "width 0.4s ease" }} />
         </div>
-        <div style={{ display: "flex", gap: 0, marginTop: 16 }}>
+        {/* Step bubbles */}
+        <div style={{ display: "flex", marginTop: 14, overflowX: "auto", gap: 0 }}>
           {STEPS.map((s, i) => (
-            <div key={s} style={{ flex: 1, textAlign: "center" }}>
-              <div style={{ width: 28, height: 28, borderRadius: "50%", background: i < step ? "#cc0000" : i === step ? "#cc0000" : "#1a1a1a", border: `2px solid ${i <= step ? "#cc0000" : "#2a2a2a"}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 4px", fontSize: 11, fontWeight: 700, color: i <= step ? "#fff" : "#444" }}>
+            <div key={s} style={{ flex: 1, textAlign: "center", minWidth: 48 }}>
+              <button
+                onClick={() => i < step && setStep(i)}
+                style={{
+                  width: 28, height: 28, borderRadius: "50%", border: "none",
+                  background: i < step ? GOLD : i === step ? GOLD : "#1e293b",
+                  color: i <= step ? "#060e1b" : "#475569",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  margin: "0 auto 4px", fontSize: 11, fontWeight: 700,
+                  cursor: i < step ? "pointer" : "default",
+                  transition: "all 0.2s",
+                  opacity: i > step ? 0.5 : 1,
+                }}
+              >
                 {i < step ? "✓" : i + 1}
-              </div>
-              <span style={{ fontSize: 10, color: i === step ? "#fff" : "#444", fontWeight: i === step ? 700 : 400, textTransform: "uppercase", letterSpacing: 0.5 }}>{s}</span>
+              </button>
+              <span style={{ fontSize: 9, color: i === step ? GOLD : "#334155", fontWeight: i === step ? 700 : 400, textTransform: "uppercase", letterSpacing: 0.3, display: "block" }}>{s}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* STEP 0 — Identidade */}
+      {/* ══════════════════════════════════════════════
+          ETAPA 1 — DADOS BÁSICOS
+      ══════════════════════════════════════════════ */}
       {step === 0 && (
         <div>
-          <Section title="Dados básicos">
+          <Section title="Dados básicos" desc="Essas informações aparecem no seu perfil público.">
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
-                <label style={labelStyle}>Nome artístico</label>
+                <label style={labelStyle}>Nome artístico *</label>
                 <input value={form.displayName} onChange={(e) => set("displayName", e.target.value)} style={inputStyle} placeholder="Como quer ser chamada(o)" />
               </div>
               <div>
                 <label style={labelStyle}>Biografia</label>
-                <textarea value={form.bio} onChange={(e) => set("bio", e.target.value)} rows={4}
-                  style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
-                  placeholder="Conte sobre você, seus diferenciais, o que oferece de especial..." />
-                <div style={{ fontSize: 11, color: "#555", marginTop: 4 }}>{form.bio.length} caracteres</div>
+                <textarea value={form.bio} onChange={(e) => set("bio", e.target.value)} rows={5}
+                  style={{ ...inputStyle, resize: "vertical", lineHeight: 1.65 }}
+                  placeholder="Conte sobre você, seus diferenciais, o que oferece de especial. Perfis com bio completa recebem até 3x mais contatos." />
+                <div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>{form.bio.length} / 800 caracteres</div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 80px", gap: 12 }}>
                 <div>
-                  <label style={labelStyle}>Cidade</label>
+                  <label style={labelStyle}>Cidade *</label>
                   <input value={form.city} onChange={(e) => set("city", e.target.value)} style={inputStyle} placeholder="São Paulo" />
                 </div>
                 <div>
-                  <label style={labelStyle}>Estado</label>
-                  <input value={form.state} onChange={(e) => set("state", e.target.value)} style={inputStyle} placeholder="SP" maxLength={2} />
+                  <label style={labelStyle}>Estado *</label>
+                  <select value={form.state} onChange={(e) => set("state", e.target.value)}
+                    style={{ ...inputStyle, cursor: "pointer" }}>
+                    <option value="">UF</option>
+                    {ESTADOS_BR.map((e) => <option key={e} value={e}>{e}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Bairro</label>
+                  <input value={(form as any).bairro ?? ""} onChange={(e) => setForm(f => ({ ...f, bairro: e.target.value }))} style={inputStyle} placeholder="Centro" />
                 </div>
               </div>
             </div>
           </Section>
 
-          <Section title="Categoria">
-            <div style={{ display: "flex", gap: 10 }}>
-              {["MULHER", "TRANS", "HOMEM"].map((c) => (
-                <button key={c} type="button" onClick={() => toggleSingle("escortCategory", c)}
-                  style={{ flex: 1, padding: "14px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13, textTransform: "uppercase", letterSpacing: 1, border: `2px solid ${form.escortCategory === c ? "#cc0000" : "#2a2a2a"}`, background: form.escortCategory === c ? "rgba(204,0,0,0.1)" : "#0d0d0d", color: form.escortCategory === c ? "#fff" : "#555" }}>
-                  {c === "MULHER" ? "Mulher" : c === "TRANS" ? "Trans" : "Homem"}
+          <Section title="Categoria *">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+              {[["MULHER", "💃", "Mulher"], ["TRANS", "🌈", "Trans"], ["HOMEM", "🕺", "Homem"]].map(([val, emoji, label]) => (
+                <button key={val} type="button" onClick={() => toggleSingle("escortCategory", val)}
+                  style={{
+                    padding: "16px 8px", borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 14,
+                    border: `2px solid ${form.escortCategory === val ? GOLD : "#1e293b"}`,
+                    background: form.escortCategory === val ? GOLD_DIM : "#0b1420",
+                    color: form.escortCategory === val ? "#f1f5f9" : "#475569",
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                  }}>
+                  <span style={{ fontSize: 24 }}>{emoji}</span>
+                  {label}
                 </button>
               ))}
             </div>
@@ -212,14 +382,17 @@ export default function ProfissionalNovoPage() {
         </div>
       )}
 
-      {/* STEP 1 — Aparência */}
+      {/* ══════════════════════════════════════════════
+          ETAPA 2 — APARÊNCIA
+      ══════════════════════════════════════════════ */}
       {step === 1 && (
         <div>
-          <Section title="Medidas">
+          <Section title="Medidas e data de nascimento">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
               <div>
-                <label style={labelStyle}>Idade</label>
+                <label style={labelStyle}>Data de nascimento *</label>
                 <input type="date" value={form.birthDate} onChange={(e) => set("birthDate", e.target.value)} style={inputStyle} />
+                <div style={{ fontSize: 10, color: "#334155", marginTop: 3 }}>Mínimo 18 anos</div>
               </div>
               <div>
                 <label style={labelStyle}>Altura (cm)</label>
@@ -250,54 +423,79 @@ export default function ProfissionalNovoPage() {
             </div>
           </Section>
 
-          <Section title="Outros">
-            <div style={{ display: "flex", gap: 12 }}>
-              <button type="button" onClick={() => set("hasTattoos", !form.hasTattoos)}
-                style={{ flex: 1, padding: "12px", borderRadius: 10, cursor: "pointer", fontWeight: 600, fontSize: 13, border: `2px solid ${form.hasTattoos ? "#cc0000" : "#2a2a2a"}`, background: form.hasTattoos ? "rgba(204,0,0,0.1)" : "#0d0d0d", color: form.hasTattoos ? "#fff" : "#555" }}>
-                {form.hasTattoos ? "Com tatuagens" : "Sem tatuagens"}
-              </button>
-              <button type="button" onClick={() => set("hasSilicone", !form.hasSilicone)}
-                style={{ flex: 1, padding: "12px", borderRadius: 10, cursor: "pointer", fontWeight: 600, fontSize: 13, border: `2px solid ${form.hasSilicone ? "#cc0000" : "#2a2a2a"}`, background: form.hasSilicone ? "rgba(204,0,0,0.1)" : "#0d0d0d", color: form.hasSilicone ? "#fff" : "#555" }}>
-                {form.hasSilicone ? "Com silicone" : "Sem silicone"}
-              </button>
+          <Section title="Signo">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {SIGNOS.map((c) => <Tag key={c} label={c} active={form.signo === c} onClick={() => toggleSingle("signo", c)} />)}
+            </div>
+          </Section>
+
+          <Section title="Corpo">
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {[["hasTattoos", form.hasTattoos ? "🖋️ Com tatuagens" : "Sem tatuagens"],
+                ["hasSilicone", form.hasSilicone ? "✨ Com silicone" : "Sem silicone"],
+                ["isDepilada", form.isDepilada ? "✨ Depilada" : "Não depilada"]].map(([field, label]) => (
+                <button key={String(field)} type="button" onClick={() => set(field as any, !(form as any)[field as string])}
+                  style={{ padding: "10px 18px", borderRadius: 20, cursor: "pointer", fontSize: 13, fontWeight: 600, border: `1.5px solid ${(form as any)[field as string] ? GOLD : "#1e293b"}`, background: (form as any)[field as string] ? GOLD_DIM : "transparent", color: (form as any)[field as string] ? "#f1f5f9" : "#475569" }}>
+                  {String(label)}
+                </button>
+              ))}
             </div>
           </Section>
         </div>
       )}
 
-      {/* STEP 2 — Atendimento */}
+      {/* ══════════════════════════════════════════════
+          ETAPA 3 — ATENDIMENTO
+      ══════════════════════════════════════════════ */}
       {step === 2 && (
         <div>
-          <Section title="Tipo de atendimento">
+          <Section title="Tipo de atendimento" desc="Onde você realiza seus atendimentos?">
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {ATENDIMENTO.map((a) => <Tag key={a} label={a} active={form.attendanceTypes.includes(a)} onClick={() => toggleArr("attendanceTypes", a)} />)}
             </div>
           </Section>
 
-          <Section title="Atendo">
+          <Section title="Atendo" desc="Quem você atende?">
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {ATENDE.map((a) => <Tag key={a} label={a} active={form.servesGenders.includes(a)} onClick={() => toggleArr("servesGenders", a)} />)}
             </div>
           </Section>
 
-          <Section title="Grupos">
+          <Section title="Idiomas">
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {GRUPOS.map((g) => <Tag key={g} label={g} active={form.grupos.includes(g)} onClick={() => toggleArr("grupos", g)} />)}
+              {IDIOMAS.map((l) => <Tag key={l} label={l} active={form.idiomas.includes(l)} onClick={() => toggleArr("idiomas", l)} />)}
+            </div>
+          </Section>
+
+          <Section title="Disponibilidade — dias">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+              {DIAS_SEMANA.map((d) => <Tag key={d} label={d} active={form.diasDisponiveis.includes(d)} onClick={() => toggleArr("diasDisponiveis", d)} />)}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <label style={labelStyle}>Início</label>
+                <input type="time" value={form.horarioInicio} onChange={(e) => set("horarioInicio", e.target.value)} style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Fim</label>
+                <input type="time" value={form.horarioFim} onChange={(e) => set("horarioFim", e.target.value)} style={inputStyle} />
+              </div>
             </div>
           </Section>
         </div>
       )}
 
-      {/* STEP 3 — Serviços */}
+      {/* ══════════════════════════════════════════════
+          ETAPA 4 — SERVIÇOS
+      ══════════════════════════════════════════════ */}
       {step === 3 && (
         <div>
-          <Section title="Serviços oferecidos">
+          <Section title="Serviços oferecidos" desc="Selecione tudo o que você oferece.">
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {SERVICOS.map((s) => <Tag key={s} label={s} active={form.services.includes(s)} onClick={() => toggleArr("services", s)} />)}
             </div>
           </Section>
-
-          <Section title="Comportamento e fetiches">
+          <Section title="Comportamento e especialidades">
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {FETICHES.map((f) => <Tag key={f} label={f} active={form.fetishes.includes(f)} onClick={() => toggleArr("fetishes", f)} />)}
             </div>
@@ -305,30 +503,33 @@ export default function ProfissionalNovoPage() {
         </div>
       )}
 
-      {/* STEP 4 — Valores */}
+      {/* ══════════════════════════════════════════════
+          ETAPA 5 — VALORES
+      ══════════════════════════════════════════════ */}
       {step === 4 && (
         <div>
-          <Section title="Tabela de preços (R$)">
+          <Section title="Tabela de preços" desc="Esses valores aparecerão no seu perfil. Você pode alterá-los a qualquer momento.">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               {[
                 { field: "price30min", label: "30 minutos" },
                 { field: "pricePerHour", label: "1 hora" },
                 { field: "price2h", label: "2 horas" },
                 { field: "priceOvernight", label: "Pernoite" },
+                { field: "priceWebcam", label: "Vídeo chamada (15min)" },
               ].map(({ field, label }) => (
                 <div key={field}>
                   <label style={labelStyle}>{label}</label>
                   <div style={{ position: "relative" }}>
-                    <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#555", fontSize: 14 }}>R$</span>
-                    <input type="number" min={0} value={(form as any)[field]} onChange={(e) => set(field, e.target.value)}
-                      style={{ ...inputStyle, paddingLeft: 36 }} placeholder="0" />
+                    <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#475569", fontSize: 14, fontWeight: 700 }}>R$</span>
+                    <input type="number" min={0} value={(form as any)[field]} onChange={(e) => set(field as any, e.target.value)}
+                      style={{ ...inputStyle, paddingLeft: 40 }} placeholder="0,00" />
                   </div>
                 </div>
               ))}
             </div>
           </Section>
 
-          <Section title="Formas de pagamento">
+          <Section title="Formas de pagamento aceitas">
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {PAGAMENTO.map((p) => <Tag key={p} label={p} active={form.paymentMethods.includes(p)} onClick={() => toggleArr("paymentMethods", p)} />)}
             </div>
@@ -336,15 +537,21 @@ export default function ProfissionalNovoPage() {
         </div>
       )}
 
-      {/* STEP 5 — Contato */}
+      {/* ══════════════════════════════════════════════
+          ETAPA 6 — CONTATO
+      ══════════════════════════════════════════════ */}
       {step === 5 && (
         <div>
-          <Section title="Contato">
+          <Section title="Contato" desc="Seus dados de contato aparecem conforme o plano contratado. O WhatsApp pode ser ocultado.">
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
-                <label style={labelStyle}>WhatsApp</label>
-                <input value={form.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} style={inputStyle} placeholder="5511900000000" />
-                <div style={{ fontSize: 11, color: "#444", marginTop: 4 }}>Formato: 55 + DDD + número (ex: 5511912345678)</div>
+                <label style={labelStyle}>WhatsApp *</label>
+                <div style={{ position: "relative" }}>
+                  <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#475569", fontSize: 14, userSelect: "none" }}>🇧🇷 +55</span>
+                  <input value={form.whatsapp} onChange={(e) => set("whatsapp", e.target.value.replace(/\D/g, "").slice(0, 11))}
+                    style={{ ...inputStyle, paddingLeft: 72 }} placeholder="11 9 0000-0000" />
+                </div>
+                <p style={{ fontSize: 11, color: "#334155", margin: "4px 0 0" }}>Formato: DDD + número (ex: 11912345678)</p>
               </div>
               <div>
                 <label style={labelStyle}>Telefone</label>
@@ -352,37 +559,235 @@ export default function ProfissionalNovoPage() {
               </div>
               <div>
                 <label style={labelStyle}>Instagram</label>
-                <input value={form.instagram} onChange={(e) => set("instagram", e.target.value)} style={inputStyle} placeholder="@seuperfil" />
+                <div style={{ position: "relative" }}>
+                  <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#475569", fontSize: 14 }}>@</span>
+                  <input value={form.instagram.replace("@", "")} onChange={(e) => set("instagram", e.target.value)}
+                    style={{ ...inputStyle, paddingLeft: 32 }} placeholder="seuperfil" />
+                </div>
               </div>
               <div>
-                <label style={labelStyle}>Site / Portfólio</label>
+                <label style={labelStyle}>Site pessoal (opcional)</label>
                 <input value={form.website} onChange={(e) => set("website", e.target.value)} style={inputStyle} placeholder="https://" />
               </div>
             </div>
           </Section>
+        </div>
+      )}
 
-          <div style={{ padding: "16px 20px", background: "rgba(204,0,0,0.05)", border: "1px solid rgba(204,0,0,0.2)", borderRadius: 10, fontSize: 13, color: "#888", lineHeight: 1.7 }}>
-            Após envio, seu perfil passará por revisão da nossa equipe em até 48 horas antes de aparecer publicamente.
+      {/* ══════════════════════════════════════════════
+          ETAPA 7 — FOTOS
+      ══════════════════════════════════════════════ */}
+      {step === 6 && (
+        <div>
+          <Section title="Foto principal" desc="Esta é a primeira foto que os clientes veem. Deve ser real, clara e você pode escolher mostrar ou não o rosto.">
+            <UploadZone label="Foto de capa do perfil *" accept="image/*"
+              preview={form.mainPhotoUrl || null}
+              loading={uploadingIdx === -1}
+              onFile={handleMainPhoto} />
+            {form.mainPhotoUrl && (
+              <button onClick={() => set("mainPhotoUrl", "")} style={{ marginTop: 8, background: "none", border: "none", color: "#475569", fontSize: 12, cursor: "pointer" }}>
+                ✕ Remover foto
+              </button>
+            )}
+          </Section>
+
+          <Section title="Galeria de fotos" desc={`Adicione até 10 fotos. Fotos de boa qualidade aumentam muito as chances de contato. (${form.galleryUrls.length}/10)`}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+              {form.galleryUrls.map((url, i) => (
+                <div key={i} style={{ position: "relative", borderRadius: 10, overflow: "hidden", aspectRatio: "3/4", background: "#0b1420" }}>
+                  <img src={url} alt={`foto ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <button onClick={() => set("galleryUrls", form.galleryUrls.filter((_, j) => j !== i))}
+                    style={{ position: "absolute", top: 6, right: 6, width: 24, height: 24, borderRadius: "50%", background: "rgba(6,14,27,0.9)", border: "none", color: "#f1f5f9", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                </div>
+              ))}
+              {form.galleryUrls.length < 10 && (
+                <div>
+                  <UploadZone label="" accept="image/*"
+                    preview={null}
+                    loading={typeof uploadingIdx === "number" && uploadingIdx >= 0 && uploadingIdx < 90}
+                    onFile={handleGalleryPhoto} />
+                </div>
+              )}
+            </div>
+            <div style={{ marginTop: 12, padding: "10px 14px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 8 }}>
+              <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
+                ✦ Fotos explícitas <strong>não</strong> são permitidas na galeria pública.<br />
+                ✦ Você pode usar fotos com o rosto visível ou não — é sua escolha.<br />
+                ✦ Fotos de outras pessoas serão reprovadas na moderação.
+              </p>
+            </div>
+          </Section>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════
+          ETAPA 8 — DOCUMENTOS (privado)
+      ══════════════════════════════════════════════ */}
+      {step === 7 && (
+        <div>
+          <div style={{ background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "14px 18px", marginBottom: 24, display: "flex", gap: 12, alignItems: "flex-start" }}>
+            <span style={{ fontSize: 20, flexShrink: 0 }}>🔒</span>
+            <div>
+              <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Seus documentos são 100% privados</p>
+              <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", lineHeight: 1.65 }}>
+                As fotos do documento são armazenadas com criptografia e acessadas apenas pela equipe de verificação. Clientes nunca verão seus documentos. A análise leva até <strong>3 dias úteis</strong>.
+              </p>
+            </div>
+          </div>
+
+          <Section title="Tipo de documento">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {DOCS_ACEITOS.map((d) => (
+                <button key={d} type="button" onClick={() => set("docType", d)}
+                  style={{ padding: "11px 14px", borderRadius: 10, cursor: "pointer", fontWeight: 600, fontSize: 13, textAlign: "left",
+                    border: `1.5px solid ${form.docType === d ? GOLD : "#1e293b"}`,
+                    background: form.docType === d ? GOLD_DIM : "#0b1420",
+                    color: form.docType === d ? "#f1f5f9" : "#475569" }}>
+                  {d}
+                </button>
+              ))}
+            </div>
+            <p style={{ fontSize: 11, color: "#334155", marginTop: 10, lineHeight: 1.6 }}>
+              Documento com foto, expedido há menos de 10 anos, contendo: nome completo, nome da mãe e data de nascimento.
+            </p>
+          </Section>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+            <UploadZone label="Frente do documento *" accept="image/*"
+              preview={form.docFrenteUrl || null}
+              loading={uploadingIdx === 90}
+              onFile={(f) => handleDocUpload(f, "frente")} />
+            <UploadZone label="Verso do documento *" accept="image/*"
+              preview={form.docVersoUrl || null}
+              loading={uploadingIdx === 91}
+              onFile={(f) => handleDocUpload(f, "verso")} />
+          </div>
+
+          <Section title="Requisitos do documento">
+            <ul style={{ margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6 }}>
+              {[
+                "Deve estar legível, sem cortes ou borrões",
+                "Foto colorida (não aceito preto e branco)",
+                "Emitido há menos de 10 anos",
+                "Contém nome completo + nome da mãe + data de nascimento",
+                "Documentos vencidos não são aceitos",
+              ].map((r) => (
+                <li key={r} style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5 }}>
+                  <span style={{ color: GOLD, marginRight: 4 }}>✦</span>{r}
+                </li>
+              ))}
+            </ul>
+          </Section>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════
+          ETAPA 9 — MÍDIA DE VERIFICAÇÃO
+      ══════════════════════════════════════════════ */}
+      {step === 8 && (
+        <div>
+          <Section title="Mídia de verificação" desc="Esta etapa confirma que você é a pessoa real do documento. Após aprovação, você decide se a mídia aparece publicamente no perfil ou fica apenas com nossa equipe.">
+
+            {/* Código único */}
+            <div style={{ background: "#060e1b", border: `2px solid ${GOLD_MID}`, borderRadius: 14, padding: "20px", marginBottom: 24, textAlign: "center" }}>
+              <p style={{ fontSize: 11, color: "#475569", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: 2, fontWeight: 700 }}>Seu código de verificação único</p>
+              <div style={{ fontSize: 32, fontWeight: 900, color: GOLD, letterSpacing: 4, fontFamily: "monospace", margin: "0 0 8px" }}>
+                {verificationCode}
+              </div>
+              <p style={{ fontSize: 12, color: "#475569", margin: 0 }}>Copie este código em um papel e segure-o na foto/vídeo abaixo</p>
+            </div>
+
+            {/* Instruções passo a passo */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+              {[
+                ["1", "Escreva o código acima em um papel legível (pode ser qualquer papel)"],
+                ["2", "Segure o papel próximo ao seu rosto — mas você pode cobrir o rosto se quiser"],
+                ["3", "Tire uma selfie clara ou grave um vídeo curto (até 30 segundos)"],
+                ["4", "Envie abaixo. Nossa equipe analisa em até 3 dias úteis"],
+              ].map(([num, text]) => (
+                <div key={num} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontWeight: 800, fontSize: 12, color: GOLD }}>
+                    {num}
+                  </div>
+                  <p style={{ fontSize: 13, color: "#94a3b8", margin: "4px 0 0", lineHeight: 1.5 }}>{text}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Upload da mídia */}
+            <UploadZone
+              label="Selfie ou vídeo de verificação *"
+              accept="image/*,video/mp4,video/webm"
+              preview={form.verificationUrl && form.verificationType === "foto" ? form.verificationUrl : null}
+              loading={uploadingIdx === 99}
+              onFile={handleVerifMedia}
+            />
+            {form.verificationUrl && form.verificationType === "video" && (
+              <div style={{ marginTop: 8, padding: "10px 14px", background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 8, fontSize: 12, color: GOLD }}>
+                ✓ Vídeo enviado com sucesso
+              </div>
+            )}
+            {form.verificationUrl && (
+              <button onClick={() => { set("verificationUrl", ""); set("verificationFile", null); }}
+                style={{ marginTop: 8, background: "none", border: "none", color: "#475569", fontSize: 12, cursor: "pointer" }}>
+                ✕ Remover e enviar novamente
+              </button>
+            )}
+
+            {/* Zona segura explicação */}
+            <div style={{ marginTop: 20, background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 10, padding: "14px 16px" }}>
+              <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "#22c55e" }}>🛡️ Zona Segura — Seu rosto é opcional</p>
+              <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
+                Você <strong>não precisa mostrar o rosto</strong> na mídia pública. Após nossa aprovação, você escolhe se a mídia aparece no perfil com rosto visível, sem rosto, ou fica apenas com nossa equipe para fins de verificação interna.
+              </p>
+            </div>
+          </Section>
+
+          {/* Resumo final antes de enviar */}
+          <Section title="Resumo do perfil">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {[
+                ["Nome artístico", form.displayName || "—"],
+                ["Categoria", form.escortCategory || "—"],
+                ["Cidade", `${form.city}${form.state ? ", " + form.state : ""}` || "—"],
+                ["Foto principal", form.mainPhotoUrl ? "✓ Enviada" : "Não enviada"],
+                ["Fotos na galeria", `${form.galleryUrls.length} foto(s)`],
+                ["Documento", form.docFrenteUrl ? "✓ Enviado" : "Não enviado"],
+                ["Mídia de verificação", form.verificationUrl ? "✓ Enviada" : "Não enviada"],
+                ["WhatsApp", form.whatsapp || "—"],
+              ].map(([label, value]) => (
+                <div key={label} style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 8, padding: "10px 12px" }}>
+                  <div style={{ fontSize: 10, color: "#475569", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>{label}</div>
+                  <div style={{ fontSize: 13, color: String(value).startsWith("✓") ? "#22c55e" : "#f1f5f9", fontWeight: String(value).startsWith("✓") ? 700 : 400 }}>{value}</div>
+                </div>
+              ))}
+            </div>
+          </Section>
+
+          <div style={{ padding: "14px 18px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 10, marginTop: 8 }}>
+            <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", lineHeight: 1.7 }}>
+              Ao enviar, você confirma ter <strong>18 anos ou mais</strong> e concorda com os Termos de Uso da plataforma. Seu perfil fica em análise por até <strong>3 dias úteis</strong> e só ficará visível após aprovação.
+            </p>
           </div>
         </div>
       )}
 
-      {/* Navigation */}
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 40, paddingTop: 24, borderTop: `1px solid ${GOLD_DIM}` }}>
-        <button onClick={() => setStep((s) => Math.max(s - 1, 0))} disabled={step === 0}
-          style={{ padding: "12px 24px", background: "transparent", border: `1px solid ${step === 0 ? "#1e293b" : GOLD_MID}`, borderRadius: 10, color: step === 0 ? "#334155" : GOLD, fontSize: 14, cursor: step === 0 ? "default" : "pointer", fontWeight: 600, fontFamily: PLAYFAIR }}>
+      {/* ── Navegação entre etapas ── */}
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 36, paddingTop: 20, borderTop: `1px solid ${GOLD_DIM}` }}>
+        <button onClick={back} disabled={step === 0}
+          style={{ padding: "12px 24px", background: "transparent", border: `1px solid ${step === 0 ? "#1e293b" : GOLD_MID}`, borderRadius: 10, color: step === 0 ? "#334155" : GOLD, fontSize: 14, cursor: step === 0 ? "default" : "pointer", fontWeight: 600 }}>
           ← Voltar
         </button>
 
-        {step < STEPS.length - 1 ? (
-          <button onClick={() => setStep((s) => Math.min(s + 1, STEPS.length - 1))}
-            style={{ padding: "12px 32px", background: GOLD, border: "none", borderRadius: 10, color: "#060e1b", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: PLAYFAIR }}>
+        {!isLast ? (
+          <button onClick={next}
+            style={{ padding: "12px 32px", background: GOLD, border: "none", borderRadius: 10, color: "#060e1b", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
             Continuar →
           </button>
         ) : (
           <button onClick={submit} disabled={loading}
-            style={{ padding: "12px 32px", background: loading ? "#9e7b2a" : GOLD, border: "none", borderRadius: 10, color: "#060e1b", fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer", fontFamily: PLAYFAIR }}>
-            {loading ? "Enviando..." : "Criar perfil ✦"}
+            style={{ padding: "12px 32px", background: loading ? "#9e7b2a" : GOLD, border: "none", borderRadius: 10, color: "#060e1b", fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}>
+            {loading ? "Enviando..." : "Enviar para aprovação ✦"}
           </button>
         )}
       </div>

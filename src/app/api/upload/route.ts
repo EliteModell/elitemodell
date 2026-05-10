@@ -13,12 +13,15 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
 
+  const url = new URL(req.url);
+  const folder = url.searchParams.get("folder") ?? "stories";
+
   const formData = await req.formData();
   const file = formData.get("file") as File;
   if (!file) return NextResponse.json({ error: "Nenhum arquivo enviado." }, { status: 400 });
 
-  const ext = file.name.split(".").pop() ?? "jpg";
-  const path = `stories/${session.user.id}/${Date.now()}.${ext}`;
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+  const path = `${folder}/${session.user.id}/${Date.now()}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
 
   const { error } = await supabase.storage
@@ -33,6 +36,6 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     url: data.publicUrl,
     type: isVideo ? "video" : "image",
-    thumbnail: null,
+    path,
   });
 }
