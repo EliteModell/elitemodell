@@ -20,43 +20,40 @@ const imovelPreview = [
 
 const TRUST = [
   {
-    title: "Discrição Garantida",
-    desc: "Sua privacidade é nossa prioridade",
+    title: "Privacidade Garantida",
+    desc: "Seus dados são protegidos com criptografia avançada. Nenhuma informação é compartilhada.",
     icon: (
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="rgba(212,168,67,0.15)" stroke={GOLD} strokeWidth="1.8" />
-        <polyline points="9 12 11 14 15 10" stroke={GOLD} strokeWidth="2" fill="none" />
+        <rect x="3" y="11" width="18" height="11" rx="2" fill="rgba(212,168,67,0.12)" stroke={GOLD} strokeWidth="1.8"/>
+        <path d="M7 11V7a5 5 0 0110 0v4" stroke={GOLD} strokeWidth="1.8"/>
       </svg>
     ),
   },
   {
-    title: "Experiências Premium",
-    desc: "Momentos únicos com os melhores perfis",
+    title: "Seleção Rigorosa",
+    desc: "Cada perfil passa por verificação de documentos e fotos antes de ser publicado.",
     icon: (
-      <svg width="26" height="26" viewBox="0 0 24 24">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-          fill="rgba(212,168,67,0.2)" stroke={GOLD} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          fill="rgba(212,168,67,0.12)" stroke={GOLD} strokeWidth="1.8" />
       </svg>
     ),
   },
   {
-    title: "Perfis Verificados",
-    desc: "Todos os perfis passam por verificação rigorosa",
-    icon: (
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="10" fill="rgba(212,168,67,0.12)" stroke={GOLD} strokeWidth="1.8" />
-        <polyline points="9 12 11 14 15 10" stroke={GOLD} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    title: "Suporte 24h",
-    desc: "Atendimento humanizado sempre que precisar",
+    title: "Atendimento Premium",
+    desc: "Suporte dedicado para clientes e profissionais, com atendimento humanizado.",
     icon: (
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 18v-6a9 9 0 0 1 18 0v6" stroke={GOLD} strokeWidth="1.8" fill="rgba(212,168,67,0.1)" />
-        <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z" fill="rgba(212,168,67,0.15)" stroke={GOLD} strokeWidth="1.8" />
-        <path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" fill="rgba(212,168,67,0.15)" stroke={GOLD} strokeWidth="1.8" />
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="rgba(212,168,67,0.12)" stroke={GOLD} strokeWidth="1.8"/>
+      </svg>
+    ),
+  },
+  {
+    title: "Satisfação Garantida",
+    desc: "Experiências únicas com acompanhantes verificadas e imóveis exclusivos.",
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" fill="rgba(212,168,67,0.12)" stroke={GOLD} strokeWidth="1.8"/>
       </svg>
     ),
   },
@@ -86,45 +83,30 @@ export default function HomePage() {
       {/* ── HERO ── */}
       <style>{`
         @media (max-width: 640px) {
-          .hero-section { min-height: 52vh !important; }
-          .hero-content { padding: 72px 20px 24px !important; }
-          .hero-subtitle { display: none !important; }
-          .hero-btns { display: none !important; }
-          .hero-title { font-size: clamp(28px, 9vw, 38px) !important; margin-bottom: 10px !important; letter-spacing: -1px !important; }
-          .hero-tag { margin-bottom: 12px !important; }
-          .hero-lora { display: none !important; }
+          .hero-section { min-height: 55vh !important; }
+          .hero-content { padding: 76px 20px 28px !important; }
+          .hero-badges-row { flex-direction: column !important; gap: 6px !important; }
+          .hero-secure-card { display: none !important; }
+          .hero-title { font-size: clamp(30px, 9.5vw, 42px) !important; letter-spacing: -1px !important; line-height: 1.05 !important; }
         }
       `}</style>
-      <section className="hero-section" style={{ position: "relative", minHeight: "90vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
-        {/* Modelo principal — fundo */}
-        <img src="/model2.jpg" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
-        {/* Overlay gradiente — escuro na esquerda, abre na direita */}
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(100deg, rgba(6,14,27,0.97) 0%, rgba(6,14,27,0.88) 38%, rgba(6,14,27,0.45) 62%, rgba(6,14,27,0.15) 100%)" }} />
-        {/* Lora — portrait flutuante na direita */}
-        <div className="hero-lora" style={{
-          position: "absolute", right: "4%", bottom: 0, top: 64,
-          width: "clamp(160px, 26vw, 320px)",
-          overflow: "hidden",
-          borderLeft: `2px solid rgba(212,168,67,0.3)`,
-          WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 8%, black 85%, transparent 100%)",
-          maskImage: "linear-gradient(to bottom, transparent 0%, black 8%, black 85%, transparent 100%)",
-        }}>
-          <img src="/model.jpeg" alt="Lora" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", filter: "brightness(0.85)" }} />
-          {/* Nome Lora sobre a foto */}
-          <div style={{ position: "absolute", bottom: 32, left: 16, right: 16 }}>
-            <p style={{ fontSize: "clamp(18px, 2.5vw, 28px)", fontWeight: 700, color: "#f1f5f9", fontFamily: PLAYFAIR, margin: "0 0 3px", textShadow: "0 2px 12px rgba(0,0,0,0.7)" }}>Lora</p>
-            <p style={{ fontSize: 10, color: GOLD, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", margin: 0 }}>VIP · Verificada</p>
-          </div>
-        </div>
+      <section className="hero-section" style={{ position: "relative", minHeight: "92vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
+        {/* Foto da Lora como fundo principal */}
+        <img src="/model.jpeg" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+        {/* Overlay: escuro forte na esquerda para o texto, abre na direita para ver a modelo */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(105deg, rgba(6,14,27,0.96) 0%, rgba(6,14,27,0.88) 35%, rgba(6,14,27,0.55) 58%, rgba(6,14,27,0.1) 100%)" }} />
+        {/* Linha dourada na base */}
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${GOLD_MID}, transparent)` }} />
 
-        <div className="hero-content" style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 1280, margin: "0 auto", padding: "110px 24px 60px" }}>
-          <div style={{ maxWidth: 560 }}>
-            <p className="hero-tag" style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, textTransform: "uppercase", marginBottom: 22 }}>
+        <div className="hero-content" style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 1280, margin: "0 auto", padding: "120px 32px 80px" }}>
+          <div style={{ maxWidth: 600 }}>
+            {/* Tag */}
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, textTransform: "uppercase", marginBottom: 20 }}>
               A plataforma premium do Brasil
             </p>
 
-            <h1 className="hero-title" style={{ fontSize: "clamp(32px, 5.2vw, 66px)", fontWeight: 700, margin: "0 0 20px", letterSpacing: "-1px", lineHeight: 1.0, wordBreak: "keep-all", hyphens: "none", fontFamily: "var(--font-playfair), serif" }}>
+            {/* Headline */}
+            <h1 className="hero-title" style={{ fontSize: "clamp(36px, 5.5vw, 72px)", fontWeight: 700, margin: "0 0 18px", letterSpacing: "-2px", lineHeight: 1.0, fontFamily: PLAYFAIR }}>
               <span style={{ background: PEARL_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block" }}>
                 Acompanhantes
               </span>
@@ -134,35 +116,56 @@ export default function HomePage() {
               </span>
               <br />
               <span style={{ background: PEARL_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block" }}>
-                Imóveis exclusivos.
+                Experiências inesquecíveis.
               </span>
             </h1>
 
-            <p className="hero-subtitle" style={{ color: "rgba(241,245,249,0.45)", fontSize: 16, margin: "0 0 44px", lineHeight: 1.75, maxWidth: 400 }}>
-              Perfis verificados, experiências premium e total discrição.
-              Conectamos você às melhores acompanhantes e imóveis do país.
+            {/* Subtítulo curto e impactante */}
+            <p style={{ color: GOLD, fontSize: 15, fontWeight: 600, letterSpacing: 1.5, marginBottom: 32 }}>
+              Discrição. Elegância. Sofisticação.
             </p>
 
-            <div className="hero-btns" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <Link
-                href="/buscar?tab=acompanhantes"
-                style={{ padding: "14px 30px", background: GOLD, color: "#060e1b", textDecoration: "none", borderRadius: 10, fontSize: 15, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 10, transition: "background 0.2s" }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#e8bb47")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = GOLD)}
-              >
-                Ver Acompanhantes
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-              </Link>
-              <Link
-                href="/buscar?tab=imoveis"
-                style={{ padding: "14px 30px", background: "transparent", color: "#f1f5f9", textDecoration: "none", border: `1px solid ${GOLD_MID}`, borderRadius: 10, fontSize: 15, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 10, transition: "border-color 0.2s, background 0.2s" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = GOLD_MID; (e.currentTarget as HTMLElement).style.background = GOLD_DIM; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = GOLD_MID; (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.8"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" /><path d="M9 21V12h6v9" /></svg>
-                Imóveis
-              </Link>
+            {/* 3 badges inline */}
+            <div className="hero-badges-row" style={{ display: "flex", gap: 20, marginBottom: 40, flexWrap: "wrap" }}>
+              {[
+                { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>, label: "Discrição total e segurança" },
+                { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>, label: "Acompanhantes verificadas" },
+                { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/></svg>, label: "Experiências premium" },
+              ].map((b) => (
+                <div key={b.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {b.icon}
+                  <span style={{ fontSize: 13, color: "rgba(241,245,249,0.7)", fontWeight: 500 }}>{b.label}</span>
+                </div>
+              ))}
             </div>
+
+            {/* CTA principal */}
+            <Link
+              href="/buscar?tab=acompanhantes"
+              style={{ display: "inline-flex", alignItems: "center", gap: 12, padding: "15px 32px", background: "transparent", color: GOLD, border: `1.5px solid ${GOLD}`, borderRadius: 8, fontSize: 13, fontWeight: 800, textDecoration: "none", letterSpacing: 2, textTransform: "uppercase", transition: "all 0.2s" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = GOLD; (e.currentTarget as HTMLElement).style.color = "#060e1b"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = GOLD; }}
+            >
+              Encontre sua companhia ideal
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </Link>
+          </div>
+        </div>
+
+        {/* Card 100% SEGURO — canto inferior direito */}
+        <div className="hero-secure-card" style={{
+          position: "absolute", bottom: 32, right: 32, zIndex: 2,
+          background: "rgba(6,14,27,0.85)", backdropFilter: "blur(12px)",
+          border: `1px solid ${GOLD_MID}`, borderRadius: 14,
+          padding: "16px 20px", display: "flex", alignItems: "center", gap: 14,
+          maxWidth: 280,
+        }}>
+          <div style={{ width: 42, height: 42, borderRadius: 10, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          </div>
+          <div>
+            <p style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 800, color: GOLD, fontFamily: PLAYFAIR, letterSpacing: 0.5 }}>100% SEGURO</p>
+            <p style={{ margin: 0, fontSize: 11, color: "#64748b", lineHeight: 1.5 }}>Seus dados protegidos com criptografia avançada</p>
           </div>
         </div>
       </section>
@@ -239,15 +242,24 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── TRUST BADGES ── */}
+      {/* ── EXCLUSIVIDADE / TRUST ── */}
       <section style={{ background: "#060e1b", padding: "0 16px 72px" }}>
         <style>{`
-          .trust-grid { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid rgba(212,168,67,0.12); border-radius: 16px; overflow: hidden; }
+          .trust-grid { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid rgba(212,168,67,0.12); border-radius: 20px; overflow: hidden; }
           @media (max-width: 700px) { .trust-grid { grid-template-columns: 1fr 1fr; } }
           @media (max-width: 400px) { .trust-grid { grid-template-columns: 1fr; } }
-          .trust-item { padding: 24px 22px; display: flex; flex-direction: column; align-items: flex-start; gap: 14px; border-right: 1px solid rgba(212,168,67,0.12); border-bottom: 1px solid rgba(212,168,67,0.12); }
+          .trust-item { padding: 28px 22px; display: flex; flex-direction: column; align-items: flex-start; gap: 14px; border-right: 1px solid rgba(212,168,67,0.12); border-bottom: 1px solid rgba(212,168,67,0.12); background: #0b1420; }
         `}</style>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          {/* Header estilo mockup */}
+          <div style={{ textAlign: "center", marginBottom: 28 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: "uppercase", marginBottom: 10 }}>
+              Exclusividade que você merece
+            </p>
+            <h2 style={{ fontSize: "clamp(22px, 4vw, 38px)", fontWeight: 700, color: "#f1f5f9", margin: 0, fontFamily: PLAYFAIR, letterSpacing: "-0.5px" }}>
+              Mais que encontros, momentos únicos.
+            </h2>
+          </div>
           <div className="trust-grid">
             {TRUST.map((t) => (
               <div key={t.title} className="trust-item">
