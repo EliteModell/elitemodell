@@ -1,18 +1,26 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 
 const amenityOptions = ["Wi-Fi", "Piscina", "Pet Friendly", "Estacionamento", "Ar-condicionado", "Cozinha", "Churrasqueira", "Academia"];
 
-const mockProperties = [
-  { id: "1", title: "Cobertura de Luxo com Vista", city: "São Paulo", state: "SP", type: "Cobertura", pricePerNight: 850, rating: 4.9, totalReviews: 42, maxGuests: 6, bedrooms: 3, bathrooms: 2, allowPets: false, amenities: ["Wi-Fi", "Piscina", "Ar-condicionado"], image: null },
-  { id: "2", title: "Casa de Campo Familiar", city: "Campos do Jordão", state: "SP", type: "Casa", pricePerNight: 420, rating: 4.7, totalReviews: 28, maxGuests: 8, bedrooms: 4, bathrooms: 3, allowPets: true, amenities: ["Wi-Fi", "Churrasqueira", "Pet Friendly"], image: null },
-  { id: "3", title: "Apartamento Studio Moderno", city: "Rio de Janeiro", state: "RJ", type: "Studio", pricePerNight: 280, rating: 4.8, totalReviews: 67, maxGuests: 2, bedrooms: 1, bathrooms: 1, allowPets: false, amenities: ["Wi-Fi", "Ar-condicionado"], image: null },
-  { id: "4", title: "Villa Exclusiva Frente ao Mar", city: "Florianópolis", state: "SC", type: "Villa", pricePerNight: 1200, rating: 5.0, totalReviews: 15, maxGuests: 10, bedrooms: 5, bathrooms: 4, allowPets: true, amenities: ["Wi-Fi", "Piscina", "Pet Friendly", "Churrasqueira"], image: null },
-  { id: "5", title: "Loft Urbano no Centro", city: "Belo Horizonte", state: "MG", type: "Loft", pricePerNight: 220, rating: 4.6, totalReviews: 33, maxGuests: 2, bedrooms: 1, bathrooms: 1, allowPets: false, amenities: ["Wi-Fi", "Estacionamento"], image: null },
-  { id: "6", title: "Sítio com Lago e Trilhas", city: "Pirenópolis", state: "GO", type: "Sítio", pricePerNight: 380, rating: 4.9, totalReviews: 21, maxGuests: 12, bedrooms: 4, bathrooms: 3, allowPets: true, amenities: ["Wi-Fi", "Churrasqueira", "Pet Friendly", "Piscina"], image: null },
-];
+interface Property {
+  id: string;
+  title: string;
+  city: string;
+  state: string;
+  type: string;
+  pricePerNight: number;
+  rating: number;
+  totalReviews: number;
+  maxGuests: number;
+  bedrooms: number;
+  bathrooms: number;
+  allowPets: boolean;
+  amenities: { name: string }[];
+  photos: { url: string }[];
+}
 
 export default function ImoveisPage() {
   const [search, setSearch] = useState("");
@@ -21,23 +29,36 @@ export default function ImoveisPage() {
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [sortBy, setSortBy] = useState("rating");
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Carrega imóveis da API com debounce nos filtros
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const qs = new URLSearchParams();
+      if (search) qs.set("search", search);
+      if (guests > 1) qs.set("guests", String(guests));
+      if (priceMax < 2000) qs.set("priceMax", String(priceMax));
+      qs.set("sortBy", sortBy);
+      setLoading(true);
+      fetch(`/api/properties?${qs}`)
+        .then(r => r.json())
+        .then(d => setProperties(d.properties ?? []))
+        .catch(() => setProperties([]))
+        .finally(() => setLoading(false));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [search, guests, priceMax, sortBy]);
 
   const toggleAmenity = (a: string) =>
     setSelectedAmenities((prev) => prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]);
 
-  const filtered = mockProperties
-    .filter((p) => {
-      if (search && !p.city.toLowerCase().includes(search.toLowerCase()) && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
-      if (p.maxGuests < guests) return false;
-      if (p.pricePerNight > priceMax) return false;
-      if (selectedAmenities.length > 0 && !selectedAmenities.every((a) => p.amenities.includes(a))) return false;
-      return true;
-    })
-    .sort((a, b) => {
-      if (sortBy === "price_asc") return a.pricePerNight - b.pricePerNight;
-      if (sortBy === "price_desc") return b.pricePerNight - a.pricePerNight;
-      return b.rating - a.rating;
-    });
+  // Filtros server-side já aplicados pela API; aqui filtramos apenas amenities
+  const filtered = properties.filter((p) => {
+    if (selectedAmenities.length === 0) return true;
+    const propAmenities = p.amenities?.map(a => a.name) ?? [];
+    return selectedAmenities.every(a => propAmenities.includes(a));
+  });
 
   return (
     <div style={{ background: "#0d0d0d", minHeight: "100vh" }}>
@@ -194,7 +215,7 @@ export default function ImoveisPage() {
       {/* Results */}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px" }}>
         <p style={{ color: "#666", fontSize: 14, marginBottom: 24 }}>
-          {filtered.length} imóvel{filtered.length !== 1 ? "is" : ""} encontrado{filtered.length !== 1 ? "s" : ""}
+          {loading ? "Carregando..." : `${filtered.length} imóvel${filtered.length !== 1 ? "is" : ""} encontrado${filtered.length !== 1 ? "s" : ""}`}
         </p>
 
         <div
@@ -226,7 +247,7 @@ export default function ImoveisPage() {
   );
 }
 
-function PropertyCard({ property: p }: { property: typeof mockProperties[0] }) {
+function PropertyCard({ property: p }: { property: Property }) {
   const [hover, setHover] = useState(false);
 
   return (
@@ -321,14 +342,14 @@ function PropertyCard({ property: p }: { property: typeof mockProperties[0] }) {
           </div>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
-            {p.amenities.slice(0, 3).map((a) => (
-              <span key={a} style={{ padding: "3px 8px", background: "#0d0d0d", border: "1px solid #222", borderRadius: 4, fontSize: 11, color: "#888" }}>
-                {a}
+            {(p.amenities ?? []).slice(0, 3).map((a: { name: string }) => (
+              <span key={a.name} style={{ padding: "3px 8px", background: "#0d0d0d", border: "1px solid #222", borderRadius: 4, fontSize: 11, color: "#888" }}>
+                {a.name}
               </span>
             ))}
-            {p.amenities.length > 3 && (
+            {(p.amenities ?? []).length > 3 && (
               <span style={{ padding: "3px 8px", background: "#0d0d0d", border: "1px solid #222", borderRadius: 4, fontSize: 11, color: "#666" }}>
-                +{p.amenities.length - 3}
+                +{(p.amenities ?? []).length - 3}
               </span>
             )}
           </div>

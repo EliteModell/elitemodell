@@ -14,7 +14,7 @@ const mockProfessionals = [
     rating: 5.0, totalReviews: 42, createdAt: "2024-11-10",
     mainPhoto: "/model.jpeg", docType: "CNH",
     verificationCode: "ABCD-1234", verificationUrl: "/model.jpeg", verificationType: "foto",
-    rejectReason: "",
+    rejectReason: "", docFrenteUrl: "documentos/mock/frente.jpg", docVersoUrl: "documentos/mock/verso.jpg",
   },
   {
     id: "p2", displayName: "Amanda R.", slug: "amanda-r", city: "São Paulo", state: "SP",
@@ -23,7 +23,7 @@ const mockProfessionals = [
     rating: 4.9, totalReviews: 87, createdAt: "2024-10-05",
     mainPhoto: "/model1.jpg", docType: "RG / DNI",
     verificationCode: "EFGH-5678", verificationUrl: "/model1.jpg", verificationType: "foto",
-    rejectReason: "",
+    rejectReason: "", docFrenteUrl: "documentos/mock/frente.jpg", docVersoUrl: "documentos/mock/verso.jpg",
   },
   {
     id: "p3", displayName: "Valentina S.", slug: "valentina-s", city: "Rio de Janeiro", state: "RJ",
@@ -32,7 +32,7 @@ const mockProfessionals = [
     rating: 0, totalReviews: 0, createdAt: "2025-05-08",
     mainPhoto: "/model2.jpg", docType: "CNH",
     verificationCode: "XKPR-9021", verificationUrl: "/model2.jpg", verificationType: "foto",
-    rejectReason: "",
+    rejectReason: "", docFrenteUrl: "documentos/mock/frente.jpg", docVersoUrl: "documentos/mock/verso.jpg",
   },
   {
     id: "p4", displayName: "Carlos M.", slug: "carlos-m", city: "Curitiba", state: "PR",
@@ -41,7 +41,7 @@ const mockProfessionals = [
     rating: 0, totalReviews: 0, createdAt: "2025-05-09",
     mainPhoto: "", docType: "Passaporte",
     verificationCode: "MNTQ-4432", verificationUrl: "", verificationType: "foto",
-    rejectReason: "",
+    rejectReason: "", docFrenteUrl: "documentos/mock/frente.jpg", docVersoUrl: "documentos/mock/verso.jpg",
   },
   {
     id: "p5", displayName: "Ana B.", slug: "ana-b", city: "Belo Horizonte", state: "MG",
@@ -51,6 +51,7 @@ const mockProfessionals = [
     mainPhoto: "/model1.jpg", docType: "RG / DNI",
     verificationCode: "ZPLW-8810", verificationUrl: "/model1.jpg", verificationType: "foto",
     rejectReason: "Documento com data de emissão ilegível.",
+    docFrenteUrl: "documentos/mock/frente.jpg", docVersoUrl: "documentos/mock/verso.jpg",
   },
 ];
 

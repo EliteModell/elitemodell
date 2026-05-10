@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
@@ -213,7 +213,38 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
 }
 
 export default function PropertyDetailPage() {
-  const p = mockProperty;
+  const params = useParams();
+  const id = String(params?.id ?? "");
+  const [fetched, setFetched] = useState<typeof mockProperty | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/properties/${id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d) return;
+        // Adapta dados do backend (amenities/photos vêm em arrays de objetos)
+        setFetched({
+          ...mockProperty,
+          ...d,
+          amenities: (d.amenities ?? []).map((a: any) => a.name),
+          host: d.host ?? mockProperty.host,
+        });
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  const p = fetched ?? mockProperty;
+
+  if (loading && !fetched) {
+    return (
+      <div style={{ background: "#0d0d0d", minHeight: "100vh" }}>
+        <Navbar />
+        <div style={{ color: "#94a3b8", padding: "120px 24px", textAlign: "center" }}>Carregando imóvel...</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ background: "#0d0d0d", minHeight: "100vh" }}>
