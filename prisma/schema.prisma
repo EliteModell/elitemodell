@@ -77,6 +77,48 @@ enum CouponType {
   FIXED
 }
 
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportReason {
+  ILLEGAL_CONTENT
+  FAKE_PROFILE
+  HARASSMENT
+  SCAM
+  INAPPROPRIATE_CONTENT
+  FAKE_DOCUMENTS
+  OTHER
+}
+
+enum AuditAction {
+  USER_CREATED
+  USER_VERIFIED
+  USER_BLOCKED
+  USER_UNBLOCKED
+  PROFESSIONAL_APPROVED
+  PROFESSIONAL_REJECTED
+  PROPERTY_APPROVED
+  PROPERTY_REJECTED
+  CONTENT_FLAGGED
+  ADMIN_ACCESS
+  SETTINGS_CHANGED
+  PAYMENT_PROCESSED
+  PAYMENT_REFUNDED
+}
+
+enum AuditTargetType {
+  USER
+  PROFESSIONAL
+  PROPERTY
+  CONTENT
+  PAYMENT
+  SYSTEM
+}
+
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 model User {
@@ -88,10 +130,17 @@ model User {
   image           String?
   phone           String?
   document        String?
+  birthDate       DateTime?
   role            UserRole     @default(GUEST)
   category        UserCategory?
   verified        Boolean      @default(false)
   credits         Float        @default(0)
+  blocked         Boolean      @default(false)
+  blockReason     String?
+  blockedAt       DateTime?
+  lgpdConsent     Boolean      @default(false)
+  termsConsent    Boolean      @default(false)
+  consentDate     DateTime?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
@@ -110,6 +159,8 @@ model User {
   clientAppointments Appointment[]  @relation("ClientAppointments")
   proReviews         ProfessionalReview[] @relation("ProReviewAuthor")
   stories            Story[]
+  reportsCreated     Report[]       @relation("ReportAuthor")
+  auditLogsCreated   AuditLog[]     @relation("AuditAdmin")
 }
 
 model Story {
@@ -572,4 +623,50 @@ model ProfessionalReview {
   professional   Professional @relation(fields: [professionalId], references: [id])
   appointment    Appointment  @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   author         User         @relation("ProReviewAuthor", fields: [authorId], references: [id])
+}
+
+// ─── Moderação: Denúncias ────────────────────────────────────────────────────
+
+model Report {
+  id             String       @id @default(cuid())
+  authorId       String
+  targetType     String       // "USER", "PROFESSIONAL", "PROPERTY", "CONTENT"
+  targetId       String
+  reason         ReportReason
+  description    String       @db.Text
+  evidence       String[]     // URLs de imagens/screenshots
+  status         ReportStatus @default(PENDING)
+  reviewedBy     String?
+  reviewNotes    String?      @db.Text
+  resolution     String?      @db.Text
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  author         User         @relation("ReportAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+// ─── Auditoria ────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id             String           @id @default(cuid())
+  adminId        String
+  action         AuditAction
+  targetType     AuditTargetType
+  targetId       String
+  changes        Json?
+  reason         String?
+  ipAddress      String?
+  userAgent      String?
+  timestamp      DateTime         @default(now())
+
+  admin          User             @relation("AuditAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([timestamp])
 }

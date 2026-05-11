@@ -1,6 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./prisma";
+import { isAgeOfMajority } from "./age-validation";
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
@@ -58,6 +59,12 @@ export const authOptions: NextAuthOptions = {
             });
           }
 
+          // Validar se usuário está bloqueado
+          if (user.blocked) {
+            console.warn(`[AUTH] Usuário bloqueado tentando acessar: ${user.id}`);
+            return null;
+          }
+
           return {
             id: user.id,
             name: user.name,
@@ -80,9 +87,18 @@ export const authOptions: NextAuthOptions = {
       if (token.id && !token.role) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { role: true, professional: { select: { id: true } } },
+          select: { 
+            role: true, 
+            professional: { select: { id: true } },
+            blocked: true,
+          },
         });
         if (dbUser) {
+          // Validar bloqueio
+          if (dbUser.blocked) {
+            console.warn(`[JWT] Usuário bloqueado: ${token.id}`);
+            return null as any;
+          }
           token.role = dbUser.role;
           token.isProfessional = !!dbUser.professional;
         }

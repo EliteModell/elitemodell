@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import type { ConfirmationResult, RecaptchaVerifier as RV } from "firebase/auth";
+import { validateBirthDate } from "@/lib/age-validation";
 
 type Role = "GUEST" | "HOST";
 type Step = "form" | "verify" | "phone";
@@ -49,7 +50,16 @@ export default function CadastroPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<Step>("form");
-  const [form, setForm] = useState({ name: "", email: "", password: "", role: "GUEST" as Role });
+  const [form, setForm] = useState({ 
+    name: "", 
+    email: "", 
+    password: "", 
+    birthDate: "",
+    role: "GUEST" as Role,
+    lgpdConsent: false,
+    termsConsent: false,
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
@@ -58,6 +68,46 @@ export default function CadastroPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const newErrors: Record<string, string> = {};
+
+    // Validar nome
+    if (!form.name.trim()) {
+      newErrors.name = "Nome é obrigatório";
+    }
+
+    // Validar email
+    if (!form.email.includes("@")) {
+      newErrors.email = "Email inválido";
+    }
+
+    // Validar senha
+    if (form.password.length < 6) {
+      newErrors.password = "Mínimo 6 caracteres";
+    }
+
+    // Validar data de nascimento
+    if (!form.birthDate) {
+      newErrors.birthDate = "Data de nascimento é obrigatória";
+    } else {
+      const { isValid, isOfAge, errors: ageErrors } = validateBirthDate(form.birthDate);
+      if (!isOfAge) {
+        newErrors.birthDate = ageErrors[0] || "Você deve ter 18 anos ou mais";
+      }
+    }
+
+    // Validar consentimento
+    if (!form.lgpdConsent) {
+      newErrors.lgpdConsent = "Você deve aceitar a Política de Privacidade";
+    }
+    if (!form.termsConsent) {
+      newErrors.termsConsent = "Você deve aceitar os Termos de Uso";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     setLoading(true);
     try {
       const { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } =
@@ -77,7 +127,13 @@ export default function CadastroPage() {
       await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken, role: form.role }),
+        body: JSON.stringify({ 
+          idToken, 
+          role: form.role,
+          birthDate: form.birthDate,
+          lgpdConsent: form.lgpdConsent,
+          termsConsent: form.termsConsent,
+        }),
       });
 
       await sendEmailVerification(credential.user);
