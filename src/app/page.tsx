@@ -375,12 +375,14 @@ export default function HomePage() {
           position: absolute;
           inset: 0;
           z-index: -1;
+          background-color: #060e1b;
           background-image:
             linear-gradient(90deg, rgba(6,14,27,0.98) 0%, rgba(6,14,27,0.88) 34%, rgba(6,14,27,0.38) 62%, rgba(6,14,27,0.06) 84%),
             linear-gradient(180deg, rgba(6,14,27,0.1) 0%, #060e1b 100%),
             url("/hero-platform-premium.png");
           background-size: cover;
           background-position: 64% top;
+          background-repeat: no-repeat;
         }
 
         .hero-content {
@@ -1107,14 +1109,24 @@ export default function HomePage() {
 
         @media (max-width: 680px) {
           .market-hero {
-            padding: 88px 12px 34px;
+            padding: 88px 12px 26px;
           }
 
           .hero-bg {
             background-image:
-              linear-gradient(180deg, rgba(6,14,27,0.68) 0%, rgba(6,14,27,0.96) 64%, #060e1b 100%),
+              linear-gradient(180deg, rgba(6,14,27,0.58) 0%, rgba(6,14,27,0.9) 34%, #060e1b 56%, #060e1b 100%),
               url("/hero-platform-premium.png");
             background-position: center top;
+            background-size: auto 58vh;
+            background-repeat: no-repeat;
+          }
+
+          .hero-content {
+            gap: 18px;
+          }
+
+          .hero-copy {
+            max-width: none;
           }
 
           .hero-copy h1 {
@@ -1141,11 +1153,17 @@ export default function HomePage() {
           .search-console {
             grid-template-columns: 1fr;
             gap: 7px;
-            padding: 7px;
-            border-radius: 20px;
+            margin: 22px -2px 0;
+            padding: 9px;
+            border-radius: 0 0 20px 20px;
             background:
-              linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02)),
-              rgba(5,12,23,0.78);
+              linear-gradient(180deg, rgba(8,17,31,0.98), rgba(6,14,27,0.98)),
+              #060e1b;
+            border-color: rgba(212,168,67,0.26);
+            border-top: 1px solid rgba(255,255,255,0.08);
+            box-shadow:
+              inset 0 1px 0 rgba(255,255,255,0.06),
+              0 14px 34px rgba(0,0,0,0.24);
           }
 
           .field {
@@ -1171,16 +1189,20 @@ export default function HomePage() {
           .trust-strip {
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 6px;
-            margin-top: 12px;
+            margin: 8px -2px 0;
+            position: relative;
+            z-index: 1;
           }
 
           .trust-strip span {
-            min-height: 48px;
+            min-height: 42px;
             flex-direction: column;
             gap: 3px;
             padding: 7px 4px;
+            border-radius: 10px;
+            background: rgba(8,17,31,0.78);
             text-align: center;
-            font-size: 10.5px;
+            font-size: 10px;
             line-height: 1.15;
             white-space: normal;
           }
@@ -1188,6 +1210,11 @@ export default function HomePage() {
           .trust-strip svg {
             width: 15px;
             height: 15px;
+          }
+
+          .live-board {
+            max-width: none;
+            margin-top: 8px;
           }
 
           .section-block {
