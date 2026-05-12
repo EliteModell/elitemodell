@@ -9,11 +9,15 @@ import {
   Camera,
   ChevronRight,
   Fingerprint,
+  Heart,
+  HousePlus,
+  LockKeyhole,
   MapPin,
   Search,
   ShieldCheck,
   Star,
   UserRoundCheck,
+  UserRoundPlus,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -63,11 +67,31 @@ const verificationItems = [
   { icon: Fingerprint, title: "Biometria facial", text: "Liveness e desafio de verificação para anunciantes." },
 ];
 
-const categories = [
-  { label: "Mulheres", href: "/buscar?tab=acompanhantes&sub=mulheres&q=Belo%20Horizonte", total: "perfis femininos em Minas Gerais" },
-  { label: "Trans", href: "/buscar?tab=acompanhantes&sub=trans&q=Belo%20Horizonte", total: "perfis trans com moderação" },
-  { label: "Homens", href: "/buscar?tab=acompanhantes&sub=homens&q=Belo%20Horizonte", total: "acompanhantes masculinos em MG" },
-  { label: "Imóveis", href: "/buscar?tab=imoveis&q=Belo%20Horizonte", total: "locais reservados em BH e região" },
+const quickActions = [
+  {
+    label: "Busco prazer",
+    href: "/buscar?tab=acompanhantes&q=Belo%20Horizonte",
+    text: "Encontre companhia para momentos especiais e discretos.",
+    icon: Heart,
+  },
+  {
+    label: "Anunciar imóvel",
+    href: "/anfitriao/imoveis/novo",
+    text: "Cadastre um espaço reservado e alcance clientes qualificados.",
+    icon: HousePlus,
+  },
+  {
+    label: "Alugar imóvel",
+    href: "/buscar?tab=imoveis&q=Belo%20Horizonte",
+    text: "Encontre casas, flats e apartamentos discretos para sua estadia.",
+    icon: LockKeyhole,
+  },
+  {
+    label: "Sou profissional",
+    href: "/cadastro",
+    text: "Cadastre seu perfil com documentos, fotos reais e biometria.",
+    icon: UserRoundPlus,
+  },
 ];
 
 export default function HomePage() {
@@ -99,16 +123,17 @@ export default function HomePage() {
           <div className="hero-content">
             <div className="hero-copy">
               <div className="eyebrow">
-                Lançamento inicial em Minas Gerais · expansão Brasil
+                A plataforma premium do Brasil
               </div>
               <h1 className="premium-title">
-                <span>Companhia premium.</span>
-                <span>Locais reservados.</span>
-                <span>Verificação real.</span>
+                <span>Acompanhantes</span>
+                <span>de luxo.</span>
+                <span>Experiências inesquecíveis.</span>
               </h1>
+              <div className="hero-signature">Discrição. Elegância. Sofisticação.</div>
               <p>
-                A Elite Modell começa com curadoria forte em Minas Gerais, incluindo Belo Horizonte e Itaúna,
-                mas nasce preparada para abranger todo o Brasil com perfis verificados e imóveis discretos.
+                Encontre profissionais verificadas e imóveis reservados com privacidade,
+                segurança e curadoria premium.
               </p>
 
               <form className="search-console" onSubmit={submitSearch}>
@@ -154,7 +179,7 @@ export default function HomePage() {
               <div className="board-head">
                 <div>
                   <span>Em destaque agora</span>
-                  <strong>Referências em Minas Gerais</strong>
+                  <strong>Profissionais verificadas</strong>
                 </div>
                 <Link href="/buscar?tab=acompanhantes">
                   Ver todas <ChevronRight size={14} />
@@ -185,21 +210,26 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="quick-categories section-block">
+        <section className="quick-actions section-block">
           <div className="section-head">
             <div>
               <span>Entrada rápida</span>
-              <h2>Escolha o que você procura em Minas</h2>
+              <h2>O que você procura?</h2>
             </div>
           </div>
-          <div className="category-grid">
-            {categories.map((item) => (
-              <Link key={item.label} href={item.href} className="category-tile">
+          <div className="action-grid">
+            {quickActions.map((item) => {
+              const Icon = item.icon;
+
+              return (
+              <Link key={item.label} href={item.href} className="action-tile">
+                <span className="action-icon"><Icon size={22} /></span>
                 <strong>{item.label}</strong>
-                <p>{item.total}</p>
-                <ChevronRight size={18} />
+                <p>{item.text}</p>
+                <span className="action-cta">Acessar <ChevronRight size={16} /></span>
               </Link>
-            ))}
+              );
+            })}
           </div>
         </section>
 
@@ -207,7 +237,7 @@ export default function HomePage() {
           <div className="section-head">
             <div>
               <span>Seleção real</span>
-              <h2>Referências iniciais de profissionais verificadas</h2>
+              <h2>Perfis verificados com presença real</h2>
             </div>
             <Link href="/buscar?tab=acompanhantes">Ver acompanhantes <ChevronRight size={16} /></Link>
           </div>
@@ -398,6 +428,14 @@ export default function HomePage() {
           -webkit-background-clip: text;
           background-clip: text;
           -webkit-text-fill-color: transparent;
+        }
+
+        .hero-signature {
+          margin: 0 0 14px;
+          color: ${GOLD};
+          font-size: clamp(18px, 2vw, 24px);
+          font-weight: 800;
+          letter-spacing: 3px;
         }
 
         .hero-copy p,
@@ -655,7 +693,7 @@ export default function HomePage() {
           font-weight: 700;
         }
 
-        .category-grid {
+        .action-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           border: 1px solid ${GOLD_DIM};
@@ -664,9 +702,9 @@ export default function HomePage() {
           background: #08111f;
         }
 
-        .category-tile {
+        .action-tile {
           position: relative;
-          min-height: 132px;
+          min-height: 178px;
           padding: 22px;
           color: inherit;
           text-decoration: none;
@@ -675,15 +713,28 @@ export default function HomePage() {
           transition: background 0.18s;
         }
 
-        .category-tile:last-child {
+        .action-tile:last-child {
           border-right: 0;
         }
 
-        .category-tile:hover {
+        .action-tile:hover {
           background: rgba(212,168,67,0.08);
         }
 
-        .category-tile strong {
+        .action-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 54px;
+          height: 54px;
+          margin-bottom: 18px;
+          border: 1px solid ${GOLD_MID};
+          border-radius: 14px;
+          background: rgba(212,168,67,0.1);
+          color: ${GOLD};
+        }
+
+        .action-tile strong {
           display: block;
           color: #f1f5f9;
           font-family: ${PLAYFAIR};
@@ -691,7 +742,7 @@ export default function HomePage() {
           margin-bottom: 8px;
         }
 
-        .category-tile p {
+        .action-tile p {
           max-width: 190px;
           color: #94a3b8;
           font-size: 13px;
@@ -699,11 +750,18 @@ export default function HomePage() {
           margin: 0;
         }
 
-        .category-tile svg {
+        .action-cta {
           position: absolute;
           right: 18px;
           bottom: 18px;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
           color: ${GOLD};
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: 1.4px;
+          text-transform: uppercase;
         }
 
         .profile-grid,
@@ -965,7 +1023,7 @@ export default function HomePage() {
             max-width: 640px;
           }
 
-          .category-grid,
+          .action-grid,
           .profile-grid,
           .property-grid,
           .verification-grid {
@@ -1024,14 +1082,14 @@ export default function HomePage() {
             flex-direction: column;
           }
 
-          .category-grid,
+          .action-grid,
           .profile-grid,
           .property-grid,
           .verification-grid {
             grid-template-columns: 1fr;
           }
 
-          .category-tile {
+          .action-tile {
             min-height: 116px;
             border-right: 0;
             border-bottom: 1px solid ${GOLD_DIM};
