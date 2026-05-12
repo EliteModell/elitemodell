@@ -129,7 +129,11 @@ export default function HomePage() {
                 <span>de luxo.</span>
                 <span>Experiências inesquecíveis.</span>
               </h1>
-              <div className="hero-signature">Discrição. Elegância. Sofisticação.</div>
+              <div className="hero-signature">
+                <span>Curadoria privada</span>
+                <span>Ambientes reservados</span>
+                <span>Perfis verificados</span>
+              </div>
               <p>
                 Encontre profissionais verificadas e imóveis reservados com privacidade,
                 segurança e curadoria premium.
@@ -151,17 +155,28 @@ export default function HomePage() {
                   </datalist>
                 </label>
 
-                <label className="field">
+                <div className="field category-field" role="group" aria-label="Categoria">
                   <span>Categoria</span>
-                  <select value={category} onChange={(event) => setCategory(event.target.value)}>
-                    <option value="mulheres">Mulheres</option>
-                    <option value="trans">Trans</option>
-                    <option value="homens">Homens</option>
-                    <option value="imoveis">Imóveis</option>
-                  </select>
-                </label>
+                  <div className="category-options">
+                    {[
+                      ["mulheres", "Mulheres"],
+                      ["trans", "Trans"],
+                      ["homens", "Homens"],
+                      ["imoveis", "Imóveis"],
+                    ].map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={category === value ? "active" : ""}
+                        onClick={() => setCategory(value)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                <button type="submit">
+                <button type="submit" className="search-submit">
                   <Search size={18} />
                   Buscar
                 </button>
@@ -430,11 +445,27 @@ export default function HomePage() {
         }
 
         .hero-signature {
-          margin: 0 0 14px;
-          color: ${GOLD};
-          font-size: clamp(18px, 2vw, 24px);
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin: 0 0 16px;
+        }
+
+        .hero-signature span {
+          display: inline-flex;
+          align-items: center;
+          min-height: 30px;
+          padding: 7px 11px;
+          border: 1px solid rgba(212,168,67,0.24);
+          border-radius: 999px;
+          background:
+            linear-gradient(135deg, rgba(255,229,160,0.12), rgba(212,168,67,0.04)),
+            rgba(6,14,27,0.58);
+          color: #f4d98c;
+          font-size: 12px;
           font-weight: 800;
-          letter-spacing: 3px;
+          letter-spacing: 0;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
         }
 
         .hero-copy p,
@@ -449,26 +480,32 @@ export default function HomePage() {
 
         .search-console {
           display: grid;
-          grid-template-columns: minmax(240px, 1fr) 190px 150px;
-          gap: 10px;
+          grid-template-columns: minmax(250px, 1fr) minmax(278px, 0.82fr) 148px;
+          gap: 8px;
           max-width: 790px;
-          padding: 10px;
-          background: rgba(6, 14, 27, 0.84);
-          border: 1px solid ${GOLD_MID};
-          border-radius: 14px;
-          backdrop-filter: blur(14px);
-          box-shadow: 0 24px 80px rgba(0,0,0,0.38);
+          padding: 8px;
+          background:
+            linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.015)),
+            rgba(6, 14, 27, 0.76);
+          border: 1px solid rgba(212,168,67,0.34);
+          border-radius: 18px;
+          backdrop-filter: blur(18px);
+          box-shadow:
+            0 24px 80px rgba(0,0,0,0.38),
+            inset 0 1px 0 rgba(255,255,255,0.08);
         }
 
         .field {
           min-width: 0;
           display: flex;
           flex-direction: column;
-          gap: 5px;
-          padding: 10px 12px;
-          background: #08111f;
-          border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 10px;
+          gap: 6px;
+          padding: 11px 13px;
+          background:
+            linear-gradient(180deg, rgba(12,24,40,0.92), rgba(7,16,29,0.92));
+          border: 1px solid rgba(255,255,255,0.075);
+          border-radius: 13px;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
         }
 
         .field span {
@@ -479,8 +516,7 @@ export default function HomePage() {
           text-transform: uppercase;
         }
 
-        .field input,
-        .field select {
+        .field input {
           width: 100%;
           min-width: 0;
           border: 0;
@@ -490,15 +526,40 @@ export default function HomePage() {
           font-size: 14px;
         }
 
-        .field select option {
-          background: #08111f;
+        .category-field {
+          justify-content: center;
         }
 
-        .search-console button {
-          min-height: 58px;
+        .category-options {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 4px;
+        }
+
+        .category-options button {
+          min-width: 0;
+          min-height: 30px;
+          border: 1px solid transparent;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.035);
+          color: #9fb0c8;
+          font-size: 11px;
+          font-weight: 800;
+          cursor: pointer;
+          transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        .category-options button.active {
+          border-color: rgba(212,168,67,0.48);
+          background: linear-gradient(135deg, rgba(212,168,67,0.28), rgba(212,168,67,0.1));
+          color: #ffe5a0;
+        }
+
+        .search-submit {
+          min-height: 62px;
           border: 0;
-          border-radius: 10px;
-          background: ${GOLD};
+          border-radius: 13px;
+          background: linear-gradient(135deg, #ffe08b 0%, #d4a843 52%, #ad8129 100%);
           color: #060e1b;
           font-size: 15px;
           font-weight: 900;
@@ -507,26 +568,31 @@ export default function HomePage() {
           justify-content: center;
           gap: 8px;
           cursor: pointer;
+          box-shadow: 0 12px 30px rgba(212,168,67,0.22), inset 0 1px 0 rgba(255,255,255,0.32);
         }
 
         .trust-strip {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
-          margin-top: 18px;
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 8px;
+          max-width: 790px;
+          margin-top: 16px;
         }
 
         .trust-strip span {
           display: inline-flex;
           align-items: center;
-          gap: 7px;
-          padding: 8px 12px;
-          border: 1px solid rgba(212,168,67,0.18);
-          border-radius: 999px;
-          background: rgba(6,14,27,0.68);
+          justify-content: center;
+          gap: 6px;
+          min-height: 42px;
+          padding: 8px 10px;
+          border: 1px solid rgba(212,168,67,0.16);
+          border-radius: 12px;
+          background: rgba(6,14,27,0.54);
           color: #cbd5e1;
           font-size: 12px;
           white-space: nowrap;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
         }
 
         .live-board {
@@ -1041,7 +1107,7 @@ export default function HomePage() {
 
         @media (max-width: 680px) {
           .market-hero {
-            padding: 92px 16px 34px;
+            padding: 88px 12px 34px;
           }
 
           .hero-bg {
@@ -1052,24 +1118,76 @@ export default function HomePage() {
           }
 
           .hero-copy h1 {
-            font-size: clamp(37px, 12vw, 54px);
+            margin: 14px 0 16px;
+            font-size: clamp(36px, 12vw, 52px);
           }
 
           .hero-copy p {
             font-size: 14px;
+            margin-bottom: 20px;
+          }
+
+          .hero-signature {
+            gap: 6px;
+            margin-bottom: 14px;
+          }
+
+          .hero-signature span {
+            min-height: 28px;
+            padding: 6px 9px;
+            font-size: 10.5px;
           }
 
           .search-console {
             grid-template-columns: 1fr;
+            gap: 7px;
+            padding: 7px;
+            border-radius: 20px;
+            background:
+              linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02)),
+              rgba(5,12,23,0.78);
           }
 
-          .search-console button {
-            min-height: 48px;
+          .field {
+            padding: 12px 14px;
+            border-radius: 15px;
+          }
+
+          .category-options {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px;
+          }
+
+          .category-options button {
+            min-height: 36px;
+            font-size: 12px;
+          }
+
+          .search-submit {
+            min-height: 52px;
+            border-radius: 15px;
+          }
+
+          .trust-strip {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            margin-top: 12px;
           }
 
           .trust-strip span {
-            width: 100%;
+            min-height: 48px;
+            flex-direction: column;
+            gap: 3px;
+            padding: 7px 4px;
+            text-align: center;
+            font-size: 10.5px;
+            line-height: 1.15;
             white-space: normal;
+          }
+
+          .trust-strip svg {
+            width: 15px;
+            height: 15px;
           }
 
           .section-block {

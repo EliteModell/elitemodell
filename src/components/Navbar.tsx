@@ -9,12 +9,12 @@ export default function Navbar() {
 
   return (
     <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: "rgba(6,14,27,0.97)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(212,168,67,0.12)", height: 64 }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "100%" }}>
+      <div className="navbar-inner" style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "100%", gap: 12 }}>
 
         {/* Logo */}
-        <Link href="/" style={{ textDecoration: "none", position: "relative", display: "inline-block", padding: "6px 16px", border: "1.5px solid rgba(212,168,67,0.35)", borderRadius: 8, background: "rgba(212,168,67,0.04)" }}>
+        <Link className="brand-mark" href="/" style={{ textDecoration: "none", position: "relative", display: "inline-block", padding: "6px 16px", border: "1.5px solid rgba(212,168,67,0.35)", borderRadius: 8, background: "rgba(212,168,67,0.04)" }}>
           <span style={{ position: "absolute", top: -10, right: -5, color: "#d4a843", fontSize: 16, lineHeight: 1, userSelect: "none" }}>✦</span>
-          <span style={{ fontWeight: 900, fontSize: 22, letterSpacing: "-1px" }}>
+          <span className="brand-text" style={{ fontWeight: 900, fontSize: 22, letterSpacing: "-1px" }}>
             <span style={{
               background: "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 50%, #9e7b2a 75%, #d4a843 100%)",
               WebkitBackgroundClip: "text",
@@ -42,25 +42,25 @@ export default function Navbar() {
         </div>
 
         {/* Auth */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="auth-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {session ? (
             <>
-              <Link href="/dashboard" style={{ padding: "8px 18px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14, fontWeight: 500, border: "1px solid rgba(212,168,67,0.2)" }}>
+              <Link className="nav-auth-link" href="/dashboard" style={{ padding: "8px 18px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14, fontWeight: 500, border: "1px solid rgba(212,168,67,0.2)" }}>
                 {session.user?.name?.split(" ")[0] ?? "Minha conta"}
               </Link>
-              <button onClick={() => signOut()} style={{ padding: "8px 18px", borderRadius: 8, background: "transparent", border: "1px solid rgba(212,168,67,0.3)", color: "#d4a843", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+              <button className="nav-auth-link" onClick={() => signOut()} style={{ padding: "8px 18px", borderRadius: 8, background: "transparent", border: "1px solid rgba(212,168,67,0.3)", color: "#d4a843", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
                 Sair
               </button>
             </>
           ) : (
             <>
-              <Link href="/login"
+              <Link className="nav-auth-link login-link" href="/login"
                 style={{ padding: "8px 22px", borderRadius: 8, color: "#d4a843", textDecoration: "none", fontSize: 14, fontWeight: 600, border: "1px solid rgba(212,168,67,0.3)", transition: "all 0.2s", background: "transparent" }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(212,168,67,0.07)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
                 Entrar
               </Link>
-              <Link href="/cadastro"
+              <Link className="nav-auth-link signup-link" href="/cadastro"
                 style={{ padding: "8px 22px", borderRadius: 8, background: "#d4a843", color: "#060e1b", textDecoration: "none", fontSize: 14, fontWeight: 800, transition: "background 0.2s" }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#e8bb47")}
                 onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "#d4a843")}>
@@ -100,8 +100,80 @@ export default function Navbar() {
 
       <style>{`
         @media (max-width: 768px) {
+          .navbar-inner {
+            padding: 0 10px !important;
+            gap: 8px !important;
+          }
+
+          .brand-mark {
+            padding: 7px 10px !important;
+            border-radius: 10px !important;
+            flex-shrink: 0;
+          }
+
+          .brand-text {
+            font-size: 19px !important;
+            letter-spacing: -0.8px !important;
+          }
+
+          .auth-actions {
+            gap: 6px !important;
+            min-width: 0;
+          }
+
+          .nav-auth-link {
+            padding: 8px 11px !important;
+            border-radius: 10px !important;
+            font-size: 13px !important;
+          }
+
+          .signup-link {
+            padding-left: 13px !important;
+            padding-right: 13px !important;
+          }
+
           .mobile-menu-btn { display: flex !important; }
           .desktop-nav { display: none !important; }
+          .mobile-menu-btn {
+            width: 40px !important;
+            height: 40px !important;
+            align-items: center;
+            justify-content: center;
+            padding: 0 !important;
+            margin-left: 0 !important;
+            border-radius: 11px !important;
+            background: rgba(255,255,255,0.03) !important;
+          }
+        }
+
+        @media (max-width: 380px) {
+          .navbar-inner {
+            padding: 0 8px !important;
+            gap: 6px !important;
+          }
+
+          .brand-mark {
+            padding: 7px 8px !important;
+          }
+
+          .brand-text {
+            font-size: 18px !important;
+          }
+
+          .nav-auth-link {
+            padding: 8px 9px !important;
+            font-size: 12.5px !important;
+          }
+
+          .signup-link {
+            padding-left: 10px !important;
+            padding-right: 10px !important;
+          }
+
+          .mobile-menu-btn {
+            width: 38px !important;
+            height: 38px !important;
+          }
         }
       `}</style>
     </nav>
