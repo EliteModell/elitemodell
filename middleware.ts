@@ -4,6 +4,12 @@ import { NextRequest, NextResponse } from "next/server";
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
+  // Arquivos estaticos em /public sao servidos na raiz (/model.jpeg, /logo.png etc.).
+  // Eles nunca devem cair no fluxo de autenticacao.
+  if (/\.(?:avif|gif|ico|jpg|jpeg|png|svg|webp|txt|xml|json)$/i.test(pathname)) {
+    return NextResponse.next();
+  }
+
   // Rotas públicas (não precisam autenticação)
   const publicRoutes = [
     "/",
@@ -78,6 +84,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder
      */
-    "/((?!_next/static|_next/image|favicon.ico|public).*)",
+    "/((?!_next/static|_next/image|favicon.ico|public|.*\\.(?:avif|gif|ico|jpg|jpeg|png|svg|webp|txt|xml|json)$).*)",
   ],
 };
