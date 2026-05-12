@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import AgeGate from "@/components/AgeGate";
 import BottomNav from "@/components/BottomNav";
 import { mockProfiles } from "@/lib/mockProfiles";
 
@@ -27,22 +26,22 @@ const GOLD_DIM = "rgba(212,168,67,0.12)";
 const GOLD_MID = "rgba(212,168,67,0.28)";
 const PLAYFAIR = "var(--font-playfair), serif";
 
-const cities = ["São Paulo", "Rio de Janeiro", "Curitiba", "Florianópolis", "Belo Horizonte"];
+const cities = ["Belo Horizonte", "Nova Lima", "Lagoa Santa", "Contagem", "São Paulo", "Rio de Janeiro"];
 
 const properties = [
   {
     id: 1,
-    title: "Cobertura Jardins",
-    city: "São Paulo, SP",
+    title: "Cobertura Lourdes",
+    city: "Belo Horizonte, MG",
     price: 890,
     image: "/hero-model.jpeg",
     type: "Cobertura",
-    details: "3 quartos · piscina · check-in discreto",
+    details: "3 quartos · vista urbana · check-in discreto",
   },
   {
     id: 2,
-    title: "Flat Executivo",
-    city: "Rio de Janeiro, RJ",
+    title: "Flat Savassi",
+    city: "Belo Horizonte, MG",
     price: 650,
     image: "/model2.jpg",
     type: "Flat",
@@ -50,12 +49,12 @@ const properties = [
   },
   {
     id: 3,
-    title: "Studio Reservado",
-    city: "Curitiba, PR",
+    title: "Casa Reservada",
+    city: "Nova Lima, MG",
     price: 420,
     image: "/model1.jpg",
-    type: "Studio",
-    details: "Local central · privacidade · Wi-Fi",
+    type: "Casa",
+    details: "Condomínio · privacidade · Wi-Fi",
   },
 ];
 
@@ -66,15 +65,21 @@ const verificationItems = [
 ];
 
 const categories = [
-  { label: "Mulheres", href: "/buscar?tab=acompanhantes&sub=mulheres", total: "perfis femininos verificados" },
-  { label: "Trans", href: "/buscar?tab=acompanhantes&sub=trans", total: "perfis trans com moderação" },
-  { label: "Homens", href: "/buscar?tab=acompanhantes&sub=homens", total: "acompanhantes masculinos" },
-  { label: "Imóveis", href: "/buscar?tab=imoveis", total: "locais reservados e avaliados" },
+  { label: "Mulheres", href: "/buscar?tab=acompanhantes&sub=mulheres&q=Belo%20Horizonte", total: "perfis femininos em Minas Gerais" },
+  { label: "Trans", href: "/buscar?tab=acompanhantes&sub=trans&q=Belo%20Horizonte", total: "perfis trans com moderação" },
+  { label: "Homens", href: "/buscar?tab=acompanhantes&sub=homens&q=Belo%20Horizonte", total: "acompanhantes masculinos em MG" },
+  { label: "Imóveis", href: "/buscar?tab=imoveis&q=Belo%20Horizonte", total: "locais reservados em BH e região" },
 ];
+
+function imageStyle(url: string): React.CSSProperties {
+  return {
+    backgroundImage: `linear-gradient(to top, rgba(6,14,27,0.92), rgba(6,14,27,0.18) 55%, rgba(6,14,27,0.02)), url("${url}")`,
+  };
+}
 
 export default function HomePage() {
   const router = useRouter();
-  const [city, setCity] = useState("");
+  const [city, setCity] = useState("Belo Horizonte");
   const [category, setCategory] = useState("mulheres");
 
   const featuredProfiles = useMemo(
@@ -93,35 +98,30 @@ export default function HomePage() {
 
   return (
     <div className="home-shell">
-      <AgeGate />
       <Navbar />
 
       <main>
         <section className="market-hero">
-          <div className="hero-media" aria-hidden="true">
-            <img src="/model.jpeg" alt="" />
-            <div className="hero-shade" />
-          </div>
-
-          <div className="hero-grid">
+          <div className="hero-bg" />
+          <div className="hero-content">
             <div className="hero-copy">
               <div className="eyebrow">
                 <Sparkles size={14} />
                 Marketplace adulto verificado
               </div>
-              <h1>Encontre companhia e locais reservados com discrição.</h1>
+              <h1>Companhia premium em Minas, imóveis reservados e verificação real.</h1>
               <p>
-                Perfis profissionais, imóveis selecionados e um fluxo de verificação com documento,
-                fotos reais e biometria facial antes da publicação.
+                Encontre profissionais verificadas em Belo Horizonte e região, com locais selecionados para encontros discretos.
+                Documento, fotos reais e biometria facial entram no fluxo antes da publicação.
               </p>
 
               <form className="search-console" onSubmit={submitSearch}>
-                <div className="field field-large">
+                <label className="field field-large">
                   <span>Cidade</span>
                   <input
                     value={city}
                     onChange={(event) => setCity(event.target.value)}
-                    placeholder="São Paulo, Rio, Curitiba..."
+                    placeholder="Belo Horizonte, Nova Lima, Lagoa Santa..."
                     list="home-cities"
                   />
                   <datalist id="home-cities">
@@ -129,9 +129,9 @@ export default function HomePage() {
                       <option key={item} value={item} />
                     ))}
                   </datalist>
-                </div>
+                </label>
 
-                <div className="field">
+                <label className="field">
                   <span>Categoria</span>
                   <select value={category} onChange={(event) => setCategory(event.target.value)}>
                     <option value="mulheres">Mulheres</option>
@@ -139,9 +139,9 @@ export default function HomePage() {
                     <option value="homens">Homens</option>
                     <option value="imoveis">Imóveis</option>
                   </select>
-                </div>
+                </label>
 
-                <button type="submit" aria-label="Buscar">
+                <button type="submit">
                   <Search size={18} />
                   Buscar
                 </button>
@@ -158,7 +158,7 @@ export default function HomePage() {
               <div className="board-head">
                 <div>
                   <span>Em destaque agora</span>
-                  <strong>Profissionais verificadas</strong>
+                  <strong>Referências em Minas Gerais</strong>
                 </div>
                 <Link href="/buscar?tab=acompanhantes">
                   Ver todas <ChevronRight size={14} />
@@ -168,8 +168,8 @@ export default function HomePage() {
               <div className="stacked-profiles">
                 {featuredProfiles.map((profile) => (
                   <Link key={profile.id} href={`/profissionais/${profile.slug}`} className="compact-profile">
-                    <img src={profile.image} alt={profile.displayName} />
-                    <div>
+                    <div className="compact-photo" style={imageStyle(profile.image)} />
+                    <div className="compact-info">
                       <div className="profile-name">
                         <strong>{profile.displayName}</strong>
                         {profile.online && <span>online</span>}
@@ -187,15 +187,17 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="quick-categories">
+        <section className="quick-categories section-block">
           <div className="section-head">
-            <span>Entrada rápida</span>
-            <h2>Escolha o que você procura</h2>
+            <div>
+              <span>Entrada rápida</span>
+              <h2>Escolha o que você procura em Minas</h2>
+            </div>
           </div>
           <div className="category-grid">
             {categories.map((item) => (
               <Link key={item.label} href={item.href} className="category-tile">
-                <span>{item.label}</span>
+                <strong>{item.label}</strong>
                 <p>{item.total}</p>
                 <ChevronRight size={18} />
               </Link>
@@ -203,18 +205,19 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="production-section">
+        <section className="section-block">
           <div className="section-head">
-            <span>Seleção real</span>
-            <h2>Perfis que parecem vivos, não placeholders</h2>
+            <div>
+              <span>Seleção real</span>
+              <h2>Perfis com referência para Belo Horizonte e região</h2>
+            </div>
+            <Link href="/buscar?tab=acompanhantes">Ver acompanhantes <ChevronRight size={16} /></Link>
           </div>
 
           <div className="profile-grid">
             {featuredProfiles.map((profile) => (
               <Link key={profile.id} href={`/profissionais/${profile.slug}`} className="feature-card">
-                <div className="photo-wrap">
-                  <img src={profile.image} alt={profile.displayName} />
-                  <div className="photo-gradient" />
+                <div className="feature-photo" style={imageStyle(profile.image)}>
                   <div className="verified-pill">
                     <UserRoundCheck size={13} />
                     Verificada
@@ -222,10 +225,8 @@ export default function HomePage() {
                   {profile.online && <div className="online-pill">Online agora</div>}
                 </div>
                 <div className="feature-info">
-                  <div>
-                    <h3>{profile.displayName}</h3>
-                    <p><MapPin size={13} /> {profile.city}, {profile.state}</p>
-                  </div>
+                  <h3>{profile.displayName}</h3>
+                  <p><MapPin size={13} /> {profile.city}, {profile.state}</p>
                   <div className="price-line">
                     <span>R$ {profile.priceMin}/h</span>
                     <small><Star size={13} fill={GOLD} /> {profile.rating} ({profile.totalReviews})</small>
@@ -241,7 +242,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="verification-band">
+        <section className="verification-band section-block">
           <div className="verification-copy">
             <span>Verificação Elite Modell</span>
             <h2>Documento, fotos reais e biometria antes do perfil ir ao ar.</h2>
@@ -261,29 +262,33 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="property-section">
+        <section className="section-block">
           <div className="section-head">
-            <span>Locais selecionados</span>
-            <h2>Imóveis para encontros discretos e estadias premium</h2>
+            <div>
+              <span>Locais selecionados</span>
+              <h2>Imóveis em Belo Horizonte, Nova Lima e região</h2>
+            </div>
+            <Link href="/buscar?tab=imoveis">Ver imóveis <ChevronRight size={16} /></Link>
           </div>
 
           <div className="property-grid">
             {properties.map((property) => (
               <Link key={property.id} href={`/imoveis/${property.id}`} className="property-card">
-                <img src={property.image} alt={property.title} />
-                <div className="property-info">
+                <div className="property-photo" style={imageStyle(property.image)}>
                   <span>{property.type}</span>
+                </div>
+                <div className="property-info">
                   <h3>{property.title}</h3>
                   <p>{property.city}</p>
                   <small>{property.details}</small>
-                  <strong>R$ {property.price}/noite</strong>
+                  <strong><Building2 size={16} /> R$ {property.price}/noite</strong>
                 </div>
               </Link>
             ))}
           </div>
         </section>
 
-        <section className="operator-section">
+        <section className="operator-section section-block">
           <div>
             <span>Para anunciantes</span>
             <h2>Cadastro profissional com pendências claras até aprovação.</h2>
@@ -304,52 +309,40 @@ export default function HomePage() {
       </Suspense>
       <Footer />
 
-      <style jsx>{`
+      <style>{`
         .home-shell {
           min-height: 100vh;
-          background:
-            linear-gradient(180deg, rgba(6, 14, 27, 0.96) 0%, #060e1b 42%),
-            #060e1b;
+          background: #060e1b;
           color: #f1f5f9;
         }
 
         .market-hero {
           position: relative;
-          min-height: 92vh;
-          padding: 112px 24px 56px;
+          min-height: calc(100vh - 64px);
+          padding: 112px 24px 58px;
           overflow: hidden;
           border-bottom: 1px solid ${GOLD_DIM};
+          isolation: isolate;
         }
 
-        .hero-media {
+        .hero-bg {
           position: absolute;
           inset: 0;
+          z-index: -1;
+          background-image:
+            linear-gradient(90deg, rgba(6,14,27,0.98) 0%, rgba(6,14,27,0.92) 36%, rgba(6,14,27,0.52) 62%, rgba(6,14,27,0.18) 84%),
+            linear-gradient(180deg, rgba(6,14,27,0.1) 0%, #060e1b 100%),
+            url("/model.jpeg");
+          background-size: cover;
+          background-position: center top;
         }
 
-        .hero-media img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          object-position: 42% top;
-          opacity: 0.72;
-        }
-
-        .hero-shade {
-          position: absolute;
-          inset: 0;
-          background:
-            linear-gradient(90deg, rgba(6,14,27,0.98) 0%, rgba(6,14,27,0.88) 42%, rgba(6,14,27,0.45) 74%, rgba(6,14,27,0.82) 100%),
-            linear-gradient(180deg, rgba(6,14,27,0.25) 0%, #060e1b 100%);
-        }
-
-        .hero-grid {
-          position: relative;
-          z-index: 1;
+        .hero-content {
           max-width: 1280px;
           margin: 0 auto;
           display: grid;
-          grid-template-columns: minmax(0, 1.05fr) 420px;
-          gap: 34px;
+          grid-template-columns: minmax(0, 1fr) 420px;
+          gap: 36px;
           align-items: end;
         }
 
@@ -371,43 +364,49 @@ export default function HomePage() {
           text-transform: uppercase;
         }
 
-        h1,
-        h2,
-        h3 {
+        .hero-copy h1,
+        .section-head h2,
+        .verification-copy h2,
+        .operator-section h2,
+        .feature-info h3,
+        .property-info h3 {
           font-family: ${PLAYFAIR};
           letter-spacing: 0;
         }
 
         .hero-copy h1 {
-          max-width: 780px;
-          margin: 18px 0 18px;
-          font-size: clamp(42px, 6.2vw, 86px);
-          line-height: 0.94;
+          max-width: 790px;
+          margin: 18px 0;
+          font-size: clamp(42px, 6vw, 82px);
+          line-height: 0.98;
           font-weight: 700;
         }
 
-        .hero-copy p {
+        .hero-copy p,
+        .verification-copy p,
+        .operator-section p {
           max-width: 610px;
           margin: 0 0 26px;
-          color: #94a3b8;
+          color: #9fb0c8;
           font-size: 16px;
           line-height: 1.75;
         }
 
         .search-console {
           display: grid;
-          grid-template-columns: minmax(220px, 1fr) 180px 132px;
+          grid-template-columns: minmax(240px, 1fr) 190px 150px;
           gap: 10px;
-          max-width: 760px;
+          max-width: 790px;
           padding: 10px;
-          background: rgba(11, 20, 32, 0.86);
+          background: rgba(6, 14, 27, 0.84);
           border: 1px solid ${GOLD_MID};
           border-radius: 14px;
-          backdrop-filter: blur(16px);
-          box-shadow: 0 24px 80px rgba(0,0,0,0.34);
+          backdrop-filter: blur(14px);
+          box-shadow: 0 24px 80px rgba(0,0,0,0.38);
         }
 
         .field {
+          min-width: 0;
           display: flex;
           flex-direction: column;
           gap: 5px;
@@ -428,6 +427,7 @@ export default function HomePage() {
         .field input,
         .field select {
           width: 100%;
+          min-width: 0;
           border: 0;
           outline: 0;
           background: transparent;
@@ -440,11 +440,12 @@ export default function HomePage() {
         }
 
         .search-console button {
+          min-height: 58px;
           border: 0;
           border-radius: 10px;
           background: ${GOLD};
           color: #060e1b;
-          font-size: 14px;
+          font-size: 15px;
           font-weight: 900;
           display: inline-flex;
           align-items: center;
@@ -457,35 +458,41 @@ export default function HomePage() {
           display: flex;
           flex-wrap: wrap;
           gap: 10px;
-          margin-top: 16px;
+          margin-top: 18px;
         }
 
         .trust-strip span {
           display: inline-flex;
           align-items: center;
           gap: 7px;
-          padding: 8px 11px;
+          padding: 8px 12px;
           border: 1px solid rgba(212,168,67,0.18);
           border-radius: 999px;
-          background: rgba(6,14,27,0.58);
+          background: rgba(6,14,27,0.68);
           color: #cbd5e1;
           font-size: 12px;
+          white-space: nowrap;
         }
 
         .live-board {
           padding: 16px;
-          background: rgba(6, 14, 27, 0.76);
+          background: rgba(6, 14, 27, 0.78);
           border: 1px solid ${GOLD_MID};
           border-radius: 16px;
           backdrop-filter: blur(16px);
           box-shadow: 0 24px 70px rgba(0,0,0,0.42);
         }
 
-        .board-head {
+        .board-head,
+        .section-head {
           display: flex;
-          align-items: flex-start;
+          align-items: flex-end;
           justify-content: space-between;
-          gap: 14px;
+          gap: 18px;
+        }
+
+        .board-head {
+          align-items: flex-start;
           margin-bottom: 14px;
         }
 
@@ -511,6 +518,7 @@ export default function HomePage() {
           text-decoration: none;
           font-size: 12px;
           font-weight: 800;
+          flex-shrink: 0;
         }
 
         .stacked-profiles {
@@ -521,10 +529,10 @@ export default function HomePage() {
 
         .compact-profile {
           display: grid;
-          grid-template-columns: 74px 1fr;
+          grid-template-columns: 74px minmax(0, 1fr);
           gap: 12px;
           padding: 10px;
-          background: rgba(11,20,32,0.86);
+          background: rgba(11,20,32,0.88);
           border: 1px solid rgba(255,255,255,0.06);
           border-radius: 12px;
           color: inherit;
@@ -537,12 +545,17 @@ export default function HomePage() {
           border-color: ${GOLD_MID};
         }
 
-        .compact-profile img {
+        .compact-photo {
           width: 74px;
           height: 92px;
           border-radius: 9px;
-          object-fit: cover;
-          object-position: top;
+          background-size: cover;
+          background-position: center top;
+          background-color: #0b1420;
+        }
+
+        .compact-info {
+          min-width: 0;
         }
 
         .profile-name {
@@ -554,8 +567,13 @@ export default function HomePage() {
         }
 
         .profile-name strong {
+          min-width: 0;
+          color: #f1f5f9;
           font-family: ${PLAYFAIR};
           font-size: 17px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .profile-name span,
@@ -567,11 +585,12 @@ export default function HomePage() {
           font-size: 10px;
           font-weight: 800;
           text-transform: uppercase;
+          flex-shrink: 0;
         }
 
         .compact-profile p {
           margin: 0 0 10px;
-          color: #64748b;
+          color: #cbd5e1;
           font-size: 12px;
         }
 
@@ -590,21 +609,13 @@ export default function HomePage() {
           gap: 4px;
         }
 
-        .quick-categories,
-        .production-section,
-        .property-section,
-        .verification-band,
-        .operator-section {
+        .section-block {
           max-width: 1280px;
           margin: 0 auto;
           padding: 70px 24px;
         }
 
         .section-head {
-          display: flex;
-          align-items: end;
-          justify-content: space-between;
-          gap: 20px;
           margin-bottom: 24px;
         }
 
@@ -614,7 +625,7 @@ export default function HomePage() {
           margin: 8px 0 0;
           color: #f1f5f9;
           font-size: clamp(27px, 3.5vw, 46px);
-          line-height: 1.05;
+          line-height: 1.08;
           font-weight: 700;
         }
 
@@ -638,22 +649,25 @@ export default function HomePage() {
           transition: background 0.18s;
         }
 
+        .category-tile:last-child {
+          border-right: 0;
+        }
+
         .category-tile:hover {
           background: rgba(212,168,67,0.08);
         }
 
-        .category-tile span {
+        .category-tile strong {
           display: block;
           color: #f1f5f9;
           font-family: ${PLAYFAIR};
           font-size: 22px;
-          font-weight: 700;
           margin-bottom: 8px;
         }
 
         .category-tile p {
           max-width: 190px;
-          color: #64748b;
+          color: #94a3b8;
           font-size: 13px;
           line-height: 1.5;
           margin: 0;
@@ -675,7 +689,8 @@ export default function HomePage() {
 
         .feature-card,
         .property-card {
-          display: block;
+          display: flex;
+          flex-direction: column;
           overflow: hidden;
           border: 1px solid ${GOLD_DIM};
           border-radius: 16px;
@@ -691,28 +706,18 @@ export default function HomePage() {
           border-color: ${GOLD_MID};
         }
 
-        .photo-wrap {
+        .feature-photo,
+        .property-photo {
           position: relative;
-          height: 410px;
-          background: #08111f;
-        }
-
-        .photo-wrap img,
-        .property-card img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          object-position: top;
-        }
-
-        .photo-gradient {
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(to top, rgba(6,14,27,0.96), rgba(6,14,27,0.18) 54%, transparent);
+          min-height: 420px;
+          background-size: cover;
+          background-position: center top;
+          background-color: #08111f;
         }
 
         .verified-pill,
-        .online-pill {
+        .online-pill,
+        .property-photo span {
           position: absolute;
           top: 12px;
           left: 12px;
@@ -735,7 +740,8 @@ export default function HomePage() {
           color: #22c55e;
         }
 
-        .feature-info {
+        .feature-info,
+        .property-info {
           padding: 16px;
         }
 
@@ -745,13 +751,21 @@ export default function HomePage() {
           font-size: 22px;
         }
 
-        .feature-info p {
+        .feature-info p,
+        .property-info p,
+        .property-info small {
           display: flex;
           align-items: center;
           gap: 5px;
           margin: 0;
-          color: #64748b;
+          color: #94a3b8;
           font-size: 13px;
+          line-height: 1.6;
+        }
+
+        .property-info small {
+          display: block;
+          margin-top: 6px;
         }
 
         .price-line {
@@ -762,17 +776,22 @@ export default function HomePage() {
           margin: 16px 0 12px;
         }
 
-        .price-line span {
+        .price-line span,
+        .property-info strong {
           color: ${GOLD};
           font-size: 18px;
           font-weight: 900;
           font-family: ${PLAYFAIR};
         }
 
-        .price-line small {
+        .price-line small,
+        .property-info strong {
           display: inline-flex;
           align-items: center;
-          gap: 4px;
+          gap: 5px;
+        }
+
+        .price-line small {
           color: #f59e0b;
           font-size: 12px;
           font-weight: 800;
@@ -804,11 +823,7 @@ export default function HomePage() {
 
         .verification-copy p,
         .operator-section p {
-          max-width: 540px;
-          margin: 14px 0 0;
-          color: #94a3b8;
-          font-size: 15px;
-          line-height: 1.75;
+          margin-top: 14px;
         }
 
         .verification-grid {
@@ -840,65 +855,18 @@ export default function HomePage() {
 
         .verify-item p {
           margin: 0;
-          color: #64748b;
+          color: #94a3b8;
           font-size: 13px;
           line-height: 1.65;
         }
 
-        .property-card {
-          position: relative;
-          min-height: 360px;
-        }
-
-        .property-card img {
-          position: absolute;
-          inset: 0;
-          object-position: center;
-          opacity: 0.68;
-        }
-
-        .property-card::after {
-          content: "";
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(to top, rgba(6,14,27,0.98), rgba(6,14,27,0.32) 58%, rgba(6,14,27,0.08));
-        }
-
-        .property-info {
-          position: absolute;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          z-index: 1;
-          padding: 20px;
-        }
-
-        .property-info span {
-          display: inline-flex;
-          padding: 4px 9px;
-          border-radius: 999px;
-          background: rgba(6,14,27,0.7);
-          border: 1px solid ${GOLD_MID};
-          color: ${GOLD};
-          font-size: 11px;
-          font-weight: 900;
-          margin-bottom: 10px;
-        }
-
-        .property-info p,
-        .property-info small {
-          display: block;
-          color: #cbd5e1;
-          font-size: 13px;
-          margin-bottom: 6px;
+        .property-photo {
+          min-height: 250px;
+          background-position: center;
         }
 
         .property-info strong {
-          display: block;
-          margin-top: 14px;
-          color: ${GOLD};
-          font-family: ${PLAYFAIR};
-          font-size: 20px;
+          margin-top: 16px;
         }
 
         .operator-section {
@@ -914,6 +882,7 @@ export default function HomePage() {
           gap: 10px;
           flex-wrap: wrap;
           justify-content: flex-end;
+          flex-shrink: 0;
         }
 
         .operator-actions a {
@@ -941,13 +910,13 @@ export default function HomePage() {
             min-height: auto;
           }
 
-          .hero-grid,
+          .hero-content,
           .verification-band {
             grid-template-columns: 1fr;
           }
 
           .live-board {
-            max-width: 620px;
+            max-width: 640px;
           }
 
           .category-grid,
@@ -972,6 +941,13 @@ export default function HomePage() {
             padding: 92px 16px 34px;
           }
 
+          .hero-bg {
+            background-image:
+              linear-gradient(180deg, rgba(6,14,27,0.68) 0%, rgba(6,14,27,0.96) 64%, #060e1b 100%),
+              url("/model.jpeg");
+            background-position: 58% top;
+          }
+
           .hero-copy h1 {
             font-size: clamp(37px, 12vw, 54px);
           }
@@ -990,13 +966,10 @@ export default function HomePage() {
 
           .trust-strip span {
             width: 100%;
+            white-space: normal;
           }
 
-          .quick-categories,
-          .production-section,
-          .property-section,
-          .verification-band,
-          .operator-section {
+          .section-block {
             padding: 48px 16px;
           }
 
@@ -1014,14 +987,16 @@ export default function HomePage() {
 
           .category-tile {
             min-height: 116px;
+            border-right: 0;
+            border-bottom: 1px solid ${GOLD_DIM};
           }
 
-          .photo-wrap {
-            height: 430px;
+          .feature-photo {
+            min-height: 430px;
           }
 
-          .property-card {
-            min-height: 330px;
+          .property-photo {
+            min-height: 240px;
           }
         }
       `}</style>
