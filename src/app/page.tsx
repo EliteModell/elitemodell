@@ -184,7 +184,7 @@ export default function HomePage() {
 
               <div className="trust-strip">
                 <span><BadgeCheck size={15} /> Perfis verificados</span>
-                <span><UserRoundCheck size={15} /> Curadoria manual</span>
+                <span><Camera size={15} /> Fotos reais</span>
                 <span><ShieldCheck size={15} /> Dados privados</span>
               </div>
             </div>
