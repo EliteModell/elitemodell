@@ -42,12 +42,12 @@ const acompanhantes = {
 };
 
 const imoveis = [
-  { id: 1, titulo: "Cobertura Premium", cidade: "São Paulo, SP", preco: 890, foto: "/hero-model.jpeg", quartos: 3, avaliacao: 4.9, tipo: "Cobertura", tags: ["Com piscina"] },
-  { id: 2, titulo: "Flat Executivo", cidade: "Rio de Janeiro, RJ", preco: 650, foto: "/hero-model.jpeg", quartos: 1, avaliacao: 4.8, tipo: "Flat", tags: [] },
-  { id: 3, titulo: "Studio Moderno", cidade: "Curitiba, PR", preco: 420, foto: "/hero-model.jpeg", quartos: 1, avaliacao: 4.7, tipo: "Studio", tags: ["Pet friendly"] },
-  { id: 4, titulo: "Casa de Luxo", cidade: "Florianópolis, SC", preco: 1200, foto: "/hero-model.jpeg", quartos: 4, avaliacao: 5.0, tipo: "Casa", tags: ["Com piscina", "Pet friendly"] },
-  { id: 5, titulo: "Apartamento Central", cidade: "Belo Horizonte, MG", preco: 380, foto: "/hero-model.jpeg", quartos: 2, avaliacao: 4.6, tipo: "Apartamento", tags: [] },
-  { id: 6, titulo: "Loft Exclusivo", cidade: "Porto Alegre, RS", preco: 550, foto: "/hero-model.jpeg", quartos: 1, avaliacao: 4.9, tipo: "Apartamento", tags: ["Pet friendly"] },
+  { id: 1, titulo: "Apartamento Lourdes", cidade: "Belo Horizonte, MG", preco: 890, foto: "/property-bh-luxury.png", quartos: 2, avaliacao: 4.9, tipo: "Apartamento", tags: ["Portaria 24h"] },
+  { id: 2, titulo: "Casa Reservada Itaúna", cidade: "Itaúna, MG", preco: 650, foto: "/property-itauna-country.png", quartos: 3, avaliacao: 4.9, tipo: "Casa", tags: ["Com piscina"] },
+  { id: 3, titulo: "Loft Privativo Itaúna", cidade: "Itaúna, MG", preco: 420, foto: "/property-itauna-loft.png", quartos: 1, avaliacao: 4.8, tipo: "Loft", tags: ["Entrada discreta"] },
+  { id: 4, titulo: "Flat Savassi", cidade: "Belo Horizonte, MG", preco: 720, foto: "/property-bh-luxury.png", quartos: 1, avaliacao: 4.8, tipo: "Flat", tags: ["Portaria 24h"] },
+  { id: 5, titulo: "Casa Alphaville", cidade: "Nova Lima, MG", preco: 980, foto: "/property-itauna-country.png", quartos: 4, avaliacao: 5.0, tipo: "Casa", tags: ["Com piscina"] },
+  { id: 6, titulo: "Studio Centro", cidade: "Belo Horizonte, MG", preco: 380, foto: "/property-itauna-loft.png", quartos: 1, avaliacao: 4.7, tipo: "Studio", tags: ["Entrada discreta"] },
 ];
 
 const FILTROS = ["Online agora", "Com avaliações", "Com local", "Até R$300", "Exclusivas"] as const;
@@ -299,7 +299,7 @@ function BuscarContent() {
         {mainTab === "imoveis" && (
           <>
             <div className="filtros-scroll" style={{ marginBottom: 20 }}>
-              {["Apartamento", "Casa", "Studio", "Cobertura", "Flat", "Com piscina", "Pet friendly"].map((f) => {
+              {["Apartamento", "Casa", "Studio", "Loft", "Flat", "Com piscina", "Entrada discreta"].map((f) => {
                 const ativo = filtroImovel === f;
                 return (
                   <button key={f} onClick={() => setFiltroImovel(ativo ? null : f)}
@@ -313,7 +313,7 @@ function BuscarContent() {
             <div className="imovel-grid">
               {imoveis.filter((i) => {
                 if (busca && !i.cidade.toLowerCase().includes(busca.toLowerCase()) && !i.titulo.toLowerCase().includes(busca.toLowerCase())) return false;
-                if (filtroImovel === "Com piscina" || filtroImovel === "Pet friendly") return i.tags.includes(filtroImovel);
+                if (filtroImovel === "Com piscina" || filtroImovel === "Entrada discreta") return i.tags.includes(filtroImovel);
                 if (filtroImovel) return i.tipo === filtroImovel;
                 return true;
               }).map((im) => (

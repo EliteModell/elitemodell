@@ -12,7 +12,6 @@ import {
   MapPin,
   Search,
   ShieldCheck,
-  Sparkles,
   Star,
   UserRoundCheck,
 } from "lucide-react";
@@ -31,30 +30,30 @@ const cities = ["Belo Horizonte", "Nova Lima", "Lagoa Santa", "Contagem", "São 
 const properties = [
   {
     id: 1,
-    title: "Cobertura Lourdes",
+    title: "Apartamento Lourdes",
     city: "Belo Horizonte, MG",
     price: 890,
-    image: "/hero-model.jpeg",
-    type: "Cobertura",
-    details: "3 quartos · vista urbana · check-in discreto",
+    image: "/property-bh-luxury.png",
+    type: "Apartamento",
+    details: "ambiente reservado · garagem · portaria 24h",
   },
   {
     id: 2,
-    title: "Flat Savassi",
-    city: "Belo Horizonte, MG",
+    title: "Casa Reservada",
+    city: "Itaúna, MG",
     price: 650,
-    image: "/model2.jpg",
-    type: "Flat",
-    details: "1 suíte · garagem · portaria 24h",
+    image: "/property-itauna-country.png",
+    type: "Casa",
+    details: "piscina · privacidade · acesso discreto",
   },
   {
     id: 3,
-    title: "Casa Reservada",
-    city: "Nova Lima, MG",
+    title: "Loft Privativo",
+    city: "Itaúna, MG",
     price: 420,
-    image: "/model1.jpg",
-    type: "Casa",
-    details: "Condomínio · privacidade · Wi-Fi",
+    image: "/property-itauna-loft.png",
+    type: "Loft",
+    details: "suíte · entrada discreta · Wi-Fi",
   },
 ];
 
@@ -70,12 +69,6 @@ const categories = [
   { label: "Homens", href: "/buscar?tab=acompanhantes&sub=homens&q=Belo%20Horizonte", total: "acompanhantes masculinos em MG" },
   { label: "Imóveis", href: "/buscar?tab=imoveis&q=Belo%20Horizonte", total: "locais reservados em BH e região" },
 ];
-
-function imageStyle(url: string): React.CSSProperties {
-  return {
-    backgroundImage: `linear-gradient(to top, rgba(6,14,27,0.92), rgba(6,14,27,0.18) 55%, rgba(6,14,27,0.02)), url("${url}")`,
-  };
-}
 
 export default function HomePage() {
   const router = useRouter();
@@ -106,13 +99,16 @@ export default function HomePage() {
           <div className="hero-content">
             <div className="hero-copy">
               <div className="eyebrow">
-                <Sparkles size={14} />
-                Marketplace adulto verificado
+                Lançamento inicial em Minas Gerais · expansão Brasil
               </div>
-              <h1>Companhia premium em Minas, imóveis reservados e verificação real.</h1>
+              <h1 className="premium-title">
+                <span>Companhia premium.</span>
+                <span>Locais reservados.</span>
+                <span>Verificação real.</span>
+              </h1>
               <p>
-                Encontre profissionais verificadas em Belo Horizonte e região, com locais selecionados para encontros discretos.
-                Documento, fotos reais e biometria facial entram no fluxo antes da publicação.
+                A Elite Modell começa com curadoria forte em Minas Gerais, incluindo Belo Horizonte e Itaúna,
+                mas nasce preparada para abranger todo o Brasil com perfis verificados e imóveis discretos.
               </p>
 
               <form className="search-console" onSubmit={submitSearch}>
@@ -168,7 +164,9 @@ export default function HomePage() {
               <div className="stacked-profiles">
                 {featuredProfiles.map((profile) => (
                   <Link key={profile.id} href={`/profissionais/${profile.slug}`} className="compact-profile">
-                    <div className="compact-photo" style={imageStyle(profile.image)} />
+                    <div className="compact-photo">
+                      <img src={profile.image} alt="" />
+                    </div>
                     <div className="compact-info">
                       <div className="profile-name">
                         <strong>{profile.displayName}</strong>
@@ -209,7 +207,7 @@ export default function HomePage() {
           <div className="section-head">
             <div>
               <span>Seleção real</span>
-              <h2>Perfis com referência para Belo Horizonte e região</h2>
+              <h2>Referências iniciais de profissionais verificadas</h2>
             </div>
             <Link href="/buscar?tab=acompanhantes">Ver acompanhantes <ChevronRight size={16} /></Link>
           </div>
@@ -217,7 +215,9 @@ export default function HomePage() {
           <div className="profile-grid">
             {featuredProfiles.map((profile) => (
               <Link key={profile.id} href={`/profissionais/${profile.slug}`} className="feature-card">
-                <div className="feature-photo" style={imageStyle(profile.image)}>
+                <div className="feature-photo">
+                  <img src={profile.image} alt="" />
+                  <div className="feature-photo-shade" />
                   <div className="verified-pill">
                     <UserRoundCheck size={13} />
                     Verificada
@@ -266,7 +266,7 @@ export default function HomePage() {
           <div className="section-head">
             <div>
               <span>Locais selecionados</span>
-              <h2>Imóveis em Belo Horizonte, Nova Lima e região</h2>
+              <h2>Imóveis discretos para esse tipo de serviço</h2>
             </div>
             <Link href="/buscar?tab=imoveis">Ver imóveis <ChevronRight size={16} /></Link>
           </div>
@@ -274,7 +274,9 @@ export default function HomePage() {
           <div className="property-grid">
             {properties.map((property) => (
               <Link key={property.id} href={`/imoveis/${property.id}`} className="property-card">
-                <div className="property-photo" style={imageStyle(property.image)}>
+                <div className="property-photo">
+                  <img src={property.image} alt="" />
+                  <div className="property-photo-shade" />
                   <span>{property.type}</span>
                 </div>
                 <div className="property-info">
@@ -330,11 +332,11 @@ export default function HomePage() {
           inset: 0;
           z-index: -1;
           background-image:
-            linear-gradient(90deg, rgba(6,14,27,0.98) 0%, rgba(6,14,27,0.92) 36%, rgba(6,14,27,0.52) 62%, rgba(6,14,27,0.18) 84%),
+            linear-gradient(90deg, rgba(6,14,27,0.98) 0%, rgba(6,14,27,0.88) 34%, rgba(6,14,27,0.38) 62%, rgba(6,14,27,0.06) 84%),
             linear-gradient(180deg, rgba(6,14,27,0.1) 0%, #060e1b 100%),
             url("/model.jpeg");
           background-size: cover;
-          background-position: center top;
+          background-position: 64% top;
         }
 
         .hero-content {
@@ -380,6 +382,22 @@ export default function HomePage() {
           font-size: clamp(42px, 6vw, 82px);
           line-height: 0.98;
           font-weight: 700;
+        }
+
+        .premium-title span {
+          display: block;
+          background: linear-gradient(135deg, #ffffff 0%, #e8dfc8 18%, #ffffff 36%, #d4a843 62%, #f5d78c 78%, #ffffff 100%);
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          text-shadow: 0 22px 55px rgba(212,168,67,0.12);
+        }
+
+        .premium-title span:nth-child(2) {
+          background: linear-gradient(135deg, #ffe5a0 0%, #d4a843 26%, #f5d78c 48%, #9e7b2a 78%, #fff2bf 100%);
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
         }
 
         .hero-copy p,
@@ -546,12 +564,20 @@ export default function HomePage() {
         }
 
         .compact-photo {
+          position: relative;
           width: 74px;
           height: 92px;
           border-radius: 9px;
-          background-size: cover;
-          background-position: center top;
           background-color: #0b1420;
+          overflow: hidden;
+        }
+
+        .compact-photo img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: top;
+          display: block;
         }
 
         .compact-info {
@@ -710,9 +736,26 @@ export default function HomePage() {
         .property-photo {
           position: relative;
           min-height: 420px;
-          background-size: cover;
-          background-position: center top;
           background-color: #08111f;
+          overflow: hidden;
+        }
+
+        .feature-photo img,
+        .property-photo img {
+          width: 100%;
+          height: 100%;
+          min-height: inherit;
+          object-fit: cover;
+          object-position: top;
+          display: block;
+        }
+
+        .feature-photo-shade,
+        .property-photo-shade {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to top, rgba(6,14,27,0.92), rgba(6,14,27,0.12) 58%, transparent);
+          pointer-events: none;
         }
 
         .verified-pill,
@@ -862,7 +905,10 @@ export default function HomePage() {
 
         .property-photo {
           min-height: 250px;
-          background-position: center;
+        }
+
+        .property-photo img {
+          object-position: center;
         }
 
         .property-info strong {
