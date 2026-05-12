@@ -1,13 +1,15 @@
 "use client";
-import { useRef, useState } from "react";
+
+import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import type { ConfirmationResult, RecaptchaVerifier as RV } from "firebase/auth";
 import { validateBirthDate } from "@/lib/age-validation";
+import { supabaseAuth } from "@/lib/supabase-auth";
 
-type Role = "GUEST" | "HOST";
+type AccountType = "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
+type Category = "MULHER" | "TRANS" | "HOMEM";
 type Step = "form" | "verify" | "phone";
 
 const GOLD = "#d4a843";
@@ -26,10 +28,12 @@ const inputStyle: React.CSSProperties = {
   transition: "border-color 0.2s",
 };
 
-const focusGold = (e: React.FocusEvent<HTMLInputElement>) =>
-  (e.target.style.borderColor = GOLD);
-const blurGray = (e: React.FocusEvent<HTMLInputElement>) =>
-  (e.target.style.borderColor = "#1e293b");
+const focusGold = (e: React.FocusEvent<HTMLInputElement>) => {
+  e.target.style.borderColor = GOLD;
+};
+const blurGray = (e: React.FocusEvent<HTMLInputElement>) => {
+  e.target.style.borderColor = "#1e293b";
+};
 
 const GoldLine = () => (
   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, borderRadius: "16px 16px 0 0", background: "linear-gradient(90deg, transparent 0%, #d4a843 30%, #f5d78c 50%, #d4a843 70%, transparent 100%)" }} />
@@ -38,7 +42,7 @@ const GoldLine = () => (
 const Logo = () => (
   <div style={{ textAlign: "center", marginBottom: 28 }}>
     <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 2 }}>
-      <span style={{ fontWeight: 900, fontSize: 26, letterSpacing: "-0.5px" }}>
+      <span style={{ fontWeight: 900, fontSize: 26 }}>
         <span style={{ background: GOLD_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>elite</span>
         <span style={{ color: "#f1f5f9" }}>modell</span>
       </span>
@@ -50,12 +54,13 @@ export default function CadastroPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<Step>("form");
-  const [form, setForm] = useState({ 
-    name: "", 
-    email: "", 
-    password: "", 
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
     birthDate: "",
-    role: "GUEST" as Role,
+    accountType: "GUEST" as AccountType,
+    category: "" as Category | "",
     lgpdConsent: false,
     termsConsent: false,
   });
@@ -63,156 +68,174 @@ export default function CadastroPage() {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
-  const recaptchaRef = useRef<RV | null>(null);
-  const confirmationRef = useRef<ConfirmationResult | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  const roles = [
+    { value: "GUEST", label: "Cliente", desc: "Quero buscar acompanhantes verificadas ou reservar imoveis." },
+    { value: "PROFESSIONAL", label: "Profissional anunciante", desc: "Quero anunciar meu perfil com documento, fotos e biometria." },
+    { value: "PROPERTY_HOST", label: "Anfitriao de imovel", desc: "Quero cadastrar imoveis premium para reserva." },
+  ];
+  const categories = [
+    { value: "MULHER", label: "Mulher" },
+    { value: "HOMEM", label: "Homem" },
+    { value: "TRANS", label: "Trans" },
+  ];
+
+  function validateRequiredForm(includeEmailFields: boolean) {
     const newErrors: Record<string, string> = {};
 
-    // Validar nome
-    if (!form.name.trim()) {
-      newErrors.name = "Nome é obrigatório";
-    }
+    if (includeEmailFields && !form.name.trim()) newErrors.name = "Nome é obrigatório";
+    if (includeEmailFields && !form.email.includes("@")) newErrors.email = "Email inválido";
+    if (includeEmailFields && form.password.length < 6) newErrors.password = "Mínimo 6 caracteres";
 
-    // Validar email
-    if (!form.email.includes("@")) {
-      newErrors.email = "Email inválido";
-    }
-
-    // Validar senha
-    if (form.password.length < 6) {
-      newErrors.password = "Mínimo 6 caracteres";
-    }
-
-    // Validar data de nascimento
     if (!form.birthDate) {
       newErrors.birthDate = "Data de nascimento é obrigatória";
     } else {
-      const { isValid, isOfAge, errors: ageErrors } = validateBirthDate(form.birthDate);
-      if (!isOfAge) {
-        newErrors.birthDate = ageErrors[0] || "Você deve ter 18 anos ou mais";
-      }
+      const { isOfAge, errors: ageErrors } = validateBirthDate(form.birthDate);
+      if (!isOfAge) newErrors.birthDate = ageErrors[0] || "Você deve ter 18 anos ou mais";
     }
 
-    // Validar consentimento
-    if (!form.lgpdConsent) {
-      newErrors.lgpdConsent = "Você deve aceitar a Política de Privacidade";
-    }
-    if (!form.termsConsent) {
-      newErrors.termsConsent = "Você deve aceitar os Termos de Uso";
-    }
+    if (form.accountType === "PROFESSIONAL" && !form.category) newErrors.category = "Selecione a categoria do anúncio";
+    if (!form.termsConsent) newErrors.termsConsent = "Você deve aceitar os Termos de Uso";
+    if (!form.lgpdConsent) newErrors.lgpdConsent = "Você deve aceitar a Política de Privacidade";
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
+
+  function registrationPayload() {
+    return {
+      role: form.accountType === "GUEST" ? "GUEST" : "HOST",
+      accountType: form.accountType,
+      category: form.accountType === "PROFESSIONAL" ? form.category : undefined,
+      birthDate: form.birthDate,
+      lgpdConsent: form.lgpdConsent,
+      termsConsent: form.termsConsent,
+      name: form.name,
+    };
+  }
+
+  async function registerUser(accessToken: string) {
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        accessToken,
+        ...registrationPayload(),
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(typeof data.error === "string" ? data.error : "Erro ao criar conta.");
     }
+  }
+
+  function nextPath() {
+    if (form.accountType === "PROFESSIONAL") return "/profissional/novo";
+    if (form.accountType === "PROPERTY_HOST") return "/anfitriao";
+    return "/dashboard";
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!validateRequiredForm(true)) return;
 
     setLoading(true);
     try {
-      const { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } =
-        await import("firebase/auth");
-      const { firebaseAuth } = await import("@/lib/firebase");
-
-      const credential = await createUserWithEmailAndPassword(
-        firebaseAuth,
-        form.email,
-        form.password
-      );
-
-      await updateProfile(credential.user, { displayName: form.name });
-
-      const idToken = await credential.user.getIdToken();
-
-      await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          idToken, 
-          role: form.role,
-          birthDate: form.birthDate,
-          lgpdConsent: form.lgpdConsent,
-          termsConsent: form.termsConsent,
-        }),
+      const { data, error } = await supabaseAuth.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: registrationPayload(),
+        },
       });
-
-      await sendEmailVerification(credential.user);
-      await firebaseAuth.signOut();
-
+      if (error) throw error;
+      if (data.session?.access_token) {
+        await registerUser(data.session.access_token);
+        const res = await signIn("supabase", { accessToken: data.session.access_token, redirect: false });
+        if (res?.ok) {
+          router.push(nextPath());
+          router.refresh();
+          return;
+        }
+      }
+      sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload()));
       setStep("verify");
     } catch (err: any) {
       const msg: Record<string, string> = {
-        "auth/email-already-in-use": "Este email já está cadastrado.",
-        "auth/weak-password": "Senha fraca. Use no mínimo 6 caracteres.",
-        "auth/invalid-email": "Email inválido.",
+        user_already_exists: "Este email ja esta cadastrado.",
+        weak_password: "Senha fraca. Use no minimo 6 caracteres.",
+        invalid_email: "Email invalido.",
       };
-      toast.error(msg[err?.code] ?? "Erro ao criar conta.");
+      toast.error(msg[err?.code] ?? msg[err?.name] ?? err?.message ?? "Erro ao criar conta.");
     } finally {
       setLoading(false);
     }
   }
 
   async function handleGoogle() {
+    if (!validateRequiredForm(false)) return;
+
     setLoading(true);
     try {
-      const { signInWithPopup, GoogleAuthProvider } = await import("firebase/auth");
-      const { firebaseAuth } = await import("@/lib/firebase");
-      const result = await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
-      const idToken = await result.user.getIdToken();
-      await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken, role: form.role }),
+      sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload()));
+      const { error } = await supabaseAuth.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
-      const res = await signIn("firebase", { idToken, redirect: false });
-      if (res?.ok) { router.push("/dashboard"); router.refresh(); }
-      else toast.error("Erro ao entrar com Google.");
+      if (error) throw error;
     } catch (err: any) {
-      if (err?.code !== "auth/popup-closed-by-user") toast.error("Erro ao entrar com Google.");
-    } finally { setLoading(false); }
+      toast.error(err?.message ?? "Erro ao entrar com Google.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleSendOtp(e: React.FormEvent) {
     e.preventDefault();
+    if (!validateRequiredForm(false)) return;
+
     setLoading(true);
     try {
-      const { signInWithPhoneNumber, RecaptchaVerifier } = await import("firebase/auth");
-      const { firebaseAuth } = await import("@/lib/firebase");
-      if (!recaptchaRef.current) {
-        recaptchaRef.current = new RecaptchaVerifier(firebaseAuth, "recaptcha-cadastro", { size: "invisible" });
-      }
-      confirmationRef.current = await signInWithPhoneNumber(firebaseAuth, `+55${phone}`, recaptchaRef.current);
+      const { error } = await supabaseAuth.auth.signInWithOtp({
+        phone: `+55${phone}`,
+        options: { data: registrationPayload() },
+      });
+      if (error) throw error;
       toast.success("Código enviado!");
       setOtpSent(true);
     } catch (err: any) {
-      recaptchaRef.current?.clear(); recaptchaRef.current = null;
-      toast.error("Erro ao enviar SMS.");
-    } finally { setLoading(false); }
+      toast.error(err?.message ?? "Erro ao enviar SMS.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleVerifyPhone(e: React.FormEvent) {
     e.preventDefault();
-    if (!confirmationRef.current) return;
     setLoading(true);
     try {
-      const result = await confirmationRef.current.confirm(otp);
-      const idToken = await result.user.getIdToken();
-      await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken, role: form.role }),
+      const { data, error } = await supabaseAuth.auth.verifyOtp({
+        phone: `+55${phone}`,
+        token: otp,
+        type: "sms",
       });
-      const res = await signIn("firebase", { idToken, redirect: false });
-      if (res?.ok) { router.push("/dashboard"); router.refresh(); }
-      else toast.error("Erro ao autenticar.");
-    } catch { toast.error("Código inválido ou expirado."); }
-    finally { setLoading(false); }
+      if (error || !data.session?.access_token) throw error ?? new Error("Codigo invalido.");
+      await registerUser(data.session.access_token);
+      const res = await signIn("supabase", { accessToken: data.session.access_token, redirect: false });
+      if (res?.ok) {
+        router.push(nextPath());
+        router.refresh();
+      } else {
+        toast.error("Erro ao autenticar.");
+      }
+    } catch (err: any) {
+      toast.error(err?.message ?? "Código inválido ou expirado.");
+    } finally {
+      setLoading(false);
+    }
   }
-
-  const roles = [
-    { value: "GUEST", label: "👤 Cliente", desc: "Quero encontrar e contratar acompanhantes" },
-    { value: "HOST", label: "💋 Acompanhante", desc: "Quero me cadastrar e oferecer meus serviços" },
-  ];
 
   if (step === "phone") {
     return (
@@ -227,32 +250,26 @@ export default function CadastroPage() {
             <div>
               <label style={{ display: "block", fontSize: 13, color: "#94a3b8", marginBottom: 6, fontWeight: 500 }}>Número de celular</label>
               <div style={{ position: "relative" }}>
-                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#475569", fontSize: 14, pointerEvents: "none" }}>🇧🇷 +55</span>
-                <input type="tel" required value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))} placeholder="11 99999-9999"
-                  style={{ ...inputStyle, paddingLeft: 80 }}
-                  onFocus={focusGold}
-                  onBlur={blurGray} />
+                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#475569", fontSize: 14, pointerEvents: "none" }}>BR +55</span>
+                <input type="tel" required value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))} placeholder="11 99999-9999" style={{ ...inputStyle, paddingLeft: 80 }} onFocus={focusGold} onBlur={blurGray} />
               </div>
             </div>
-            <button type="submit" disabled={loading || phone.length < 10} style={{ padding: "13px", background: phone.length < 10 ? "rgba(212,168,67,0.3)" : GOLD, color: phone.length < 10 ? "#475569" : "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer", transition: "all 0.2s" }}>
+            <button type="submit" disabled={loading || phone.length < 10} style={{ padding: "13px", background: phone.length < 10 ? "rgba(212,168,67,0.3)" : GOLD, color: phone.length < 10 ? "#475569" : "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
               {loading ? "Enviando..." : "Enviar código"}
             </button>
-            <button type="button" onClick={() => setStep("form")} style={{ background: "none", border: "none", color: GOLD, fontSize: 13, cursor: "pointer", textAlign: "center" }}>← Voltar</button>
+            <button type="button" onClick={() => setStep("form")} style={{ background: "none", border: "none", color: GOLD, fontSize: 13, cursor: "pointer", textAlign: "center" }}>Voltar</button>
           </form>
         ) : (
           <form onSubmit={handleVerifyPhone} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <p style={{ color: "#64748b", fontSize: 13, textAlign: "center", margin: 0 }}>Código enviado para <strong style={{ color: "#94a3b8" }}>+55 {phone}</strong></p>
             <div>
               <label style={{ display: "block", fontSize: 13, color: "#94a3b8", marginBottom: 6, fontWeight: 500 }}>Código de 6 dígitos</label>
-              <input type="text" inputMode="numeric" required autoFocus maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000"
-                style={{ ...inputStyle, textAlign: "center", fontSize: 22, letterSpacing: 10, fontWeight: 700 }}
-                onFocus={focusGold}
-                onBlur={blurGray} />
+              <input type="text" inputMode="numeric" required autoFocus maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" style={{ ...inputStyle, textAlign: "center", fontSize: 22, letterSpacing: 10, fontWeight: 700 }} onFocus={focusGold} onBlur={blurGray} />
             </div>
-            <button type="submit" disabled={loading || otp.length < 6} style={{ padding: "13px", background: otp.length < 6 ? "rgba(212,168,67,0.3)" : GOLD, color: otp.length < 6 ? "#475569" : "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer", transition: "all 0.2s" }}>
+            <button type="submit" disabled={loading || otp.length < 6} style={{ padding: "13px", background: otp.length < 6 ? "rgba(212,168,67,0.3)" : GOLD, color: otp.length < 6 ? "#475569" : "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
               {loading ? "Verificando..." : "Verificar e entrar"}
             </button>
-            <button type="button" onClick={() => setOtpSent(false)} style={{ background: "none", border: "none", color: GOLD, fontSize: 13, cursor: "pointer", textAlign: "center" }}>← Usar outro número</button>
+            <button type="button" onClick={() => setOtpSent(false)} style={{ background: "none", border: "none", color: GOLD, fontSize: 13, cursor: "pointer", textAlign: "center" }}>Usar outro número</button>
           </form>
         )}
       </div>
@@ -263,28 +280,13 @@ export default function CadastroPage() {
     return (
       <div style={{ width: "100%", maxWidth: 420, background: "#0b1420", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 16, padding: "48px 36px", position: "relative", zIndex: 1, textAlign: "center" }}>
         <GoldLine />
-        <div style={{ fontSize: 48, marginBottom: 20 }}>📧</div>
-        <h2 style={{ color: "#f1f5f9", fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>
-          Verifique seu email
-        </h2>
-        <p style={{ color: "#64748b", fontSize: 14, lineHeight: 1.6, margin: "0 0 8px" }}>
-          Enviamos um link de confirmação para
-        </p>
-        <p style={{ color: GOLD, fontSize: 15, fontWeight: 600, margin: "0 0 24px" }}>
-          {form.email}
-        </p>
-        <p style={{ color: "#334155", fontSize: 13, lineHeight: 1.6, margin: "0 0 32px" }}>
-          Clique no link do email para ativar sua conta. Depois volte aqui para entrar.
-        </p>
-        <button
-          onClick={() => router.push("/login")}
-          style={{ width: "100%", padding: "13px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}
-        >
+        <h2 style={{ color: "#f1f5f9", fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>Verifique seu email</h2>
+        <p style={{ color: "#64748b", fontSize: 14, lineHeight: 1.6, margin: "0 0 8px" }}>Enviamos um link de confirmação para</p>
+        <p style={{ color: GOLD, fontSize: 15, fontWeight: 600, margin: "0 0 24px" }}>{form.email}</p>
+        <p style={{ color: "#334155", fontSize: 13, lineHeight: 1.6, margin: "0 0 32px" }}>Clique no link do email para ativar sua conta. Depois volte aqui para entrar.</p>
+        <button onClick={() => router.push("/login")} style={{ width: "100%", padding: "13px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
           Ir para o login
         </button>
-        <p style={{ color: "#334155", fontSize: 12, marginTop: 16 }}>
-          Não recebeu? Verifique a pasta de spam.
-        </p>
       </div>
     );
   }
@@ -292,33 +294,67 @@ export default function CadastroPage() {
   return (
     <div style={{ width: "100%", maxWidth: 460, background: "#0b1420", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 16, padding: "40px 36px", position: "relative", zIndex: 1 }}>
       <GoldLine />
-
-      {/* Logo */}
-      <div style={{ textAlign: "center", marginBottom: 8 }}>
-        <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 2 }}>
-          <span style={{ fontWeight: 900, fontSize: 26, letterSpacing: "-0.5px" }}>
-            <span style={{ background: GOLD_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>elite</span>
-            <span style={{ color: "#f1f5f9" }}>modell</span>
-          </span>
-        </Link>
-        <p style={{ color: "#475569", fontSize: 14, marginTop: 6, marginBottom: 24 }}>Plataforma adulta — +18</p>
-      </div>
-
+      <Logo />
+      <p style={{ color: "#475569", fontSize: 14, textAlign: "center", marginTop: -18, marginBottom: 24 }}>Cadastro seguro +18</p>
       <div id="recaptcha-cadastro" />
 
-      {/* Google */}
-      <button type="button" onClick={handleGoogle} disabled={loading}
-        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(212,168,67,0.5)")}
-        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(212,168,67,0.2)")}
-        style={{ width: "100%", padding: "11px", background: "transparent", border: "1px solid rgba(212,168,67,0.2)", borderRadius: 8, color: "#94a3b8", fontSize: 14, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 10, transition: "border-color 0.2s" }}>
-        <svg width="17" height="17" viewBox="0 0 24 24"><path fill="#EA4335" d="M5.27 9.76A7.08 7.08 0 0112 4.9c1.84 0 3.5.67 4.79 1.77l3.56-3.56A11.96 11.96 0 0012 .96C7.43.96 3.48 3.77 1.6 7.76l3.67 2z"/><path fill="#34A853" d="M16.04 18.02A7.06 7.06 0 0112 19.1c-2.96 0-5.49-1.82-6.64-4.44l-3.68 2.01C3.59 20.3 7.5 23.04 12 23.04c2.93 0 5.72-1.08 7.81-3.01l-3.77-2.01z"/><path fill="#4A90D9" d="M19.81 20.03A11.95 11.95 0 0023.04 12c0-.72-.07-1.47-.2-2.18H12v4.36h6.19a5.26 5.26 0 01-2.29 3.45l3.91 2.4z"/><path fill="#FBBC05" d="M5.36 14.66A7.17 7.17 0 014.9 12c0-.92.16-1.8.46-2.62L1.6 7.37A11.97 11.97 0 00.96 12c0 1.63.33 3.18.93 4.6l3.47-1.94z"/></svg>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 18 }}>
+        {roles.map((r) => (
+          <button
+            key={r.value}
+            type="button"
+            onClick={() => setForm({ ...form, accountType: r.value as AccountType, category: r.value === "PROFESSIONAL" ? form.category : "" })}
+            style={{
+              padding: "13px 14px",
+              background: form.accountType === r.value ? "rgba(212,168,67,0.08)" : "#0f172a",
+              border: `1.5px solid ${form.accountType === r.value ? "rgba(212,168,67,0.5)" : "#1e293b"}`,
+              borderRadius: 8,
+              color: form.accountType === r.value ? "#f1f5f9" : "#475569",
+              cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 3 }}>{r.label}</div>
+            <div style={{ fontSize: 11, lineHeight: 1.4, color: form.accountType === r.value ? "#94a3b8" : "#334155" }}>{r.desc}</div>
+          </button>
+        ))}
+      </div>
+
+      {form.accountType === "PROFESSIONAL" && (
+        <div style={{ marginBottom: 18 }}>
+          <label style={{ display: "block", fontSize: 13, color: "#94a3b8", marginBottom: 8, fontWeight: 500 }}>Categoria do anúncio</label>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+            {categories.map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => setForm({ ...form, category: c.value as Category })}
+                style={{
+                  padding: "11px 8px",
+                  background: form.category === c.value ? "rgba(212,168,67,0.08)" : "#0f172a",
+                  border: `1.5px solid ${form.category === c.value ? "rgba(212,168,67,0.5)" : "#1e293b"}`,
+                  borderRadius: 8,
+                  color: form.category === c.value ? "#f1f5f9" : "#475569",
+                  cursor: "pointer",
+                  fontSize: 13,
+                  fontWeight: 700,
+                }}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+          {errors.category && <p style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors.category}</p>}
+          <p style={{ color: "#334155", fontSize: 11, margin: "8px 0 0", lineHeight: 1.5 }}>
+            Para publicar, sera obrigatorio enviar documento com foto, fotos reais e biometria facial. A idade exibida deve ser confirmada por documento.
+          </p>
+        </div>
+      )}
+
+      <button type="button" onClick={handleGoogle} disabled={loading} style={{ width: "100%", padding: "11px", background: "transparent", border: "1px solid rgba(212,168,67,0.2)", borderRadius: 8, color: "#94a3b8", fontSize: 14, fontWeight: 500, cursor: "pointer", marginBottom: 10 }}>
         Cadastrar com Google
       </button>
-
-      <button type="button" onClick={() => setStep("phone")}
-        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(212,168,67,0.5)")}
-        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(212,168,67,0.2)")}
-        style={{ width: "100%", padding: "11px", background: "transparent", border: "1px solid rgba(212,168,67,0.2)", borderRadius: 8, color: "#94a3b8", fontSize: 14, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 20, transition: "border-color 0.2s" }}>
+      <button type="button" onClick={() => setStep("phone")} disabled={loading} style={{ width: "100%", padding: "11px", background: "transparent", border: "1px solid rgba(212,168,67,0.2)", borderRadius: 8, color: "#94a3b8", fontSize: 14, fontWeight: 500, cursor: "pointer", marginBottom: 20 }}>
         Cadastrar com SMS
       </button>
 
@@ -328,30 +364,6 @@ export default function CadastroPage() {
         <div style={{ flex: 1, height: 1, background: "rgba(212,168,67,0.12)" }} />
       </div>
 
-      {/* Role selector */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
-        {roles.map((r) => (
-          <button
-            key={r.value}
-            type="button"
-            onClick={() => setForm({ ...form, role: r.value as Role })}
-            style={{
-              padding: "12px 10px",
-              background: form.role === r.value ? "rgba(212,168,67,0.08)" : "#0f172a",
-              border: `1.5px solid ${form.role === r.value ? "rgba(212,168,67,0.5)" : "#1e293b"}`,
-              borderRadius: 8,
-              color: form.role === r.value ? "#f1f5f9" : "#475569",
-              cursor: "pointer",
-              textAlign: "left",
-              transition: "all 0.2s",
-            }}
-          >
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 3 }}>{r.label}</div>
-            <div style={{ fontSize: 11, lineHeight: 1.4, color: form.role === r.value ? "#94a3b8" : "#334155" }}>{r.desc}</div>
-          </button>
-        ))}
-      </div>
-
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {[
           { key: "name", label: "Nome completo", type: "text", placeholder: "Seu nome" },
@@ -359,43 +371,41 @@ export default function CadastroPage() {
           { key: "password", label: "Senha", type: "password", placeholder: "Mínimo 6 caracteres" },
         ].map((field) => (
           <div key={field.key}>
-            <label style={{ display: "block", fontSize: 13, color: "#94a3b8", marginBottom: 6, fontWeight: 500 }}>
-              {field.label}
-            </label>
-            <input
-              type={field.type}
-              required
-              placeholder={field.placeholder}
-              value={(form as any)[field.key]}
-              onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
-              style={inputStyle}
-              onFocus={focusGold}
-              onBlur={blurGray}
-            />
+            <label style={{ display: "block", fontSize: 13, color: "#94a3b8", marginBottom: 6, fontWeight: 500 }}>{field.label}</label>
+            <input type={field.type} required placeholder={field.placeholder} value={(form as any)[field.key]} onChange={(e) => setForm({ ...form, [field.key]: e.target.value })} style={inputStyle} onFocus={focusGold} onBlur={blurGray} />
+            {errors[field.key] && <p style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors[field.key]}</p>}
           </div>
         ))}
 
-        <p style={{ fontSize: 12, color: "#334155", lineHeight: 1.5, marginTop: 4 }}>
-          Ao criar uma conta você concorda com nossos{" "}
-          <Link href="/termos" style={{ color: GOLD, textDecoration: "none" }}>Termos de Uso</Link>{" "}
-          e{" "}
-          <Link href="/privacidade" style={{ color: GOLD, textDecoration: "none" }}>Política de Privacidade</Link>.
-        </p>
+        <div>
+          <label style={{ display: "block", fontSize: 13, color: "#94a3b8", marginBottom: 6, fontWeight: 500 }}>Data de nascimento</label>
+          <input type="date" required value={form.birthDate} onChange={(e) => setForm({ ...form, birthDate: e.target.value })} style={inputStyle} onFocus={focusGold} onBlur={blurGray} />
+          {errors.birthDate && <p style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors.birthDate}</p>}
+        </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = "#e8bb47"; }}
-          onMouseLeave={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = GOLD; }}
-          style={{ padding: "13px", background: loading ? "#9e7b2a" : GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer", transition: "background 0.2s", marginTop: 4 }}
-        >
+        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
+          <input type="checkbox" checked={form.termsConsent} onChange={(e) => setForm({ ...form, termsConsent: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
+          <span>
+            Li e aceito os <Link href="/terms" style={{ color: GOLD, textDecoration: "none" }}>Termos de Uso</Link>.
+            {errors.termsConsent && <span style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.termsConsent}</span>}
+          </span>
+        </label>
+
+        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
+          <input type="checkbox" checked={form.lgpdConsent} onChange={(e) => setForm({ ...form, lgpdConsent: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
+          <span>
+            Li e aceito a <Link href="/privacy" style={{ color: GOLD, textDecoration: "none" }}>Política de Privacidade</Link>.
+            {errors.lgpdConsent && <span style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.lgpdConsent}</span>}
+          </span>
+        </label>
+
+        <button type="submit" disabled={loading} style={{ padding: "13px", background: loading ? "#9e7b2a" : GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer", marginTop: 4 }}>
           {loading ? "Criando conta..." : "Criar conta"}
         </button>
       </form>
 
       <p style={{ textAlign: "center", marginTop: 24, fontSize: 14, color: "#475569" }}>
-        Já tem uma conta?{" "}
-        <Link href="/login" style={{ color: GOLD, textDecoration: "none", fontWeight: 600 }}>Entrar</Link>
+        Já tem uma conta? <Link href="/login" style={{ color: GOLD, textDecoration: "none", fontWeight: 600 }}>Entrar</Link>
       </p>
     </div>
   );

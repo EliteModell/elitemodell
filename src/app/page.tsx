@@ -1,402 +1,1030 @@
 "use client";
+
+import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  BadgeCheck,
+  Building2,
+  Camera,
+  ChevronRight,
+  Fingerprint,
+  MapPin,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  UserRoundCheck,
+} from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AgeGate from "@/components/AgeGate";
+import BottomNav from "@/components/BottomNav";
+import { mockProfiles } from "@/lib/mockProfiles";
 
 const GOLD = "#d4a843";
-const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
-const PEARL_GRADIENT = "linear-gradient(135deg, #ffffff 0%, #e8dfc8 20%, #ffffff 48%, #cfc5b5 72%, #ffffff 100%)";
-const PLAYFAIR = "var(--font-playfair), serif";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
 const GOLD_MID = "rgba(212,168,67,0.28)";
+const PLAYFAIR = "var(--font-playfair), serif";
 
-const imovelPreview = [
-  { id: 1, titulo: "Cobertura Premium", cidade: "São Paulo, SP", preco: 890, foto: "/hero-model.jpeg" },
-  { id: 2, titulo: "Flat Executivo", cidade: "Rio de Janeiro, RJ", preco: 650, foto: "/hero-model.jpeg" },
-  { id: 3, titulo: "Studio Moderno", cidade: "Curitiba, PR", preco: 420, foto: "/hero-model.jpeg" },
-  { id: 4, titulo: "Casa de Luxo", cidade: "Florianópolis, SC", preco: 1200, foto: "/hero-model.jpeg" },
-];
+const cities = ["São Paulo", "Rio de Janeiro", "Curitiba", "Florianópolis", "Belo Horizonte"];
 
-const TRUST = [
+const properties = [
   {
-    title: "Privacidade Garantida",
-    desc: "Seus dados são protegidos com criptografia avançada. Nenhuma informação é compartilhada.",
-    icon: (
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="11" width="18" height="11" rx="2" fill="rgba(212,168,67,0.12)" stroke={GOLD} strokeWidth="1.8"/>
-        <path d="M7 11V7a5 5 0 0110 0v4" stroke={GOLD} strokeWidth="1.8"/>
-      </svg>
-    ),
+    id: 1,
+    title: "Cobertura Jardins",
+    city: "São Paulo, SP",
+    price: 890,
+    image: "/hero-model.jpeg",
+    type: "Cobertura",
+    details: "3 quartos · piscina · check-in discreto",
   },
   {
-    title: "Seleção Rigorosa",
-    desc: "Cada perfil passa por verificação de documentos e fotos antes de ser publicado.",
-    icon: (
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-          fill="rgba(212,168,67,0.12)" stroke={GOLD} strokeWidth="1.8" />
-      </svg>
-    ),
+    id: 2,
+    title: "Flat Executivo",
+    city: "Rio de Janeiro, RJ",
+    price: 650,
+    image: "/model2.jpg",
+    type: "Flat",
+    details: "1 suíte · garagem · portaria 24h",
   },
   {
-    title: "Atendimento Premium",
-    desc: "Suporte dedicado para clientes e profissionais, com atendimento humanizado.",
-    icon: (
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="rgba(212,168,67,0.12)" stroke={GOLD} strokeWidth="1.8"/>
-      </svg>
-    ),
-  },
-  {
-    title: "Satisfação Garantida",
-    desc: "Experiências únicas com acompanhantes verificadas e imóveis exclusivos.",
-    icon: (
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" fill="rgba(212,168,67,0.12)" stroke={GOLD} strokeWidth="1.8"/>
-      </svg>
-    ),
+    id: 3,
+    title: "Studio Reservado",
+    city: "Curitiba, PR",
+    price: 420,
+    image: "/model1.jpg",
+    type: "Studio",
+    details: "Local central · privacidade · Wi-Fi",
   },
 ];
 
-const CATEGORIAS = [
-  { label: "Acompanhantes Femininas", sub: "Mulheres", count: "+1.400 perfis", cidades: "São Paulo · Rio · Curitiba · BH · Brasília", href: "/buscar?tab=acompanhantes&sub=mulheres" },
-  { label: "Acompanhantes Trans", sub: "Trans", count: "+320 perfis", cidades: "São Paulo · Rio · Salvador · Florianópolis", href: "/buscar?tab=acompanhantes&sub=trans" },
-  { label: "Acompanhantes Masculinos", sub: "Homens", count: "+280 perfis", cidades: "São Paulo · Rio · BH · Porto Alegre", href: "/buscar?tab=acompanhantes&sub=homens" },
-  { label: "Imóveis", sub: "Hospedagem", count: "+600 imóveis", cidades: "São Paulo · Rio · Florianópolis · Campos", href: "/buscar?tab=imoveis" },
+const verificationItems = [
+  { icon: ShieldCheck, title: "Documento privado", text: "Análise interna de identidade antes da publicação." },
+  { icon: Camera, title: "Fotos reais", text: "Galeria revisada para reduzir perfis falsos." },
+  { icon: Fingerprint, title: "Biometria facial", text: "Liveness e desafio de verificação para anunciantes." },
 ];
 
-const FEATURES = [
-  { title: "100% Verificadas", desc: "Todos os perfis passam por verificação de documentos e fotos reais antes de serem publicados." },
-  { title: "Pagamento Seguro", desc: "Pix, cartão e boleto com ambiente criptografado. Reembolso garantido em casos de cancelamento." },
-  { title: "Discrição Total", desc: "Seus dados são protegidos com criptografia de ponta e nunca compartilhados com terceiros." },
-  { title: "Avaliações Reais", desc: "Só quem realizou o serviço pode avaliar. Transparência total para sua segurança." },
+const categories = [
+  { label: "Mulheres", href: "/buscar?tab=acompanhantes&sub=mulheres", total: "perfis femininos verificados" },
+  { label: "Trans", href: "/buscar?tab=acompanhantes&sub=trans", total: "perfis trans com moderação" },
+  { label: "Homens", href: "/buscar?tab=acompanhantes&sub=homens", total: "acompanhantes masculinos" },
+  { label: "Imóveis", href: "/buscar?tab=imoveis", total: "locais reservados e avaliados" },
 ];
 
 export default function HomePage() {
+  const router = useRouter();
+  const [city, setCity] = useState("");
+  const [category, setCategory] = useState("mulheres");
+
+  const featuredProfiles = useMemo(
+    () => mockProfiles.filter((profile) => profile.verified).slice(0, 3),
+    []
+  );
+
+  function submitSearch(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    params.set("tab", category === "imoveis" ? "imoveis" : "acompanhantes");
+    if (category !== "imoveis") params.set("sub", category);
+    if (city.trim()) params.set("q", city.trim());
+    router.push(`/buscar?${params.toString()}`);
+  }
 
   return (
-    <div style={{ background: "#060e1b", minHeight: "100vh", color: "#f1f5f9" }}>
+    <div className="home-shell">
       <AgeGate />
       <Navbar />
 
-      {/* ── HERO ── */}
-      <style>{`
-        @media (max-width: 640px) {
-          .hero-section { min-height: 55vh !important; }
-          .hero-content { padding: 76px 20px 28px !important; }
-          .hero-badges-row { flex-direction: column !important; gap: 6px !important; }
-          .hero-secure-card { display: none !important; }
-          .hero-title { font-size: clamp(30px, 9.5vw, 42px) !important; letter-spacing: -1px !important; line-height: 1.05 !important; }
+      <main>
+        <section className="market-hero">
+          <div className="hero-media" aria-hidden="true">
+            <img src="/model.jpeg" alt="" />
+            <div className="hero-shade" />
+          </div>
+
+          <div className="hero-grid">
+            <div className="hero-copy">
+              <div className="eyebrow">
+                <Sparkles size={14} />
+                Marketplace adulto verificado
+              </div>
+              <h1>Encontre companhia e locais reservados com discrição.</h1>
+              <p>
+                Perfis profissionais, imóveis selecionados e um fluxo de verificação com documento,
+                fotos reais e biometria facial antes da publicação.
+              </p>
+
+              <form className="search-console" onSubmit={submitSearch}>
+                <div className="field field-large">
+                  <span>Cidade</span>
+                  <input
+                    value={city}
+                    onChange={(event) => setCity(event.target.value)}
+                    placeholder="São Paulo, Rio, Curitiba..."
+                    list="home-cities"
+                  />
+                  <datalist id="home-cities">
+                    {cities.map((item) => (
+                      <option key={item} value={item} />
+                    ))}
+                  </datalist>
+                </div>
+
+                <div className="field">
+                  <span>Categoria</span>
+                  <select value={category} onChange={(event) => setCategory(event.target.value)}>
+                    <option value="mulheres">Mulheres</option>
+                    <option value="trans">Trans</option>
+                    <option value="homens">Homens</option>
+                    <option value="imoveis">Imóveis</option>
+                  </select>
+                </div>
+
+                <button type="submit" aria-label="Buscar">
+                  <Search size={18} />
+                  Buscar
+                </button>
+              </form>
+
+              <div className="trust-strip">
+                <span><BadgeCheck size={15} /> Perfis verificados</span>
+                <span><Fingerprint size={15} /> Biometria facial</span>
+                <span><ShieldCheck size={15} /> Dados privados</span>
+              </div>
+            </div>
+
+            <aside className="live-board" aria-label="Perfis em destaque">
+              <div className="board-head">
+                <div>
+                  <span>Em destaque agora</span>
+                  <strong>Profissionais verificadas</strong>
+                </div>
+                <Link href="/buscar?tab=acompanhantes">
+                  Ver todas <ChevronRight size={14} />
+                </Link>
+              </div>
+
+              <div className="stacked-profiles">
+                {featuredProfiles.map((profile) => (
+                  <Link key={profile.id} href={`/profissionais/${profile.slug}`} className="compact-profile">
+                    <img src={profile.image} alt={profile.displayName} />
+                    <div>
+                      <div className="profile-name">
+                        <strong>{profile.displayName}</strong>
+                        {profile.online && <span>online</span>}
+                      </div>
+                      <p>{profile.city}, {profile.state} · {profile.idade} anos</p>
+                      <div className="profile-meta">
+                        <span><Star size={12} fill={GOLD} /> {profile.rating}</span>
+                        <span>R$ {profile.priceMin}/h</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section className="quick-categories">
+          <div className="section-head">
+            <span>Entrada rápida</span>
+            <h2>Escolha o que você procura</h2>
+          </div>
+          <div className="category-grid">
+            {categories.map((item) => (
+              <Link key={item.label} href={item.href} className="category-tile">
+                <span>{item.label}</span>
+                <p>{item.total}</p>
+                <ChevronRight size={18} />
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="production-section">
+          <div className="section-head">
+            <span>Seleção real</span>
+            <h2>Perfis que parecem vivos, não placeholders</h2>
+          </div>
+
+          <div className="profile-grid">
+            {featuredProfiles.map((profile) => (
+              <Link key={profile.id} href={`/profissionais/${profile.slug}`} className="feature-card">
+                <div className="photo-wrap">
+                  <img src={profile.image} alt={profile.displayName} />
+                  <div className="photo-gradient" />
+                  <div className="verified-pill">
+                    <UserRoundCheck size={13} />
+                    Verificada
+                  </div>
+                  {profile.online && <div className="online-pill">Online agora</div>}
+                </div>
+                <div className="feature-info">
+                  <div>
+                    <h3>{profile.displayName}</h3>
+                    <p><MapPin size={13} /> {profile.city}, {profile.state}</p>
+                  </div>
+                  <div className="price-line">
+                    <span>R$ {profile.priceMin}/h</span>
+                    <small><Star size={13} fill={GOLD} /> {profile.rating} ({profile.totalReviews})</small>
+                  </div>
+                  <div className="tag-row">
+                    {profile.specialties.slice(0, 3).map((specialty) => (
+                      <span key={specialty}>{specialty}</span>
+                    ))}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="verification-band">
+          <div className="verification-copy">
+            <span>Verificação Elite Modell</span>
+            <h2>Documento, fotos reais e biometria antes do perfil ir ao ar.</h2>
+            <p>
+              O cadastro profissional já nasce com análise manual e suporte para provedor KYC.
+              Isso reduz perfis falsos e deixa a plataforma com confiança de produto sério.
+            </p>
+          </div>
+          <div className="verification-grid">
+            {verificationItems.map(({ icon: Icon, title, text }) => (
+              <div key={title} className="verify-item">
+                <Icon size={22} />
+                <strong>{title}</strong>
+                <p>{text}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="property-section">
+          <div className="section-head">
+            <span>Locais selecionados</span>
+            <h2>Imóveis para encontros discretos e estadias premium</h2>
+          </div>
+
+          <div className="property-grid">
+            {properties.map((property) => (
+              <Link key={property.id} href={`/imoveis/${property.id}`} className="property-card">
+                <img src={property.image} alt={property.title} />
+                <div className="property-info">
+                  <span>{property.type}</span>
+                  <h3>{property.title}</h3>
+                  <p>{property.city}</p>
+                  <small>{property.details}</small>
+                  <strong>R$ {property.price}/noite</strong>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="operator-section">
+          <div>
+            <span>Para anunciantes</span>
+            <h2>Cadastro profissional com pendências claras até aprovação.</h2>
+            <p>
+              Documento, galeria, biometria facial, categoria, valores e contato ficam organizados
+              antes de o perfil entrar em análise.
+            </p>
+          </div>
+          <div className="operator-actions">
+            <Link href="/cadastro">Criar conta profissional</Link>
+            <Link href="/anfitriao/imoveis/novo">Anunciar imóvel</Link>
+          </div>
+        </section>
+      </main>
+
+      <Suspense fallback={null}>
+        <BottomNav />
+      </Suspense>
+      <Footer />
+
+      <style jsx>{`
+        .home-shell {
+          min-height: 100vh;
+          background:
+            linear-gradient(180deg, rgba(6, 14, 27, 0.96) 0%, #060e1b 42%),
+            #060e1b;
+          color: #f1f5f9;
+        }
+
+        .market-hero {
+          position: relative;
+          min-height: 92vh;
+          padding: 112px 24px 56px;
+          overflow: hidden;
+          border-bottom: 1px solid ${GOLD_DIM};
+        }
+
+        .hero-media {
+          position: absolute;
+          inset: 0;
+        }
+
+        .hero-media img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: 42% top;
+          opacity: 0.72;
+        }
+
+        .hero-shade {
+          position: absolute;
+          inset: 0;
+          background:
+            linear-gradient(90deg, rgba(6,14,27,0.98) 0%, rgba(6,14,27,0.88) 42%, rgba(6,14,27,0.45) 74%, rgba(6,14,27,0.82) 100%),
+            linear-gradient(180deg, rgba(6,14,27,0.25) 0%, #060e1b 100%);
+        }
+
+        .hero-grid {
+          position: relative;
+          z-index: 1;
+          max-width: 1280px;
+          margin: 0 auto;
+          display: grid;
+          grid-template-columns: minmax(0, 1.05fr) 420px;
+          gap: 34px;
+          align-items: end;
+        }
+
+        .hero-copy {
+          max-width: 760px;
+        }
+
+        .eyebrow,
+        .section-head span,
+        .verification-copy span,
+        .operator-section span {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          color: ${GOLD};
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 2.4px;
+          text-transform: uppercase;
+        }
+
+        h1,
+        h2,
+        h3 {
+          font-family: ${PLAYFAIR};
+          letter-spacing: 0;
+        }
+
+        .hero-copy h1 {
+          max-width: 780px;
+          margin: 18px 0 18px;
+          font-size: clamp(42px, 6.2vw, 86px);
+          line-height: 0.94;
+          font-weight: 700;
+        }
+
+        .hero-copy p {
+          max-width: 610px;
+          margin: 0 0 26px;
+          color: #94a3b8;
+          font-size: 16px;
+          line-height: 1.75;
+        }
+
+        .search-console {
+          display: grid;
+          grid-template-columns: minmax(220px, 1fr) 180px 132px;
+          gap: 10px;
+          max-width: 760px;
+          padding: 10px;
+          background: rgba(11, 20, 32, 0.86);
+          border: 1px solid ${GOLD_MID};
+          border-radius: 14px;
+          backdrop-filter: blur(16px);
+          box-shadow: 0 24px 80px rgba(0,0,0,0.34);
+        }
+
+        .field {
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+          padding: 10px 12px;
+          background: #08111f;
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 10px;
+        }
+
+        .field span {
+          color: #64748b;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 1.4px;
+          text-transform: uppercase;
+        }
+
+        .field input,
+        .field select {
+          width: 100%;
+          border: 0;
+          outline: 0;
+          background: transparent;
+          color: #f1f5f9;
+          font-size: 14px;
+        }
+
+        .field select option {
+          background: #08111f;
+        }
+
+        .search-console button {
+          border: 0;
+          border-radius: 10px;
+          background: ${GOLD};
+          color: #060e1b;
+          font-size: 14px;
+          font-weight: 900;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          cursor: pointer;
+        }
+
+        .trust-strip {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 16px;
+        }
+
+        .trust-strip span {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          padding: 8px 11px;
+          border: 1px solid rgba(212,168,67,0.18);
+          border-radius: 999px;
+          background: rgba(6,14,27,0.58);
+          color: #cbd5e1;
+          font-size: 12px;
+        }
+
+        .live-board {
+          padding: 16px;
+          background: rgba(6, 14, 27, 0.76);
+          border: 1px solid ${GOLD_MID};
+          border-radius: 16px;
+          backdrop-filter: blur(16px);
+          box-shadow: 0 24px 70px rgba(0,0,0,0.42);
+        }
+
+        .board-head {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 14px;
+          margin-bottom: 14px;
+        }
+
+        .board-head span {
+          display: block;
+          color: #64748b;
+          font-size: 11px;
+          margin-bottom: 3px;
+        }
+
+        .board-head strong {
+          color: #f1f5f9;
+          font-size: 16px;
+          font-family: ${PLAYFAIR};
+        }
+
+        .board-head a,
+        .section-head a {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          color: ${GOLD};
+          text-decoration: none;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .stacked-profiles {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .compact-profile {
+          display: grid;
+          grid-template-columns: 74px 1fr;
+          gap: 12px;
+          padding: 10px;
+          background: rgba(11,20,32,0.86);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 12px;
+          color: inherit;
+          text-decoration: none;
+          transition: transform 0.18s, border-color 0.18s;
+        }
+
+        .compact-profile:hover {
+          transform: translateY(-2px);
+          border-color: ${GOLD_MID};
+        }
+
+        .compact-profile img {
+          width: 74px;
+          height: 92px;
+          border-radius: 9px;
+          object-fit: cover;
+          object-position: top;
+        }
+
+        .profile-name {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          margin-bottom: 4px;
+        }
+
+        .profile-name strong {
+          font-family: ${PLAYFAIR};
+          font-size: 17px;
+        }
+
+        .profile-name span,
+        .online-pill {
+          padding: 3px 8px;
+          border-radius: 999px;
+          background: rgba(34,197,94,0.12);
+          color: #22c55e;
+          font-size: 10px;
+          font-weight: 800;
+          text-transform: uppercase;
+        }
+
+        .compact-profile p {
+          margin: 0 0 10px;
+          color: #64748b;
+          font-size: 12px;
+        }
+
+        .profile-meta {
+          display: flex;
+          justify-content: space-between;
+          gap: 8px;
+          color: ${GOLD};
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .profile-meta span {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .quick-categories,
+        .production-section,
+        .property-section,
+        .verification-band,
+        .operator-section {
+          max-width: 1280px;
+          margin: 0 auto;
+          padding: 70px 24px;
+        }
+
+        .section-head {
+          display: flex;
+          align-items: end;
+          justify-content: space-between;
+          gap: 20px;
+          margin-bottom: 24px;
+        }
+
+        .section-head h2,
+        .verification-copy h2,
+        .operator-section h2 {
+          margin: 8px 0 0;
+          color: #f1f5f9;
+          font-size: clamp(27px, 3.5vw, 46px);
+          line-height: 1.05;
+          font-weight: 700;
+        }
+
+        .category-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          border: 1px solid ${GOLD_DIM};
+          border-radius: 16px;
+          overflow: hidden;
+          background: #08111f;
+        }
+
+        .category-tile {
+          position: relative;
+          min-height: 132px;
+          padding: 22px;
+          color: inherit;
+          text-decoration: none;
+          border-right: 1px solid ${GOLD_DIM};
+          background: #0b1420;
+          transition: background 0.18s;
+        }
+
+        .category-tile:hover {
+          background: rgba(212,168,67,0.08);
+        }
+
+        .category-tile span {
+          display: block;
+          color: #f1f5f9;
+          font-family: ${PLAYFAIR};
+          font-size: 22px;
+          font-weight: 700;
+          margin-bottom: 8px;
+        }
+
+        .category-tile p {
+          max-width: 190px;
+          color: #64748b;
+          font-size: 13px;
+          line-height: 1.5;
+          margin: 0;
+        }
+
+        .category-tile svg {
+          position: absolute;
+          right: 18px;
+          bottom: 18px;
+          color: ${GOLD};
+        }
+
+        .profile-grid,
+        .property-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+        }
+
+        .feature-card,
+        .property-card {
+          display: block;
+          overflow: hidden;
+          border: 1px solid ${GOLD_DIM};
+          border-radius: 16px;
+          background: #0b1420;
+          color: inherit;
+          text-decoration: none;
+          transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover,
+        .property-card:hover {
+          transform: translateY(-4px);
+          border-color: ${GOLD_MID};
+        }
+
+        .photo-wrap {
+          position: relative;
+          height: 410px;
+          background: #08111f;
+        }
+
+        .photo-wrap img,
+        .property-card img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: top;
+        }
+
+        .photo-gradient {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to top, rgba(6,14,27,0.96), rgba(6,14,27,0.18) 54%, transparent);
+        }
+
+        .verified-pill,
+        .online-pill {
+          position: absolute;
+          top: 12px;
+          left: 12px;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 10px;
+          border-radius: 999px;
+          background: rgba(6,14,27,0.78);
+          border: 1px solid ${GOLD_MID};
+          color: ${GOLD};
+          font-size: 11px;
+          font-weight: 900;
+        }
+
+        .online-pill {
+          left: auto;
+          right: 12px;
+          border-color: rgba(34,197,94,0.3);
+          color: #22c55e;
+        }
+
+        .feature-info {
+          padding: 16px;
+        }
+
+        .feature-info h3,
+        .property-info h3 {
+          margin: 0 0 4px;
+          font-size: 22px;
+        }
+
+        .feature-info p {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          margin: 0;
+          color: #64748b;
+          font-size: 13px;
+        }
+
+        .price-line {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 10px;
+          margin: 16px 0 12px;
+        }
+
+        .price-line span {
+          color: ${GOLD};
+          font-size: 18px;
+          font-weight: 900;
+          font-family: ${PLAYFAIR};
+        }
+
+        .price-line small {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          color: #f59e0b;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .tag-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .tag-row span {
+          padding: 4px 9px;
+          border-radius: 999px;
+          background: ${GOLD_DIM};
+          border: 1px solid rgba(212,168,67,0.16);
+          color: #cbd5e1;
+          font-size: 11px;
+        }
+
+        .verification-band {
+          display: grid;
+          grid-template-columns: 0.9fr 1.1fr;
+          gap: 28px;
+          align-items: center;
+          border-top: 1px solid ${GOLD_DIM};
+          border-bottom: 1px solid ${GOLD_DIM};
+        }
+
+        .verification-copy p,
+        .operator-section p {
+          max-width: 540px;
+          margin: 14px 0 0;
+          color: #94a3b8;
+          font-size: 15px;
+          line-height: 1.75;
+        }
+
+        .verification-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 10px;
+        }
+
+        .verify-item {
+          min-height: 190px;
+          padding: 20px;
+          background: #0b1420;
+          border: 1px solid ${GOLD_DIM};
+          border-radius: 14px;
+        }
+
+        .verify-item svg {
+          color: ${GOLD};
+          margin-bottom: 18px;
+        }
+
+        .verify-item strong {
+          display: block;
+          color: #f1f5f9;
+          font-family: ${PLAYFAIR};
+          font-size: 18px;
+          margin-bottom: 8px;
+        }
+
+        .verify-item p {
+          margin: 0;
+          color: #64748b;
+          font-size: 13px;
+          line-height: 1.65;
+        }
+
+        .property-card {
+          position: relative;
+          min-height: 360px;
+        }
+
+        .property-card img {
+          position: absolute;
+          inset: 0;
+          object-position: center;
+          opacity: 0.68;
+        }
+
+        .property-card::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to top, rgba(6,14,27,0.98), rgba(6,14,27,0.32) 58%, rgba(6,14,27,0.08));
+        }
+
+        .property-info {
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 1;
+          padding: 20px;
+        }
+
+        .property-info span {
+          display: inline-flex;
+          padding: 4px 9px;
+          border-radius: 999px;
+          background: rgba(6,14,27,0.7);
+          border: 1px solid ${GOLD_MID};
+          color: ${GOLD};
+          font-size: 11px;
+          font-weight: 900;
+          margin-bottom: 10px;
+        }
+
+        .property-info p,
+        .property-info small {
+          display: block;
+          color: #cbd5e1;
+          font-size: 13px;
+          margin-bottom: 6px;
+        }
+
+        .property-info strong {
+          display: block;
+          margin-top: 14px;
+          color: ${GOLD};
+          font-family: ${PLAYFAIR};
+          font-size: 20px;
+        }
+
+        .operator-section {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 22px;
+          border-top: 1px solid ${GOLD_DIM};
+        }
+
+        .operator-actions {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+        }
+
+        .operator-actions a {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 46px;
+          padding: 0 18px;
+          border-radius: 10px;
+          border: 1px solid ${GOLD_MID};
+          color: ${GOLD};
+          text-decoration: none;
+          font-size: 13px;
+          font-weight: 900;
+        }
+
+        .operator-actions a:first-child {
+          background: ${GOLD};
+          color: #060e1b;
+          border-color: ${GOLD};
+        }
+
+        @media (max-width: 980px) {
+          .market-hero {
+            min-height: auto;
+          }
+
+          .hero-grid,
+          .verification-band {
+            grid-template-columns: 1fr;
+          }
+
+          .live-board {
+            max-width: 620px;
+          }
+
+          .category-grid,
+          .profile-grid,
+          .property-grid,
+          .verification-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+
+          .operator-section {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .operator-actions {
+            justify-content: flex-start;
+          }
+        }
+
+        @media (max-width: 680px) {
+          .market-hero {
+            padding: 92px 16px 34px;
+          }
+
+          .hero-copy h1 {
+            font-size: clamp(37px, 12vw, 54px);
+          }
+
+          .hero-copy p {
+            font-size: 14px;
+          }
+
+          .search-console {
+            grid-template-columns: 1fr;
+          }
+
+          .search-console button {
+            min-height: 48px;
+          }
+
+          .trust-strip span {
+            width: 100%;
+          }
+
+          .quick-categories,
+          .production-section,
+          .property-section,
+          .verification-band,
+          .operator-section {
+            padding: 48px 16px;
+          }
+
+          .section-head {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .category-grid,
+          .profile-grid,
+          .property-grid,
+          .verification-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .category-tile {
+            min-height: 116px;
+          }
+
+          .photo-wrap {
+            height: 430px;
+          }
+
+          .property-card {
+            min-height: 330px;
+          }
         }
       `}</style>
-      <section className="hero-section" style={{ position: "relative", minHeight: "92vh", display: "flex", alignItems: "center", overflow: "hidden", marginTop: 64 }}>
-        {/* Foto da Lora */}
-        <img src="/model.jpeg" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "38% top" }} />
-        {/* Overlay: escuro na esquerda, modelo visível na direita */}
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(100deg, rgba(6,14,27,0.97) 0%, rgba(6,14,27,0.90) 32%, rgba(6,14,27,0.50) 55%, rgba(6,14,27,0.05) 100%)" }} />
-        {/* Linha dourada na base */}
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${GOLD_MID}, transparent)` }} />
-
-        <div className="hero-content" style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 1280, margin: "0 auto", padding: "56px 32px 80px" }}>
-          <div style={{ maxWidth: 600 }}>
-            {/* Tag */}
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, color: GOLD, textTransform: "uppercase", marginBottom: 20 }}>
-              A plataforma premium do Brasil
-            </p>
-
-            {/* Headline */}
-            <h1 className="hero-title" style={{ fontSize: "clamp(36px, 5.5vw, 72px)", fontWeight: 700, margin: "0 0 18px", letterSpacing: "-2px", lineHeight: 1.0, fontFamily: PLAYFAIR }}>
-              <span style={{ background: PEARL_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block" }}>
-                Acompanhantes
-              </span>
-              <br />
-              <span style={{ background: GOLD_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block" }}>
-                de luxo.
-              </span>
-              <br />
-              <span style={{ background: PEARL_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block" }}>
-                Experiências inesquecíveis.
-              </span>
-            </h1>
-
-            {/* Subtítulo curto e impactante */}
-            <p style={{ color: GOLD, fontSize: 15, fontWeight: 600, letterSpacing: 1.5, marginBottom: 32 }}>
-              Discrição. Elegância. Sofisticação.
-            </p>
-
-            {/* 3 badges inline */}
-            <div className="hero-badges-row" style={{ display: "flex", gap: 20, marginBottom: 40, flexWrap: "wrap" }}>
-              {[
-                { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>, label: "Discrição total e segurança" },
-                { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>, label: "Acompanhantes verificadas" },
-                { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/></svg>, label: "Experiências premium" },
-              ].map((b) => (
-                <div key={b.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  {b.icon}
-                  <span style={{ fontSize: 13, color: "rgba(241,245,249,0.7)", fontWeight: 500 }}>{b.label}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* CTA principal */}
-            <Link
-              href="/buscar?tab=acompanhantes"
-              style={{ display: "inline-flex", alignItems: "center", gap: 12, padding: "15px 32px", background: "transparent", color: GOLD, border: `1.5px solid ${GOLD}`, borderRadius: 8, fontSize: 13, fontWeight: 800, textDecoration: "none", letterSpacing: 2, textTransform: "uppercase", transition: "all 0.2s" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = GOLD; (e.currentTarget as HTMLElement).style.color = "#060e1b"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = GOLD; }}
-            >
-              Encontre sua companhia ideal
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </Link>
-          </div>
-        </div>
-
-        {/* Card 100% SEGURO — canto inferior direito */}
-        <div className="hero-secure-card" style={{
-          position: "absolute", bottom: 32, right: 32, zIndex: 2,
-          background: "rgba(6,14,27,0.85)", backdropFilter: "blur(12px)",
-          border: `1px solid ${GOLD_MID}`, borderRadius: 14,
-          padding: "16px 20px", display: "flex", alignItems: "center", gap: 14,
-          maxWidth: 280,
-        }}>
-          <div style={{ width: 42, height: 42, borderRadius: 10, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-          </div>
-          <div>
-            <p style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 800, color: GOLD, fontFamily: PLAYFAIR, letterSpacing: 0.5 }}>100% SEGURO</p>
-            <p style={{ margin: 0, fontSize: 11, color: "#64748b", lineHeight: 1.5 }}>Seus dados protegidos com criptografia avançada</p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── O QUE VOCÊ PROCURA ── */}
-      <section style={{ background: "#060e1b", padding: "0 16px 16px" }}>
-        <style>{`
-          .procura-grid { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid rgba(212,168,67,0.28); border-radius: 20px; overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,0.4); }
-          .procura-item { padding: 20px 16px 44px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; border-right: 1px solid rgba(212,168,67,0.12); border-bottom: 1px solid rgba(212,168,67,0.12); background: #0b1420; text-decoration: none; transition: all 0.18s; cursor: pointer; position: relative; -webkit-tap-highlight-color: rgba(212,168,67,0.15); }
-          .procura-item:hover, .procura-item:active { background: rgba(212,168,67,0.08) !important; }
-          .procura-cta { position: absolute; bottom: 0; left: 0; right: 0; padding: 9px 16px; background: rgba(212,168,67,0.08); border-top: 1px solid rgba(212,168,67,0.12); display: flex; align-items: center; justify-content: space-between; transition: background 0.18s; }
-          .procura-item:hover .procura-cta, .procura-item:active .procura-cta { background: rgba(212,168,67,0.18); }
-          .procura-cta span { font-size: 11px; font-weight: 700; color: #d4a843; letter-spacing: 0.5px; text-transform: uppercase; }
-          .procura-cta svg { transition: transform 0.18s; }
-          .procura-item:hover .procura-cta svg { transform: translateX(4px); }
-        `}</style>
-        <div style={{ maxWidth: 600, margin: "0 auto", transform: "translateY(-32px)" }}>
-          <div className="procura-grid">
-            {[
-              {
-                href: "/buscar?tab=acompanhantes",
-                title: "Busco prazer",
-                desc: "Encontre companhia para momentos especiais e discretos.",
-                iconBg: "rgba(204,0,0,0.12)",
-                iconBorder: "rgba(204,0,0,0.25)",
-                icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="#cc0000"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
-              },
-              {
-                href: "/anfitriao/imoveis/novo",
-                title: "Anunciar imóvel",
-                desc: "Cadastre seu imóvel e alcance mais clientes.",
-                iconBg: GOLD_DIM,
-                iconBorder: GOLD_MID,
-                icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,
-              },
-              {
-                href: "/buscar?tab=imoveis",
-                title: "Alugar imóvel",
-                desc: "Encontre o espaço perfeito para sua estadia.",
-                iconBg: GOLD_DIM,
-                iconBorder: GOLD_MID,
-                icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
-              },
-              {
-                href: "/cadastro",
-                title: "Sou profissional",
-                desc: "Cadastre seu perfil e alcance novos clientes.",
-                iconBg: GOLD_DIM,
-                iconBorder: GOLD_MID,
-                icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-              },
-            ].map((opt) => (
-              <Link key={opt.title} href={opt.href} className="procura-item">
-                <div style={{ width: 52, height: 52, borderRadius: 14, background: opt.iconBg, border: `1px solid ${opt.iconBorder}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {opt.icon}
-                </div>
-                <div>
-                  <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: "#f1f5f9", fontFamily: PLAYFAIR, lineHeight: 1.2 }}>{opt.title}</p>
-                  <p style={{ margin: 0, fontSize: 11, color: "#475569", lineHeight: 1.55 }}>{opt.desc}</p>
-                </div>
-                {/* Barra inferior clicável */}
-                <div className="procura-cta">
-                  <span>Acessar</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d4a843" strokeWidth="2.5">
-                    <path d="M5 12h14M12 5l7 7-7 7"/>
-                  </svg>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── EXCLUSIVIDADE / TRUST ── */}
-      <section style={{ background: "#060e1b", padding: "0 16px 72px" }}>
-        <style>{`
-          .trust-grid { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid rgba(212,168,67,0.12); border-radius: 20px; overflow: hidden; }
-          @media (max-width: 700px) { .trust-grid { grid-template-columns: 1fr 1fr; } }
-          @media (max-width: 400px) { .trust-grid { grid-template-columns: 1fr; } }
-          .trust-item { padding: 28px 22px; display: flex; flex-direction: column; align-items: flex-start; gap: 14px; border-right: 1px solid rgba(212,168,67,0.12); border-bottom: 1px solid rgba(212,168,67,0.12); background: #0b1420; }
-        `}</style>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          {/* Header estilo mockup */}
-          <div style={{ textAlign: "center", marginBottom: 28 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: "uppercase", marginBottom: 10 }}>
-              Exclusividade que você merece
-            </p>
-            <h2 style={{ fontSize: "clamp(22px, 4vw, 38px)", fontWeight: 700, color: "#f1f5f9", margin: 0, fontFamily: PLAYFAIR, letterSpacing: "-0.5px" }}>
-              Mais que encontros, momentos únicos.
-            </h2>
-          </div>
-          <div className="trust-grid">
-            {TRUST.map((t) => (
-              <div key={t.title} className="trust-item">
-                {/* Ícone com halo dourado */}
-                <div style={{
-                  width: 54, height: 54, borderRadius: 14,
-                  background: "rgba(212,168,67,0.08)",
-                  border: `1px solid rgba(212,168,67,0.2)`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  boxShadow: "0 0 20px rgba(212,168,67,0.08)",
-                }}>
-                  {t.icon}
-                </div>
-                <div>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: "#f1f5f9", margin: "0 0 6px", fontFamily: PLAYFAIR, lineHeight: 1.3 }}>{t.title}</p>
-                  <p style={{ fontSize: 12, color: "#475569", margin: 0, lineHeight: 1.65 }}>{t.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CATEGORIAS ── */}
-      <section style={{ background: "#060e1b", borderTop: `1px solid ${GOLD_DIM}`, padding: "80px 24px" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 44, flexWrap: "wrap", gap: 12 }}>
-            <div>
-              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: "uppercase", marginBottom: 10 }}>Explore</p>
-              <h2 style={{ fontSize: "clamp(24px, 4vw, 40px)", fontWeight: 700, color: "#f1f5f9", margin: 0, letterSpacing: "-1px", fontFamily: PLAYFAIR }}>
-                Categorias em destaque
-              </h2>
-            </div>
-            <Link href="/buscar" style={{ display: "flex", alignItems: "center", gap: 6, color: GOLD, textDecoration: "none", fontSize: 14, fontWeight: 700 }}>
-              Ver todas
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-            </Link>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
-            {CATEGORIAS.map((cat) => (
-              <Link
-                key={cat.label}
-                href={cat.href}
-                style={{ textDecoration: "none", display: "block", background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 16, overflow: "hidden", transition: "border-color 0.2s, transform 0.2s" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = GOLD_MID; (e.currentTarget as HTMLElement).style.transform = "translateY(-4px)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = GOLD_DIM; (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
-              >
-                <div style={{ height: 3, background: GOLD, width: "36px", margin: "22px 22px 0" }} />
-                <div style={{ padding: "14px 22px 26px" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#475569", textTransform: "uppercase" }}>{cat.sub}</span>
-                    <span style={{ fontSize: 12, color: "#334155", fontWeight: 600 }}>{cat.count}</span>
-                  </div>
-                  <h3 style={{ fontSize: 19, fontWeight: 700, color: "#f1f5f9", margin: "0 0 8px", lineHeight: 1.2, fontFamily: PLAYFAIR }}>{cat.label}</h3>
-                  <p style={{ fontSize: 12, color: "#334155", margin: "0 0 16px", lineHeight: 1.7 }}>{cat.cidades}</p>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: GOLD, fontSize: 13, fontWeight: 700 }}>
-                    Ver todos
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── FEATURES ── */}
-      <section style={{ background: "#060e1b", borderTop: `1px solid ${GOLD_DIM}`, padding: "80px 24px" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-          <div style={{ marginBottom: 52, textAlign: "center" }}>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: "uppercase", marginBottom: 14 }}>Por que escolher</p>
-            <h2 style={{ fontSize: "clamp(26px, 4vw, 42px)", fontWeight: 700, color: "#f1f5f9", margin: "0 0 14px", letterSpacing: "-1px", fontFamily: PLAYFAIR }}>A experiência mais premium do Brasil</h2>
-            <p style={{ color: "#475569", fontSize: 15, margin: 0, maxWidth: 460, marginLeft: "auto", marginRight: "auto" }}>
-              Construída para quem exige qualidade, segurança e discrição acima de tudo.
-            </p>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", border: `1px solid ${GOLD_DIM}`, borderRadius: 20, overflow: "hidden" }}>
-            {FEATURES.map((f, i) => (
-              <div key={f.title} style={{ padding: "36px 30px", background: i % 2 === 0 ? "#0b1420" : "#0a1323", borderRight: `1px solid ${GOLD_DIM}`, borderBottom: `1px solid ${GOLD_DIM}` }}>
-                <div style={{ width: 36, height: 3, background: GOLD, borderRadius: 2, marginBottom: 20 }} />
-                <h3 style={{ fontSize: 17, fontWeight: 700, color: "#f1f5f9", margin: "0 0 10px", fontFamily: PLAYFAIR }}>{f.title}</h3>
-                <p style={{ fontSize: 13, color: "#475569", lineHeight: 1.75, margin: 0 }}>{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── MÓDULO IMÓVEIS ── */}
-      <section style={{ background: "#060e1b", borderTop: `1px solid ${GOLD_DIM}`, padding: "80px 24px" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", gap: 56, alignItems: "center", flexWrap: "wrap" }}>
-          <div style={{ flex: 1, minWidth: 280 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: "uppercase", marginBottom: 18 }}>Módulo imóveis</p>
-            <h2 style={{ fontSize: "clamp(26px, 4vw, 44px)", fontWeight: 700, margin: "0 0 18px", letterSpacing: "-1px", lineHeight: 1.1, fontFamily: PLAYFAIR }}>
-              <span style={{ background: PEARL_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block" }}>Reserve o imóvel</span>
-              <br />
-              <span style={{ background: GOLD_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block" }}>perfeito para</span>
-              <br />
-              <span style={{ background: PEARL_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block" }}>sua experiência</span>
-            </h2>
-            <p style={{ color: "#475569", fontSize: 14, lineHeight: 1.85, margin: "0 0 30px" }}>
-              Coberturas, flats executivos, casas de temporada e studios modernos.
-              Pague via Pix, cartão ou boleto. Check-in configurável, reserva instantânea.
-            </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 36 }}>
-              {["Piscina", "Pet friendly", "Wi-Fi", "Churrasqueira", "Check-in flexível", "Estacionamento"].map((tag) => (
-                <span key={tag} style={{ padding: "5px 14px", border: `1px solid ${GOLD_DIM}`, borderRadius: 20, fontSize: 12, color: "#475569" }}>{tag}</span>
-              ))}
-            </div>
-            <Link href="/buscar?tab=imoveis"
-              style={{ padding: "14px 30px", background: "transparent", color: GOLD, border: `1px solid ${GOLD_MID}`, borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: "none", display: "inline-block", transition: "background 0.2s" }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = GOLD_DIM)}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "transparent")}>
-              Explorar Imóveis
-            </Link>
-          </div>
-
-          <div style={{ flex: 1, minWidth: 280, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            {imovelPreview.map((im) => (
-              <Link key={im.id} href="/buscar?tab=imoveis" style={{ textDecoration: "none", background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, overflow: "hidden", transition: "border-color 0.2s" }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = GOLD_MID)}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = GOLD_DIM)}>
-                <div style={{ height: 90, background: "#0f172a", position: "relative", overflow: "hidden" }}>
-                  <img src={im.foto} alt={im.titulo} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.4 }} />
-                  <div style={{ position: "absolute", top: 8, right: 8, background: "rgba(6,14,27,0.9)", padding: "2px 8px", borderRadius: 6, fontSize: 11, color: GOLD, fontWeight: 700 }}>
-                    R${im.preco}/noite
-                  </div>
-                </div>
-                <div style={{ padding: "10px 12px" }}>
-                  <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{im.titulo}</p>
-                  <p style={{ margin: "2px 0 0", fontSize: 11, color: "#334155" }}>{im.cidade}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <Footer />
     </div>
   );
 }

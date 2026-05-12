@@ -51,9 +51,17 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // A tela de novo perfil precisa estar aberta para HOST antes do perfil existir.
+  if (pathname === "/profissional/novo") {
+    if (token.role !== "HOST" && token.role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+    return NextResponse.next();
+  }
+
   // Rotas de profissional - apenas com perfil profissional
   if (pathname.startsWith("/profissional") || pathname.startsWith("/api/profissional")) {
-    if (!(token as any).isProfessional) {
+    if (!(token as any).isProfessional && token.role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }

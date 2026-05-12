@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
@@ -33,8 +33,13 @@ const PAGAMENTO = ["Pix", "Dinheiro", "Cartão de crédito", "Cartão de débito
 const DIAS_SEMANA = ["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"];
 const DOCS_ACEITOS = ["RG / DNI", "CNH", "Passaporte", "CTPS", "OAB / CRM / CRO"];
 const ESTADOS_BR = ["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN","RO","RR","RS","SC","SE","SP","TO"];
+const CATEGORIAS = [
+  ["MULHER", "Mulher"],
+  ["HOMEM", "Homem"],
+  ["TRANS", "Trans"],
+];
 
-const STEPS = ["Dados", "Aparência", "Atendimento", "Serviços", "Valores", "Contato", "Fotos", "Documentos", "Verificação"];
+const STEPS = ["Dados", "Aparência", "Atendimento", "Serviços", "Valores", "Contato", "Fotos", "Documentos", "Biometria"];
 
 /* ── sub-componentes reutilizáveis ──────────────────────── */
 function Tag({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
@@ -68,6 +73,7 @@ function UploadZone({ label, accept, preview, onFile, loading }: {
   label: string; accept: string; preview?: string | null; onFile: (f: File) => void; loading?: boolean;
 }) {
   const ref = useRef<HTMLInputElement>(null);
+  const canPreview = !!preview && (preview.startsWith("http") || preview.startsWith("/") || preview.startsWith("blob:") || preview.startsWith("data:"));
   return (
     <div>
       <label style={labelStyle}>{label}</label>
@@ -83,8 +89,10 @@ function UploadZone({ label, accept, preview, onFile, loading }: {
       >
         {loading ? (
           <div style={{ padding: "28px 0", color: "#475569", fontSize: 13 }}>Enviando...</div>
-        ) : preview ? (
+        ) : canPreview ? (
           <img src={preview} alt="preview" style={{ width: "100%", maxHeight: 220, objectFit: "cover", display: "block" }} />
+        ) : preview ? (
+          <div style={{ padding: "28px 0", color: GOLD, fontSize: 13, fontWeight: 700 }}>Arquivo privado enviado</div>
         ) : (
           <>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.5" style={{ marginBottom: 8 }}>
@@ -96,6 +104,122 @@ function UploadZone({ label, accept, preview, onFile, loading }: {
         )}
       </div>
       <input ref={ref} type="file" accept={accept} style={{ display: "none" }} onChange={(e) => { if (e.target.files?.[0]) onFile(e.target.files[0]); }} />
+    </div>
+  );
+}
+
+function FaceCapture({
+  challenge,
+  loading,
+  onCapture,
+}: {
+  challenge: string;
+  loading?: boolean;
+  onCapture: (file: File) => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [cameraOn, setCameraOn] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [error, setError] = useState("");
+
+  async function startCamera() {
+    setError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 960 } },
+        audio: true,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
+      setCameraOn(true);
+    } catch {
+      setError("Nao foi possivel acessar a camera. Use o upload manual abaixo.");
+    }
+  }
+
+  function stopCamera() {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    setCameraOn(false);
+    setRecording(false);
+  }
+
+  function takeSelfie() {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      onCapture(new File([blob], `selfie-verificacao-${Date.now()}.jpg`, { type: "image/jpeg" }));
+    }, "image/jpeg", 0.9);
+  }
+
+  function startRecording() {
+    const stream = streamRef.current;
+    if (!stream) return;
+    chunksRef.current = [];
+    const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus") ? "video/webm;codecs=vp8,opus" : "video/webm";
+    const recorder = new MediaRecorder(stream, { mimeType });
+    recorderRef.current = recorder;
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) chunksRef.current.push(event.data);
+    };
+    recorder.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type: "video/webm" });
+      onCapture(new File([blob], `liveness-verificacao-${Date.now()}.webm`, { type: "video/webm" }));
+    };
+    recorder.start();
+    setRecording(true);
+  }
+
+  function stopRecording() {
+    recorderRef.current?.stop();
+    setRecording(false);
+  }
+
+  useEffect(() => () => stopCamera(), []);
+
+  return (
+    <div style={{ background: "#060e1b", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: 14, marginBottom: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
+        <div>
+          <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 800, color: "#f1f5f9" }}>Captura pela camera</p>
+          <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", lineHeight: 1.5 }}>Desafio: <strong style={{ color: GOLD }}>{challenge}</strong></p>
+        </div>
+        <button type="button" onClick={cameraOn ? stopCamera : startCamera}
+          style={{ padding: "9px 12px", borderRadius: 8, border: `1px solid ${GOLD_MID}`, background: cameraOn ? "transparent" : GOLD, color: cameraOn ? GOLD : "#060e1b", fontWeight: 800, cursor: "pointer", fontSize: 12 }}>
+          {cameraOn ? "Fechar camera" : "Abrir camera"}
+        </button>
+      </div>
+
+      <div style={{ aspectRatio: "4 / 3", borderRadius: 10, overflow: "hidden", background: "#0b1420", border: "1px solid #1e293b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {cameraOn ? (
+          <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }} />
+        ) : (
+          <p style={{ color: "#475569", fontSize: 12, margin: 0 }}>A camera aparece aqui quando autorizada.</p>
+        )}
+      </div>
+
+      {error && <p style={{ color: "#ef4444", fontSize: 12, margin: "8px 0 0" }}>{error}</p>}
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
+        <button type="button" onClick={takeSelfie} disabled={!cameraOn || loading}
+          style={{ padding: "11px", borderRadius: 8, border: "none", background: !cameraOn || loading ? "#334155" : GOLD, color: "#060e1b", fontWeight: 800, cursor: !cameraOn || loading ? "not-allowed" : "pointer" }}>
+          Enviar selfie
+        </button>
+        <button type="button" onClick={recording ? stopRecording : startRecording} disabled={!cameraOn || loading}
+          style={{ padding: "11px", borderRadius: 8, border: `1px solid ${recording ? "rgba(239,68,68,0.5)" : GOLD_MID}`, background: recording ? "rgba(239,68,68,0.12)" : "#0b1420", color: recording ? "#ef4444" : GOLD, fontWeight: 800, cursor: !cameraOn || loading ? "not-allowed" : "pointer" }}>
+          {recording ? "Parar video" : "Gravar video"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -136,8 +260,31 @@ export default function ProfissionalNovoPage() {
     docType: "", docFrenteUrl: "", docVersoUrl: "",
     docFrenteFile: null as File | null, docVersoFile: null as File | null,
     /* etapa 9 – verificação */
-    verificationUrl: "", verificationFile: null as File | null, verificationType: "foto" as "foto" | "video",
+    verificationUrl: "", verificationFile: null as File | null, verificationType: "foto" as "foto" | "video" | "biometria",
+    kycProvider: "", kycSessionId: "", kycStatus: "NOT_STARTED", kycChallenge: "", kycExpiresAt: "",
   });
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadUserDefaults() {
+      const res = await fetch("/api/users/me");
+      if (!res.ok) return;
+      const user = await res.json();
+      if (!active) return;
+
+      setForm((current) => ({
+        ...current,
+        escortCategory: current.escortCategory || (["MULHER", "TRANS", "HOMEM"].includes(user.category) ? user.category : ""),
+        birthDate: current.birthDate || (user.birthDate ? String(user.birthDate).slice(0, 10) : ""),
+      }));
+    }
+
+    loadUserDefaults().catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function set<K extends keyof typeof form>(field: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -162,7 +309,7 @@ export default function ProfissionalNovoPage() {
       throw new Error(d.error ?? "Erro no upload");
     }
     const d = await res.json();
-    return d.url;
+    return d.url ?? d.path;
   }
 
   /* upload da foto principal */
@@ -213,7 +360,45 @@ export default function ProfissionalNovoPage() {
   }
 
   /* ── submit final ─────────────────────────────────────── */
+  async function startFaceBiometry() {
+    setUploadingIdx(100);
+    try {
+      const res = await fetch("/api/kyc/sessions", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Erro ao iniciar biometria facial.");
+        return;
+      }
+
+      set("kycProvider", data.provider);
+      set("kycSessionId", data.sessionId);
+      set("kycStatus", data.status);
+      set("kycChallenge", data.challenge ?? "");
+      set("kycExpiresAt", data.expiresAt ?? "");
+      if (data.url) set("verificationUrl", data.url);
+      set("verificationType", "biometria");
+
+      if (data.provider === "LOCAL_MANUAL") {
+        toast.success("Sessao criada. Capture a selfie ou video com o desafio.");
+      } else if (data.url?.startsWith("http")) {
+        window.location.href = data.url;
+      } else {
+        toast.success("Sessao de biometria facial criada.");
+      }
+    } catch {
+      toast.error("Erro ao iniciar biometria facial.");
+    } finally {
+      setUploadingIdx(null);
+    }
+  }
+
   async function submit() {
+    const error = validateStep(step);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+
     setLoading(true);
     try {
       const payload = {
@@ -221,22 +406,26 @@ export default function ProfissionalNovoPage() {
         bio: form.bio,
         city: form.city,
         state: form.state,
+        bairro: (form as any).bairro,
         escortCategory: form.escortCategory,
         birthDate: form.birthDate,
         height: form.height ? Number(form.height) : undefined,
         weight: form.weight ? Number(form.weight) : undefined,
         hairColor: form.hairColor, eyeColor: form.eyeColor, ethnicity: form.ethnicity,
-        hasTattoos: form.hasTattoos, hasSilicone: form.hasSilicone,
-        attendanceTypes: form.attendanceTypes, servesGenders: form.servesGenders,
+        signo: form.signo,
+        hasTattoos: form.hasTattoos, hasSilicone: form.hasSilicone, isDepilada: form.isDepilada,
+        attendanceTypes: form.attendanceTypes, servesGenders: form.servesGenders, idiomas: form.idiomas,
+        diasDisponiveis: form.diasDisponiveis, horarioInicio: form.horarioInicio, horarioFim: form.horarioFim,
         services: form.services, fetishes: form.fetishes,
         specialties: form.services,
         pricePerHour: form.pricePerHour ? Number(form.pricePerHour) : undefined,
         price30min: form.price30min ? Number(form.price30min) : undefined,
         price2h: form.price2h ? Number(form.price2h) : undefined,
         priceOvernight: form.priceOvernight ? Number(form.priceOvernight) : undefined,
+        priceWebcam: form.priceWebcam ? Number(form.priceWebcam) : undefined,
         priceMin: form.pricePerHour ? Number(form.pricePerHour) : undefined,
         paymentMethods: form.paymentMethods,
-        phone: form.phone, whatsapp: form.whatsapp, instagram: form.instagram,
+        phone: form.phone, whatsapp: form.whatsapp, instagram: form.instagram, website: form.website,
         image: form.mainPhotoUrl || undefined,
         galleryUrls: form.galleryUrls,
         docType: form.docType,
@@ -244,6 +433,9 @@ export default function ProfissionalNovoPage() {
         verificationUrl: form.verificationUrl,
         verificationType: form.verificationType,
         verificationCode,
+        kycProvider: form.kycProvider,
+        kycSessionId: form.kycSessionId,
+        kycStatus: form.kycStatus,
         status: "PENDING_REVIEW",
       };
       const res = await fetch("/api/professionals", {
@@ -265,7 +457,42 @@ export default function ProfissionalNovoPage() {
   const progress = ((step + 1) / STEPS.length) * 100;
   const isLast = step === STEPS.length - 1;
 
+  function validateStep(targetStep: number) {
+    if (targetStep === 0) {
+      if (!form.displayName.trim()) return "Informe seu nome artistico.";
+      if (form.bio.trim().length < 80) return "Escreva uma biografia com pelo menos 80 caracteres.";
+      if (!form.escortCategory) return "Selecione uma categoria.";
+      if (!form.city.trim()) return "Informe sua cidade.";
+      if (!form.state) return "Selecione o estado.";
+    }
+    if (targetStep === 1) {
+      if (!form.birthDate) return "Informe sua data de nascimento.";
+      if (form.height && (Number(form.height) < 120 || Number(form.height) > 230)) return "Confira a altura informada.";
+      if (form.weight && (Number(form.weight) < 35 || Number(form.weight) > 250)) return "Confira o peso informado.";
+    }
+    if (targetStep === 2) {
+      if (form.attendanceTypes.length === 0) return "Selecione pelo menos um tipo de atendimento.";
+      if (form.servesGenders.length === 0) return "Selecione quem voce atende.";
+      if (form.diasDisponiveis.length === 0) return "Selecione pelo menos um dia disponivel.";
+    }
+    if (targetStep === 3 && form.services.length === 0) return "Selecione pelo menos um servico.";
+    if (targetStep === 4) {
+      if (!form.pricePerHour && !form.price30min && !form.price2h && !form.priceOvernight && !form.priceWebcam) return "Informe pelo menos um valor.";
+      if (form.paymentMethods.length === 0) return "Selecione pelo menos uma forma de pagamento.";
+    }
+    if (targetStep === 5 && form.whatsapp.replace(/\D/g, "").length < 10) return "Informe um WhatsApp valido com DDD.";
+    if (targetStep === 6 && !form.mainPhotoUrl) return "Envie a foto principal do perfil.";
+    if (targetStep === 7) {
+      if (!form.docType) return "Selecione o tipo de documento.";
+      if (!form.docFrenteUrl || !form.docVersoUrl) return "Envie frente e verso do documento.";
+    }
+    if (targetStep === 8 && !form.verificationUrl) return "Inicie a biometria ou envie a selfie/video de verificacao.";
+    return null;
+  }
+
   function next() {
+    const error = validateStep(step);
+    if (error) { toast.error(error); return; }
     if (step === 0 && !form.displayName) { toast.error("Informe seu nome artístico."); return; }
     if (step === 0 && !form.escortCategory) { toast.error("Selecione uma categoria."); return; }
     if (step === 0 && !form.city) { toast.error("Informe sua cidade."); return; }
@@ -364,7 +591,7 @@ export default function ProfissionalNovoPage() {
 
           <Section title="Categoria *">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-              {[["MULHER", "💃", "Mulher"], ["TRANS", "🌈", "Trans"], ["HOMEM", "🕺", "Homem"]].map(([val, emoji, label]) => (
+              {CATEGORIAS.map(([val, label]) => (
                 <button key={val} type="button" onClick={() => toggleSingle("escortCategory", val)}
                   style={{
                     padding: "16px 8px", borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 14,
@@ -373,7 +600,6 @@ export default function ProfissionalNovoPage() {
                     color: form.escortCategory === val ? "#f1f5f9" : "#475569",
                     display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
                   }}>
-                  <span style={{ fontSize: 24 }}>{emoji}</span>
                   {label}
                 </button>
               ))}
@@ -686,7 +912,7 @@ export default function ProfissionalNovoPage() {
       ══════════════════════════════════════════════ */}
       {step === 8 && (
         <div>
-          <Section title="Mídia de verificação" desc="Esta etapa confirma que você é a pessoa real do documento. Após aprovação, você decide se a mídia aparece publicamente no perfil ou fica apenas com nossa equipe.">
+          <Section title="Biometria facial" desc="Esta etapa confirma pessoa real, maioridade e autenticidade do anúncio. Com provedor KYC configurado, a validação facial pode ser automática; sem provedor, cai para análise manual.">
 
             {/* Código único */}
             <div style={{ background: "#060e1b", border: `2px solid ${GOLD_MID}`, borderRadius: 14, padding: "20px", marginBottom: 24, textAlign: "center" }}>
@@ -715,13 +941,51 @@ export default function ProfissionalNovoPage() {
             </div>
 
             {/* Upload da mídia */}
+            <div style={{ background: "#060e1b", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "16px", marginBottom: 20 }}>
+              <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#f1f5f9" }}>Biometria facial</p>
+              <p style={{ margin: "0 0 14px", fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
+                Inicie a validacao facial para confirmar pessoa real e maioridade. Quando um provedor KYC estiver configurado, esta etapa abre a captura com liveness automaticamente.
+              </p>
+              <button
+                type="button"
+                onClick={startFaceBiometry}
+                disabled={uploadingIdx === 100}
+                style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "none", background: GOLD, color: "#060e1b", fontSize: 14, fontWeight: 800, cursor: uploadingIdx === 100 ? "not-allowed" : "pointer" }}
+              >
+                {uploadingIdx === 100 ? "Iniciando..." : "Iniciar biometria facial"}
+              </button>
+              {form.kycSessionId && (
+                <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, fontSize: 12, fontWeight: 700 }}>
+                  Sessao {form.kycProvider}: {form.kycStatus}
+                  {form.kycExpiresAt && (
+                    <span style={{ display: "block", color: "#94a3b8", fontWeight: 500, marginTop: 4 }}>
+                      Expira em {new Date(form.kycExpiresAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {form.kycSessionId && form.kycChallenge && (
+              <FaceCapture
+                challenge={form.kycChallenge}
+                loading={uploadingIdx === 99}
+                onCapture={handleVerifMedia}
+              />
+            )}
+
             <UploadZone
-              label="Selfie ou vídeo de verificação *"
+              label="Fallback: selfie ou vídeo de verificação *"
               accept="image/*,video/mp4,video/webm"
               preview={form.verificationUrl && form.verificationType === "foto" ? form.verificationUrl : null}
               loading={uploadingIdx === 99}
               onFile={handleVerifMedia}
             />
+            {form.verificationUrl && form.verificationType === "biometria" && (
+              <div style={{ marginTop: 8, padding: "10px 14px", background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 8, fontSize: 12, color: GOLD }}>
+                Biometria facial iniciada
+              </div>
+            )}
             {form.verificationUrl && form.verificationType === "video" && (
               <div style={{ marginTop: 8, padding: "10px 14px", background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 8, fontSize: 12, color: GOLD }}>
                 ✓ Vídeo enviado com sucesso
@@ -753,7 +1017,7 @@ export default function ProfissionalNovoPage() {
                 ["Foto principal", form.mainPhotoUrl ? "✓ Enviada" : "Não enviada"],
                 ["Fotos na galeria", `${form.galleryUrls.length} foto(s)`],
                 ["Documento", form.docFrenteUrl ? "✓ Enviado" : "Não enviado"],
-                ["Mídia de verificação", form.verificationUrl ? "✓ Enviada" : "Não enviada"],
+                ["Biometria facial", form.verificationUrl ? "✓ Iniciada" : "Não iniciada"],
                 ["WhatsApp", form.whatsapp || "—"],
               ].map(([label, value]) => (
                 <div key={label} style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 8, padding: "10px 12px" }}>

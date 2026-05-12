@@ -20,8 +20,8 @@ export async function GET() {
     where: { id: session.user.id },
     select: {
       id: true, name: true, email: true, image: true, phone: true,
-      document: true, role: true, verified: true, credits: true,
-      createdAt: true, hostProfile: true,
+      document: true, role: true, category: true, birthDate: true, verified: true, credits: true,
+      createdAt: true, hostProfile: true, professional: { select: { id: true } },
     },
   });
 

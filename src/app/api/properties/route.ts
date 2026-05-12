@@ -11,6 +11,7 @@ const createSchema = z.object({
   description: z.string().min(20),
   type: z.nativeEnum(PropertyType).default(PropertyType.APARTMENT),
   address: z.string().min(5),
+  bairro: z.string().optional(),
   city: z.string().min(2),
   state: z.string().min(2),
   country: z.string().default("Brasil"),
@@ -31,10 +32,17 @@ const createSchema = z.object({
   allowSmoking: z.boolean().default(false),
   allowParties: z.boolean().default(false),
   amenities: z.array(z.string()).default([]),
+  photos: z.array(z.string()).default([]),
+}).superRefine((data, ctx) => {
+  const addIssue = (path: string[], message: string) => ctx.addIssue({ code: "custom", path, message });
+  if (!data.latitude || !data.longitude) addIssue(["latitude"], "Informe a localizacao GPS do imovel.");
+  if (data.photos.length === 0) addIssue(["photos"], "Envie pelo menos uma foto do imovel.");
+  if (data.amenities.length === 0) addIssue(["amenities"], "Selecione pelo menos uma comodidade.");
 });
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
+  const search = searchParams.get("search");
   const city = searchParams.get("city");
   const guests = Number(searchParams.get("guests") ?? 1);
   const priceMax = Number(searchParams.get("priceMax") ?? 99999);
@@ -43,10 +51,16 @@ export async function GET(req: NextRequest) {
   const limit = 12;
 
   const where: any = { status: "ACTIVE" };
-  if (city) where.OR = [
-    { city: { contains: city, mode: "insensitive" } },
-    { address: { contains: city, mode: "insensitive" } },
-  ];
+  const locationSearch = search || city;
+  if (locationSearch) {
+    where.OR = [
+      { title: { contains: locationSearch, mode: "insensitive" } },
+      { city: { contains: locationSearch, mode: "insensitive" } },
+      { state: { contains: locationSearch, mode: "insensitive" } },
+      { bairro: { contains: locationSearch, mode: "insensitive" } },
+      { address: { contains: locationSearch, mode: "insensitive" } },
+    ];
+  }
   if (guests) where.maxGuests = { gte: guests };
   if (priceMax) where.pricePerNight = { lte: priceMax };
 
@@ -82,7 +96,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const data = createSchema.parse(body);
-    const { amenities, ...propertyData } = data;
+    const { amenities, photos, ...propertyData } = data;
 
     const property = await prisma.property.create({
       data: {
@@ -90,8 +104,9 @@ export async function POST(req: NextRequest) {
         hostId: session.user.id,
         status: "PENDING_REVIEW",
         amenities: { create: amenities.map((name) => ({ name })) },
+        photos: { create: photos.map((url, order) => ({ url, order })) },
       },
-      include: { amenities: true },
+      include: { amenities: true, photos: true },
     });
 
     return NextResponse.json(property, { status: 201 });

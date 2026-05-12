@@ -11,7 +11,7 @@ import { getClientIP } from "@/lib/security";
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,7 +19,7 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const professionalId = params.id;
+    const { id: professionalId } = await params;
     const body = await req.json();
     const { action, reason } = body;
 
@@ -46,6 +46,7 @@ export async function POST(
         data: {
           docStatus: "APPROVED",
           verifStatus: "APPROVED",
+          kycStatus: "APPROVED",
           status: "ACTIVE",
           verified: true,
         },
@@ -63,6 +64,7 @@ export async function POST(
         data: {
           docStatus: "REJECTED",
           verifStatus: "REJECTED",
+          kycStatus: "REJECTED",
           status: "REJECTED",
           rejectReason: reason,
         },

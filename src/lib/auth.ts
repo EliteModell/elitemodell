@@ -1,7 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./prisma";
-import { isAgeOfMajority } from "./age-validation";
+import { createSupabaseServerClient } from "./supabase-auth";
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
@@ -11,23 +11,23 @@ export const authOptions: NextAuthOptions = {
   },
   providers: [
     CredentialsProvider({
-      id: "firebase",
-      name: "Firebase",
+      id: "supabase",
+      name: "Supabase",
       credentials: {
-        idToken: { label: "Firebase ID Token", type: "text" },
+        accessToken: { label: "Supabase Access Token", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.idToken) return null;
+        if (!credentials?.accessToken) return null;
         try {
-          const { adminAuth } = await import("./firebase-admin");
-          const decoded = await adminAuth.verifyIdToken(credentials.idToken);
+          const supabase = createSupabaseServerClient();
+          const { data, error } = await supabase.auth.getUser(credentials.accessToken);
+          if (error || !data.user) return null;
 
-          const email = decoded.email
-            ?? `phone_${decoded.phone_number?.replace(/\D/g, "").replace(/^55/, "")}@sms.elitemodell.local`;
+          const authUser = data.user;
+          const phone = authUser.phone?.replace(/\D/g, "").replace(/^55/, "");
+          const email = authUser.email ?? (phone ? `phone_${phone}@sms.elitemodell.local` : null);
 
-          const phone = decoded.phone_number
-            ?.replace(/\D/g, "")
-            .replace(/^55/, "");
+          if (!email) return null;
 
           let user = await prisma.user.findFirst({
             where: {
@@ -36,28 +36,52 @@ export const authOptions: NextAuthOptions = {
           });
 
           if (!user) {
+            const metadata = authUser.user_metadata ?? {};
+            const role = metadata.role === "HOST" ? "HOST" : "GUEST";
+            const category = ["MULHER", "HOMEM", "TRANS"].includes(metadata.category)
+              ? metadata.category
+              : null;
+
+            if (!metadata.birthDate || !metadata.lgpdConsent || !metadata.termsConsent) {
+              return null;
+            }
+
             user = await prisma.user.create({
               data: {
                 email,
-                name: decoded.name ?? null,
-                image: decoded.picture ?? null,
+                name: metadata.name ?? authUser.email ?? phone ?? null,
+                image: metadata.avatar_url ?? null,
                 phone: phone ?? null,
-                emailVerified: decoded.email_verified ? new Date() : null,
+                emailVerified: authUser.email_confirmed_at ? new Date(authUser.email_confirmed_at) : null,
+                role,
+                category,
+                birthDate: new Date(metadata.birthDate),
+                lgpdConsent: true,
+                termsConsent: true,
+                consentDate: new Date(),
               },
             });
-          } else {
-            await prisma.user.update({
-              where: { id: user.id },
-              data: {
-                name: user.name ?? decoded.name ?? null,
-                image: user.image ?? decoded.picture ?? null,
-                emailVerified:
-                  decoded.email_verified && !user.emailVerified
-                    ? new Date()
-                    : user.emailVerified,
-              },
-            });
+
+            if (role === "HOST") {
+              await prisma.hostProfile.upsert({
+                where: { userId: user.id },
+                create: { userId: user.id },
+                update: {},
+              });
+            }
           }
+
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              name: user.name ?? (authUser.user_metadata?.name as string | undefined) ?? null,
+              image: user.image ?? (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
+              emailVerified:
+                authUser.email_confirmed_at && !user.emailVerified
+                  ? new Date(authUser.email_confirmed_at)
+                  : user.emailVerified,
+            },
+          });
 
           // Validar se usuário está bloqueado
           if (user.blocked) {
@@ -84,7 +108,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = (user as any).role;
       }
-      if (token.id && !token.role) {
+      if (token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
           select: { 

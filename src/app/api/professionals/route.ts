@@ -67,6 +67,33 @@ const createSchema = z.object({
   verificationUrl: z.string().optional(),
   verificationType:z.string().optional(),
   verificationCode:z.string().optional(),
+  kycProvider:     z.string().optional(),
+  kycSessionId:    z.string().optional(),
+  kycStatus:       z.string().optional(),
+}).superRefine((data, ctx) => {
+  const addIssue = (path: string[], message: string) => {
+    ctx.addIssue({ code: "custom", path, message });
+  };
+
+  if (!["MULHER", "HOMEM", "TRANS"].includes(data.escortCategory ?? "")) {
+    addIssue(["escortCategory"], "Categoria invalida.");
+  }
+  if ((data.bio ?? "").trim().length < 80) {
+    addIssue(["bio"], "A biografia deve ter pelo menos 80 caracteres.");
+  }
+  if (!data.birthDate) addIssue(["birthDate"], "Data de nascimento obrigatoria.");
+  if (data.attendanceTypes.length === 0) addIssue(["attendanceTypes"], "Informe o tipo de atendimento.");
+  if (data.servesGenders.length === 0) addIssue(["servesGenders"], "Informe quem atende.");
+  if (data.diasDisponiveis.length === 0) addIssue(["diasDisponiveis"], "Informe os dias disponiveis.");
+  if (data.services.length === 0) addIssue(["services"], "Informe pelo menos um servico.");
+  if (!data.pricePerHour && !data.price30min && !data.price2h && !data.priceOvernight && !data.priceWebcam) {
+    addIssue(["pricePerHour"], "Informe pelo menos um valor.");
+  }
+  if (data.paymentMethods.length === 0) addIssue(["paymentMethods"], "Informe uma forma de pagamento.");
+  if (!data.whatsapp || data.whatsapp.replace(/\D/g, "").length < 10) addIssue(["whatsapp"], "WhatsApp invalido.");
+  if (!data.image) addIssue(["image"], "Foto principal obrigatoria.");
+  if (!data.docType || !data.docFrenteUrl || !data.docVersoUrl) addIssue(["docType"], "Documento completo obrigatorio.");
+  if (!data.verificationUrl && !data.kycSessionId) addIssue(["verificationUrl"], "Biometria ou verificacao facial obrigatoria.");
 });
 
 function slugify(text: string) {
@@ -140,6 +167,10 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
 
+  if (session.user.role !== "HOST" && session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Apenas anunciantes podem criar perfil profissional." }, { status: 403 });
+  }
+
   const existing = await prisma.professional.findUnique({ where: { userId: session.user.id } });
   if (existing) return NextResponse.json({ error: "Você já tem um perfil profissional." }, { status: 409 });
 
@@ -147,7 +178,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const data = createSchema.parse(body);
 
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { category: true },
+    });
+
     const { specialties, services, ...profileData } = data;
+    const escortCategory = profileData.escortCategory
+      || (user?.category && ["MULHER", "TRANS", "HOMEM"].includes(user.category) ? user.category : undefined);
 
     // garante slug único
     let slug = slugify(data.displayName);
@@ -159,13 +197,15 @@ export async function POST(req: NextRequest) {
     const professional = await prisma.professional.create({
       data: {
         ...profileData,
+        escortCategory,
         slug,
         userId:    session.user.id,
         bio:       profileData.bio ?? "",
         birthDate: profileData.birthDate ? new Date(profileData.birthDate) : undefined,
         status:    "PENDING_REVIEW",
         docStatus:  profileData.docFrenteUrl ? "PENDING" : "NOT_SENT",
-        verifStatus: profileData.verificationUrl ? "PENDING" : "NOT_SENT",
+        verifStatus: profileData.verificationUrl || profileData.kycSessionId ? "PENDING" : "NOT_SENT",
+        kycStatus: profileData.kycStatus ?? (profileData.kycSessionId ? "PENDING" : "NOT_STARTED"),
         specialties: {
           create: allSpecialties.map((name) => ({ name })),
         },

@@ -79,7 +79,9 @@ export default function AdminProfissionaisPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [docModal, setDocModal] = useState<Prof | null>(null);
   const [signedDocUrl, setSignedDocUrl] = useState<string | null>(null);
+  const [signedVerifUrl, setSignedVerifUrl] = useState<string | null>(null);
   const [loadingDoc, setLoadingDoc] = useState(false);
+  const [loadingVerif, setLoadingVerif] = useState(false);
 
   const filtered = professionals.filter((p) => {
     const matchSearch = !search || p.displayName.toLowerCase().includes(search.toLowerCase()) || p.city.toLowerCase().includes(search.toLowerCase());
@@ -101,17 +103,34 @@ export default function AdminProfissionaisPage() {
     toast.success("Documentos aprovados! Perfil ativado.");
   }
 
-  async function loadSignedDoc(path: string) {
-    setLoadingDoc(true);
-    setSignedDocUrl(null);
+  function isPrivateStoragePath(path?: string) {
+    return !!path && !path.startsWith("http") && !path.startsWith("/");
+  }
+
+  async function loadSignedDoc(path: string, target: "doc" | "verif" = "doc") {
+    if (target === "doc") {
+      setLoadingDoc(true);
+      setSignedDocUrl(null);
+    } else {
+      setLoadingVerif(true);
+      setSignedVerifUrl(null);
+    }
     try {
       const res = await fetch(`/api/admin/documento?path=${encodeURIComponent(path)}`);
       const d = await res.json();
       if (!res.ok) throw new Error(d.error);
-      setSignedDocUrl(d.url);
-      setTimeout(() => setSignedDocUrl(null), 58000); // expira em 58s
+      if (target === "doc") {
+        setSignedDocUrl(d.url);
+        setTimeout(() => setSignedDocUrl(null), 58000); // expira em 58s
+      } else {
+        setSignedVerifUrl(d.url);
+        setTimeout(() => setSignedVerifUrl(null), 58000);
+      }
     } catch { toast.error("Erro ao carregar documento."); }
-    finally { setLoadingDoc(false); }
+    finally {
+      if (target === "doc") setLoadingDoc(false);
+      else setLoadingVerif(false);
+    }
   }
 
   function rejectDoc(id: string) {
@@ -272,7 +291,11 @@ export default function AdminProfissionaisPage() {
               <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 11, color: "#475569", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Mídia de verificação</div>
                 <div style={{ borderRadius: 10, overflow: "hidden", border: `1px solid ${GOLD_MID}` }}>
-                  {selected.verificationType === "foto" ? (
+                  {selected.verificationType === "biometria" ? (
+                    <div style={{ padding: "14px", background: "#060e1b", color: GOLD, fontSize: 12, fontWeight: 700 }}>
+                      Biometria facial iniciada: {selected.verificationUrl}
+                    </div>
+                  ) : selected.verificationType === "foto" ? (
                     <img src={selected.verificationUrl} alt="verificação" style={{ width: "100%", maxHeight: 180, objectFit: "cover", objectPosition: "center top", display: "block" }} />
                   ) : (
                     <video src={selected.verificationUrl} controls style={{ width: "100%", maxHeight: 180 }} />
@@ -323,7 +346,7 @@ export default function AdminProfissionaisPage() {
       {docModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(4,10,20,0.92)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
           <div style={{ background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 16, padding: "28px 24px", maxWidth: 480, width: "100%", position: "relative" }}>
-            <button onClick={() => { setDocModal(null); setRejectReason(""); }} style={{ position: "absolute", top: 14, right: 16, background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 20 }}>×</button>
+            <button onClick={() => { setDocModal(null); setRejectReason(""); setSignedDocUrl(null); setSignedVerifUrl(null); }} style={{ position: "absolute", top: 14, right: 16, background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 20 }}>×</button>
 
             {!(docModal as any)._reject ? (
               <>
@@ -349,7 +372,23 @@ export default function AdminProfissionaisPage() {
                     <div>
                       <div style={{ fontSize: 11, color: "#475569", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Mídia de verificação</div>
                       <div style={{ borderRadius: 8, overflow: "hidden", border: `1px solid ${GOLD_MID}` }}>
-                        <img src={docModal.verificationUrl} alt="verif" style={{ width: "100%", height: 120, objectFit: "cover", objectPosition: "center top", display: "block" }} />
+                        {docModal.verificationType === "biometria" ? (
+                          <div style={{ padding: "14px", background: "#060e1b", color: GOLD, fontSize: 12, fontWeight: 700 }}>
+                            Biometria facial iniciada
+                          </div>
+                        ) : isPrivateStoragePath(docModal.verificationUrl) && !signedVerifUrl ? (
+                          <div style={{ minHeight: 120, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#060e1b", padding: 16 }}>
+                            <p style={{ color: "#475569", fontSize: 12, margin: "0 0 10px" }}>🔒 Verificacao facial privada</p>
+                            <button onClick={() => docModal?.verificationUrl && loadSignedDoc(docModal.verificationUrl, "verif")} disabled={loadingVerif}
+                              style={{ padding: "8px 16px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 8, color: GOLD, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                              {loadingVerif ? "Carregando..." : "🔓 Ver midia (60s)"}
+                            </button>
+                          </div>
+                        ) : docModal.verificationType === "video" ? (
+                          <video src={signedVerifUrl ?? docModal.verificationUrl} controls style={{ width: "100%", maxHeight: 220, display: "block" }} />
+                        ) : (
+                          <img src={signedVerifUrl ?? docModal.verificationUrl} alt="verif" style={{ width: "100%", height: 120, objectFit: "cover", objectPosition: "center top", display: "block" }} />
+                        )}
                       </div>
                       <div style={{ fontSize: 11, color: "#475569", marginTop: 4 }}>Código: <strong style={{ color: GOLD }}>{docModal.verificationCode}</strong></div>
                     </div>

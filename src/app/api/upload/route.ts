@@ -21,10 +21,13 @@ function resolveBucket(folder: string): {
   maxBytes: number;
   allowedTypes: string[];
 } {
-  if (folder.startsWith("documentos") || folder.startsWith("verificacao")) {
+  if (folder.startsWith("verificacao")) {
+    return { bucket: "documentos", isPrivate: true,  maxBytes: 50 * 1024 * 1024, allowedTypes: ALLOWED_VIDEO };
+  }
+  if (folder.startsWith("documentos")) {
     return { bucket: "documentos", isPrivate: true,  maxBytes: 10 * 1024 * 1024, allowedTypes: ALLOWED_DOC   };
   }
-  if (folder.startsWith("profiles")) {
+  if (folder.startsWith("profiles") || folder.startsWith("properties")) {
     return { bucket: "profiles",   isPrivate: false, maxBytes: 10 * 1024 * 1024, allowedTypes: ALLOWED_IMAGE };
   }
   // stories (legado + novos)

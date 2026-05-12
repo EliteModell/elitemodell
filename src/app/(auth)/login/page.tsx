@@ -1,10 +1,10 @@
 "use client";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import type { ConfirmationResult, RecaptchaVerifier as RV } from "firebase/auth";
+import { supabaseAuth } from "@/lib/supabase-auth";
 
 type Tab = "email" | "phone";
 
@@ -29,14 +29,12 @@ const focusGold = (e: React.FocusEvent<HTMLInputElement>) =>
 const blurGray = (e: React.FocusEvent<HTMLInputElement>) =>
   (e.target.style.borderColor = "#1e293b");
 
-const firebaseMsg: Record<string, string> = {
-  "auth/invalid-credential": "Email ou senha inválidos.",
-  "auth/user-not-found": "Email não cadastrado.",
-  "auth/wrong-password": "Senha incorreta.",
-  "auth/too-many-requests": "Muitas tentativas. Tente mais tarde.",
-  "auth/invalid-phone-number": "Número de telefone inválido.",
-  "auth/invalid-verification-code": "Código inválido.",
-  "auth/code-expired": "Código expirado. Solicite um novo.",
+const authMsg: Record<string, string> = {
+  invalid_credentials: "Email ou senha invalidos.",
+  user_not_found: "Email nao cadastrado.",
+  over_request_rate_limit: "Muitas tentativas. Tente mais tarde.",
+  invalid_phone: "Numero de telefone invalido.",
+  otp_expired: "Codigo expirado. Solicite um novo.",
 };
 
 function SocialButton({ onClick, icon, label }: {
@@ -88,8 +86,16 @@ const AppleIcon = (
   </svg>
 );
 
-async function firebaseSignIn(idToken: string) {
-  return signIn("firebase", { idToken, redirect: false });
+async function appSignIn(accessToken: string) {
+  return signIn("supabase", { accessToken, redirect: false });
+}
+
+async function getPostLoginPath() {
+  const res = await fetch("/api/users/me");
+  if (!res.ok) return "/dashboard";
+  const user = await res.json();
+  if (user.role === "HOST" && !user.professional) return "/profissional/novo";
+  return "/dashboard";
 }
 
 export default function LoginPage() {
@@ -101,40 +107,26 @@ export default function LoginPage() {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
 
-  const recaptchaRef = useRef<RV | null>(null);
-  const confirmationRef = useRef<ConfirmationResult | null>(null);
-
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
-      const { signInWithEmailAndPassword } = await import("firebase/auth");
-      const { firebaseAuth } = await import("@/lib/firebase");
-
-      const credential = await signInWithEmailAndPassword(
-        firebaseAuth,
-        form.email,
-        form.password
-      );
-
-      if (!credential.user.emailVerified) {
-        await firebaseAuth.signOut();
-        toast.error("Verifique seu email antes de entrar. Cheque sua caixa de entrada.");
-        return;
-      }
-
-      const idToken = await credential.user.getIdToken();
-      const res = await firebaseSignIn(idToken);
+      const { data, error } = await supabaseAuth.auth.signInWithPassword({
+        email: form.email,
+        password: form.password,
+      });
+      if (error || !data.session?.access_token) throw error ?? new Error("Email ou senha invalidos.");
+      const res = await appSignIn(data.session.access_token);
 
       if (res?.error) {
         toast.error("Erro ao entrar. Tente novamente.");
       } else {
         toast.success("Bem-vindo de volta!");
-        router.push("/dashboard");
+        router.push(await getPostLoginPath());
         router.refresh();
       }
     } catch (err: any) {
-      toast.error(firebaseMsg[err?.code] ?? "Email ou senha inválidos.");
+      toast.error(authMsg[err?.code] ?? err?.message ?? "Email ou senha invalidos.");
     } finally {
       setLoading(false);
     }
@@ -143,24 +135,13 @@ export default function LoginPage() {
   async function handleGoogle() {
     setLoading(true);
     try {
-      const { signInWithPopup, GoogleAuthProvider } = await import("firebase/auth");
-      const { firebaseAuth } = await import("@/lib/firebase");
-
-      const result = await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
-      const idToken = await result.user.getIdToken();
-      const res = await firebaseSignIn(idToken);
-
-      if (res?.error) {
-        toast.error("Erro ao entrar com Google.");
-      } else {
-        toast.success("Bem-vindo!");
-        router.push("/dashboard");
-        router.refresh();
-      }
+      const { error } = await supabaseAuth.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) throw error;
     } catch (err: any) {
-      if (err?.code !== "auth/popup-closed-by-user") {
-        toast.error("Erro ao entrar com Google.");
-      }
+      toast.error(err?.message ?? "Erro ao entrar com Google.");
     } finally {
       setLoading(false);
     }
@@ -170,29 +151,13 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { signInWithPhoneNumber, RecaptchaVerifier } = await import("firebase/auth");
-      const { firebaseAuth } = await import("@/lib/firebase");
-
-      if (!recaptchaRef.current) {
-        recaptchaRef.current = new RecaptchaVerifier(
-          firebaseAuth,
-          "recaptcha-container",
-          { size: "invisible" }
-        );
-      }
-
-      confirmationRef.current = await signInWithPhoneNumber(
-        firebaseAuth,
-        `+55${phone}`,
-        recaptchaRef.current
-      );
+      const { error } = await supabaseAuth.auth.signInWithOtp({ phone: `+55${phone}` });
+      if (error) throw error;
 
       toast.success("Código enviado por SMS!");
       setOtpSent(true);
     } catch (err: any) {
-      recaptchaRef.current?.clear();
-      recaptchaRef.current = null;
-      toast.error(firebaseMsg[err?.code] ?? "Erro ao enviar SMS.");
+      toast.error(authMsg[err?.code] ?? err?.message ?? "Erro ao enviar SMS.");
     } finally {
       setLoading(false);
     }
@@ -200,22 +165,25 @@ export default function LoginPage() {
 
   async function handleVerifyOtp(e: React.FormEvent) {
     e.preventDefault();
-    if (!confirmationRef.current) return;
     setLoading(true);
     try {
-      const result = await confirmationRef.current.confirm(otp);
-      const idToken = await result.user.getIdToken();
-      const res = await firebaseSignIn(idToken);
+      const { data, error } = await supabaseAuth.auth.verifyOtp({
+        phone: `+55${phone}`,
+        token: otp,
+        type: "sms",
+      });
+      if (error || !data.session?.access_token) throw error ?? new Error("Codigo invalido.");
+      const res = await appSignIn(data.session.access_token);
 
       if (res?.error) {
         toast.error("Erro ao autenticar. Tente novamente.");
       } else {
         toast.success("Bem-vindo!");
-        router.push("/dashboard");
+        router.push(await getPostLoginPath());
         router.refresh();
       }
     } catch (err: any) {
-      toast.error(firebaseMsg[err?.code] ?? "Código inválido ou expirado.");
+      toast.error(authMsg[err?.code] ?? err?.message ?? "Codigo invalido ou expirado.");
     } finally {
       setLoading(false);
     }

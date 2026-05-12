@@ -36,6 +36,7 @@ enum UserCategory {
   HETERO
   TRANS
   MULHER
+  HOMEM
 }
 
 enum BookingStatus {
@@ -241,6 +242,7 @@ model Property {
   type            PropertyType    @default(APARTMENT)
   status          PropertyStatus  @default(DRAFT)
   address         String
+  bairro          String?
   city            String
   state           String
   country         String          @default("Brasil")
@@ -537,6 +539,9 @@ model Professional {
   verificationUrl  String?
   verificationType String?
   verificationCode String?
+  kycProvider      String?
+  kycSessionId     String?
+  kycStatus        String   @default("NOT_STARTED") // NOT_STARTED | PENDING | APPROVED | REJECTED | MANUAL_REVIEW
   rejectReason     String?
 
   // Status e métricas
