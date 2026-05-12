@@ -489,8 +489,8 @@ export default function HomePage() {
           background:
             linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.015)),
             rgba(6, 14, 27, 0.76);
-          border: 1px solid rgba(212,168,67,0.34);
-          border-radius: 18px;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 24px;
           backdrop-filter: blur(18px);
           box-shadow:
             0 24px 80px rgba(0,0,0,0.38),
@@ -505,8 +505,8 @@ export default function HomePage() {
           padding: 11px 13px;
           background:
             linear-gradient(180deg, rgba(12,24,40,0.92), rgba(7,16,29,0.92));
-          border: 1px solid rgba(255,255,255,0.075);
-          border-radius: 13px;
+          border: 1px solid rgba(255,255,255,0.065);
+          border-radius: 20px;
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
         }
 
@@ -541,7 +541,7 @@ export default function HomePage() {
         .category-options button {
           min-width: 0;
           min-height: 30px;
-          border: 1px solid transparent;
+          border: 0;
           border-radius: 999px;
           background: rgba(255,255,255,0.035);
           color: #9fb0c8;
@@ -552,15 +552,15 @@ export default function HomePage() {
         }
 
         .category-options button.active {
-          border-color: rgba(212,168,67,0.48);
-          background: linear-gradient(135deg, rgba(212,168,67,0.28), rgba(212,168,67,0.1));
-          color: #ffe5a0;
+          background: linear-gradient(135deg, rgba(255,224,139,0.32), rgba(212,168,67,0.18));
+          color: #fff0bf;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 8px 20px rgba(0,0,0,0.2);
         }
 
         .search-submit {
           min-height: 62px;
           border: 0;
-          border-radius: 13px;
+          border-radius: 20px;
           background: linear-gradient(135deg, #ffe08b 0%, #d4a843 52%, #ad8129 100%);
           color: #060e1b;
           font-size: 15px;
@@ -1114,10 +1114,11 @@ export default function HomePage() {
 
           .hero-bg {
             background-image:
-              linear-gradient(180deg, rgba(6,14,27,0.58) 0%, rgba(6,14,27,0.9) 34%, #060e1b 56%, #060e1b 100%),
+              linear-gradient(90deg, rgba(6,14,27,0.94) 0%, rgba(6,14,27,0.72) 46%, rgba(6,14,27,0.34) 100%),
+              linear-gradient(180deg, rgba(6,14,27,0.2) 0%, rgba(6,14,27,0.6) 58%, #060e1b 100%),
               url("/hero-platform-premium.png");
-            background-position: center top;
-            background-size: auto 58vh;
+            background-position: 58% top;
+            background-size: cover;
             background-repeat: no-repeat;
           }
 
@@ -1152,23 +1153,25 @@ export default function HomePage() {
 
           .search-console {
             grid-template-columns: 1fr;
-            gap: 7px;
-            margin: 22px -2px 0;
-            padding: 9px;
-            border-radius: 0 0 20px 20px;
+            gap: 8px;
+            margin: 24px 0 0;
+            padding: 10px;
+            border: 0;
+            border-radius: 28px;
             background:
-              linear-gradient(180deg, rgba(8,17,31,0.98), rgba(6,14,27,0.98)),
-              #060e1b;
-            border-color: rgba(212,168,67,0.26);
-            border-top: 1px solid rgba(255,255,255,0.08);
+              linear-gradient(145deg, rgba(255,255,255,0.09), rgba(255,255,255,0.025)),
+              rgba(5,12,23,0.86);
             box-shadow:
-              inset 0 1px 0 rgba(255,255,255,0.06),
-              0 14px 34px rgba(0,0,0,0.24);
+              inset 0 1px 0 rgba(255,255,255,0.08),
+              0 18px 48px rgba(0,0,0,0.28);
           }
 
           .field {
             padding: 12px 14px;
-            border-radius: 15px;
+            border: 0;
+            border-radius: 23px;
+            background:
+              linear-gradient(180deg, rgba(10,23,39,0.96), rgba(7,16,29,0.96));
           }
 
           .category-options {
@@ -1177,19 +1180,20 @@ export default function HomePage() {
           }
 
           .category-options button {
-            min-height: 36px;
+            min-height: 38px;
             font-size: 12px;
+            background: rgba(255,255,255,0.045);
           }
 
           .search-submit {
             min-height: 52px;
-            border-radius: 15px;
+            border-radius: 999px;
           }
 
           .trust-strip {
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 6px;
-            margin: 8px -2px 0;
+            margin: 12px 0 0;
             position: relative;
             z-index: 1;
           }
