@@ -8,7 +8,6 @@ import {
   Building2,
   Camera,
   ChevronRight,
-  Fingerprint,
   Heart,
   HousePlus,
   LockKeyhole,
@@ -62,9 +61,9 @@ const properties = [
 ];
 
 const verificationItems = [
-  { icon: ShieldCheck, title: "Documento privado", text: "Análise interna de identidade antes da publicação." },
-  { icon: Camera, title: "Fotos reais", text: "Galeria revisada para reduzir perfis falsos." },
-  { icon: Fingerprint, title: "Biometria facial", text: "Liveness e desafio de verificação para anunciantes." },
+  { icon: ShieldCheck, title: "Documento protegido", text: "Conferência interna e privada antes da publicação." },
+  { icon: Camera, title: "Galeria real", text: "Fotos revisadas para manter perfis autênticos e atuais." },
+  { icon: UserRoundCheck, title: "Acompanhante verificada", text: "Análise manual para liberar apenas perfis aprovados." },
 ];
 
 const quickActions = [
@@ -170,7 +169,7 @@ export default function HomePage() {
 
               <div className="trust-strip">
                 <span><BadgeCheck size={15} /> Perfis verificados</span>
-                <span><Fingerprint size={15} /> Biometria facial</span>
+                <span><UserRoundCheck size={15} /> Curadoria manual</span>
                 <span><ShieldCheck size={15} /> Dados privados</span>
               </div>
             </div>
@@ -275,9 +274,9 @@ export default function HomePage() {
         <section className="verification-band section-block">
           <div className="verification-copy">
             <span>Verificação Elite Modell</span>
-            <h2>Documento, fotos reais e biometria antes do perfil ir ao ar.</h2>
+            <h2>Documentos e fotos analisados antes do perfil entrar no ar.</h2>
             <p>
-              O cadastro profissional já nasce com análise manual e suporte para provedor KYC.
+              Cada cadastro passa por revisão privada, galeria real e checagem de consistência.
               Isso reduz perfis falsos e deixa a plataforma com confiança de produto sério.
             </p>
           </div>
@@ -325,7 +324,7 @@ export default function HomePage() {
             <span>Para anunciantes</span>
             <h2>Cadastro profissional com pendências claras até aprovação.</h2>
             <p>
-              Documento, galeria, biometria facial, categoria, valores e contato ficam organizados
+              Documento, galeria, categoria, valores e contato ficam organizados
               antes de o perfil entrar em análise.
             </p>
           </div>
@@ -364,7 +363,7 @@ export default function HomePage() {
           background-image:
             linear-gradient(90deg, rgba(6,14,27,0.98) 0%, rgba(6,14,27,0.88) 34%, rgba(6,14,27,0.38) 62%, rgba(6,14,27,0.06) 84%),
             linear-gradient(180deg, rgba(6,14,27,0.1) 0%, #060e1b 100%),
-            url("/model.jpeg");
+            url("/hero-platform-premium.png");
           background-size: cover;
           background-position: 64% top;
         }
@@ -1048,8 +1047,8 @@ export default function HomePage() {
           .hero-bg {
             background-image:
               linear-gradient(180deg, rgba(6,14,27,0.68) 0%, rgba(6,14,27,0.96) 64%, #060e1b 100%),
-              url("/model.jpeg");
-            background-position: 58% top;
+              url("/hero-platform-premium.png");
+            background-position: center top;
           }
 
           .hero-copy h1 {
