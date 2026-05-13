@@ -344,6 +344,7 @@ export default function HomePage() {
           position: absolute;
           inset: 0;
           z-index: -1;
+          pointer-events: none;
           background-color: #060e1b;
           background-image:
             linear-gradient(90deg, rgba(2,7,14,0.92) 0%, rgba(2,7,14,0.78) 42%, rgba(2,7,14,0.18) 72%, rgba(2,7,14,0.04) 100%),
@@ -735,9 +736,19 @@ export default function HomePage() {
         }
 
         .section-block {
+          position: relative;
+          z-index: 1;
           max-width: 1280px;
           margin: 0 auto;
           padding: 70px 24px;
+          background: #060e1b;
+        }
+
+        .quick-actions {
+          position: relative;
+          z-index: 3;
+          background: #060e1b;
+          isolation: isolate;
         }
 
         .section-head {
@@ -1105,7 +1116,8 @@ export default function HomePage() {
           .market-hero {
             min-height: auto;
             padding: 64px 16px 22px;
-            overflow: visible;
+            overflow: hidden;
+            contain: paint;
           }
 
           .hero-bg {
@@ -1113,8 +1125,8 @@ export default function HomePage() {
               linear-gradient(90deg, rgba(2,7,14,0.98) 0%, rgba(2,7,14,0.9) 43%, rgba(2,7,14,0.48) 72%, rgba(2,7,14,0.22) 100%),
               linear-gradient(180deg, rgba(2,7,14,0.04) 0%, rgba(2,7,14,0.18) 48%, #060e1b 93%, #060e1b 100%),
               url("/hero-sofa-model.png");
-            background-position: 65% top;
-            background-size: auto 560px;
+            background-position: 62% top;
+            background-size: cover;
             background-repeat: no-repeat;
             background-color: #060e1b;
           }
@@ -1183,6 +1195,8 @@ export default function HomePage() {
           }
 
           .market-hero + .section-block {
+            position: relative;
+            z-index: 2;
             background: #060e1b;
           }
 
@@ -1219,6 +1233,7 @@ export default function HomePage() {
           }
 
           .quick-actions.section-block {
+            isolation: isolate;
             padding-top: 34px;
             padding-bottom: 34px;
           }
@@ -1247,8 +1262,8 @@ export default function HomePage() {
             gap: 10px;
             border: 0;
             border-radius: 0;
-            overflow: visible;
-            background: transparent;
+            overflow: hidden;
+            background: #060e1b;
           }
 
           .action-tile {
