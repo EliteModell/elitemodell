@@ -1,8 +1,7 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   BadgeCheck,
   Building2,
@@ -12,7 +11,6 @@ import {
   HousePlus,
   LockKeyhole,
   MapPin,
-  Search,
   ShieldCheck,
   Star,
   UserRoundCheck,
@@ -27,8 +25,6 @@ const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
 const GOLD_MID = "rgba(212,168,67,0.28)";
 const PLAYFAIR = "var(--font-playfair), serif";
-
-const cities = ["Belo Horizonte", "Nova Lima", "Lagoa Santa", "Contagem", "São Paulo", "Rio de Janeiro"];
 
 const properties = [
   {
@@ -94,23 +90,10 @@ const quickActions = [
 ];
 
 export default function HomePage() {
-  const router = useRouter();
-  const [city, setCity] = useState("Belo Horizonte");
-  const [category, setCategory] = useState("mulheres");
-
   const featuredProfiles = useMemo(
     () => mockProfiles.filter((profile) => profile.verified).slice(0, 3),
     []
   );
-
-  function submitSearch(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const params = new URLSearchParams();
-    params.set("tab", category === "imoveis" ? "imoveis" : "acompanhantes");
-    if (category !== "imoveis") params.set("sub", category);
-    if (city.trim()) params.set("q", city.trim());
-    router.push(`/buscar?${params.toString()}`);
-  }
 
   return (
     <div className="home-shell">
@@ -129,98 +112,16 @@ export default function HomePage() {
                 <span>de luxo.</span>
                 <span>Experiências inesquecíveis.</span>
               </h1>
-              <div className="hero-signature">
-                <span>Curadoria privada</span>
-                <span>Ambientes reservados</span>
-                <span>Perfis verificados</span>
+              <div className="hero-signature">Discrição. Elegância. Sofisticação.</div>
+              <div className="hero-benefits">
+                <span><ShieldCheck size={18} /> Discrição total e segurança</span>
+                <span><Star size={18} /> Acompanhantes verificadas</span>
+                <span><BadgeCheck size={18} /> Experiências premium</span>
               </div>
-              <p>
-                Encontre profissionais verificadas e imóveis reservados com privacidade,
-                segurança e curadoria premium.
-              </p>
-
-              <form className="search-console" onSubmit={submitSearch}>
-                <label className="field field-large">
-                  <span>Cidade</span>
-                  <input
-                    value={city}
-                    onChange={(event) => setCity(event.target.value)}
-                    placeholder="Belo Horizonte, Nova Lima, Lagoa Santa..."
-                    list="home-cities"
-                  />
-                  <datalist id="home-cities">
-                    {cities.map((item) => (
-                      <option key={item} value={item} />
-                    ))}
-                  </datalist>
-                </label>
-
-                <div className="field category-field" role="group" aria-label="Categoria">
-                  <span>Categoria</span>
-                  <div className="category-options">
-                    {[
-                      ["mulheres", "Mulheres"],
-                      ["trans", "Trans"],
-                      ["homens", "Homens"],
-                      ["imoveis", "Imóveis"],
-                    ].map(([value, label]) => (
-                      <button
-                        key={value}
-                        type="button"
-                        className={category === value ? "active" : ""}
-                        onClick={() => setCategory(value)}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <button type="submit" className="search-submit">
-                  <Search size={18} />
-                  Buscar
-                </button>
-              </form>
-
-              <div className="trust-strip">
-                <span><BadgeCheck size={15} /> Perfis verificados</span>
-                <span><Camera size={15} /> Fotos reais</span>
-                <span><ShieldCheck size={15} /> Dados privados</span>
-              </div>
+              <Link className="hero-cta" href="/buscar?tab=acompanhantes&q=Belo%20Horizonte">
+                Encontre sua companhia ideal <ChevronRight size={22} />
+              </Link>
             </div>
-
-            <aside className="live-board" aria-label="Perfis em destaque">
-              <div className="board-head">
-                <div>
-                  <span>Em destaque agora</span>
-                  <strong>Profissionais verificadas</strong>
-                </div>
-                <Link href="/buscar?tab=acompanhantes">
-                  Ver todas <ChevronRight size={14} />
-                </Link>
-              </div>
-
-              <div className="stacked-profiles">
-                {featuredProfiles.map((profile) => (
-                  <Link key={profile.id} href={`/profissionais/${profile.slug}`} className="compact-profile">
-                    <div className="compact-photo">
-                      <img src={profile.image} alt="" />
-                    </div>
-                    <div className="compact-info">
-                      <div className="profile-name">
-                        <strong>{profile.displayName}</strong>
-                        {profile.online && <span>online</span>}
-                      </div>
-                      <p>{profile.city}, {profile.state} · {profile.idade} anos</p>
-                      <div className="profile-meta">
-                        <span><Star size={12} fill={GOLD} /> {profile.rating}</span>
-                        <span>R$ {profile.priceMin}/h</span>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </aside>
           </div>
         </section>
 
@@ -365,7 +266,7 @@ export default function HomePage() {
         .market-hero {
           position: relative;
           min-height: calc(100vh - 64px);
-          padding: 112px 24px 58px;
+          padding: 112px 24px 64px;
           overflow: hidden;
           border-bottom: 1px solid ${GOLD_DIM};
           isolation: isolate;
@@ -377,25 +278,24 @@ export default function HomePage() {
           z-index: -1;
           background-color: #060e1b;
           background-image:
-            linear-gradient(90deg, rgba(6,14,27,0.98) 0%, rgba(6,14,27,0.88) 34%, rgba(6,14,27,0.38) 62%, rgba(6,14,27,0.06) 84%),
-            linear-gradient(180deg, rgba(6,14,27,0.1) 0%, #060e1b 100%),
-            url("/hero-platform-premium.png");
+            linear-gradient(90deg, rgba(2,7,14,0.92) 0%, rgba(2,7,14,0.78) 42%, rgba(2,7,14,0.18) 72%, rgba(2,7,14,0.04) 100%),
+            linear-gradient(180deg, rgba(2,7,14,0.1) 0%, rgba(2,7,14,0.22) 62%, #060e1b 100%),
+            url("/hero-sofa-model.png");
           background-size: cover;
-          background-position: 64% top;
+          background-position: center 42%;
           background-repeat: no-repeat;
         }
 
         .hero-content {
           max-width: 1280px;
           margin: 0 auto;
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) 420px;
-          gap: 36px;
-          align-items: end;
+          min-height: calc(100vh - 190px);
+          display: flex;
+          align-items: center;
         }
 
         .hero-copy {
-          max-width: 760px;
+          max-width: 610px;
         }
 
         .eyebrow,
@@ -447,27 +347,52 @@ export default function HomePage() {
         }
 
         .hero-signature {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin: 0 0 16px;
+          color: #f4d98c;
+          font-size: clamp(18px, 2vw, 22px);
+          font-weight: 800;
+          letter-spacing: 0.2px;
+          margin: 0 0 24px;
         }
 
-        .hero-signature span {
+        .hero-benefits {
+          display: grid;
+          gap: 12px;
+          margin: 0 0 34px;
+        }
+
+        .hero-benefits span {
           display: inline-flex;
           align-items: center;
-          min-height: 30px;
-          padding: 7px 11px;
-          border: 1px solid rgba(212,168,67,0.24);
-          border-radius: 999px;
-          background:
-            linear-gradient(135deg, rgba(255,229,160,0.12), rgba(212,168,67,0.04)),
-            rgba(6,14,27,0.58);
-          color: #f4d98c;
-          font-size: 12px;
-          font-weight: 800;
-          letter-spacing: 0;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+          gap: 12px;
+          color: #e5edf8;
+          font-size: 17px;
+          line-height: 1.35;
+          text-shadow: 0 3px 14px rgba(0,0,0,0.45);
+        }
+
+        .hero-benefits svg {
+          color: ${GOLD};
+          flex: 0 0 auto;
+        }
+
+        .hero-cta {
+          width: min(100%, 610px);
+          min-height: 64px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 18px;
+          border: 1.5px solid rgba(212,168,67,0.82);
+          border-radius: 12px;
+          background: rgba(6,14,27,0.22);
+          color: #f5d78c;
+          text-decoration: none;
+          text-transform: uppercase;
+          letter-spacing: 4px;
+          font-size: 15px;
+          font-weight: 900;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 18px 44px rgba(0,0,0,0.32);
+          backdrop-filter: blur(8px);
         }
 
         .hero-copy p,
@@ -1109,116 +1034,57 @@ export default function HomePage() {
 
         @media (max-width: 680px) {
           .market-hero {
-            padding: 88px 12px 26px;
+            min-height: 760px;
+            padding: 92px 16px 34px;
           }
 
           .hero-bg {
             background-image:
-              linear-gradient(90deg, rgba(6,14,27,0.94) 0%, rgba(6,14,27,0.72) 46%, rgba(6,14,27,0.34) 100%),
-              linear-gradient(180deg, rgba(6,14,27,0.2) 0%, rgba(6,14,27,0.6) 58%, #060e1b 100%),
-              url("/hero-platform-premium.png");
-            background-position: 58% top;
-            background-size: cover;
+              linear-gradient(90deg, rgba(2,7,14,0.96) 0%, rgba(2,7,14,0.82) 43%, rgba(2,7,14,0.26) 76%, rgba(2,7,14,0.08) 100%),
+              linear-gradient(180deg, rgba(2,7,14,0.08) 0%, rgba(2,7,14,0.18) 56%, #060e1b 100%),
+              url("/hero-sofa-model.png");
+            background-position: 62% top;
+            background-size: auto 100%;
             background-repeat: no-repeat;
           }
 
           .hero-content {
-            gap: 18px;
+            min-height: 630px;
+            align-items: flex-start;
+            padding-top: 92px;
           }
 
           .hero-copy {
-            max-width: none;
+            max-width: 360px;
           }
 
           .hero-copy h1 {
             margin: 14px 0 16px;
-            font-size: clamp(36px, 12vw, 52px);
-          }
-
-          .hero-copy p {
-            font-size: 14px;
-            margin-bottom: 20px;
+            font-size: clamp(39px, 12vw, 52px);
           }
 
           .hero-signature {
-            gap: 6px;
-            margin-bottom: 14px;
+            margin-bottom: 24px;
+            font-size: 17px;
           }
 
-          .hero-signature span {
-            min-height: 28px;
-            padding: 6px 9px;
-            font-size: 10.5px;
+          .hero-benefits {
+            gap: 11px;
+            margin-bottom: 28px;
           }
 
-          .search-console {
-            grid-template-columns: 1fr;
-            gap: 8px;
-            margin: 24px 0 0;
-            padding: 10px;
-            border: 0;
-            border-radius: 28px;
-            background:
-              linear-gradient(145deg, rgba(255,255,255,0.09), rgba(255,255,255,0.025)),
-              rgba(5,12,23,0.86);
-            box-shadow:
-              inset 0 1px 0 rgba(255,255,255,0.08),
-              0 18px 48px rgba(0,0,0,0.28);
+          .hero-benefits span {
+            gap: 10px;
+            font-size: 14.5px;
           }
 
-          .field {
-            padding: 12px 14px;
-            border: 0;
-            border-radius: 23px;
-            background:
-              linear-gradient(180deg, rgba(10,23,39,0.96), rgba(7,16,29,0.96));
-          }
-
-          .category-options {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 6px;
-          }
-
-          .category-options button {
-            min-height: 38px;
+          .hero-cta {
+            width: 100%;
+            min-height: 58px;
+            padding: 0 18px;
+            justify-content: space-between;
+            letter-spacing: 2.4px;
             font-size: 12px;
-            background: rgba(255,255,255,0.045);
-          }
-
-          .search-submit {
-            min-height: 52px;
-            border-radius: 999px;
-          }
-
-          .trust-strip {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 6px;
-            margin: 12px 0 0;
-            position: relative;
-            z-index: 1;
-          }
-
-          .trust-strip span {
-            min-height: 42px;
-            flex-direction: column;
-            gap: 3px;
-            padding: 7px 4px;
-            border-radius: 10px;
-            background: rgba(8,17,31,0.78);
-            text-align: center;
-            font-size: 10px;
-            line-height: 1.15;
-            white-space: normal;
-          }
-
-          .trust-strip svg {
-            width: 15px;
-            height: 15px;
-          }
-
-          .live-board {
-            max-width: none;
-            margin-top: 8px;
           }
 
           .section-block {
