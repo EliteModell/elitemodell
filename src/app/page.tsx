@@ -1118,17 +1118,17 @@ export default function HomePage() {
         @media (max-width: 680px) {
           .market-hero {
             min-height: auto;
-            padding: 58px 18px 20px;
+            padding: 58px 18px 18px;
             overflow: hidden;
           }
 
           .hero-bg {
             background-image:
-              linear-gradient(90deg, rgba(2,7,14,0.96) 0%, rgba(2,7,14,0.78) 36%, rgba(2,7,14,0.22) 64%, rgba(2,7,14,0.03) 100%),
-              linear-gradient(180deg, rgba(2,7,14,0.02) 0%, rgba(2,7,14,0.1) 58%, rgba(6,14,27,0.92) 100%),
+              linear-gradient(90deg, rgba(2,7,14,0.92) 0%, rgba(2,7,14,0.66) 34%, rgba(2,7,14,0.2) 62%, rgba(2,7,14,0.02) 100%),
+              linear-gradient(180deg, rgba(2,7,14,0) 0%, rgba(2,7,14,0.05) 58%, rgba(6,14,27,0.8) 100%),
               url("/hero-sofa-model.png");
-            background-position: 68% top;
-            background-size: auto 100%;
+            background-position: 60% top;
+            background-size: auto 760px;
             background-repeat: no-repeat;
             background-color: #060e1b;
           }
@@ -1144,48 +1144,51 @@ export default function HomePage() {
           }
 
           .eyebrow {
-            max-width: 72%;
+            max-width: 66%;
             font-size: 10px;
             letter-spacing: 2px;
           }
 
           .hero-copy h1 {
-            max-width: 72%;
+            max-width: 64%;
             margin: 12px 0 14px;
-            font-size: clamp(33px, 9.7vw, 44px);
+            font-size: clamp(32px, 9.3vw, 42px);
             line-height: 1;
           }
 
           .hero-signature {
-            max-width: 76%;
-            margin-bottom: 22px;
+            max-width: 70%;
+            margin-bottom: 20px;
             font-size: 16px;
           }
 
           .hero-benefits {
-            gap: 11px;
-            max-width: 74%;
-            margin-bottom: 26px;
+            gap: 10px;
+            max-width: 68%;
+            margin-bottom: 24px;
           }
 
           .hero-benefits span {
             gap: 10px;
-            font-size: 14px;
+            font-size: 13.5px;
           }
 
           .hero-cta {
-            width: min(78%, 430px);
-            min-height: 58px;
-            padding: 0 18px;
+            width: min(73%, 420px);
+            min-height: 50px;
+            padding: 0 15px 0 17px;
             justify-content: space-between;
-            letter-spacing: 2.4px;
-            font-size: 12px;
+            border-radius: 10px;
+            background: rgba(6,14,27,0.24);
+            box-shadow: none;
+            letter-spacing: 2.6px;
+            font-size: 11px;
           }
 
           .search-console {
             grid-template-columns: 1fr;
             gap: 8px;
-            margin-top: 22px;
+            margin-top: 30px;
             padding: 10px;
             border: 1px solid rgba(212,168,67,0.12);
             border-radius: 24px;
