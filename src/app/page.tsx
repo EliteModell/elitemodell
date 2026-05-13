@@ -1150,9 +1150,9 @@ export default function HomePage() {
           }
 
           .hero-copy h1 {
-            max-width: 64%;
+            max-width: 68%;
             margin: 12px 0 14px;
-            font-size: clamp(32px, 9.3vw, 42px);
+            font-size: clamp(31px, 8.9vw, 41px);
             line-height: 1;
           }
 
