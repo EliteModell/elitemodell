@@ -15,7 +15,7 @@ export default function BottomNav() {
 
   const items = [
     {
-      href: "/buscar?tab=acompanhantes",
+      href: "/buscar",
       label: "Buscar",
       active: pathname === "/buscar" && !tab,
       icon: (active: boolean) => (
