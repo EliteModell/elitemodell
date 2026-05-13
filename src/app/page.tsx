@@ -1174,27 +1174,29 @@ export default function HomePage() {
           }
 
           .hero-cta {
-            width: min(73%, 420px);
-            min-height: 50px;
-            padding: 0 15px 0 17px;
+            width: min(82%, 520px);
+            min-height: 44px;
+            padding: 0 13px 0 18px;
             justify-content: space-between;
-            border-radius: 10px;
-            background: rgba(6,14,27,0.24);
+            border-radius: 9px;
+            border-color: rgba(212,168,67,0.88);
+            background: rgba(6,14,27,0.12);
             box-shadow: none;
-            letter-spacing: 2.6px;
-            font-size: 11px;
+            letter-spacing: 2.45px;
+            font-size: 10.5px;
+            white-space: nowrap;
           }
 
           .search-console {
             grid-template-columns: 1fr;
-            gap: 8px;
-            margin-top: 30px;
-            padding: 10px;
-            border: 1px solid rgba(212,168,67,0.12);
-            border-radius: 24px;
+            gap: 9px;
+            margin-top: 26px;
+            padding: 9px;
+            border: 1px solid rgba(212,168,67,0.18);
+            border-radius: 22px;
             overflow: visible;
-            background: #101927;
-            box-shadow: none;
+            background: rgba(6,14,27,0.42);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
           }
@@ -1207,9 +1209,9 @@ export default function HomePage() {
 
           .field {
             padding: 12px 14px;
-            border: 1px solid rgba(255,255,255,0.04);
-            border-radius: 20px;
-            background: #081421;
+            border: 1px solid rgba(255,255,255,0.035);
+            border-radius: 18px;
+            background: rgba(5,13,24,0.62);
           }
 
           .category-options {
@@ -1220,11 +1222,11 @@ export default function HomePage() {
           .category-options button {
             min-height: 38px;
             font-size: 11px;
-            background: #111a29;
+            background: rgba(15,25,40,0.72);
           }
 
           .category-options button.active {
-            background: #8d7334;
+            background: linear-gradient(135deg, rgba(212,168,67,0.72), rgba(124,98,43,0.68));
             color: #fff4c7;
             box-shadow: none;
           }
@@ -1232,7 +1234,7 @@ export default function HomePage() {
           .search-submit {
             min-height: 52px;
             border-radius: 999px;
-            background: #d4a843;
+            background: linear-gradient(135deg, #ffe08b 0%, #d4a843 56%, #b98c2e 100%);
             box-shadow: none;
             transform: none;
             color: #060e1b;
