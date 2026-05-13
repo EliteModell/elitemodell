@@ -1115,18 +1115,18 @@ export default function HomePage() {
         @media (max-width: 680px) {
           .market-hero {
             min-height: auto;
-            padding: 64px 16px 22px;
+            padding: 58px 18px 20px;
             overflow: hidden;
             contain: paint;
           }
 
           .hero-bg {
             background-image:
-              linear-gradient(90deg, rgba(2,7,14,0.98) 0%, rgba(2,7,14,0.9) 43%, rgba(2,7,14,0.48) 72%, rgba(2,7,14,0.22) 100%),
-              linear-gradient(180deg, rgba(2,7,14,0.04) 0%, rgba(2,7,14,0.18) 48%, #060e1b 93%, #060e1b 100%),
+              linear-gradient(90deg, rgba(2,7,14,0.96) 0%, rgba(2,7,14,0.78) 36%, rgba(2,7,14,0.22) 64%, rgba(2,7,14,0.03) 100%),
+              linear-gradient(180deg, rgba(2,7,14,0.02) 0%, rgba(2,7,14,0.1) 58%, rgba(6,14,27,0.92) 100%),
               url("/hero-sofa-model.png");
-            background-position: 62% top;
-            background-size: cover;
+            background-position: 68% top;
+            background-size: auto 100%;
             background-repeat: no-repeat;
             background-color: #060e1b;
           }
@@ -1134,7 +1134,7 @@ export default function HomePage() {
           .hero-content {
             min-height: auto;
             align-items: flex-start;
-            padding-top: 46px;
+            padding-top: 42px;
           }
 
           .hero-copy {
@@ -1142,35 +1142,37 @@ export default function HomePage() {
           }
 
           .eyebrow {
-            max-width: 88%;
+            max-width: 72%;
             font-size: 10px;
             letter-spacing: 2px;
           }
 
           .hero-copy h1 {
-            max-width: 92%;
-            margin: 12px 0 16px;
-            font-size: clamp(35px, 10.7vw, 47px);
-            line-height: 1.02;
+            max-width: 72%;
+            margin: 12px 0 14px;
+            font-size: clamp(33px, 9.7vw, 44px);
+            line-height: 1;
           }
 
           .hero-signature {
-            margin-bottom: 24px;
-            font-size: 17px;
+            max-width: 76%;
+            margin-bottom: 22px;
+            font-size: 16px;
           }
 
           .hero-benefits {
             gap: 11px;
-            margin-bottom: 28px;
+            max-width: 74%;
+            margin-bottom: 26px;
           }
 
           .hero-benefits span {
             gap: 10px;
-            font-size: 14.5px;
+            font-size: 14px;
           }
 
           .hero-cta {
-            width: 100%;
+            width: min(78%, 430px);
             min-height: 58px;
             padding: 0 18px;
             justify-content: space-between;
@@ -1225,7 +1227,23 @@ export default function HomePage() {
           }
 
           .trust-strip {
-            display: none;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 12px;
+          }
+
+          .trust-strip span {
+            min-height: 50px;
+            flex-direction: column;
+            gap: 5px;
+            padding: 8px 6px;
+            border-radius: 12px;
+            background: rgba(6,14,27,0.78);
+            color: #cbd5e1;
+            font-size: 10.5px;
+            white-space: normal;
+            text-align: center;
           }
 
           .section-block {
