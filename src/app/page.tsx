@@ -1187,16 +1187,13 @@ export default function HomePage() {
             gap: 8px;
             margin-top: 22px;
             padding: 10px;
-            border: 0;
+            border: 1px solid rgba(212,168,67,0.12);
             border-radius: 24px;
-            overflow: hidden;
-            background:
-              linear-gradient(145deg, rgba(255,255,255,0.09), rgba(255,255,255,0.025)),
-              rgba(5,12,23,0.9);
-            box-shadow:
-              inset 0 1px 0 rgba(255,255,255,0.08),
-              0 14px 30px rgba(0,0,0,0.24);
+            overflow: visible;
+            background: #101927;
+            box-shadow: none;
             backdrop-filter: none;
+            -webkit-backdrop-filter: none;
           }
 
           .market-hero + .section-block {
@@ -1207,10 +1204,9 @@ export default function HomePage() {
 
           .field {
             padding: 12px 14px;
-            border: 0;
+            border: 1px solid rgba(255,255,255,0.04);
             border-radius: 20px;
-            background:
-              linear-gradient(180deg, rgba(10,23,39,0.96), rgba(7,16,29,0.96));
+            background: #081421;
           }
 
           .category-options {
@@ -1221,35 +1217,27 @@ export default function HomePage() {
           .category-options button {
             min-height: 38px;
             font-size: 11px;
-            background: rgba(255,255,255,0.045);
+            background: #111a29;
+          }
+
+          .category-options button.active {
+            background: #8d7334;
+            color: #fff4c7;
+            box-shadow: none;
           }
 
           .search-submit {
             min-height: 52px;
             border-radius: 999px;
+            background: #d4a843;
+            box-shadow: none;
+            transform: none;
+            color: #060e1b;
+            -webkit-tap-highlight-color: transparent;
           }
 
           .trust-strip {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 8px;
-            width: 100%;
-            max-width: none;
-            margin-top: 12px;
-            overflow: hidden;
-          }
-
-          .trust-strip span {
-            min-height: 50px;
-            flex-direction: column;
-            gap: 5px;
-            padding: 8px 6px;
-            border-radius: 12px;
-            background: rgba(6,14,27,0.78);
-            color: #cbd5e1;
-            font-size: 10.5px;
-            white-space: normal;
-            text-align: center;
+            display: none;
           }
 
           .home-shell nav,
@@ -1265,6 +1253,8 @@ export default function HomePage() {
           .property-photo {
             transform: none !important;
             backface-visibility: hidden;
+            box-shadow: none !important;
+            filter: none !important;
           }
 
           .section-block {
@@ -1301,7 +1291,7 @@ export default function HomePage() {
             gap: 10px;
             border: 0;
             border-radius: 0;
-            overflow: hidden;
+            overflow: visible;
             background: #060e1b;
           }
 
@@ -1312,10 +1302,8 @@ export default function HomePage() {
             padding: 14px;
             border: 1px solid ${GOLD_DIM};
             border-radius: 14px;
-            background:
-              linear-gradient(145deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01)),
-              #0b1420;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.035);
+            background: #0b1420;
+            box-shadow: none;
           }
 
           .action-tile:last-child {
