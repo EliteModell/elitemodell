@@ -1218,22 +1218,87 @@ export default function HomePage() {
             padding: 48px 16px;
           }
 
+          .quick-actions.section-block {
+            padding-top: 34px;
+            padding-bottom: 34px;
+          }
+
           .section-head {
             align-items: flex-start;
             flex-direction: column;
           }
 
-          .action-grid,
           .profile-grid,
           .property-grid,
           .verification-grid {
             grid-template-columns: 1fr;
           }
 
+          .quick-actions .section-head {
+            margin-bottom: 18px;
+          }
+
+          .quick-actions .section-head h2 {
+            font-size: clamp(30px, 9vw, 38px);
+          }
+
+          .action-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            border: 0;
+            border-radius: 0;
+            overflow: visible;
+            background: transparent;
+          }
+
           .action-tile {
-            min-height: 116px;
-            border-right: 0;
-            border-bottom: 1px solid ${GOLD_DIM};
+            min-height: 154px;
+            display: flex;
+            flex-direction: column;
+            padding: 14px;
+            border: 1px solid ${GOLD_DIM};
+            border-radius: 14px;
+            background:
+              linear-gradient(145deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01)),
+              #0b1420;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.035);
+          }
+
+          .action-tile:last-child {
+            border-right: 1px solid ${GOLD_DIM};
+          }
+
+          .action-icon {
+            width: 42px;
+            height: 42px;
+            margin-bottom: 14px;
+            border-radius: 12px;
+          }
+
+          .action-tile strong {
+            min-height: 44px;
+            font-size: 19px;
+            line-height: 1.05;
+            margin-bottom: 7px;
+          }
+
+          .action-tile p {
+            max-width: none;
+            display: -webkit-box;
+            overflow: hidden;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            font-size: 11.5px;
+            line-height: 1.35;
+          }
+
+          .action-cta {
+            position: static;
+            margin-top: auto;
+            padding-top: 12px;
+            justify-content: space-between;
+            font-size: 10.5px;
+            letter-spacing: 1.2px;
           }
 
           .feature-photo {
