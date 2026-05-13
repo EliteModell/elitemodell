@@ -337,6 +337,7 @@ export default function HomePage() {
           overflow: hidden;
           border-bottom: 1px solid ${GOLD_DIM};
           isolation: isolate;
+          background: #060e1b;
         }
 
         .hero-bg {
@@ -1103,32 +1104,42 @@ export default function HomePage() {
         @media (max-width: 680px) {
           .market-hero {
             min-height: auto;
-            padding: 78px 16px 30px;
+            padding: 64px 16px 22px;
+            overflow: visible;
           }
 
           .hero-bg {
             background-image:
-              linear-gradient(90deg, rgba(2,7,14,0.96) 0%, rgba(2,7,14,0.84) 45%, rgba(2,7,14,0.32) 76%, rgba(2,7,14,0.1) 100%),
-              linear-gradient(180deg, rgba(2,7,14,0.02) 0%, rgba(2,7,14,0.16) 54%, #060e1b 100%),
+              linear-gradient(90deg, rgba(2,7,14,0.98) 0%, rgba(2,7,14,0.9) 43%, rgba(2,7,14,0.48) 72%, rgba(2,7,14,0.22) 100%),
+              linear-gradient(180deg, rgba(2,7,14,0.04) 0%, rgba(2,7,14,0.18) 48%, #060e1b 93%, #060e1b 100%),
               url("/hero-sofa-model.png");
-            background-position: 57% top;
-            background-size: 100% auto;
+            background-position: 65% top;
+            background-size: auto 560px;
             background-repeat: no-repeat;
+            background-color: #060e1b;
           }
 
           .hero-content {
             min-height: auto;
             align-items: flex-start;
-            padding-top: clamp(44px, 13vw, 72px);
+            padding-top: 46px;
           }
 
           .hero-copy {
             max-width: none;
           }
 
+          .eyebrow {
+            max-width: 88%;
+            font-size: 10px;
+            letter-spacing: 2px;
+          }
+
           .hero-copy h1 {
-            margin: 14px 0 16px;
-            font-size: clamp(39px, 12vw, 52px);
+            max-width: 92%;
+            margin: 12px 0 16px;
+            font-size: clamp(35px, 10.7vw, 47px);
+            line-height: 1.02;
           }
 
           .hero-signature {
@@ -1171,6 +1182,10 @@ export default function HomePage() {
               0 14px 30px rgba(0,0,0,0.24);
           }
 
+          .market-hero + .section-block {
+            background: #060e1b;
+          }
+
           .field {
             padding: 12px 14px;
             border: 0;
@@ -1196,23 +1211,7 @@ export default function HomePage() {
           }
 
           .trust-strip {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 6px;
-            margin-top: 14px;
-            max-width: none;
-          }
-
-          .trust-strip span {
-            min-height: 56px;
-            flex-direction: column;
-            gap: 5px;
-            padding: 8px 4px;
-            border-radius: 10px;
-            background: rgba(5,12,23,0.72);
-            text-align: center;
-            font-size: 10px;
-            line-height: 1.15;
-            white-space: normal;
+            display: none;
           }
 
           .section-block {
