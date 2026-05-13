@@ -328,6 +328,7 @@ export default function HomePage() {
           min-height: 100vh;
           background: #060e1b;
           color: #f1f5f9;
+          overflow-x: hidden;
         }
 
         .market-hero {
@@ -343,7 +344,7 @@ export default function HomePage() {
         .hero-bg {
           position: absolute;
           inset: 0;
-          z-index: -1;
+          z-index: 0;
           pointer-events: none;
           background-color: #060e1b;
           background-image:
@@ -356,6 +357,8 @@ export default function HomePage() {
         }
 
         .hero-content {
+          position: relative;
+          z-index: 1;
           max-width: 1280px;
           margin: 0 auto;
           min-height: calc(100vh - 190px);
@@ -1117,7 +1120,6 @@ export default function HomePage() {
             min-height: auto;
             padding: 58px 18px 20px;
             overflow: hidden;
-            contain: paint;
           }
 
           .hero-bg {
@@ -1194,6 +1196,7 @@ export default function HomePage() {
             box-shadow:
               inset 0 1px 0 rgba(255,255,255,0.08),
               0 14px 30px rgba(0,0,0,0.24);
+            backdrop-filter: none;
           }
 
           .market-hero + .section-block {
@@ -1230,7 +1233,10 @@ export default function HomePage() {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 8px;
+            width: 100%;
+            max-width: none;
             margin-top: 12px;
+            overflow: hidden;
           }
 
           .trust-strip span {
@@ -1244,6 +1250,21 @@ export default function HomePage() {
             font-size: 10.5px;
             white-space: normal;
             text-align: center;
+          }
+
+          .home-shell nav,
+          .bottom-nav {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+          }
+
+          .feature-card,
+          .property-card,
+          .action-tile,
+          .feature-photo,
+          .property-photo {
+            transform: none !important;
+            backface-visibility: hidden;
           }
 
           .section-block {
