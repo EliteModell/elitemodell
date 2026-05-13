@@ -1,16 +1,19 @@
 "use client";
 
-import { Suspense, useMemo } from "react";
+import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   BadgeCheck,
   Building2,
   Camera,
   ChevronRight,
+  Gem,
   Heart,
   HousePlus,
   LockKeyhole,
   MapPin,
+  Search,
   ShieldCheck,
   Star,
   UserRoundCheck,
@@ -25,6 +28,8 @@ const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
 const GOLD_MID = "rgba(212,168,67,0.28)";
 const PLAYFAIR = "var(--font-playfair), serif";
+
+const cities = ["Belo Horizonte", "Nova Lima", "Lagoa Santa", "Contagem", "São Paulo", "Rio de Janeiro"];
 
 const properties = [
   {
@@ -90,10 +95,23 @@ const quickActions = [
 ];
 
 export default function HomePage() {
+  const router = useRouter();
+  const [city, setCity] = useState("Belo Horizonte");
+  const [category, setCategory] = useState("mulheres");
+
   const featuredProfiles = useMemo(
     () => mockProfiles.filter((profile) => profile.verified).slice(0, 3),
     []
   );
+
+  function submitSearch(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    params.set("tab", category === "imoveis" ? "imoveis" : "acompanhantes");
+    if (category !== "imoveis") params.set("sub", category);
+    if (city.trim()) params.set("q", city.trim());
+    router.push(`/buscar?${params.toString()}`);
+  }
 
   return (
     <div className="home-shell">
@@ -116,11 +134,60 @@ export default function HomePage() {
               <div className="hero-benefits">
                 <span><ShieldCheck size={18} /> Discrição total e segurança</span>
                 <span><Star size={18} /> Acompanhantes verificadas</span>
-                <span><BadgeCheck size={18} /> Experiências premium</span>
+                <span><Gem size={18} /> Experiências premium</span>
               </div>
               <Link className="hero-cta" href="/buscar?tab=acompanhantes&q=Belo%20Horizonte">
                 Encontre sua companhia ideal <ChevronRight size={22} />
               </Link>
+
+              <form className="search-console" onSubmit={submitSearch}>
+                <label className="field field-large">
+                  <span>Cidade</span>
+                  <input
+                    value={city}
+                    onChange={(event) => setCity(event.target.value)}
+                    placeholder="Belo Horizonte, Nova Lima, Lagoa Santa..."
+                    list="home-cities"
+                  />
+                  <datalist id="home-cities">
+                    {cities.map((item) => (
+                      <option key={item} value={item} />
+                    ))}
+                  </datalist>
+                </label>
+
+                <div className="field category-field" role="group" aria-label="Categoria">
+                  <span>Categoria</span>
+                  <div className="category-options">
+                    {[
+                      ["mulheres", "Mulheres"],
+                      ["trans", "Trans"],
+                      ["homens", "Homens"],
+                      ["imoveis", "Imóveis"],
+                    ].map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={category === value ? "active" : ""}
+                        onClick={() => setCategory(value)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button type="submit" className="search-submit">
+                  <Search size={18} />
+                  Buscar
+                </button>
+              </form>
+
+              <div className="trust-strip">
+                <span><ShieldCheck size={16} /> Perfis verificados</span>
+                <span><Camera size={16} /> Fotos reais</span>
+                <span><BadgeCheck size={16} /> Dados privados</span>
+              </div>
             </div>
           </div>
         </section>
@@ -410,6 +477,7 @@ export default function HomePage() {
           grid-template-columns: minmax(250px, 1fr) minmax(278px, 0.82fr) 148px;
           gap: 8px;
           max-width: 790px;
+          margin-top: 26px;
           padding: 8px;
           background:
             linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.015)),
@@ -1034,8 +1102,8 @@ export default function HomePage() {
 
         @media (max-width: 680px) {
           .market-hero {
-            min-height: 760px;
-            padding: 92px 16px 34px;
+            min-height: 1080px;
+            padding: 92px 16px 38px;
           }
 
           .hero-bg {
@@ -1043,15 +1111,15 @@ export default function HomePage() {
               linear-gradient(90deg, rgba(2,7,14,0.96) 0%, rgba(2,7,14,0.82) 43%, rgba(2,7,14,0.26) 76%, rgba(2,7,14,0.08) 100%),
               linear-gradient(180deg, rgba(2,7,14,0.08) 0%, rgba(2,7,14,0.18) 56%, #060e1b 100%),
               url("/hero-sofa-model.png");
-            background-position: 62% top;
-            background-size: auto 100%;
+            background-position: center top;
+            background-size: cover;
             background-repeat: no-repeat;
           }
 
           .hero-content {
-            min-height: 630px;
+            min-height: 950px;
             align-items: flex-start;
-            padding-top: 92px;
+            padding-top: 96px;
           }
 
           .hero-copy {
@@ -1085,6 +1153,64 @@ export default function HomePage() {
             justify-content: space-between;
             letter-spacing: 2.4px;
             font-size: 12px;
+          }
+
+          .search-console {
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-top: 22px;
+            padding: 10px;
+            border: 0;
+            border-radius: 24px;
+            background:
+              linear-gradient(145deg, rgba(255,255,255,0.09), rgba(255,255,255,0.025)),
+              rgba(5,12,23,0.9);
+            box-shadow:
+              inset 0 1px 0 rgba(255,255,255,0.08),
+              0 18px 48px rgba(0,0,0,0.28);
+          }
+
+          .field {
+            padding: 12px 14px;
+            border: 0;
+            border-radius: 20px;
+            background:
+              linear-gradient(180deg, rgba(10,23,39,0.96), rgba(7,16,29,0.96));
+          }
+
+          .category-options {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 6px;
+          }
+
+          .category-options button {
+            min-height: 38px;
+            font-size: 11px;
+            background: rgba(255,255,255,0.045);
+          }
+
+          .search-submit {
+            min-height: 52px;
+            border-radius: 999px;
+          }
+
+          .trust-strip {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            margin-top: 14px;
+          }
+
+          .trust-strip span {
+            min-height: 56px;
+            flex-direction: column;
+            gap: 5px;
+            padding: 8px 4px;
+            border-radius: 10px;
+            background: rgba(5,12,23,0.72);
+            text-align: center;
+            font-size: 10px;
+            line-height: 1.15;
+            white-space: normal;
           }
 
           .section-block {
