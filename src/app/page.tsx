@@ -1102,8 +1102,8 @@ export default function HomePage() {
 
         @media (max-width: 680px) {
           .market-hero {
-            min-height: 1080px;
-            padding: 92px 16px 38px;
+            min-height: auto;
+            padding: 92px 16px 30px;
           }
 
           .hero-bg {
@@ -1112,18 +1112,18 @@ export default function HomePage() {
               linear-gradient(180deg, rgba(2,7,14,0.08) 0%, rgba(2,7,14,0.18) 56%, #060e1b 100%),
               url("/hero-sofa-model.png");
             background-position: center top;
-            background-size: cover;
+            background-size: 100% auto;
             background-repeat: no-repeat;
           }
 
           .hero-content {
-            min-height: 950px;
+            min-height: auto;
             align-items: flex-start;
-            padding-top: 96px;
+            padding-top: 104px;
           }
 
           .hero-copy {
-            max-width: 360px;
+            max-width: none;
           }
 
           .hero-copy h1 {
@@ -1162,12 +1162,13 @@ export default function HomePage() {
             padding: 10px;
             border: 0;
             border-radius: 24px;
+            overflow: hidden;
             background:
               linear-gradient(145deg, rgba(255,255,255,0.09), rgba(255,255,255,0.025)),
               rgba(5,12,23,0.9);
             box-shadow:
               inset 0 1px 0 rgba(255,255,255,0.08),
-              0 18px 48px rgba(0,0,0,0.28);
+              0 14px 30px rgba(0,0,0,0.24);
           }
 
           .field {
@@ -1198,6 +1199,7 @@ export default function HomePage() {
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 6px;
             margin-top: 14px;
+            max-width: none;
           }
 
           .trust-strip span {
