@@ -12,6 +12,7 @@ type AccountType = "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
 type Category = "MULHER" | "TRANS" | "HOMEM";
 type Step = "form" | "verify" | "phone";
 type BirthPart = "day" | "month" | "year";
+type PendingAuthMethod = "google" | "sms" | null;
 
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
@@ -158,6 +159,7 @@ export default function CadastroPage() {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [pendingAuthMethod, setPendingAuthMethod] = useState<PendingAuthMethod>(null);
 
   const roles = [
     { value: "GUEST", label: "Cliente", desc: "Quero buscar acompanhantes verificadas ou reservar imoveis." },
@@ -248,6 +250,7 @@ export default function CadastroPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setPendingAuthMethod(null);
     if (!validateRequiredForm(true)) return;
 
     setLoading(true);
@@ -285,6 +288,7 @@ export default function CadastroPage() {
   }
 
   async function handleGoogle() {
+    setPendingAuthMethod("google");
     if (!validateRequiredForm(false, true)) return;
 
     setLoading(true);
@@ -304,6 +308,7 @@ export default function CadastroPage() {
 
   async function handleSendOtp(e: React.FormEvent) {
     e.preventDefault();
+    setPendingAuthMethod("sms");
     if (!validateRequiredForm(false, true)) return;
 
     setLoading(true);
@@ -472,6 +477,7 @@ export default function CadastroPage() {
         icon={SmsIcon}
         label="Cadastrar com SMS"
         onClick={() => {
+          setPendingAuthMethod("sms");
           if (!validateRequiredForm(false, true)) return;
           setStep("phone");
         }}
@@ -560,6 +566,59 @@ export default function CadastroPage() {
             {errors.lgpdConsent && <span data-auth-required-error="true" style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.lgpdConsent}</span>}
           </span>
         </label>
+
+        {pendingAuthMethod === "google" && (
+          <button
+            type="button"
+            onClick={handleGoogle}
+            disabled={loading}
+            style={{
+              padding: "13px",
+              background: "#f8fafc",
+              color: "#0f172a",
+              border: "none",
+              borderRadius: 8,
+              fontSize: 15,
+              fontWeight: 800,
+              cursor: loading ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
+            }}
+          >
+            {GoogleIcon}
+            {loading ? "Abrindo Google..." : "Continuar com Google"}
+          </button>
+        )}
+
+        {pendingAuthMethod === "sms" && (
+          <button
+            type="button"
+            onClick={() => {
+              if (!validateRequiredForm(false, true)) return;
+              setStep("phone");
+            }}
+            disabled={loading}
+            style={{
+              padding: "13px",
+              background: "rgba(212,168,67,0.12)",
+              color: "#f5d78c",
+              border: "1px solid rgba(212,168,67,0.32)",
+              borderRadius: 8,
+              fontSize: 15,
+              fontWeight: 800,
+              cursor: loading ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
+            }}
+          >
+            {SmsIcon}
+            Continuar com SMS
+          </button>
+        )}
 
         <button type="submit" disabled={loading} style={{ padding: "13px", background: loading ? "#9e7b2a" : GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer", marginTop: 4 }}>
           {loading ? "Criando conta..." : "Criar conta"}
