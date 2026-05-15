@@ -2,10 +2,16 @@
 import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
+import { supabaseAuth } from "@/lib/supabase-client";
 
 export default function Navbar() {
   const { data: session } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  async function handleSignOut() {
+    await supabaseAuth.auth.signOut();
+    await signOut({ callbackUrl: "/" });
+  }
 
   return (
     <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: "rgba(6,14,27,0.97)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(212,168,67,0.12)", height: 64 }}>
@@ -48,7 +54,7 @@ export default function Navbar() {
               <Link className="nav-auth-link" href="/dashboard" style={{ padding: "8px 18px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14, fontWeight: 500, border: "1px solid rgba(212,168,67,0.2)" }}>
                 {session.user?.name?.split(" ")[0] ?? "Minha conta"}
               </Link>
-              <button className="nav-auth-link" onClick={() => signOut()} style={{ padding: "8px 18px", borderRadius: 8, background: "transparent", border: "1px solid rgba(212,168,67,0.3)", color: "#d4a843", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+              <button className="nav-auth-link" onClick={handleSignOut} style={{ padding: "8px 18px", borderRadius: 8, background: "transparent", border: "1px solid rgba(212,168,67,0.3)", color: "#d4a843", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
                 Sair
               </button>
             </>

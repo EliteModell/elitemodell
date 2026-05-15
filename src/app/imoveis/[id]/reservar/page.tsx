@@ -47,8 +47,8 @@ function ReservarContent() {
   const [cpf, setCpf] = useState("");
 
   // Modal PIX
-  const [pixData, setPixData] = useState<{ qrCodeBase64: string; copyPaste: string; bookingId: string } | null>(null);
-  const [pollingPayment, setPollingPayment] = useState(false);
+  const [pixData, setPixData] = useState<{ qrCodeBase64: string; copyPaste: string; bookingId: string; amount: number } | null>(null);
+  const [, setPollingPayment] = useState(false);
 
   useEffect(() => {
     fetch(`/api/properties/${propertyId}`)
@@ -106,9 +106,7 @@ function ReservarContent() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             bookingId: booking.id,
-            amount: total,
             description: `Reserva ${property.title}`,
-            payerEmail: session?.user?.email ?? "",
             payerName:  session?.user?.name ?? "",
             payerCpf:   cpf,
           }),
@@ -120,14 +118,15 @@ function ReservarContent() {
           qrCodeBase64: pix.qrCodeBase64,
           copyPaste: pix.copyPaste,
           bookingId: booking.id,
+          amount: pix.amount ?? booking.totalPrice,
         });
         startPaymentPolling(booking.id);
       } else {
         toast.success("Reserva criada! Aguarde a confirmação.");
         router.push("/dashboard/reservas");
       }
-    } catch (err: any) {
-      toast.error(err?.message ?? "Erro ao confirmar reserva.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Erro ao confirmar reserva.");
     } finally {
       setLoading(false);
     }
@@ -330,7 +329,7 @@ function ReservarContent() {
         <div style={{ position: "fixed", inset: 0, background: "rgba(4,10,20,0.92)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
           <div style={{ background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 16, padding: 28, maxWidth: 420, width: "100%", textAlign: "center" }}>
             <div style={{ fontSize: 11, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", marginBottom: 8 }}>Pague com PIX</div>
-            <h3 style={{ color: "#f1f5f9", fontSize: 20, fontWeight: 800, margin: "0 0 6px" }}>R$ {fmt(total)}</h3>
+            <h3 style={{ color: "#f1f5f9", fontSize: 20, fontWeight: 800, margin: "0 0 6px" }}>R$ {fmt(pixData.amount)}</h3>
             <p style={{ color: "#475569", fontSize: 13, margin: "0 0 20px" }}>Escaneie o QR Code ou copie o código abaixo. Confirmação automática em segundos.</p>
 
             {pixData.qrCodeBase64 && (

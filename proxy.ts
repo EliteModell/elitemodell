@@ -1,7 +1,7 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Arquivos estaticos em /public sao servidos na raiz (/model.jpeg, /logo.png etc.).
@@ -21,9 +21,15 @@ export async function middleware(request: NextRequest) {
     "/terms",
     "/privacy",
     "/api/auth",
-    "/api/professionals",
-    "/api/properties",
   ];
+
+  const publicGetApiRoutes = ["/api/professionals", "/api/properties"];
+  if (
+    request.method === "GET" &&
+    publicGetApiRoutes.some((route) => pathname === route || pathname.startsWith(route + "/"))
+  ) {
+    return NextResponse.next();
+  }
 
   // Verificar se é rota pública
   const isPublic = publicRoutes.some(
@@ -42,24 +48,28 @@ export async function middleware(request: NextRequest) {
   if (!token) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
+  const tokenWithRole = token as typeof token & {
+    role?: string;
+    isProfessional?: boolean;
+  };
 
   // Rotas de admin - apenas ADMIN
   if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
-    if (token.role !== "ADMIN") {
+    if (tokenWithRole.role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
 
   // Rotas de anfitrião - apenas HOST e ADMIN
   if (pathname.startsWith("/anfitriao") || pathname.startsWith("/api/anfitriao")) {
-    if (token.role !== "HOST" && token.role !== "ADMIN") {
+    if (tokenWithRole.role !== "HOST" && tokenWithRole.role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
 
   // A tela de novo perfil precisa estar aberta para HOST antes do perfil existir.
   if (pathname === "/profissional/novo") {
-    if (token.role !== "HOST" && token.role !== "ADMIN") {
+    if (tokenWithRole.role !== "HOST" && tokenWithRole.role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
     return NextResponse.next();
@@ -67,7 +77,7 @@ export async function middleware(request: NextRequest) {
 
   // Rotas de profissional - apenas com perfil profissional
   if (pathname.startsWith("/profissional") || pathname.startsWith("/api/profissional")) {
-    if (!(token as any).isProfessional && token.role !== "ADMIN") {
+    if (!tokenWithRole.isProfessional && tokenWithRole.role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }

@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { isAgeOfMajority } from "@/lib/age-validation";
-import { createSupabaseServerClient } from "@/lib/supabase-auth";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 const schema = z.object({
   accessToken: z.string(),

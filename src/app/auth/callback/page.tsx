@@ -3,7 +3,26 @@
 import { Suspense, useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabaseAuth } from "@/lib/supabase-auth";
+import { supabaseAuth } from "@/lib/supabase-client";
+
+type PendingRegistration = {
+  accountType?: "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
+};
+
+async function getPostLoginPath() {
+  const res = await fetch("/api/users/me");
+  if (!res.ok) return "/dashboard";
+
+  const user = await res.json();
+  if (user.role === "HOST" && !user.professional) return "/profissional/novo";
+  return "/dashboard";
+}
+
+function getRegistrationPath(pending: PendingRegistration | null) {
+  if (pending?.accountType === "PROFESSIONAL") return "/profissional/novo";
+  if (pending?.accountType === "PROPERTY_HOST") return "/anfitriao";
+  return "/dashboard";
+}
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -25,8 +44,10 @@ function AuthCallbackContent() {
       if (!accessToken) throw new Error("Sessao Supabase nao encontrada.");
 
       const pendingRaw = sessionStorage.getItem("elitemodell_pending_registration");
+      let pendingRegistration: PendingRegistration | null = null;
       if (pendingRaw) {
-        const pending = JSON.parse(pendingRaw);
+        const pending = JSON.parse(pendingRaw) as PendingRegistration;
+        pendingRegistration = pending;
         const res = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -44,7 +65,9 @@ function AuthCallbackContent() {
 
       if (!active) return;
       setMessage("Acesso confirmado.");
-      router.replace("/dashboard");
+      router.replace(
+        pendingRegistration ? getRegistrationPath(pendingRegistration) : await getPostLoginPath()
+      );
       router.refresh();
     }
 

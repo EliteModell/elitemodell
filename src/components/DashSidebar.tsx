@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import { supabaseAuth } from "@/lib/supabase-client";
 
 type NavItem = { label: string; href: string; icon: React.ReactNode };
 
@@ -135,6 +136,11 @@ interface Props {
 export default function DashSidebar({ mobileOpen, onClose }: Props) {
   const { data: session } = useSession();
   const pathname = usePathname();
+
+  async function handleSignOut() {
+    await supabaseAuth.auth.signOut();
+    await signOut({ callbackUrl: "/" });
+  }
 
   const role = session?.user?.role;
   const pathname_str = pathname ?? "";
@@ -278,7 +284,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
         {/* Footer */}
         <div style={{ padding: "12px 10px", borderTop: "1px solid #1a1a1a" }}>
           <button
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={handleSignOut}
             style={{
               display: "flex",
               alignItems: "center",

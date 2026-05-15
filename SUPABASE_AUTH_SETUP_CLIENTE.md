@@ -1,6 +1,6 @@
-# Setup Supabase Auth do cliente
+# Setup Supabase Auth do EliteModell
 
-Use este checklist no painel Supabase do cliente.
+Use este checklist no painel Supabase do projeto em producao.
 
 ## 1. URLs de autenticacao
 
@@ -10,11 +10,12 @@ Painel Supabase:
 
 Configurar:
 
-- Site URL: dominio oficial de producao do cliente.
+- Site URL: `https://elitemodell.com.br`
 - Redirect URLs:
   - `http://localhost:3000/auth/callback`
   - `http://localhost:3000/**`
-  - URL de producao: `https://DOMINIO-DO-CLIENTE/auth/callback`
+  - `https://elitemodell.com.br/auth/callback`
+  - `https://www.elitemodell.com.br/auth/callback`
   - Vercel preview, se usar: `https://*-SLUG-DA-CONTA-VERCEL.vercel.app/**`
   - Callback Supabase do projeto atual: `https://jgvmpbrsxegwkrgjncsv.supabase.co/auth/v1/callback`
 
@@ -56,7 +57,8 @@ Tambem adicionar em Authorized JavaScript origins:
 
 ```txt
 http://localhost:3000
-https://DOMINIO-DO-CLIENTE
+https://elitemodell.com.br
+https://www.elitemodell.com.br
 ```
 
 ## 4. Telefone/SMS
@@ -89,13 +91,20 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=""
 SUPABASE_SERVICE_ROLE_KEY=""
 NEXTAUTH_URL=""
 NEXTAUTH_SECRET=""
+NEXT_PUBLIC_APP_URL=""
 ```
 
 Na Vercel:
 
-- `NEXTAUTH_URL` deve ser a URL final de producao.
+- `NEXTAUTH_URL` deve ser `https://elitemodell.com.br`.
+- `NEXT_PUBLIC_APP_URL` deve ser `https://elitemodell.com.br`.
 - `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` podem ser publicas.
 - `SUPABASE_SERVICE_ROLE_KEY` e `NEXTAUTH_SECRET` sao segredos e nunca devem ir para o frontend.
+
+Localmente:
+
+- `NEXTAUTH_URL` deve ser `http://localhost:3000`.
+- `NEXT_PUBLIC_APP_URL` deve ser `http://localhost:3000`.
 
 ## 6. Testes depois de configurar
 

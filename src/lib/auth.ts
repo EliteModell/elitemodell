@@ -1,7 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./prisma";
-import { createSupabaseServerClient } from "./supabase-auth";
+import { createSupabaseServerClient } from "./supabase-server";
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },

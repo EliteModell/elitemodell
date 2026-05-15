@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
   const bookings = await prisma.booking.findMany({
     where,
     include: {
-      property: { select: { title: true, city: true, photos: { take: 1 } } },
+      property: { select: { id: true, title: true, city: true, photos: { take: 1 } } },
       guest: { select: { name: true, email: true, image: true } },
     },
     orderBy: { createdAt: "desc" },
@@ -54,14 +54,25 @@ export async function POST(req: NextRequest) {
     const checkIn = new Date(data.checkIn);
     const checkOut = new Date(data.checkOut);
     const nights = differenceInCalendarDays(checkOut, checkIn);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    if (nights < 1) {
+    if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime()) || nights < 1) {
       return NextResponse.json({ error: "Datas invÃ¡lidas." }, { status: 400 });
+    }
+    if (checkIn < today) {
+      return NextResponse.json({ error: "Check-in nao pode estar no passado." }, { status: 400 });
     }
 
     const property = await prisma.property.findUnique({ where: { id: data.propertyId } });
     if (!property || property.status !== "ACTIVE") {
       return NextResponse.json({ error: "ImÃ³vel nÃ£o disponÃ­vel." }, { status: 404 });
+    }
+    if (property.hostId === session.user.id) {
+      return NextResponse.json({ error: "Voce nao pode reservar seu proprio imovel." }, { status: 400 });
+    }
+    if (data.guests > property.maxGuests) {
+      return NextResponse.json({ error: `Este imovel aceita no maximo ${property.maxGuests} hospedes.` }, { status: 400 });
     }
 
     if (nights < property.minNights) {
@@ -86,10 +97,15 @@ export async function POST(req: NextRequest) {
     let discount = 0;
     if (data.couponCode) {
       const coupon = await prisma.coupon.findUnique({ where: { code: data.couponCode } });
-      if (coupon && coupon.active) {
-        const subtotal = nights * property.pricePerNight;
+      const subtotal = nights * property.pricePerNight;
+      const couponExpired = coupon?.expiresAt ? coupon.expiresAt < new Date() : false;
+      const couponLimitReached = coupon?.maxUses ? coupon.usedCount >= coupon.maxUses : false;
+      const couponBelowMinimum = coupon?.minBooking ? subtotal < coupon.minBooking : false;
+
+      if (coupon && coupon.active && !couponExpired && !couponLimitReached && !couponBelowMinimum) {
         discount = coupon.type === "PERCENTAGE" ? subtotal * (coupon.value / 100) : coupon.value;
-        await prisma.coupon.update({ where: { id: coupon.id }, data: { usedCount: { increment: 1 } } });
+      } else if (data.couponCode) {
+        return NextResponse.json({ error: "Cupom invalido ou expirado." }, { status: 400 });
       }
     }
 
@@ -117,6 +133,13 @@ export async function POST(req: NextRequest) {
         hostPayout: totalPrice * 0.9,
       },
     });
+
+    if (data.couponCode && discount > 0) {
+      await prisma.coupon.update({
+        where: { code: data.couponCode },
+        data: { usedCount: { increment: 1 } },
+      });
+    }
 
     return NextResponse.json(booking, { status: 201 });
   } catch (err) {

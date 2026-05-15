@@ -1,121 +1,117 @@
-"use client";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { prisma } from "@/lib/prisma";
+import { authOptions } from "@/lib/auth";
 
-const mockStats = [
-  { label: "Imóveis ativos", value: "3", icon: "🏠" },
-  { label: "Reservas este mês", value: "8", icon: "📅" },
-  { label: "Ganhos este mês", value: "R$ 6.840", icon: "💰" },
-  { label: "Avaliação média", value: "4.9 ★", icon: "⭐" },
-];
+export const dynamic = "force-dynamic";
 
-const mockBookings = [
-  { id: "b1", guest: "Ana Lima", property: "Cobertura Jardins", checkIn: "2024-12-15", checkOut: "2024-12-18", total: 2700, status: "CONFIRMED" },
-  { id: "b2", guest: "Pedro Souza", property: "Casa Campos do Jordão", checkIn: "2024-12-20", checkOut: "2024-12-27", total: 3780, status: "PENDING" },
-  { id: "b3", guest: "Maria Silva", property: "Studio Ipanema", checkIn: "2024-11-30", checkOut: "2024-12-02", total: 620, status: "COMPLETED" },
-];
-
-const statusStyle: Record<string, { bg: string; color: string; label: string }> = {
-  CONFIRMED: { bg: "rgba(0,200,100,0.1)", color: "#00cc66", label: "Confirmada" },
-  PENDING: { bg: "rgba(204,170,0,0.1)", color: "#ccaa00", label: "Pendente" },
-  COMPLETED: { bg: "rgba(100,100,100,0.1)", color: "#888", label: "Concluída" },
-  CANCELLED: { bg: "rgba(204,0,0,0.1)", color: "#cc0000", label: "Cancelada" },
+const cardStyle: React.CSSProperties = {
+  background: "#111",
+  border: "1px solid #1e1e1e",
+  borderRadius: 12,
+  padding: 18,
 };
 
-export default function AnfitriaoPage() {
-  const { data: session } = useSession();
+export default async function AnfitriaoPage() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) redirect("/login");
+  if (session.user.role !== "HOST" && session.user.role !== "ADMIN") redirect("/dashboard");
+
+  const [properties, bookings, paid] = await Promise.all([
+    prisma.property.findMany({
+      where: session.user.role === "ADMIN" ? {} : { hostId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      include: { photos: { take: 1, orderBy: { order: "asc" } } },
+    }),
+    prisma.booking.findMany({
+      where: session.user.role === "ADMIN" ? {} : { property: { hostId: session.user.id } },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      include: {
+        property: { select: { title: true } },
+        guest: { select: { name: true, email: true } },
+      },
+    }),
+    prisma.booking.aggregate({
+      where: {
+        paymentStatus: "PAID",
+        ...(session.user.role === "ADMIN" ? {} : { property: { hostId: session.user.id } }),
+      },
+      _sum: { hostPayout: true },
+    }),
+  ]);
+
+  const activeProperties = properties.filter((property) => property.status === "ACTIVE").length;
+  const pendingProperties = properties.filter((property) => property.status === "PENDING_REVIEW").length;
+  const pendingBookings = bookings.filter((booking) => booking.status === "PENDING").length;
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Painel do Anfitrião</h1>
-          <p style={{ color: "#666", fontSize: 14 }}>Gerencie seus imóveis, reservas e ganhos.</p>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Painel do anfitriao</h1>
+          <p style={{ color: "#777", fontSize: 14 }}>Dados reais dos seus imoveis, reservas e repasses.</p>
         </div>
-        <Link
-          href="/anfitriao/imoveis/novo"
-          style={{
-            padding: "10px 20px",
-            background: "#cc0000",
-            color: "#fff",
-            borderRadius: 8,
-            textDecoration: "none",
-            fontSize: 14,
-            fontWeight: 600,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Novo imóvel
+        <Link href="/anfitriao/imoveis/novo" style={{ padding: "10px 20px", background: "#d4a843", color: "#060e1b", borderRadius: 8, textDecoration: "none", fontSize: 14, fontWeight: 800 }}>
+          Novo imovel
         </Link>
       </div>
 
-      {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 32 }}>
-        {mockStats.map((s) => (
-          <div key={s.label} style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, padding: "20px" }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>{s.icon}</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 4 }}>{s.value}</div>
-            <div style={{ fontSize: 12, color: "#666" }}>{s.label}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 28 }}>
+        {[
+          { label: "Imoveis ativos", value: activeProperties },
+          { label: "Em analise", value: pendingProperties },
+          { label: "Reservas pendentes", value: pendingBookings },
+          { label: "Repasses pagos", value: `R$ ${(paid._sum.hostPayout ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` },
+        ].map((stat) => (
+          <div key={stat.label} style={cardStyle}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 3 }}>{stat.value}</div>
+            <div style={{ fontSize: 12, color: "#777" }}>{stat.label}</div>
           </div>
         ))}
       </div>
 
-      {/* Recent bookings */}
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>Reservas recentes</h2>
-          <Link href="/anfitriao/reservas" style={{ fontSize: 13, color: "#cc0000", textDecoration: "none" }}>Ver todas</Link>
+          <Link href="/anfitriao/reservas" style={{ fontSize: 13, color: "#d4a843", textDecoration: "none" }}>Ver todas</Link>
         </div>
-
-        <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid #1a1a1a" }}>
-                {["Hóspede", "Imóvel", "Check-in", "Check-out", "Total", "Status"].map((h) => (
-                  <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 12, color: "#666", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {mockBookings.map((b) => {
-                const s = statusStyle[b.status] ?? statusStyle.PENDING;
-                return (
-                  <tr key={b.id} style={{ borderBottom: "1px solid #141414" }}>
-                    <td style={{ padding: "14px 16px", fontSize: 14, color: "#ccc", fontWeight: 500 }}>{b.guest}</td>
-                    <td style={{ padding: "14px 16px", fontSize: 13, color: "#888" }}>{b.property}</td>
-                    <td style={{ padding: "14px 16px", fontSize: 13, color: "#888" }}>{new Date(b.checkIn + "T12:00:00").toLocaleDateString("pt-BR")}</td>
-                    <td style={{ padding: "14px 16px", fontSize: 13, color: "#888" }}>{new Date(b.checkOut + "T12:00:00").toLocaleDateString("pt-BR")}</td>
-                    <td style={{ padding: "14px 16px", fontSize: 14, color: "#cc0000", fontWeight: 700 }}>R$ {b.total.toLocaleString("pt-BR")}</td>
-                    <td style={{ padding: "14px 16px" }}>
-                      <span style={{ padding: "4px 10px", background: s.bg, color: s.color, borderRadius: 20, fontSize: 12, fontWeight: 600 }}>{s.label}</span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        {bookings.length === 0 ? (
+          <div style={cardStyle}><p style={{ color: "#777", margin: 0 }}>Nenhuma reserva encontrada.</p></div>
+        ) : (
+          <div style={{ display: "grid", gap: 12 }}>
+            {bookings.map((booking) => (
+              <div key={booking.id} style={cardStyle}>
+                <strong style={{ color: "#fff" }}>{booking.property.title}</strong>
+                <p style={{ color: "#aaa", margin: "6px 0" }}>{booking.guest.name ?? booking.guest.email ?? "Hospede"}</p>
+                <p style={{ color: "#777", margin: 0 }}>
+                  {new Date(booking.checkIn).toLocaleDateString("pt-BR")} - {new Date(booking.checkOut).toLocaleDateString("pt-BR")} | R$ {booking.totalPrice.toLocaleString("pt-BR")}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Quick links */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
-        {[
-          { href: "/anfitriao/imoveis", label: "Gerenciar imóveis", icon: "🏠", desc: "3 imóveis cadastrados" },
-          { href: "/anfitriao/reservas", label: "Todas as reservas", icon: "📅", desc: "Calendário completo" },
-          { href: "/anfitriao/ganhos", label: "Relatório de ganhos", icon: "💰", desc: "Histórico financeiro" },
-        ].map((l) => (
-          <Link key={l.href} href={l.href} style={{ display: "block", background: "#111", border: "1px solid #1e1e1e", borderRadius: 10, padding: "16px", textDecoration: "none", transition: "border-color 0.2s" }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "#cc000050")}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "#1e1e1e")}
-          >
-            <div style={{ fontSize: 24, marginBottom: 8 }}>{l.icon}</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{l.label}</div>
-            <div style={{ fontSize: 12, color: "#666" }}>{l.desc}</div>
-          </Link>
-        ))}
+      <div>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 14 }}>Imoveis recentes</h2>
+        {properties.length === 0 ? (
+          <div style={cardStyle}>
+            <p style={{ color: "#777", marginBottom: 12 }}>Voce ainda nao cadastrou imoveis.</p>
+            <Link href="/anfitriao/imoveis/novo" style={{ color: "#d4a843", textDecoration: "none", fontWeight: 700 }}>Cadastrar primeiro imovel</Link>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: 12 }}>
+            {properties.map((property) => (
+              <Link key={property.id} href={`/imoveis/${property.id}`} style={{ ...cardStyle, display: "block", textDecoration: "none" }}>
+                <strong style={{ color: "#fff" }}>{property.title}</strong>
+                <p style={{ color: "#777", margin: "6px 0 0" }}>{property.city}, {property.state} - {property.status}</p>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

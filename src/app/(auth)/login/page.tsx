@@ -4,7 +4,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { supabaseAuth } from "@/lib/supabase-auth";
+import { supabaseAuth } from "@/lib/supabase-client";
 
 type Tab = "email" | "phone";
 

@@ -11,9 +11,7 @@ import { prisma } from "@/lib/prisma";
 const schema = z.object({
   bookingId: z.string().optional(),
   planId:    z.string().optional(),
-  amount:    z.number().positive(),
-  description: z.string().min(1),
-  payerEmail: z.string().email(),
+  description: z.string().min(1).optional(),
   payerName:  z.string().optional(),
   payerCpf:   z.string().optional(),
 });
@@ -30,18 +28,50 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Pagamentos não configurados. Contate o administrador." }, { status: 503 });
     }
 
+    let amount = 0;
+    let description = data.description ?? "Pagamento EliteModell";
+    let externalReference = data.planId ?? `user-${session.user.id}`;
+
+    if (data.bookingId) {
+      const booking = await prisma.booking.findUnique({
+        where: { id: data.bookingId },
+        include: { property: { select: { title: true } } },
+      });
+
+      if (!booking) {
+        return NextResponse.json({ error: "Reserva nao encontrada." }, { status: 404 });
+      }
+      if (booking.guestId !== session.user.id && session.user.role !== "ADMIN") {
+        return NextResponse.json({ error: "Acesso negado a esta reserva." }, { status: 403 });
+      }
+      if (booking.paymentStatus === "PAID") {
+        return NextResponse.json({ error: "Reserva ja paga." }, { status: 409 });
+      }
+      if (booking.status === "CANCELLED" || booking.status === "REJECTED") {
+        return NextResponse.json({ error: "Reserva nao pode ser paga neste status." }, { status: 400 });
+      }
+
+      amount = booking.totalPrice;
+      description = data.description ?? `Reserva ${booking.property.title}`;
+      externalReference = booking.id;
+    } else if (data.planId) {
+      return NextResponse.json({ error: "Pagamento de planos ainda nao esta habilitado." }, { status: 400 });
+    } else {
+      return NextResponse.json({ error: "Informe uma reserva para pagamento." }, { status: 400 });
+    }
+
     const result = await mpPayment.create({
       body: {
-        transaction_amount: data.amount,
-        description: data.description,
+        transaction_amount: amount,
+        description,
         payment_method_id: "pix",
         payer: {
-          email: data.payerEmail,
+          email: session.user.email ?? "cliente@elitemodell.local",
           first_name: data.payerName?.split(" ")[0] ?? "Cliente",
           last_name:  data.payerName?.split(" ").slice(1).join(" ") || "EliteModell",
           identification: data.payerCpf ? { type: "CPF", number: data.payerCpf.replace(/\D/g, "") } : undefined,
         },
-        external_reference: data.bookingId ?? data.planId ?? `user-${session.user.id}`,
+        external_reference: externalReference,
         notification_url: `${process.env.NEXTAUTH_URL ?? ""}/api/payments/webhook`,
       },
       requestOptions: { idempotencyKey: `${session.user.id}-${Date.now()}` },
@@ -63,12 +93,13 @@ export async function POST(req: NextRequest) {
       copyPaste: result.point_of_interaction?.transaction_data?.qr_code ?? null,
       ticketUrl: result.point_of_interaction?.transaction_data?.ticket_url ?? null,
       expiresAt: result.date_of_expiration ?? null,
+      amount,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues }, { status: 400 });
     }
-    console.error("[pix]", err?.message ?? err);
+    console.error("[pix]", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Erro ao criar pagamento PIX." }, { status: 500 });
   }
 }

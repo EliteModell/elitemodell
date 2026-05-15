@@ -1,140 +1,109 @@
-"use client";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { prisma } from "@/lib/prisma";
+import { authOptions } from "@/lib/auth";
 
-const stats = [
-  { label: "Usuários totais", value: "1.284", change: "+12%", icon: "👥" },
-  { label: "Imóveis ativos", value: "347", change: "+5%", icon: "🏠" },
-  { label: "Reservas este mês", value: "892", change: "+23%", icon: "📅" },
-  { label: "Receita total", value: "R$ 142K", change: "+18%", icon: "💰" },
-];
+export const dynamic = "force-dynamic";
 
-const recentUsers = [
-  { name: "Ana Lima", email: "ana@email.com", role: "GUEST", createdAt: "2024-12-10", verified: true },
-  { name: "Carlos Host", email: "carlos@email.com", role: "HOST", createdAt: "2024-12-09", verified: false },
-  { name: "Maria Silva", email: "maria@email.com", role: "GUEST", createdAt: "2024-12-08", verified: true },
-  { name: "João Santos", email: "joao@email.com", role: "HOST", createdAt: "2024-12-07", verified: true },
-];
-
-const pendingProperties = [
-  { title: "Casa de Praia Búzios", host: "João Host", city: "Búzios", price: 650, submittedAt: "2024-12-10" },
-  { title: "Flat Centro SP", host: "Maria Anfitriã", city: "São Paulo", price: 180, submittedAt: "2024-12-09" },
-];
-
-const roleLabel: Record<string, { label: string; color: string }> = {
-  GUEST: { label: "Hóspede", color: "#4488cc" },
-  HOST: { label: "Anfitrião", color: "#cc8800" },
-  ADMIN: { label: "Admin", color: "#cc0000" },
+const cardStyle: React.CSSProperties = {
+  background: "#111",
+  border: "1px solid #1e1e1e",
+  borderRadius: 12,
+  padding: "20px",
 };
 
-export default function AdminPage() {
+export default async function AdminPage() {
+  const session = await getServerSession(authOptions);
+  if (session?.user?.role !== "ADMIN") redirect("/dashboard");
+
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const [
+    totalUsers,
+    activeProperties,
+    pendingProperties,
+    activeProfessionals,
+    pendingProfessionals,
+    pendingReports,
+    bookingsThisMonth,
+    paidThisMonth,
+  ] = await Promise.all([
+    prisma.user.count(),
+    prisma.property.count({ where: { status: "ACTIVE" } }),
+    prisma.property.count({ where: { status: "PENDING_REVIEW" } }),
+    prisma.professional.count({ where: { status: "ACTIVE" } }),
+    prisma.professional.count({ where: { status: "PENDING_REVIEW" } }),
+    prisma.report.count({ where: { status: "PENDING" } }),
+    prisma.booking.count({ where: { createdAt: { gte: monthStart } } }),
+    prisma.payment.aggregate({
+      where: { status: "PAID", paidAt: { gte: monthStart } },
+      _sum: { amount: true },
+    }),
+  ]);
+
+  const stats = [
+    { label: "Usuarios totais", value: totalUsers.toLocaleString("pt-BR") },
+    { label: "Imoveis ativos", value: activeProperties.toLocaleString("pt-BR") },
+    { label: "Profissionais ativos", value: activeProfessionals.toLocaleString("pt-BR") },
+    { label: "Reservas no mes", value: bookingsThisMonth.toLocaleString("pt-BR") },
+  ];
+
+  const alerts = [
+    { label: "Imoveis pendentes", value: pendingProperties, href: "/admin/imoveis" },
+    { label: "Profissionais pendentes", value: pendingProfessionals, href: "/admin/profissionais" },
+    { label: "Denuncias pendentes", value: pendingReports, href: "/admin/reservas" },
+  ];
+
+  const revenue = paidThisMonth._sum.amount ?? 0;
+
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Painel Administrativo</h1>
-        <p style={{ color: "#666", fontSize: 14 }}>Visão geral da plataforma Elite Modell.</p>
+        <p style={{ color: "#777", fontSize: 14 }}>Visao operacional baseada em dados reais do banco.</p>
       </div>
 
-      {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 32 }}>
-        {stats.map((s) => (
-          <div key={s.label} style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, padding: "20px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-              <span style={{ fontSize: 26 }}>{s.icon}</span>
-              <span style={{ fontSize: 12, color: "#00cc66", fontWeight: 600, background: "rgba(0,200,100,0.1)", padding: "2px 8px", borderRadius: 20 }}>{s.change}</span>
-            </div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>{s.value}</div>
-            <div style={{ fontSize: 12, color: "#666" }}>{s.label}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 24 }}>
+        {stats.map((stat) => (
+          <div key={stat.label} style={cardStyle}>
+            <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>{stat.value}</div>
+            <div style={{ fontSize: 12, color: "#777" }}>{stat.label}</div>
           </div>
         ))}
+        <div style={cardStyle}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>
+            R$ {revenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          </div>
+          <div style={{ fontSize: 12, color: "#777" }}>Receita paga no mes</div>
+        </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 24 }} className="admin-grid">
-        {/* Recent Users */}
-        <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, overflow: "hidden" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #1a1a1a" }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Usuários recentes</h2>
-            <Link href="/admin/usuarios" style={{ fontSize: 13, color: "#cc0000", textDecoration: "none" }}>Ver todos</Link>
-          </div>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <tbody>
-              {recentUsers.map((u) => {
-                const r = roleLabel[u.role];
-                return (
-                  <tr key={u.email} style={{ borderBottom: "1px solid #141414" }}>
-                    <td style={{ padding: "12px 20px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#cc0000", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
-                          {u.name[0]}
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{u.name}</div>
-                          <div style={{ fontSize: 12, color: "#555" }}>{u.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ padding: "12px 16px" }}>
-                      <span style={{ fontSize: 11, padding: "3px 8px", background: `${r.color}22`, color: r.color, borderRadius: 20, fontWeight: 600 }}>{r.label}</span>
-                    </td>
-                    <td style={{ padding: "12px 16px" }}>
-                      <span style={{ fontSize: 11, color: u.verified ? "#00cc66" : "#cc8800" }}>{u.verified ? "✓ Verificado" : "⏳ Pendente"}</span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pending Properties */}
-        <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, overflow: "hidden" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #1a1a1a" }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Imóveis pendentes</h2>
-            <Link href="/admin/imoveis" style={{ fontSize: 13, color: "#cc0000", textDecoration: "none" }}>Ver todos</Link>
-          </div>
-          {pendingProperties.map((p) => (
-            <div key={p.title} style={{ padding: "16px 20px", borderBottom: "1px solid #141414" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 3 }}>{p.title}</div>
-                  <div style={{ fontSize: 12, color: "#666" }}>{p.host} · {p.city} · R$ {p.price}/noite</div>
-                </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button style={{ padding: "5px 12px", background: "rgba(0,200,100,0.1)", border: "1px solid #00cc66", borderRadius: 6, color: "#00cc66", fontSize: 12, cursor: "pointer" }}>✓ Aprovar</button>
-                  <button style={{ padding: "5px 12px", background: "rgba(204,0,0,0.1)", border: "1px solid #cc0000", borderRadius: 6, color: "#cc0000", fontSize: 12, cursor: "pointer" }}>✗ Rejeitar</button>
-                </div>
-              </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginBottom: 24 }}>
+        {alerts.map((alert) => (
+          <Link key={alert.label} href={alert.href} style={{ ...cardStyle, textDecoration: "none", display: "block" }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: alert.value > 0 ? "#d4a843" : "#777", marginBottom: 4 }}>
+              {alert.value.toLocaleString("pt-BR")}
             </div>
-          ))}
-          {pendingProperties.length === 0 && (
-            <div style={{ padding: "32px", textAlign: "center", color: "#555", fontSize: 14 }}>Nenhum imóvel pendente.</div>
-          )}
-        </div>
-      </div>
-
-      {/* Quick admin actions */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-        {[
-          { href: "/admin/usuarios", label: "Gerenciar usuários", icon: "👥", desc: "Criar, editar e banir" },
-          { href: "/admin/imoveis", label: "Aprovar anúncios", icon: "🏠", desc: "2 pendentes" },
-          { href: "/admin/reservas", label: "Reservas", icon: "📅", desc: "Monitorar pagamentos" },
-          { href: "/admin/cupons", label: "Cupons", icon: "🎟️", desc: "Criar promoções" },
-        ].map((l) => (
-          <Link key={l.href} href={l.href} style={{ display: "block", background: "#111", border: "1px solid #1e1e1e", borderRadius: 10, padding: "16px", textDecoration: "none", transition: "border-color 0.2s" }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "#cc000050")}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "#1e1e1e")}
-          >
-            <div style={{ fontSize: 24, marginBottom: 8 }}>{l.icon}</div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 3 }}>{l.label}</div>
-            <div style={{ fontSize: 12, color: "#666" }}>{l.desc}</div>
+            <div style={{ fontSize: 13, color: "#ccc" }}>{alert.label}</div>
           </Link>
         ))}
       </div>
 
-      <style>{`
-        @media (max-width: 767px) {
-          .admin-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+        {[
+          { href: "/admin/usuarios", label: "Usuarios", desc: "Auditar contas e permissoes" },
+          { href: "/admin/imoveis", label: "Imoveis", desc: "Revisar anuncios pendentes" },
+          { href: "/admin/profissionais", label: "Profissionais", desc: "Validar documentos e perfis" },
+          { href: "/admin/cupons", label: "Cupons", desc: "Consultar cupons cadastrados" },
+        ].map((link) => (
+          <Link key={link.href} href={link.href} style={{ ...cardStyle, textDecoration: "none", display: "block" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{link.label}</div>
+            <div style={{ fontSize: 12, color: "#777" }}>{link.desc}</div>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }

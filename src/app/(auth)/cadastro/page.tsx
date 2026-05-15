@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { validateBirthDate } from "@/lib/age-validation";
-import { supabaseAuth } from "@/lib/supabase-auth";
+import { supabaseAuth } from "@/lib/supabase-client";
 
 type AccountType = "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
 type Category = "MULHER" | "TRANS" | "HOMEM";
@@ -50,6 +50,78 @@ const Logo = () => (
   </div>
 );
 
+const GoogleIcon = (
+  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+    <path fill="#EA4335" d="M5.27 9.76A7.08 7.08 0 0112 4.9c1.84 0 3.5.67 4.79 1.77l3.56-3.56A11.96 11.96 0 0012 .96C7.43.96 3.48 3.77 1.6 7.76l3.67 2z" />
+    <path fill="#34A853" d="M16.04 18.02A7.06 7.06 0 0112 19.1c-2.96 0-5.49-1.82-6.64-4.44l-3.68 2.01C3.59 20.3 7.5 23.04 12 23.04c2.93 0 5.72-1.08 7.81-3.01l-3.77-2.01z" />
+    <path fill="#4A90D9" d="M19.81 20.03A11.95 11.95 0 0023.04 12c0-.72-.07-1.47-.2-2.18H12v4.36h6.19a5.26 5.26 0 01-2.29 3.45l3.91 2.4z" />
+    <path fill="#FBBC05" d="M5.36 14.66A7.17 7.17 0 014.9 12c0-.92.16-1.8.46-2.62L1.6 7.37A11.97 11.97 0 00.96 12c0 1.63.33 3.18.93 4.6l3.47-1.94z" />
+  </svg>
+);
+
+const SmsIcon = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+    <rect x="5" y="2" width="14" height="20" rx="2" />
+    <path d="M12 18h.01" />
+    <path d="M9 6h6" />
+  </svg>
+);
+
+function AuthMethodButton({
+  disabled,
+  icon,
+  label,
+  onClick,
+}: {
+  disabled: boolean;
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        width: "100%",
+        height: 54,
+        background: "rgba(15,23,42,0.72)",
+        border: "1px solid rgba(212,168,67,0.24)",
+        borderRadius: 8,
+        color: "#cbd5e1",
+        fontSize: 14,
+        fontWeight: 700,
+        cursor: disabled ? "not-allowed" : "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        marginBottom: 10,
+        opacity: disabled ? 0.68 : 1,
+        transition: "border-color 0.2s, background 0.2s, color 0.2s",
+      }}
+      onMouseEnter={(e) => {
+        if (disabled) return;
+        e.currentTarget.style.borderColor = "rgba(212,168,67,0.5)";
+        e.currentTarget.style.background = "rgba(15,23,42,0.95)";
+        e.currentTarget.style.color = "#f1f5f9";
+      }}
+      onMouseLeave={(e) => {
+        if (disabled) return;
+        e.currentTarget.style.borderColor = "rgba(212,168,67,0.24)";
+        e.currentTarget.style.background = "rgba(15,23,42,0.72)";
+        e.currentTarget.style.color = "#cbd5e1";
+      }}
+    >
+      <span style={{ width: 22, height: 22, display: "grid", placeItems: "center", color: "#d4a843" }}>
+        {icon}
+      </span>
+      {label}
+    </button>
+  );
+}
+
 export default function CadastroPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -80,7 +152,7 @@ export default function CadastroPage() {
     { value: "TRANS", label: "Trans" },
   ];
 
-  function validateRequiredForm(includeEmailFields: boolean) {
+  function validateRequiredForm(includeEmailFields: boolean, showToast = false) {
     const newErrors: Record<string, string> = {};
 
     if (includeEmailFields && !form.name.trim()) newErrors.name = "Nome é obrigatório";
@@ -99,7 +171,19 @@ export default function CadastroPage() {
     if (!form.lgpdConsent) newErrors.lgpdConsent = "Você deve aceitar a Política de Privacidade";
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const isValid = Object.keys(newErrors).length === 0;
+
+    if (!isValid && showToast) {
+      toast.error("Complete os dados obrigatorios antes de continuar.");
+      window.setTimeout(() => {
+        document.querySelector("[data-auth-required-error='true']")?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }, 50);
+    }
+
+    return isValid;
   }
 
   function registrationPayload() {
@@ -175,7 +259,7 @@ export default function CadastroPage() {
   }
 
   async function handleGoogle() {
-    if (!validateRequiredForm(false)) return;
+    if (!validateRequiredForm(false, true)) return;
 
     setLoading(true);
     try {
@@ -194,7 +278,7 @@ export default function CadastroPage() {
 
   async function handleSendOtp(e: React.FormEvent) {
     e.preventDefault();
-    if (!validateRequiredForm(false)) return;
+    if (!validateRequiredForm(false, true)) return;
 
     setLoading(true);
     try {
@@ -344,19 +428,28 @@ export default function CadastroPage() {
               </button>
             ))}
           </div>
-          {errors.category && <p style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors.category}</p>}
+          {errors.category && <p data-auth-required-error="true" style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors.category}</p>}
           <p style={{ color: "#334155", fontSize: 11, margin: "8px 0 0", lineHeight: 1.5 }}>
             Para publicar, sera obrigatorio enviar documento com foto, fotos reais e biometria facial. A idade exibida deve ser confirmada por documento.
           </p>
         </div>
       )}
 
-      <button type="button" onClick={handleGoogle} disabled={loading} style={{ width: "100%", padding: "11px", background: "transparent", border: "1px solid rgba(212,168,67,0.2)", borderRadius: 8, color: "#94a3b8", fontSize: 14, fontWeight: 500, cursor: "pointer", marginBottom: 10 }}>
-        Cadastrar com Google
-      </button>
-      <button type="button" onClick={() => setStep("phone")} disabled={loading} style={{ width: "100%", padding: "11px", background: "transparent", border: "1px solid rgba(212,168,67,0.2)", borderRadius: 8, color: "#94a3b8", fontSize: 14, fontWeight: 500, cursor: "pointer", marginBottom: 20 }}>
-        Cadastrar com SMS
-      </button>
+      <AuthMethodButton
+        disabled={loading}
+        icon={GoogleIcon}
+        label="Cadastrar com Google"
+        onClick={handleGoogle}
+      />
+      <AuthMethodButton
+        disabled={loading}
+        icon={SmsIcon}
+        label="Cadastrar com SMS"
+        onClick={() => {
+          if (!validateRequiredForm(false, true)) return;
+          setStep("phone");
+        }}
+      />
 
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
         <div style={{ flex: 1, height: 1, background: "rgba(212,168,67,0.12)" }} />
@@ -373,21 +466,21 @@ export default function CadastroPage() {
           <div key={field.key}>
             <label style={{ display: "block", fontSize: 13, color: "#94a3b8", marginBottom: 6, fontWeight: 500 }}>{field.label}</label>
             <input type={field.type} required placeholder={field.placeholder} value={(form as any)[field.key]} onChange={(e) => setForm({ ...form, [field.key]: e.target.value })} style={inputStyle} onFocus={focusGold} onBlur={blurGray} />
-            {errors[field.key] && <p style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors[field.key]}</p>}
+            {errors[field.key] && <p data-auth-required-error="true" style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors[field.key]}</p>}
           </div>
         ))}
 
         <div>
           <label style={{ display: "block", fontSize: 13, color: "#94a3b8", marginBottom: 6, fontWeight: 500 }}>Data de nascimento</label>
           <input type="date" required value={form.birthDate} onChange={(e) => setForm({ ...form, birthDate: e.target.value })} style={inputStyle} onFocus={focusGold} onBlur={blurGray} />
-          {errors.birthDate && <p style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors.birthDate}</p>}
+          {errors.birthDate && <p data-auth-required-error="true" style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors.birthDate}</p>}
         </div>
 
         <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
           <input type="checkbox" checked={form.termsConsent} onChange={(e) => setForm({ ...form, termsConsent: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
           <span>
             Li e aceito os <Link href="/terms" style={{ color: GOLD, textDecoration: "none" }}>Termos de Uso</Link>.
-            {errors.termsConsent && <span style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.termsConsent}</span>}
+            {errors.termsConsent && <span data-auth-required-error="true" style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.termsConsent}</span>}
           </span>
         </label>
 
@@ -395,7 +488,7 @@ export default function CadastroPage() {
           <input type="checkbox" checked={form.lgpdConsent} onChange={(e) => setForm({ ...form, lgpdConsent: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
           <span>
             Li e aceito a <Link href="/privacy" style={{ color: GOLD, textDecoration: "none" }}>Política de Privacidade</Link>.
-            {errors.lgpdConsent && <span style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.lgpdConsent}</span>}
+            {errors.lgpdConsent && <span data-auth-required-error="true" style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.lgpdConsent}</span>}
           </span>
         </label>
 

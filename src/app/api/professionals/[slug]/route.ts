@@ -7,10 +7,58 @@ import { authOptions } from "@/lib/auth";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const session = await getServerSession(authOptions);
   const professional = await prisma.professional.findUnique({
     where: { slug },
-    include: {
-      user: { select: { name: true, email: true, createdAt: true } },
+    select: {
+      id: true,
+      userId: true,
+      slug: true,
+      displayName: true,
+      bio: true,
+      city: true,
+      state: true,
+      bairro: true,
+      whatsapp: true,
+      instagram: true,
+      website: true,
+      priceMin: true,
+      priceMax: true,
+      pricePerHour: true,
+      price30min: true,
+      price2h: true,
+      priceOvernight: true,
+      priceWebcam: true,
+      paymentMethods: true,
+      escortCategory: true,
+      birthDate: true,
+      height: true,
+      weight: true,
+      hairColor: true,
+      eyeColor: true,
+      ethnicity: true,
+      signo: true,
+      hasTattoos: true,
+      hasSilicone: true,
+      isDepilada: true,
+      attendanceTypes: true,
+      servesGenders: true,
+      idiomas: true,
+      diasDisponiveis: true,
+      horarioInicio: true,
+      horarioFim: true,
+      services: true,
+      fetishes: true,
+      image: true,
+      galleryUrls: true,
+      status: true,
+      verified: true,
+      featured: true,
+      rating: true,
+      totalReviews: true,
+      totalAppointments: true,
+      createdAt: true,
+      user: { select: { name: true, image: true, createdAt: true } },
       photos: { orderBy: { order: "asc" } },
       specialties: true,
       schedule: { orderBy: { dayOfWeek: "asc" } },
@@ -23,7 +71,17 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
   });
 
   if (!professional) return NextResponse.json({ error: "Profissional não encontrado." }, { status: 404 });
-  return NextResponse.json(professional);
+  const canViewDraft =
+    session?.user?.role === "ADMIN" || professional.userId === session?.user?.id;
+  if (professional.status !== "ACTIVE" && !canViewDraft) {
+    return NextResponse.json({ error: "Profissional nao encontrado." }, { status: 404 });
+  }
+
+  const publicProfessional: Omit<typeof professional, "userId"> & { userId?: string } = {
+    ...professional,
+  };
+  delete publicProfessional.userId;
+  return NextResponse.json(publicProfessional);
 }
 
 const updateSchema = z.object({
