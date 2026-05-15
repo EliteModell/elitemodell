@@ -11,6 +11,7 @@ import { supabaseAuth } from "@/lib/supabase-client";
 type AccountType = "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
 type Category = "MULHER" | "TRANS" | "HOMEM";
 type Step = "form" | "verify" | "phone";
+type BirthPart = "day" | "month" | "year";
 
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
@@ -34,6 +35,18 @@ const focusGold = (e: React.FocusEvent<HTMLInputElement>) => {
 const blurGray = (e: React.FocusEvent<HTMLInputElement>) => {
   e.target.style.borderColor = "#1e293b";
 };
+
+function onlyDigits(value: string, maxLength: number) {
+  return value.replace(/\D/g, "").slice(0, maxLength);
+}
+
+function composeBirthDate(parts: Record<BirthPart, string>) {
+  if (parts.day.length !== 2 || parts.month.length !== 2 || parts.year.length !== 4) {
+    return "";
+  }
+
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
 
 const GoldLine = () => (
   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, borderRadius: "16px 16px 0 0", background: "linear-gradient(90deg, transparent 0%, #d4a843 30%, #f5d78c 50%, #d4a843 70%, transparent 100%)" }} />
@@ -137,6 +150,11 @@ export default function CadastroPage() {
     termsConsent: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [birthParts, setBirthParts] = useState<Record<BirthPart, string>>({
+    day: "",
+    month: "",
+    year: "",
+  });
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
@@ -151,6 +169,14 @@ export default function CadastroPage() {
     { value: "HOMEM", label: "Homem" },
     { value: "TRANS", label: "Trans" },
   ];
+
+  function handleBirthPartChange(part: BirthPart, value: string) {
+    const maxLength = part === "year" ? 4 : 2;
+    const nextParts = { ...birthParts, [part]: onlyDigits(value, maxLength) };
+
+    setBirthParts(nextParts);
+    setForm({ ...form, birthDate: composeBirthDate(nextParts) });
+  }
 
   function validateRequiredForm(includeEmailFields: boolean, showToast = false) {
     const newErrors: Record<string, string> = {};
@@ -472,7 +498,50 @@ export default function CadastroPage() {
 
         <div>
           <label style={{ display: "block", fontSize: 13, color: "#94a3b8", marginBottom: 6, fontWeight: 500 }}>Data de nascimento</label>
-          <input type="date" required value={form.birthDate} onChange={(e) => setForm({ ...form, birthDate: e.target.value })} style={inputStyle} onFocus={focusGold} onBlur={blurGray} />
+          <div style={{ display: "grid", gridTemplateColumns: "0.72fr 0.72fr 1fr", gap: 8 }}>
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="bday-day"
+              required
+              maxLength={2}
+              placeholder="DD"
+              value={birthParts.day}
+              onChange={(e) => handleBirthPartChange("day", e.target.value)}
+              style={{ ...inputStyle, textAlign: "center" }}
+              onFocus={focusGold}
+              onBlur={blurGray}
+              aria-label="Dia de nascimento"
+            />
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="bday-month"
+              required
+              maxLength={2}
+              placeholder="MM"
+              value={birthParts.month}
+              onChange={(e) => handleBirthPartChange("month", e.target.value)}
+              style={{ ...inputStyle, textAlign: "center" }}
+              onFocus={focusGold}
+              onBlur={blurGray}
+              aria-label="Mes de nascimento"
+            />
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="bday-year"
+              required
+              maxLength={4}
+              placeholder="AAAA"
+              value={birthParts.year}
+              onChange={(e) => handleBirthPartChange("year", e.target.value)}
+              style={{ ...inputStyle, textAlign: "center" }}
+              onFocus={focusGold}
+              onBlur={blurGray}
+              aria-label="Ano de nascimento"
+            />
+          </div>
           {errors.birthDate && <p data-auth-required-error="true" style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors.birthDate}</p>}
         </div>
 
