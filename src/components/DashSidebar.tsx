@@ -23,46 +23,41 @@ import {
 } from "lucide-react";
 import { supabaseAuth } from "@/lib/supabase-client";
 
-type NavItem = { label: string; href: string; icon: React.ReactNode; accent?: string };
+type NavItem = { label: string; href: string; icon: React.ReactNode };
 
 const guestNav: NavItem[] = [
-  { label: "Início", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" />, accent: "Hoje" },
-  { label: "Reservas", href: "/dashboard/reservas", icon: <CalendarCheck className="h-4 w-4" /> },
-  { label: "Favoritos", href: "/dashboard/favoritos", icon: <Heart className="h-4 w-4" /> },
-  { label: "Meu Perfil", href: "/dashboard/perfil", icon: <UserRound className="h-4 w-4" /> },
+  { label: "Início", href: "/dashboard", icon: <LayoutDashboard className="h-[15px] w-[15px]" /> },
+  { label: "Reservas", href: "/dashboard/reservas", icon: <CalendarCheck className="h-[15px] w-[15px]" /> },
+  { label: "Favoritos", href: "/dashboard/favoritos", icon: <Heart className="h-[15px] w-[15px]" /> },
+  { label: "Meu perfil", href: "/dashboard/perfil", icon: <UserRound className="h-[15px] w-[15px]" /> },
 ];
 
 const hostNav: NavItem[] = [
-  { label: "Painel", href: "/anfitriao", icon: <LayoutDashboard className="h-4 w-4" />, accent: "Host" },
-  { label: "Meus Imóveis", href: "/anfitriao/imoveis", icon: <Home className="h-4 w-4" /> },
-  { label: "Reservas", href: "/anfitriao/reservas", icon: <CalendarCheck className="h-4 w-4" /> },
-  { label: "Ganhos", href: "/anfitriao/ganhos", icon: <WalletCards className="h-4 w-4" /> },
-  { label: "Meu Perfil", href: "/dashboard/perfil", icon: <UserRound className="h-4 w-4" /> },
+  { label: "Painel", href: "/anfitriao", icon: <LayoutDashboard className="h-[15px] w-[15px]" /> },
+  { label: "Imóveis", href: "/anfitriao/imoveis", icon: <Home className="h-[15px] w-[15px]" /> },
+  { label: "Reservas", href: "/anfitriao/reservas", icon: <CalendarCheck className="h-[15px] w-[15px]" /> },
+  { label: "Ganhos", href: "/anfitriao/ganhos", icon: <WalletCards className="h-[15px] w-[15px]" /> },
+  { label: "Meu perfil", href: "/dashboard/perfil", icon: <UserRound className="h-[15px] w-[15px]" /> },
 ];
 
 const adminNav: NavItem[] = [
-  { label: "Dashboard", href: "/admin", icon: <LayoutDashboard className="h-4 w-4" />, accent: "Admin" },
-  { label: "Usuários", href: "/admin/usuarios", icon: <UsersRound className="h-4 w-4" /> },
-  { label: "Imóveis", href: "/admin/imoveis", icon: <Building2 className="h-4 w-4" /> },
-  { label: "Profissionais", href: "/admin/profissionais", icon: <UserRound className="h-4 w-4" /> },
-  { label: "Reservas", href: "/admin/reservas", icon: <CalendarCheck className="h-4 w-4" /> },
-  { label: "Cupons", href: "/admin/cupons", icon: <TicketPercent className="h-4 w-4" /> },
+  { label: "Dashboard", href: "/admin", icon: <LayoutDashboard className="h-[15px] w-[15px]" /> },
+  { label: "Usuários", href: "/admin/usuarios", icon: <UsersRound className="h-[15px] w-[15px]" /> },
+  { label: "Imóveis", href: "/admin/imoveis", icon: <Building2 className="h-[15px] w-[15px]" /> },
+  { label: "Profissionais", href: "/admin/profissionais", icon: <UserRound className="h-[15px] w-[15px]" /> },
+  { label: "Reservas", href: "/admin/reservas", icon: <CalendarCheck className="h-[15px] w-[15px]" /> },
+  { label: "Cupons", href: "/admin/cupons", icon: <TicketPercent className="h-[15px] w-[15px]" /> },
 ];
 
 const professionalNav: NavItem[] = [
-  { label: "Painel", href: "/profissional", icon: <LayoutDashboard className="h-4 w-4" />, accent: "Pro" },
-  { label: "Meu perfil", href: "/profissional/perfil", icon: <UserRound className="h-4 w-4" /> },
-  { label: "Planos", href: "/profissional/planos", icon: <Crown className="h-4 w-4" /> },
-  { label: "Fotos", href: "/profissional/fotos", icon: <Sparkles className="h-4 w-4" /> },
-  { label: "Agenda", href: "/profissional/agenda", icon: <CalendarCheck className="h-4 w-4" /> },
-  { label: "Agendamentos", href: "/profissional/agendamentos", icon: <UsersRound className="h-4 w-4" /> },
-  { label: "Novo anúncio", href: "/profissional/novo", icon: <BadgePlus className="h-4 w-4" /> },
+  { label: "Painel", href: "/profissional", icon: <LayoutDashboard className="h-[15px] w-[15px]" /> },
+  { label: "Meu perfil", href: "/profissional/perfil", icon: <UserRound className="h-[15px] w-[15px]" /> },
+  { label: "Planos", href: "/profissional/planos", icon: <Crown className="h-[15px] w-[15px]" /> },
+  { label: "Fotos", href: "/profissional/fotos", icon: <Sparkles className="h-[15px] w-[15px]" /> },
+  { label: "Agenda", href: "/profissional/agenda", icon: <CalendarCheck className="h-[15px] w-[15px]" /> },
+  { label: "Agendamentos", href: "/profissional/agendamentos", icon: <UsersRound className="h-[15px] w-[15px]" /> },
+  { label: "Novo anúncio", href: "/profissional/novo", icon: <BadgePlus className="h-[15px] w-[15px]" /> },
 ];
-
-interface Props {
-  mobileOpen: boolean;
-  onClose: () => void;
-}
 
 function initials(name?: string | null) {
   if (!name) return "EM";
@@ -74,10 +69,16 @@ function initials(name?: string | null) {
     .join("");
 }
 
-function roleLabel(role?: string) {
+function roleBadge(role?: string) {
   if (role === "ADMIN") return "Administrador";
   if (role === "HOST") return "Anfitrião";
-  return "Cliente premium";
+  if (role === "PROFESSIONAL") return "Profissional";
+  return "Membro Elite";
+}
+
+interface Props {
+  mobileOpen: boolean;
+  onClose: () => void;
 }
 
 export default function DashSidebar({ mobileOpen, onClose }: Props) {
@@ -93,7 +94,13 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
   const path = pathname ?? "";
   const isProfessionalArea = path.startsWith("/profissional");
   const nav =
-    role === "ADMIN" ? adminNav : isProfessionalArea ? professionalNav : role === "HOST" ? hostNav : guestNav;
+    role === "ADMIN"
+      ? adminNav
+      : isProfessionalArea
+        ? professionalNav
+        : role === "HOST"
+          ? hostNav
+          : guestNav;
 
   return (
     <>
@@ -103,37 +110,34 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/78 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-40 bg-black/75 backdrop-blur-sm md:hidden"
           />
         ) : null}
       </AnimatePresence>
 
       <aside
-        className={`dash-sidebar fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-white/10 bg-[#070708]/92 shadow-[24px_0_90px_rgba(0,0,0,0.42)] backdrop-blur-2xl transition-transform duration-300 md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[240px] flex-col border-r border-white/[0.06] bg-[#060608] transition-transform duration-300 ease-in-out md:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(245,215,140,0.9),transparent)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(212,168,67,0.08),transparent_34%,rgba(204,31,47,0.08))]" />
-
-        <div className="relative border-b border-white/10 p-5">
-          <Link href="/" onClick={onClose} className="inline-flex items-center gap-2 no-underline">
-            <span className="grid h-10 w-10 place-items-center rounded-[8px] border border-[#d4a843]/30 bg-[#d4a843]/10 text-sm font-black text-[#f5d78c]">
-              EM
+        {/* Logo */}
+        <div className="flex h-[60px] shrink-0 items-center border-b border-white/[0.06] px-5">
+          <Link href="/" onClick={onClose} className="flex items-center gap-2.5 no-underline">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#d4a843]/10 text-[13px] font-bold text-[#d4a843]">
+              E
             </span>
-            <span className="text-xl font-black tracking-[-0.02em]">
-              <span className="bg-[linear-gradient(135deg,#ffe5a0,#d4a843_30%,#f5d78c_58%,#9e7b2a)] bg-clip-text text-transparent">
-                elite
-              </span>
-              <span className="text-white">modell</span>
+            <span className="text-[15px] font-semibold tracking-[-0.015em] text-white">
+              elite<span className="text-white/30">modell</span>
             </span>
           </Link>
         </div>
 
-        <div className="relative border-b border-white/10 p-5">
+        {/* User */}
+        <div className="shrink-0 border-b border-white/[0.06] px-4 py-4">
           <div className="flex items-center gap-3">
-            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[8px] border border-[#d4a843]/28 bg-[#d4a843]/12">
+            <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-white/[0.06]">
               {session?.user?.image ? (
                 <img
                   src={session.user.image}
@@ -141,28 +145,27 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="grid h-full w-full place-items-center text-sm font-black text-[#f5d78c]">
+                <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-white/45">
                   {initials(session?.user?.name)}
                 </div>
               )}
-              <span className="absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full border border-[#070708] bg-[#d4a843]" />
+              <span className="absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full border border-[#060608] bg-[#d4a843]" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-black text-white">{session?.user?.name ?? "Perfil Elite"}</p>
-              <p className="mt-0.5 truncate text-xs text-white/42">{session?.user?.email ?? roleLabel(role)}</p>
-              <p className="mt-2 inline-flex items-center gap-1 rounded-full border border-[#d4a843]/20 bg-[#d4a843]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#f5d78c]">
-                <Crown className="h-3 w-3" />
-                {roleLabel(role)}
+              <p className="truncate text-[13px] font-medium text-white">
+                {session?.user?.name ?? "Perfil Elite"}
               </p>
+              <p className="mt-0.5 text-[11px] text-white/30">{roleBadge(role)}</p>
             </div>
           </div>
         </div>
 
-        <nav className="relative flex-1 overflow-y-auto px-3 py-4">
-          <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.26em] text-white/28">
-            Navegação
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto px-3 py-3">
+          <p className="mb-2 px-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/18">
+            Menu
           </p>
-          <div className="space-y-1.5">
+          <div className="space-y-0.5">
             {nav.map((navItem) => {
               const active =
                 path === navItem.href ||
@@ -176,64 +179,33 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                   key={navItem.href}
                   href={navItem.href}
                   onClick={onClose}
-                  className={`group relative flex h-11 items-center gap-3 rounded-[8px] px-3 text-sm font-bold transition ${
+                  className={`flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] transition-all duration-150 ${
                     active
-                      ? "border border-[#d4a843]/25 bg-[#d4a843]/12 text-white shadow-[0_12px_34px_rgba(212,168,67,0.08)]"
-                      : "border border-transparent text-white/48 hover:border-white/8 hover:bg-white/[0.045] hover:text-white/82"
+                      ? "bg-white/[0.07] font-medium text-white"
+                      : "font-normal text-white/38 hover:bg-white/[0.04] hover:text-white/68"
                   }`}
                 >
-                  <span
-                    className={`grid h-7 w-7 place-items-center rounded-[8px] transition ${
-                      active ? "bg-[#d4a843]/15 text-[#f5d78c]" : "bg-white/[0.04] text-white/42 group-hover:text-[#f5d78c]"
-                    }`}
-                  >
+                  <span className={active ? "text-[#d4a843]" : "text-inherit"}>
                     {navItem.icon}
                   </span>
-                  <span className="min-w-0 flex-1 truncate">{navItem.label}</span>
-                  {navItem.accent ? (
-                    <span className="rounded-full bg-[#cc1f2f]/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#ff9aa4]">
-                      {navItem.accent}
-                    </span>
-                  ) : null}
+                  <span className="flex-1 truncate">{navItem.label}</span>
                   {active ? (
-                    <motion.span
-                      layoutId="sidebar-active"
-                      className="absolute right-2 h-1.5 w-1.5 rounded-full bg-[#d4a843] shadow-[0_0_18px_rgba(212,168,67,0.95)]"
-                    />
+                    <span className="h-1 w-1 shrink-0 rounded-full bg-[#d4a843]" />
                   ) : null}
                 </Link>
               );
             })}
           </div>
-
-          {role === "GUEST" || role === "HOST" ? (
-            <div className="mt-5 rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(204,31,47,0.06))] p-3">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f5d78c]">
-                Upgrade
-              </p>
-              <p className="mt-2 text-xs leading-5 text-white/48">
-                Expanda sua presença com anúncios, imóveis e benefícios premium.
-              </p>
-              <Link
-                href={role === "HOST" ? "/anfitriao" : "/cadastro"}
-                onClick={onClose}
-                className="mt-3 inline-flex w-full items-center justify-center rounded-[8px] bg-[#d4a843] px-3 py-2 text-xs font-black text-[#100d09] transition hover:bg-[#f5d78c]"
-              >
-                {role === "HOST" ? "Área do anfitrião" : "Virar anfitrião"}
-              </Link>
-            </div>
-          ) : null}
         </nav>
 
-        <div className="relative border-t border-white/10 p-3">
+        {/* Logout */}
+        <div className="shrink-0 border-t border-white/[0.06] p-3">
           <button
             onClick={handleSignOut}
-            className="flex h-11 w-full items-center gap-3 rounded-[8px] px-3 text-sm font-bold text-white/45 transition hover:bg-[#cc1f2f]/10 hover:text-[#ff9aa4]"
+            className="flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13px] text-white/28 transition hover:bg-white/[0.04] hover:text-white/55"
           >
-            <span className="grid h-7 w-7 place-items-center rounded-[8px] bg-white/[0.04]">
-              <LogOut className="h-4 w-4" />
-            </span>
-            Sair
+            <LogOut className="h-[15px] w-[15px]" />
+            Sair da conta
           </button>
         </div>
       </aside>

@@ -77,12 +77,12 @@ export type PremiumProfileData = {
 
 const container: Variants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.07 } },
+  show: { opacity: 1, transition: { staggerChildren: 0.055 } },
 };
 
 const item: Variants = {
-  hidden: { opacity: 0, y: 18 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.44, ease: "easeOut" } },
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.38, ease: "easeOut" } },
 };
 
 function initials(name?: string | null) {
@@ -121,8 +121,23 @@ function profileCompletion(data: PremiumProfileData) {
     Boolean(data.user.birthDate),
     Boolean(data.user.termsConsent && data.user.lgpdConsent),
   ];
-
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+}
+
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.18em] text-[#d4a843]/60">
+      {children}
+    </p>
+  );
+}
+
+function Card({ className, children }: { className?: string; children: React.ReactNode }) {
+  return (
+    <div className={`rounded-xl border border-white/[0.07] bg-white/[0.02] ${className ?? ""}`}>
+      {children}
+    </div>
+  );
 }
 
 function Field({
@@ -135,12 +150,12 @@ function Field({
   value: string;
 }) {
   return (
-    <div className="rounded-[8px] border border-white/8 bg-black/18 p-4">
-      <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-[#d4a843]">
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-4">
+      <div className="mb-2.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-[#d4a843]/55">
         {icon}
         {label}
       </div>
-      <p className="break-words text-sm font-bold text-white/82">{value}</p>
+      <p className="break-words text-[13px] font-medium text-white/70">{value}</p>
     </div>
   );
 }
@@ -157,14 +172,14 @@ function Metric({
   return (
     <motion.div
       variants={item}
-      whileHover={{ y: -4 }}
-      className="rounded-[8px] border border-white/10 bg-white/[0.045] p-4 backdrop-blur-xl transition hover:border-[#d4a843]/35"
+      whileHover={{ y: -3, transition: { duration: 0.2 } }}
+      className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 transition-colors hover:border-white/10"
     >
-      <div className="mb-4 grid h-11 w-11 place-items-center rounded-[8px] border border-[#d4a843]/20 bg-[#d4a843]/10 text-[#f5d78c]">
+      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-[#d4a843]/[0.07] text-[#d4a843]">
         {icon}
       </div>
-      <p className="text-2xl font-black text-white">{value}</p>
-      <p className="mt-1 text-sm text-white/48">{label}</p>
+      <p className="text-[1.35rem] font-bold tracking-tight text-white">{value}</p>
+      <p className="mt-0.5 text-[12px] text-white/42">{label}</p>
     </motion.div>
   );
 }
@@ -218,255 +233,369 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-5">
+
+      {/* ── Hero ── */}
       <motion.section
         variants={item}
-        className="relative overflow-hidden rounded-[8px] border border-white/10 bg-[linear-gradient(135deg,rgba(8,8,9,0.98),rgba(64,12,18,0.68)_48%,rgba(18,16,12,0.96))] p-5 shadow-[0_32px_110px_rgba(0,0,0,0.38)] sm:p-7"
+        className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0c0b0e] p-6 sm:p-8"
       >
-        <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(245,215,140,0.9),transparent)]" />
-        <div className="relative grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
-          <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-end">
-            <div className="relative h-36 w-36 overflow-hidden rounded-[8px] border border-[#d4a843]/35 bg-[#d4a843]/10 shadow-[0_22px_60px_rgba(0,0,0,0.38)]">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#d4a843]/30 to-transparent" />
+
+        <div className="relative grid gap-8 lg:grid-cols-[1fr_260px] lg:items-end">
+          {/* Avatar + name */}
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-end">
+            <div className="relative h-32 w-32 overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.04] shadow-2xl sm:h-36 sm:w-36">
               {profile.image ? (
-                <img src={profile.image} alt={profile.name ?? "Avatar"} className="h-full w-full object-cover" />
+                <img
+                  src={profile.image}
+                  alt={profile.name ?? "Avatar"}
+                  className="h-full w-full object-cover"
+                />
               ) : (
-                <div className="grid h-full w-full place-items-center text-4xl font-black text-[#f5d78c]">
+                <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-white/25">
                   {initials(profile.name)}
                 </div>
               )}
-              <span className="absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-full border border-[#d4a843]/25 bg-[#0a0a0b] text-[#d4a843]">
-                <Camera className="h-4 w-4" />
+              <span className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full border border-white/[0.08] bg-[#0c0b0e] text-[#d4a843]">
+                <Camera className="h-3.5 w-3.5" />
               </span>
             </div>
 
             <div className="min-w-0">
-              <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#d4a843]/25 bg-black/25 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-[#f5d78c]">
-                <Crown className="h-3.5 w-3.5" />
-                {data.vip.label}
-              </p>
-              <h1 className="text-3xl font-black leading-tight text-white sm:text-5xl">
+              <Eyebrow>{data.vip.label}</Eyebrow>
+              <h1 className="text-[1.65rem] font-bold leading-[1.15] tracking-tight text-white sm:text-[2.25rem]">
                 {profile.name ?? "Perfil Elite"}
               </h1>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-white/55">
-                Conta criada em {accountAge}. Sua experiência fica mais precisa conforme seu perfil, favoritos e reservas evoluem.
+              <p className="mt-3 max-w-md text-[12px] leading-relaxed text-white/35">
+                Conta criada em {accountAge}. Sua experiência evolui conforme seu perfil, favoritos
+                e reservas crescem.
               </p>
             </div>
           </div>
 
-          <div className="rounded-[8px] border border-white/10 bg-black/25 p-4 backdrop-blur-xl">
+          {/* Status card */}
+          <div className="rounded-xl border border-[#d4a843]/10 bg-gradient-to-br from-[#141210] to-[#0d0b09] p-5">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-black text-white">Status da conta</p>
-                <p className="mt-1 text-xs leading-5 text-white/45">{data.vip.description}</p>
+                <p className="text-[13px] font-semibold text-white">Status da conta</p>
+                <p className="mt-0.5 text-[11px] leading-5 text-white/30">{data.vip.description}</p>
               </div>
               <div className="text-right">
-                <p className="text-3xl font-black text-[#f5d78c]">{completion}%</p>
-                <p className="text-xs uppercase tracking-[0.16em] text-white/35">perfil</p>
+                <p className="text-[2rem] font-bold leading-none text-[#e2c06a]">{completion}%</p>
+                <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-white/25">perfil</p>
               </div>
             </div>
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+            <div className="mt-4 h-[3px] overflow-hidden rounded-full bg-white/[0.06]">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${completion}%` }}
-                transition={{ duration: 0.75, ease: "easeOut" }}
-                className="h-full rounded-full bg-[linear-gradient(90deg,#cc1f2f,#d4a843,#f5d78c)]"
+                transition={{ duration: 0.75, ease: "easeOut", delay: 0.2 }}
+                className="h-full rounded-full bg-gradient-to-r from-[#cc1f2f] via-[#d4a843] to-[#f5d78c]"
               />
             </div>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              <div className="flex items-center gap-2 text-sm text-white/70">
-                <ShieldCheck className="h-4 w-4 text-[#d4a843]" />
-                {profile.emailVerified ? "Email verificado" : "Email pendente"}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-white/70">
-                <LockKeyhole className="h-4 w-4 text-[#d4a843]" />
-                Navegação discreta
-              </div>
-              <div className="flex items-center gap-2 text-sm text-white/70">
-                <BadgeCheck className="h-4 w-4 text-[#d4a843]" />
-                {profile.verified ? "Identidade validada" : "Validação disponível"}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-white/70">
-                <WalletCards className="h-4 w-4 text-[#d4a843]" />
-                {money(profile.credits)} em créditos
-              </div>
+              {[
+                {
+                  icon: <ShieldCheck className="h-3.5 w-3.5" />,
+                  label: profile.emailVerified ? "Email verificado" : "Email pendente",
+                },
+                { icon: <LockKeyhole className="h-3.5 w-3.5" />, label: "Navegação discreta" },
+                {
+                  icon: <BadgeCheck className="h-3.5 w-3.5" />,
+                  label: profile.verified ? "Identidade validada" : "Validação disponível",
+                },
+                {
+                  icon: <WalletCards className="h-3.5 w-3.5" />,
+                  label: `${money(profile.credits)} em créditos`,
+                },
+              ].map((feat) => (
+                <div key={feat.label} className="flex items-center gap-2 text-[12px] text-white/35">
+                  <span className="text-[#d4a843]/50">{feat.icon}</span>
+                  {feat.label}
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </motion.section>
 
-      <motion.section variants={container} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <Metric icon={<Heart className="h-5 w-5" />} label="Favoritos" value={String(data.metrics.favorites)} />
-        <Metric icon={<CalendarCheck className="h-5 w-5" />} label="Reservas" value={String(data.metrics.bookings)} />
-        <Metric icon={<Sparkles className="h-5 w-5" />} label="Ativas" value={String(data.metrics.activeBookings)} />
-        <Metric icon={<UserRound className="h-5 w-5" />} label="Agendamentos" value={String(data.metrics.appointments)} />
-        <Metric icon={<Star className="h-5 w-5" />} label="Avaliações" value={String(data.metrics.reviews)} />
+      {/* ── Metrics ── */}
+      <motion.section variants={container} className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+        <Metric icon={<Heart className="h-4 w-4" />} label="Favoritos" value={String(data.metrics.favorites)} />
+        <Metric icon={<CalendarCheck className="h-4 w-4" />} label="Reservas" value={String(data.metrics.bookings)} />
+        <Metric icon={<Sparkles className="h-4 w-4" />} label="Ativas" value={String(data.metrics.activeBookings)} />
+        <Metric icon={<UserRound className="h-4 w-4" />} label="Agendamentos" value={String(data.metrics.appointments)} />
+        <Metric icon={<Star className="h-4 w-4" />} label="Avaliações" value={String(data.metrics.reviews)} />
       </motion.section>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_0.85fr]">
-        <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl sm:p-6">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="mb-1 text-[11px] font-black uppercase tracking-[0.24em] text-[#d4a843]">
-                Meu perfil
-              </p>
-              <h2 className="text-xl font-black text-white">Dados principais</h2>
-            </div>
-            <button
-              type="button"
-              onClick={() => setEditing((value) => !value)}
-              className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#d4a843]/25 bg-[#d4a843]/10 px-4 text-sm font-black text-[#f5d78c] transition hover:border-[#d4a843]/45 hover:bg-[#d4a843]/16"
-            >
-              {editing ? <X className="h-4 w-4" /> : <Edit3 className="h-4 w-4" />}
-              {editing ? "Cancelar" : "Editar perfil"}
-            </button>
-          </div>
-
-          {editing ? (
-            <form onSubmit={saveProfile} className="grid gap-4">
-              <label className="grid gap-2 text-sm font-bold text-white/72">
-                Nome
-                <input
-                  value={form.name}
-                  onChange={(event) => setForm({ ...form, name: event.target.value })}
-                  className="h-12 rounded-[8px] border border-white/10 bg-black/30 px-4 text-white outline-none transition focus:border-[#d4a843]/55"
-                  placeholder="Seu nome"
-                  required
-                />
-              </label>
-              <label className="grid gap-2 text-sm font-bold text-white/72">
-                Telefone
-                <input
-                  value={form.phone}
-                  onChange={(event) => setForm({ ...form, phone: event.target.value })}
-                  className="h-12 rounded-[8px] border border-white/10 bg-black/30 px-4 text-white outline-none transition focus:border-[#d4a843]/55"
-                  placeholder="(11) 99999-9999"
-                  inputMode="tel"
-                />
-              </label>
-              <label className="grid gap-2 text-sm font-bold text-white/72">
-                URL da foto
-                <input
-                  value={form.image}
-                  onChange={(event) => setForm({ ...form, image: event.target.value })}
-                  className="h-12 rounded-[8px] border border-white/10 bg-black/30 px-4 text-white outline-none transition focus:border-[#d4a843]/55"
-                  placeholder="https://..."
-                />
-              </label>
+      {/* ── Data + Onboarding ── */}
+      <div className="grid gap-5 xl:grid-cols-[1fr_0.75fr]">
+        {/* Data section */}
+        <motion.section variants={item}>
+          <Card className="p-5 sm:p-6">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <Eyebrow>Meu perfil</Eyebrow>
+                <h2 className="text-base font-semibold tracking-tight text-white sm:text-lg">
+                  Dados principais
+                </h2>
+              </div>
               <button
-                disabled={saving}
-                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[8px] bg-[#d4a843] px-5 text-sm font-black text-[#100d09] transition hover:bg-[#f5d78c] disabled:cursor-not-allowed disabled:opacity-60 sm:w-fit"
+                type="button"
+                onClick={() => setEditing((v) => !v)}
+                className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.03] px-4 text-[12px] font-medium text-white/55 transition hover:border-white/12 hover:text-white/80"
               >
-                <Save className="h-4 w-4" />
-                {saving ? "Salvando..." : "Salvar alterações"}
+                {editing ? (
+                  <X className="h-3.5 w-3.5" />
+                ) : (
+                  <Edit3 className="h-3.5 w-3.5" />
+                )}
+                {editing ? "Cancelar" : "Editar"}
               </button>
-            </form>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field icon={<UserRound className="h-4 w-4" />} label="Nome" value={profile.name ?? "Adicionar nome"} />
-              <Field icon={<Mail className="h-4 w-4" />} label="Email" value={profile.email ?? "Email não informado"} />
-              <Field icon={<Phone className="h-4 w-4" />} label="Telefone" value={profile.phone ?? "Adicionar telefone"} />
-              <Field icon={<Building2 className="h-4 w-4" />} label="Cidade" value={data.city ?? "Definir pela sua próxima busca"} />
-              <Field icon={<BadgeCheck className="h-4 w-4" />} label="Verificação" value={profile.verified ? "Conta verificada" : "Verificação pendente"} />
-              <Field icon={<KeyRound className="h-4 w-4" />} label="Acesso" value={profile.emailVerified ? "Google ou email confirmado" : "Confirmação recomendada"} />
             </div>
-          )}
+
+            {editing ? (
+              <form onSubmit={saveProfile} className="grid gap-4">
+                {[
+                  {
+                    label: "Nome",
+                    value: form.name,
+                    key: "name" as const,
+                    placeholder: "Seu nome",
+                    type: "text",
+                    required: true,
+                  },
+                  {
+                    label: "Telefone",
+                    value: form.phone,
+                    key: "phone" as const,
+                    placeholder: "(11) 99999-9999",
+                    type: "tel",
+                    required: false,
+                  },
+                  {
+                    label: "URL da foto",
+                    value: form.image,
+                    key: "image" as const,
+                    placeholder: "https://...",
+                    type: "url",
+                    required: false,
+                  },
+                ].map((field) => (
+                  <label key={field.key} className="grid gap-1.5 text-[12px] font-medium text-white/45">
+                    {field.label}
+                    <input
+                      type={field.type}
+                      value={field.value}
+                      onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                      className="h-11 rounded-lg border border-white/[0.07] bg-white/[0.025] px-4 text-[13px] text-white placeholder-white/20 outline-none transition focus:border-[#d4a843]/35 focus:bg-white/[0.035]"
+                      placeholder={field.placeholder}
+                      required={field.required}
+                    />
+                  </label>
+                ))}
+                <button
+                  disabled={saving}
+                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#d4a843] px-5 text-[13px] font-semibold text-[#0c0a06] shadow-[0_6px_20px_rgba(212,168,67,0.18)] transition hover:bg-[#e8c560] disabled:cursor-not-allowed disabled:opacity-55 sm:w-fit"
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  {saving ? "Salvando..." : "Salvar alterações"}
+                </button>
+              </form>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field
+                  icon={<UserRound className="h-3.5 w-3.5" />}
+                  label="Nome"
+                  value={profile.name ?? "Adicionar nome"}
+                />
+                <Field
+                  icon={<Mail className="h-3.5 w-3.5" />}
+                  label="Email"
+                  value={profile.email ?? "Email não informado"}
+                />
+                <Field
+                  icon={<Phone className="h-3.5 w-3.5" />}
+                  label="Telefone"
+                  value={profile.phone ?? "Adicionar telefone"}
+                />
+                <Field
+                  icon={<Building2 className="h-3.5 w-3.5" />}
+                  label="Cidade"
+                  value={data.city ?? "Definir pela sua próxima busca"}
+                />
+                <Field
+                  icon={<BadgeCheck className="h-3.5 w-3.5" />}
+                  label="Verificação"
+                  value={profile.verified ? "Conta verificada" : "Verificação pendente"}
+                />
+                <Field
+                  icon={<KeyRound className="h-3.5 w-3.5" />}
+                  label="Acesso"
+                  value={
+                    profile.emailVerified
+                      ? "Google ou email confirmado"
+                      : "Confirmação recomendada"
+                  }
+                />
+              </div>
+            )}
+          </Card>
         </motion.section>
 
-        <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl sm:p-6">
-          <p className="mb-1 text-[11px] font-black uppercase tracking-[0.24em] text-[#d4a843]">
-            Onboarding
-          </p>
-          <h2 className="mb-5 text-xl font-black text-white">Experiência personalizada</h2>
-          <div className="space-y-3">
-            {data.onboarding.map((step) => (
-              <div key={step.label} className="flex gap-3 rounded-[8px] border border-white/8 bg-black/18 p-3">
-                <span
-                  className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full border ${
+        {/* Onboarding */}
+        <motion.section variants={item}>
+          <Card className="h-full p-5 sm:p-6">
+            <div className="mb-5">
+              <Eyebrow>Onboarding</Eyebrow>
+              <h2 className="text-base font-semibold tracking-tight text-white sm:text-lg">
+                Experiência personalizada
+              </h2>
+            </div>
+            <div className="space-y-2">
+              {data.onboarding.map((step) => (
+                <div
+                  key={step.label}
+                  className={`flex gap-3 rounded-xl border p-3 ${
                     step.done
-                      ? "border-[#d4a843]/40 bg-[#d4a843]/15 text-[#f5d78c]"
-                      : "border-white/10 bg-white/[0.04] text-white/35"
+                      ? "border-[#d4a843]/10 bg-[#d4a843]/[0.04]"
+                      : "border-white/[0.05] bg-transparent"
                   }`}
                 >
-                  {step.done ? <CheckCircle2 className="h-4 w-4" /> : <History className="h-4 w-4" />}
-                </span>
-                <div>
-                  <p className="text-sm font-black text-white">{step.label}</p>
-                  <p className="mt-1 text-xs leading-5 text-white/42">{step.detail}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <Link
-            href="/profissionais"
-            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-[8px] border border-[#cc1f2f]/25 bg-[#cc1f2f]/10 px-4 py-3 text-sm font-black text-[#ff9aa4] transition hover:border-[#cc1f2f]/45 hover:bg-[#cc1f2f]/15"
-          >
-            Continuar curadoria
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </motion.section>
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[0.85fr_1fr]">
-        <motion.section variants={item} className="rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(255,255,255,0.035))] p-5 backdrop-blur-xl sm:p-6">
-          <p className="mb-1 text-[11px] font-black uppercase tracking-[0.24em] text-[#d4a843]">
-            Badges
-          </p>
-          <h2 className="mb-5 text-xl font-black text-white">Identidade Elite</h2>
-          <div className="grid gap-3">
-            {[
-              { label: data.vip.label, icon: <Crown className="h-4 w-4" />, active: true },
-              { label: profile.emailVerified ? "Email verificado" : "Email pendente", icon: <ShieldCheck className="h-4 w-4" />, active: Boolean(profile.emailVerified) },
-              { label: profile.image ? "Foto conectada" : "Foto pendente", icon: <Camera className="h-4 w-4" />, active: Boolean(profile.image) },
-              { label: data.metrics.favorites > 0 ? "Curadoria iniciada" : "Curadoria vazia", icon: <Heart className="h-4 w-4" />, active: data.metrics.favorites > 0 },
-            ].map((badge) => (
-              <div
-                key={badge.label}
-                className={`flex items-center gap-3 rounded-[8px] border p-3 ${
-                  badge.active
-                    ? "border-[#d4a843]/25 bg-[#d4a843]/10 text-[#f5d78c]"
-                    : "border-white/8 bg-black/16 text-white/38"
-                }`}
-              >
-                {badge.icon}
-                <span className="text-sm font-black">{badge.label}</span>
-              </div>
-            ))}
-          </div>
-        </motion.section>
-
-        <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl sm:p-6">
-          <p className="mb-1 text-[11px] font-black uppercase tracking-[0.24em] text-[#d4a843]">
-            Histórico
-          </p>
-          <h2 className="mb-5 text-xl font-black text-white">Últimos movimentos</h2>
-          {data.recentHistory.length > 0 ? (
-            <div className="space-y-3">
-              {data.recentHistory.map((entry) => (
-                <div key={`${entry.type}-${entry.id}`} className="flex gap-3 rounded-[8px] border border-white/8 bg-black/18 p-3">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/20 bg-[#d4a843]/10 text-[#f5d78c]">
-                    {entry.type === "Reserva" ? <CalendarCheck className="h-4 w-4" /> : entry.type === "Favorito" ? <Heart className="h-4 w-4" /> : <UserRound className="h-4 w-4" />}
+                  <span
+                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                      step.done
+                        ? "bg-[#d4a843]/15 text-[#d4a843]"
+                        : "bg-white/[0.05] text-white/22"
+                    }`}
+                  >
+                    {step.done ? (
+                      <CheckCircle2 className="h-3 w-3" />
+                    ) : (
+                      <History className="h-3 w-3" />
+                    )}
                   </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="truncate text-sm font-black text-white">{entry.title}</p>
-                      <span className="text-xs text-white/35">{dateLabel(entry.date)}</span>
-                    </div>
-                    <p className="mt-1 text-xs leading-5 text-white/45">
-                      {entry.type} · {entry.detail}
+                  <div>
+                    <p
+                      className={`text-[12px] font-medium ${
+                        step.done ? "text-white" : "text-white/40"
+                      }`}
+                    >
+                      {step.label}
                     </p>
+                    <p className="mt-0.5 text-[11px] leading-4 text-white/22">{step.detail}</p>
                   </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="rounded-[8px] border border-dashed border-white/12 bg-black/18 p-6 text-center">
-              <MapPin className="mx-auto mb-3 h-5 w-5 text-[#d4a843]" />
-              <p className="font-black text-white">Histórico em branco</p>
-              <p className="mt-1 text-sm leading-6 text-white/45">
-                Favoritos, reservas e agendamentos aparecerão aqui.
-              </p>
+            <Link
+              href="/profissionais"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#cc1f2f]/15 bg-[#cc1f2f]/[0.06] px-4 py-2.5 text-[12px] font-medium text-[#ff9aa4]/70 transition hover:border-[#cc1f2f]/25 hover:text-[#ff9aa4]"
+            >
+              Continuar curadoria
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </Card>
+        </motion.section>
+      </div>
+
+      {/* ── Badges + History ── */}
+      <div className="grid gap-5 xl:grid-cols-[0.75fr_1fr]">
+        {/* Badges */}
+        <motion.section variants={item}>
+          <Card className="p-5 sm:p-6">
+            <div className="mb-5">
+              <Eyebrow>Badges</Eyebrow>
+              <h2 className="text-base font-semibold tracking-tight text-white sm:text-lg">
+                Identidade Elite
+              </h2>
             </div>
-          )}
+            <div className="space-y-2.5">
+              {[
+                { label: data.vip.label, icon: <Crown className="h-4 w-4" />, active: true },
+                {
+                  label: profile.emailVerified ? "Email verificado" : "Email pendente",
+                  icon: <ShieldCheck className="h-4 w-4" />,
+                  active: Boolean(profile.emailVerified),
+                },
+                {
+                  label: profile.image ? "Foto conectada" : "Foto pendente",
+                  icon: <Camera className="h-4 w-4" />,
+                  active: Boolean(profile.image),
+                },
+                {
+                  label:
+                    data.metrics.favorites > 0 ? "Curadoria iniciada" : "Curadoria vazia",
+                  icon: <Heart className="h-4 w-4" />,
+                  active: data.metrics.favorites > 0,
+                },
+              ].map((badge) => (
+                <div
+                  key={badge.label}
+                  className={`flex items-center gap-3 rounded-xl border p-3 text-[13px] font-medium ${
+                    badge.active
+                      ? "border-[#d4a843]/12 bg-[#d4a843]/[0.04] text-[#e2c06a]"
+                      : "border-white/[0.05] bg-transparent text-white/25"
+                  }`}
+                >
+                  {badge.icon}
+                  {badge.label}
+                </div>
+              ))}
+            </div>
+          </Card>
+        </motion.section>
+
+        {/* History */}
+        <motion.section variants={item}>
+          <Card className="p-5 sm:p-6">
+            <div className="mb-5">
+              <Eyebrow>Histórico</Eyebrow>
+              <h2 className="text-base font-semibold tracking-tight text-white sm:text-lg">
+                Últimos movimentos
+              </h2>
+            </div>
+            {data.recentHistory.length > 0 ? (
+              <div className="space-y-2.5">
+                {data.recentHistory.map((entry) => (
+                  <div
+                    key={`${entry.type}-${entry.id}`}
+                    className="flex gap-3 rounded-xl border border-white/[0.06] p-3"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#d4a843]/[0.07] text-[#d4a843]">
+                      {entry.type === "Reserva" ? (
+                        <CalendarCheck className="h-3.5 w-3.5" />
+                      ) : entry.type === "Favorito" ? (
+                        <Heart className="h-3.5 w-3.5" />
+                      ) : (
+                        <UserRound className="h-3.5 w-3.5" />
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="truncate text-[12px] font-medium text-white/75">
+                          {entry.title}
+                        </p>
+                        <span className="text-[10px] text-white/25">{dateLabel(entry.date)}</span>
+                      </div>
+                      <p className="mt-0.5 text-[11px] leading-4 text-white/32">
+                        {entry.type} · {entry.detail}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-white/[0.07] p-6 text-center">
+                <MapPin className="mx-auto mb-3 h-4 w-4 text-[#d4a843]/35" />
+                <p className="text-[13px] font-medium text-white/45">Histórico em branco</p>
+                <p className="mt-1 text-[12px] leading-5 text-white/22">
+                  Favoritos, reservas e agendamentos aparecerão aqui.
+                </p>
+              </div>
+            )}
+          </Card>
         </motion.section>
       </div>
     </motion.div>
