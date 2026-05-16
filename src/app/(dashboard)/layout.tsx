@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { Bell, Menu, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { Bell, CalendarCheck, Compass, Heart, LayoutDashboard, Menu, Search, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import DashSidebar from "@/components/DashSidebar";
 
 function LoadingScreen() {
@@ -27,6 +28,7 @@ function LoadingScreen() {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -61,7 +63,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
               <div className="hidden min-w-0 items-center gap-3 rounded-[8px] border border-white/10 bg-white/[0.045] px-3 py-2 text-white/45 lg:flex">
                 <Search className="h-4 w-4 text-[#d4a843]" />
-                <span className="text-sm">Buscar perfis, estadias e reservas</span>
+                <span className="text-sm">Buscar profissionais, favoritos e agendamentos</span>
               </div>
               <div className="min-w-0 lg:hidden">
                 <p className="text-sm font-black text-white">EliteModell</p>
@@ -92,6 +94,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         >
           <div className="mx-auto w-full max-w-[1480px]">{children}</div>
         </motion.main>
+
+        <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-[8px] border border-white/10 bg-[#070708]/92 p-1 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-2xl md:hidden">
+          {[
+            { label: "Início", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
+            { label: "Explorar", href: "/profissionais", icon: <Compass className="h-4 w-4" /> },
+            { label: "Agenda", href: "/dashboard/reservas", icon: <CalendarCheck className="h-4 w-4" /> },
+            { label: "Salvos", href: "/dashboard/favoritos", icon: <Heart className="h-4 w-4" /> },
+            { label: "Perfil", href: "/dashboard/perfil", icon: <UserRound className="h-4 w-4" /> },
+          ].map((navItem) => {
+            const active = pathname === navItem.href;
+
+            return (
+              <Link
+                key={navItem.href}
+                href={navItem.href}
+                className={`grid min-h-14 place-items-center rounded-[8px] px-1 py-2 text-[10px] font-black transition ${
+                  active ? "bg-[#d4a843]/14 text-[#f5d78c]" : "text-white/45"
+                }`}
+              >
+                {navItem.icon}
+                <span className="mt-1">{navItem.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
     </div>
   );

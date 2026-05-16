@@ -10,11 +10,13 @@ import {
   BadgePlus,
   Building2,
   CalendarCheck,
+  Compass,
   Crown,
   Heart,
   Home,
   LayoutDashboard,
   LogOut,
+  MessageCircle,
   Sparkles,
   TicketPercent,
   UserRound,
@@ -27,7 +29,8 @@ type NavItem = { label: string; href: string; icon: React.ReactNode; accent?: st
 
 const guestNav: NavItem[] = [
   { label: "Início", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" />, accent: "Hoje" },
-  { label: "Reservas", href: "/dashboard/reservas", icon: <CalendarCheck className="h-4 w-4" /> },
+  { label: "Explorar", href: "/profissionais", icon: <Compass className="h-4 w-4" /> },
+  { label: "Agendamentos", href: "/dashboard/reservas", icon: <CalendarCheck className="h-4 w-4" /> },
   { label: "Favoritos", href: "/dashboard/favoritos", icon: <Heart className="h-4 w-4" /> },
   { label: "Meu Perfil", href: "/dashboard/perfil", icon: <UserRound className="h-4 w-4" /> },
 ];
@@ -76,7 +79,7 @@ function initials(name?: string | null) {
 
 function roleLabel(role?: string) {
   if (role === "ADMIN") return "Administrador";
-  if (role === "HOST") return "Anfitrião";
+  if (role === "HOST") return "Parceiro";
   return "Cliente premium";
 }
 
@@ -160,7 +163,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
 
         <nav className="relative flex-1 overflow-y-auto px-3 py-4">
           <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.26em] text-white/28">
-            Navegação
+            {isProfessionalArea ? "Área profissional" : role === "HOST" ? "Área parceira" : "Área cliente"}
           </p>
           <div className="space-y-1.5">
             {nav.map((navItem) => {
@@ -206,20 +209,37 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
             })}
           </div>
 
-          {role === "GUEST" || role === "HOST" ? (
+          {isProfessionalArea ? (
             <div className="mt-5 rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(204,31,47,0.06))] p-3">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f5d78c]">
-                Upgrade
+                Perfil profissional
               </p>
               <p className="mt-2 text-xs leading-5 text-white/48">
-                Expanda sua presença com anúncios, imóveis e benefícios premium.
+                Gerencie agenda, fotos, disponibilidade e presença premium.
               </p>
               <Link
-                href={role === "HOST" ? "/anfitriao" : "/cadastro"}
+                href="/profissional/novo"
                 onClick={onClose}
                 className="mt-3 inline-flex w-full items-center justify-center rounded-[8px] bg-[#d4a843] px-3 py-2 text-xs font-black text-[#100d09] transition hover:bg-[#f5d78c]"
               >
-                {role === "HOST" ? "Área do anfitrião" : "Virar anfitrião"}
+                Novo anúncio
+              </Link>
+            </div>
+          ) : role === "GUEST" ? (
+            <div className="mt-5 rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(204,31,47,0.06))] p-3">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f5d78c]">
+                Concierge discreto
+              </p>
+              <p className="mt-2 text-xs leading-5 text-white/48">
+                Explore perfis verificados e organize seus contatos com privacidade.
+              </p>
+              <Link
+                href="/profissionais"
+                onClick={onClose}
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-[8px] bg-[#d4a843] px-3 py-2 text-xs font-black text-[#100d09] transition hover:bg-[#f5d78c]"
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                Ver profissionais
               </Link>
             </div>
           ) : null}

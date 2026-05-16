@@ -2,59 +2,111 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { BadgeCheck, CalendarCheck, Clock3, Compass, MapPin, Sparkles } from "lucide-react";
 
-type Booking = {
+type Appointment = {
   id: string;
-  checkIn: string;
-  checkOut: string;
-  totalPrice: number;
+  date: string;
+  duration: number;
   status: string;
-  paymentStatus: string;
-  property?: { id: string; title: string; city: string };
+  contactMethod: string;
+  professional?: {
+    displayName: string;
+    slug: string;
+  };
 };
 
+function statusLabel(status: string) {
+  const labels: Record<string, string> = {
+    PENDING: "Aguardando confirmação",
+    CONFIRMED: "Confirmado",
+    CANCELLED: "Cancelado",
+    COMPLETED: "Concluído",
+    NO_SHOW: "Não compareceu",
+  };
+  return labels[status] ?? status;
+}
+
+function dateLabel(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 export default function ReservasPage() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/bookings")
+    fetch("/api/appointments")
       .then((res) => res.json())
-      .then((data) => setBookings(Array.isArray(data) ? data : []))
-      .catch(() => setBookings([]))
+      .then((data) => setAppointments(Array.isArray(data) ? data : []))
+      .catch(() => setAppointments([]))
       .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div>
-      <h1 style={{ color: "#fff", fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Minhas reservas</h1>
-      <p style={{ color: "#777", marginBottom: 24 }}>Acompanhe reservas e pagamentos criados na plataforma.</p>
+    <div className="space-y-5 pb-20 md:pb-0">
+      <section className="rounded-[8px] border border-white/10 bg-[linear-gradient(135deg,rgba(20,20,22,0.97),rgba(58,9,14,0.65),rgba(7,7,8,0.98))] p-4 shadow-[0_28px_90px_rgba(0,0,0,0.35)] sm:p-6">
+        <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-[#f5d78c]">
+          <CalendarCheck className="h-4 w-4" />
+          Agenda cliente
+        </p>
+        <h1 className="text-3xl font-black text-white">Meus agendamentos</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/52">
+          Acompanhe contatos e experiências iniciadas com profissionais verificadas.
+        </p>
+      </section>
 
       {loading ? (
-        <p style={{ color: "#777" }}>Carregando reservas...</p>
-      ) : bookings.length === 0 ? (
-        <div style={{ background: "#111", border: "1px solid #222", borderRadius: 10, padding: 24 }}>
-          <p style={{ color: "#aaa", marginBottom: 14 }}>Voce ainda nao tem reservas.</p>
-          <Link href="/imoveis" style={{ color: "#d4a843", textDecoration: "none", fontWeight: 700 }}>
-            Buscar imoveis
+        <div className="rounded-[8px] border border-white/10 bg-white/[0.04] p-5">
+          <div className="premium-shimmer h-24 rounded-[8px] bg-white/5" />
+        </div>
+      ) : appointments.length === 0 ? (
+        <div className="rounded-[8px] border border-dashed border-white/12 bg-white/[0.04] p-6 text-center">
+          <Sparkles className="mx-auto mb-3 h-6 w-6 text-[#d4a843]" />
+          <p className="text-lg font-black text-white">Nenhum agendamento ainda</p>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/45">
+            Explore perfis verificados e inicie contato quando encontrar uma profissional alinhada ao seu momento.
+          </p>
+          <Link
+            href="/profissionais"
+            className="mt-5 inline-flex h-12 items-center justify-center gap-2 rounded-[8px] bg-[#d4a843] px-5 text-sm font-black text-[#100d09] transition hover:bg-[#f5d78c]"
+          >
+            <Compass className="h-4 w-4" />
+            Explorar profissionais
           </Link>
         </div>
       ) : (
-        <div style={{ display: "grid", gap: 12 }}>
-          {bookings.map((booking) => (
+        <div className="grid gap-3">
+          {appointments.map((appointment) => (
             <Link
-              key={booking.id}
-              href={booking.property?.id ? `/imoveis/${booking.property.id}` : "/dashboard/reservas"}
-              style={{ background: "#111", border: "1px solid #222", borderRadius: 10, padding: 16, textDecoration: "none" }}
+              key={appointment.id}
+              href={appointment.professional?.slug ? `/profissionais/${appointment.professional.slug}` : "/dashboard/reservas"}
+              className="rounded-[8px] border border-white/10 bg-white/[0.04] p-4 text-white no-underline transition hover:border-[#d4a843]/35 hover:bg-white/[0.06]"
             >
-              <strong style={{ color: "#fff" }}>{booking.property?.title ?? "Reserva"}</strong>
-              <p style={{ color: "#777", margin: "6px 0" }}>{booking.property?.city ?? ""}</p>
-              <p style={{ color: "#aaa", margin: 0 }}>
-                {new Date(booking.checkIn).toLocaleDateString("pt-BR")} - {new Date(booking.checkOut).toLocaleDateString("pt-BR")} | R$ {booking.totalPrice.toLocaleString("pt-BR")}
-              </p>
-              <p style={{ color: "#d4a843", margin: "8px 0 0", fontSize: 13 }}>
-                {booking.status} / {booking.paymentStatus}
-              </p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 truncate font-black text-white">
+                    {appointment.professional?.displayName ?? "Profissional"}
+                    <BadgeCheck className="h-4 w-4 shrink-0 text-[#d4a843]" />
+                  </p>
+                  <p className="mt-2 flex items-center gap-2 text-sm text-white/45">
+                    <Clock3 className="h-4 w-4 text-[#d4a843]" />
+                    {dateLabel(appointment.date)} · {appointment.duration} min
+                  </p>
+                  <p className="mt-1 flex items-center gap-2 text-sm text-white/45">
+                    <MapPin className="h-4 w-4 text-[#d4a843]" />
+                    Contato via {appointment.contactMethod}
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full border border-[#d4a843]/20 bg-[#d4a843]/10 px-3 py-1 text-xs font-black text-[#f5d78c]">
+                  {statusLabel(appointment.status)}
+                </span>
+              </div>
             </Link>
           ))}
         </div>

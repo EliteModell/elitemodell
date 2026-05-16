@@ -10,10 +10,8 @@ import toast from "react-hot-toast";
 import {
   ArrowRight,
   BadgeCheck,
-  CalendarCheck,
   Camera,
   CheckCircle2,
-  Building2,
   Crown,
   Edit3,
   Heart,
@@ -55,10 +53,10 @@ export type PremiumProfileData = {
     progress: number;
   };
   metrics: {
-    favorites: number;
-    bookings: number;
-    activeBookings: number;
+    favoriteProfiles: number;
     appointments: number;
+    activeAppointments: number;
+    completedAppointments: number;
     reviews: number;
   };
   onboarding: Array<{
@@ -68,7 +66,7 @@ export type PremiumProfileData = {
   }>;
   recentHistory: Array<{
     id: string;
-    type: "Reserva" | "Favorito" | "Agendamento";
+    type: "Agendamento";
     title: string;
     detail: string;
     date: string;
@@ -248,7 +246,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
                 {profile.name ?? "Perfil Elite"}
               </h1>
               <p className="mt-3 max-w-xl text-sm leading-6 text-white/55">
-                Conta criada em {accountAge}. Sua experiência fica mais precisa conforme seu perfil, favoritos e reservas evoluem.
+                Conta criada em {accountAge}. Sua experiência fica mais precisa conforme seu perfil, favoritos e agendamentos evoluem.
               </p>
             </div>
           </div>
@@ -295,10 +293,10 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
       </motion.section>
 
       <motion.section variants={container} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <Metric icon={<Heart className="h-5 w-5" />} label="Favoritos" value={String(data.metrics.favorites)} />
-        <Metric icon={<CalendarCheck className="h-5 w-5" />} label="Reservas" value={String(data.metrics.bookings)} />
-        <Metric icon={<Sparkles className="h-5 w-5" />} label="Ativas" value={String(data.metrics.activeBookings)} />
+        <Metric icon={<Heart className="h-5 w-5" />} label="Favoritos" value={String(data.metrics.favoriteProfiles)} />
+        <Metric icon={<Sparkles className="h-5 w-5" />} label="Ativos" value={String(data.metrics.activeAppointments)} />
         <Metric icon={<UserRound className="h-5 w-5" />} label="Agendamentos" value={String(data.metrics.appointments)} />
+        <Metric icon={<CheckCircle2 className="h-5 w-5" />} label="Concluídos" value={String(data.metrics.completedAppointments)} />
         <Metric icon={<Star className="h-5 w-5" />} label="Avaliações" value={String(data.metrics.reviews)} />
       </motion.section>
 
@@ -365,7 +363,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
               <Field icon={<UserRound className="h-4 w-4" />} label="Nome" value={profile.name ?? "Adicionar nome"} />
               <Field icon={<Mail className="h-4 w-4" />} label="Email" value={profile.email ?? "Email não informado"} />
               <Field icon={<Phone className="h-4 w-4" />} label="Telefone" value={profile.phone ?? "Adicionar telefone"} />
-              <Field icon={<Building2 className="h-4 w-4" />} label="Cidade" value={data.city ?? "Definir pela sua próxima busca"} />
+              <Field icon={<MapPin className="h-4 w-4" />} label="Cidade" value={data.city ?? "Definir pela sua próxima busca"} />
               <Field icon={<BadgeCheck className="h-4 w-4" />} label="Verificação" value={profile.verified ? "Conta verificada" : "Verificação pendente"} />
               <Field icon={<KeyRound className="h-4 w-4" />} label="Acesso" value={profile.emailVerified ? "Google ou email confirmado" : "Confirmação recomendada"} />
             </div>
@@ -417,7 +415,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
               { label: data.vip.label, icon: <Crown className="h-4 w-4" />, active: true },
               { label: profile.emailVerified ? "Email verificado" : "Email pendente", icon: <ShieldCheck className="h-4 w-4" />, active: Boolean(profile.emailVerified) },
               { label: profile.image ? "Foto conectada" : "Foto pendente", icon: <Camera className="h-4 w-4" />, active: Boolean(profile.image) },
-              { label: data.metrics.favorites > 0 ? "Curadoria iniciada" : "Curadoria vazia", icon: <Heart className="h-4 w-4" />, active: data.metrics.favorites > 0 },
+              { label: data.metrics.favoriteProfiles > 0 ? "Curadoria iniciada" : "Curadoria vazia", icon: <Heart className="h-4 w-4" />, active: data.metrics.favoriteProfiles > 0 },
             ].map((badge) => (
               <div
                 key={badge.label}
@@ -444,7 +442,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
               {data.recentHistory.map((entry) => (
                 <div key={`${entry.type}-${entry.id}`} className="flex gap-3 rounded-[8px] border border-white/8 bg-black/18 p-3">
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/20 bg-[#d4a843]/10 text-[#f5d78c]">
-                    {entry.type === "Reserva" ? <CalendarCheck className="h-4 w-4" /> : entry.type === "Favorito" ? <Heart className="h-4 w-4" /> : <UserRound className="h-4 w-4" />}
+                    <UserRound className="h-4 w-4" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -463,7 +461,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
               <MapPin className="mx-auto mb-3 h-5 w-5 text-[#d4a843]" />
               <p className="font-black text-white">Histórico em branco</p>
               <p className="mt-1 text-sm leading-6 text-white/45">
-                Favoritos, reservas e agendamentos aparecerão aqui.
+                Favoritos, contatos e agendamentos aparecerão aqui.
               </p>
             </div>
           )}
