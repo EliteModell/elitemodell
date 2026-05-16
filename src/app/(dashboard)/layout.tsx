@@ -1,12 +1,31 @@
 "use client";
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { Bell, Menu, Search, ShieldCheck, Sparkles } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import DashSidebar from "@/components/DashSidebar";
 
+function LoadingScreen() {
+  return (
+    <div className="grid min-h-screen place-items-center bg-[#050506] px-5 text-white">
+      <div className="w-full max-w-sm rounded-[8px] border border-[#d4a843]/18 bg-white/[0.04] p-6 text-center shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+        <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-[8px] border border-[#d4a843]/28 bg-[#d4a843]/10 text-[#f5d78c]">
+          <Sparkles className="h-6 w-6 animate-pulse" />
+        </div>
+        <p className="text-xs font-black uppercase tracking-[0.24em] text-[#d4a843]">EliteModell</p>
+        <h1 className="mt-2 text-xl font-black">Preparando seu painel</h1>
+        <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
+          <div className="premium-loading-bar h-full w-1/2 rounded-full bg-[linear-gradient(90deg,#cc1f2f,#d4a843,#f5d78c)]" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -17,89 +36,63 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [status, router]);
 
   if (status === "loading") {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#060e1b" }}>
-        <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              border: "3px solid #222",
-              borderTopColor: "#d4a843",
-              borderRadius: "50%",
-              animation: "spin 0.8s linear infinite",
-              margin: "0 auto 16px",
-            }}
-          />
-          <span style={{ color: "#666", fontSize: 14 }}>Carregando...</span>
-        </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (status === "unauthenticated") return null;
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#0a0a0a" }}>
+    <div className="min-h-screen overflow-x-hidden bg-[#050506] text-white">
+      <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(135deg,rgba(204,31,47,0.12),transparent_28%,rgba(212,168,67,0.09)_58%,transparent)]" />
+      <div className="pointer-events-none fixed inset-0 opacity-[0.14] [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:44px_44px]" />
+
       <DashSidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Main content */}
-      <div
-        style={{
-          flex: 1,
-          marginLeft: 240,
-          display: "flex",
-          flexDirection: "column",
-          minHeight: "100vh",
-        }}
-        className="dash-content"
-      >
-        {/* Top bar mobile */}
-        <header
-          style={{
-            display: "none",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 20px",
-            height: 56,
-            background: "#060e1b",
-            borderBottom: "1px solid #1e1e1e",
-            position: "sticky",
-            top: 0,
-            zIndex: 30,
-          }}
-          className="dash-topbar"
-        >
-          <button
-            onClick={() => setSidebarOpen(true)}
-            style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: 4 }}
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <line x1="3" y1="12" x2="21" y2="12"/>
-              <line x1="3" y1="18" x2="21" y2="18"/>
-            </svg>
-          </button>
-          <span style={{ fontWeight: 900, fontSize: 18, letterSpacing: "-0.5px" }}>
-            <span style={{ background: "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>elite</span>
-            <span style={{ color: "#f1f5f9" }}>modell</span>
-          </span>
-          <div style={{ width: 30 }} />
+      <div className="relative flex min-h-screen flex-col md:ml-[280px]">
+        <header className="sticky top-0 z-30 border-b border-white/10 bg-[#050506]/72 px-4 py-3 backdrop-blur-2xl sm:px-6 md:px-8">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="grid h-10 w-10 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-white md:hidden"
+                aria-label="Abrir menu"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <div className="hidden min-w-0 items-center gap-3 rounded-[8px] border border-white/10 bg-white/[0.045] px-3 py-2 text-white/45 lg:flex">
+                <Search className="h-4 w-4 text-[#d4a843]" />
+                <span className="text-sm">Buscar perfis, estadias e reservas</span>
+              </div>
+              <div className="min-w-0 lg:hidden">
+                <p className="text-sm font-black text-white">EliteModell</p>
+                <p className="truncate text-xs text-white/38">{session?.user?.email ?? "Painel premium"}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="hidden items-center gap-2 rounded-full border border-[#d4a843]/20 bg-[#d4a843]/10 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-[#f5d78c] sm:flex">
+                <ShieldCheck className="h-4 w-4" />
+                Ambiente seguro
+              </div>
+              <button
+                className="grid h-10 w-10 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-white/70 transition hover:border-[#d4a843]/35 hover:text-[#f5d78c]"
+                aria-label="Notificações"
+              >
+                <Bell className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
         </header>
 
-        <main style={{ flex: 1, padding: "32px 32px" }} className="dash-main">
-          {children}
-        </main>
+        <motion.main
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="relative flex-1 px-4 py-5 sm:px-6 sm:py-6 md:px-8 lg:px-10"
+        >
+          <div className="mx-auto w-full max-w-[1480px]">{children}</div>
+        </motion.main>
       </div>
-
-      <style>{`
-        @media (max-width: 767px) {
-          .dash-content { margin-left: 0 !important; }
-          .dash-topbar { display: flex !important; }
-          .dash-main { padding: 20px 16px !important; }
-        }
-      `}</style>
     </div>
   );
 }

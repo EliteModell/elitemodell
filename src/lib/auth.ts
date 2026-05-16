@@ -28,6 +28,28 @@ export const authOptions: NextAuthOptions = {
           const email = authUser.email ?? (phone ? `phone_${phone}@sms.elitemodell.local` : null);
 
           if (!email) return null;
+          const metadata = authUser.user_metadata ?? {};
+          const emailVerified = authUser.email_confirmed_at
+            ? new Date(authUser.email_confirmed_at)
+            : null;
+          const metadataName =
+            (metadata.name as string | undefined) ??
+            (metadata.full_name as string | undefined) ??
+            authUser.email ??
+            phone ??
+            null;
+          const metadataImage =
+            (metadata.avatar_url as string | undefined) ??
+            (metadata.picture as string | undefined) ??
+            null;
+          const birthDate =
+            typeof metadata.birthDate === "string" && metadata.birthDate
+              ? new Date(metadata.birthDate)
+              : null;
+          const hasConsent = Boolean(metadata.lgpdConsent && metadata.termsConsent);
+          const isGoogleAuth =
+            authUser.app_metadata?.provider === "google" ||
+            Boolean(authUser.identities?.some((identity) => identity.provider === "google"));
 
           let user = await prisma.user.findFirst({
             where: {
@@ -36,29 +58,30 @@ export const authOptions: NextAuthOptions = {
           });
 
           if (!user) {
-            const metadata = authUser.user_metadata ?? {};
-            const role = metadata.role === "HOST" ? "HOST" : "GUEST";
-            const category = ["MULHER", "HOMEM", "TRANS"].includes(metadata.category)
-              ? metadata.category
-              : null;
-
-            if (!metadata.birthDate || !metadata.lgpdConsent || !metadata.termsConsent) {
+            if (!isGoogleAuth && (!birthDate || !hasConsent)) {
               return null;
             }
+
+            const role = metadata.role === "HOST" ? "HOST" : "GUEST";
+            const metadataCategory =
+              typeof metadata.category === "string" ? metadata.category : undefined;
+            const category = ["MULHER", "HOMEM", "TRANS"].includes(metadataCategory ?? "")
+              ? (metadataCategory as "MULHER" | "HOMEM" | "TRANS")
+              : null;
 
             user = await prisma.user.create({
               data: {
                 email,
-                name: metadata.name ?? authUser.email ?? phone ?? null,
-                image: metadata.avatar_url ?? null,
+                name: metadataName,
+                image: metadataImage,
                 phone: phone ?? null,
-                emailVerified: authUser.email_confirmed_at ? new Date(authUser.email_confirmed_at) : null,
+                emailVerified,
                 role,
                 category,
-                birthDate: new Date(metadata.birthDate),
-                lgpdConsent: true,
-                termsConsent: true,
-                consentDate: new Date(),
+                birthDate,
+                lgpdConsent: hasConsent,
+                termsConsent: hasConsent,
+                consentDate: hasConsent ? new Date() : null,
               },
             });
 
@@ -74,12 +97,10 @@ export const authOptions: NextAuthOptions = {
           await prisma.user.update({
             where: { id: user.id },
             data: {
-              name: user.name ?? (authUser.user_metadata?.name as string | undefined) ?? null,
-              image: user.image ?? (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
-              emailVerified:
-                authUser.email_confirmed_at && !user.emailVerified
-                  ? new Date(authUser.email_confirmed_at)
-                  : user.emailVerified,
+              name: user.name ?? metadataName,
+              image: user.image ?? metadataImage,
+              phone: user.phone ?? phone ?? null,
+              emailVerified: emailVerified && !user.emailVerified ? emailVerified : user.emailVerified,
             },
           });
 
@@ -91,11 +112,11 @@ export const authOptions: NextAuthOptions = {
 
           return {
             id: user.id,
-            name: user.name,
+            name: user.name ?? metadataName,
             email: user.email,
-            image: user.image,
+            image: user.image ?? metadataImage,
             role: user.role,
-          } as any;
+          };
         } catch {
           return null;
         }
@@ -106,12 +127,18 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
+        token.role = user.role;
+        token.name = user.name;
+        token.email = user.email;
+        token.picture = user.image;
       }
       if (token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { 
+          select: {
+            name: true,
+            email: true,
+            image: true,
             role: true, 
             professional: { select: { id: true } },
             blocked: true,
@@ -121,8 +148,11 @@ export const authOptions: NextAuthOptions = {
           // Validar bloqueio
           if (dbUser.blocked) {
             console.warn(`[JWT] Usuário bloqueado: ${token.id}`);
-            return null as any;
+            return null as unknown as typeof token;
           }
+          token.name = dbUser.name;
+          token.email = dbUser.email;
+          token.picture = dbUser.image;
           token.role = dbUser.role;
           token.isProfessional = !!dbUser.professional;
         }
@@ -132,8 +162,11 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;
+        session.user.name = token.name as string | null;
+        session.user.email = token.email as string | null;
+        session.user.image = token.picture as string | null;
         session.user.role = token.role as string;
-        (session.user as any).isProfessional = token.isProfessional ?? false;
+        session.user.isProfessional = token.isProfessional ?? false;
       }
       return session;
     },
