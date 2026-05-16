@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -138,6 +138,7 @@ function AuthMethodButton({
 
 export default function CadastroPage() {
   const router = useRouter();
+  const { status } = useSession();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<Step>("form");
   const [form, setForm] = useState({
@@ -160,6 +161,8 @@ export default function CadastroPage() {
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [pendingAuthMethod, setPendingAuthMethod] = useState<PendingAuthMethod>(null);
+  const isAuthenticated = status === "authenticated";
+  const isLoggedUpgradeFlow = isAuthenticated && form.accountType !== "GUEST";
 
   const roles = [
     { value: "GUEST", label: "Cliente", desc: "Quero buscar acompanhantes verificadas ou reservar imoveis." },
@@ -301,6 +304,34 @@ export default function CadastroPage() {
       if (error) throw error;
     } catch (err: any) {
       toast.error(err?.message ?? "Erro ao entrar com Google.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleContinueExistingAccount() {
+    if (!validateRequiredForm(false, true)) return;
+
+    setLoading(true);
+    try {
+      const { data } = await supabaseAuth.auth.getSession();
+      const accessToken = data.session?.access_token;
+
+      if (!accessToken) {
+        sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload()));
+        toast.error("Entre novamente para continuar seu cadastro.");
+        router.push("/login");
+        return;
+      }
+
+      await registerUser(accessToken);
+      const res = await signIn("supabase", { accessToken, redirect: false });
+      if (res?.error) throw new Error("Nao foi possivel atualizar sua sessao.");
+
+      router.push(nextPath());
+      router.refresh();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Nao foi possivel continuar o cadastro.");
     } finally {
       setLoading(false);
     }
@@ -463,33 +494,65 @@ export default function CadastroPage() {
           <p style={{ color: "#334155", fontSize: 11, margin: "8px 0 0", lineHeight: 1.5 }}>
             Para publicar, sera obrigatorio enviar documento com foto, fotos reais e biometria facial. A idade exibida deve ser confirmada por documento.
           </p>
+          <div style={{ marginTop: 12, padding: 12, border: "1px solid rgba(212,168,67,0.18)", borderRadius: 8, background: "rgba(212,168,67,0.06)" }}>
+            <p style={{ color: "#d4a843", fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", margin: "0 0 8px" }}>Fases do cadastro</p>
+            <div style={{ display: "grid", gap: 6 }}>
+              {["Dados do perfil", "Fotos e valores", "Documentos", "Biometria", "Analise da equipe"].map((item, index) => (
+                <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, color: "#94a3b8", fontSize: 12 }}>
+                  <span style={{ width: 18, height: 18, borderRadius: 999, border: "1px solid rgba(212,168,67,0.35)", color: "#f5d78c", display: "grid", placeItems: "center", fontSize: 10, fontWeight: 800 }}>{index + 1}</span>
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
-      <AuthMethodButton
-        disabled={loading}
-        icon={GoogleIcon}
-        label="Cadastrar com Google"
-        onClick={handleGoogle}
-      />
-      <AuthMethodButton
-        disabled={loading}
-        icon={SmsIcon}
-        label="Cadastrar com SMS"
-        onClick={() => {
-          setPendingAuthMethod("sms");
-          if (!validateRequiredForm(false, true)) return;
-          setStep("phone");
-        }}
-      />
+      {isLoggedUpgradeFlow ? (
+        <div style={{ marginBottom: 20, padding: 14, borderRadius: 8, border: "1px solid rgba(212,168,67,0.24)", background: "rgba(15,23,42,0.72)" }}>
+          <p style={{ color: "#f1f5f9", fontSize: 14, fontWeight: 800, margin: "0 0 6px" }}>
+            Continuar como {form.accountType === "PROFESSIONAL" ? "profissional anunciante" : "anfitriao de imovel"}
+          </p>
+          <p style={{ color: "#64748b", fontSize: 12, lineHeight: 1.5, margin: "0 0 12px" }}>
+            Voce ja esta logado. Vamos atualizar sua conta e abrir as etapas do cadastro.
+          </p>
+          <button
+            type="button"
+            onClick={handleContinueExistingAccount}
+            disabled={loading}
+            style={{ width: "100%", padding: "13px", background: loading ? "#9e7b2a" : GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}
+          >
+            {loading ? "Preparando cadastro..." : form.accountType === "PROFESSIONAL" ? "Ir para as fases do cadastro" : "Ir para cadastro de imovel"}
+          </button>
+        </div>
+      ) : (
+        <>
+          <AuthMethodButton
+            disabled={loading}
+            icon={GoogleIcon}
+            label="Cadastrar com Google"
+            onClick={handleGoogle}
+          />
+          <AuthMethodButton
+            disabled={loading}
+            icon={SmsIcon}
+            label="Cadastrar com SMS"
+            onClick={() => {
+              setPendingAuthMethod("sms");
+              if (!validateRequiredForm(false, true)) return;
+              setStep("phone");
+            }}
+          />
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-        <div style={{ flex: 1, height: 1, background: "rgba(212,168,67,0.12)" }} />
-        <span style={{ color: "#475569", fontSize: 13 }}>ou com email</span>
-        <div style={{ flex: 1, height: 1, background: "rgba(212,168,67,0.12)" }} />
-      </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+            <div style={{ flex: 1, height: 1, background: "rgba(212,168,67,0.12)" }} />
+            <span style={{ color: "#475569", fontSize: 13 }}>ou com email</span>
+            <div style={{ flex: 1, height: 1, background: "rgba(212,168,67,0.12)" }} />
+          </div>
+        </>
+      )}
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      {!isLoggedUpgradeFlow && <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {[
           { key: "name", label: "Nome completo", type: "text", placeholder: "Seu nome" },
           { key: "email", label: "Email", type: "email", placeholder: "seu@email.com" },
@@ -623,7 +686,7 @@ export default function CadastroPage() {
         <button type="submit" disabled={loading} style={{ padding: "13px", background: loading ? "#9e7b2a" : GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer", marginTop: 4 }}>
           {loading ? "Criando conta..." : "Criar conta"}
         </button>
-      </form>
+      </form>}
 
       <p style={{ textAlign: "center", marginTop: 24, fontSize: 14, color: "#475569" }}>
         Já tem uma conta? <Link href="/login" style={{ color: GOLD, textDecoration: "none", fontWeight: 600 }}>Entrar</Link>
