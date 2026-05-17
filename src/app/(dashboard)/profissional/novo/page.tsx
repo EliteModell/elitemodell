@@ -243,7 +243,7 @@ export default function ProfissionalNovoPage() {
   /* ── estado do formulário ─────────────────────────────── */
   const [form, setForm] = useState({
     /* etapa 1 */
-    displayName: "", bio: "", city: "", state: "", escortCategory: "", birthDate: "", signo: "",
+    displayName: "", bio: "", city: "", state: "", bairro: "", escortCategory: "", birthDate: "", signo: "",
     /* etapa 2 */
     height: "", weight: "", hairColor: "", eyeColor: "", ethnicity: "",
     hasTattoos: false, hasSilicone: false, isDepilada: true,
@@ -428,7 +428,7 @@ export default function ProfissionalNovoPage() {
         bio: form.bio,
         city: form.city,
         state: form.state,
-        bairro: (form as any).bairro,
+        bairro: form.bairro || undefined,
         escortCategory: form.escortCategory,
         birthDate: form.birthDate,
         height: form.height ? Number(form.height) : undefined,
@@ -605,7 +605,7 @@ export default function ProfissionalNovoPage() {
                 </div>
                 <div>
                   <label style={labelStyle}>Bairro</label>
-                  <input value={(form as any).bairro ?? ""} onChange={(e) => setForm(f => ({ ...f, bairro: e.target.value }))} style={inputStyle} placeholder="Centro" />
+                  <input value={form.bairro} onChange={(e) => set("bairro", e.target.value)} style={inputStyle} placeholder="Centro" />
                 </div>
               </div>
             </div>
