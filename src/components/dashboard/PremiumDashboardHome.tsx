@@ -192,19 +192,25 @@ function ProfileCard({
   large?: boolean;
 }) {
   const online = isOnline(index, pro.featured);
-  const image = pro.image ?? profileFallbacks[index % profileFallbacks.length];
+  const image = pro.image;
 
   return (
     <Link
       href={`/profissionais/${pro.slug}`}
       className="group block overflow-hidden rounded-[8px] border border-white/10 bg-[#111113] shadow-[0_22px_70px_rgba(0,0,0,0.34)] transition hover:border-[#d4a843]/45"
     >
-      <div className={`relative overflow-hidden bg-white/5 ${large ? "aspect-[3/4]" : "aspect-[4/5]"}`}>
-        <img
-          src={image}
-          alt={pro.name}
-          className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105"
-        />
+      <div className={`relative overflow-hidden bg-[#1a1a1c] ${large ? "aspect-[3/4]" : "aspect-[4/5]"}`}>
+        {image ? (
+          <img
+            src={image}
+            alt={pro.name}
+            className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="grid h-full w-full place-items-center text-3xl font-black text-[#f5d78c]/30">
+            {initials(pro.name)}
+          </div>
+        )}
         <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black ${
@@ -294,12 +300,12 @@ function MiniProfileRow({ pro, index }: { pro: ProfessionalCardData; index: numb
       href={`/profissionais/${pro.slug}`}
       className="flex items-center gap-3 rounded-[8px] border border-white/10 bg-white/[0.045] p-2.5 transition hover:border-[#d4a843]/35"
     >
-      <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded-[8px] bg-white/8">
-        <img
-          src={pro.image ?? profileFallbacks[index % profileFallbacks.length]}
-          alt={pro.name}
-          className="h-full w-full object-cover object-top"
-        />
+      <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded-[8px] bg-[#1a1a1c]">
+        {pro.image ? (
+          <img src={pro.image} alt={pro.name} className="h-full w-full object-cover object-top" />
+        ) : (
+          <div className="grid h-full w-full place-items-center text-xs font-black text-[#f5d78c]/40">{initials(pro.name)}</div>
+        )}
         <span className={`absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full border border-black ${online ? "bg-emerald-400" : "bg-white/45"}`} />
       </div>
       <div className="min-w-0 flex-1">
@@ -335,12 +341,12 @@ function Appointments({
                 href={`/profissionais/${appointment.slug}`}
                 className="flex items-center gap-3 rounded-[8px] bg-black/22 p-2.5"
               >
-                <div className="h-14 w-12 shrink-0 overflow-hidden rounded-[8px] bg-white/8">
-                  <img
-                    src={appointment.image ?? profileFallbacks[index % profileFallbacks.length]}
-                    alt={appointment.name}
-                    className="h-full w-full object-cover object-top"
-                  />
+                <div className="h-14 w-12 shrink-0 overflow-hidden rounded-[8px] bg-[#1a1a1c]">
+                  {appointment.image ? (
+                    <img src={appointment.image} alt={appointment.name} className="h-full w-full object-cover object-top" />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center text-xs font-black text-[#f5d78c]/40">{initials(appointment.name)}</div>
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-black text-white">{appointment.name}</p>
@@ -357,12 +363,12 @@ function Appointments({
                 href={`/profissionais/${pro.slug}`}
                 className="flex items-center gap-3 rounded-[8px] bg-black/22 p-2.5"
               >
-                <div className="h-14 w-12 shrink-0 overflow-hidden rounded-[8px] bg-white/8">
-                  <img
-                    src={pro.image ?? profileFallbacks[index % profileFallbacks.length]}
-                    alt={pro.name}
-                    className="h-full w-full object-cover object-top"
-                  />
+                <div className="h-14 w-12 shrink-0 overflow-hidden rounded-[8px] bg-[#1a1a1c]">
+                  {pro.image ? (
+                    <img src={pro.image} alt={pro.name} className="h-full w-full object-cover object-top" />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center text-xs font-black text-[#f5d78c]/40">{initials(pro.name)}</div>
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-black text-white">{pro.name}</p>
