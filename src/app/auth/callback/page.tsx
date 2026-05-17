@@ -11,6 +11,7 @@ type PendingRegistration = {
 
 const PROPERTY_DRAFT_KEY = "elitemodell_property_draft_v1";
 const PROPERTY_DRAFT_FINAL_PATH = "/anfitriao/imoveis/novo";
+const CALLBACK_TIMEOUT_MS = 1800;
 
 function hasPropertyDraft() {
   return Boolean(localStorage.getItem(PROPERTY_DRAFT_KEY));
@@ -19,7 +20,7 @@ function hasPropertyDraft() {
 const PROFESSIONAL_CATEGORIES = ["MULHER", "HOMEM", "TRANS"];
 
 async function getPostLoginPath() {
-  const res = await fetch("/api/users/me");
+  const res = await fetch("/api/users/me", { cache: "no-store" });
   if (!res.ok) return "/dashboard";
 
   const user = await res.json();
@@ -38,6 +39,31 @@ async function getPostLoginPath() {
   if (user.role === "HOST" && hasPropertyDraft()) return PROPERTY_DRAFT_FINAL_PATH;
 
   return "/dashboard";
+}
+
+function resolveWithTimeout<T>(promise: Promise<T>, fallback: T, ms = CALLBACK_TIMEOUT_MS) {
+  return new Promise<T>((resolve) => {
+    let settled = false;
+    const timer = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve(fallback);
+    }, ms);
+
+    promise
+      .then((value) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        resolve(value);
+      })
+      .catch(() => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        resolve(fallback);
+      });
+  });
 }
 
 function getRegistrationPath(pending: PendingRegistration | null) {
@@ -87,18 +113,20 @@ function AuthCallbackContent() {
       const res = await signIn("supabase", { accessToken, redirect: false });
       if (res?.error) throw new Error("Conta nao encontrada. Cadastre-se antes de entrar.");
 
+      const targetPath = pendingRegistration
+        ? getRegistrationPath(pendingRegistration)
+        : await resolveWithTimeout(getPostLoginPath(), "/dashboard");
+
       if (!active) return;
-      setMessage("Acesso confirmado.");
-      router.replace(
-        pendingRegistration ? getRegistrationPath(pendingRegistration) : await getPostLoginPath()
-      );
-      router.refresh();
+      setMessage("Acesso confirmado. Redirecionando...");
+      router.replace(targetPath);
+      window.setTimeout(() => router.refresh(), 120);
     }
 
     finishAuth().catch((err) => {
       if (!active) return;
       setMessage(err?.message ?? "Nao foi possivel finalizar o acesso.");
-      setTimeout(() => router.replace("/login"), 1800);
+      setTimeout(() => router.replace("/login"), 1200);
     });
 
     return () => {
@@ -107,8 +135,8 @@ function AuthCallbackContent() {
   }, [router, searchParams]);
 
   return (
-    <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#060e1b", color: "#f1f5f9", padding: 24 }}>
-      <div style={{ width: "100%", maxWidth: 420, background: "#0b1420", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 14, padding: 28, textAlign: "center" }}>
+    <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#050505", color: "#f4f1ea", padding: 24 }}>
+      <div style={{ width: "100%", maxWidth: 420, background: "#0c0c0c", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 14, padding: 28, textAlign: "center" }}>
         <p style={{ color: "#d4a843", fontSize: 12, fontWeight: 800, letterSpacing: 3, textTransform: "uppercase", margin: "0 0 10px" }}>EliteModell</p>
         <h1 style={{ fontSize: 18, margin: 0 }}>{message}</h1>
       </div>
@@ -119,8 +147,8 @@ function AuthCallbackContent() {
 export default function AuthCallbackPage() {
   return (
     <Suspense fallback={
-      <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#060e1b", color: "#f1f5f9", padding: 24 }}>
-        <div style={{ width: "100%", maxWidth: 420, background: "#0b1420", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 14, padding: 28, textAlign: "center" }}>
+      <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#050505", color: "#f4f1ea", padding: 24 }}>
+        <div style={{ width: "100%", maxWidth: 420, background: "#0c0c0c", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 14, padding: 28, textAlign: "center" }}>
           <p style={{ color: "#d4a843", fontSize: 12, fontWeight: 800, letterSpacing: 3, textTransform: "uppercase", margin: "0 0 10px" }}>EliteModell</p>
           <h1 style={{ fontSize: 18, margin: 0 }}>Finalizando acesso seguro...</h1>
         </div>

@@ -37,14 +37,16 @@ type CardPerfil = {
   local: string | null; servicos: string[]; bio: string;
 };
 
-const imoveis = [
-  { id: 1, titulo: "Suite reservada Lourdes", cidade: "Belo Horizonte, MG", preco: 890, foto: "/property-bh-luxury.png", quartos: 1, avaliacao: 4.9, tipo: "Espaco reservado", tags: ["Entrada privativa", "Uso profissional"] },
-  { id: 2, titulo: "Ambiente discreto Itauna", cidade: "Itauna, MG", preco: 650, foto: "/property-itauna-country.png", quartos: 1, avaliacao: 4.9, tipo: "Quarto privativo", tags: ["Privacidade acustica", "Atendimento reservado"] },
-  { id: 3, titulo: "Flat privativo Itauna", cidade: "Itauna, MG", preco: 420, foto: "/property-itauna-loft.png", quartos: 1, avaliacao: 4.8, tipo: "Flat discreto", tags: ["Entrada privativa"] },
-  { id: 4, titulo: "Studio reservado Savassi", cidade: "Belo Horizonte, MG", preco: 720, foto: "/property-bh-luxury.png", quartos: 1, avaliacao: 4.8, tipo: "Studio reservado", tags: ["Uso profissional"] },
-  { id: 5, titulo: "Espaco discreto Nova Lima", cidade: "Nova Lima, MG", preco: 980, foto: "/property-itauna-country.png", quartos: 1, avaliacao: 5.0, tipo: "Ambiente reservado", tags: ["Garagem privativa"] },
-  { id: 6, titulo: "Quarto reservado centro", cidade: "Belo Horizonte, MG", preco: 380, foto: "/property-itauna-loft.png", quartos: 1, avaliacao: 4.7, tipo: "Quarto privativo", tags: ["Entrada privativa"] },
-];
+const imoveis: Array<{
+  id: number;
+  titulo: string;
+  cidade: string;
+  preco: number;
+  foto: string;
+  avaliacao: number;
+  tipo: string;
+  tags: string[];
+}> = [];
 
 const FILTROS = ["Online agora", "Com avaliações", "Com local", "Até R$300", "Exclusivas"] as const;
 type Filtro = typeof FILTROS[number];
@@ -144,13 +146,99 @@ function BuscarContent() {
           .perfil-foto { padding-top: 0; width: 100%; height: 320px; flex-shrink: 0; }
           .perfil-info { padding: 16px 18px; }
         }
-        .imovel-grid {
+        .rooms-coming-soon {
+          min-height: 420px;
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 20px;
+          place-items: center;
+          text-align: center;
+          border: 1px solid rgba(212,168,67,0.18);
+          border-radius: 18px;
+          background:
+            radial-gradient(circle at 50% 0%, rgba(212,168,67,0.12), transparent 42%),
+            linear-gradient(145deg, rgba(255,255,255,0.035), rgba(212,168,67,0.035)),
+            #0b0b0b;
+          padding: 48px 24px;
+          box-shadow: 0 24px 70px rgba(0,0,0,0.28);
+        }
+        .rooms-coming-soon-inner { max-width: 620px; }
+        .soon-kicker {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 6px 12px;
+          border: 1px solid rgba(212,168,67,0.28);
+          border-radius: 999px;
+          color: ${GOLD};
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          background: rgba(212,168,67,0.08);
+        }
+        .rooms-coming-soon h2 {
+          margin: 18px 0 12px;
+          color: #f4f1ea;
+          font-family: ${PLAYFAIR};
+          font-size: clamp(2rem, 6vw, 4rem);
+          line-height: 0.95;
+          letter-spacing: 0;
+        }
+        .rooms-coming-soon p {
+          margin: 0 auto;
+          color: #b8b1a6;
+          font-size: 15px;
+          line-height: 1.75;
+          max-width: 520px;
+        }
+        .coming-actions {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 10px;
+          margin-top: 24px;
+        }
+        .coming-actions a {
+          min-height: 44px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          border-radius: 999px;
+          padding: 0 18px;
+          text-decoration: none;
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          transition: transform 0.2s, border-color 0.2s, background 0.2s;
+        }
+        .coming-actions a:hover { transform: translateY(-2px); }
+        .coming-actions .primary {
+          border: 1px solid transparent;
+          background: linear-gradient(135deg, #f6d979, #d4a843 48%, #a57920);
+          color: #080704;
+          box-shadow: 0 14px 36px rgba(212,168,67,0.18);
+        }
+        .coming-actions .secondary {
+          border: 1px solid rgba(212,168,67,0.22);
+          background: rgba(255,255,255,0.035);
+          color: #f4f1ea;
+        }
+        .soon-note {
+          display: block;
+          margin-top: 20px;
+          color: #716b62;
+          font-size: 12px;
+          line-height: 1.6;
         }
         @media (max-width: 640px) {
-          .imovel-grid { grid-template-columns: 1fr; }
+          .rooms-coming-soon {
+            min-height: 360px;
+            border-radius: 14px;
+            padding: 38px 18px;
+          }
+          .coming-actions { flex-direction: column; }
+          .coming-actions a { width: 100%; }
         }
         .filtros-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; align-items: center; -webkit-overflow-scrolling: touch; }
         .filtros-scroll::-webkit-scrollbar { display: none; }
@@ -343,7 +431,31 @@ function BuscarContent() {
         {/* ── QUARTOS ── */}
         {mainTab === "imoveis" && (
           <>
-            <div className="filtros-scroll" style={{ marginBottom: 20 }}>
+            <section className="rooms-coming-soon" aria-labelledby="rooms-coming-title">
+              <div className="rooms-coming-soon-inner">
+                <span className="soon-kicker">Ambientes reservados</span>
+                <h2 id="rooms-coming-title">Quartos discretos em breve.</h2>
+                <p>
+                  Estamos selecionando os primeiros espacos profissionais da Elite Modell.
+                  As listagens publicas so entram no ar depois de curadoria e aprovacao.
+                </p>
+                <div className="coming-actions">
+                  <Link className="primary" href="/cadastro?draft=imovel">
+                    Cadastrar para anunciar
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                  <Link className="secondary" href="/anfitriao/imoveis/novo">
+                    Ja sou anfitriao
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                </div>
+                <span className="soon-note">
+                  Nao exibimos fotos ou anuncios ficticios. O catalogo sera liberado apenas com espacos reais e verificados.
+                </span>
+              </div>
+            </section>
+
+            <div className="filtros-scroll" style={{ display: "none" }}>
               {["Quarto privativo", "Espaco reservado", "Flat discreto", "Studio reservado", "Ambiente reservado", "Entrada privativa"].map((f) => {
                 const ativo = filtroImovel === f;
                 return (
@@ -355,7 +467,7 @@ function BuscarContent() {
               })}
             </div>
 
-            <div className="imovel-grid">
+            <div className="imovel-grid" style={{ display: "none" }}>
               {imoveis.filter((i) => {
                 if (busca && !i.cidade.toLowerCase().includes(busca.toLowerCase()) && !i.titulo.toLowerCase().includes(busca.toLowerCase())) return false;
                 if (filtroImovel === "Entrada privativa") return i.tags.includes(filtroImovel);
