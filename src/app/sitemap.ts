@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const siteUrl = "https://elitemodell.vercel.app";
+const siteUrl = "https://elitemodell.com.br";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();

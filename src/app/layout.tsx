@@ -11,7 +11,7 @@ const playfair = Playfair_Display({
   variable: "--font-playfair",
 });
 
-const siteUrl = "https://elitemodell.vercel.app";
+const siteUrl = "https://elitemodell.com.br";
 const brandDescription =
   "Elite Modell e uma plataforma premium para conectar pessoas, profissionais, locais reservados e oportunidades com discricao, seguranca e elegancia.";
 
