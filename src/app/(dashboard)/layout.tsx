@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Bell, Compass, Heart, LayoutDashboard, Menu, MessageCircle, Search, ShieldCheck, Sparkles, UserRound } from "lucide-react";
@@ -31,6 +31,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
+      }
+    }
+    if (notifOpen) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [notifOpen]);
   const isPublicPropertyDraft = pathname === ACCOUNT_ROUTES.onboardingAnfitriao;
 
   useEffect(() => {
@@ -92,12 +104,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <ShieldCheck className="h-4 w-4" />
                 Ambiente seguro
               </div>
-              <button
-                className="grid h-10 w-10 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-white/70 transition hover:border-[#d4a843]/35 hover:text-[#f5d78c]"
-                aria-label="Notificações"
-              >
-                <Bell className="h-4 w-4" />
-              </button>
+              <div ref={notifRef} className="relative">
+                <button
+                  onClick={() => setNotifOpen((v) => !v)}
+                  className="grid h-10 w-10 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-white/70 transition hover:border-[#d4a843]/35 hover:text-[#f5d78c]"
+                  aria-label="Notificações"
+                >
+                  <Bell className="h-4 w-4" />
+                </button>
+                {notifOpen && (
+                  <div className="absolute right-0 top-12 z-50 w-72 rounded-[8px] border border-white/10 bg-[#0d0d0f] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
+                    <p className="mb-3 text-[11px] font-black uppercase tracking-[0.22em] text-[#d4a843]">Notificações</p>
+                    <div className="rounded-[8px] border border-dashed border-white/10 p-4 text-center">
+                      <Bell className="mx-auto mb-2 h-5 w-5 text-white/20" />
+                      <p className="text-sm font-black text-white/50">Nenhuma notificação</p>
+                      <p className="mt-1 text-xs text-white/28">Novidades e alertas aparecem aqui.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>

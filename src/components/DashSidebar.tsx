@@ -81,7 +81,7 @@ function initials(name?: string | null) {
 function roleLabel(role?: string) {
   if (role === "ADMIN") return "Administrador";
   if (role === "HOST") return "Anunciante";
-  return "Cliente premium";
+  return "Conta Elite";
 }
 
 export default function DashSidebar({ mobileOpen, onClose }: Props) {
@@ -123,8 +123,9 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
 
         <div className="relative border-b border-white/10 p-5">
           <Link href="/" onClick={onClose} className="inline-flex items-center gap-2 no-underline">
-            <span className="grid h-10 w-10 place-items-center rounded-[8px] border border-[#d4a843]/30 bg-[#d4a843]/10 text-sm font-black text-[#f5d78c]">
-              EM
+            <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-[8px] border border-[#d4a843]/30">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand/elite-modell-icon.svg" alt="Elite Modell" className="h-full w-full object-cover" />
             </span>
             <span className="text-xl font-black tracking-[-0.02em]">
               <span className="bg-[linear-gradient(135deg,#ffe5a0,#d4a843_30%,#f5d78c_58%,#9e7b2a)] bg-clip-text text-transparent">

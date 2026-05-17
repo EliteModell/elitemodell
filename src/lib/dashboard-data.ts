@@ -110,9 +110,9 @@ function getOnboarding(user: DashboardUser, savedProfiles: number, activeAppoint
       detail: "Elegibilidade e privacidade mantêm o ambiente confiável e discreto.",
     },
     {
-      label: "Curadoria inicial",
+      label: "Salvar favoritos",
       done: savedProfiles > 0,
-      detail: "Favoritar perfis vai treinar sua seleção pessoal de profissionais.",
+      detail: "Salve perfis que gostar para acessar rápido e receber sugestões melhores.",
     },
     {
       label: "Primeiro agendamento",

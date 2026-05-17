@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- Profile photos can come from Google or user-provided URLs. */
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
@@ -17,6 +17,7 @@ import {
   Heart,
   History,
   KeyRound,
+  Loader2,
   LockKeyhole,
   Mail,
   MapPin,
@@ -29,6 +30,7 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
+import { supabaseAuth } from "@/lib/supabase-client";
 
 export type PremiumProfileData = {
   user: {
@@ -170,41 +172,65 @@ function Metric({
 export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [profile, setProfile] = useState(data.user);
   const [form, setForm] = useState({
     name: data.user.name ?? "",
     phone: data.user.phone ?? "",
-    image: data.user.image ?? "",
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const completion = useMemo(() => profileCompletion({ ...data, user: profile }), [data, profile]);
   const accountAge = dateLabel(profile.createdAt);
 
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${data.user.id}/avatar.${ext}`;
+      const { error: uploadError } = await supabaseAuth.storage
+        .from("profiles")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabaseAuth.storage.from("profiles").getPublicUrl(path);
+      const imageUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      const res = await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: imageUrl }),
+      });
+      if (!res.ok) throw new Error("Erro ao salvar foto.");
+      setProfile((current) => ({ ...current, image: imageUrl }));
+      toast.success("Foto atualizada!");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar foto.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-
     try {
       const payload = {
         name: form.name.trim(),
         phone: form.phone.replace(/\D/g, ""),
-        image: form.image.trim() || undefined,
       };
-
       const res = await fetch("/api/users/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       if (!res.ok) throw new Error("Não foi possível atualizar o perfil.");
-
       const updated = await res.json();
       setProfile((current) => ({
         ...current,
         name: updated.name ?? current.name,
         phone: updated.phone ?? null,
-        image: updated.image ?? null,
       }));
       setEditing(false);
       toast.success("Perfil atualizado.");
@@ -216,7 +242,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6 pb-28 md:pb-0">
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6 pb-36 md:pb-0">
       <motion.section
         variants={item}
         className="relative overflow-hidden rounded-[8px] border border-white/10 bg-[linear-gradient(135deg,rgba(8,8,9,0.98),rgba(64,12,18,0.68)_48%,rgba(18,16,12,0.96))] p-5 shadow-[0_32px_110px_rgba(0,0,0,0.38)] sm:p-7"
@@ -234,12 +260,20 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
               )}
               <button
                 type="button"
-                onClick={() => setEditing(true)}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
                 aria-label="Alterar foto de perfil"
-                className="absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-full border border-[#d4a843]/25 bg-[#0a0a0b] text-[#d4a843] transition hover:border-[#d4a843]/55 hover:bg-[#0f0f10]"
+                className="absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-full border border-[#d4a843]/25 bg-[#0a0a0b] text-[#d4a843] transition hover:border-[#d4a843]/55 hover:bg-[#0f0f10] disabled:opacity-60"
               >
-                <Camera className="h-4 w-4" />
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
               </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handlePhotoUpload}
+              />
             </div>
 
             <div className="min-w-0">
@@ -346,15 +380,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
                   inputMode="tel"
                 />
               </label>
-              <label className="grid gap-2 text-sm font-bold text-white/72">
-                URL da foto
-                <input
-                  value={form.image}
-                  onChange={(event) => setForm({ ...form, image: event.target.value })}
-                  className="h-12 rounded-[8px] border border-white/10 bg-black/30 px-4 text-white outline-none transition focus:border-[#d4a843]/55"
-                  placeholder="https://..."
-                />
-              </label>
+              <p className="text-xs text-white/35">Para trocar a foto, toque no ícone da câmera acima.</p>
               <button
                 disabled={saving}
                 className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[8px] bg-[#d4a843] px-5 text-sm font-black text-[#100d09] transition hover:bg-[#f5d78c] disabled:cursor-not-allowed disabled:opacity-60 sm:w-fit"
@@ -403,7 +429,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
             href="/profissionais"
             className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-[8px] border border-[#cc1f2f]/25 bg-[#cc1f2f]/10 px-4 py-3 text-sm font-black text-[#ff9aa4] transition hover:border-[#cc1f2f]/45 hover:bg-[#cc1f2f]/15"
           >
-            Continuar curadoria
+            Explorar perfis
             <ArrowRight className="h-4 w-4" />
           </Link>
         </motion.section>
@@ -420,7 +446,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
               { label: data.vip.label, icon: <Crown className="h-4 w-4" />, active: true },
               { label: profile.emailVerified ? "Email verificado" : "Email pendente", icon: <ShieldCheck className="h-4 w-4" />, active: Boolean(profile.emailVerified) },
               { label: profile.image ? "Foto conectada" : "Foto pendente", icon: <Camera className="h-4 w-4" />, active: Boolean(profile.image) },
-              { label: data.metrics.favoriteProfiles > 0 ? "Curadoria iniciada" : "Curadoria vazia", icon: <Heart className="h-4 w-4" />, active: data.metrics.favoriteProfiles > 0 },
+              { label: data.metrics.favoriteProfiles > 0 ? "Favoritos salvos" : "Nenhum favorito", icon: <Heart className="h-4 w-4" />, active: data.metrics.favoriteProfiles > 0 },
             ].map((badge) => (
               <div
                 key={badge.label}

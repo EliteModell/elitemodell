@@ -335,7 +335,7 @@ function Appointments({
       <SectionHeader title="Agendamentos" href="/dashboard/reservas" compact />
       <div className="grid gap-2.5">
         {appointments.length > 0
-          ? appointments.slice(0, 3).map((appointment, index) => (
+          ? appointments.slice(0, 3).map((appointment) => (
               <Link
                 key={appointment.id}
                 href={`/profissionais/${appointment.slug}`}
@@ -357,7 +357,7 @@ function Appointments({
                 <CalendarCheck className="h-4 w-4 text-[#f5d78c]" />
               </Link>
             ))
-          : profiles.slice(0, 2).map((pro, index) => (
+          : profiles.slice(0, 2).map((pro) => (
               <Link
                 key={`agenda-${pro.id}`}
                 href={`/profissionais/${pro.slug}`}
@@ -407,7 +407,7 @@ export default function PremiumDashboardHome({ data }: { data: DashboardHomeData
   const onlineNow = profiles.filter((pro, index) => isOnline(index, pro.featured)).slice(0, 6);
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-5 pb-28 md:pb-0">
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-5 pb-36 md:pb-0">
       <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-[#101012] p-4 shadow-[0_30px_100px_rgba(0,0,0,0.35)]">
         <div className="flex items-center gap-3">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[8px] border border-[#d4a843]/35 bg-[#d4a843]/12">
