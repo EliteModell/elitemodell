@@ -16,14 +16,27 @@ function hasPropertyDraft() {
   return Boolean(localStorage.getItem(PROPERTY_DRAFT_KEY));
 }
 
-async function getPostLoginPath() {
-  if (hasPropertyDraft()) return PROPERTY_DRAFT_FINAL_PATH;
+const PROFESSIONAL_CATEGORIES = ["MULHER", "HOMEM", "TRANS"];
 
+async function getPostLoginPath() {
   const res = await fetch("/api/users/me");
   if (!res.ok) return "/dashboard";
 
   const user = await res.json();
-  if (user.role === "HOST" && !user.professional) return "/profissional/novo";
+  const isProfessional = PROFESSIONAL_CATEGORIES.includes(user.category);
+
+  if (user.role === "HOST" && isProfessional) {
+    // Sem perfil criado → começar onboarding
+    if (!user.professional) return "/profissional/novo";
+    // Perfil incompleto (DRAFT) → retomar onboarding
+    if (user.professional.status === "DRAFT") return "/profissional/novo";
+    // Perfil em revisão ou ativo → dashboard
+    return "/dashboard";
+  }
+
+  // Host de imóveis → verificar rascunho de propriedade
+  if (user.role === "HOST" && hasPropertyDraft()) return PROPERTY_DRAFT_FINAL_PATH;
+
   return "/dashboard";
 }
 

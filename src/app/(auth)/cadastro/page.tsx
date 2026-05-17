@@ -2,7 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- Existing auth error payloads are provider-specific. */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -169,6 +169,8 @@ export default function CadastroPage() {
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [pendingAuthMethod, setPendingAuthMethod] = useState<PendingAuthMethod>(null);
+  const monthRef = useRef<HTMLInputElement>(null);
+  const yearRef = useRef<HTMLInputElement>(null);
   const isAuthenticated = status === "authenticated";
   const isLoggedUpgradeFlow = isAuthenticated && form.accountType !== "GUEST";
 
@@ -210,10 +212,14 @@ export default function CadastroPage() {
 
   function handleBirthPartChange(part: BirthPart, value: string) {
     const maxLength = part === "year" ? 4 : 2;
-    const nextParts = { ...birthParts, [part]: onlyDigits(value, maxLength) };
+    const cleaned = onlyDigits(value, maxLength);
+    const nextParts = { ...birthParts, [part]: cleaned };
 
     setBirthParts(nextParts);
     setForm({ ...form, birthDate: composeBirthDate(nextParts) });
+
+    if (part === "day" && cleaned.length === 2) monthRef.current?.focus();
+    if (part === "month" && cleaned.length === 2) yearRef.current?.focus();
   }
 
   function validateRequiredForm(includeEmailFields: boolean, showToast = false) {
@@ -606,6 +612,7 @@ export default function CadastroPage() {
               aria-label="Dia de nascimento"
             />
             <input
+              ref={monthRef}
               type="text"
               inputMode="numeric"
               autoComplete="bday-month"
@@ -620,6 +627,7 @@ export default function CadastroPage() {
               aria-label="Mes de nascimento"
             />
             <input
+              ref={yearRef}
               type="text"
               inputMode="numeric"
               autoComplete="bday-year"
