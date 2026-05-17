@@ -1,25 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { isAgeOfMajority, isValidBirthDate, getMaxBirthDate } from "@/lib/age-validation";
+import { useRef, useState } from "react";
+import { isAgeOfMajority, isValidBirthDate } from "@/lib/age-validation";
 
 type PickerStep = "day" | "month" | "year";
 
 const GOLD = "#d4a843";
 const months = [
-  "Janeiro",
-  "Fevereiro",
-  "Marco",
-  "Abril",
-  "Maio",
-  "Junho",
-  "Julho",
-  "Agosto",
-  "Setembro",
-  "Outubro",
-  "Novembro",
-  "Dezembro",
+  "Jan",
+  "Fev",
+  "Mar",
+  "Abr",
+  "Mai",
+  "Jun",
+  "Jul",
+  "Ago",
+  "Set",
+  "Out",
+  "Nov",
+  "Dez",
 ];
 
 function pad(value: number) {
@@ -36,11 +35,6 @@ function composeBirthDate(day: number | null, month: number | null, year: number
   return `${year}-${pad(month)}-${pad(day)}`;
 }
 
-function displayBirthDate(day: number | null, month: number | null, year: number | null) {
-  if (!day || !month || !year) return "Selecione sua data";
-  return `${pad(day)} de ${months[month - 1]} de ${year}`;
-}
-
 export default function AgeGate() {
   const [visible, setVisible] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -48,75 +42,34 @@ export default function AgeGate() {
   });
   const [birthDate, setBirthDate] = useState("");
   const [error, setError] = useState("");
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerStep, setPickerStep] = useState<PickerStep>("day");
-  const [day, setDay] = useState<number | null>(null);
+  const [activeStep, setActiveStep] = useState<PickerStep>("day");
+  const [dayInput, setDayInput] = useState("");
   const [month, setMonth] = useState<number | null>(null);
-  const [year, setYear] = useState<number | null>(null);
-
-  const maxDate = getMaxBirthDate();
-  const maxBirth = useMemo(() => new Date(`${maxDate}T12:00:00`), [maxDate]);
-  const dayOptions = useMemo(() => {
-    const total = daysInMonth(month, year);
-    return Array.from({ length: total }, (_, index) => index + 1);
-  }, [month, year]);
-  const yearOptions = useMemo(() => {
-    const selectedMonth = month ?? 1;
-    const selectedDay = day ?? 1;
-    const maxYearAllowed =
-      selectedMonth > maxBirth.getMonth() + 1 ||
-      (selectedMonth === maxBirth.getMonth() + 1 && selectedDay > maxBirth.getDate())
-        ? maxBirth.getFullYear() - 1
-        : maxBirth.getFullYear();
-
-    return Array.from({ length: maxYearAllowed - 1925 }, (_, index) => maxYearAllowed - index);
-  }, [day, maxBirth, month]);
-
-  function openPicker() {
-    setError("");
-    setPickerStep(day ? month ? "year" : "month" : "day");
-    setPickerOpen(true);
-  }
-
-  function selectDay(value: number) {
-    setDay(value);
-    setError("");
-    setPickerStep("month");
-  }
+  const [yearInput, setYearInput] = useState("");
+  const dayRef = useRef<HTMLInputElement>(null);
+  const yearRef = useRef<HTMLInputElement>(null);
+  const dayReady = dayInput.length === 2 && Number(dayInput) >= 1 && Number(dayInput) <= 31;
 
   function selectMonth(value: number) {
     setMonth(value);
     setError("");
-
-    if (day && day > daysInMonth(value, year)) {
-      setDay(daysInMonth(value, year));
-    }
-
-    setPickerStep("year");
+    setActiveStep("year");
+    window.setTimeout(() => yearRef.current?.focus(), 80);
+    tryComplete(dayInput, value, yearInput);
   }
 
-  function selectYear(value: number) {
-    const safeDay = day && month ? Math.min(day, daysInMonth(month, value)) : day;
-    setYear(value);
-    setDay(safeDay);
-    setError("");
-    setBirthDate(composeBirthDate(safeDay, month, value));
-    setPickerOpen(false);
+  function composeFromParts(nextDay = dayInput, nextMonth = month, nextYear = yearInput) {
+    if (nextDay.length !== 2 || !nextMonth || nextYear.length !== 4) return "";
+    return composeBirthDate(Number(nextDay), nextMonth, Number(nextYear));
   }
 
-  function handleConfirm() {
-    if (!birthDate) {
-      setError("Selecione sua data de nascimento");
-      openPicker();
-      return;
-    }
-
-    if (!isValidBirthDate(birthDate)) {
+  function completeWithDate(date: string) {
+    if (!isValidBirthDate(date)) {
       setError("Data de nascimento invalida");
       return;
     }
 
-    if (!isAgeOfMajority(birthDate)) {
+    if (!isAgeOfMajority(date)) {
       setError("Voce deve ter 18 anos ou mais");
       return;
     }
@@ -124,6 +77,75 @@ export default function AgeGate() {
     sessionStorage.setItem("age_verified_session", "1");
     sessionStorage.setItem("age_verified_date", new Date().toISOString());
     setVisible(false);
+  }
+
+  function tryComplete(nextDay = dayInput, nextMonth = month, nextYear = yearInput) {
+    const date = composeFromParts(nextDay, nextMonth, nextYear);
+    if (!date) return;
+    setBirthDate(date);
+    completeWithDate(date);
+  }
+
+  function handleDayChange(value: string) {
+    const clean = value.replace(/\D/g, "").slice(0, 2);
+    setDayInput(clean);
+    setError("");
+    setBirthDate("");
+
+    if (clean.length === 2) {
+      const numericDay = Number(clean);
+      if (numericDay < 1 || numericDay > 31) {
+        setError("Dia invalido");
+        return;
+      }
+      setActiveStep("month");
+      window.setTimeout(() => {
+        document.querySelector<HTMLButtonElement>("[data-month-index='0']")?.focus();
+      }, 80);
+    }
+  }
+
+  function handleYearChange(value: string) {
+    const clean = value.replace(/\D/g, "").slice(0, 4);
+    setYearInput(clean);
+    setError("");
+
+    if (clean.length === 4) {
+      if (!month) {
+        setActiveStep("month");
+        setError("Escolha o mes");
+        return;
+      }
+
+      const numericDay = Number(dayInput);
+      if (numericDay > daysInMonth(month, Number(clean))) {
+        setError("Dia invalido para este mes");
+        setActiveStep("day");
+        window.setTimeout(() => dayRef.current?.focus(), 80);
+        return;
+      }
+
+      tryComplete(dayInput, month, clean);
+    }
+  }
+
+  function handleConfirm() {
+    const date = birthDate || composeFromParts();
+    if (!date) {
+      setError("Complete sua data de nascimento");
+      if (dayInput.length < 2) {
+        setActiveStep("day");
+        dayRef.current?.focus();
+      } else if (!month) {
+        setActiveStep("month");
+      } else {
+        setActiveStep("year");
+        yearRef.current?.focus();
+      }
+      return;
+    }
+
+    completeWithDate(date);
   }
 
   function handleDeny() {
@@ -152,79 +174,64 @@ export default function AgeGate() {
 
           <div className="date-block">
             <span className="date-label">Data de nascimento</span>
-            <button className={`date-trigger ${birthDate ? "filled" : ""}`} type="button" onClick={openPicker}>
-              <span>{displayBirthDate(day, month, year)}</span>
-              <ChevronDown size={18} />
-            </button>
-            {error ? <p className="date-error">{error}</p> : null}
-          </div>
+            <div className="birth-flow" aria-label="Data de nascimento">
+              <div className={`birth-field ${activeStep === "day" ? "active" : ""}`}>
+                <label htmlFor="birth-day">Dia</label>
+                <input
+                  ref={dayRef}
+                  id="birth-day"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="bday-day"
+                  maxLength={2}
+                  placeholder="DD"
+                  value={dayInput}
+                  onChange={(event) => handleDayChange(event.target.value)}
+                  onFocus={() => setActiveStep("day")}
+                />
+              </div>
 
-          {pickerOpen ? (
-            <div className="picker-panel" aria-label="Selecionar data de nascimento">
-              <div className="picker-head">
-                <div>
-                  <span>{pickerStep === "day" ? "1 de 3" : pickerStep === "month" ? "2 de 3" : "3 de 3"}</span>
-                  <strong>{pickerStep === "day" ? "Escolha o dia" : pickerStep === "month" ? "Escolha o mes" : "Escolha o ano"}</strong>
+              <div className={`month-field ${activeStep === "month" ? "active" : ""} ${dayReady ? "" : "disabled"}`}>
+                <label>Mes</label>
+                <div className="month-strip">
+                  {months.map((item, index) => (
+                    <button
+                      key={item}
+                      type="button"
+                      data-month-index={index}
+                      disabled={!dayReady}
+                      className={month === index + 1 ? "selected" : ""}
+                      onClick={() => selectMonth(index + 1)}
+                    >
+                      {item}
+                    </button>
+                  ))}
                 </div>
-                <button type="button" onClick={() => setPickerOpen(false)} aria-label="Fechar seletor">
-                  Fechar
-                </button>
               </div>
 
-              <div className="step-track">
-                {(["day", "month", "year"] as PickerStep[]).map((step) => (
-                  <span key={step} className={pickerStep === step ? "active" : ""} />
-                ))}
+              <div className={`birth-field ${activeStep === "year" ? "active" : ""}`}>
+                <label htmlFor="birth-year">Ano</label>
+                <input
+                  ref={yearRef}
+                  id="birth-year"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="bday-year"
+                  maxLength={4}
+                  placeholder="AAAA"
+                  value={yearInput}
+                  disabled={!month}
+                  onChange={(event) => handleYearChange(event.target.value)}
+                  onFocus={() => setActiveStep("year")}
+                />
               </div>
 
-              <div key={pickerStep} className={`picker-stage ${pickerStep}`}>
-                {pickerStep === "day" ? (
-                  <div className="day-grid">
-                    {dayOptions.map((item) => (
-                      <button
-                        key={item}
-                        type="button"
-                        className={day === item ? "selected" : ""}
-                        onClick={() => selectDay(item)}
-                      >
-                        {pad(item)}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-
-                {pickerStep === "month" ? (
-                  <div className="month-grid">
-                    {months.map((item, index) => (
-                      <button
-                        key={item}
-                        type="button"
-                        className={month === index + 1 ? "selected" : ""}
-                        onClick={() => selectMonth(index + 1)}
-                      >
-                        {item}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-
-                {pickerStep === "year" ? (
-                  <div className="year-wheel">
-                    {yearOptions.map((item) => (
-                      <button
-                        key={item}
-                        type="button"
-                        className={year === item ? "selected" : ""}
-                        onClick={() => selectYear(item)}
-                      >
-                        {item}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
+              <div className="birth-preview">
+                {dayInput.length === 2 ? dayInput : "DD"} / {month ? months[month - 1] : "Mes"} / {yearInput || "AAAA"}
               </div>
             </div>
-          ) : null}
+            {error ? <p className="date-error">{error}</p> : null}
+          </div>
 
           <button className="continue-button" onClick={handleConfirm} type="button">
             Continuar
@@ -339,171 +346,107 @@ export default function AgeGate() {
           font-weight: 700;
         }
 
-        .date-trigger {
-          display: flex;
-          width: 100%;
-          min-height: 54px;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 12px;
-          background: #0f172a;
-          color: #7f8ea4;
-          padding: 0 14px;
-          font-size: 15px;
-          font-weight: 750;
-          text-align: left;
-          cursor: pointer;
-        }
-
-        .date-trigger.filled {
-          border-color: rgba(212, 168, 67, 0.28);
-          color: #f8fafc;
-        }
-
-        .date-trigger svg {
-          color: ${GOLD};
-          flex-shrink: 0;
-        }
-
         .date-error {
           margin: 8px 0 0;
           color: #ef4444;
           font-size: 12px;
         }
 
-        .picker-panel {
-          margin: 0 0 16px;
-          overflow: hidden;
-          border: 1px solid rgba(212, 168, 67, 0.2);
-          border-radius: 18px;
-          background:
-            linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
-            #080f1d;
-          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        .birth-flow {
+          display: grid;
+          gap: 10px;
         }
 
-        .picker-head {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 14px;
-          padding: 14px 14px 10px;
-          text-align: left;
+        .birth-field,
+        .month-field {
+          border: 1px solid rgba(255, 255, 255, 0.07);
+          border-radius: 12px;
+          background: rgba(15, 23, 42, 0.92);
+          padding: 11px;
+          transition: border-color 0.18s ease, background 0.18s ease;
         }
 
-        .picker-head span {
+        .birth-field.active,
+        .month-field.active {
+          border-color: rgba(212, 168, 67, 0.55);
+          background: rgba(212, 168, 67, 0.075);
+        }
+
+        .month-field.disabled {
+          opacity: 0.42;
+        }
+
+        .birth-field label,
+        .month-field label {
           display: block;
-          margin-bottom: 3px;
+          margin-bottom: 7px;
           color: ${GOLD};
           font-size: 10px;
           font-weight: 900;
-          letter-spacing: 1.5px;
+          letter-spacing: 1.35px;
           text-transform: uppercase;
         }
 
-        .picker-head strong {
+        .birth-field input {
+          width: 100%;
+          height: 45px;
+          border: 0;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.045);
           color: #f8fafc;
-          font-size: 15px;
+          outline: none;
+          text-align: center;
+          font-size: 22px;
           font-weight: 900;
+          letter-spacing: 1.6px;
         }
 
-        .picker-head button {
-          min-height: 34px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 999px;
-          background: rgba(255, 255, 255, 0.04);
-          color: #cbd5e1;
-          padding: 0 12px;
-          font-size: 12px;
-          font-weight: 800;
+        .birth-field input:disabled {
+          color: #334155;
         }
 
-        .step-track {
+        .month-strip {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 6px;
-          padding: 0 14px 12px;
-        }
-
-        .step-track span {
-          height: 3px;
-          border-radius: 999px;
-          background: rgba(255, 255, 255, 0.08);
-          transition: background 0.2s ease;
-        }
-
-        .step-track span.active {
-          background: linear-gradient(90deg, #ffe08b, ${GOLD});
-        }
-
-        .picker-stage {
-          padding: 0 14px 14px;
-          animation: stageIn 0.2s ease both;
-        }
-
-        .day-grid {
-          display: grid;
-          grid-template-columns: repeat(7, minmax(0, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 7px;
         }
 
-        .day-grid button,
-        .month-grid button,
-        .year-wheel button {
-          min-height: 42px;
+        .month-strip button {
+          min-height: 38px;
           border: 1px solid rgba(255, 255, 255, 0.07);
-          border-radius: 12px;
+          border-radius: 10px;
           background: rgba(255, 255, 255, 0.045);
-          color: #e2e8f0;
-          font-size: 14px;
-          font-weight: 850;
+          color: #cbd5e1;
+          font-size: 12px;
+          font-weight: 900;
           cursor: pointer;
           transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
           -webkit-tap-highlight-color: transparent;
         }
 
-        .day-grid button:active,
-        .month-grid button:active,
-        .year-wheel button:active {
-          transform: scale(0.96);
+        .month-strip button:active {
+          transform: scale(0.95);
         }
 
-        .day-grid button.selected,
-        .month-grid button.selected,
-        .year-wheel button.selected {
-          border-color: rgba(212, 168, 67, 0.55);
+        .month-strip button.selected {
+          border-color: rgba(212, 168, 67, 0.62);
           background: linear-gradient(135deg, rgba(255, 224, 139, 0.34), rgba(212, 168, 67, 0.18));
           color: #fff4c7;
         }
 
-        .month-grid {
+        .month-strip button:disabled {
+          cursor: default;
+        }
+
+        .birth-preview {
+          min-height: 34px;
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 8px;
-        }
-
-        .month-grid button {
-          min-height: 48px;
-          justify-content: flex-start;
-          padding: 0 12px;
-          text-align: left;
-        }
-
-        .year-wheel {
-          display: grid;
-          max-height: 238px;
-          gap: 8px;
-          overflow-y: auto;
-          padding-right: 3px;
-          scroll-snap-type: y mandatory;
-        }
-
-        .year-wheel button {
-          min-height: 52px;
-          scroll-snap-align: center;
-          font-size: 19px;
+          place-items: center;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.035);
+          color: #64748b;
+          font-size: 12px;
+          font-weight: 800;
         }
 
         .continue-button,
@@ -582,22 +525,13 @@ export default function AgeGate() {
             margin-bottom: 20px;
           }
 
-          .day-grid {
-            gap: 6px;
+          .month-strip {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
           }
 
-          .day-grid button {
-            min-height: 40px;
-            border-radius: 10px;
-            font-size: 13px;
-          }
-
-          .month-grid button {
-            min-height: 46px;
-          }
-
-          .year-wheel {
-            max-height: 220px;
+          .birth-field input {
+            height: 42px;
+            font-size: 20px;
           }
         }
       `}</style>
