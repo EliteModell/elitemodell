@@ -13,6 +13,8 @@ type PendingRegistration = {
 const PROPERTY_DRAFT_KEY = "elitemodell_property_draft_v1";
 const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
 const CALLBACK_TIMEOUT_MS = 1800;
+const GOLD = "#d4a843";
+const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
 
 function hasPropertyDraft() {
   return Boolean(localStorage.getItem(PROPERTY_DRAFT_KEY));
@@ -28,15 +30,11 @@ async function getPostLoginPath() {
   const isProfessional = PROFESSIONAL_CATEGORIES.includes(user.category);
 
   if (user.role === "HOST" && isProfessional) {
-    // Sem perfil criado → começar onboarding
     if (!user.professional) return ACCOUNT_ROUTES.onboardingAcompanhante;
-    // Perfil incompleto (DRAFT) → retomar onboarding
     if (user.professional.status === "DRAFT") return ACCOUNT_ROUTES.onboardingAcompanhante;
-    // Perfil em revisão ou ativo → dashboard
     return postLoginPathFromUser(user);
   }
 
-  // Host de imóveis → verificar rascunho de propriedade
   if (user.role === "HOST" && hasPropertyDraft()) return PROPERTY_DRAFT_FINAL_PATH;
 
   return postLoginPathFromUser(user);
@@ -75,10 +73,117 @@ function getRegistrationPath(pending: PendingRegistration | null) {
   return ACCOUNT_ROUTES.painelCliente;
 }
 
+function CallbackCard({ message, success }: { message: string; success?: boolean }) {
+  return (
+    <main style={{
+      minHeight: "100vh",
+      display: "grid",
+      placeItems: "center",
+      background: "radial-gradient(ellipse at 50% 0%, rgba(212,168,67,0.06) 0%, #050505 60%)",
+      padding: 24,
+    }}>
+      <style>{`
+        @keyframes em-spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        @keyframes em-pulse {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.5; }
+        }
+        @keyframes em-fadein {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
+      <div style={{
+        width: "100%",
+        maxWidth: 380,
+        background: "rgba(10,10,10,0.96)",
+        border: "1px solid rgba(212,168,67,0.28)",
+        borderRadius: 16,
+        padding: "40px 32px 36px",
+        textAlign: "center",
+        position: "relative",
+        animation: "em-fadein 0.4s ease",
+        boxShadow: "0 0 60px rgba(212,168,67,0.06), 0 20px 60px rgba(0,0,0,0.6)",
+      }}>
+        {/* Gold line */}
+        <div style={{
+          position: "absolute",
+          top: 0, left: 0, right: 0,
+          height: 2,
+          borderRadius: "16px 16px 0 0",
+          background: "linear-gradient(90deg, transparent 0%, #d4a843 30%, #f5d78c 50%, #d4a843 70%, transparent 100%)",
+        }} />
+
+        {/* Logo */}
+        <div style={{ marginBottom: 32 }}>
+          <span style={{ fontWeight: 900, fontSize: 28, letterSpacing: "-0.5px" }}>
+            <span style={{ background: GOLD_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>elite</span>
+            <span style={{ color: "#f1f5f9" }}>modell</span>
+          </span>
+        </div>
+
+        {/* Spinner */}
+        {!success && (
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
+            <div style={{
+              width: 48,
+              height: 48,
+              borderRadius: "50%",
+              border: "2.5px solid rgba(212,168,67,0.15)",
+              borderTopColor: GOLD,
+              animation: "em-spin 0.9s linear infinite",
+            }} />
+          </div>
+        )}
+
+        {/* Check icon on success */}
+        {success && (
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
+            <div style={{
+              width: 48, height: 48,
+              borderRadius: "50%",
+              background: "rgba(212,168,67,0.12)",
+              border: `1.5px solid ${GOLD}`,
+              display: "grid",
+              placeItems: "center",
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M5 13l4 4L19 7" stroke={GOLD} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+          </div>
+        )}
+
+        {/* Message */}
+        <p style={{
+          color: "#cbd5e1",
+          fontSize: 15,
+          fontWeight: 500,
+          margin: 0,
+          lineHeight: 1.5,
+          animation: "em-pulse 2s ease-in-out infinite",
+        }}>
+          {message}
+        </p>
+
+        {/* Subtle bottom label */}
+        <p style={{ color: "#334155", fontSize: 11, margin: "20px 0 0", letterSpacing: 1.5, textTransform: "uppercase" }}>
+          Acesso seguro
+        </p>
+      </div>
+    </main>
+  );
+}
+
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [message, setMessage] = useState("Finalizando acesso seguro...");
+  const [message, setMessage] = useState("Verificando suas credenciais...");
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -92,7 +197,9 @@ function AuthCallbackContent() {
 
       const { data } = await supabaseAuth.auth.getSession();
       const accessToken = data.session?.access_token;
-      if (!accessToken) throw new Error("Sessão Supabase não encontrada.");
+      if (!accessToken) throw new Error("Sessão não encontrada. Tente novamente.");
+
+      if (active) setMessage("Configurando sua conta...");
 
       const pendingRaw = sessionStorage.getItem("elitemodell_pending_registration");
       let pendingRegistration: PendingRegistration | null = null;
@@ -119,15 +226,18 @@ function AuthCallbackContent() {
         : await resolveWithTimeout(getPostLoginPath(), ACCOUNT_ROUTES.painelCliente);
 
       if (!active) return;
-      setMessage("Acesso confirmado. Redirecionando...");
-      router.replace(targetPath);
-      window.setTimeout(() => router.refresh(), 120);
+      setSuccess(true);
+      setMessage("Acesso confirmado!");
+      window.setTimeout(() => {
+        router.replace(targetPath);
+        window.setTimeout(() => router.refresh(), 120);
+      }, 600);
     }
 
     finishAuth().catch((err) => {
       if (!active) return;
       setMessage(err?.message ?? "Não foi possível finalizar o acesso.");
-      setTimeout(() => router.replace(ACCOUNT_ROUTES.login), 1200);
+      setTimeout(() => router.replace(ACCOUNT_ROUTES.login), 1800);
     });
 
     return () => {
@@ -135,26 +245,12 @@ function AuthCallbackContent() {
     };
   }, [router, searchParams]);
 
-  return (
-    <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#050505", color: "#f4f1ea", padding: 24 }}>
-      <div style={{ width: "100%", maxWidth: 420, background: "#0c0c0c", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 14, padding: 28, textAlign: "center" }}>
-        <p style={{ color: "#d4a843", fontSize: 12, fontWeight: 800, letterSpacing: 3, textTransform: "uppercase", margin: "0 0 10px" }}>EliteModell</p>
-        <h1 style={{ fontSize: 18, margin: 0 }}>{message}</h1>
-      </div>
-    </main>
-  );
+  return <CallbackCard message={message} success={success} />;
 }
 
 export default function AuthCallbackPage() {
   return (
-    <Suspense fallback={
-      <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#050505", color: "#f4f1ea", padding: 24 }}>
-        <div style={{ width: "100%", maxWidth: 420, background: "#0c0c0c", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 14, padding: 28, textAlign: "center" }}>
-          <p style={{ color: "#d4a843", fontSize: 12, fontWeight: 800, letterSpacing: 3, textTransform: "uppercase", margin: "0 0 10px" }}>EliteModell</p>
-          <h1 style={{ fontSize: 18, margin: 0 }}>Finalizando acesso seguro...</h1>
-        </div>
-      </main>
-    }>
+    <Suspense fallback={<CallbackCard message="Carregando..." />}>
       <AuthCallbackContent />
     </Suspense>
   );
