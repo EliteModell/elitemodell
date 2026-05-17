@@ -59,7 +59,7 @@ function BuscarContent() {
   const [filtroImovel, setFiltroImovel] = useState<string | null>(null);
   const [perfis, setPerfis] = useState<CardPerfil[]>([]);
   const [loading, setLoading] = useState(false);
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchPerfis = useCallback(async (category: string, search: string) => {
     setLoading(true);
