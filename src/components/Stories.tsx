@@ -75,13 +75,9 @@ export default function Stories() {
   }
 
   const story = aberto ? aberto.grupo.stories[aberto.idx] : null;
+  const canPostStory = Boolean(session && (session.user as any).isProfessional);
 
-  const demoStories = [
-    { id: "d1", nome: "Elite Stories", foto: "/model2.jpg", badge: true },
-    { id: "d2", nome: "Amanda R.", foto: "/model1.jpg", badge: false },
-  ];
-
-  const listaFinal = grupos.length > 0 ? null : demoStories;
+  if (grupos.length === 0 && !canPostStory) return null;
 
   return (
     <>
@@ -89,7 +85,7 @@ export default function Stories() {
         <div ref={rowRef} style={{ display: "flex", gap: 16, overflowX: "auto", scrollbarWidth: "none", padding: "18px 40px 12px 8px", WebkitOverflowScrolling: "touch" }}>
 
           {/* Botão adicionar story (só para profissionais) */}
-          {session && (session.user as any).isProfessional && (
+          {canPostStory && (
             <div onClick={() => fileRef.current?.click()}
               style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: uploading ? "wait" : "pointer", flexShrink: 0, opacity: uploading ? 0.6 : 1 }}>
               <div style={{ width: 70, height: 70, borderRadius: "50%", background: "#0f172a", border: "2px dashed rgba(212,168,67,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: "#475569" }}
@@ -123,31 +119,6 @@ export default function Stories() {
             );
           })}
 
-          {/* Demo stories — exibidos quando não há stories da API */}
-          {listaFinal && listaFinal.map((d, i) => (
-            <div key={d.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0, cursor: "pointer" }}>
-              <div style={{
-                width: 70, height: 70, borderRadius: "50%", padding: 2.5,
-                background: d.badge
-                  ? "linear-gradient(135deg,#ffe5a0 0%,#d4a843 30%,#f0c060 60%,#9e7b2a 100%)"
-                  : i % 2 === 0
-                    ? "linear-gradient(135deg,#d4a843,#f0c060,#c9963a)"
-                    : "linear-gradient(135deg,#b8923a,#d4a843,#e8c97a)",
-              }}>
-                <div style={{ width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden", border: "2.5px solid #060e1b", background: "#0f172a", position: "relative" }}>
-                  <img src={d.foto} alt={d.nome} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
-                  {d.badge && (
-                    <div style={{ position: "absolute", inset: 0, background: "rgba(6,14,27,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <span style={{ fontSize: 14, color: "#d4a843" }}>✦</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <span style={{ fontSize: 10, color: "#cbd5e1", fontWeight: 600, maxWidth: 70, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "var(--font-playfair), serif" }}>
-                {d.nome.split(" ")[0]}
-              </span>
-            </div>
-          ))}
         </div>
 
         {/* Setas navegação */}

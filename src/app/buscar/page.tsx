@@ -5,8 +5,6 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FiltersModal from "@/components/FiltersModal";
-import Stories from "@/components/Stories";
-import BottomNav from "@/components/BottomNav";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
@@ -37,17 +35,6 @@ type CardPerfil = {
   local: string | null; servicos: string[]; bio: string;
 };
 
-const imoveis: Array<{
-  id: number;
-  titulo: string;
-  cidade: string;
-  preco: number;
-  foto: string;
-  avaliacao: number;
-  tipo: string;
-  tags: string[];
-}> = [];
-
 const FILTROS = ["Online agora", "Com avaliações", "Com local", "Até R$300", "Exclusivas"] as const;
 type Filtro = typeof FILTROS[number];
 
@@ -58,7 +45,6 @@ function BuscarContent() {
   const [busca, setBusca] = useState(params.get("q") ?? "");
   const [showFilters, setShowFilters] = useState(false);
   const [filtros, setFiltros] = useState<Set<Filtro>>(new Set());
-  const [filtroImovel, setFiltroImovel] = useState<string | null>(null);
   const [perfis, setPerfis] = useState<CardPerfil[]>([]);
   const [loading, setLoading] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -242,6 +228,92 @@ function BuscarContent() {
         }
         .filtros-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; align-items: center; -webkit-overflow-scrolling: touch; }
         .filtros-scroll::-webkit-scrollbar { display: none; }
+        .profiles-empty {
+          min-height: 330px;
+          display: grid;
+          place-items: center;
+          text-align: center;
+          border: 1px solid rgba(212,168,67,0.16);
+          border-radius: 18px;
+          background:
+            radial-gradient(circle at 50% 0%, rgba(212,168,67,0.10), transparent 42%),
+            linear-gradient(145deg, rgba(255,255,255,0.035), rgba(212,168,67,0.025)),
+            #080808;
+          padding: 42px 22px;
+          margin-top: 18px;
+        }
+        .profiles-empty-inner { max-width: 560px; }
+        .profiles-empty-kicker {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 6px 12px;
+          border: 1px solid rgba(212,168,67,0.26);
+          border-radius: 999px;
+          color: ${GOLD};
+          font-size: 10px;
+          font-weight: 900;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          background: rgba(212,168,67,0.08);
+        }
+        .profiles-empty h2 {
+          margin: 16px 0 10px;
+          color: #f4f1ea;
+          font-family: ${PLAYFAIR};
+          font-size: clamp(1.9rem, 6vw, 3.5rem);
+          line-height: 0.98;
+          letter-spacing: 0;
+        }
+        .profiles-empty p {
+          margin: 0 auto;
+          max-width: 470px;
+          color: #a9a297;
+          font-size: 14px;
+          line-height: 1.7;
+        }
+        .profiles-empty-actions {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 10px;
+          margin-top: 22px;
+        }
+        .profiles-empty-actions button,
+        .profiles-empty-actions a {
+          min-height: 42px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 999px;
+          padding: 0 18px;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          text-decoration: none;
+          cursor: pointer;
+        }
+        .profiles-empty-actions button {
+          border: 1px solid transparent;
+          background: linear-gradient(135deg, #f6d979, #d4a843 50%, #a57920);
+          color: #080704;
+        }
+        .profiles-empty-actions a {
+          border: 1px solid rgba(212,168,67,0.22);
+          background: rgba(255,255,255,0.035);
+          color: #f4f1ea;
+        }
+        @media (max-width: 640px) {
+          .profiles-empty {
+            min-height: 300px;
+            border-radius: 14px;
+            padding: 36px 18px;
+          }
+          .profiles-empty-actions { flex-direction: column; }
+          .profiles-empty-actions button,
+          .profiles-empty-actions a { width: 100%; }
+        }
       `}</style>
 
       {showFilters && <FiltersModal onClose={() => setShowFilters(false)} onApply={() => setShowFilters(false)} />}
@@ -291,13 +363,11 @@ function BuscarContent() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "24px 16px 80px" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "24px 16px 56px" }}>
 
         {/* ── ACOMPANHANTES ── */}
         {mainTab === "acompanhantes" && (
           <>
-            <Stories />
-
             {/* Sub-tabs */}
             <div style={{ display: "flex", marginBottom: 16, borderBottom: `1px solid ${GOLD_DIM}` }}>
               {([["mulheres", "Mulheres"], ["trans", "Trans"], ["homens", "Homens"]] as const).map(([tab, label]) => (
@@ -416,13 +486,22 @@ function BuscarContent() {
               ))}
             </div>
 
-            {lista.length === 0 && (
-              <div style={{ textAlign: "center", padding: "60px 20px" }}>
-                <p style={{ fontSize: 16, color: "#475569" }}>Nenhum perfil encontrado com os filtros selecionados.</p>
-                <button onClick={() => { setFiltros(new Set()); setBusca(""); }}
-                  style={{ marginTop: 12, padding: "10px 24px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 700 }}>
-                  Limpar filtros
-                </button>
+            {!loading && lista.length === 0 && (
+              <div className="profiles-empty">
+                <div className="profiles-empty-inner">
+                  <span className="profiles-empty-kicker">Curadoria em andamento</span>
+                  <h2>Perfis premium em breve.</h2>
+                  <p>
+                    Estamos liberando apenas profissionais verificadas e alinhadas ao padrao Elite Modell.
+                    Novas presencas entram no ar assim que a curadoria for concluida.
+                  </p>
+                  <div className="profiles-empty-actions">
+                    <button type="button" onClick={() => { setFiltros(new Set()); setBusca(""); }}>
+                      Limpar busca
+                    </button>
+                    <Link href="/cadastro?tipo=profissional">Sou profissional</Link>
+                  </div>
+                </div>
               </div>
             )}
           </>
@@ -454,66 +533,10 @@ function BuscarContent() {
                 </span>
               </div>
             </section>
-
-            <div className="filtros-scroll" style={{ display: "none" }}>
-              {["Quarto privativo", "Espaco reservado", "Flat discreto", "Studio reservado", "Ambiente reservado", "Entrada privativa"].map((f) => {
-                const ativo = filtroImovel === f;
-                return (
-                  <button key={f} onClick={() => setFiltroImovel(ativo ? null : f)}
-                    style={{ padding: "7px 14px", background: ativo ? "rgba(212,168,67,0.15)" : "#111", border: `1px solid ${ativo ? GOLD : "#2a2620"}`, borderRadius: 20, color: ativo ? "#f4f1ea" : "#8d8578", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", fontWeight: ativo ? 700 : 400, transition: "all 0.2s", flexShrink: 0 }}>
-                    {f}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="imovel-grid" style={{ display: "none" }}>
-              {imoveis.filter((i) => {
-                if (busca && !i.cidade.toLowerCase().includes(busca.toLowerCase()) && !i.titulo.toLowerCase().includes(busca.toLowerCase())) return false;
-                if (filtroImovel === "Entrada privativa") return i.tags.includes(filtroImovel);
-                if (filtroImovel) return i.tipo === filtroImovel;
-                return true;
-              }).map((im) => (
-                <Link key={im.id} href={`/imoveis/${im.id}`} style={{ textDecoration: "none" }}>
-                  <div style={{ borderRadius: 12, overflow: "hidden", background: "#111", border: `1px solid ${GOLD_DIM}`, cursor: "pointer", transition: "transform 0.2s, border-color 0.2s" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-4px)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(212,168,67,0.3)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.borderColor = GOLD_DIM; }}>
-                    <div style={{ position: "relative", paddingTop: "60%", background: "#141414" }}>
-                      <img src={im.foto} alt={im.titulo} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.82, filter: "saturate(0.76) contrast(1.04)" }} />
-                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(5,5,5,0.78), rgba(5,5,5,0.08) 58%, transparent)" }} />
-                      <div style={{ position: "absolute", top: 10, right: 10, background: "rgba(5,5,5,0.82)", border: `1px solid ${GOLD_DIM}`, padding: "4px 10px", borderRadius: 999, fontSize: 11, color: GOLD, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8 }}>
-                        {im.tipo}
-                      </div>
-                    </div>
-                    <div style={{ padding: "14px 16px" }}>
-                      <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: 16, color: "#f4f1ea", fontFamily: PLAYFAIR }}>{im.titulo}</p>
-                      <p style={{ margin: "0 0 10px", fontSize: 13, color: "#8d8578" }}>{im.cidade} · atendimento reservado</p>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
-                        {im.tags.map((tag) => (
-                          <span key={tag} style={{ fontSize: 10, background: "rgba(255,255,255,0.035)", border: `1px solid ${GOLD_DIM}`, color: "#b8b1a6", padding: "3px 8px", borderRadius: 999 }}>
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span style={{ color: GOLD, fontWeight: 800, fontSize: 16, fontFamily: PLAYFAIR }}>
-                          R${im.preco}<span style={{ color: "#8d8578", fontSize: 12, fontWeight: 400, fontFamily: "var(--font-inter), sans-serif" }}>/periodo</span>
-                        </span>
-                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="#d4a843"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                          <span style={{ fontSize: 13, color: "#d4a843", fontWeight: 600 }}>{im.avaliacao}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
           </>
         )}
       </div>
 
-      <BottomNav />
       <Footer />
     </div>
   );

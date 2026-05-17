@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
-import BottomNav from "@/components/BottomNav";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
@@ -594,7 +593,7 @@ export default function ProfissionalProfilePage() {
 
       {/* CTA FIXO */}
       {pro.whatsapp && (
-        <div style={{ position: "fixed", bottom: 60, left: 0, right: 0, zIndex: 55, background: "rgba(6,14,27,0.98)", backdropFilter: "blur(12px)", borderTop: `1px solid ${GOLD_DIM}`, padding: "10px 16px", display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 55, background: "rgba(6,14,27,0.98)", backdropFilter: "blur(12px)", borderTop: `1px solid ${GOLD_DIM}`, padding: "10px 16px calc(10px + env(safe-area-inset-bottom))", display: "flex", gap: 10, alignItems: "center" }}>
           <div style={{ flexShrink: 0 }}>
             <p style={{ margin: 0, fontSize: 9, color: "#475569" }}>a partir de</p>
             <p style={{ margin: 0, fontSize: 17, fontWeight: 900, color: GOLD, fontFamily: PLAYFAIR, lineHeight: 1.1 }}>{preco ? `R$ ${preco.toLocaleString("pt-BR")}/h` : "Consulte"}</p>
@@ -608,8 +607,6 @@ export default function ProfissionalProfilePage() {
           </a>
         </div>
       )}
-
-      <BottomNav />
 
       {/* Lightbox */}
       {photoOpen !== null && allPhotos[photoOpen] && (

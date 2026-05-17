@@ -1,6 +1,5 @@
 "use client";
 
-import { Suspense } from "react";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -14,7 +13,6 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import BottomNav from "@/components/BottomNav";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
@@ -63,13 +61,13 @@ export default function HomePage() {
               <div className="eyebrow">A plataforma premium do Brasil</div>
               <div className="hero-benefits">
                 <span>
-                  <ShieldCheck size={18} /> Discrição total e segurança
+                  <ShieldCheck size={18} /> Discrição total
                 </span>
                 <span>
-                  <Star size={18} /> Acompanhantes verificadas
+                  <Star size={18} /> Perfis verificados
                 </span>
                 <span>
-                  <Gem size={18} /> Experiências premium
+                  <Gem size={18} /> Experiência premium
                 </span>
               </div>
             </div>
@@ -109,9 +107,6 @@ export default function HomePage() {
         </section>
       </main>
 
-      <Suspense fallback={null}>
-        <BottomNav />
-      </Suspense>
       <Footer />
 
       <style>{`
@@ -182,23 +177,38 @@ export default function HomePage() {
 
         .hero-benefits {
           display: grid;
-          gap: 10px;
-          margin: 22px 0;
+          gap: 12px;
+          margin: 24px 0;
+          max-width: 360px;
         }
 
         .hero-benefits span {
-          display: inline-flex;
+          display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 11px;
+          width: fit-content;
+          min-height: 44px;
+          padding: 8px 13px 8px 9px;
+          border: 1px solid rgba(212,168,67,0.22);
+          border-radius: 999px;
+          background: linear-gradient(135deg, rgba(5,5,5,0.78), rgba(212,168,67,0.08));
           color: #f4f1ea;
-          font-size: 17px;
+          font-size: 14px;
+          font-weight: 750;
           line-height: 1.35;
-          text-shadow: 0 3px 14px rgba(0,0,0,0.45);
+          box-shadow: 0 14px 36px rgba(0,0,0,0.2);
+          backdrop-filter: blur(8px);
         }
 
         .hero-benefits svg {
           color: ${GOLD};
           flex: 0 0 auto;
+          width: 30px;
+          height: 30px;
+          padding: 6px;
+          border: 1px solid rgba(212,168,67,0.2);
+          border-radius: 50%;
+          background: rgba(212,168,67,0.08);
         }
 
         .section-block {
@@ -389,8 +399,7 @@ export default function HomePage() {
             background: #050505;
           }
 
-          .home-shell nav,
-          .bottom-nav {
+          .home-shell nav {
             backdrop-filter: none !important;
             -webkit-backdrop-filter: none !important;
           }
@@ -403,7 +412,7 @@ export default function HomePage() {
           }
 
           .section-block {
-            padding: 42px 14px 92px;
+            padding: 42px 14px 56px;
           }
 
           .quick-actions.section-block {

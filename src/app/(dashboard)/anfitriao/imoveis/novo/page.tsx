@@ -467,7 +467,7 @@ export default function NovoImovelPage() {
   }
 
   return (
-    <div className="property-draft-shell">
+    <div className={status !== "authenticated" ? "property-draft-shell public-draft" : "property-draft-shell"}>
       {status !== "authenticated" ? (
         <header className="draft-topbar">
           <Link href="/" className="draft-logo">
@@ -705,17 +705,27 @@ export default function NovoImovelPage() {
           padding: 0 0 90px;
         }
 
+        .property-draft-shell.public-draft {
+          padding-top: 72px;
+        }
+
         .draft-topbar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 100;
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 16px;
-          min-height: 64px;
-          margin: -20px -8px 28px;
-          padding: 0 8px;
+          height: 64px;
+          margin: 0;
+          padding: 0 max(14px, env(safe-area-inset-right)) 0 max(14px, env(safe-area-inset-left));
           border-bottom: 1px solid rgba(212,168,67,0.16);
-          background: rgba(5,5,5,0.72);
+          background: rgba(5,5,5,0.94);
           backdrop-filter: blur(18px);
+          box-shadow: 0 18px 46px rgba(0,0,0,0.28);
         }
 
         .draft-logo {
@@ -723,12 +733,13 @@ export default function NovoImovelPage() {
           display: inline-flex;
           align-items: center;
           min-height: 40px;
-          padding: 6px 16px;
+          padding: 6px 14px;
           border: 1.5px solid rgba(212,168,67,0.34);
-          border-radius: 8px;
+          border-radius: 10px;
           background: rgba(255,255,255,0.025);
           color: #f4f1ea;
           text-decoration: none;
+          box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
         }
 
         .draft-logo-star {
@@ -756,14 +767,16 @@ export default function NovoImovelPage() {
 
         .draft-login,
         .outline-link {
-          border: 1px solid ${GOLD_MID};
-          border-radius: 8px;
+          border: 1px solid rgba(212,168,67,0.34);
+          border-radius: 10px;
           color: ${GOLD};
-          padding: 9px 20px;
+          padding: 10px 18px;
           text-decoration: none;
           font-size: 13px;
           font-weight: 900;
-          background: rgba(212,168,67,0.04);
+          background: rgba(255,255,255,0.025);
+          box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+          white-space: nowrap;
         }
 
         .draft-hero {
