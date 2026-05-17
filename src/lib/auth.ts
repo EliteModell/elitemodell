@@ -68,6 +68,7 @@ export const authOptions: NextAuthOptions = {
             const category = ["MULHER", "HOMEM", "TRANS"].includes(metadataCategory ?? "")
               ? (metadataCategory as "MULHER" | "HOMEM" | "TRANS")
               : null;
+            const metadataClientStatus = metadata.clientStatus === "VERIFIED" ? "VERIFIED" as const : undefined;
 
             user = await prisma.user.create({
               data: {
@@ -82,6 +83,7 @@ export const authOptions: NextAuthOptions = {
                 lgpdConsent: hasConsent,
                 termsConsent: hasConsent,
                 consentDate: hasConsent ? new Date() : null,
+                ...(metadataClientStatus ? { clientStatus: metadataClientStatus, kycReviewedAt: new Date() } : {}),
               },
             });
 
