@@ -23,19 +23,19 @@ const quickActions = [
   {
     label: "Busco prazer",
     href: "/buscar?tab=acompanhantes",
-    text: "Explore perfis verificados sem cadastro obrigatorio.",
+    text: "Explore perfis verificados sem cadastro obrigatório.",
     icon: Heart,
   },
   {
     label: "Anunciar imóvel",
     href: "/anfitriao/imoveis/novo",
-    text: "Cadastre um espaco reservado para atendimento discreto.",
+    text: "Cadastre um espaço reservado para atendimento discreto.",
     icon: HousePlus,
   },
   {
     label: "Alugar quarto",
     href: "/buscar?tab=imoveis",
-    text: "Encontre quartos, suites e flats para atendimento.",
+    text: "Encontre quartos, suítes e flats para atendimento.",
     icon: LockKeyhole,
   },
   {

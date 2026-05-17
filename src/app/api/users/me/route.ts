@@ -14,7 +14,7 @@ const updateSchema = z.object({
 
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "NÃ£o autorizado." }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -30,7 +30,7 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "NÃ£o autorizado." }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
 
   try {
     const body = await req.json();
@@ -50,4 +50,3 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });
   }
 }
-

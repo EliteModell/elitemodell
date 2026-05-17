@@ -52,17 +52,17 @@ export default async function AnfitriaoPage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Painel do anunciante</h1>
-          <p style={{ color: "#777", fontSize: 14 }}>Dados reais dos seus espacos, reservas e repasses.</p>
+          <p style={{ color: "#777", fontSize: 14 }}>Dados reais dos seus espaços, reservas e repasses.</p>
         </div>
         <Link href="/anfitriao/imoveis/novo" style={{ padding: "10px 20px", background: "#d4a843", color: "#060e1b", borderRadius: 8, textDecoration: "none", fontSize: 14, fontWeight: 800 }}>
-          Novo anuncio
+          Novo anúncio
         </Link>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 28 }}>
         {[
-          { label: "Espacos ativos", value: activeProperties },
-          { label: "Em analise", value: pendingProperties },
+          { label: "Espaços ativos", value: activeProperties },
+          { label: "Em análise", value: pendingProperties },
           { label: "Reservas pendentes", value: pendingBookings },
           { label: "Repasses pagos", value: `R$ ${(paid._sum.hostPayout ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` },
         ].map((stat) => (
@@ -96,11 +96,11 @@ export default async function AnfitriaoPage() {
       </div>
 
       <div>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 14 }}>Espacos recentes</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 14 }}>Espaços recentes</h2>
         {properties.length === 0 ? (
           <div style={cardStyle}>
-            <p style={{ color: "#777", marginBottom: 12 }}>Voce ainda nao cadastrou espacos.</p>
-            <Link href="/anfitriao/imoveis/novo" style={{ color: "#d4a843", textDecoration: "none", fontWeight: 700 }}>Cadastrar primeiro espaco</Link>
+            <p style={{ color: "#777", marginBottom: 12 }}>Você ainda não cadastrou espaços.</p>
+            <Link href="/anfitriao/imoveis/novo" style={{ color: "#d4a843", textDecoration: "none", fontWeight: 700 }}>Cadastrar primeiro espaço</Link>
           </div>
         ) : (
           <div style={{ display: "grid", gap: 12 }}>

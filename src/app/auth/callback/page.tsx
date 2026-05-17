@@ -91,7 +91,7 @@ function AuthCallbackContent() {
 
       const { data } = await supabaseAuth.auth.getSession();
       const accessToken = data.session?.access_token;
-      if (!accessToken) throw new Error("Sessao Supabase nao encontrada.");
+      if (!accessToken) throw new Error("Sessão Supabase não encontrada.");
 
       const pendingRaw = sessionStorage.getItem("elitemodell_pending_registration");
       let pendingRegistration: PendingRegistration | null = null;
@@ -111,7 +111,7 @@ function AuthCallbackContent() {
       }
 
       const res = await signIn("supabase", { accessToken, redirect: false });
-      if (res?.error) throw new Error("Conta nao encontrada. Cadastre-se antes de entrar.");
+      if (res?.error) throw new Error("Conta não encontrada. Cadastre-se antes de entrar.");
 
       const targetPath = pendingRegistration
         ? getRegistrationPath(pendingRegistration)
@@ -125,7 +125,7 @@ function AuthCallbackContent() {
 
     finishAuth().catch((err) => {
       if (!active) return;
-      setMessage(err?.message ?? "Nao foi possivel finalizar o acesso.");
+      setMessage(err?.message ?? "Não foi possível finalizar o acesso.");
       setTimeout(() => router.replace("/login"), 1200);
     });
 

@@ -99,14 +99,14 @@ const fallbackProfiles: ProfessionalCardData[] = [
     id: "lora-demo",
     slug: "lora",
     name: "Lora",
-    city: "Sao Paulo",
+    city: "São Paulo",
     state: "SP",
     rating: 5,
     verified: true,
     featured: true,
     price: 650,
     image: "/model.jpeg",
-    attendanceTypes: ["Local proprio", "Hotel"],
+    attendanceTypes: ["Local próprio", "Hotel"],
     age: 26,
   },
   {
@@ -148,7 +148,7 @@ const fallbackProfiles: ProfessionalCardData[] = [
     featured: true,
     price: 590,
     image: "/model1.jpg",
-    attendanceTypes: ["Eventos", "Local proprio"],
+    attendanceTypes: ["Eventos", "Local próprio"],
     age: 27,
   },
 ];
@@ -166,7 +166,7 @@ function initials(name?: string | null) {
 }
 
 function firstName(name?: string | null) {
-  return name?.split(" ").filter(Boolean)[0] ?? "voce";
+  return name?.split(" ").filter(Boolean)[0] ?? "você";
 }
 
 function money(value: number) {
@@ -349,7 +349,7 @@ function MiniProfileRow({ pro, index }: { pro: ProfessionalCardData; index: numb
         <p className="mt-1 truncate text-xs text-white/50">
           {pro.city} {pro.age ? `- ${pro.age} anos` : ""}
         </p>
-        <p className="mt-1 text-xs font-bold text-[#f5d78c]">{online ? "Online agora" : "Disponivel hoje"}</p>
+        <p className="mt-1 text-xs font-bold text-[#f5d78c]">{online ? "Online agora" : "Disponível hoje"}</p>
       </div>
       <ChevronRight className="h-4 w-4 text-white/28" />
     </Link>
@@ -405,7 +405,7 @@ function Appointments({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-black text-white">{pro.name}</p>
-                  <p className="mt-1 text-xs text-white/48">Escolha um horario no perfil</p>
+                  <p className="mt-1 text-xs text-white/48">Escolha um horário no perfil</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-white/28" />
               </Link>
@@ -432,7 +432,7 @@ export default function PremiumDashboardHome({ data }: { data: DashboardHomeData
         featured: index === 0,
         price: null,
         image: appointment.image,
-        attendanceTypes: ["Ja visto", "Perfil salvo"],
+        attendanceTypes: ["Já visto", "Perfil salvo"],
         age: appointment.age,
       }))
     : profiles.slice(1, 5);
@@ -484,7 +484,7 @@ export default function PremiumDashboardHome({ data }: { data: DashboardHomeData
         </Link>
       </motion.section>
 
-      <ProfileRail title="Profissionais recomendadas para voce" profiles={recommended} large />
+      <ProfileRail title="Profissionais recomendadas para você" profiles={recommended} large />
 
       <motion.section
         variants={item}
@@ -495,9 +495,9 @@ export default function PremiumDashboardHome({ data }: { data: DashboardHomeData
             <Sparkles className="h-4 w-4" />
             Premium
           </p>
-          <h2 className="mt-2 text-xl font-black text-white">Perfis verificados perto de voce</h2>
+          <h2 className="mt-2 text-xl font-black text-white">Perfis verificados perto de você</h2>
           <p className="mt-1 text-sm leading-6 text-white/55">
-            Fotos em destaque, status online e acesso rapido ao perfil.
+            Fotos em destaque, status online e acesso rápido ao perfil.
           </p>
         </div>
         <Link

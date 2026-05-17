@@ -39,23 +39,23 @@ export async function POST(req: NextRequest) {
       });
 
       if (!booking) {
-        return NextResponse.json({ error: "Reserva nao encontrada." }, { status: 404 });
+        return NextResponse.json({ error: "Reserva não encontrada." }, { status: 404 });
       }
       if (booking.guestId !== session.user.id && session.user.role !== "ADMIN") {
         return NextResponse.json({ error: "Acesso negado a esta reserva." }, { status: 403 });
       }
       if (booking.paymentStatus === "PAID") {
-        return NextResponse.json({ error: "Reserva ja paga." }, { status: 409 });
+        return NextResponse.json({ error: "Reserva já paga." }, { status: 409 });
       }
       if (booking.status === "CANCELLED" || booking.status === "REJECTED") {
-        return NextResponse.json({ error: "Reserva nao pode ser paga neste status." }, { status: 400 });
+        return NextResponse.json({ error: "Reserva não pode ser paga neste status." }, { status: 400 });
       }
 
       amount = booking.totalPrice;
       description = data.description ?? `Reserva ${booking.property.title}`;
       externalReference = booking.id;
     } else if (data.planId) {
-      return NextResponse.json({ error: "Pagamento de planos ainda nao esta habilitado." }, { status: 400 });
+      return NextResponse.json({ error: "Pagamento de planos ainda não está habilitado." }, { status: 400 });
     } else {
       return NextResponse.json({ error: "Informe uma reserva para pagamento." }, { status: 400 });
     }

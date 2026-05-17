@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       suggestions: [],
       provider: "fallback",
-      message: "GOOGLE_MAPS_API_KEY nao configurada.",
+      message: "GOOGLE_MAPS_API_KEY não configurada.",
     });
   }
 

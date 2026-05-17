@@ -81,7 +81,7 @@ const createSchema = z.object({
   if ((data.bio ?? "").trim().length < 80) {
     addIssue(["bio"], "A biografia deve ter pelo menos 80 caracteres.");
   }
-  if (!data.birthDate) addIssue(["birthDate"], "Data de nascimento obrigatoria.");
+  if (!data.birthDate) addIssue(["birthDate"], "Data de nascimento obrigatória.");
   if (data.attendanceTypes.length === 0) addIssue(["attendanceTypes"], "Informe o tipo de atendimento.");
   if (data.servesGenders.length === 0) addIssue(["servesGenders"], "Informe quem atende.");
   if (data.diasDisponiveis.length === 0) addIssue(["diasDisponiveis"], "Informe os dias disponiveis.");
@@ -90,10 +90,10 @@ const createSchema = z.object({
     addIssue(["pricePerHour"], "Informe pelo menos um valor.");
   }
   if (data.paymentMethods.length === 0) addIssue(["paymentMethods"], "Informe uma forma de pagamento.");
-  if (!data.whatsapp || data.whatsapp.replace(/\D/g, "").length < 10) addIssue(["whatsapp"], "WhatsApp invalido.");
-  if (!data.image) addIssue(["image"], "Foto principal obrigatoria.");
-  if (!data.docType || !data.docFrenteUrl || !data.docVersoUrl) addIssue(["docType"], "Documento completo obrigatorio.");
-  if (!data.verificationUrl && !data.kycSessionId) addIssue(["verificationUrl"], "Biometria ou verificacao facial obrigatoria.");
+  if (!data.whatsapp || data.whatsapp.replace(/\D/g, "").length < 10) addIssue(["whatsapp"], "WhatsApp inválido.");
+  if (!data.image) addIssue(["image"], "Foto principal obrigatória.");
+  if (!data.docType || !data.docFrenteUrl || !data.docVersoUrl) addIssue(["docType"], "Documento completo obrigatório.");
+  if (!data.verificationUrl && !data.kycSessionId) addIssue(["verificationUrl"], "Biometria ou verificação facial obrigatória.");
 });
 
 function slugify(text: string) {

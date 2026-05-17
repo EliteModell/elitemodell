@@ -10,7 +10,7 @@ function createLocalSession(userId: string) {
     "Vire o rosto para a esquerda e pisque duas vezes",
     "Vire o rosto para a direita e sorria",
     "Aproxime o documento do rosto por tres segundos",
-    "Leia o codigo em voz alta e pisque uma vez",
+    "Leia o código em voz alta e pisque uma vez",
   ];
   const challenge = challenges[Math.floor(Math.random() * challenges.length)];
 
@@ -22,13 +22,13 @@ function createLocalSession(userId: string) {
     challenge,
     expiresAt: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
     captureMode: "CAMERA_OR_UPLOAD",
-    message: "Sessao local criada. Capture selfie ou video com o desafio para analise manual.",
+    message: "Sessão local criada. Capture selfie ou vídeo com o desafio para análise manual.",
   };
 }
 
 export async function POST() {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   if (session.user.role !== "HOST" && session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Apenas anunciantes podem iniciar biometria." }, { status: 403 });
   }
@@ -41,7 +41,7 @@ export async function POST() {
 
   return NextResponse.json(
     {
-      error: `Provedor KYC '${provider}' ainda nao foi configurado no backend.`,
+      error: `Provedor KYC '${provider}' ainda não foi configurado no backend.`,
       expectedEnv: ["KYC_PROVIDER", "KYC_API_KEY", "KYC_WEBHOOK_SECRET"],
     },
     { status: 501 }

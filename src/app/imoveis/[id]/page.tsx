@@ -34,9 +34,9 @@ const mockProperty = {
   state: "SP",
   address: "Jardins, São Paulo - SP",
   type: "Suite premium",
-  description: `Espaco discreto no coracao de Sao Paulo, pensado para atendimento profissional com privacidade, conforto e acesso reservado.
+  description: `Espaço discreto no coração de São Paulo, pensado para atendimento profissional com privacidade, conforto e acesso reservado.
 
-Conta com cama, banheiro privativo, Wi-Fi, ar-condicionado e entrada discreta. A localizacao exata e combinada apenas depois da reserva confirmada.
+Conta com cama, banheiro privativo, Wi-Fi, ar-condicionado e entrada discreta. A localização exata é combinada apenas depois da reserva confirmada.
 
 Indicado para profissionais que precisam de um local seguro, limpo e sem exposicao desnecessaria.`,
   pricePerNight: 850,
@@ -115,7 +115,7 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
         <span style={{ fontSize: 26, fontWeight: 800, color: GOLD }}>
           R$ {property.pricePerNight.toLocaleString("pt-BR")}
         </span>
-        <span style={{ color: MUTED, fontSize: 14 }}>/periodo</span>
+        <span style={{ color: MUTED, fontSize: 14 }}>/período</span>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
           <Star size={14} fill={GOLD} color={GOLD} />
           <span style={{ color: "#ccc", fontSize: 13, fontWeight: 600 }}>{property.rating}</span>
@@ -169,7 +169,7 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
       {nights > 0 && (
         <div style={{ marginBottom: 16, padding: "14px", background: INK, borderRadius: 8, border: `1px solid ${LINE}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#888", marginBottom: 8 }}>
-                <span>R$ {property.pricePerNight.toLocaleString("pt-BR")} × {nights} periodo{nights > 1 ? "s" : ""}</span>
+                <span>R$ {property.pricePerNight.toLocaleString("pt-BR")} × {nights} período{nights > 1 ? "s" : ""}</span>
             <span style={{ color: "#ccc" }}>R$ {subtotal.toLocaleString("pt-BR")}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#888", marginBottom: 8 }}>
@@ -189,7 +189,7 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
 
       {nights > 0 && nights < property.minNights && (
         <p style={{ fontSize: 12, color: "#cc4444", marginBottom: 12 }}>
-          Minimo de {property.minNights} periodo para este espaco.
+          Mínimo de {property.minNights} período para este espaço.
         </p>
       )}
 
@@ -264,7 +264,7 @@ export default function PropertyDetailPage() {
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "96px 24px 60px" }}>
         {/* Breadcrumb */}
         <div style={{ display: "flex", gap: 8, fontSize: 13, color: MUTED, marginBottom: 20, alignItems: "center" }}>
-          <Link href="/imoveis" style={{ color: GOLD, textDecoration: "none" }}>Espacos</Link>
+          <Link href="/imoveis" style={{ color: GOLD, textDecoration: "none" }}>Espaços</Link>
           <span>›</span>
           <span>{p.city}, {p.state}</span>
           <span>›</span>
@@ -378,7 +378,7 @@ export default function PropertyDetailPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 16, paddingBottom: 28, borderBottom: `1px solid ${LINE}`, marginBottom: 28 }}>
               {[
                 { icon: "⚡", title: "Reserva instantânea", desc: "Confirme sua reserva sem esperar aprovação." },
-                { icon: "📅", title: `Disponivel a partir de ${p.checkInTime}`, desc: `Uso minimo de ${p.minNights} periodo.` },
+                { icon: "📅", title: `Disponível a partir de ${p.checkInTime}`, desc: `Uso mínimo de ${p.minNights} período.` },
                 { icon: "🔒", title: "Segurança e privacidade", desc: "Plataforma verificada com proteção total de dados." },
               ].map((h, i) => (
                 <div key={i} style={{ display: "flex", gap: 14 }}>
@@ -412,7 +412,7 @@ export default function PropertyDetailPage() {
 
             {/* Rules */}
             <div style={{ paddingBottom: 28, borderBottom: `1px solid ${LINE}`, marginBottom: 28 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: TEXT, marginBottom: 14 }}>Uso do espaco</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: TEXT, marginBottom: 14 }}>Uso do espaço</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {[
                   { label: "Pets permitidos", value: p.allowPets },

@@ -6,9 +6,9 @@ import { MessageCircle, Search } from "lucide-react";
 /* eslint-disable @next/next/no-img-element -- Local profile previews keep this route lightweight. */
 
 const quickContacts = [
-  { name: "Lora", city: "Sao Paulo", image: "/model.jpeg", slug: "lora" },
+  { name: "Lora", city: "São Paulo", image: "/model.jpeg", slug: "lora" },
   { name: "Amanda R.", city: "Belo Horizonte", image: "/model1.jpg", slug: "amanda-r" },
-  { name: "Leticia M.", city: "Rio de Janeiro", image: "/model2.jpg", slug: "leticia-m" },
+  { name: "Letícia M.", city: "Rio de Janeiro", image: "/model2.jpg", slug: "leticia-m" },
 ];
 
 export default function MensagensPage() {

@@ -136,7 +136,7 @@ function FaceCapture({
       if (videoRef.current) videoRef.current.srcObject = stream;
       setCameraOn(true);
     } catch {
-      setError("Nao foi possivel acessar a camera. Use o upload manual abaixo.");
+      setError("Não foi possível acessar a câmera. Use o upload manual abaixo.");
     }
   }
 
@@ -191,12 +191,12 @@ function FaceCapture({
     <div style={{ background: "#060e1b", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: 14, marginBottom: 18 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
         <div>
-          <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 800, color: "#f1f5f9" }}>Captura pela camera</p>
+          <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 800, color: "#f1f5f9" }}>Captura pela câmera</p>
           <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", lineHeight: 1.5 }}>Desafio: <strong style={{ color: GOLD }}>{challenge}</strong></p>
         </div>
         <button type="button" onClick={cameraOn ? stopCamera : startCamera}
           style={{ padding: "9px 12px", borderRadius: 8, border: `1px solid ${GOLD_MID}`, background: cameraOn ? "transparent" : GOLD, color: cameraOn ? GOLD : "#060e1b", fontWeight: 800, cursor: "pointer", fontSize: 12 }}>
-          {cameraOn ? "Fechar camera" : "Abrir camera"}
+          {cameraOn ? "Fechar câmera" : "Abrir câmera"}
         </button>
       </div>
 
@@ -204,7 +204,7 @@ function FaceCapture({
         {cameraOn ? (
           <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }} />
         ) : (
-          <p style={{ color: "#475569", fontSize: 12, margin: 0 }}>A camera aparece aqui quando autorizada.</p>
+          <p style={{ color: "#475569", fontSize: 12, margin: 0 }}>A câmera aparece aqui quando autorizada.</p>
         )}
       </div>
 
@@ -401,11 +401,11 @@ export default function ProfissionalNovoPage() {
       set("verificationType", "biometria");
 
       if (data.provider === "LOCAL_MANUAL") {
-        toast.success("Sessao criada. Capture a selfie ou video com o desafio.");
+        toast.success("Sessão criada. Capture a selfie ou vídeo com o desafio.");
       } else if (data.url?.startsWith("http")) {
         window.location.href = data.url;
       } else {
-        toast.success("Sessao de biometria facial criada.");
+        toast.success("Sessão de biometria facial criada.");
       }
     } catch {
       toast.error("Erro ao iniciar biometria facial.");
@@ -494,8 +494,8 @@ export default function ProfissionalNovoPage() {
     }
     if (targetStep === 2) {
       if (form.attendanceTypes.length === 0) return "Selecione pelo menos um tipo de atendimento.";
-      if (form.servesGenders.length === 0) return "Selecione quem voce atende.";
-      if (form.diasDisponiveis.length === 0) return "Selecione pelo menos um dia disponivel.";
+      if (form.servesGenders.length === 0) return "Selecione quem você atende.";
+      if (form.diasDisponiveis.length === 0) return "Selecione pelo menos um dia disponível.";
     }
     if (targetStep === 3 && form.services.length === 0) return "Selecione pelo menos um servico.";
     if (targetStep === 4) {
@@ -1011,7 +1011,7 @@ export default function ProfissionalNovoPage() {
               </button>
               {form.kycSessionId && (
                 <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, fontSize: 12, fontWeight: 700 }}>
-                  Sessao {form.kycProvider}: {form.kycStatus}
+                  Sessão {form.kycProvider}: {form.kycStatus}
                   {form.kycExpiresAt && (
                     <span style={{ display: "block", color: "#94a3b8", fontWeight: 500, marginTop: 4 }}>
                       Expira em {new Date(form.kycExpiresAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}

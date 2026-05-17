@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Elite Modell",
     short_name: "Elite Modell",
     description:
-      "Plataforma premium para conectar pessoas, profissionais, locais reservados e oportunidades com discricao e seguranca.",
+      "Plataforma premium para conectar pessoas, profissionais, locais reservados e oportunidades com discrição e segurança.",
     start_url: "/",
     scope: "/",
     display: "standalone",

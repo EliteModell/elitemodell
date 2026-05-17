@@ -35,7 +35,7 @@ const createSchema = z.object({
   photos: z.array(z.string()).default([]),
 }).superRefine((data, ctx) => {
   const addIssue = (path: string[], message: string) => ctx.addIssue({ code: "custom", path, message });
-  if (data.photos.length === 0) addIssue(["photos"], "Envie pelo menos uma foto do espaco.");
+  if (data.photos.length === 0) addIssue(["photos"], "Envie pelo menos uma foto do espaço.");
   if (data.amenities.length === 0) addIssue(["amenities"], "Selecione pelo menos um item de estrutura.");
 });
 
@@ -87,9 +87,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "NÃ£o autorizado." }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   if (session.user.role !== "HOST" && session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Apenas anunciantes podem cadastrar espacos." }, { status: 403 });
+    return NextResponse.json({ error: "Apenas anunciantes podem cadastrar espaços." }, { status: 403 });
   }
 
   try {

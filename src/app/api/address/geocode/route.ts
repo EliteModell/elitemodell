@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
   if (!apiKey) {
-    return NextResponse.json({ error: "GOOGLE_MAPS_API_KEY nao configurada." }, { status: 501 });
+    return NextResponse.json({ error: "GOOGLE_MAPS_API_KEY não configurada." }, { status: 501 });
   }
 
   if (placeId) {
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    if (!res.ok) return NextResponse.json({ error: "Erro ao buscar endereco no Google Places." }, { status: 502 });
+    if (!res.ok) return NextResponse.json({ error: "Erro ao buscar endereço no Google Places." }, { status: 502 });
     const place = await res.json();
     const components = place.addressComponents ?? [];
 
@@ -50,11 +50,11 @@ export async function GET(req: NextRequest) {
   url.searchParams.set("key", apiKey);
 
   const res = await fetch(url);
-  if (!res.ok) return NextResponse.json({ error: "Erro ao geocodificar endereco." }, { status: 502 });
+  if (!res.ok) return NextResponse.json({ error: "Erro ao geocodificar endereço." }, { status: 502 });
 
   const data = await res.json();
   const result = data.results?.[0];
-  if (!result) return NextResponse.json({ error: "Endereco nao encontrado." }, { status: 404 });
+  if (!result) return NextResponse.json({ error: "Endereço não encontrado." }, { status: 404 });
 
   const components = result.address_components ?? [];
   return NextResponse.json({

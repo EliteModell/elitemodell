@@ -29,12 +29,12 @@ export default async function AdminImoveisPage() {
 
   return (
     <div>
-      <h1 style={{ color: "#fff", fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Espacos</h1>
+      <h1 style={{ color: "#fff", fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Espaços</h1>
       <p style={{ color: "#777", marginBottom: 24 }}>Ultimos locais cadastrados para auditoria e moderacao.</p>
 
       {properties.length === 0 ? (
         <div style={{ background: "#111", border: "1px solid #222", borderRadius: 10, padding: 24, color: "#777" }}>
-          Nenhum espaco cadastrado.
+          Nenhum espaço cadastrado.
         </div>
       ) : (
         <div style={{ display: "grid", gap: 12 }}>

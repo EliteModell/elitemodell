@@ -74,7 +74,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
   const canViewDraft =
     session?.user?.role === "ADMIN" || professional.userId === session?.user?.id;
   if (professional.status !== "ACTIVE" && !canViewDraft) {
-    return NextResponse.json({ error: "Profissional nao encontrado." }, { status: 404 });
+    return NextResponse.json({ error: "Profissional não encontrado." }, { status: 404 });
   }
 
   const publicProfessional: Omit<typeof professional, "userId"> & { userId?: string } = {

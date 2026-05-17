@@ -33,10 +33,10 @@ function validateDateParts(day: string, month: string, year: string) {
   const monthNumber = Number(month);
   const yearNumber = Number(year);
 
-  if (dayNumber < 1 || dayNumber > 31) return "Dia invalido";
-  if (monthNumber < 1 || monthNumber > 12) return "Mes invalido";
-  if (yearNumber < 1900) return "Ano invalido";
-  if (dayNumber > daysInMonth(monthNumber, yearNumber)) return "Dia invalido para este mes";
+  if (dayNumber < 1 || dayNumber > 31) return "Dia inválido";
+  if (monthNumber < 1 || monthNumber > 12) return "Mês inválido";
+  if (yearNumber < 1900) return "Ano inválido";
+  if (dayNumber > daysInMonth(monthNumber, yearNumber)) return "Dia inválido para este mês";
 
   return "";
 }
@@ -58,12 +58,12 @@ export default function AgeGate() {
 
   function completeWithDate(date: string) {
     if (!isValidBirthDate(date)) {
-      setError("Data de nascimento invalida");
+      setError("Data de nascimento inválida");
       return;
     }
 
     if (!isAgeOfMajority(date)) {
-      setError("Voce deve ter 18 anos ou mais");
+      setError("Você deve ter 18 anos ou mais");
       return;
     }
 
@@ -93,7 +93,7 @@ export default function AgeGate() {
     if (part === "day" && cleaned.length === 2) {
       const dayNumber = Number(cleaned);
       if (dayNumber < 1 || dayNumber > 31) {
-        setError("Dia invalido");
+        setError("Dia inválido");
         return;
       }
       monthRef.current?.focus();
@@ -102,7 +102,7 @@ export default function AgeGate() {
     if (part === "month" && cleaned.length === 2) {
       const monthNumber = Number(cleaned);
       if (monthNumber < 1 || monthNumber > 12) {
-        setError("Mes invalido");
+        setError("Mês inválido");
         return;
       }
       yearRef.current?.focus();
@@ -153,8 +153,8 @@ export default function AgeGate() {
 
           <div className="adult-badge">18+</div>
 
-          <h2>Conteudo para adultos</h2>
-          <p className="age-intro">Este site e destinado exclusivamente a maiores de 18 anos.</p>
+          <h2>Conteúdo para adultos</h2>
+          <p className="age-intro">Este site é destinado exclusivamente a maiores de 18 anos.</p>
 
           <div className="date-block">
             <label className="date-label" htmlFor="birth-day">
@@ -185,7 +185,7 @@ export default function AgeGate() {
                 value={birthParts.month}
                 onChange={(event) => handleBirthPartChange("month", event.target.value)}
                 onKeyDown={(event) => handleKeyDown("month", event)}
-                aria-label="Mes de nascimento"
+                aria-label="Mês de nascimento"
               />
               <input
                 ref={yearRef}
@@ -209,12 +209,12 @@ export default function AgeGate() {
           </button>
 
           <button className="deny-button" onClick={handleDeny} type="button">
-            Nao tenho 18 anos
+            Não tenho 18 anos
           </button>
 
           <p className="legal-copy">
-            Ao continuar, voce confirma sua maioridade e concorda com nossos{" "}
-            <a href="/terms">Termos de Uso</a> e <a href="/privacy">Politica de Privacidade</a>.
+            Ao continuar, você confirma sua maioridade e concorda com nossos{" "}
+            <a href="/terms">Termos de Uso</a> e <a href="/privacy">Política de Privacidade</a>.
           </p>
         </div>
       </div>

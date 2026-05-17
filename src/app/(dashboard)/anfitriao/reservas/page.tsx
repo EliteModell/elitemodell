@@ -27,7 +27,7 @@ export default function ReservasAnfitriaoPage() {
 
   return (
     <div>
-      <h1 style={{ color: "#fff", fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Reservas dos espacos</h1>
+      <h1 style={{ color: "#fff", fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Reservas dos espaços</h1>
       <p style={{ color: "#777", marginBottom: 24 }}>Reservas vinculadas aos seus locais de atendimento.</p>
       {loading ? <p style={{ color: "#777" }}>Carregando reservas...</p> : null}
       {!loading && bookings.length === 0 ? <p style={{ color: "#777" }}>Nenhuma reserva encontrada.</p> : null}

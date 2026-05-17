@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     const supabase = createSupabaseServerClient();
     const { data, error } = await supabase.auth.getUser(accessToken);
     if (error || !data.user) {
-      return NextResponse.json({ error: "Sessao Supabase invalida." }, { status: 401 });
+      return NextResponse.json({ error: "Sessão Supabase inválida." }, { status: 401 });
     }
 
     const authUser = data.user;

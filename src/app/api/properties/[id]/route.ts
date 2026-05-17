@@ -32,7 +32,7 @@ export async function GET(
   const canViewDraft =
     session?.user?.role === "ADMIN" || property.hostId === session?.user?.id;
   if (property.status !== "ACTIVE" && !canViewDraft) {
-    return NextResponse.json({ error: "Imovel nao encontrado." }, { status: 404 });
+    return NextResponse.json({ error: "Imóvel não encontrado." }, { status: 404 });
   }
 
   return NextResponse.json(property);

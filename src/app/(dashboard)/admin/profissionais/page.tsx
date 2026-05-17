@@ -44,7 +44,7 @@ async function rejectProfessional(formData: FormData) {
   "use server";
   await requireAdmin();
   const id = String(formData.get("id") ?? "");
-  const reason = String(formData.get("reason") ?? "Rejeitado pela administracao.");
+  const reason = String(formData.get("reason") ?? "Rejeitado pela administração.");
   if (!id) return;
 
   await prisma.professional.update({
@@ -76,7 +76,7 @@ export default async function AdminProfissionaisPage() {
   return (
     <div>
       <h1 style={{ color: "#fff", fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Profissionais</h1>
-      <p style={{ color: "#777", marginBottom: 24 }}>Perfis reais cadastrados no banco para analise e publicacao.</p>
+      <p style={{ color: "#777", marginBottom: 24 }}>Perfis reais cadastrados no banco para análise e publicação.</p>
 
       {professionals.length === 0 ? (
         <div style={{ background: "#111", border: "1px solid #222", borderRadius: 10, padding: 24, color: "#777" }}>

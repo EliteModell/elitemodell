@@ -32,16 +32,16 @@ const structureOptions = [
   "Wi-Fi",
   "Espelho",
   "Garagem",
-  "Seguranca",
+  "Segurança",
   "Portaria",
-  "Privacidade acustica",
+  "Privacidade acústica",
   "Entrada discreta",
 ];
 
-const hourOptions = ["24h", "Manha e tarde", "Noite", "Madrugada", "Sob consulta"];
-const bookingModes = ["Por hora", "Diaria"];
+const hourOptions = ["24h", "Manhã e tarde", "Noite", "Madrugada", "Sob consulta"];
+const bookingModes = ["Por hora", "Diária"];
 const weekDays = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"];
-const steps = ["Localizacao", "Tipo", "Estrutura", "Funcionamento", "Fotos", "Valores", "Finalizacao"];
+const steps = ["Localização", "Tipo", "Estrutura", "Funcionamento", "Fotos", "Valores", "Finalização"];
 
 type DraftPhoto = {
   id: string;
@@ -182,7 +182,9 @@ function normalizeDraft(raw: unknown): SavedDraft | null {
         : Array.isArray(incoming.amenities)
           ? incoming.amenities
           : current.structure,
-      bookingModes: Array.isArray(incoming.bookingModes) ? incoming.bookingModes : current.bookingModes,
+      bookingModes: Array.isArray(incoming.bookingModes)
+        ? incoming.bookingModes.map((mode) => mode === "Diaria" ? "Diária" : mode)
+        : current.bookingModes,
       weeklyAvailability: Array.isArray(incoming.weeklyAvailability) ? incoming.weeklyAvailability : current.weeklyAvailability,
       hourlyRate: incoming.hourlyRate ?? "",
       dayRate: incoming.dayRate ?? incoming.pricePerNight ?? "",
@@ -199,7 +201,7 @@ async function readPhoto(file: File): Promise<DraftPhoto> {
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result !== "string") {
-        reject(new Error("Nao foi possivel ler a imagem."));
+        reject(new Error("Não foi possível ler a imagem."));
         return;
       }
 
@@ -210,7 +212,7 @@ async function readPhoto(file: File): Promise<DraftPhoto> {
         dataUrl: reader.result,
       });
     };
-    reader.onerror = () => reject(new Error("Nao foi possivel ler a imagem."));
+    reader.onerror = () => reject(new Error("Não foi possível ler a imagem."));
     reader.readAsDataURL(file);
   });
 }
@@ -280,7 +282,7 @@ export default function NovoImovelPage() {
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, step, updatedAt: new Date().toISOString() }));
     } catch {
-      toast.error("Nao foi possivel salvar o rascunho neste navegador.");
+      toast.error("Não foi possível salvar o rascunho neste navegador.");
     }
   }, [form, hydrated, step]);
 
@@ -288,20 +290,20 @@ export default function NovoImovelPage() {
     if (target === 0) {
       if (!f.city.trim()) return "Informe a cidade.";
       if (!f.bairro.trim()) return "Informe o bairro.";
-      if (!f.region.trim()) return "Informe a regiao do espaco.";
+      if (!f.region.trim()) return "Informe a região do espaço.";
     }
     if (target === 2 && f.structure.length < 3) return "Selecione pelo menos 3 itens de estrutura.";
     if (target === 3) {
-      if (f.bookingModes.length === 0) return "Escolha se aceita por hora, diaria ou ambos.";
+      if (f.bookingModes.length === 0) return "Escolha se aceita por hora, diária ou ambos.";
       if (f.weeklyAvailability.length === 0) return "Informe a disponibilidade semanal.";
     }
-    if (target === 4 && f.photos.length === 0) return "Envie pelo menos uma foto do espaco.";
+    if (target === 4 && f.photos.length === 0) return "Envie pelo menos uma foto do espaço.";
     if (target === 5) {
       if (f.bookingModes.includes("Por hora") && (!f.hourlyRate || Number(f.hourlyRate) <= 0)) {
         return "Informe o valor por hora.";
       }
-      if (f.bookingModes.includes("Diaria") && (!f.dayRate || Number(f.dayRate) <= 0)) {
-        return "Informe o valor da diaria.";
+      if (f.bookingModes.includes("Diária") && (!f.dayRate || Number(f.dayRate) <= 0)) {
+        return "Informe o valor da diária.";
       }
     }
     return null;
@@ -333,9 +335,9 @@ export default function NovoImovelPage() {
   }
 
   async function uploadPhoto(file: File) {
-    if (form.photos.length >= 12) return toast.error("Limite de 12 fotos por espaco.");
+    if (form.photos.length >= 12) return toast.error("Limite de 12 fotos por espaço.");
     if (!file.type.startsWith("image/")) return toast.error("Envie apenas imagens.");
-    if (file.size > 6 * 1024 * 1024) return toast.error("Use imagens de ate 6MB para salvar o rascunho.");
+    if (file.size > 6 * 1024 * 1024) return toast.error("Use imagens de até 6MB para salvar o rascunho.");
 
     setUploading(true);
     try {
@@ -379,13 +381,13 @@ export default function NovoImovelPage() {
   function buildDescription() {
     return [
       `${typeLabels[form.type]} para atendimento discreto em ${form.bairro}, ${form.city}.`,
-      `Regiao: ${form.region}.`,
-      form.referencePoint ? `Ponto de referencia: ${form.referencePoint}.` : "",
+      `Região: ${form.region}.`,
+      form.referencePoint ? `Ponto de referência: ${form.referencePoint}.` : "",
       `Estrutura: ${form.structure.join(", ")}.`,
-      `Funcionamento: ${form.serviceAllowed ? "atendimento permitido" : "atendimento sob avaliacao"}; ${form.availableHours}; ${form.bookingModes.join(" e ")}.`,
+      `Funcionamento: ${form.serviceAllowed ? "atendimento permitido" : "atendimento sob avaliação"}; ${form.availableHours}; ${form.bookingModes.join(" e ")}.`,
       `Disponibilidade: ${form.weeklyAvailability.join(", ")}.`,
       form.hourlyRate ? `Valor por hora: R$ ${form.hourlyRate}.` : "",
-      form.dayRate ? `Diaria: R$ ${form.dayRate}.` : "",
+      form.dayRate ? `Diária: R$ ${form.dayRate}.` : "",
     ].filter(Boolean).join("\n");
   }
 
@@ -395,7 +397,7 @@ export default function NovoImovelPage() {
 
     if (!isAuthenticated) {
       setStep(steps.length - 1);
-      return toast.error("Crie uma conta para publicar seu anuncio.");
+      return toast.error("Crie uma conta para publicar seu anúncio.");
     }
 
     if (!canPublish) {
@@ -407,7 +409,7 @@ export default function NovoImovelPage() {
     try {
       toast.loading("Preparando fotos...", { id: "property-submit" });
       const photos = await uploadDraftPhotos();
-      toast.loading("Enviando para analise...", { id: "property-submit" });
+      toast.loading("Enviando para análise...", { id: "property-submit" });
 
       const visibleLocation = [form.referencePoint || form.region, form.bairro, form.city, form.state].filter(Boolean).join(", ");
       const payload = {
@@ -427,7 +429,7 @@ export default function NovoImovelPage() {
         beds: 1,
         bathrooms: form.structure.includes("Banheiro privativo") ? 1 : 1,
         checkInTime: form.availableHours === "Noite" ? "18:00" : form.availableHours === "Madrugada" ? "22:00" : "08:00",
-        checkOutTime: form.availableHours === "Manha e tarde" ? "18:00" : "23:59",
+        checkOutTime: form.availableHours === "Manhã e tarde" ? "18:00" : "23:59",
         minNights: 1,
         instantBook: false,
         allowPets: false,
@@ -435,8 +437,8 @@ export default function NovoImovelPage() {
         allowParties: false,
         amenities: [
           ...form.structure,
-          `Atendimento: ${form.serviceAllowed ? "permitido" : "sob avaliacao"}`,
-          `Horario: ${form.availableHours}`,
+          `Atendimento: ${form.serviceAllowed ? "permitido" : "sob avaliação"}`,
+          `Horário: ${form.availableHours}`,
           `Modalidade: ${form.bookingModes.join(" e ")}`,
           `Disponibilidade: ${form.weeklyAvailability.join(", ")}`,
         ],
@@ -449,14 +451,14 @@ export default function NovoImovelPage() {
         body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Revise os dados do espaco.");
+      if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Revise os dados do espaço.");
 
       localStorage.removeItem(DRAFT_KEY);
-      toast.success("Espaco enviado para aprovacao.", { id: "property-submit" });
+      toast.success("Espaço enviado para aprovação.", { id: "property-submit" });
       router.push("/anfitriao");
       router.refresh();
     } catch (err) {
-      toast.error(errorMessage(err, "Erro ao cadastrar espaco."), { id: "property-submit" });
+      toast.error(errorMessage(err, "Erro ao cadastrar espaço."), { id: "property-submit" });
     } finally {
       setLoading(false);
     }
@@ -483,7 +485,7 @@ export default function NovoImovelPage() {
       <div className="draft-hero">
         <p>EliteModell Reserve</p>
         <h1>Anuncie um ambiente discreto para profissionais.</h1>
-        <span>Cadastre um espaco reservado para atendimento profissional. A conta fica para o final e o rascunho fica salvo neste dispositivo.</span>
+        <span>Cadastre um espaço reservado para atendimento profissional. A conta fica para o final e o rascunho fica salvo neste dispositivo.</span>
       </div>
 
       <div className="draft-progress">
@@ -499,7 +501,7 @@ export default function NovoImovelPage() {
 
       <div className="draft-card">
         {step === 0 && (
-          <Section title="Onde fica o espaco?" desc="A busca mostra cidade, bairro e regiao. O detalhe sensivel fica privado.">
+          <Section title="Onde fica o espaço?" desc="A busca mostra cidade, bairro e região. O detalhe sensível fica privado.">
             <div className="form-stack">
               <div className="city-grid">
                 <div>
@@ -517,20 +519,20 @@ export default function NovoImovelPage() {
                   <input style={inputStyle} value={form.bairro} onChange={(event) => setField("bairro", event.target.value)} placeholder="Savassi" />
                 </div>
                 <div>
-                  <label style={labelStyle}>Regiao *</label>
-                  <input style={inputStyle} value={form.region} onChange={(event) => setField("region", event.target.value)} placeholder="Centro-sul, proximo a avenidas" />
+                  <label style={labelStyle}>Região *</label>
+                  <input style={inputStyle} value={form.region} onChange={(event) => setField("region", event.target.value)} placeholder="Centro-sul, próximo a avenidas" />
                 </div>
               </div>
               <div>
-                <label style={labelStyle}>Ponto de referencia opcional</label>
-                <input style={inputStyle} value={form.referencePoint} onChange={(event) => setField("referencePoint", event.target.value)} placeholder="Shopping, hotel, avenida ou metro proximo" />
+                <label style={labelStyle}>Ponto de referência opcional</label>
+                <input style={inputStyle} value={form.referencePoint} onChange={(event) => setField("referencePoint", event.target.value)} placeholder="Shopping, hotel, avenida ou metrô próximo" />
               </div>
             </div>
           </Section>
         )}
 
         {step === 1 && (
-          <Section title="Tipo do espaco" desc="Escolha como profissionais vao reconhecer o local.">
+          <Section title="Tipo do espaço" desc="Escolha como profissionais vão reconhecer o local.">
             <div className="type-grid">
               {spaceTypes.map((type) => (
                 <button key={type} type="button" onClick={() => setField("type", type)} className={form.type === type ? "option active" : "option"}>
@@ -542,7 +544,7 @@ export default function NovoImovelPage() {
         )}
 
         {step === 2 && (
-          <Section title="Estrutura disponivel" desc="Itens objetivos ajudam a profissional decidir rapido.">
+          <Section title="Estrutura disponível" desc="Itens objetivos ajudam a profissional decidir rápido.">
             <div className="amenity-grid">
               {structureOptions.map((item) => (
                 <button key={item} type="button" onClick={() => toggleList("structure", item)} className={form.structure.includes(item) ? "option active" : "option"}>
@@ -560,12 +562,12 @@ export default function NovoImovelPage() {
                 <input type="checkbox" checked={form.serviceAllowed} onChange={(event) => setField("serviceAllowed", event.target.checked)} />
                 <span>
                   <strong>Atendimento permitido</strong>
-                  <small>O espaco aceita uso profissional e discreto.</small>
+                  <small>O espaço aceita uso profissional e discreto.</small>
                 </span>
               </label>
 
               <div>
-                <label style={labelStyle}>Horario disponivel</label>
+                <label style={labelStyle}>Horário disponível</label>
                 <div className="chip-grid">
                   {hourOptions.map((option) => (
                     <button key={option} type="button" onClick={() => setField("availableHours", option)} className={form.availableHours === option ? "chip active" : "chip"}>
@@ -601,7 +603,7 @@ export default function NovoImovelPage() {
         )}
 
         {step === 4 && (
-          <Section title="Fotos" desc={`Upload simples pelo celular. Arraste a ordem usando os botoes. ${photoCount}/12`}>
+          <Section title="Fotos" desc={`Upload simples pelo celular. Arraste a ordem usando os botões. ${photoCount}/12`}>
             <label className="upload-box">
               {uploading ? "Adicionando..." : "Toque para adicionar fotos"}
               <input type="file" accept="image/*" hidden onChange={(event) => { if (event.target.files?.[0]) uploadPhoto(event.target.files[0]); event.currentTarget.value = ""; }} />
@@ -622,7 +624,7 @@ export default function NovoImovelPage() {
         )}
 
         {step === 5 && (
-          <Section title="Valores" desc="Mostre o preco de forma direta. Taxa extra e opcional.">
+          <Section title="Valores" desc="Mostre o preço de forma direta. Taxa extra é opcional.">
             <div className="form-stack">
               <div className="two-grid">
                 <div>
@@ -630,7 +632,7 @@ export default function NovoImovelPage() {
                   <input type="number" inputMode="numeric" style={inputStyle} value={form.hourlyRate} onChange={(event) => setField("hourlyRate", event.target.value)} placeholder="120" />
                 </div>
                 <div>
-                  <label style={labelStyle}>Valor diaria</label>
+                  <label style={labelStyle}>Valor diária</label>
                   <input type="number" inputMode="numeric" style={inputStyle} value={form.dayRate} onChange={(event) => setField("dayRate", event.target.value)} placeholder="450" />
                 </div>
               </div>
@@ -643,7 +645,7 @@ export default function NovoImovelPage() {
         )}
 
         {step === 6 && (
-          <Section title="Finalizacao" desc="Seu anuncio ja esta montado. Agora vinculamos a uma conta segura.">
+          <Section title="Finalização" desc="Seu anúncio já está montado. Agora vinculamos a uma conta segura.">
             <div className="summary-grid">
               {summary.map((item) => (
                 <div key={item.label}>
@@ -654,28 +656,28 @@ export default function NovoImovelPage() {
             </div>
 
             {status === "loading" ? (
-              <div className="auth-final">Verificando sua sessao...</div>
+              <div className="auth-final">Verificando sua sessão...</div>
             ) : !isAuthenticated ? (
               <div className="auth-final">
                 <h3>Crie sua conta para publicar</h3>
-                <p>O rascunho fica salvo. Depois da conta criada, voce volta para finalizar o envio.</p>
+                <p>O rascunho fica salvo. Depois da conta criada, você volta para finalizar o envio.</p>
                 <div className="auth-actions">
                   <Link href={authHref("/cadastro")} className="gold-link">Criar conta e publicar</Link>
-                  <Link href={authHref("/login")} className="outline-link">Ja tenho conta</Link>
+                  <Link href={authHref("/login")} className="outline-link">Já tenho conta</Link>
                 </div>
               </div>
             ) : !canPublish ? (
               <div className="auth-final">
                 <h3>Ative a conta de anunciante</h3>
-                <p>Sua conta ja existe. Falta liberar o perfil de anunciante para enviar este espaco.</p>
+                <p>Sua conta já existe. Falta liberar o perfil de anunciante para enviar este espaço.</p>
                 <Link href={authHref("/cadastro")} className="gold-link">Ativar como anunciante</Link>
               </div>
             ) : (
               <div className="auth-final">
-                <h3>Tudo pronto para analise</h3>
-                <p>As fotos serao enviadas agora e o espaco entrara em revisao.</p>
+                <h3>Tudo pronto para análise</h3>
+                <p>As fotos serão enviadas agora e o espaço entrará em revisão.</p>
                 <button type="button" onClick={handleSubmit} disabled={loading} className="gold-button wide">
-                  {loading ? "Enviando..." : "Enviar para aprovacao"}
+                  {loading ? "Enviando..." : "Enviar para aprovação"}
                 </button>
               </div>
             )}

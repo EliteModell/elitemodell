@@ -13,7 +13,7 @@ const playfair = Playfair_Display({
 
 const siteUrl = "https://elitemodell.com.br";
 const brandDescription =
-  "Elite Modell e uma plataforma premium para conectar pessoas, profissionais, locais reservados e oportunidades com discricao, seguranca e elegancia.";
+  "Elite Modell é uma plataforma premium para conectar pessoas, profissionais, locais reservados e oportunidades com discrição, segurança e elegância.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

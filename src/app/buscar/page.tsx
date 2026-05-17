@@ -492,8 +492,8 @@ function BuscarContent() {
                   <span className="profiles-empty-kicker">Curadoria em andamento</span>
                   <h2>Perfis premium em breve.</h2>
                   <p>
-                    Estamos liberando apenas profissionais verificadas e alinhadas ao padrao Elite Modell.
-                    Novas presencas entram no ar assim que a curadoria for concluida.
+                    Estamos liberando apenas profissionais verificadas e alinhadas ao padrão Elite Modell.
+                    Novas presenças entram no ar assim que a curadoria for concluída.
                   </p>
                   <div className="profiles-empty-actions">
                     <button type="button" onClick={() => { setFiltros(new Set()); setBusca(""); }}>
@@ -515,21 +515,21 @@ function BuscarContent() {
                 <span className="soon-kicker">Ambientes reservados</span>
                 <h2 id="rooms-coming-title">Quartos discretos em breve.</h2>
                 <p>
-                  Estamos selecionando os primeiros espacos profissionais da Elite Modell.
-                  As listagens publicas so entram no ar depois de curadoria e aprovacao.
+                  Estamos selecionando os primeiros espaços profissionais da Elite Modell.
+                  As listagens públicas só entram no ar depois de curadoria e aprovação.
                 </p>
                 <div className="coming-actions">
-                  <Link className="primary" href="/cadastro?draft=imovel">
+                  <Link className="primary" href="/anfitriao/imoveis/novo">
                     Cadastrar para anunciar
                     <span aria-hidden="true">→</span>
                   </Link>
-                  <Link className="secondary" href="/anfitriao/imoveis/novo">
-                    Ja sou anfitriao
+                  <Link className="secondary" href="/login?draft=quarto">
+                    Já sou anfitrião
                     <span aria-hidden="true">→</span>
                   </Link>
                 </div>
                 <span className="soon-note">
-                  Nao exibimos fotos ou anuncios ficticios. O catalogo sera liberado apenas com espacos reais e verificados.
+                  Não exibimos fotos ou anúncios fictícios. O catálogo será liberado apenas com espaços reais e verificados.
                 </span>
               </div>
             </section>

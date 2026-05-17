@@ -162,7 +162,7 @@ function ReservarContent() {
     return <div style={{ color: "#94a3b8", padding: "100px 24px", textAlign: "center" }}>Carregando quarto...</div>;
   }
   if (!property) {
-    return <div style={{ color: "#94a3b8", padding: "100px 24px", textAlign: "center" }}>Quarto nao encontrado.</div>;
+    return <div style={{ color: "#94a3b8", padding: "100px 24px", textAlign: "center" }}>Quarto não encontrado.</div>;
   }
 
   return (
@@ -181,12 +181,12 @@ function ReservarContent() {
         {/* Left */}
         <div>
           <section style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, padding: 24, marginBottom: 20 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9", marginBottom: 16 }}>Seu periodo</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9", marginBottom: 16 }}>Seu período</h2>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               {[
                 { label: "Check-in", value: fmtDate(checkIn) },
                 { label: "Check-out", value: fmtDate(checkOut) },
-                { label: "Duracao", value: `${nights} periodo${nights > 1 ? "s" : ""}` },
+                { label: "Duração", value: `${nights} período${nights > 1 ? "s" : ""}` },
                 { label: "Pessoas", value: `${guests} pessoa${guests > 1 ? "s" : ""}` },
               ].map((d) => (
                 <div key={d.label}>
@@ -198,7 +198,7 @@ function ReservarContent() {
           </section>
 
           <section style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, padding: 24, marginBottom: 20 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9", marginBottom: 16 }}>Dados para confirmacao</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9", marginBottom: 16 }}>Dados para confirmação</h2>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <div>
                 <label style={{ fontSize: 12, color: "#94a3b8", display: "block", marginBottom: 6 }}>Nome</label>
@@ -287,7 +287,7 @@ function ReservarContent() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16, paddingBottom: 16, borderBottom: `1px solid ${GOLD_DIM}` }}>
               {[
-                { label: `R$ ${fmt(property.pricePerNight)} × ${nights} periodo${nights > 1 ? "s" : ""}`, value: subtotal },
+                { label: `R$ ${fmt(property.pricePerNight)} × ${nights} período${nights > 1 ? "s" : ""}`, value: subtotal },
                 { label: "Taxa de limpeza", value: cleaningFee },
                 { label: "Taxa de serviço (10%)", value: serviceFee },
                 ...(couponApplied ? [{ label: "Cupom ELITE10", value: -discount }] : []),

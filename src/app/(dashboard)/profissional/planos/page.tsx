@@ -193,7 +193,7 @@ const PLANS: Plan[] = [
 
 const FAQ_ITEMS = [
   { q: "O anúncio é gratuito?", a: "Sim. A Elite Modell não cobra nenhuma taxa de cadastro, nem nos atendimentos. O valor é 100% recebido pelas pessoas que anunciam na plataforma. Ou seja, o anunciante fica com todo o valor." },
-  { q: "Como funciona a ordem dos anúncios na listagem?", a: "A posição dos anúncios é calculada através de uma pontuação. A cada plano adquirido, que é obtida através da compra de planos." },
+  { q: "Como funciona a ordem dos anúncios na listagem?", a: "A posição dos anúncios é calculada por pontuação. Cada plano adquirido adiciona pontos e pode melhorar sua posição na listagem." },
   { q: "Qual a diferença entre plano e assinatura?", a: "O plano tem duração fixa (3, 7 ou 30 dias). A assinatura é renovada mensalmente com desconto de 10% a partir do segundo mês." },
   { q: "O que são pontos ao adquirir um plano?", a: "Os pontos de listagem determinam a posição do seu anúncio na busca. Quanto mais pontos, mais alto você aparece." },
   { q: "Quanto tempo meu anúncio fica ativo?", a: "O anúncio fica ativo enquanto você tiver pelo menos um plano ativo. Após o vencimento, o anúncio continua visível, porém sem destaque." },
@@ -605,7 +605,7 @@ export default function PlanosPage() {
 
           <div style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, padding: "14px 18px" }}>
             <p style={{ margin: 0, fontSize: 12, color: "#475569", lineHeight: 1.7 }}>
-              * A posição do seu anúncio é calculada com base nos pontos que você tem. Esses pontos também mudam todo o dia, a posição pode subir ou descer a qualquer momento.
+              * A posição do seu anúncio é calculada com base nos pontos disponíveis. Esses pontos mudam ao longo do dia, então a posição pode subir ou descer a qualquer momento.
             </p>
           </div>
 

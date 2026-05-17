@@ -20,7 +20,7 @@ export async function GET(
   const cleanCep = cep.replace(/\D/g, "");
 
   if (cleanCep.length !== 8) {
-    return NextResponse.json({ error: "CEP invalido." }, { status: 400 });
+    return NextResponse.json({ error: "CEP inválido." }, { status: 400 });
   }
 
   const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`, {
@@ -34,7 +34,7 @@ export async function GET(
 
   const data = (await res.json()) as ViaCepResponse;
   if (data.erro) {
-    return NextResponse.json({ error: "CEP nao encontrado." }, { status: 404 });
+    return NextResponse.json({ error: "CEP não encontrado." }, { status: 404 });
   }
 
   return NextResponse.json({

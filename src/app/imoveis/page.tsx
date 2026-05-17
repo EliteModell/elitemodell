@@ -33,7 +33,7 @@ export default function ImoveisPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Carrega quartos/espacos da API com debounce nos filtros
+  // Carrega quartos/espaços da API com debounce nos filtros
   useEffect(() => {
     const t = setTimeout(() => {
       const qs = new URLSearchParams();
@@ -69,7 +69,7 @@ export default function ImoveisPage() {
       <div style={{ paddingTop: 80, background: "#070707", borderBottom: "1px solid rgba(212,168,67,0.14)" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "20px 24px" }}>
           <div style={{ marginBottom: 18 }}>
-            <p style={{ margin: "0 0 8px", color: "#d4a843", fontSize: 11, fontWeight: 900, letterSpacing: 2.4, textTransform: "uppercase" }}>Espacos para profissionais</p>
+            <p style={{ margin: "0 0 8px", color: "#d4a843", fontSize: 11, fontWeight: 900, letterSpacing: 2.4, textTransform: "uppercase" }}>Espaços para profissionais</p>
             <h1 style={{ margin: 0, color: "#f4f1ea", fontFamily: "var(--font-playfair), serif", fontSize: "clamp(26px, 4vw, 42px)", lineHeight: 1.05 }}>
               Ambientes discretos para atendimento reservado
             </h1>
@@ -112,7 +112,7 @@ export default function ImoveisPage() {
                 style={{ background: "transparent", border: "none", color: "#cfc8ba", fontSize: 14, padding: "11px 0", outline: "none", cursor: "pointer" }}
               >
                 {[1,2,3,4,5,6,8,10,12].map((n) => (
-                  <option key={n} value={n} style={{ background: "#111" }}>ate {n} pessoa{n > 1 ? "s" : ""}</option>
+                  <option key={n} value={n} style={{ background: "#111" }}>até {n} pessoa{n > 1 ? "s" : ""}</option>
                 ))}
               </select>
             </div>
@@ -213,7 +213,7 @@ export default function ImoveisPage() {
       {/* Results */}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px" }}>
         <p style={{ color: "#8d8578", fontSize: 14, marginBottom: 24 }}>
-          {loading ? "Carregando..." : `${filtered.length} espaco${filtered.length !== 1 ? "s" : ""} reservado${filtered.length !== 1 ? "s" : ""} encontrado${filtered.length !== 1 ? "s" : ""}`}
+          {loading ? "Carregando..." : `${filtered.length} espaço${filtered.length !== 1 ? "s" : ""} reservado${filtered.length !== 1 ? "s" : ""} encontrado${filtered.length !== 1 ? "s" : ""}`}
         </p>
 
         <div
@@ -356,7 +356,7 @@ function PropertyCard({ property: p }: { property: Property }) {
               <span style={{ fontSize: 20, fontWeight: 800, color: "#d4a843" }}>
                 R$ {p.pricePerNight.toLocaleString("pt-BR")}
               </span>
-              <span style={{ fontSize: 13, color: "#8d8578" }}>/periodo</span>
+              <span style={{ fontSize: 13, color: "#8d8578" }}>/período</span>
             </div>
             <div
               style={{

@@ -35,11 +35,11 @@ const blurGray = (e: React.FocusEvent<HTMLInputElement>) =>
   (e.target.style.borderColor = "#1e293b");
 
 const authMsg: Record<string, string> = {
-  invalid_credentials: "Email ou senha invalidos.",
-  user_not_found: "Email nao cadastrado.",
+  invalid_credentials: "Email ou senha inválidos.",
+  user_not_found: "Email não cadastrado.",
   over_request_rate_limit: "Muitas tentativas. Tente mais tarde.",
-  invalid_phone: "Numero de telefone invalido.",
-  otp_expired: "Codigo expirado. Solicite um novo.",
+  invalid_phone: "Número de telefone inválido.",
+  otp_expired: "Código expirado. Solicite um novo.",
 };
 
 function SocialButton({ onClick, icon, label }: {
@@ -122,7 +122,7 @@ export default function LoginPage() {
         email: form.email,
         password: form.password,
       });
-      if (error || !data.session?.access_token) throw error ?? new Error("Email ou senha invalidos.");
+      if (error || !data.session?.access_token) throw error ?? new Error("Email ou senha inválidos.");
       const res = await appSignIn(data.session.access_token);
 
       if (res?.error) {
@@ -133,7 +133,7 @@ export default function LoginPage() {
         router.refresh();
       }
     } catch (err: any) {
-      toast.error(authMsg[err?.code] ?? err?.message ?? "Email ou senha invalidos.");
+      toast.error(authMsg[err?.code] ?? err?.message ?? "Email ou senha inválidos.");
     } finally {
       setLoading(false);
     }
@@ -179,7 +179,7 @@ export default function LoginPage() {
         token: otp,
         type: "sms",
       });
-      if (error || !data.session?.access_token) throw error ?? new Error("Codigo invalido.");
+      if (error || !data.session?.access_token) throw error ?? new Error("Código inválido.");
       const res = await appSignIn(data.session.access_token);
 
       if (res?.error) {
@@ -190,7 +190,7 @@ export default function LoginPage() {
         router.refresh();
       }
     } catch (err: any) {
-      toast.error(authMsg[err?.code] ?? err?.message ?? "Codigo invalido ou expirado.");
+      toast.error(authMsg[err?.code] ?? err?.message ?? "Código inválido ou expirado.");
     } finally {
       setLoading(false);
     }

@@ -15,7 +15,7 @@ const cardStyle: React.CSSProperties = {
 
 const statusLabel: Record<string, string> = {
   DRAFT: "Rascunho",
-  PENDING_REVIEW: "Em analise",
+  PENDING_REVIEW: "Em análise",
   ACTIVE: "Ativo",
   SUSPENDED: "Suspenso",
   REJECTED: "Rejeitado",

@@ -201,9 +201,9 @@ export default function CadastroPage() {
         : "Cadastro seguro +18";
   const accountHint =
     form.accountType === "PROFESSIONAL"
-      ? "Depois da conta, voce segue direto para as etapas do perfil profissional."
+      ? "Depois da conta, você segue direto para as etapas do perfil profissional."
       : form.accountType === "PROPERTY_HOST"
-        ? "Seu rascunho fica salvo. Depois da conta, voce volta para publicar o espaco."
+        ? "Seu rascunho fica salvo. Depois da conta, você volta para publicar o espaço."
         : "";
 
   function handleBirthPartChange(part: BirthPart, value: string) {
@@ -240,7 +240,7 @@ export default function CadastroPage() {
     const isValid = Object.keys(newErrors).length === 0;
 
     if (!isValid && showToast) {
-      toast.error("Complete os dados obrigatorios antes de continuar.");
+      toast.error("Complete os dados obrigatórios antes de continuar.");
       window.setTimeout(() => {
         document.querySelector("[data-auth-required-error='true']")?.scrollIntoView({
           behavior: "smooth",
@@ -318,9 +318,9 @@ export default function CadastroPage() {
     } catch (err: unknown) {
       const authError = asAuthError(err);
       const msg: Record<string, string> = {
-        user_already_exists: "Este email ja esta cadastrado.",
-        weak_password: "Senha fraca. Use no minimo 6 caracteres.",
-        invalid_email: "Email invalido.",
+        user_already_exists: "Este email já está cadastrado.",
+        weak_password: "Senha fraca. Use no mínimo 6 caracteres.",
+        invalid_email: "Email inválido.",
       };
       toast.error(msg[authError.code ?? ""] ?? msg[authError.name ?? ""] ?? authError.message ?? "Erro ao criar conta.");
     } finally {
@@ -370,12 +370,12 @@ export default function CadastroPage() {
 
       await registerUser(accessToken);
       const res = await signIn("supabase", { accessToken, redirect: false });
-      if (res?.error) throw new Error("Nao foi possivel atualizar sua sessao.");
+      if (res?.error) throw new Error("Não foi possível atualizar sua sessão.");
 
       router.push(nextPath());
       router.refresh();
     } catch (err: unknown) {
-      toast.error(asAuthError(err).message ?? "Nao foi possivel continuar o cadastro.");
+      toast.error(asAuthError(err).message ?? "Não foi possível continuar o cadastro.");
     } finally {
       setLoading(false);
     }
@@ -430,12 +430,12 @@ export default function CadastroPage() {
           </div>
           {errors.category && <p data-auth-required-error="true" style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors.category}</p>}
           <p style={{ color: "#334155", fontSize: 11, margin: "8px 0 0", lineHeight: 1.5 }}>
-            Para publicar, sera obrigatorio enviar documento com foto, fotos reais e biometria facial. A idade exibida deve ser confirmada por documento.
+            Para publicar, será obrigatório enviar documento com foto, fotos reais e biometria facial. A idade exibida deve ser confirmada por documento.
           </p>
           <div style={{ marginTop: 12, padding: 12, border: "1px solid rgba(212,168,67,0.18)", borderRadius: 8, background: "rgba(212,168,67,0.06)" }}>
             <p style={{ color: "#d4a843", fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", margin: "0 0 8px" }}>Fases do cadastro</p>
             <div style={{ display: "grid", gap: 6 }}>
-              {["Dados do perfil", "Fotos e valores", "Documentos", "Biometria", "Analise da equipe"].map((item, index) => (
+              {["Dados do perfil", "Fotos e valores", "Documentos", "Biometria", "Análise da equipe"].map((item, index) => (
                 <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, color: "#94a3b8", fontSize: 12 }}>
                   <span style={{ width: 18, height: 18, borderRadius: 999, border: "1px solid rgba(212,168,67,0.35)", color: "#f5d78c", display: "grid", placeItems: "center", fontSize: 10, fontWeight: 800 }}>{index + 1}</span>
                   {item}
@@ -449,10 +449,10 @@ export default function CadastroPage() {
       {isLoggedUpgradeFlow ? (
         <div style={{ marginBottom: 20, padding: 14, borderRadius: 8, border: "1px solid rgba(212,168,67,0.24)", background: "rgba(15,23,42,0.72)" }}>
           <p style={{ color: "#f1f5f9", fontSize: 14, fontWeight: 800, margin: "0 0 6px" }}>
-            Continuar como {form.accountType === "PROFESSIONAL" ? "profissional anunciante" : "anunciante de espaco"}
+            Continuar como {form.accountType === "PROFESSIONAL" ? "profissional anunciante" : "anunciante de espaço"}
           </p>
           <p style={{ color: "#64748b", fontSize: 12, lineHeight: 1.5, margin: "0 0 12px" }}>
-            Voce ja esta logado. Vamos atualizar sua conta e abrir as etapas do cadastro.
+            Você já está logado. Vamos atualizar sua conta e abrir as etapas do cadastro.
           </p>
           <button
             type="button"
@@ -460,7 +460,7 @@ export default function CadastroPage() {
             disabled={loading}
             style={{ width: "100%", padding: "13px", background: loading ? "#9e7b2a" : GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}
           >
-            {loading ? "Preparando cadastro..." : form.accountType === "PROFESSIONAL" ? "Ir para as fases do cadastro" : "Voltar ao anuncio"}
+            {loading ? "Preparando cadastro..." : form.accountType === "PROFESSIONAL" ? "Ir para as fases do cadastro" : "Voltar ao anúncio"}
           </button>
         </div>
       ) : (
@@ -523,7 +523,7 @@ export default function CadastroPage() {
               style={{ ...inputStyle, textAlign: "center" }}
               onFocus={focusGold}
               onBlur={blurGray}
-              aria-label="Mes de nascimento"
+              aria-label="Mês de nascimento"
             />
             <input
               ref={yearRef}
