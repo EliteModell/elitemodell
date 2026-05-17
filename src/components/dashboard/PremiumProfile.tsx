@@ -139,8 +139,12 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
     if (!file) return;
     setUploading(true);
     try {
+      // Usa o UID do Supabase Auth (UUID) — necessário para a RLS policy do storage
+      const { data: authData } = await supabaseAuth.auth.getUser();
+      const uid = authData.user?.id;
+      if (!uid) throw new Error("Sessão expirada. Faça login novamente.");
       const ext = file.name.split(".").pop() ?? "jpg";
-      const path = `${data.user.id}/avatar.${ext}`;
+      const path = `${uid}/avatar.${ext}`;
       const { error: uploadError } = await supabaseAuth.storage
         .from("profiles")
         .upload(path, file, { upsert: true, contentType: file.type });
