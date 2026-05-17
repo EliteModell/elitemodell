@@ -287,7 +287,7 @@ export default function CadastroPage() {
   function nextPath() {
     if (form.accountType === "PROFESSIONAL") return "/profissional/novo";
     if (form.accountType === "PROPERTY_HOST") {
-      return localStorage.getItem(PROPERTY_DRAFT_KEY) ? "/anfitriao/imoveis/novo?finalizar=1" : "/anfitriao";
+      return localStorage.getItem(PROPERTY_DRAFT_KEY) ? "/anfitriao/imoveis/novo" : "/anfitriao";
     }
     return "/dashboard";
   }

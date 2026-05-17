@@ -10,7 +10,7 @@ type PendingRegistration = {
 };
 
 const PROPERTY_DRAFT_KEY = "elitemodell_property_draft_v1";
-const PROPERTY_DRAFT_FINAL_PATH = "/anfitriao/imoveis/novo?finalizar=1";
+const PROPERTY_DRAFT_FINAL_PATH = "/anfitriao/imoveis/novo";
 
 function hasPropertyDraft() {
   return Boolean(localStorage.getItem(PROPERTY_DRAFT_KEY));

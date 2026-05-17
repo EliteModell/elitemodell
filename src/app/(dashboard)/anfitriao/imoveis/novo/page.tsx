@@ -263,16 +263,15 @@ export default function NovoImovelPage() {
         if (saved) {
           window.setTimeout(() => {
             setForm(saved.form);
-            setStep(saved.step);
+            // Nunca restaurar além da primeira etapa incompleta —
+            // impede pular para Finalização com campos vazios.
+            setStep(firstIncompleteStep(saved.form));
           }, 0);
         }
       } catch {
         localStorage.removeItem(DRAFT_KEY);
       }
     }
-
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("finalizar") === "1") window.setTimeout(() => setStep(steps.length - 1), 0);
     window.setTimeout(() => setHydrated(true), 0);
   }, []);
 
@@ -285,27 +284,34 @@ export default function NovoImovelPage() {
     }
   }, [form, hydrated, step]);
 
-  function validateStep(target: number) {
+  function validateStep(target: number, f: RoomDraftForm = form) {
     if (target === 0) {
-      if (!form.city.trim()) return "Informe a cidade.";
-      if (!form.bairro.trim()) return "Informe o bairro.";
-      if (!form.region.trim()) return "Informe a regiao do espaco.";
+      if (!f.city.trim()) return "Informe a cidade.";
+      if (!f.bairro.trim()) return "Informe o bairro.";
+      if (!f.region.trim()) return "Informe a regiao do espaco.";
     }
-    if (target === 2 && form.structure.length < 3) return "Selecione pelo menos 3 itens de estrutura.";
+    if (target === 2 && f.structure.length < 3) return "Selecione pelo menos 3 itens de estrutura.";
     if (target === 3) {
-      if (form.bookingModes.length === 0) return "Escolha se aceita por hora, diaria ou ambos.";
-      if (form.weeklyAvailability.length === 0) return "Informe a disponibilidade semanal.";
+      if (f.bookingModes.length === 0) return "Escolha se aceita por hora, diaria ou ambos.";
+      if (f.weeklyAvailability.length === 0) return "Informe a disponibilidade semanal.";
     }
-    if (target === 4 && form.photos.length === 0) return "Envie pelo menos uma foto do espaco.";
+    if (target === 4 && f.photos.length === 0) return "Envie pelo menos uma foto do espaco.";
     if (target === 5) {
-      if (form.bookingModes.includes("Por hora") && (!form.hourlyRate || Number(form.hourlyRate) <= 0)) {
+      if (f.bookingModes.includes("Por hora") && (!f.hourlyRate || Number(f.hourlyRate) <= 0)) {
         return "Informe o valor por hora.";
       }
-      if (form.bookingModes.includes("Diaria") && (!form.dayRate || Number(form.dayRate) <= 0)) {
+      if (f.bookingModes.includes("Diaria") && (!f.dayRate || Number(f.dayRate) <= 0)) {
         return "Informe o valor da diaria.";
       }
     }
     return null;
+  }
+
+  function firstIncompleteStep(f: RoomDraftForm): number {
+    for (let i = 0; i < steps.length - 1; i++) {
+      if (validateStep(i, f) !== null) return i;
+    }
+    return steps.length - 1;
   }
 
   function validateAllListingSteps() {
