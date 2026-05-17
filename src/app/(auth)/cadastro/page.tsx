@@ -186,7 +186,8 @@ export default function CadastroPage() {
 
     window.setTimeout(() => {
       setHydrated(true);
-      if (hasRoomDraft || draft === "quarto" || draft === "imovel") {
+      // Draft de imóvel só aplica quando não há tipo explícito de acompanhante na URL
+      if ((hasRoomDraft || draft === "quarto" || draft === "imovel") && tipo !== "acompanhante" && tipo !== "cliente") {
         setForm((current) => ({ ...current, accountType: "PROPERTY_HOST", category: "" }));
         setAccountTypeSelected(true);
         return;

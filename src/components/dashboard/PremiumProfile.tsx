@@ -242,7 +242,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6 pb-36 md:pb-0">
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6 pb-10">
       <motion.section
         variants={item}
         className="relative overflow-hidden rounded-[8px] border border-white/10 bg-[linear-gradient(135deg,rgba(8,8,9,0.98),rgba(64,12,18,0.68)_48%,rgba(18,16,12,0.96))] p-5 shadow-[0_32px_110px_rgba(0,0,0,0.38)] sm:p-7"

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Bell, Compass, Heart, LayoutDashboard, Menu, MessageCircle, Search, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import { Bell, Menu, Search, ShieldCheck, Sparkles } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import DashSidebar from "@/components/DashSidebar";
@@ -136,32 +136,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="mx-auto w-full max-w-[1480px]">{children}</div>
         </motion.main>
 
-        <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-[8px] border border-white/10 bg-[#070708]/92 p-1 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-2xl md:hidden">
-          {[
-            { label: "Início", href: ACCOUNT_ROUTES.painelCliente, icon: <LayoutDashboard className="h-4 w-4" /> },
-            { label: "Explorar", href: "/profissionais", icon: <Compass className="h-4 w-4" /> },
-            { label: "Favoritas", href: "/dashboard/favoritos", icon: <Heart className="h-4 w-4" /> },
-            { label: "Mensagens", href: "/dashboard/mensagens", icon: <MessageCircle className="h-4 w-4" /> },
-            { label: "Perfil", href: "/dashboard/perfil", icon: <UserRound className="h-4 w-4" /> },
-          ].map((navItem) => {
-            const active =
-              pathname === navItem.href ||
-              (navItem.href === ACCOUNT_ROUTES.painelCliente && pathname === ACCOUNT_ROUTES.dashboardCliente);
-
-            return (
-              <Link
-                key={navItem.href}
-                href={navItem.href}
-                className={`grid min-h-14 place-items-center rounded-[8px] px-1 py-2 text-[10px] font-black transition ${
-                  active ? "bg-[#d4a843]/14 text-[#f5d78c]" : "text-white/45"
-                }`}
-              >
-                {navItem.icon}
-                <span className="mt-1">{navItem.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
       </div>
     </div>
   );

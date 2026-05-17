@@ -407,7 +407,7 @@ export default function PremiumDashboardHome({ data }: { data: DashboardHomeData
   const onlineNow = profiles.filter((pro, index) => isOnline(index, pro.featured)).slice(0, 6);
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-5 pb-36 md:pb-0">
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-5 pb-10">
       <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-[#101012] p-4 shadow-[0_30px_100px_rgba(0,0,0,0.35)]">
         <div className="flex items-center gap-3">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[8px] border border-[#d4a843]/35 bg-[#d4a843]/12">
