@@ -179,6 +179,33 @@ function CallbackCard({ message, success }: { message: string; success?: boolean
   );
 }
 
+function waitForSession(timeoutMs = 8000): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+
+    const done = (token: string | null) => {
+      if (settled) return;
+      settled = true;
+      sub?.subscription.unsubscribe();
+      clearTimeout(timer);
+      if (token) resolve(token);
+      else reject(new Error("Sessão não encontrada. Tente novamente."));
+    };
+
+    const timer = setTimeout(() => done(null), timeoutMs);
+
+    // Fast path: session already in storage (PKCE code was exchanged or hash already parsed)
+    supabaseAuth.auth.getSession().then(({ data }) => {
+      if (data.session?.access_token) done(data.session.access_token);
+    });
+
+    // Slow path: wait for detectSessionInUrl to process hash fragment (implicit flow / mobile)
+    const sub = supabaseAuth.auth.onAuthStateChange((_event, session) => {
+      if (session?.access_token) done(session.access_token);
+    });
+  });
+}
+
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -195,8 +222,7 @@ function AuthCallbackContent() {
         if (error) throw error;
       }
 
-      const { data } = await supabaseAuth.auth.getSession();
-      const accessToken = data.session?.access_token;
+      const accessToken = await waitForSession();
       if (!accessToken) throw new Error("Sessão não encontrada. Tente novamente.");
 
       if (active) setMessage("Configurando sua conta...");
@@ -206,13 +232,13 @@ function AuthCallbackContent() {
       if (pendingRaw) {
         const pending = JSON.parse(pendingRaw) as PendingRegistration;
         pendingRegistration = pending;
-        const res = await fetch("/api/auth/register", {
+        const regRes = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ accessToken, ...pending }),
         });
-        if (!res.ok) {
-          const payload = await res.json().catch(() => ({}));
+        if (!regRes.ok) {
+          const payload = await regRes.json().catch(() => ({}));
           throw new Error(typeof payload.error === "string" ? payload.error : "Erro ao criar conta.");
         }
         sessionStorage.removeItem("elitemodell_pending_registration");
