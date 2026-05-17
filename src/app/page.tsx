@@ -114,9 +114,6 @@ export default function HomePage() {
                 <span><Star size={18} /> Acompanhantes verificadas</span>
                 <span><Gem size={18} /> Experiências premium</span>
               </div>
-              <Link className="hero-cta" href="/buscar?tab=acompanhantes&q=Belo%20Horizonte">
-                Encontre sua companhia ideal <ChevronRight size={22} />
-              </Link>
             </div>
           </div>
         </section>
@@ -184,14 +181,6 @@ export default function HomePage() {
         </section>
 
         <section className="verification-band section-block">
-          <div className="verification-copy">
-            <span>Verificação Elite Modell</span>
-            <h2>Documentos e fotos analisados antes do perfil entrar no ar.</h2>
-            <p>
-              Cada cadastro passa por revisão privada, galeria real e checagem de consistência.
-              Isso reduz perfis falsos e deixa a plataforma com confiança de produto sério.
-            </p>
-          </div>
           <div className="verification-grid">
             {verificationItems.map(({ icon: Icon, title, text }) => (
               <div key={title} className="verify-item">
@@ -231,20 +220,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="operator-section section-block">
-          <div>
-            <span>Para anunciantes</span>
-            <h2>Cadastro profissional com pendências claras até aprovação.</h2>
-            <p>
-              Documento, galeria, categoria, valores e contato ficam organizados
-              antes de o perfil entrar em análise.
-            </p>
-          </div>
-          <div className="operator-actions">
-            <Link href="/cadastro?tipo=profissional">Criar conta profissional</Link>
-            <Link href="/anfitriao/imoveis/novo">Anunciar imóvel</Link>
-          </div>
-        </section>
       </main>
 
       <Suspense fallback={null}>
@@ -262,8 +237,8 @@ export default function HomePage() {
 
         .market-hero {
           position: relative;
-          min-height: calc(100vh - 64px);
-          padding: 112px 24px 64px;
+          min-height: min(760px, calc(100vh - 64px));
+          padding: 104px 24px 52px;
           overflow: hidden;
           border-bottom: 1px solid ${GOLD_DIM};
           isolation: isolate;
@@ -275,10 +250,10 @@ export default function HomePage() {
           inset: 0;
           z-index: 0;
           pointer-events: none;
-          background-color: #060e1b;
+          background-color: #050505;
           background-image:
-            linear-gradient(90deg, rgba(2,7,14,0.92) 0%, rgba(2,7,14,0.78) 42%, rgba(2,7,14,0.18) 72%, rgba(2,7,14,0.04) 100%),
-            linear-gradient(180deg, rgba(2,7,14,0.1) 0%, rgba(2,7,14,0.22) 62%, #060e1b 100%),
+            linear-gradient(90deg, rgba(5,5,5,0.92) 0%, rgba(5,5,5,0.74) 42%, rgba(5,5,5,0.18) 72%, rgba(5,5,5,0.04) 100%),
+            linear-gradient(180deg, rgba(5,5,5,0.08) 0%, rgba(5,5,5,0.18) 62%, #050505 100%),
             url("/hero-sofa-model.png");
           background-size: cover;
           background-position: center 42%;
@@ -301,9 +276,7 @@ export default function HomePage() {
         }
 
         .eyebrow,
-        .section-head span,
-        .verification-copy span,
-        .operator-section span {
+        .section-head span {
           display: inline-flex;
           align-items: center;
           gap: 8px;
@@ -315,8 +288,6 @@ export default function HomePage() {
         }
 
         .section-head h2,
-        .verification-copy h2,
-        .operator-section h2,
         .feature-info h3,
         .property-info h3 {
           font-family: ${PLAYFAIR};
@@ -333,7 +304,7 @@ export default function HomePage() {
           display: inline-flex;
           align-items: center;
           gap: 12px;
-          color: #e5edf8;
+          color: #f4f1ea;
           font-size: 17px;
           line-height: 1.35;
           text-shadow: 0 3px 14px rgba(0,0,0,0.45);
@@ -344,41 +315,17 @@ export default function HomePage() {
           flex: 0 0 auto;
         }
 
-        .hero-cta {
-          width: min(100%, 560px);
-          min-height: 58px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 18px;
-          margin-top: 6px;
-          padding: 0 18px 0 24px;
-          border: 1.5px solid rgba(212,168,67,0.82);
-          border-radius: 12px;
-          background: rgba(6,14,27,0.18);
-          color: #f5d78c;
-          text-decoration: none;
-          text-transform: uppercase;
-          letter-spacing: 4px;
-          font-size: 14px;
-          font-weight: 900;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 18px 44px rgba(0,0,0,0.26);
-          backdrop-filter: blur(6px);
-        }
-
-        .hero-copy p,
-        .verification-copy p,
-        .operator-section p {
+        .hero-copy p {
           max-width: 610px;
           margin: 0 0 26px;
-          color: #9fb0c8;
+          color: #b8b1a6;
           font-size: 16px;
           line-height: 1.75;
         }
 
         .live-board {
           padding: 16px;
-          background: rgba(6, 14, 27, 0.78);
+          background: rgba(10, 10, 10, 0.78);
           border: 1px solid ${GOLD_MID};
           border-radius: 16px;
           backdrop-filter: blur(16px);
@@ -400,13 +347,13 @@ export default function HomePage() {
 
         .board-head span {
           display: block;
-          color: #64748b;
+          color: #8d8578;
           font-size: 11px;
           margin-bottom: 3px;
         }
 
         .board-head strong {
-          color: #f1f5f9;
+          color: #f4f1ea;
           font-size: 16px;
           font-family: ${PLAYFAIR};
         }
@@ -434,7 +381,7 @@ export default function HomePage() {
           grid-template-columns: 74px minmax(0, 1fr);
           gap: 12px;
           padding: 10px;
-          background: rgba(11,20,32,0.88);
+          background: rgba(17,17,17,0.88);
           border: 1px solid rgba(255,255,255,0.06);
           border-radius: 12px;
           color: inherit;
@@ -452,7 +399,7 @@ export default function HomePage() {
           width: 74px;
           height: 92px;
           border-radius: 9px;
-          background-color: #0b1420;
+          background-color: #111;
           overflow: hidden;
         }
 
@@ -478,7 +425,7 @@ export default function HomePage() {
 
         .profile-name strong {
           min-width: 0;
-          color: #f1f5f9;
+          color: #f4f1ea;
           font-family: ${PLAYFAIR};
           font-size: 17px;
           overflow: hidden;
@@ -500,7 +447,7 @@ export default function HomePage() {
 
         .compact-profile p {
           margin: 0 0 10px;
-          color: #cbd5e1;
+          color: #cfc8ba;
           font-size: 12px;
         }
 
@@ -528,10 +475,14 @@ export default function HomePage() {
           background: #050505;
         }
 
+        main > .section-block:last-child {
+          padding-bottom: 54px;
+        }
+
         .quick-actions {
           position: relative;
           z-index: 3;
-          background: #060e1b;
+          background: #050505;
           isolation: isolate;
         }
 
@@ -540,10 +491,9 @@ export default function HomePage() {
         }
 
         .section-head h2,
-        .verification-copy h2,
-        .operator-section h2 {
+        .section-head h2 {
           margin: 8px 0 0;
-          color: #f1f5f9;
+          color: #f4f1ea;
           font-size: clamp(27px, 3.5vw, 46px);
           line-height: 1.08;
           font-weight: 700;
@@ -555,7 +505,7 @@ export default function HomePage() {
           border: 1px solid ${GOLD_DIM};
           border-radius: 16px;
           overflow: hidden;
-          background: #08111f;
+          background: #101010;
         }
 
         .action-tile {
@@ -565,7 +515,7 @@ export default function HomePage() {
           color: inherit;
           text-decoration: none;
           border-right: 1px solid ${GOLD_DIM};
-          background: #0b1420;
+          background: #111;
           transition: background 0.18s;
         }
 
@@ -592,7 +542,7 @@ export default function HomePage() {
 
         .action-tile strong {
           display: block;
-          color: #f1f5f9;
+          color: #f4f1ea;
           font-family: ${PLAYFAIR};
           font-size: 22px;
           margin-bottom: 8px;
@@ -600,7 +550,7 @@ export default function HomePage() {
 
         .action-tile p {
           max-width: 190px;
-          color: #94a3b8;
+          color: #9f978b;
           font-size: 13px;
           line-height: 1.5;
           margin: 0;
@@ -622,7 +572,7 @@ export default function HomePage() {
 
         .professional-tile {
           border-color: rgba(212,168,67,0.18);
-          background: linear-gradient(135deg, rgba(212,168,67,0.07), rgba(11,20,32,0.98));
+          background: linear-gradient(135deg, rgba(212,168,67,0.07), rgba(17,17,17,0.98));
         }
 
         .professional-tile p {
@@ -631,7 +581,7 @@ export default function HomePage() {
         }
 
         .professional-tile .action-cta {
-          color: #060e1b;
+          color: #080704;
           background: linear-gradient(135deg, #ffe08b, ${GOLD});
           border-radius: 999px;
           padding: 8px 11px;
@@ -653,7 +603,7 @@ export default function HomePage() {
           overflow: hidden;
           border: 1px solid ${GOLD_DIM};
           border-radius: 16px;
-          background: #0b1420;
+          background: #111;
           color: inherit;
           text-decoration: none;
           transition: transform 0.2s, border-color 0.2s;
@@ -669,7 +619,7 @@ export default function HomePage() {
         .property-photo {
           position: relative;
           min-height: 420px;
-          background-color: #08111f;
+          background-color: #111;
           overflow: hidden;
         }
 
@@ -687,7 +637,7 @@ export default function HomePage() {
         .property-photo-shade {
           position: absolute;
           inset: 0;
-          background: linear-gradient(to top, rgba(6,14,27,0.92), rgba(6,14,27,0.12) 58%, transparent);
+          background: linear-gradient(to top, rgba(5,5,5,0.92), rgba(5,5,5,0.12) 58%, transparent);
           pointer-events: none;
         }
 
@@ -702,7 +652,7 @@ export default function HomePage() {
           gap: 6px;
           padding: 6px 10px;
           border-radius: 999px;
-          background: rgba(6,14,27,0.78);
+          background: rgba(5,5,5,0.78);
           border: 1px solid ${GOLD_MID};
           color: ${GOLD};
           font-size: 11px;
@@ -734,7 +684,7 @@ export default function HomePage() {
           align-items: center;
           gap: 5px;
           margin: 0;
-          color: #94a3b8;
+          color: #9f978b;
           font-size: 13px;
           line-height: 1.6;
         }
@@ -784,46 +734,47 @@ export default function HomePage() {
           border-radius: 999px;
           background: ${GOLD_DIM};
           border: 1px solid rgba(212,168,67,0.16);
-          color: #cbd5e1;
+          color: #cfc8ba;
           font-size: 11px;
         }
 
         .verification-band {
-          display: grid;
-          grid-template-columns: 0.9fr 1.1fr;
-          gap: 28px;
-          align-items: center;
-          border-top: 1px solid ${GOLD_DIM};
-          border-bottom: 1px solid ${GOLD_DIM};
-        }
-
-        .verification-copy p,
-        .operator-section p {
-          margin-top: 14px;
+          padding-top: 34px;
+          padding-bottom: 70px;
+          border-top: 1px solid rgba(212,168,67,0.12);
+          border-bottom: 1px solid rgba(212,168,67,0.12);
         }
 
         .verification-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 10px;
+          gap: 14px;
         }
 
         .verify-item {
-          min-height: 190px;
-          padding: 20px;
-          background: #0b1420;
-          border: 1px solid ${GOLD_DIM};
-          border-radius: 14px;
+          min-height: 174px;
+          padding: 22px;
+          background:
+            linear-gradient(145deg, rgba(212,168,67,0.06), rgba(255,255,255,0.025)),
+            #101010;
+          border: 1px solid rgba(212,168,67,0.18);
+          border-radius: 12px;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
         }
 
         .verify-item svg {
           color: ${GOLD};
+          box-sizing: content-box;
           margin-bottom: 18px;
+          padding: 10px;
+          border: 1px solid rgba(212,168,67,0.16);
+          border-radius: 12px;
+          background: rgba(212,168,67,0.07);
         }
 
         .verify-item strong {
           display: block;
-          color: #f1f5f9;
+          color: #f4f1ea;
           font-family: ${PLAYFAIR};
           font-size: 18px;
           margin-bottom: 8px;
@@ -831,7 +782,7 @@ export default function HomePage() {
 
         .verify-item p {
           margin: 0;
-          color: #94a3b8;
+          color: #9f978b;
           font-size: 13px;
           line-height: 1.65;
         }
@@ -848,49 +799,12 @@ export default function HomePage() {
           margin-top: 16px;
         }
 
-        .operator-section {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 22px;
-          border-top: 1px solid ${GOLD_DIM};
-        }
-
-        .operator-actions {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-          justify-content: flex-end;
-          flex-shrink: 0;
-        }
-
-        .operator-actions a {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 46px;
-          padding: 0 18px;
-          border-radius: 10px;
-          border: 1px solid ${GOLD_MID};
-          color: ${GOLD};
-          text-decoration: none;
-          font-size: 13px;
-          font-weight: 900;
-        }
-
-        .operator-actions a:first-child {
-          background: ${GOLD};
-          color: #060e1b;
-          border-color: ${GOLD};
-        }
-
         @media (max-width: 980px) {
           .market-hero {
             min-height: auto;
           }
 
-          .hero-content,
-          .verification-band {
+          .hero-content {
             grid-template-columns: 1fr;
           }
 
@@ -905,27 +819,19 @@ export default function HomePage() {
             grid-template-columns: 1fr 1fr;
           }
 
-          .operator-section {
-            align-items: flex-start;
-            flex-direction: column;
-          }
-
-          .operator-actions {
-            justify-content: flex-start;
-          }
         }
 
         @media (max-width: 680px) {
           .market-hero {
-            min-height: 500px;
-            padding: 42px 18px 18px;
+            min-height: 430px;
+            padding: 36px 18px 8px;
             overflow: hidden;
           }
 
           .hero-bg {
             background-image:
-              linear-gradient(90deg, rgba(2,7,14,0.92) 0%, rgba(2,7,14,0.66) 34%, rgba(2,7,14,0.2) 62%, rgba(2,7,14,0.02) 100%),
-              linear-gradient(180deg, rgba(2,7,14,0) 0%, rgba(2,7,14,0.05) 58%, rgba(6,14,27,0.8) 100%),
+              linear-gradient(90deg, rgba(5,5,5,0.92) 0%, rgba(5,5,5,0.66) 34%, rgba(5,5,5,0.2) 62%, rgba(5,5,5,0.02) 100%),
+              linear-gradient(180deg, rgba(5,5,5,0) 0%, rgba(5,5,5,0.05) 58%, rgba(5,5,5,0.86) 100%),
               url("/hero-sofa-model.png");
             background-position: 64% top;
             background-size: auto 590px;
@@ -936,7 +842,7 @@ export default function HomePage() {
           .hero-content {
             min-height: auto;
             align-items: flex-start;
-            padding-top: 76px;
+            padding-top: 70px;
           }
 
           .hero-copy {
@@ -953,7 +859,7 @@ export default function HomePage() {
           .hero-benefits {
             gap: 9px;
             max-width: 68%;
-            margin: 18px 0 18px;
+            margin: 18px 0 0;
           }
 
           .hero-benefits span {
@@ -961,25 +867,10 @@ export default function HomePage() {
             font-size: 13.5px;
           }
 
-          .hero-cta {
-            width: min(78%, 520px);
-            min-height: 48px;
-            margin-top: 4px;
-            padding: 0 13px 0 18px;
-            justify-content: space-between;
-            border-radius: 9px;
-            border-color: rgba(212,168,67,0.88);
-            background: rgba(6,14,27,0.12);
-            box-shadow: none;
-            letter-spacing: 2.45px;
-            font-size: 10.5px;
-            white-space: nowrap;
-          }
-
           .market-hero + .section-block {
             position: relative;
             z-index: 2;
-            background: #060e1b;
+            background: #050505;
           }
 
           .home-shell nav,
@@ -1003,9 +894,18 @@ export default function HomePage() {
             padding: 48px 16px;
           }
 
+          main > .section-block:last-child {
+            padding-bottom: 34px;
+          }
+
+          .verification-band.section-block {
+            padding-top: 24px;
+            padding-bottom: 42px;
+          }
+
           .quick-actions.section-block {
             isolation: isolate;
-            padding-top: 24px;
+            padding-top: 20px;
             padding-bottom: 34px;
           }
 
@@ -1034,7 +934,7 @@ export default function HomePage() {
             border: 0;
             border-radius: 0;
             overflow: visible;
-            background: #060e1b;
+            background: #050505;
           }
 
           .action-tile {
@@ -1044,7 +944,7 @@ export default function HomePage() {
             padding: 14px;
             border: 1px solid ${GOLD_DIM};
             border-radius: 14px;
-            background: #0b1420;
+            background: #111;
             box-shadow: none;
           }
 
