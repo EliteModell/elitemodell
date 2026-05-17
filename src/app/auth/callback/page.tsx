@@ -186,7 +186,7 @@ function waitForSession(timeoutMs = 8000): Promise<string> {
     const done = (token: string | null) => {
       if (settled) return;
       settled = true;
-      sub?.subscription.unsubscribe();
+      sub?.data.subscription.unsubscribe();
       clearTimeout(timer);
       if (token) resolve(token);
       else reject(new Error("Sessão não encontrada. Tente novamente."));
