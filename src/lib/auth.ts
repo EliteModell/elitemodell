@@ -139,7 +139,8 @@ export const authOptions: NextAuthOptions = {
             name: true,
             email: true,
             image: true,
-            role: true, 
+            role: true,
+            clientStatus: true,
             professional: { select: { id: true } },
             blocked: true,
           },
@@ -154,6 +155,7 @@ export const authOptions: NextAuthOptions = {
           token.email = dbUser.email;
           token.picture = dbUser.image;
           token.role = dbUser.role;
+          token.clientStatus = dbUser.clientStatus;
           token.isProfessional = !!dbUser.professional;
         }
       }
@@ -166,6 +168,7 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.email as string | null;
         session.user.image = token.picture as string | null;
         session.user.role = token.role as string;
+        session.user.clientStatus = token.clientStatus as string;
         session.user.isProfessional = token.isProfessional ?? false;
       }
       return session;

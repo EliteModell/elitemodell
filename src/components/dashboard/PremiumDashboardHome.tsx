@@ -16,8 +16,50 @@ import {
   MessageCircle,
   Pencil,
   Search,
+  ShieldCheck,
   UserRound,
 } from "lucide-react";
+
+function VerificationBanner({ status }: { status?: string }) {
+  if (status === "VERIFIED" || !status) return null;
+
+  if (status === "PENDING_REVIEW") {
+    return (
+      <motion.section variants={item} className="rounded-[8px] border border-[#d4a843]/35 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(212,168,67,0.03))] p-4">
+        <div className="flex items-start gap-3">
+          <Clock className="h-5 w-5 shrink-0 text-[#d4a843] mt-0.5" />
+          <div>
+            <p className="text-sm font-black text-white">Verificação em análise</p>
+            <p className="mt-1 text-xs text-white/50 leading-5">
+              Sua solicitação foi recebida. Assim que aprovada, você terá acesso completo à plataforma.
+            </p>
+          </div>
+        </div>
+      </motion.section>
+    );
+  }
+
+  return (
+    <motion.section variants={item} className="rounded-[8px] border border-[#cc1f2f]/35 bg-[rgba(204,31,47,0.07)] p-4">
+      <div className="flex items-start gap-3">
+        <ShieldCheck className="h-5 w-5 shrink-0 text-[#ff9aa4] mt-0.5" />
+        <div className="flex-1">
+          <p className="text-sm font-black text-white">Verificação necessária</p>
+          <p className="mt-1 text-xs text-white/50 leading-5">
+            Confirme sua maioridade para acessar perfis, favoritos, mensagens e agendamentos.
+          </p>
+          <Link
+            href="/dashboard/verificacao"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-[8px] bg-[#d4a843] px-3 py-2 text-xs font-black text-[#060e1b]"
+          >
+            Verificar agora
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      </div>
+    </motion.section>
+  );
+}
 
 export type DashboardHomeData = {
   user: {
@@ -109,7 +151,7 @@ function appointmentStatus(status: string) {
   return labels[status] ?? status;
 }
 
-export default function PremiumDashboardHome({ data }: { data: DashboardHomeData }) {
+export default function PremiumDashboardHome({ data, clientStatus }: { data: DashboardHomeData; clientStatus?: string }) {
   const name = firstName(data.user.name);
   const allDone = data.onboarding.every((s) => s.done);
   const pendingSteps = data.onboarding.filter((s) => !s.done);
@@ -143,6 +185,8 @@ export default function PremiumDashboardHome({ data }: { data: DashboardHomeData
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-4 pb-10">
+
+      <VerificationBanner status={clientStatus} />
 
       {/* Welcome card */}
       <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-[#0d0d0f] p-5">

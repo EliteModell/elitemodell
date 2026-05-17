@@ -120,6 +120,13 @@ enum AuditTargetType {
   SYSTEM
 }
 
+enum ClientStatus {
+  UNVERIFIED
+  PENDING_REVIEW
+  VERIFIED
+  REJECTED
+}
+
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 model User {
@@ -142,6 +149,12 @@ model User {
   lgpdConsent     Boolean      @default(false)
   termsConsent    Boolean      @default(false)
   consentDate     DateTime?
+  clientStatus    ClientStatus @default(UNVERIFIED)
+  kycSessionId    String?
+  kycSubmittedAt  DateTime?
+  kycReviewedAt   DateTime?
+  kycRejectionReason String?
+  termsVersion    String?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 

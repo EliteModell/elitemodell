@@ -20,5 +20,5 @@ export default async function DashboardPage() {
     redirect(ACCOUNT_ROUTES.login);
   }
 
-  return <PremiumDashboardHome data={data} />;
+  return <PremiumDashboardHome data={data} clientStatus={session.user.clientStatus} />;
 }
