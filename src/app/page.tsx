@@ -2,30 +2,51 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { ArrowRight, Building2, Heart, LockKeyhole, ShieldCheck } from "lucide-react";
+import {
+  ChevronRight,
+  Gem,
+  Heart,
+  HousePlus,
+  LockKeyhole,
+  ShieldCheck,
+  Star,
+  UserRoundPlus,
+} from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
 
 const GOLD = "#d4a843";
-const GOLD_SOFT = "rgba(212,168,67,0.16)";
-const GOLD_LINE = "rgba(212,168,67,0.28)";
+const GOLD_DIM = "rgba(212,168,67,0.12)";
+const GOLD_MID = "rgba(212,168,67,0.28)";
 const PLAYFAIR = "var(--font-playfair), serif";
 
-const entryCards = [
+const quickActions = [
   {
-    label: "Buscar prazer",
-    title: "Encontre acompanhantes premium",
-    text: "Acesse perfis selecionados em uma area discreta, publica e sem cadastro obrigatorio.",
+    label: "Busco prazer",
     href: "/buscar?tab=acompanhantes",
+    text: "Explore perfis verificados sem cadastro obrigatorio.",
     icon: Heart,
   },
   {
-    label: "Buscar ambiente",
-    title: "Encontre locais e espacos discretos",
-    text: "Explore ambientes reservados para encontros e atendimentos com privacidade.",
+    label: "Anunciar imóvel",
+    href: "/anfitriao/imoveis/novo",
+    text: "Cadastre um espaco reservado para atendimento discreto.",
+    icon: HousePlus,
+  },
+  {
+    label: "Alugar quarto",
     href: "/buscar?tab=imoveis",
-    icon: Building2,
+    text: "Encontre quartos, suites e flats para atendimento.",
+    icon: LockKeyhole,
+  },
+  {
+    label: "Sou profissional",
+    href: "/cadastro?tipo=profissional",
+    text: "Anunciar meu perfil",
+    cta: "Começar cadastro",
+    featured: true,
+    icon: UserRoundPlus,
   },
 ];
 
@@ -34,49 +55,56 @@ export default function HomePage() {
     <div className="home-shell">
       <Navbar />
 
-      <main className="home-entry">
-        <div className="hero-bg" aria-hidden="true" />
-        <div className="grain-layer" aria-hidden="true" />
-
-        <section className="entry-content" aria-labelledby="home-title">
-          <div className="brand-lockup">
-            <span className="brand-monogram">EM</span>
-            <span className="brand-divider" aria-hidden="true" />
-            <span className="brand-name">Elite Modell</span>
-          </div>
-
-          <div className="hero-copy">
-            <span className="eyebrow">
-              <ShieldCheck size={16} />
-              Plataforma premium e discreta
-            </span>
-            <h1 id="home-title">Escolha primeiro o universo que deseja acessar.</h1>
-            <p>
-              Uma entrada reservada para prazer, ambientes privados e experiencias com
-              presenca sofisticada.
-            </p>
-          </div>
-
-          <div className="entry-grid" aria-label="Escolha de acesso">
-            {entryCards.map(({ icon: Icon, label, title, text, href }) => (
-              <Link key={label} href={href} className="entry-card">
-                <span className="entry-icon" aria-hidden="true">
-                  <Icon size={24} />
+      <main>
+        <section className="market-hero">
+          <div className="hero-bg" aria-hidden="true" />
+          <div className="hero-content">
+            <div className="hero-copy">
+              <div className="eyebrow">A plataforma premium do Brasil</div>
+              <div className="hero-benefits">
+                <span>
+                  <ShieldCheck size={18} /> Discrição total e segurança
                 </span>
-                <span className="entry-label">{label}</span>
-                <strong>{title}</strong>
-                <span className="entry-text">{text}</span>
-                <span className="entry-action">
-                  Acessar
-                  <ArrowRight size={17} />
+                <span>
+                  <Star size={18} /> Acompanhantes verificadas
                 </span>
-              </Link>
-            ))}
+                <span>
+                  <Gem size={18} /> Experiências premium
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="quick-actions section-block">
+          <div className="section-head">
+            <div>
+              <span>Entrada rápida</span>
+              <h2>O que você procura?</h2>
+            </div>
           </div>
 
-          <div className="privacy-line">
-            <LockKeyhole size={15} />
-            Navegacao publica para explorar. Login apenas para acoes privadas.
+          <div className="action-grid">
+            {quickActions.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={item.featured ? "action-tile professional-tile" : "action-tile"}
+                >
+                  <span className="action-icon">
+                    <Icon size={22} />
+                  </span>
+                  <strong>{item.label}</strong>
+                  <p>{item.text}</p>
+                  <span className="action-cta">
+                    {item.cta ?? "Acessar"} <ChevronRight size={16} />
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </section>
       </main>
@@ -94,16 +122,14 @@ export default function HomePage() {
           overflow-x: hidden;
         }
 
-        .home-entry {
+        .market-hero {
           position: relative;
-          min-height: calc(100svh - 64px);
-          padding: 64px 24px 44px;
-          display: flex;
-          align-items: center;
+          min-height: min(760px, calc(100vh - 64px));
+          padding: 104px 24px 52px;
           overflow: hidden;
+          border-bottom: 1px solid ${GOLD_DIM};
           isolation: isolate;
           background: #050505;
-          border-bottom: 1px solid ${GOLD_SOFT};
         }
 
         .hero-bg {
@@ -113,353 +139,359 @@ export default function HomePage() {
           pointer-events: none;
           background-color: #050505;
           background-image:
-            linear-gradient(90deg, rgba(5,5,5,0.96) 0%, rgba(5,5,5,0.82) 44%, rgba(5,5,5,0.44) 72%, rgba(5,5,5,0.18) 100%),
-            linear-gradient(180deg, rgba(5,5,5,0.1) 0%, rgba(5,5,5,0.42) 58%, #050505 100%),
+            linear-gradient(90deg, rgba(5,5,5,0.92) 0%, rgba(5,5,5,0.74) 42%, rgba(5,5,5,0.18) 72%, rgba(5,5,5,0.04) 100%),
+            linear-gradient(180deg, rgba(5,5,5,0.08) 0%, rgba(5,5,5,0.18) 62%, #050505 100%),
             url("/hero-sofa-model.png");
-          background-repeat: no-repeat;
           background-size: cover;
-          background-position: center 38%;
-          transform: scale(1.02);
+          background-position: center 42%;
+          background-repeat: no-repeat;
         }
 
-        .grain-layer {
-          position: absolute;
-          inset: 0;
-          z-index: 1;
-          pointer-events: none;
-          opacity: 0.3;
-          background-image:
-            linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px);
-          background-size: 42px 42px;
-          mask-image: linear-gradient(90deg, #000 0%, rgba(0,0,0,0.62) 52%, transparent 100%);
-        }
-
-        .entry-content {
+        .hero-content {
           position: relative;
-          z-index: 2;
-          width: 100%;
-          max-width: 1180px;
+          z-index: 1;
+          max-width: 1280px;
           margin: 0 auto;
-          padding-top: 44px;
-          animation: fadeIn 0.72s ease both;
-        }
-
-        .brand-lockup {
-          display: inline-flex;
+          min-height: calc(100vh - 210px);
+          display: flex;
           align-items: center;
-          gap: 15px;
-          margin-bottom: 40px;
-          color: ${GOLD};
-        }
-
-        .brand-monogram {
-          font-family: ${PLAYFAIR};
-          font-size: 40px;
-          line-height: 1;
-          color: ${GOLD};
-        }
-
-        .brand-divider {
-          width: 1px;
-          height: 42px;
-          background: linear-gradient(180deg, transparent, ${GOLD}, transparent);
-        }
-
-        .brand-name {
-          font-family: ${PLAYFAIR};
-          font-size: 26px;
-          line-height: 1;
-          color: #f5d78c;
         }
 
         .hero-copy {
-          max-width: 760px;
+          max-width: 640px;
+          padding-top: 24px;
         }
 
-        .eyebrow {
-          display: inline-flex;
-          align-items: center;
-          gap: 10px;
-          margin-bottom: 18px;
-          color: #d9c58f;
-          font-size: 13px;
-          font-weight: 800;
-        }
-
-        .eyebrow svg {
-          color: ${GOLD};
-        }
-
-        .hero-copy h1 {
-          margin: 0;
-          max-width: 720px;
-          color: #f7f3eb;
-          font-family: ${PLAYFAIR};
-          font-size: 58px;
-          line-height: 1.02;
-          font-weight: 700;
-        }
-
-        .hero-copy p {
-          max-width: 610px;
-          margin: 22px 0 0;
-          color: #b8b1a6;
-          font-size: 17px;
-          line-height: 1.72;
-        }
-
-        .entry-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 14px;
-          max-width: 890px;
-          margin-top: 48px;
-        }
-
-        .entry-card {
-          position: relative;
-          min-height: 260px;
-          padding: 26px;
-          display: flex;
-          flex-direction: column;
-          color: inherit;
-          text-decoration: none;
-          background:
-            linear-gradient(145deg, rgba(255,255,255,0.048), rgba(255,255,255,0.014)),
-            rgba(10,10,10,0.86);
-          border: 1px solid ${GOLD_SOFT};
-          border-radius: 8px;
-          box-shadow: 0 24px 80px rgba(0,0,0,0.38);
-          backdrop-filter: blur(18px);
-          transition:
-            transform 0.24s ease,
-            border-color 0.24s ease,
-            background 0.24s ease,
-            box-shadow 0.24s ease;
-        }
-
-        .entry-card::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          pointer-events: none;
-          background: linear-gradient(120deg, rgba(245,215,140,0.16), transparent 42%);
-          opacity: 0;
-          transition: opacity 0.24s ease;
-        }
-
-        .entry-card:hover {
-          transform: translateY(-5px);
-          border-color: ${GOLD_LINE};
-          background:
-            linear-gradient(145deg, rgba(212,168,67,0.08), rgba(255,255,255,0.02)),
-            rgba(12,12,12,0.94);
-          box-shadow: 0 32px 92px rgba(0,0,0,0.48);
-        }
-
-        .entry-card:hover::before {
-          opacity: 1;
-        }
-
-        .entry-icon {
-          width: 52px;
-          height: 52px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: 24px;
-          color: ${GOLD};
-          border: 1px solid ${GOLD_SOFT};
-          border-radius: 8px;
-          background: rgba(212,168,67,0.08);
-        }
-
-        .entry-label {
-          color: ${GOLD};
-          font-size: 12px;
-          font-weight: 900;
-          text-transform: uppercase;
-        }
-
-        .entry-card strong {
-          display: block;
-          margin-top: 10px;
-          color: #f7f3eb;
-          font-family: ${PLAYFAIR};
-          font-size: 27px;
-          line-height: 1.14;
-        }
-
-        .entry-text {
-          display: block;
-          max-width: 320px;
-          margin-top: 12px;
-          color: #aaa296;
-          font-size: 14px;
-          line-height: 1.62;
-        }
-
-        .entry-action {
+        .eyebrow,
+        .section-head span {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          margin-top: auto;
-          padding-top: 24px;
-          color: #f5d78c;
-          font-size: 13px;
-          font-weight: 900;
+          color: ${GOLD};
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0;
           text-transform: uppercase;
         }
 
-        .entry-action svg {
-          transition: transform 0.24s ease;
+        .section-head h2,
+        .action-tile strong {
+          font-family: ${PLAYFAIR};
+          letter-spacing: 0;
         }
 
-        .entry-card:hover .entry-action svg {
-          transform: translateX(4px);
+        .hero-benefits {
+          display: grid;
+          gap: 10px;
+          margin: 22px 0;
         }
 
-        .privacy-line {
+        .hero-benefits span {
           display: inline-flex;
           align-items: center;
-          gap: 9px;
-          margin-top: 24px;
-          color: #8d8578;
-          font-size: 13px;
+          gap: 12px;
+          color: #f4f1ea;
+          font-size: 17px;
+          line-height: 1.35;
+          text-shadow: 0 3px 14px rgba(0,0,0,0.45);
         }
 
-        .privacy-line svg {
+        .hero-benefits svg {
+          color: ${GOLD};
+          flex: 0 0 auto;
+        }
+
+        .section-block {
+          position: relative;
+          z-index: 1;
+          max-width: 1280px;
+          margin: 0 auto;
+          padding: 70px 24px 88px;
+          background: #050505;
+        }
+
+        .quick-actions {
+          position: relative;
+          z-index: 3;
+          background: #050505;
+          isolation: isolate;
+        }
+
+        .section-head {
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 18px;
+          margin-bottom: 24px;
+        }
+
+        .section-head h2 {
+          margin: 8px 0 0;
+          color: #f4f1ea;
+          font-size: 46px;
+          line-height: 1.08;
+          font-weight: 700;
+        }
+
+        .action-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          border: 1px solid ${GOLD_DIM};
+          border-radius: 16px;
+          overflow: hidden;
+          background: #101010;
+        }
+
+        .action-tile {
+          position: relative;
+          min-height: 178px;
+          padding: 22px;
+          color: inherit;
+          text-decoration: none;
+          border-right: 1px solid ${GOLD_DIM};
+          background: #111;
+          transition: background 0.18s, border-color 0.18s, transform 0.18s;
+        }
+
+        .action-tile:last-child {
+          border-right: 0;
+        }
+
+        .action-tile:hover {
+          background: rgba(212,168,67,0.08);
+        }
+
+        .action-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 54px;
+          height: 54px;
+          margin-bottom: 18px;
+          border: 1px solid ${GOLD_MID};
+          border-radius: 14px;
+          background: rgba(212,168,67,0.1);
           color: ${GOLD};
         }
 
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(14px);
+        .action-tile strong {
+          display: block;
+          color: #f4f1ea;
+          font-size: 22px;
+          margin-bottom: 8px;
+        }
+
+        .action-tile p {
+          max-width: 190px;
+          color: #9f978b;
+          font-size: 13px;
+          line-height: 1.5;
+          margin: 0;
+        }
+
+        .action-cta {
+          position: absolute;
+          right: 18px;
+          bottom: 18px;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          color: ${GOLD};
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: 0;
+          text-transform: uppercase;
+        }
+
+        .professional-tile {
+          border-color: rgba(212,168,67,0.18);
+          background: linear-gradient(135deg, rgba(212,168,67,0.07), rgba(17,17,17,0.98));
+        }
+
+        .professional-tile p {
+          color: #f5d78c;
+          font-weight: 850;
+        }
+
+        .professional-tile .action-cta {
+          color: #080704;
+          background: linear-gradient(135deg, #ffe08b, ${GOLD});
+          border-radius: 999px;
+          padding: 8px 11px;
+          letter-spacing: 0;
+          box-shadow: 0 10px 28px rgba(212,168,67,0.14);
+        }
+
+        @media (max-width: 980px) {
+          .market-hero {
+            min-height: auto;
           }
-          to {
-            opacity: 1;
-            transform: translateY(0);
+
+          .action-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+
+          .section-head h2 {
+            font-size: 40px;
           }
         }
 
-        @media (max-width: 820px) {
-          .home-entry {
-            min-height: auto;
-            padding: 94px 18px 38px;
-            align-items: flex-start;
+        @media (max-width: 680px) {
+          .market-hero {
+            min-height: 430px;
+            padding: 36px 18px 8px;
+            overflow: hidden;
           }
 
           .hero-bg {
             background-image:
-              linear-gradient(180deg, rgba(5,5,5,0.42) 0%, rgba(5,5,5,0.66) 42%, #050505 88%),
+              linear-gradient(90deg, rgba(5,5,5,0.92) 0%, rgba(5,5,5,0.66) 34%, rgba(5,5,5,0.2) 62%, rgba(5,5,5,0.02) 100%),
+              linear-gradient(180deg, rgba(5,5,5,0) 0%, rgba(5,5,5,0.05) 58%, rgba(5,5,5,0.86) 100%),
               url("/hero-sofa-model.png");
-            background-size: auto 560px;
-            background-position: 63% top;
-            opacity: 0.78;
+            background-position: 64% top;
+            background-size: auto 590px;
+            background-repeat: no-repeat;
+            background-color: #050505;
           }
 
-          .grain-layer {
-            display: none;
+          .hero-content {
+            min-height: auto;
+            align-items: flex-start;
+            padding-top: 70px;
           }
 
-          .entry-content {
+          .hero-copy {
+            max-width: none;
             padding-top: 0;
           }
 
-          .brand-lockup {
-            gap: 12px;
-            margin-bottom: 92px;
+          .eyebrow {
+            max-width: 74%;
+            font-size: 10px;
+            letter-spacing: 0;
           }
 
-          .brand-monogram {
-            font-size: 34px;
+          .hero-benefits {
+            gap: 9px;
+            max-width: 68%;
+            margin: 18px 0 0;
           }
 
-          .brand-divider {
-            height: 36px;
+          .hero-benefits span {
+            gap: 10px;
+            font-size: 13.5px;
           }
 
-          .brand-name {
-            font-size: 22px;
+          .market-hero + .section-block {
+            position: relative;
+            z-index: 2;
+            background: #050505;
           }
 
-          .hero-copy h1 {
-            font-size: 40px;
-            line-height: 1.05;
+          .home-shell nav,
+          .bottom-nav {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
           }
 
-          .hero-copy p {
-            margin-top: 16px;
-            font-size: 15px;
-            line-height: 1.62;
+          .action-tile {
+            transform: none !important;
+            backface-visibility: hidden;
+            box-shadow: none !important;
+            filter: none !important;
           }
 
-          .entry-grid {
-            grid-template-columns: 1fr;
-            gap: 12px;
-            margin-top: 30px;
+          .section-block {
+            padding: 48px 16px 58px;
           }
 
-          .entry-card {
-            min-height: 212px;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: none;
-            backdrop-filter: none;
+          .quick-actions.section-block {
+            isolation: isolate;
+            padding-top: 20px;
           }
 
-          .entry-card:hover {
-            transform: none;
+          .section-head {
+            align-items: flex-start;
+            flex-direction: column;
           }
 
-          .entry-icon {
-            width: 46px;
-            height: 46px;
+          .quick-actions .section-head {
             margin-bottom: 18px;
           }
 
-          .entry-card strong {
-            font-size: 24px;
+          .quick-actions .section-head h2 {
+            font-size: 38px;
           }
 
-          .privacy-line {
-            align-items: flex-start;
-            margin-top: 18px;
-            font-size: 12px;
-            line-height: 1.5;
-          }
-        }
-
-        @media (max-width: 420px) {
-          .home-entry {
-            padding-left: 16px;
-            padding-right: 16px;
+          .action-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            border: 0;
+            border-radius: 0;
+            overflow: visible;
+            background: #050505;
           }
 
-          .brand-lockup {
-            margin-bottom: 76px;
+          .action-tile {
+            min-height: 154px;
+            display: flex;
+            flex-direction: column;
+            padding: 14px;
+            border: 1px solid ${GOLD_DIM};
+            border-radius: 14px;
+            background: #111;
           }
 
-          .hero-copy h1 {
-            font-size: 36px;
+          .action-tile:last-child {
+            border-right: 1px solid ${GOLD_DIM};
           }
 
-          .entry-card {
-            min-height: 202px;
-            padding: 18px;
+          .action-icon {
+            width: 42px;
+            height: 42px;
+            margin-bottom: 14px;
+            border-radius: 12px;
           }
-        }
 
-        @media (prefers-reduced-motion: reduce) {
-          .entry-content,
-          .entry-card,
-          .entry-card::before,
-          .entry-action svg {
-            animation: none;
-            transition: none;
+          .action-tile strong {
+            min-height: 44px;
+            font-size: 19px;
+            line-height: 1.05;
+            margin-bottom: 7px;
+          }
+
+          .action-tile p {
+            max-width: none;
+            display: -webkit-box;
+            overflow: hidden;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            font-size: 11.5px;
+            line-height: 1.35;
+          }
+
+          .professional-tile p {
+            display: block;
+            -webkit-line-clamp: unset;
+            color: #f5d78c;
+            font-size: 12.5px;
+            font-weight: 900;
+          }
+
+          .action-cta {
+            position: static;
+            margin-top: auto;
+            padding-top: 12px;
+            justify-content: space-between;
+            font-size: 10.5px;
+            letter-spacing: 0;
+          }
+
+          .professional-tile .action-cta {
+            justify-content: center;
+            padding: 8px 10px;
+            font-size: 9.8px;
+            letter-spacing: 0;
           }
         }
       `}</style>
