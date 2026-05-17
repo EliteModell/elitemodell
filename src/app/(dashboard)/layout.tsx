@@ -131,7 +131,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
-          className="relative flex-1 px-4 py-5 sm:px-6 sm:py-6 md:px-8 lg:px-10"
+          className="relative flex-1 px-4 py-5 pb-8 sm:px-6 sm:py-6 md:px-8 lg:px-10"
         >
           <div className="mx-auto w-full max-w-[1480px]">{children}</div>
         </motion.main>

@@ -95,29 +95,29 @@ function getVipLevel({
 function getOnboarding(user: DashboardUser, savedProfiles: number, activeAppointments: number) {
   return [
     {
-      label: "Perfil com identidade",
+      label: "Adicionar foto e nome",
       done: Boolean(user.name && user.email && user.image),
-      detail: "Nome, email e avatar deixam a experiência pessoal desde o primeiro acesso.",
+      detail: "Complete seu perfil com foto e nome para personalizar a experiência.",
     },
     {
-      label: "Contato seguro",
+      label: "Informar telefone",
       done: Boolean(user.phone),
-      detail: "Telefone ajuda no suporte e nos fluxos de contato sem expor dados no painel.",
+      detail: "Seu telefone fica protegido e é usado apenas para suporte.",
     },
     {
-      label: "Segurança +18",
+      label: "Confirmar maioridade",
       done: Boolean(user.birthDate && user.termsConsent && user.lgpdConsent),
-      detail: "Elegibilidade e privacidade mantêm o ambiente confiável e discreto.",
+      detail: "Confirmação de idade e termos necessários para acesso completo.",
     },
     {
       label: "Salvar favoritos",
       done: savedProfiles > 0,
-      detail: "Salve perfis que gostar para acessar rápido e receber sugestões melhores.",
+      detail: "Salve perfis que gostar para acessar rápido.",
     },
     {
       label: "Primeiro agendamento",
       done: activeAppointments > 0,
-      detail: "Sua agenda aparece aqui quando uma experiência for iniciada.",
+      detail: "Inicie uma conversa e agende sua primeira experiência.",
     },
   ];
 }

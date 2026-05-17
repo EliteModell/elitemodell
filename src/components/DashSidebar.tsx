@@ -114,14 +114,15 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
       </AnimatePresence>
 
       <aside
-        className={`dash-sidebar fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-white/10 bg-[#070708]/92 shadow-[24px_0_90px_rgba(0,0,0,0.42)] backdrop-blur-2xl transition-transform duration-300 md:translate-x-0 ${
+        className={`dash-sidebar fixed inset-y-0 left-0 z-50 flex w-[80vw] max-w-[320px] flex-col border-r border-white/10 bg-[#070708] shadow-[24px_0_90px_rgba(0,0,0,0.55)] transition-transform duration-300 md:w-[280px] md:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(245,215,140,0.9),transparent)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(212,168,67,0.08),transparent_34%,rgba(204,31,47,0.08))]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(212,168,67,0.06),transparent_30%)]" />
 
-        <div className="relative border-b border-white/10 p-5">
+        <div className="relative border-b border-white/10 p-4">
+          <div className="flex items-center justify-between">
           <Link href="/" onClick={onClose} className="inline-flex items-center gap-2 no-underline">
             <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-[8px] border border-[#d4a843]/30">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -134,9 +135,19 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
               <span className="text-white">modell</span>
             </span>
           </Link>
+            <button
+              onClick={onClose}
+              className="grid h-8 w-8 place-items-center rounded-[8px] border border-white/10 text-white/40 transition hover:border-white/20 hover:text-white md:hidden"
+              aria-label="Fechar menu"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
-        <div className="relative border-b border-white/10 p-5">
+        <div className="relative border-b border-white/10 p-4">
           <div className="flex items-center gap-3">
             <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[8px] border border-[#d4a843]/28 bg-[#d4a843]/12">
               {session?.user?.image ? (
