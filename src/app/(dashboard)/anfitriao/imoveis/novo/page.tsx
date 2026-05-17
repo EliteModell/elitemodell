@@ -78,10 +78,10 @@ type SavedDraft = {
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "13px 14px",
-  background: "#0b1420",
-  border: "1px solid #1e293b",
+  background: "#111",
+  border: "1px solid #2a2620",
   borderRadius: 10,
-  color: "#f1f5f9",
+  color: "#f4f1ea",
   fontSize: 14,
   outline: "none",
   boxSizing: "border-box",
@@ -90,7 +90,7 @@ const inputStyle: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: 11,
-  color: "#64748b",
+  color: "#8d8578",
   fontWeight: 900,
   textTransform: "uppercase",
   letterSpacing: 1.4,
@@ -465,7 +465,8 @@ export default function NovoImovelPage() {
       {status !== "authenticated" ? (
         <header className="draft-topbar">
           <Link href="/" className="draft-logo">
-            <span>elite</span>modell
+            <span className="draft-logo-star">✦</span>
+            <span className="draft-logo-word"><span>elite</span>modell</span>
           </Link>
           <Link href={authHref("/login")} className="draft-login">
             Entrar
@@ -474,9 +475,9 @@ export default function NovoImovelPage() {
       ) : null}
 
       <div className="draft-hero">
-        <p>EliteModell Rooms</p>
-        <h1>Anuncie um espaco discreto para atendimento.</h1>
-        <span>Comece pelo local. A conta fica para o final e o rascunho fica salvo neste dispositivo.</span>
+        <p>EliteModell Reserve</p>
+        <h1>Anuncie um ambiente discreto para profissionais.</h1>
+        <span>Cadastre um espaco reservado para atendimento profissional. A conta fica para o final e o rascunho fica salvo neste dispositivo.</span>
       </div>
 
       <div className="draft-progress">
@@ -693,7 +694,7 @@ export default function NovoImovelPage() {
 
       <style jsx>{`
         .property-draft-shell {
-          width: min(100%, 820px);
+          width: min(100%, 920px);
           margin: 0 auto;
           padding: 0 0 90px;
         }
@@ -703,18 +704,44 @@ export default function NovoImovelPage() {
           align-items: center;
           justify-content: space-between;
           gap: 16px;
-          margin-bottom: 22px;
+          min-height: 64px;
+          margin: -20px -8px 28px;
+          padding: 0 8px;
+          border-bottom: 1px solid rgba(212,168,67,0.16);
+          background: rgba(5,5,5,0.72);
+          backdrop-filter: blur(18px);
         }
 
         .draft-logo {
-          color: #f1f5f9;
-          font-size: 24px;
-          font-weight: 900;
-          letter-spacing: -0.5px;
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          min-height: 40px;
+          padding: 6px 16px;
+          border: 1.5px solid rgba(212,168,67,0.34);
+          border-radius: 8px;
+          background: rgba(255,255,255,0.025);
+          color: #f4f1ea;
           text-decoration: none;
         }
 
-        .draft-logo span {
+        .draft-logo-star {
+          position: absolute;
+          top: -10px;
+          right: -5px;
+          color: ${GOLD};
+          font-size: 16px;
+          line-height: 1;
+          user-select: none;
+        }
+
+        .draft-logo-word {
+          font-size: 22px;
+          font-weight: 900;
+          letter-spacing: -1px;
+        }
+
+        .draft-logo-word span {
           background: linear-gradient(135deg, #ffe5a0 0%, #d4a843 35%, #f5d78c 62%, #9e7b2a 100%);
           background-clip: text;
           -webkit-background-clip: text;
@@ -724,22 +751,23 @@ export default function NovoImovelPage() {
         .draft-login,
         .outline-link {
           border: 1px solid ${GOLD_MID};
-          border-radius: 10px;
+          border-radius: 8px;
           color: ${GOLD};
-          padding: 10px 14px;
+          padding: 9px 20px;
           text-decoration: none;
           font-size: 13px;
           font-weight: 900;
+          background: rgba(212,168,67,0.04);
         }
 
         .draft-hero {
           margin-bottom: 22px;
           border: 1px solid rgba(212, 168, 67, 0.18);
-          border-radius: 18px;
+          border-radius: 12px;
           padding: 22px;
           background:
-            linear-gradient(135deg, rgba(212, 168, 67, 0.12), rgba(204, 31, 47, 0.06), rgba(255,255,255,0.025)),
-            #07111f;
+            linear-gradient(135deg, rgba(212, 168, 67, 0.12), rgba(255,255,255,0.025)),
+            #111;
           box-shadow: 0 24px 80px rgba(0,0,0,0.28);
         }
 
@@ -755,7 +783,7 @@ export default function NovoImovelPage() {
 
         .draft-hero h1 {
           margin: 0;
-          color: #f8fafc;
+          color: #f4f1ea;
           font-size: clamp(26px, 5vw, 38px);
           line-height: 1.05;
           font-weight: 950;
@@ -764,7 +792,7 @@ export default function NovoImovelPage() {
         .draft-hero > span {
           display: block;
           margin-top: 12px;
-          color: #94a3b8;
+          color: #b8b1a6;
           font-size: 13px;
           line-height: 1.6;
         }
@@ -779,7 +807,7 @@ export default function NovoImovelPage() {
 
         .draft-progress strong {
           display: block;
-          color: #f1f5f9;
+          color: #f4f1ea;
           font-size: 17px;
         }
 
@@ -794,7 +822,7 @@ export default function NovoImovelPage() {
           margin-bottom: 22px;
           overflow: hidden;
           border-radius: 999px;
-          background: #1e293b;
+          background: #24211d;
         }
 
         .progress-track div {
@@ -806,8 +834,8 @@ export default function NovoImovelPage() {
 
         .draft-card {
           border: 1px solid ${GOLD_MID};
-          border-radius: 18px;
-          background: #07111f;
+          border-radius: 12px;
+          background: #111;
           padding: 24px;
           box-shadow: 0 28px 90px rgba(0,0,0,0.32);
         }

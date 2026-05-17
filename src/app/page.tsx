@@ -65,8 +65,8 @@ const verificationItems = [
 const quickActions = [
   {
     label: "Busco prazer",
-    href: "/dashboard",
-    text: "Acesse sua area cliente de forma privada e simples.",
+    href: "/buscar?tab=acompanhantes",
+    text: "Explore perfis verificados sem cadastro obrigatorio.",
     icon: Heart,
   },
   {
@@ -84,7 +84,9 @@ const quickActions = [
   {
     label: "Sou profissional",
     href: "/cadastro?tipo=profissional",
-    text: "Cadastre seu perfil com documentos, fotos reais e biometria.",
+    text: "Anunciar meu perfil",
+    cta: "Comecar cadastro",
+    featured: true,
     icon: UserRoundPlus,
   },
 ];
@@ -107,7 +109,6 @@ export default function HomePage() {
               <div className="eyebrow">
                 A plataforma premium do Brasil
               </div>
-              <div className="hero-signature">Discrição. Elegância. Sofisticação.</div>
               <div className="hero-benefits">
                 <span><ShieldCheck size={18} /> Discrição total e segurança</span>
                 <span><Star size={18} /> Acompanhantes verificadas</span>
@@ -132,11 +133,11 @@ export default function HomePage() {
               const Icon = item.icon;
 
               return (
-              <Link key={item.label} href={item.href} className="action-tile">
+              <Link key={item.label} href={item.href} className={item.featured ? "action-tile professional-tile" : "action-tile"}>
                 <span className="action-icon"><Icon size={22} /></span>
                 <strong>{item.label}</strong>
                 <p>{item.text}</p>
-                <span className="action-cta">Acessar <ChevronRight size={16} /></span>
+                <span className="action-cta">{item.cta ?? "Acessar"} <ChevronRight size={16} /></span>
               </Link>
               );
             })}
@@ -254,8 +255,8 @@ export default function HomePage() {
       <style>{`
         .home-shell {
           min-height: 100vh;
-          background: #060e1b;
-          color: #f1f5f9;
+          background: #050505;
+          color: #f4f1ea;
           overflow-x: hidden;
         }
 
@@ -266,7 +267,7 @@ export default function HomePage() {
           overflow: hidden;
           border-bottom: 1px solid ${GOLD_DIM};
           isolation: isolate;
-          background: #060e1b;
+          background: #050505;
         }
 
         .hero-bg {
@@ -322,20 +323,10 @@ export default function HomePage() {
           letter-spacing: 0;
         }
 
-        .hero-signature {
-          color: #f4d98c;
-          font-size: clamp(24px, 3.4vw, 42px);
-          font-weight: 800;
-          letter-spacing: 0.2px;
-          margin: 18px 0 22px;
-          max-width: 600px;
-          line-height: 1.05;
-        }
-
         .hero-benefits {
           display: grid;
           gap: 10px;
-          margin: 0 0 22px;
+          margin: 22px 0;
         }
 
         .hero-benefits span {
@@ -534,7 +525,7 @@ export default function HomePage() {
           max-width: 1280px;
           margin: 0 auto;
           padding: 70px 24px;
-          background: #060e1b;
+          background: #050505;
         }
 
         .quick-actions {
@@ -627,6 +618,25 @@ export default function HomePage() {
           font-weight: 900;
           letter-spacing: 1.4px;
           text-transform: uppercase;
+        }
+
+        .professional-tile {
+          border-color: rgba(212,168,67,0.18);
+          background: linear-gradient(135deg, rgba(212,168,67,0.07), rgba(11,20,32,0.98));
+        }
+
+        .professional-tile p {
+          color: #f5d78c;
+          font-weight: 850;
+        }
+
+        .professional-tile .action-cta {
+          color: #060e1b;
+          background: linear-gradient(135deg, #ffe08b, ${GOLD});
+          border-radius: 999px;
+          padding: 8px 11px;
+          letter-spacing: 1px;
+          box-shadow: 0 10px 28px rgba(212,168,67,0.14);
         }
 
         .profile-grid,
@@ -907,8 +917,8 @@ export default function HomePage() {
 
         @media (max-width: 680px) {
           .market-hero {
-            min-height: 620px;
-            padding: 52px 18px 30px;
+            min-height: 500px;
+            padding: 42px 18px 18px;
             overflow: hidden;
           }
 
@@ -917,16 +927,16 @@ export default function HomePage() {
               linear-gradient(90deg, rgba(2,7,14,0.92) 0%, rgba(2,7,14,0.66) 34%, rgba(2,7,14,0.2) 62%, rgba(2,7,14,0.02) 100%),
               linear-gradient(180deg, rgba(2,7,14,0) 0%, rgba(2,7,14,0.05) 58%, rgba(6,14,27,0.8) 100%),
               url("/hero-sofa-model.png");
-            background-position: 60% top;
-            background-size: auto 700px;
+            background-position: 64% top;
+            background-size: auto 590px;
             background-repeat: no-repeat;
-            background-color: #060e1b;
+          background-color: #050505;
           }
 
           .hero-content {
             min-height: auto;
             align-items: flex-start;
-            padding-top: 70px;
+            padding-top: 76px;
           }
 
           .hero-copy {
@@ -940,17 +950,10 @@ export default function HomePage() {
             letter-spacing: 2px;
           }
 
-          .hero-signature {
-            max-width: 74%;
-            margin: 16px 0 18px;
-            font-size: clamp(24px, 7.2vw, 32px);
-            line-height: 1.05;
-          }
-
           .hero-benefits {
             gap: 9px;
-            max-width: 72%;
-            margin-bottom: 20px;
+            max-width: 68%;
+            margin: 18px 0 18px;
           }
 
           .hero-benefits span {
@@ -959,7 +962,7 @@ export default function HomePage() {
           }
 
           .hero-cta {
-            width: min(82%, 520px);
+            width: min(78%, 520px);
             min-height: 48px;
             margin-top: 4px;
             padding: 0 13px 0 18px;
@@ -1002,7 +1005,7 @@ export default function HomePage() {
 
           .quick-actions.section-block {
             isolation: isolate;
-            padding-top: 34px;
+            padding-top: 24px;
             padding-bottom: 34px;
           }
 
@@ -1073,6 +1076,14 @@ export default function HomePage() {
             line-height: 1.35;
           }
 
+          .professional-tile p {
+            display: block;
+            -webkit-line-clamp: unset;
+            color: #f5d78c;
+            font-size: 12.5px;
+            font-weight: 900;
+          }
+
           .action-cta {
             position: static;
             margin-top: auto;
@@ -1080,6 +1091,13 @@ export default function HomePage() {
             justify-content: space-between;
             font-size: 10.5px;
             letter-spacing: 1.2px;
+          }
+
+          .professional-tile .action-cta {
+            justify-content: center;
+            padding: 8px 10px;
+            font-size: 9.8px;
+            letter-spacing: 0.6px;
           }
 
           .feature-photo {

@@ -4,6 +4,15 @@ import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import { Star } from "lucide-react";
+
+const GOLD = "#d4a843";
+const GOLD_SOFT = "#f5d78c";
+const INK = "#050505";
+const PANEL = "#111";
+const LINE = "#2a2620";
+const MUTED = "#8d8578";
+const TEXT = "#f4f1ea";
 
 const amenityIcons: Record<string, string> = {
   "Wi-Fi": "📶",
@@ -63,7 +72,7 @@ function StarRating({ rating }: { rating: number }) {
   return (
     <div style={{ display: "flex", gap: 2 }}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <span key={n} style={{ color: n <= Math.round(rating) ? "#cc0000" : "#333", fontSize: 16 }}>★</span>
+        <Star key={n} size={15} fill={n <= Math.round(rating) ? GOLD : "transparent"} color={n <= Math.round(rating) ? GOLD : "#3a3328"} />
       ))}
     </div>
   );
@@ -94,8 +103,8 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
   return (
     <div
       style={{
-        background: "#111",
-        border: "1px solid #222",
+        background: PANEL,
+        border: `1px solid ${LINE}`,
         borderRadius: 14,
         padding: "24px",
         position: "sticky",
@@ -103,12 +112,12 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
       }}
     >
       <div style={{ marginBottom: 20 }}>
-        <span style={{ fontSize: 26, fontWeight: 800, color: "#cc0000" }}>
+        <span style={{ fontSize: 26, fontWeight: 800, color: GOLD }}>
           R$ {property.pricePerNight.toLocaleString("pt-BR")}
         </span>
-        <span style={{ color: "#666", fontSize: 14 }}>/periodo</span>
+        <span style={{ color: MUTED, fontSize: 14 }}>/periodo</span>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-          <span style={{ color: "#cc0000" }}>★</span>
+          <Star size={14} fill={GOLD} color={GOLD} />
           <span style={{ color: "#ccc", fontSize: 13, fontWeight: 600 }}>{property.rating}</span>
           <span style={{ color: "#555", fontSize: 13 }}>· {property.totalReviews} avaliações</span>
         </div>
@@ -117,27 +126,27 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
       {/* Date inputs */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
         <div>
-          <label style={{ fontSize: 11, color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 6 }}>Check-in</label>
+          <label style={{ fontSize: 11, color: MUTED, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 6 }}>Inicio</label>
           <input
             type="date"
             value={checkIn}
             min={new Date().toISOString().split("T")[0]}
             onChange={(e) => setCheckIn(e.target.value)}
-            style={{ width: "100%", padding: "10px 12px", background: "#0d0d0d", border: "1px solid #2a2a2a", borderRadius: 8, color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box", colorScheme: "dark" }}
-            onFocus={(e) => ((e.target as HTMLElement).style.borderColor = "#cc0000")}
-            onBlur={(e) => ((e.target as HTMLElement).style.borderColor = "#2a2a2a")}
+            style={{ width: "100%", padding: "10px 12px", background: INK, border: `1px solid ${LINE}`, borderRadius: 8, color: TEXT, fontSize: 13, outline: "none", boxSizing: "border-box", colorScheme: "dark" }}
+            onFocus={(e) => ((e.target as HTMLElement).style.borderColor = GOLD)}
+            onBlur={(e) => ((e.target as HTMLElement).style.borderColor = LINE)}
           />
         </div>
         <div>
-          <label style={{ fontSize: 11, color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 6 }}>Check-out</label>
+          <label style={{ fontSize: 11, color: MUTED, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 6 }}>Saida</label>
           <input
             type="date"
             value={checkOut}
             min={checkIn || new Date().toISOString().split("T")[0]}
             onChange={(e) => setCheckOut(e.target.value)}
-            style={{ width: "100%", padding: "10px 12px", background: "#0d0d0d", border: "1px solid #2a2a2a", borderRadius: 8, color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box", colorScheme: "dark" }}
-            onFocus={(e) => ((e.target as HTMLElement).style.borderColor = "#cc0000")}
-            onBlur={(e) => ((e.target as HTMLElement).style.borderColor = "#2a2a2a")}
+            style={{ width: "100%", padding: "10px 12px", background: INK, border: `1px solid ${LINE}`, borderRadius: 8, color: TEXT, fontSize: 13, outline: "none", boxSizing: "border-box", colorScheme: "dark" }}
+            onFocus={(e) => ((e.target as HTMLElement).style.borderColor = GOLD)}
+            onBlur={(e) => ((e.target as HTMLElement).style.borderColor = LINE)}
           />
         </div>
       </div>
@@ -148,7 +157,7 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
         <select
           value={guests}
           onChange={(e) => setGuests(Number(e.target.value))}
-          style={{ width: "100%", padding: "10px 12px", background: "#0d0d0d", border: "1px solid #2a2a2a", borderRadius: 8, color: "#fff", fontSize: 13, outline: "none" }}
+          style={{ width: "100%", padding: "10px 12px", background: INK, border: `1px solid ${LINE}`, borderRadius: 8, color: TEXT, fontSize: 13, outline: "none" }}
         >
           {Array.from({ length: property.maxGuests }, (_, i) => i + 1).map((n) => (
             <option key={n} value={n} style={{ background: "#111" }}>{n} pessoa{n > 1 ? "s" : ""}</option>
@@ -158,7 +167,7 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
 
       {/* Price breakdown */}
       {nights > 0 && (
-        <div style={{ marginBottom: 16, padding: "14px", background: "#0d0d0d", borderRadius: 8, border: "1px solid #1a1a1a" }}>
+        <div style={{ marginBottom: 16, padding: "14px", background: INK, borderRadius: 8, border: `1px solid ${LINE}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#888", marginBottom: 8 }}>
                 <span>R$ {property.pricePerNight.toLocaleString("pt-BR")} × {nights} periodo{nights > 1 ? "s" : ""}</span>
             <span style={{ color: "#ccc" }}>R$ {subtotal.toLocaleString("pt-BR")}</span>
@@ -171,9 +180,9 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
             <span>Taxa de serviço</span>
             <span style={{ color: "#ccc" }}>R$ {property.serviceFee.toLocaleString("pt-BR")}</span>
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 700, color: "#fff", borderTop: "1px solid #222", paddingTop: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 700, color: TEXT, borderTop: `1px solid ${LINE}`, paddingTop: 12 }}>
             <span>Total</span>
-            <span style={{ color: "#cc0000" }}>R$ {total.toLocaleString("pt-BR")}</span>
+            <span style={{ color: GOLD }}>R$ {total.toLocaleString("pt-BR")}</span>
           </div>
         </div>
       )}
@@ -190,8 +199,8 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
         style={{
           width: "100%",
           padding: "14px",
-          background: (!checkIn || !checkOut || nights < property.minNights) ? "#444" : "#cc0000",
-          color: "#fff",
+          background: (!checkIn || !checkOut || nights < property.minNights) ? "#2a2620" : "linear-gradient(135deg, #f5d78c, #d4a843)",
+          color: (!checkIn || !checkOut || nights < property.minNights) ? "#8d8578" : "#080704",
           border: "none",
           borderRadius: 8,
           fontSize: 15,
@@ -199,10 +208,10 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
           cursor: (!checkIn || !checkOut || nights < property.minNights) ? "not-allowed" : "pointer",
           transition: "background 0.2s",
         }}
-        onMouseEnter={(e) => { if (checkIn && checkOut && nights >= property.minNights) (e.currentTarget as HTMLElement).style.background = "#e00000"; }}
-        onMouseLeave={(e) => { if (checkIn && checkOut && nights >= property.minNights) (e.currentTarget as HTMLElement).style.background = "#cc0000"; }}
+        onMouseEnter={(e) => { if (checkIn && checkOut && nights >= property.minNights) (e.currentTarget as HTMLElement).style.background = GOLD_SOFT; }}
+        onMouseLeave={(e) => { if (checkIn && checkOut && nights >= property.minNights) (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #f5d78c, #d4a843)"; }}
       >
-        {property.instantBook ? "Reservar agora" : "Solicitar reserva"}
+        {property.instantBook ? "Reservar ambiente" : "Solicitar reserva"}
       </button>
 
       {property.instantBook && (
@@ -241,42 +250,42 @@ export default function PropertyDetailPage() {
 
   if (loading && !fetched) {
     return (
-      <div style={{ background: "#0d0d0d", minHeight: "100vh" }}>
+      <div style={{ background: INK, minHeight: "100vh" }}>
         <Navbar />
-        <div style={{ color: "#94a3b8", padding: "120px 24px", textAlign: "center" }}>Carregando quarto...</div>
+        <div style={{ color: MUTED, padding: "120px 24px", textAlign: "center" }}>Carregando ambiente...</div>
       </div>
     );
   }
 
   return (
-    <div style={{ background: "#0d0d0d", minHeight: "100vh" }}>
+    <div style={{ background: INK, minHeight: "100vh", color: TEXT }}>
       <Navbar />
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "96px 24px 60px" }}>
         {/* Breadcrumb */}
-        <div style={{ display: "flex", gap: 8, fontSize: 13, color: "#666", marginBottom: 20, alignItems: "center" }}>
-          <Link href="/imoveis" style={{ color: "#cc0000", textDecoration: "none" }}>Quartos</Link>
+        <div style={{ display: "flex", gap: 8, fontSize: 13, color: MUTED, marginBottom: 20, alignItems: "center" }}>
+          <Link href="/imoveis" style={{ color: GOLD, textDecoration: "none" }}>Espacos</Link>
           <span>›</span>
           <span>{p.city}, {p.state}</span>
           <span>›</span>
-          <span style={{ color: "#aaa" }}>{p.title}</span>
+          <span style={{ color: "#cfc8ba" }}>{p.title}</span>
         </div>
 
         {/* Title */}
-        <h1 style={{ fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 800, color: "#fff", marginBottom: 12 }}>
+        <h1 style={{ fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 800, color: TEXT, marginBottom: 12, fontFamily: "var(--font-playfair), serif" }}>
           {p.title}
         </h1>
 
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center", marginBottom: 24 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ color: "#cc0000" }}>★</span>
+            <Star size={14} fill={GOLD} color={GOLD} />
             <span style={{ color: "#fff", fontWeight: 700 }}>{p.rating}</span>
             <span style={{ color: "#666" }}>· {p.totalReviews} avaliações</span>
           </div>
           <span style={{ color: "#333" }}>·</span>
           <span style={{ color: "#666" }}>{p.address}</span>
           {p.instantBook && (
-            <span style={{ padding: "3px 10px", background: "rgba(204,0,0,0.1)", border: "1px solid rgba(204,0,0,0.3)", borderRadius: 20, fontSize: 12, color: "#cc0000" }}>
+            <span style={{ padding: "3px 10px", background: "rgba(212,168,67,0.12)", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 20, fontSize: 12, color: GOLD, fontWeight: 800 }}>
               ⚡ Reserva instantânea
             </span>
           )}
@@ -299,7 +308,7 @@ export default function PropertyDetailPage() {
             <div
               key={i}
               style={{
-                background: `linear-gradient(${135 + i * 30}deg, #1a0000 0%, #111 50%, #0d0d1a 100%)`,
+                background: `linear-gradient(${135 + i * 30}deg, #181613 0%, #111 55%, #050505 100%)`,
                 gridRow: i === 0 ? "1 / 3" : undefined,
                 display: "flex",
                 alignItems: "center",
@@ -313,7 +322,7 @@ export default function PropertyDetailPage() {
                 <polyline points="21 15 16 10 5 21"/>
               </svg>
               {i === 4 && (
-                <div style={{ position: "absolute", bottom: 10, right: 10, padding: "4px 12px", background: "rgba(0,0,0,0.8)", borderRadius: 6, fontSize: 12, color: "#ccc", cursor: "pointer" }}>
+                <div style={{ position: "absolute", bottom: 10, right: 10, padding: "4px 12px", background: "rgba(0,0,0,0.82)", border: `1px solid ${LINE}`, borderRadius: 8, fontSize: 12, color: "#cfc8ba", cursor: "pointer" }}>
                   Ver todas as fotos
                 </div>
               )}
@@ -326,12 +335,12 @@ export default function PropertyDetailPage() {
           {/* Left */}
           <div>
             {/* Host + specs */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", paddingBottom: 28, borderBottom: "1px solid #1a1a1a", marginBottom: 28 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", paddingBottom: 28, borderBottom: `1px solid ${LINE}`, marginBottom: 28 }}>
               <div>
-                <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 8 }}>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: TEXT, marginBottom: 8 }}>
                   {p.type} em {p.city}
                 </h2>
-                <div style={{ display: "flex", gap: 12, fontSize: 14, color: "#888" }}>
+                <div style={{ display: "flex", gap: 12, fontSize: 14, color: MUTED, flexWrap: "wrap" }}>
                   <span>{p.maxGuests} pessoas</span>
                   <span>·</span>
                   <span>{p.bedrooms} quarto{p.bedrooms > 1 ? "s" : ""}</span>
@@ -347,25 +356,26 @@ export default function PropertyDetailPage() {
                     width: 52,
                     height: 52,
                     borderRadius: "50%",
-                    background: "#cc0000",
+                    background: "rgba(212,168,67,0.12)",
+                    border: "1px solid rgba(212,168,67,0.28)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     fontSize: 20,
                     fontWeight: 800,
-                    color: "#fff",
+                    color: GOLD,
                     margin: "0 auto 4px",
                   }}
                 >
                   {p.host.name[0]}
                 </div>
-                <div style={{ fontSize: 12, color: "#666" }}>Anunciante</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#ccc" }}>{p.host.name}</div>
+                <div style={{ fontSize: 12, color: MUTED }}>Anunciante</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#cfc8ba" }}>{p.host.name}</div>
               </div>
             </div>
 
             {/* Highlights */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 16, paddingBottom: 28, borderBottom: "1px solid #1a1a1a", marginBottom: 28 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16, paddingBottom: 28, borderBottom: `1px solid ${LINE}`, marginBottom: 28 }}>
               {[
                 { icon: "⚡", title: "Reserva instantânea", desc: "Confirme sua reserva sem esperar aprovação." },
                 { icon: "📅", title: `Disponivel a partir de ${p.checkInTime}`, desc: `Uso minimo de ${p.minNights} periodo.` },
@@ -374,25 +384,25 @@ export default function PropertyDetailPage() {
                 <div key={i} style={{ display: "flex", gap: 14 }}>
                   <span style={{ fontSize: 22, flexShrink: 0 }}>{h.icon}</span>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>{h.title}</div>
-                    <div style={{ fontSize: 13, color: "#666" }}>{h.desc}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, marginBottom: 2 }}>{h.title}</div>
+                    <div style={{ fontSize: 13, color: MUTED }}>{h.desc}</div>
                   </div>
                 </div>
               ))}
             </div>
 
             {/* Description */}
-            <div style={{ paddingBottom: 28, borderBottom: "1px solid #1a1a1a", marginBottom: 28 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 14 }}>Sobre o espaco</h3>
-              <p style={{ color: "#888", fontSize: 15, lineHeight: 1.8, whiteSpace: "pre-line" }}>{p.description}</p>
+            <div style={{ paddingBottom: 28, borderBottom: `1px solid ${LINE}`, marginBottom: 28 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: TEXT, marginBottom: 14 }}>Sobre o ambiente</h3>
+              <p style={{ color: "#b8b1a6", fontSize: 15, lineHeight: 1.8, whiteSpace: "pre-line" }}>{p.description}</p>
             </div>
 
             {/* Amenities */}
-            <div style={{ paddingBottom: 28, borderBottom: "1px solid #1a1a1a", marginBottom: 28 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 18 }}>O que este lugar oferece</h3>
+            <div style={{ paddingBottom: 28, borderBottom: `1px solid ${LINE}`, marginBottom: 28 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: TEXT, marginBottom: 18 }}>Estrutura para atendimento</h3>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 {p.amenities.map((a) => (
-                  <div key={a} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#ccc" }}>
+                  <div key={a} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#cfc8ba" }}>
                     <span style={{ fontSize: 18 }}>{amenityIcons[a] ?? "✓"}</span>
                     {a}
                   </div>
@@ -401,8 +411,8 @@ export default function PropertyDetailPage() {
             </div>
 
             {/* Rules */}
-            <div style={{ paddingBottom: 28, borderBottom: "1px solid #1a1a1a", marginBottom: 28 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 14 }}>Uso do espaco</h3>
+            <div style={{ paddingBottom: 28, borderBottom: `1px solid ${LINE}`, marginBottom: 28 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: TEXT, marginBottom: 14 }}>Uso do espaco</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {[
                   { label: "Pets permitidos", value: p.allowPets },
@@ -410,8 +420,8 @@ export default function PropertyDetailPage() {
                   { label: "Festas permitidas", value: p.allowParties },
                 ].map((r) => (
                   <div key={r.label} style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
-                    <span style={{ color: "#888" }}>{r.label}</span>
-                    <span style={{ color: r.value ? "#66cc66" : "#cc4444", fontWeight: 600 }}>
+                    <span style={{ color: MUTED }}>{r.label}</span>
+                    <span style={{ color: r.value ? GOLD : "#8d8578", fontWeight: 600 }}>
                       {r.value ? "✓ Sim" : "✗ Não"}
                     </span>
                   </div>
@@ -422,7 +432,7 @@ export default function PropertyDetailPage() {
             {/* Rating breakdown */}
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-                <span style={{ fontSize: 36, fontWeight: 800, color: "#fff" }}>{p.rating}</span>
+                <span style={{ fontSize: 36, fontWeight: 800, color: TEXT }}>{p.rating}</span>
                 <div>
                   <StarRating rating={p.rating} />
                   <span style={{ color: "#666", fontSize: 13 }}>{p.totalReviews} avaliações</span>
@@ -437,11 +447,11 @@ export default function PropertyDetailPage() {
                 { label: "Custo-benefício", value: 4.7 },
               ].map((r) => (
                 <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                  <span style={{ fontSize: 13, color: "#888", width: 120, flexShrink: 0 }}>{r.label}</span>
-                  <div style={{ flex: 1, height: 4, background: "#222", borderRadius: 2 }}>
-                    <div style={{ width: `${(r.value / 5) * 100}%`, height: "100%", background: "#cc0000", borderRadius: 2 }} />
+                  <span style={{ fontSize: 13, color: MUTED, width: 120, flexShrink: 0 }}>{r.label}</span>
+                  <div style={{ flex: 1, height: 4, background: "#24211d", borderRadius: 2 }}>
+                    <div style={{ width: `${(r.value / 5) * 100}%`, height: "100%", background: `linear-gradient(90deg, ${GOLD}, ${GOLD_SOFT})`, borderRadius: 2 }} />
                   </div>
-                  <span style={{ fontSize: 13, color: "#ccc", width: 30, textAlign: "right" }}>{r.value}</span>
+                  <span style={{ fontSize: 13, color: "#cfc8ba", width: 30, textAlign: "right" }}>{r.value}</span>
                 </div>
               ))}
             </div>

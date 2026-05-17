@@ -42,12 +42,12 @@ const acompanhantes = {
 };
 
 const imoveis = [
-  { id: 1, titulo: "Suite discreta Lourdes", cidade: "Belo Horizonte, MG", preco: 890, foto: "/property-bh-luxury.png", quartos: 1, avaliacao: 4.9, tipo: "Suite premium", tags: ["Portaria", "Entrada discreta"] },
-  { id: 2, titulo: "Quarto privado Itauna", cidade: "Itauna, MG", preco: 650, foto: "/property-itauna-country.png", quartos: 1, avaliacao: 4.9, tipo: "Quarto privado", tags: ["Privacidade acustica"] },
-  { id: 3, titulo: "Flat privativo Itauna", cidade: "Itauna, MG", preco: 420, foto: "/property-itauna-loft.png", quartos: 1, avaliacao: 4.8, tipo: "Flat discreto", tags: ["Entrada discreta"] },
-  { id: 4, titulo: "Studio reservado Savassi", cidade: "Belo Horizonte, MG", preco: 720, foto: "/property-bh-luxury.png", quartos: 1, avaliacao: 4.8, tipo: "Studio reservado", tags: ["Portaria"] },
-  { id: 5, titulo: "Local discreto Nova Lima", cidade: "Nova Lima, MG", preco: 980, foto: "/property-itauna-country.png", quartos: 1, avaliacao: 5.0, tipo: "Motel parceiro", tags: ["Garagem"] },
-  { id: 6, titulo: "Quarto centro", cidade: "Belo Horizonte, MG", preco: 380, foto: "/property-itauna-loft.png", quartos: 1, avaliacao: 4.7, tipo: "Quarto privado", tags: ["Entrada discreta"] },
+  { id: 1, titulo: "Suite reservada Lourdes", cidade: "Belo Horizonte, MG", preco: 890, foto: "/property-bh-luxury.png", quartos: 1, avaliacao: 4.9, tipo: "Espaco reservado", tags: ["Entrada privativa", "Uso profissional"] },
+  { id: 2, titulo: "Ambiente discreto Itauna", cidade: "Itauna, MG", preco: 650, foto: "/property-itauna-country.png", quartos: 1, avaliacao: 4.9, tipo: "Quarto privativo", tags: ["Privacidade acustica", "Atendimento reservado"] },
+  { id: 3, titulo: "Flat privativo Itauna", cidade: "Itauna, MG", preco: 420, foto: "/property-itauna-loft.png", quartos: 1, avaliacao: 4.8, tipo: "Flat discreto", tags: ["Entrada privativa"] },
+  { id: 4, titulo: "Studio reservado Savassi", cidade: "Belo Horizonte, MG", preco: 720, foto: "/property-bh-luxury.png", quartos: 1, avaliacao: 4.8, tipo: "Studio reservado", tags: ["Uso profissional"] },
+  { id: 5, titulo: "Espaco discreto Nova Lima", cidade: "Nova Lima, MG", preco: 980, foto: "/property-itauna-country.png", quartos: 1, avaliacao: 5.0, tipo: "Ambiente reservado", tags: ["Garagem privativa"] },
+  { id: 6, titulo: "Quarto reservado centro", cidade: "Belo Horizonte, MG", preco: 380, foto: "/property-itauna-loft.png", quartos: 1, avaliacao: 4.7, tipo: "Quarto privativo", tags: ["Entrada privativa"] },
 ];
 
 const FILTROS = ["Online agora", "Com avaliações", "Com local", "Até R$300", "Exclusivas"] as const;
@@ -85,7 +85,7 @@ function BuscarContent() {
   });
 
   return (
-    <div style={{ background: "#060e1b", minHeight: "100vh", color: "#f1f5f9" }}>
+    <div style={{ background: "#050505", minHeight: "100vh", color: "#f4f1ea" }}>
       <style>{`
         .buscar-tabs-bar { display: flex; gap: 4px; }
         .perfil-grid {
@@ -93,7 +93,7 @@ function BuscarContent() {
           grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
           gap: 14px;
         }
-        .perfil-card { border-radius: 16px; overflow: hidden; background: #0b1420; border: 1px solid #1e293b; transition: transform 0.2s, border-color 0.2s; cursor: pointer; }
+        .perfil-card { border-radius: 16px; overflow: hidden; background: #111; border: 1px solid #2a2620; transition: transform 0.2s, border-color 0.2s; cursor: pointer; }
         .perfil-card:hover { transform: translateY(-3px); border-color: rgba(212,168,67,0.3); }
         .perfil-foto { position: relative; padding-top: 130%; }
         .perfil-info { padding: 14px 16px; }
@@ -119,17 +119,17 @@ function BuscarContent() {
       <Navbar />
 
       {/* ── BARRA DE BUSCA PREMIUM ── */}
-      <div style={{ background: "#0b1420", borderBottom: `1px solid ${GOLD_DIM}` }}>
+      <div style={{ background: "#0a0a0a", borderBottom: `1px solid ${GOLD_DIM}` }}>
         {/* linha dourada */}
         <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${GOLD}, rgba(212,168,67,0.3), transparent)` }} />
         <div style={{ maxWidth: 1280, margin: "0 auto", padding: "12px 16px" }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
 
             {/* Tipo toggle */}
-            <div style={{ display: "flex", gap: 0, background: "#0f172a", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, overflow: "hidden", flexShrink: 0 }}>
+            <div style={{ display: "flex", gap: 0, background: "#111", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, overflow: "hidden", flexShrink: 0 }}>
               {([["acompanhantes", "Acompanhantes"], ["imoveis", "Quartos"]] as const).map(([tab, label]) => (
                 <button key={tab} onClick={() => setMainTab(tab)}
-                  style={{ padding: "9px 16px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, background: mainTab === tab ? GOLD : "transparent", color: mainTab === tab ? "#060e1b" : "#475569", transition: "all 0.2s", fontFamily: PLAYFAIR }}>
+                  style={{ padding: "9px 16px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, background: mainTab === tab ? GOLD : "transparent", color: mainTab === tab ? "#080704" : "#8d8578", transition: "all 0.2s", fontFamily: PLAYFAIR }}>
                   {label}
                 </button>
               ))}
@@ -137,13 +137,13 @@ function BuscarContent() {
 
             {/* Input de busca */}
             <div style={{ flex: 1, position: "relative", minWidth: 0 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2"
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#615b52" strokeWidth="2"
                 style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
                 <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
               <input value={busca} onChange={(e) => setBusca(e.target.value)}
                 placeholder={mainTab === "acompanhantes" ? "Nome, serviço ou especialidade..." : "Cidade, bairro ou estrutura..."}
-                style={{ width: "100%", padding: "10px 14px 10px 36px", background: "#0f172a", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, color: "#f1f5f9", fontSize: 14, outline: "none", boxSizing: "border-box", transition: "border-color 0.2s" }}
+                style={{ width: "100%", padding: "10px 14px 10px 36px", background: "#111", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, color: "#f4f1ea", fontSize: 14, outline: "none", boxSizing: "border-box", transition: "border-color 0.2s" }}
                 onFocus={(e) => ((e.target as HTMLElement).style.borderColor = GOLD)}
                 onBlur={(e) => ((e.target as HTMLElement).style.borderColor = GOLD_DIM)} />
             </div>
@@ -154,7 +154,7 @@ function BuscarContent() {
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#e8bb47"; (e.currentTarget as HTMLElement).style.transform = "scale(1.08)"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = GOLD; (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
             >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#060e1b" strokeWidth="2.5">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#080704" strokeWidth="2.5">
                 <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
             </button>
@@ -303,11 +303,11 @@ function BuscarContent() {
         {mainTab === "imoveis" && (
           <>
             <div className="filtros-scroll" style={{ marginBottom: 20 }}>
-              {["Quarto privado", "Suite premium", "Flat discreto", "Studio reservado", "Motel parceiro", "Entrada discreta"].map((f) => {
+              {["Quarto privativo", "Espaco reservado", "Flat discreto", "Studio reservado", "Ambiente reservado", "Entrada privativa"].map((f) => {
                 const ativo = filtroImovel === f;
                 return (
                   <button key={f} onClick={() => setFiltroImovel(ativo ? null : f)}
-                    style={{ padding: "7px 14px", background: ativo ? "rgba(212,168,67,0.15)" : "#0f172a", border: `1px solid ${ativo ? GOLD : "#1e293b"}`, borderRadius: 20, color: ativo ? "#f1f5f9" : "#64748b", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", fontWeight: ativo ? 700 : 400, transition: "all 0.2s", flexShrink: 0 }}>
+                    style={{ padding: "7px 14px", background: ativo ? "rgba(212,168,67,0.15)" : "#111", border: `1px solid ${ativo ? GOLD : "#2a2620"}`, borderRadius: 20, color: ativo ? "#f4f1ea" : "#8d8578", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", fontWeight: ativo ? 700 : 400, transition: "all 0.2s", flexShrink: 0 }}>
                     {f}
                   </button>
                 );
@@ -317,30 +317,38 @@ function BuscarContent() {
             <div className="imovel-grid">
               {imoveis.filter((i) => {
                 if (busca && !i.cidade.toLowerCase().includes(busca.toLowerCase()) && !i.titulo.toLowerCase().includes(busca.toLowerCase())) return false;
-                if (filtroImovel === "Entrada discreta") return i.tags.includes(filtroImovel);
+                if (filtroImovel === "Entrada privativa") return i.tags.includes(filtroImovel);
                 if (filtroImovel) return i.tipo === filtroImovel;
                 return true;
               }).map((im) => (
                 <Link key={im.id} href={`/imoveis/${im.id}`} style={{ textDecoration: "none" }}>
-                  <div style={{ borderRadius: 14, overflow: "hidden", background: "#0f172a", border: `1px solid ${GOLD_DIM}`, cursor: "pointer", transition: "transform 0.2s, border-color 0.2s" }}
+                  <div style={{ borderRadius: 12, overflow: "hidden", background: "#111", border: `1px solid ${GOLD_DIM}`, cursor: "pointer", transition: "transform 0.2s, border-color 0.2s" }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-4px)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(212,168,67,0.3)"; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.borderColor = GOLD_DIM; }}>
-                    <div style={{ position: "relative", paddingTop: "60%", background: "#1a2a40" }}>
-                      <img src={im.foto} alt={im.titulo} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.7 }} />
-                      <div style={{ position: "absolute", top: 10, right: 10, background: "rgba(6,14,27,0.85)", padding: "4px 10px", borderRadius: 8, fontSize: 12, color: GOLD, fontWeight: 700 }}>
+                    <div style={{ position: "relative", paddingTop: "60%", background: "#141414" }}>
+                      <img src={im.foto} alt={im.titulo} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.82, filter: "saturate(0.76) contrast(1.04)" }} />
+                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(5,5,5,0.78), rgba(5,5,5,0.08) 58%, transparent)" }} />
+                      <div style={{ position: "absolute", top: 10, right: 10, background: "rgba(5,5,5,0.82)", border: `1px solid ${GOLD_DIM}`, padding: "4px 10px", borderRadius: 999, fontSize: 11, color: GOLD, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8 }}>
                         {im.tipo}
                       </div>
                     </div>
                     <div style={{ padding: "14px 16px" }}>
-                      <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: 16, color: "#f1f5f9", fontFamily: PLAYFAIR }}>{im.titulo}</p>
-                      <p style={{ margin: "0 0 10px", fontSize: 13, color: "#475569" }}>{im.cidade} · local discreto</p>
+                      <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: 16, color: "#f4f1ea", fontFamily: PLAYFAIR }}>{im.titulo}</p>
+                      <p style={{ margin: "0 0 10px", fontSize: 13, color: "#8d8578" }}>{im.cidade} · atendimento reservado</p>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+                        {im.tags.map((tag) => (
+                          <span key={tag} style={{ fontSize: 10, background: "rgba(255,255,255,0.035)", border: `1px solid ${GOLD_DIM}`, color: "#b8b1a6", padding: "3px 8px", borderRadius: 999 }}>
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <span style={{ color: GOLD, fontWeight: 800, fontSize: 16, fontFamily: PLAYFAIR }}>
-                          R${im.preco}<span style={{ color: "#475569", fontSize: 12, fontWeight: 400, fontFamily: "var(--font-inter), sans-serif" }}>/periodo</span>
+                          R${im.preco}<span style={{ color: "#8d8578", fontSize: 12, fontWeight: 400, fontFamily: "var(--font-inter), sans-serif" }}>/periodo</span>
                         </span>
                         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                          <span style={{ fontSize: 13, color: "#f59e0b", fontWeight: 600 }}>{im.avaliacao}</span>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="#d4a843"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                          <span style={{ fontSize: 13, color: "#d4a843", fontWeight: 600 }}>{im.avaliacao}</span>
                         </div>
                       </div>
                     </div>

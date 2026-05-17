@@ -14,11 +14,11 @@ export default function Navbar() {
   }
 
   return (
-    <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: "rgba(6,14,27,0.97)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(212,168,67,0.12)", height: 64 }}>
+    <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: "rgba(5,5,5,0.94)", backdropFilter: "blur(18px)", borderBottom: "1px solid rgba(212,168,67,0.16)", height: 64 }}>
       <div className="navbar-inner" style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "100%", gap: 12 }}>
 
         {/* Logo */}
-        <Link className="brand-mark" href="/" style={{ textDecoration: "none", position: "relative", display: "inline-block", padding: "6px 16px", border: "1.5px solid rgba(212,168,67,0.35)", borderRadius: 8, background: "rgba(212,168,67,0.04)" }}>
+        <Link className="brand-mark" href="/" style={{ textDecoration: "none", position: "relative", display: "inline-block", padding: "6px 16px", border: "1.5px solid rgba(212,168,67,0.34)", borderRadius: 8, background: "rgba(255,255,255,0.025)" }}>
           <span style={{ position: "absolute", top: -10, right: -5, color: "#d4a843", fontSize: 16, lineHeight: 1, userSelect: "none" }}>✦</span>
           <span className="brand-text" style={{ fontWeight: 900, fontSize: 22, letterSpacing: "-1px" }}>
             <span style={{
@@ -27,22 +27,22 @@ export default function Navbar() {
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
             }}>elite</span>
-            <span style={{ color: "#f1f5f9" }}>modell</span>
+            <span style={{ color: "#f4f1ea" }}>modell</span>
           </span>
         </Link>
 
         {/* Nav links */}
         <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <Link href="/buscar?tab=acompanhantes"
-            style={{ padding: "8px 16px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14, fontWeight: 500, transition: "all 0.2s" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#f1f5f9"; (e.currentTarget as HTMLElement).style.background = "rgba(212,168,67,0.06)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#94a3b8"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+            style={{ padding: "8px 16px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14, fontWeight: 500, transition: "all 0.2s" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#f4f1ea"; (e.currentTarget as HTMLElement).style.background = "rgba(212,168,67,0.06)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#b8b1a6"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
             Acompanhantes
           </Link>
           <Link href="/buscar?tab=imoveis"
-            style={{ padding: "8px 16px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14, fontWeight: 500, transition: "all 0.2s" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#f1f5f9"; (e.currentTarget as HTMLElement).style.background = "rgba(212,168,67,0.06)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#94a3b8"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+            style={{ padding: "8px 16px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14, fontWeight: 500, transition: "all 0.2s" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#f4f1ea"; (e.currentTarget as HTMLElement).style.background = "rgba(212,168,67,0.06)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#b8b1a6"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
             Quartos
           </Link>
         </div>
@@ -51,7 +51,7 @@ export default function Navbar() {
         <div className="auth-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {session ? (
             <>
-              <Link className="nav-auth-link" href="/dashboard" style={{ padding: "8px 18px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14, fontWeight: 500, border: "1px solid rgba(212,168,67,0.2)" }}>
+              <Link className="nav-auth-link" href="/dashboard" style={{ padding: "8px 18px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14, fontWeight: 500, border: "1px solid rgba(212,168,67,0.2)" }}>
                 {session.user?.name?.split(" ")[0] ?? "Minha conta"}
               </Link>
               <button className="nav-auth-link" onClick={handleSignOut} style={{ padding: "8px 18px", borderRadius: 8, background: "transparent", border: "1px solid rgba(212,168,67,0.3)", color: "#d4a843", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
@@ -67,7 +67,7 @@ export default function Navbar() {
                 Entrar
               </Link>
               <Link className="nav-auth-link signup-link" href="/cadastro"
-                style={{ padding: "8px 22px", borderRadius: 8, background: "#d4a843", color: "#060e1b", textDecoration: "none", fontSize: 14, fontWeight: 800, transition: "background 0.2s" }}
+                style={{ padding: "8px 22px", borderRadius: 8, background: "linear-gradient(135deg, #f5d78c, #d4a843)", color: "#080704", textDecoration: "none", fontSize: 14, fontWeight: 800, transition: "background 0.2s" }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#e8bb47")}
                 onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "#d4a843")}>
                 Cadastrar
@@ -77,7 +77,7 @@ export default function Navbar() {
 
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            style={{ display: "none", padding: "8px", background: "transparent", border: "1px solid rgba(212,168,67,0.2)", borderRadius: 8, color: "#94a3b8", cursor: "pointer", marginLeft: 4 }}
+            style={{ display: "none", padding: "8px", background: "transparent", border: "1px solid rgba(212,168,67,0.2)", borderRadius: 8, color: "#b8b1a6", cursor: "pointer", marginLeft: 4 }}
             className="mobile-menu-btn"
             aria-label="Menu"
           >
@@ -92,13 +92,13 @@ export default function Navbar() {
       </div>
 
       {menuOpen && (
-        <div style={{ background: "#0b1420", borderBottom: "1px solid rgba(212,168,67,0.12)", padding: "16px 24px", display: "flex", flexDirection: "column", gap: 8 }}>
-          <Link href="/buscar?tab=acompanhantes" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14 }}>Acompanhantes</Link>
-          <Link href="/buscar?tab=imoveis" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, color: "#94a3b8", textDecoration: "none", fontSize: 14 }}>Quartos</Link>
+        <div style={{ background: "#0a0a0a", borderBottom: "1px solid rgba(212,168,67,0.12)", padding: "16px 24px", display: "flex", flexDirection: "column", gap: 8 }}>
+          <Link href="/buscar?tab=acompanhantes" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14 }}>Acompanhantes</Link>
+          <Link href="/buscar?tab=imoveis" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14 }}>Quartos</Link>
           {!session && (
             <>
               <Link href="/login" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, color: "#d4a843", textDecoration: "none", fontSize: 14, border: "1px solid rgba(212,168,67,0.2)" }}>Entrar</Link>
-              <Link href="/cadastro" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, background: "#d4a843", color: "#060e1b", textDecoration: "none", fontSize: 14, fontWeight: 800, textAlign: "center" }}>Cadastrar</Link>
+              <Link href="/cadastro" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, background: "#d4a843", color: "#080704", textDecoration: "none", fontSize: 14, fontWeight: 800, textAlign: "center" }}>Cadastrar</Link>
             </>
           )}
         </div>
