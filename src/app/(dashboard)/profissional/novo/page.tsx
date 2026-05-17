@@ -230,6 +230,9 @@ export default function ProfissionalNovoPage() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const [birthParts, setBirthParts] = useState({ day: "", month: "", year: "" });
+  const birthMonthRef = useRef<HTMLInputElement>(null);
+  const birthYearRef = useRef<HTMLInputElement>(null);
 
   /* código único de verificação – gerado 1x por sessão */
   const verificationCode = useMemo(() => {
@@ -273,11 +276,16 @@ export default function ProfissionalNovoPage() {
       const user = await res.json();
       if (!active) return;
 
+      const loadedDate = user.birthDate ? String(user.birthDate).slice(0, 10) : "";
       setForm((current) => ({
         ...current,
         escortCategory: current.escortCategory || (["MULHER", "TRANS", "HOMEM"].includes(user.category) ? user.category : ""),
-        birthDate: current.birthDate || (user.birthDate ? String(user.birthDate).slice(0, 10) : ""),
+        birthDate: current.birthDate || loadedDate,
       }));
+      if (loadedDate) {
+        const [y, m, d] = loadedDate.split("-");
+        setBirthParts({ day: d ?? "", month: m ?? "", year: y ?? "" });
+      }
     }
 
     loadUserDefaults().catch(() => {});
@@ -288,6 +296,20 @@ export default function ProfissionalNovoPage() {
 
   function set<K extends keyof typeof form>(field: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  function handleBirthPart(part: "day" | "month" | "year", value: string) {
+    const maxLen = part === "year" ? 4 : 2;
+    const cleaned = value.replace(/\D/g, "").slice(0, maxLen);
+    const next = { ...birthParts, [part]: cleaned };
+    setBirthParts(next);
+    if (next.day.length === 2 && next.month.length === 2 && next.year.length === 4) {
+      set("birthDate", `${next.year}-${next.month}-${next.day}`);
+    } else {
+      set("birthDate", "");
+    }
+    if (part === "day" && cleaned.length === 2) birthMonthRef.current?.focus();
+    if (part === "month" && cleaned.length === 2) birthYearRef.current?.focus();
   }
   function toggleArr(field: string, val: string) {
     setForm((f) => {
@@ -617,7 +639,40 @@ export default function ProfissionalNovoPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
               <div>
                 <label style={labelStyle}>Data de nascimento *</label>
-                <input type="date" value={form.birthDate} onChange={(e) => set("birthDate", e.target.value)} style={inputStyle} />
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.4fr", gap: 6 }}>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="bday-day"
+                    maxLength={2}
+                    placeholder="DD"
+                    value={birthParts.day}
+                    onChange={(e) => handleBirthPart("day", e.target.value)}
+                    style={{ ...inputStyle, textAlign: "center", padding: "12px 6px" }}
+                  />
+                  <input
+                    ref={birthMonthRef}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="bday-month"
+                    maxLength={2}
+                    placeholder="MM"
+                    value={birthParts.month}
+                    onChange={(e) => handleBirthPart("month", e.target.value)}
+                    style={{ ...inputStyle, textAlign: "center", padding: "12px 6px" }}
+                  />
+                  <input
+                    ref={birthYearRef}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="bday-year"
+                    maxLength={4}
+                    placeholder="AAAA"
+                    value={birthParts.year}
+                    onChange={(e) => handleBirthPart("year", e.target.value)}
+                    style={{ ...inputStyle, textAlign: "center", padding: "12px 6px" }}
+                  />
+                </div>
                 <div style={{ fontSize: 10, color: "#334155", marginTop: 3 }}>Mínimo 18 anos</div>
               </div>
               <div>
