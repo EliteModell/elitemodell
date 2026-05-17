@@ -45,14 +45,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
-      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
-      { url: "/android-chrome-192x192.png", type: "image/png", sizes: "192x192" },
-      { url: "/android-chrome-512x512.png", type: "image/png", sizes: "512x512" },
+      { url: "/brand/elite-modell-icon.svg", type: "image/svg+xml" },
+      { url: "/brand/elite-modell-icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/brand/elite-modell-icon-512.png", type: "image/png", sizes: "512x512" },
     ],
-    apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
-    shortcut: ["/favicon.ico"],
+    apple: [{ url: "/brand/elite-modell-apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
+    shortcut: ["/brand/elite-modell-icon-192.png"],
   },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
