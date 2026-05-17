@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Elite Modell</title>
+  <desc id="desc">Preview premium preto e dourado da Elite Modell para compartilhamento de links.</desc>
+  <defs>
+    <linearGradient id="gold" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff2b8"/>
+      <stop offset="30%" stop-color="#d4a843"/>
+      <stop offset="62%" stop-color="#f4d98c"/>
+      <stop offset="100%" stop-color="#8f6a1b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="48%" r="58%">
+      <stop offset="0%" stop-color="#d4a843" stop-opacity="0.18"/>
+      <stop offset="70%" stop-color="#d4a843" stop-opacity="0.035"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#050505"/>
+  <rect x="24" y="24" width="1152" height="582" rx="34" fill="none" stroke="#d4a843" stroke-opacity="0.18"/>
+  <ellipse cx="600" cy="324" rx="430" ry="156" fill="url(#glow)"/>
+  <text x="312" y="345" font-family="Georgia, 'Times New Roman', serif" font-size="128" font-weight="500" letter-spacing="-13" fill="url(#gold)">EM</text>
+  <rect x="500" y="230" width="2.5" height="144" fill="url(#gold)" opacity="0.82"/>
+  <text x="540" y="292" font-family="Georgia, 'Times New Roman', serif" font-size="62" font-weight="500" letter-spacing="11" fill="url(#gold)">ELITE MODELL</text>
+  <rect x="540" y="338" width="196" height="2" fill="url(#gold)" opacity="0.7"/>
+  <rect x="780" y="338" width="196" height="2" fill="url(#gold)" opacity="0.7"/>
+  <rect x="754" y="329" width="17" height="17" transform="rotate(45 762.5 337.5)" fill="none" stroke="url(#gold)" stroke-width="2"/>
+  <text x="594" y="400" font-family="Inter, Arial, sans-serif" font-size="25" letter-spacing="11" fill="#f4d98c">CONECTANDO PESSOAS</text>
+  <text x="563" y="437" font-family="Inter, Arial, sans-serif" font-size="25" letter-spacing="9" fill="#f4d98c">LOCAIS E OPORTUNIDADES.</text>
+</svg>

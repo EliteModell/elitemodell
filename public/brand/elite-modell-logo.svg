@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Elite Modell</title>
+  <desc id="desc">Logo dourada EM Elite Modell sobre fundo preto premium.</desc>
+  <defs>
+    <linearGradient id="gold" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff2b8"/>
+      <stop offset="28%" stop-color="#d4a843"/>
+      <stop offset="56%" stop-color="#f4d98c"/>
+      <stop offset="100%" stop-color="#8f6a1b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#d4a843" stop-opacity="0.18"/>
+      <stop offset="65%" stop-color="#d4a843" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="18" flood-color="#000000" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+  <rect width="1600" height="900" fill="#000000"/>
+  <ellipse cx="800" cy="455" rx="560" ry="160" fill="url(#glow)"/>
+  <g filter="url(#softShadow)" fill="url(#gold)">
+    <text x="363" y="503" font-family="Georgia, 'Times New Roman', serif" font-size="166" font-weight="500" letter-spacing="-18">EM</text>
+    <rect x="603" y="363" width="2.5" height="172" fill="url(#gold)" opacity="0.9"/>
+    <text x="645" y="445" font-family="Georgia, 'Times New Roman', serif" font-size="72" font-weight="500" letter-spacing="14">ELITE MODELL</text>
+    <rect x="645" y="496" width="258" height="2" fill="url(#gold)" opacity="0.72"/>
+    <rect x="942" y="496" width="258" height="2" fill="url(#gold)" opacity="0.72"/>
+    <rect x="918" y="486" width="18" height="18" transform="rotate(45 927 495)" fill="none" stroke="url(#gold)" stroke-width="2"/>
+    <text x="715" y="555" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="500" letter-spacing="15">CONECTANDO PESSOAS</text>
+    <text x="690" y="595" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="500" letter-spacing="13">LOCAIS E OPORTUNIDADES.</text>
+  </g>
+  <path d="M421 367h68" stroke="url(#gold)" stroke-width="2" opacity="0.7"/>
+  <path d="M422 367c10-11 22-13 36-6" stroke="url(#gold)" stroke-width="1.4" fill="none" opacity="0.55"/>
+</svg>
