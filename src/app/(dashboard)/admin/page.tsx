@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ const cardStyle: React.CSSProperties = {
 
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
-  if (session?.user?.role !== "ADMIN") redirect("/dashboard");
+  if (session?.user?.role !== "ADMIN") redirect(ACCOUNT_ROUTES.painelCliente);
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -47,13 +48,13 @@ export default async function AdminPage() {
     { label: "Usuários totais", value: totalUsers.toLocaleString("pt-BR") },
     { label: "Espaços ativos", value: activeProperties.toLocaleString("pt-BR") },
     { label: "Profissionais ativos", value: activeProfessionals.toLocaleString("pt-BR") },
-    { label: "Reservas no mes", value: bookingsThisMonth.toLocaleString("pt-BR") },
+    { label: "Reservas no mês", value: bookingsThisMonth.toLocaleString("pt-BR") },
   ];
 
   const alerts = [
     { label: "Espaços pendentes", value: pendingProperties, href: "/admin/imoveis" },
     { label: "Profissionais pendentes", value: pendingProfessionals, href: "/admin/profissionais" },
-    { label: "Denuncias pendentes", value: pendingReports, href: "/admin/reservas" },
+    { label: "Denúncias pendentes", value: pendingReports, href: "/admin/reservas" },
   ];
 
   const revenue = paidThisMonth._sum.amount ?? 0;
@@ -62,7 +63,7 @@ export default async function AdminPage() {
     <div>
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Painel Administrativo</h1>
-        <p style={{ color: "#777", fontSize: 14 }}>Visao operacional baseada em dados reais do banco.</p>
+        <p style={{ color: "#777", fontSize: 14 }}>Visão operacional baseada em dados reais do banco.</p>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 24 }}>
@@ -76,7 +77,7 @@ export default async function AdminPage() {
           <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>
             R$ {revenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </div>
-          <div style={{ fontSize: 12, color: "#777" }}>Receita paga no mes</div>
+          <div style={{ fontSize: 12, color: "#777" }}>Receita paga no mês</div>
         </div>
       </div>
 

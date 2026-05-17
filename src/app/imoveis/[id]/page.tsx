@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { Star } from "lucide-react";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 const GOLD = "#d4a843";
 const GOLD_SOFT = "#f5d78c";
@@ -38,7 +39,7 @@ const mockProperty = {
 
 Conta com cama, banheiro privativo, Wi-Fi, ar-condicionado e entrada discreta. A localização exata é combinada apenas depois da reserva confirmada.
 
-Indicado para profissionais que precisam de um local seguro, limpo e sem exposicao desnecessaria.`,
+Indicado para profissionais que precisam de um local seguro, limpo e sem exposição desnecessária.`,
   pricePerNight: 850,
   cleaningFee: 150,
   serviceFee: 80,
@@ -93,7 +94,7 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
 
   function handleReserve() {
     if (!session) {
-      router.push("/login");
+      router.push(ACCOUNT_ROUTES.login);
       return;
     }
     if (!checkIn || !checkOut || nights < property.minNights) return;
@@ -126,7 +127,7 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
       {/* Date inputs */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
         <div>
-          <label style={{ fontSize: 11, color: MUTED, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 6 }}>Inicio</label>
+          <label style={{ fontSize: 11, color: MUTED, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 6 }}>Início</label>
           <input
             type="date"
             value={checkIn}

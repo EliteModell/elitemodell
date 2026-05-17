@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { postLoginPathFromUser } from "@/lib/account-routes";
 
 const updateSchema = z.object({
   name: z.string().min(2).optional(),
@@ -22,10 +23,11 @@ export async function GET() {
       id: true, name: true, email: true, image: true, phone: true,
       document: true, role: true, category: true, birthDate: true, verified: true, credits: true,
       createdAt: true, hostProfile: true, professional: { select: { id: true, status: true } },
+      properties: { select: { id: true, status: true }, orderBy: { createdAt: "desc" } },
     },
   });
 
-  return NextResponse.json(user);
+  return NextResponse.json(user ? { ...user, redirectTo: postLoginPathFromUser(user) } : null);
 }
 
 export async function PATCH(req: NextRequest) {

@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 /* ── constantes de tema ─────────────────────────────────── */
 const GOLD = "#d4a843";
@@ -471,7 +472,7 @@ export default function ProfissionalNovoPage() {
         return;
       }
       toast.success("Perfil enviado! Aguarde a aprovação em até 3 dias úteis.");
-      router.push("/profissional");
+      router.push(ACCOUNT_ROUTES.verificacaoAcompanhante);
     } catch { toast.error("Erro ao enviar perfil."); }
     finally { setLoading(false); }
   }

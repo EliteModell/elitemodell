@@ -9,6 +9,12 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { validateBirthDate } from "@/lib/age-validation";
 import { supabaseAuth } from "@/lib/supabase-client";
+import {
+  ACCOUNT_ROUTES,
+  type CadastroTipo,
+  internalAccountTypeFromTipo,
+  normalizeCadastroTipo,
+} from "@/lib/account-routes";
 
 type AccountType = "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
 type Category = "MULHER" | "TRANS" | "HOMEM";
@@ -147,6 +153,8 @@ export default function CadastroPage() {
   const router = useRouter();
   const { status } = useSession();
   const [loading, setLoading] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const [accountTypeSelected, setAccountTypeSelected] = useState(false);
   const [step, setStep] = useState<Step>("form");
   const [form, setForm] = useState({
     name: "",
@@ -173,20 +181,52 @@ export default function CadastroPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const draft = params.get("draft");
-    const tipo = params.get("tipo");
+    const tipo = normalizeCadastroTipo(params.get("tipo"));
     const hasRoomDraft = Boolean(localStorage.getItem(PROPERTY_DRAFT_KEY));
 
     window.setTimeout(() => {
+      setHydrated(true);
       if (hasRoomDraft || draft === "quarto" || draft === "imovel") {
         setForm((current) => ({ ...current, accountType: "PROPERTY_HOST", category: "" }));
+        setAccountTypeSelected(true);
         return;
       }
 
-      if (tipo === "profissional") {
-        setForm((current) => ({ ...current, accountType: "PROFESSIONAL" }));
+      if (tipo === "anfitriao") {
+        router.replace(ACCOUNT_ROUTES.onboardingAnfitriao);
+        return;
       }
+
+      if (tipo) {
+        setForm((current) => ({
+          ...current,
+          accountType: internalAccountTypeFromTipo(tipo),
+          category: tipo === "acompanhante" ? current.category : "",
+        }));
+        setAccountTypeSelected(true);
+        return;
+      }
+
+      setAccountTypeSelected(false);
     }, 0);
-  }, []);
+  }, [router]);
+
+  useEffect(() => {
+    if (hydrated && status === "authenticated" && accountTypeSelected && form.accountType === "GUEST") {
+      router.replace(ACCOUNT_ROUTES.painelCliente);
+    }
+  }, [accountTypeSelected, form.accountType, hydrated, router, status]);
+
+  function selectAccountType(tipo: CadastroTipo) {
+    const accountType = internalAccountTypeFromTipo(tipo);
+    setForm((current) => ({
+      ...current,
+      accountType,
+      category: tipo === "acompanhante" ? current.category : "",
+    }));
+    setAccountTypeSelected(true);
+    window.history.replaceState(null, "", `${ACCOUNT_ROUTES.cadastro}?tipo=${tipo}`);
+  }
 
   const categories = [
     { value: "MULHER", label: "Mulher" },
@@ -195,15 +235,15 @@ export default function CadastroPage() {
   ];
   const accountSubtitle =
     form.accountType === "PROFESSIONAL"
-      ? "Cadastro profissional +18"
+      ? "Ativação profissional +18"
       : form.accountType === "PROPERTY_HOST"
-        ? "Conta de anunciante +18"
-        : "Cadastro seguro +18";
+        ? "Cadastro de imóvel +18"
+        : "Conta cliente +18";
   const accountHint =
     form.accountType === "PROFESSIONAL"
-      ? "Depois da conta, você segue direto para as etapas do perfil profissional."
+      ? "Depois da conta, você segue para a verificação e criação do perfil de anunciante."
       : form.accountType === "PROPERTY_HOST"
-        ? "Seu rascunho fica salvo. Depois da conta, você volta para publicar o espaço."
+        ? "Seu rascunho fica salvo. Depois da conta, você volta para publicar o imóvel."
         : "";
 
   function handleBirthPartChange(part: BirthPart, value: string) {
@@ -281,11 +321,11 @@ export default function CadastroPage() {
   }
 
   function nextPath() {
-    if (form.accountType === "PROFESSIONAL") return "/profissional/novo";
+    if (form.accountType === "PROFESSIONAL") return ACCOUNT_ROUTES.onboardingAcompanhante;
     if (form.accountType === "PROPERTY_HOST") {
-      return localStorage.getItem(PROPERTY_DRAFT_KEY) ? "/anfitriao/imoveis/novo" : "/anfitriao";
+      return ACCOUNT_ROUTES.onboardingAnfitriao;
     }
-    return "/dashboard";
+    return ACCOUNT_ROUTES.painelCliente;
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -348,7 +388,7 @@ export default function CadastroPage() {
   }
 
   async function handleContinueExistingAccount() {
-    if (!isLoggedUpgradeFlow && !validateRequiredForm(false, true)) return;
+    if (!validateRequiredForm(false, true)) return;
 
     if (form.accountType === "PROFESSIONAL" && !form.category) {
       setErrors((current) => ({ ...current, category: "Selecione a categoria do anúncio" }));
@@ -364,7 +404,7 @@ export default function CadastroPage() {
       if (!accessToken) {
         sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload()));
         toast.error("Entre novamente para continuar seu cadastro.");
-        router.push("/login");
+        router.push(ACCOUNT_ROUTES.login);
         return;
       }
 
@@ -381,6 +421,96 @@ export default function CadastroPage() {
     }
   }
 
+  if (hydrated && !accountTypeSelected) {
+    const options: Array<{
+      tipo: CadastroTipo;
+      title: string;
+      eyebrow: string;
+      desc: string;
+      action: string;
+      directHref?: string;
+    }> = [
+      {
+        tipo: "cliente",
+        eyebrow: "Área do cliente",
+        title: "Criar conta cliente",
+        desc: "Busque perfis, salve favoritos, converse e reserve locais com uma conta discreta.",
+        action: "Criar conta cliente",
+      },
+      {
+        tipo: "acompanhante",
+        eyebrow: "Perfil profissional",
+        title: "Quero anunciar como acompanhante",
+        desc: "Inicie a ativação profissional com maioridade, termos, documentos, fotos e análise da equipe.",
+        action: "Ativar perfil profissional",
+      },
+      {
+        tipo: "anfitriao",
+        eyebrow: "Imóvel reservado",
+        title: "Cadastrar meu imóvel",
+        desc: "Cadastre um ambiente discreto primeiro. A conta entra no final e a publicação passa por aprovação.",
+        action: "Começar cadastro do imóvel",
+        directHref: ACCOUNT_ROUTES.onboardingAnfitriao,
+      },
+    ];
+
+    return (
+      <div style={{ width: "100%", maxWidth: 620, background: "rgba(8,8,8,0.96)", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 16, padding: "34px 28px", position: "relative", zIndex: 1 }}>
+        <GoldLine />
+        <Logo />
+        <div style={{ textAlign: "center", margin: "-12px 0 24px" }}>
+          <p style={{ color: GOLD, fontSize: 11, fontWeight: 900, letterSpacing: 2.4, textTransform: "uppercase", margin: "0 0 8px" }}>Cadastro Elite Modell</p>
+          <h1 style={{ color: "#f4f1ea", fontSize: 24, lineHeight: 1.15, margin: 0 }}>Escolha o tipo de conta</h1>
+          <p style={{ color: "#8d8578", fontSize: 13, lineHeight: 1.55, margin: "10px auto 0", maxWidth: 460 }}>
+            Uma conta única pode acessar a área cliente e solicitar ativação como acompanhante ou anfitrião, sempre com aprovação.
+          </p>
+        </div>
+
+        <div style={{ display: "grid", gap: 12 }}>
+          {options.map((option) => {
+            const content = (
+              <>
+                <span style={{ color: GOLD, fontSize: 10, fontWeight: 900, letterSpacing: 1.7, textTransform: "uppercase" }}>{option.eyebrow}</span>
+                <strong style={{ display: "block", color: "#f8fafc", fontSize: 18, marginTop: 6 }}>{option.title}</strong>
+                <p style={{ color: "#8d8578", fontSize: 12.5, lineHeight: 1.55, margin: "8px 0 14px" }}>{option.desc}</p>
+                <span style={{ color: "#050505", background: GOLD, borderRadius: 999, display: "inline-flex", padding: "8px 13px", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0 }}>
+                  {option.action}
+                </span>
+              </>
+            );
+
+            if (option.directHref) {
+              return (
+                <Link
+                  key={option.tipo}
+                  href={option.directHref}
+                  style={{ display: "block", border: "1px solid rgba(212,168,67,0.2)", borderRadius: 12, background: "#111", padding: 18, textDecoration: "none" }}
+                >
+                  {content}
+                </Link>
+              );
+            }
+
+            return (
+              <button
+                key={option.tipo}
+                type="button"
+                onClick={() => selectAccountType(option.tipo)}
+                style={{ width: "100%", textAlign: "left", border: "1px solid rgba(212,168,67,0.2)", borderRadius: 12, background: "#111", padding: 18, cursor: "pointer" }}
+              >
+                {content}
+              </button>
+            );
+          })}
+        </div>
+
+        <p style={{ textAlign: "center", marginTop: 22, fontSize: 14, color: "#475569" }}>
+          Já tem uma conta? <Link href={ACCOUNT_ROUTES.login} style={{ color: GOLD, textDecoration: "none", fontWeight: 700 }}>Entrar</Link>
+        </p>
+      </div>
+    );
+  }
+
   if (step === "verify") {
     return (
       <div style={{ width: "100%", maxWidth: 420, background: "rgba(8,8,8,0.96)", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 16, padding: "48px 36px", position: "relative", zIndex: 1, textAlign: "center" }}>
@@ -389,7 +519,7 @@ export default function CadastroPage() {
         <p style={{ color: "#8d8578", fontSize: 14, lineHeight: 1.6, margin: "0 0 8px" }}>Enviamos uma verificação para</p>
         <p style={{ color: GOLD, fontSize: 15, fontWeight: 600, margin: "0 0 24px" }}>{form.email}</p>
         <p style={{ color: "#615b52", fontSize: 13, lineHeight: 1.6, margin: "0 0 32px" }}>Confirme o email para ativar sua conta. Depois volte aqui para entrar.</p>
-        <button onClick={() => router.push("/login")} style={{ width: "100%", padding: "13px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
+        <button onClick={() => router.push(ACCOUNT_ROUTES.login)} style={{ width: "100%", padding: "13px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
           Ir para o login
         </button>
       </div>
@@ -454,6 +584,71 @@ export default function CadastroPage() {
           <p style={{ color: "#64748b", fontSize: 12, lineHeight: 1.5, margin: "0 0 12px" }}>
             Você já está logado. Vamos atualizar sua conta e abrir as etapas do cadastro.
           </p>
+          <div style={{ display: "grid", gap: 12, marginBottom: 12 }}>
+            <div>
+              <label style={{ display: "block", fontSize: 13, color: "#94a3b8", marginBottom: 6, fontWeight: 500 }}>Data de nascimento</label>
+              <div style={{ display: "grid", gridTemplateColumns: "0.72fr 0.72fr 1fr", gap: 8 }}>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="bday-day"
+                  maxLength={2}
+                  placeholder="DD"
+                  value={birthParts.day}
+                  onChange={(e) => handleBirthPartChange("day", e.target.value)}
+                  style={{ ...inputStyle, textAlign: "center" }}
+                  onFocus={focusGold}
+                  onBlur={blurGray}
+                  aria-label="Dia de nascimento"
+                />
+                <input
+                  ref={monthRef}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="bday-month"
+                  maxLength={2}
+                  placeholder="MM"
+                  value={birthParts.month}
+                  onChange={(e) => handleBirthPartChange("month", e.target.value)}
+                  style={{ ...inputStyle, textAlign: "center" }}
+                  onFocus={focusGold}
+                  onBlur={blurGray}
+                  aria-label="Mês de nascimento"
+                />
+                <input
+                  ref={yearRef}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="bday-year"
+                  maxLength={4}
+                  placeholder="AAAA"
+                  value={birthParts.year}
+                  onChange={(e) => handleBirthPartChange("year", e.target.value)}
+                  style={{ ...inputStyle, textAlign: "center" }}
+                  onFocus={focusGold}
+                  onBlur={blurGray}
+                  aria-label="Ano de nascimento"
+                />
+              </div>
+              {errors.birthDate && <p data-auth-required-error="true" style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors.birthDate}</p>}
+            </div>
+
+            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
+              <input type="checkbox" checked={form.termsConsent} onChange={(e) => setForm({ ...form, termsConsent: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
+              <span>
+                Li e aceito os <Link href="/terms" style={{ color: GOLD, textDecoration: "none" }}>Termos de Uso</Link>.
+                {errors.termsConsent && <span data-auth-required-error="true" style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.termsConsent}</span>}
+              </span>
+            </label>
+
+            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
+              <input type="checkbox" checked={form.lgpdConsent} onChange={(e) => setForm({ ...form, lgpdConsent: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
+              <span>
+                Li e aceito a <Link href="/privacy" style={{ color: GOLD, textDecoration: "none" }}>Política de Privacidade</Link>.
+                {errors.lgpdConsent && <span data-auth-required-error="true" style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.lgpdConsent}</span>}
+              </span>
+            </label>
+          </div>
           <button
             type="button"
             onClick={handleContinueExistingAccount}
@@ -591,7 +786,7 @@ export default function CadastroPage() {
       </form>}
 
       <p style={{ textAlign: "center", marginTop: 24, fontSize: 14, color: "#475569" }}>
-        Já tem uma conta? <Link href="/login" style={{ color: GOLD, textDecoration: "none", fontWeight: 600 }}>Entrar</Link>
+        Já tem uma conta? <Link href={ACCOUNT_ROUTES.login} style={{ color: GOLD, textDecoration: "none", fontWeight: 600 }}>Entrar</Link>
       </p>
     </div>
   );

@@ -4,13 +4,14 @@ import { Suspense, useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseAuth } from "@/lib/supabase-client";
+import { ACCOUNT_ROUTES, postLoginPathFromUser } from "@/lib/account-routes";
 
 type PendingRegistration = {
   accountType?: "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
 };
 
 const PROPERTY_DRAFT_KEY = "elitemodell_property_draft_v1";
-const PROPERTY_DRAFT_FINAL_PATH = "/anfitriao/imoveis/novo";
+const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
 const CALLBACK_TIMEOUT_MS = 1800;
 
 function hasPropertyDraft() {
@@ -21,24 +22,24 @@ const PROFESSIONAL_CATEGORIES = ["MULHER", "HOMEM", "TRANS"];
 
 async function getPostLoginPath() {
   const res = await fetch("/api/users/me", { cache: "no-store" });
-  if (!res.ok) return "/dashboard";
+  if (!res.ok) return ACCOUNT_ROUTES.painelCliente;
 
   const user = await res.json();
   const isProfessional = PROFESSIONAL_CATEGORIES.includes(user.category);
 
   if (user.role === "HOST" && isProfessional) {
     // Sem perfil criado → começar onboarding
-    if (!user.professional) return "/profissional/novo";
+    if (!user.professional) return ACCOUNT_ROUTES.onboardingAcompanhante;
     // Perfil incompleto (DRAFT) → retomar onboarding
-    if (user.professional.status === "DRAFT") return "/profissional/novo";
+    if (user.professional.status === "DRAFT") return ACCOUNT_ROUTES.onboardingAcompanhante;
     // Perfil em revisão ou ativo → dashboard
-    return "/dashboard";
+    return postLoginPathFromUser(user);
   }
 
   // Host de imóveis → verificar rascunho de propriedade
   if (user.role === "HOST" && hasPropertyDraft()) return PROPERTY_DRAFT_FINAL_PATH;
 
-  return "/dashboard";
+  return postLoginPathFromUser(user);
 }
 
 function resolveWithTimeout<T>(promise: Promise<T>, fallback: T, ms = CALLBACK_TIMEOUT_MS) {
@@ -67,11 +68,11 @@ function resolveWithTimeout<T>(promise: Promise<T>, fallback: T, ms = CALLBACK_T
 }
 
 function getRegistrationPath(pending: PendingRegistration | null) {
-  if (pending?.accountType === "PROFESSIONAL") return "/profissional/novo";
+  if (pending?.accountType === "PROFESSIONAL") return ACCOUNT_ROUTES.onboardingAcompanhante;
   if (pending?.accountType === "PROPERTY_HOST") {
-    return hasPropertyDraft() ? PROPERTY_DRAFT_FINAL_PATH : "/anfitriao";
+    return hasPropertyDraft() ? PROPERTY_DRAFT_FINAL_PATH : ACCOUNT_ROUTES.onboardingAnfitriao;
   }
-  return "/dashboard";
+  return ACCOUNT_ROUTES.painelCliente;
 }
 
 function AuthCallbackContent() {
@@ -115,7 +116,7 @@ function AuthCallbackContent() {
 
       const targetPath = pendingRegistration
         ? getRegistrationPath(pendingRegistration)
-        : await resolveWithTimeout(getPostLoginPath(), "/dashboard");
+        : await resolveWithTimeout(getPostLoginPath(), ACCOUNT_ROUTES.painelCliente);
 
       if (!active) return;
       setMessage("Acesso confirmado. Redirecionando...");
@@ -126,7 +127,7 @@ function AuthCallbackContent() {
     finishAuth().catch((err) => {
       if (!active) return;
       setMessage(err?.message ?? "Não foi possível finalizar o acesso.");
-      setTimeout(() => router.replace("/login"), 1200);
+      setTimeout(() => router.replace(ACCOUNT_ROUTES.login), 1200);
     });
 
     return () => {

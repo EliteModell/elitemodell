@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { supabaseAuth } from "@/lib/supabase-client";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -51,7 +52,7 @@ export default function Navbar() {
         <div className="auth-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {session ? (
             <>
-              <Link className="nav-auth-link" href="/dashboard" style={{ padding: "8px 18px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14, fontWeight: 500, border: "1px solid rgba(212,168,67,0.2)" }}>
+              <Link className="nav-auth-link" href={ACCOUNT_ROUTES.painelCliente} style={{ padding: "8px 18px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14, fontWeight: 500, border: "1px solid rgba(212,168,67,0.2)" }}>
                 {session.user?.name?.split(" ")[0] ?? "Minha conta"}
               </Link>
               <button className="nav-auth-link" onClick={handleSignOut} style={{ padding: "8px 18px", borderRadius: 8, background: "transparent", border: "1px solid rgba(212,168,67,0.3)", color: "#d4a843", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
@@ -60,13 +61,13 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Link className="nav-auth-link login-link" href="/login"
+              <Link className="nav-auth-link login-link" href={ACCOUNT_ROUTES.login}
                 style={{ padding: "8px 22px", borderRadius: 8, color: "#d4a843", textDecoration: "none", fontSize: 14, fontWeight: 600, border: "1px solid rgba(212,168,67,0.3)", transition: "all 0.2s", background: "transparent" }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(212,168,67,0.07)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
                 Entrar
               </Link>
-              <Link className="nav-auth-link signup-link" href="/cadastro"
+              <Link className="nav-auth-link signup-link" href={ACCOUNT_ROUTES.cadastro}
                 style={{ padding: "8px 22px", borderRadius: 8, background: "linear-gradient(135deg, #f5d78c, #d4a843)", color: "#080704", textDecoration: "none", fontSize: 14, fontWeight: 800, transition: "background 0.2s" }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#e8bb47")}
                 onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "#d4a843")}>
@@ -97,8 +98,8 @@ export default function Navbar() {
           <Link href="/buscar?tab=imoveis" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14 }}>Quartos</Link>
           {!session && (
             <>
-              <Link href="/login" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, color: "#d4a843", textDecoration: "none", fontSize: 14, border: "1px solid rgba(212,168,67,0.2)" }}>Entrar</Link>
-              <Link href="/cadastro" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, background: "#d4a843", color: "#080704", textDecoration: "none", fontSize: 14, fontWeight: 800, textAlign: "center" }}>Cadastrar</Link>
+              <Link href={ACCOUNT_ROUTES.login} onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, color: "#d4a843", textDecoration: "none", fontSize: 14, border: "1px solid rgba(212,168,67,0.2)" }}>Entrar</Link>
+              <Link href={ACCOUNT_ROUTES.cadastro} onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, background: "#d4a843", color: "#080704", textDecoration: "none", fontSize: 14, fontWeight: 800, textAlign: "center" }}>Cadastrar</Link>
             </>
           )}
         </div>

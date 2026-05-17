@@ -1,4 +1,12 @@
-export default function AdminUsuariosPage() {
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+
+export default async function AdminUsuariosPage() {
+  const session = await getServerSession(authOptions);
+  if (session?.user?.role !== "ADMIN") redirect(ACCOUNT_ROUTES.painelCliente);
+
   return (
     <div>
       <h1 style={{ color: "#fff", fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Usuários</h1>

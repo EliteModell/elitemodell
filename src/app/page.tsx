@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
@@ -28,7 +29,7 @@ const quickActions = [
   },
   {
     label: "Anunciar imóvel",
-    href: "/anfitriao/imoveis/novo",
+    href: ACCOUNT_ROUTES.onboardingAnfitriao,
     text: "Cadastre um espaço reservado para atendimento discreto.",
     icon: HousePlus,
   },
@@ -40,9 +41,9 @@ const quickActions = [
   },
   {
     label: "Sou profissional",
-    href: "/cadastro?tipo=profissional",
+    href: ACCOUNT_ROUTES.cadastroAcompanhante,
     text: "Anunciar meu perfil",
-    cta: "Começar cadastro",
+    cta: "Ativar perfil",
     featured: true,
     icon: UserRoundPlus,
   },

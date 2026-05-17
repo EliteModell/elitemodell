@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.10)";
@@ -455,7 +456,7 @@ export default function NovoImovelPage() {
 
       localStorage.removeItem(DRAFT_KEY);
       toast.success("Espaço enviado para aprovação.", { id: "property-submit" });
-      router.push("/anfitriao");
+      router.push(ACCOUNT_ROUTES.verificacaoAnfitriao);
       router.refresh();
     } catch (err) {
       toast.error(errorMessage(err, "Erro ao cadastrar espaço."), { id: "property-submit" });
@@ -465,7 +466,7 @@ export default function NovoImovelPage() {
   }
 
   function authHref(path: "/cadastro" | "/login") {
-    return `${path}?draft=quarto`;
+    return `${path}?draft=quarto&tipo=anfitriao`;
   }
 
   return (

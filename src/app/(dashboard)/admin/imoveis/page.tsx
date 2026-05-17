@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ const statusLabel: Record<string, string> = {
 
 export default async function AdminImoveisPage() {
   const session = await getServerSession(authOptions);
-  if (session?.user?.role !== "ADMIN") redirect("/dashboard");
+  if (session?.user?.role !== "ADMIN") redirect(ACCOUNT_ROUTES.painelCliente);
 
   const properties = await prisma.property.findMany({
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
@@ -30,7 +31,7 @@ export default async function AdminImoveisPage() {
   return (
     <div>
       <h1 style={{ color: "#fff", fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Espaços</h1>
-      <p style={{ color: "#777", marginBottom: 24 }}>Ultimos locais cadastrados para auditoria e moderacao.</p>
+      <p style={{ color: "#777", marginBottom: 24 }}>Últimos locais cadastrados para auditoria e moderação.</p>
 
       {properties.length === 0 ? (
         <div style={{ background: "#111", border: "1px solid #222", borderRadius: 10, padding: 24, color: "#777" }}>

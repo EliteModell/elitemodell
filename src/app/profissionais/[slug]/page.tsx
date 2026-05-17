@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
@@ -552,7 +553,7 @@ export default function ProfissionalProfilePage() {
           <div style={{ background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "18px 16px", textAlign: "center", marginBottom: 32 }}>
             <p style={{ fontSize: 14, fontWeight: 700, color: "#f1f5f9", margin: "0 0 6px", fontFamily: PLAYFAIR }}>Foi atendido por {pro.displayName}?</p>
             <p style={{ fontSize: 12, color: "#475569", margin: "0 0 14px" }}>Deixe sua avaliação gratuita</p>
-            <Link href="/login" style={{ display: "inline-block", padding: "10px 28px", background: GOLD, color: "#060e1b", borderRadius: 10, fontSize: 13, fontWeight: 800, textDecoration: "none", fontFamily: PLAYFAIR }}>
+            <Link href={ACCOUNT_ROUTES.login} style={{ display: "inline-block", padding: "10px 28px", background: GOLD, color: "#060e1b", borderRadius: 10, fontSize: 13, fontWeight: 800, textDecoration: "none", fontFamily: PLAYFAIR }}>
               Entrar para avaliar
             </Link>
           </div>

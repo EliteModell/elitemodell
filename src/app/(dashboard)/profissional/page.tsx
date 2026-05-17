@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
-import { authOptions } from "@/lib/auth";
+import { requireCompanionPanel } from "@/lib/account-access";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 export const dynamic = "force-dynamic";
 
@@ -22,11 +22,10 @@ const statusLabel: Record<string, string> = {
 };
 
 export default async function ProfissionalDashPage() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) redirect("/login");
+  const access = await requireCompanionPanel();
 
   const professional = await prisma.professional.findUnique({
-    where: { userId: session.user.id },
+    where: { userId: access.user.id },
     include: {
       appointments: {
         orderBy: { date: "desc" },
@@ -38,7 +37,7 @@ export default async function ProfissionalDashPage() {
   });
 
   if (!professional) {
-    redirect("/profissional/novo");
+    redirect(ACCOUNT_ROUTES.onboardingAcompanhante);
   }
 
   const pendingAppointments = professional.appointments.filter((item) => item.status === "PENDING");
@@ -67,7 +66,7 @@ export default async function ProfissionalDashPage() {
           href={`/profissionais/${professional.slug}`}
           style={{ padding: "10px 20px", background: "#111", border: "1px solid #333", borderRadius: 8, color: "#ccc", textDecoration: "none", fontSize: 14 }}
         >
-          Ver perfil publico
+          Ver perfil público
         </Link>
       </div>
 
@@ -89,7 +88,7 @@ export default async function ProfissionalDashPage() {
           { label: "Status", value: statusLabel[professional.status] ?? professional.status },
           { label: "Fotos", value: String(professional.photos.length || professional.galleryUrls.length) },
           { label: "Agendamentos", value: professional.totalAppointments.toLocaleString("pt-BR") },
-          { label: "Avaliacoes", value: professional.totalReviews.toLocaleString("pt-BR") },
+          { label: "Avaliações", value: professional.totalReviews.toLocaleString("pt-BR") },
         ].map((stat) => (
           <div key={stat.label} style={cardStyle}>
             <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 3 }}>{stat.value}</div>

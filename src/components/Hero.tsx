@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+
 export default function Hero() {
   return (
     <>
@@ -50,8 +53,8 @@ export default function Hero() {
 
       {/* Botões mobile — só aparecem no celular */}
       <div className="hero-mobile-btns" style={{ display: "none" }}>
-        <a
-          href="/login"
+        <Link
+          href={ACCOUNT_ROUTES.login}
           style={{
             display: "block",
             padding: "14px 20px",
@@ -66,9 +69,9 @@ export default function Hero() {
           }}
         >
           Entrar
-        </a>
-        <a
-          href="/cadastro"
+        </Link>
+        <Link
+          href={ACCOUNT_ROUTES.cadastro}
           style={{
             display: "block",
             padding: "14px 20px",
@@ -82,7 +85,7 @@ export default function Hero() {
           }}
         >
           Cadastrar agora
-        </a>
+        </Link>
       </div>
 
       <style>{`

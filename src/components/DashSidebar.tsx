@@ -24,11 +24,12 @@ import {
   WalletCards,
 } from "lucide-react";
 import { supabaseAuth } from "@/lib/supabase-client";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 type NavItem = { label: string; href: string; icon: React.ReactNode; accent?: string };
 
 const guestNav: NavItem[] = [
-  { label: "Inicio", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" />, accent: "Hoje" },
+  { label: "Início", href: ACCOUNT_ROUTES.painelCliente, icon: <LayoutDashboard className="h-4 w-4" />, accent: "Hoje" },
   { label: "Explorar", href: "/profissionais", icon: <Compass className="h-4 w-4" /> },
   { label: "Favoritas", href: "/dashboard/favoritos", icon: <Heart className="h-4 w-4" /> },
   { label: "Mensagens", href: "/dashboard/mensagens", icon: <MessageCircle className="h-4 w-4" /> },
@@ -36,7 +37,7 @@ const guestNav: NavItem[] = [
 ];
 
 const hostNav: NavItem[] = [
-  { label: "Painel", href: "/anfitriao", icon: <LayoutDashboard className="h-4 w-4" />, accent: "Anunc." },
+  { label: "Painel", href: ACCOUNT_ROUTES.painelAnfitriao, icon: <LayoutDashboard className="h-4 w-4" />, accent: "Imóvel" },
   { label: "Meus espaços", href: "/anfitriao/imoveis", icon: <Home className="h-4 w-4" /> },
   { label: "Reservas", href: "/anfitriao/reservas", icon: <CalendarCheck className="h-4 w-4" /> },
   { label: "Ganhos", href: "/anfitriao/ganhos", icon: <WalletCards className="h-4 w-4" /> },
@@ -53,13 +54,13 @@ const adminNav: NavItem[] = [
 ];
 
 const professionalNav: NavItem[] = [
-  { label: "Painel", href: "/profissional", icon: <LayoutDashboard className="h-4 w-4" />, accent: "Pro" },
+  { label: "Painel", href: ACCOUNT_ROUTES.painelAcompanhante, icon: <LayoutDashboard className="h-4 w-4" />, accent: "Pro" },
   { label: "Meu perfil", href: "/profissional/perfil", icon: <UserRound className="h-4 w-4" /> },
   { label: "Planos", href: "/profissional/planos", icon: <Crown className="h-4 w-4" /> },
   { label: "Fotos", href: "/profissional/fotos", icon: <Sparkles className="h-4 w-4" /> },
   { label: "Agenda", href: "/profissional/agenda", icon: <CalendarCheck className="h-4 w-4" /> },
   { label: "Agendamentos", href: "/profissional/agendamentos", icon: <UsersRound className="h-4 w-4" /> },
-  { label: "Novo anúncio", href: "/profissional/novo", icon: <BadgePlus className="h-4 w-4" /> },
+  { label: "Perfil de anunciante", href: "/profissional/perfil", icon: <BadgePlus className="h-4 w-4" /> },
 ];
 
 interface Props {
@@ -169,8 +170,12 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
             {nav.map((navItem) => {
               const active =
                 path === navItem.href ||
-                (navItem.href !== "/dashboard" &&
-                  navItem.href !== "/anfitriao" &&
+                (navItem.href === ACCOUNT_ROUTES.painelCliente && path === ACCOUNT_ROUTES.dashboardCliente) ||
+                (navItem.href === ACCOUNT_ROUTES.painelAnfitriao && path === ACCOUNT_ROUTES.dashboardAnfitriao) ||
+                (navItem.href === ACCOUNT_ROUTES.painelAcompanhante && path === ACCOUNT_ROUTES.dashboardAcompanhante) ||
+                (navItem.href !== ACCOUNT_ROUTES.painelCliente &&
+                  navItem.href !== ACCOUNT_ROUTES.painelAnfitriao &&
+                  navItem.href !== ACCOUNT_ROUTES.painelAcompanhante &&
                   navItem.href !== "/admin" &&
                   path.startsWith(navItem.href));
 
@@ -218,11 +223,11 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                 Gerencie agenda, fotos, disponibilidade e presença premium.
               </p>
               <Link
-                href="/profissional/novo"
+                href="/profissional/perfil"
                 onClick={onClose}
                 className="mt-3 inline-flex w-full items-center justify-center rounded-[8px] bg-[#d4a843] px-3 py-2 text-xs font-black text-[#100d09] transition hover:bg-[#f5d78c]"
               >
-                Novo anúncio
+                Atualizar perfil
               </Link>
             </div>
           ) : role === "GUEST" ? (

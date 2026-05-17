@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
-import { authOptions } from "@/lib/auth";
+import { requireHostPanel } from "@/lib/account-access";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 export const dynamic = "force-dynamic";
 
@@ -14,19 +13,19 @@ const cardStyle: React.CSSProperties = {
 };
 
 export default async function AnfitriaoPage() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) redirect("/login");
-  if (session.user.role !== "HOST" && session.user.role !== "ADMIN") redirect("/dashboard");
+  const access = await requireHostPanel();
+  const userId = access.user.id;
+  const isAdmin = access.isAdmin;
 
   const [properties, bookings, paid] = await Promise.all([
     prisma.property.findMany({
-      where: session.user.role === "ADMIN" ? {} : { hostId: session.user.id },
+      where: isAdmin ? {} : { hostId: userId },
       orderBy: { createdAt: "desc" },
       take: 5,
       include: { photos: { take: 1, orderBy: { order: "asc" } } },
     }),
     prisma.booking.findMany({
-      where: session.user.role === "ADMIN" ? {} : { property: { hostId: session.user.id } },
+      where: isAdmin ? {} : { property: { hostId: userId } },
       orderBy: { createdAt: "desc" },
       take: 5,
       include: {
@@ -37,7 +36,7 @@ export default async function AnfitriaoPage() {
     prisma.booking.aggregate({
       where: {
         paymentStatus: "PAID",
-        ...(session.user.role === "ADMIN" ? {} : { property: { hostId: session.user.id } }),
+        ...(isAdmin ? {} : { property: { hostId: userId } }),
       },
       _sum: { hostPayout: true },
     }),
@@ -54,8 +53,8 @@ export default async function AnfitriaoPage() {
           <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Painel do anunciante</h1>
           <p style={{ color: "#777", fontSize: 14 }}>Dados reais dos seus espaços, reservas e repasses.</p>
         </div>
-        <Link href="/anfitriao/imoveis/novo" style={{ padding: "10px 20px", background: "#d4a843", color: "#060e1b", borderRadius: 8, textDecoration: "none", fontSize: 14, fontWeight: 800 }}>
-          Novo anúncio
+        <Link href={ACCOUNT_ROUTES.onboardingAnfitriao} style={{ padding: "10px 20px", background: "#d4a843", color: "#060e1b", borderRadius: 8, textDecoration: "none", fontSize: 14, fontWeight: 800 }}>
+          Cadastrar imóvel
         </Link>
       </div>
 
@@ -85,7 +84,7 @@ export default async function AnfitriaoPage() {
             {bookings.map((booking) => (
               <div key={booking.id} style={cardStyle}>
                 <strong style={{ color: "#fff" }}>{booking.property.title}</strong>
-                <p style={{ color: "#aaa", margin: "6px 0" }}>{booking.guest.name ?? booking.guest.email ?? "Hospede"}</p>
+                <p style={{ color: "#aaa", margin: "6px 0" }}>{booking.guest.name ?? booking.guest.email ?? "Hóspede"}</p>
                 <p style={{ color: "#777", margin: 0 }}>
                   {new Date(booking.checkIn).toLocaleDateString("pt-BR")} - {new Date(booking.checkOut).toLocaleDateString("pt-BR")} | R$ {booking.totalPrice.toLocaleString("pt-BR")}
                 </p>
@@ -100,7 +99,7 @@ export default async function AnfitriaoPage() {
         {properties.length === 0 ? (
           <div style={cardStyle}>
             <p style={{ color: "#777", marginBottom: 12 }}>Você ainda não cadastrou espaços.</p>
-            <Link href="/anfitriao/imoveis/novo" style={{ color: "#d4a843", textDecoration: "none", fontWeight: 700 }}>Cadastrar primeiro espaço</Link>
+            <Link href={ACCOUNT_ROUTES.onboardingAnfitriao} style={{ color: "#d4a843", textDecoration: "none", fontWeight: 700 }}>Cadastrar primeiro espaço</Link>
           </div>
         ) : (
           <div style={{ display: "grid", gap: 12 }}>

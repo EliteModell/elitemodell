@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ const statusLabel: Record<string, string> = {
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
-  if (session?.user?.role !== "ADMIN") redirect("/dashboard");
+  if (session?.user?.role !== "ADMIN") redirect(ACCOUNT_ROUTES.painelCliente);
   return session;
 }
 

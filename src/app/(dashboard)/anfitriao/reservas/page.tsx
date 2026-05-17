@@ -35,7 +35,7 @@ export default function ReservasAnfitriaoPage() {
         {bookings.map((booking) => (
           <div key={booking.id} style={{ background: "#111", border: "1px solid #222", borderRadius: 10, padding: 16 }}>
             <strong style={{ color: "#fff" }}>{booking.property?.title ?? "Reserva"}</strong>
-            <p style={{ color: "#aaa", margin: "6px 0" }}>{booking.guest?.name ?? booking.guest?.email ?? "Hospede"}</p>
+            <p style={{ color: "#aaa", margin: "6px 0" }}>{booking.guest?.name ?? booking.guest?.email ?? "Hóspede"}</p>
             <p style={{ color: "#777", margin: 0 }}>
               {new Date(booking.checkIn).toLocaleDateString("pt-BR")} - {new Date(booking.checkOut).toLocaleDateString("pt-BR")} | R$ {booking.totalPrice.toLocaleString("pt-BR")}
             </p>

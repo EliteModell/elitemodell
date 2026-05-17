@@ -5,6 +5,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FiltersModal from "@/components/FiltersModal";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
@@ -499,7 +500,7 @@ function BuscarContent() {
                     <button type="button" onClick={() => { setFiltros(new Set()); setBusca(""); }}>
                       Limpar busca
                     </button>
-                    <Link href="/cadastro?tipo=profissional">Sou profissional</Link>
+                    <Link href={ACCOUNT_ROUTES.cadastroAcompanhante}>Ativar perfil profissional</Link>
                   </div>
                 </div>
               </div>
@@ -519,11 +520,11 @@ function BuscarContent() {
                   As listagens públicas só entram no ar depois de curadoria e aprovação.
                 </p>
                 <div className="coming-actions">
-                  <Link className="primary" href="/anfitriao/imoveis/novo">
+                  <Link className="primary" href={ACCOUNT_ROUTES.onboardingAnfitriao}>
                     Cadastrar para anunciar
                     <span aria-hidden="true">→</span>
                   </Link>
-                  <Link className="secondary" href="/login?draft=quarto">
+                  <Link className="secondary" href={ACCOUNT_ROUTES.login}>
                     Já sou anfitrião
                     <span aria-hidden="true">→</span>
                   </Link>

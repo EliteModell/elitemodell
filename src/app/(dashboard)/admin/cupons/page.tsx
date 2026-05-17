@@ -2,12 +2,13 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminCuponsPage() {
   const session = await getServerSession(authOptions);
-  if (session?.user?.role !== "ADMIN") redirect("/dashboard");
+  if (session?.user?.role !== "ADMIN") redirect(ACCOUNT_ROUTES.painelCliente);
 
   const coupons = await prisma.coupon.findMany({
     orderBy: { createdAt: "desc" },
@@ -30,7 +31,7 @@ export default async function AdminCuponsPage() {
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                 <div>
                   <strong style={{ color: "#fff" }}>{coupon.code}</strong>
-                  <p style={{ color: "#777", margin: "6px 0 0" }}>{coupon.description ?? "Sem descricao"}</p>
+                  <p style={{ color: "#777", margin: "6px 0 0" }}>{coupon.description ?? "Sem descrição"}</p>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <span style={{ color: coupon.active ? "#22c55e" : "#777", fontSize: 13, fontWeight: 700 }}>

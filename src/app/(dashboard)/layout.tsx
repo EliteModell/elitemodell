@@ -7,6 +7,7 @@ import { Bell, Compass, Heart, LayoutDashboard, Menu, MessageCircle, Search, Shi
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import DashSidebar from "@/components/DashSidebar";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 function LoadingScreen() {
   return (
@@ -30,11 +31,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const isPublicPropertyDraft = pathname === "/anfitriao/imoveis/novo";
+  const isPublicPropertyDraft = pathname === ACCOUNT_ROUTES.onboardingAnfitriao;
 
   useEffect(() => {
     if (status === "unauthenticated" && !isPublicPropertyDraft) {
-      router.push("/login");
+      router.push(ACCOUNT_ROUTES.login);
     }
   }, [isPublicPropertyDraft, status, router]);
 
@@ -109,13 +110,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-[8px] border border-white/10 bg-[#070708]/92 p-1 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-2xl md:hidden">
           {[
-            { label: "Inicio", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
+            { label: "Início", href: ACCOUNT_ROUTES.painelCliente, icon: <LayoutDashboard className="h-4 w-4" /> },
             { label: "Explorar", href: "/profissionais", icon: <Compass className="h-4 w-4" /> },
             { label: "Favoritas", href: "/dashboard/favoritos", icon: <Heart className="h-4 w-4" /> },
             { label: "Mensagens", href: "/dashboard/mensagens", icon: <MessageCircle className="h-4 w-4" /> },
             { label: "Perfil", href: "/dashboard/perfil", icon: <UserRound className="h-4 w-4" /> },
           ].map((navItem) => {
-            const active = pathname === navItem.href;
+            const active =
+              pathname === navItem.href ||
+              (navItem.href === ACCOUNT_ROUTES.painelCliente && pathname === ACCOUNT_ROUTES.dashboardCliente);
 
             return (
               <Link
