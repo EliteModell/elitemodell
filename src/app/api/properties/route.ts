@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
-import { PropertyType } from "@prisma/client";
+import { Prisma, PropertyType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 
@@ -35,9 +35,8 @@ const createSchema = z.object({
   photos: z.array(z.string()).default([]),
 }).superRefine((data, ctx) => {
   const addIssue = (path: string[], message: string) => ctx.addIssue({ code: "custom", path, message });
-  if (!data.latitude || !data.longitude) addIssue(["latitude"], "Informe a localizacao GPS do imovel.");
-  if (data.photos.length === 0) addIssue(["photos"], "Envie pelo menos uma foto do imovel.");
-  if (data.amenities.length === 0) addIssue(["amenities"], "Selecione pelo menos uma comodidade.");
+  if (data.photos.length === 0) addIssue(["photos"], "Envie pelo menos uma foto do espaco.");
+  if (data.amenities.length === 0) addIssue(["amenities"], "Selecione pelo menos um item de estrutura.");
 });
 
 export async function GET(req: NextRequest) {
@@ -50,7 +49,7 @@ export async function GET(req: NextRequest) {
   const page = Number(searchParams.get("page") ?? 1);
   const limit = 12;
 
-  const where: any = { status: "ACTIVE" };
+  const where: Prisma.PropertyWhereInput = { status: "ACTIVE" };
   const locationSearch = search || city;
   if (locationSearch) {
     where.OR = [
@@ -64,7 +63,7 @@ export async function GET(req: NextRequest) {
   if (guests) where.maxGuests = { gte: guests };
   if (priceMax) where.pricePerNight = { lte: priceMax };
 
-  const orderBy: any = sortBy === "price_asc" ? { pricePerNight: "asc" }
+  const orderBy: Prisma.PropertyOrderByWithRelationInput = sortBy === "price_asc" ? { pricePerNight: "asc" }
     : sortBy === "price_desc" ? { pricePerNight: "desc" }
     : { rating: "desc" };
 
@@ -90,7 +89,7 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "NÃ£o autorizado." }, { status: 401 });
   if (session.user.role !== "HOST" && session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Apenas anfitriÃµes podem cadastrar imÃ³veis." }, { status: 403 });
+    return NextResponse.json({ error: "Apenas anunciantes podem cadastrar espacos." }, { status: 403 });
   }
 
   try {

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Bell, CalendarCheck, Compass, Heart, LayoutDashboard, Menu, Search, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import { Bell, Compass, Heart, LayoutDashboard, Menu, MessageCircle, Search, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import DashSidebar from "@/components/DashSidebar";
@@ -16,7 +16,7 @@ function LoadingScreen() {
           <Sparkles className="h-6 w-6 animate-pulse" />
         </div>
         <p className="text-xs font-black uppercase tracking-[0.24em] text-[#d4a843]">EliteModell</p>
-        <h1 className="mt-2 text-xl font-black">Preparando seu painel</h1>
+        <h1 className="mt-2 text-xl font-black">Preparando sua conta</h1>
         <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
           <div className="premium-loading-bar h-full w-1/2 rounded-full bg-[linear-gradient(90deg,#cc1f2f,#d4a843,#f5d78c)]" />
         </div>
@@ -30,18 +30,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isPublicPropertyDraft = pathname === "/anfitriao/imoveis/novo";
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (status === "unauthenticated" && !isPublicPropertyDraft) {
       router.push("/login");
     }
-  }, [status, router]);
+  }, [isPublicPropertyDraft, status, router]);
 
-  if (status === "loading") {
+  if (status === "loading" && !isPublicPropertyDraft) {
     return <LoadingScreen />;
   }
 
-  if (status === "unauthenticated") return null;
+  if (status === "unauthenticated" && !isPublicPropertyDraft) return null;
+
+  if (isPublicPropertyDraft && status !== "authenticated") {
+    return (
+      <div className="min-h-screen overflow-x-hidden bg-[#050506] text-white">
+        <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(135deg,rgba(204,31,47,0.10),transparent_30%,rgba(212,168,67,0.08)_62%,transparent)]" />
+        <main className="relative min-h-screen px-4 py-5 sm:px-6 sm:py-7">
+          {children}
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#050506] text-white">
@@ -67,7 +79,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
               <div className="min-w-0 lg:hidden">
                 <p className="text-sm font-black text-white">EliteModell</p>
-                <p className="truncate text-xs text-white/38">{session?.user?.email ?? "Painel premium"}</p>
+                <p className="truncate text-xs text-white/38">{session?.user?.email ?? "Conta discreta"}</p>
               </div>
             </div>
 
@@ -97,10 +109,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-[8px] border border-white/10 bg-[#070708]/92 p-1 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-2xl md:hidden">
           {[
-            { label: "Início", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
+            { label: "Inicio", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
             { label: "Explorar", href: "/profissionais", icon: <Compass className="h-4 w-4" /> },
-            { label: "Agenda", href: "/dashboard/reservas", icon: <CalendarCheck className="h-4 w-4" /> },
-            { label: "Salvos", href: "/dashboard/favoritos", icon: <Heart className="h-4 w-4" /> },
+            { label: "Favoritas", href: "/dashboard/favoritos", icon: <Heart className="h-4 w-4" /> },
+            { label: "Mensagens", href: "/dashboard/mensagens", icon: <MessageCircle className="h-4 w-4" /> },
             { label: "Perfil", href: "/dashboard/perfil", icon: <UserRound className="h-4 w-4" /> },
           ].map((navItem) => {
             const active = pathname === navItem.href;

@@ -14,8 +14,8 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "Elite Modell — Conectando pessoas, locais e oportunidades",
   description:
-    "Plataforma inteligente onde modelos, clientes e imóveis se encontram com segurança, privacidade e controle total.",
-  keywords: "elite modell, modelos, imóveis, plataforma, marketplace",
+    "Plataforma premium onde acompanhantes, clientes e quartos discretos se encontram com segurança, privacidade e controle total.",
+  keywords: "elite modell, acompanhantes, quartos discretos, plataforma premium",
   openGraph: {
     title: "Elite Modell",
     description: "Uma nova forma de conectar pessoas, locais e oportunidades.",

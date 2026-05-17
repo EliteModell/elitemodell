@@ -17,8 +17,8 @@ const cards = [
         <path d="M9 21V12h6v9" />
       </svg>
     ),
-    title: "Para imóveis",
-    desc: "Cadastre, gerencie e controle a visibilidade dos seus imóveis com facilidade.",
+    title: "Para anunciantes",
+    desc: "Cadastre e gerencie locais discretos para atendimento com facilidade.",
   },
   {
     icon: (
@@ -31,7 +31,7 @@ const cards = [
       </svg>
     ),
     title: "Para clientes",
-    desc: "Acesse perfis e imóveis de forma rápida, segura e com total praticidade.",
+    desc: "Acesse perfis e quartos discretos de forma rápida, segura e com total praticidade.",
   },
   {
     icon: (

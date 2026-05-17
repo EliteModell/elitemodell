@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { differenceInCalendarDays } from "date-fns";
+import { BookingStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 
@@ -24,12 +25,14 @@ export async function GET(req: NextRequest) {
   const role = session.user.role;
   const status = searchParams.get("status");
 
-  const where: any = {};
+  const where: Prisma.BookingWhereInput = {};
   if (role === "GUEST") where.guestId = session.user.id;
   if (role === "HOST") {
     where.property = { hostId: session.user.id };
   }
-  if (status) where.status = status;
+  if (status && Object.values(BookingStatus).includes(status as BookingStatus)) {
+    where.status = status as BookingStatus;
+  }
 
   const bookings = await prisma.booking.findMany({
     where,
@@ -69,14 +72,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "ImÃ³vel nÃ£o disponÃ­vel." }, { status: 404 });
     }
     if (property.hostId === session.user.id) {
-      return NextResponse.json({ error: "Voce nao pode reservar seu proprio imovel." }, { status: 400 });
+      return NextResponse.json({ error: "Voce nao pode reservar seu proprio espaco." }, { status: 400 });
     }
     if (data.guests > property.maxGuests) {
-      return NextResponse.json({ error: `Este imovel aceita no maximo ${property.maxGuests} hospedes.` }, { status: 400 });
+      return NextResponse.json({ error: `Este espaco aceita no maximo ${property.maxGuests} pessoas.` }, { status: 400 });
     }
 
     if (nights < property.minNights) {
-      return NextResponse.json({ error: `MÃ­nimo de ${property.minNights} noites.` }, { status: 400 });
+      return NextResponse.json({ error: `Minimo de ${property.minNights} periodo.` }, { status: 400 });
     }
 
     // Check conflicts

@@ -29,12 +29,12 @@ export default async function AdminImoveisPage() {
 
   return (
     <div>
-      <h1 style={{ color: "#fff", fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Imoveis</h1>
-      <p style={{ color: "#777", marginBottom: 24 }}>Ultimos imoveis cadastrados para auditoria e moderacao.</p>
+      <h1 style={{ color: "#fff", fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Espacos</h1>
+      <p style={{ color: "#777", marginBottom: 24 }}>Ultimos locais cadastrados para auditoria e moderacao.</p>
 
       {properties.length === 0 ? (
         <div style={{ background: "#111", border: "1px solid #222", borderRadius: 10, padding: 24, color: "#777" }}>
-          Nenhum imovel cadastrado.
+          Nenhum espaco cadastrado.
         </div>
       ) : (
         <div style={{ display: "grid", gap: 12 }}>
@@ -49,7 +49,7 @@ export default async function AdminImoveisPage() {
                   <strong style={{ color: "#fff" }}>{property.title}</strong>
                   <p style={{ color: "#777", margin: "6px 0" }}>{property.city}, {property.state}</p>
                   <p style={{ color: "#777", margin: 0, fontSize: 13 }}>
-                    Anfitriao: {property.host.name ?? property.host.email ?? "Sem nome"}
+                    Anunciante: {property.host.name ?? property.host.email ?? "Sem nome"}
                   </p>
                 </div>
                 <div style={{ textAlign: "right" }}>
@@ -57,7 +57,7 @@ export default async function AdminImoveisPage() {
                     {statusLabel[property.status] ?? property.status}
                   </span>
                   <p style={{ color: "#aaa", margin: "8px 0 0", fontSize: 13 }}>
-                    R$ {property.pricePerNight.toLocaleString("pt-BR")}/noite
+                    R$ {property.pricePerNight.toLocaleString("pt-BR")}/periodo
                   </p>
                 </div>
               </div>

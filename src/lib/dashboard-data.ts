@@ -26,6 +26,20 @@ function iso(value: Date | null | undefined) {
   return value ? value.toISOString() : null;
 }
 
+function ageFromBirthDate(value: Date | null | undefined) {
+  if (!value) return null;
+
+  const today = new Date();
+  let age = today.getFullYear() - value.getFullYear();
+  const monthDiff = today.getMonth() - value.getMonth();
+
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < value.getDate())) {
+    age--;
+  }
+
+  return age >= 18 ? age : null;
+}
+
 function getVipLevel({
   completedAppointments,
   savedProfiles,
@@ -165,6 +179,7 @@ async function getCoreData(userId: string) {
               state: true,
               image: true,
               verified: true,
+              birthDate: true,
             },
           },
         },
@@ -185,6 +200,7 @@ async function getCoreData(userId: string) {
           pricePerHour: true,
           priceMin: true,
           image: true,
+          birthDate: true,
           attendanceTypes: true,
         },
       }),
@@ -254,6 +270,7 @@ export async function getDashboardHomeData(userId: string): Promise<DashboardHom
       contactMethod: appointment.contactMethod,
       image: appointment.professional.image,
       verified: appointment.professional.verified,
+      age: ageFromBirthDate(appointment.professional.birthDate),
     })),
     recommendedProfessionals: data.recommendedProfessionals.map((professional) => ({
       id: professional.id,
@@ -267,6 +284,7 @@ export async function getDashboardHomeData(userId: string): Promise<DashboardHom
       price: professional.pricePerHour ?? professional.priceMin,
       image: professional.image,
       attendanceTypes: professional.attendanceTypes.slice(0, 2),
+      age: ageFromBirthDate(professional.birthDate),
     })),
   };
 }

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 
-const amenityOptions = ["Wi-Fi", "Piscina", "Pet Friendly", "Estacionamento", "Ar-condicionado", "Cozinha", "Churrasqueira", "Academia"];
+const amenityOptions = ["Wi-Fi", "Garagem", "Entrada discreta", "Ar-condicionado", "Espelho", "Portaria", "Seguranca", "Privacidade acustica"];
 
 interface Property {
   id: string;
@@ -32,7 +32,7 @@ export default function ImoveisPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Carrega imóveis da API com debounce nos filtros
+  // Carrega quartos/espacos da API com debounce nos filtros
   useEffect(() => {
     const t = setTimeout(() => {
       const qs = new URLSearchParams();
@@ -112,7 +112,7 @@ export default function ImoveisPage() {
                 style={{ background: "transparent", border: "none", color: "#ccc", fontSize: 14, padding: "11px 0", outline: "none", cursor: "pointer" }}
               >
                 {[1,2,3,4,5,6,8,10,12].map((n) => (
-                  <option key={n} value={n} style={{ background: "#111" }}>{n} hóspede{n > 1 ? "s" : ""}</option>
+                  <option key={n} value={n} style={{ background: "#111" }}>{n} pessoa{n > 1 ? "s" : ""}</option>
                 ))}
               </select>
             </div>
@@ -172,7 +172,7 @@ export default function ImoveisPage() {
               <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
                 <div>
                   <label style={{ fontSize: 13, color: "#aaa", fontWeight: 600, display: "block", marginBottom: 12 }}>
-                    Preço máximo: <span style={{ color: "#cc0000" }}>R$ {priceMax}</span>
+                    Valor maximo: <span style={{ color: "#cc0000" }}>R$ {priceMax}</span>
                   </label>
                   <input
                     type="range"
@@ -185,7 +185,7 @@ export default function ImoveisPage() {
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: 13, color: "#aaa", fontWeight: 600, display: "block", marginBottom: 12 }}>Comodidades</label>
+                  <label style={{ fontSize: 13, color: "#aaa", fontWeight: 600, display: "block", marginBottom: 12 }}>Estrutura</label>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {amenityOptions.map((a) => (
                       <button
@@ -215,7 +215,7 @@ export default function ImoveisPage() {
       {/* Results */}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px" }}>
         <p style={{ color: "#666", fontSize: 14, marginBottom: 24 }}>
-          {loading ? "Carregando..." : `${filtered.length} imóvel${filtered.length !== 1 ? "is" : ""} encontrado${filtered.length !== 1 ? "s" : ""}`}
+          {loading ? "Carregando..." : `${filtered.length} quarto${filtered.length !== 1 ? "s" : ""} encontrado${filtered.length !== 1 ? "s" : ""}`}
         </p>
 
         <div
@@ -233,7 +233,7 @@ export default function ImoveisPage() {
         {filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: "60px 0" }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🏠</div>
-            <p style={{ color: "#666", fontSize: 16 }}>Nenhum imóvel encontrado com esses filtros.</p>
+            <p style={{ color: "#666", fontSize: 16 }}>Nenhum quarto encontrado com esses filtros.</p>
             <button
               onClick={() => { setSearch(""); setGuests(1); setPriceMax(2000); setSelectedAmenities([]); }}
               style={{ marginTop: 16, padding: "10px 24px", background: "#cc0000", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14 }}
@@ -338,7 +338,7 @@ function PropertyCard({ property: p }: { property: Property }) {
             <span>·</span>
             <span>{p.bathrooms} banheiro{p.bathrooms > 1 ? "s" : ""}</span>
             <span>·</span>
-            <span>até {p.maxGuests} hóspedes</span>
+            <span>ate {p.maxGuests} pessoas</span>
           </div>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
@@ -359,7 +359,7 @@ function PropertyCard({ property: p }: { property: Property }) {
               <span style={{ fontSize: 20, fontWeight: 800, color: "#cc0000" }}>
                 R$ {p.pricePerNight.toLocaleString("pt-BR")}
               </span>
-              <span style={{ fontSize: 13, color: "#666" }}>/noite</span>
+              <span style={{ fontSize: 13, color: "#666" }}>/periodo</span>
             </div>
             <div
               style={{

@@ -17,7 +17,7 @@ const features = [
         <path d="M9 21V12h6v9" />
       </svg>
     ),
-    title: "Cadastro de imóveis",
+    title: "Cadastro de locais discretos",
     desc: "Cadastre locais, gerencie disponibilidade, associe com perfis e controle visibilidade.",
   },
   {
@@ -30,7 +30,7 @@ const features = [
       </svg>
     ),
     title: "Acesso para clientes",
-    desc: "Clientes acessam perfis e locais de forma simples, rápida e segura.",
+    desc: "Clientes e profissionais acessam perfis e quartos de forma simples, rápida e segura.",
   },
   {
     icon: (
@@ -40,7 +40,7 @@ const features = [
       </svg>
     ),
     title: "Painel administrativo",
-    desc: "Controle total da plataforma, usuários, imóveis, permissões e muito mais.",
+    desc: "Controle total da plataforma, usuários, espaços, permissões e muito mais.",
   },
   {
     icon: (

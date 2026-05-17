@@ -28,16 +28,16 @@ import { supabaseAuth } from "@/lib/supabase-client";
 type NavItem = { label: string; href: string; icon: React.ReactNode; accent?: string };
 
 const guestNav: NavItem[] = [
-  { label: "Início", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" />, accent: "Hoje" },
+  { label: "Inicio", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" />, accent: "Hoje" },
   { label: "Explorar", href: "/profissionais", icon: <Compass className="h-4 w-4" /> },
-  { label: "Agendamentos", href: "/dashboard/reservas", icon: <CalendarCheck className="h-4 w-4" /> },
-  { label: "Favoritos", href: "/dashboard/favoritos", icon: <Heart className="h-4 w-4" /> },
-  { label: "Meu Perfil", href: "/dashboard/perfil", icon: <UserRound className="h-4 w-4" /> },
+  { label: "Favoritas", href: "/dashboard/favoritos", icon: <Heart className="h-4 w-4" /> },
+  { label: "Mensagens", href: "/dashboard/mensagens", icon: <MessageCircle className="h-4 w-4" /> },
+  { label: "Perfil", href: "/dashboard/perfil", icon: <UserRound className="h-4 w-4" /> },
 ];
 
 const hostNav: NavItem[] = [
-  { label: "Painel", href: "/anfitriao", icon: <LayoutDashboard className="h-4 w-4" />, accent: "Host" },
-  { label: "Meus Imóveis", href: "/anfitriao/imoveis", icon: <Home className="h-4 w-4" /> },
+  { label: "Painel", href: "/anfitriao", icon: <LayoutDashboard className="h-4 w-4" />, accent: "Anunc." },
+  { label: "Meus espaços", href: "/anfitriao/imoveis", icon: <Home className="h-4 w-4" /> },
   { label: "Reservas", href: "/anfitriao/reservas", icon: <CalendarCheck className="h-4 w-4" /> },
   { label: "Ganhos", href: "/anfitriao/ganhos", icon: <WalletCards className="h-4 w-4" /> },
   { label: "Meu Perfil", href: "/dashboard/perfil", icon: <UserRound className="h-4 w-4" /> },
@@ -46,7 +46,7 @@ const hostNav: NavItem[] = [
 const adminNav: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: <LayoutDashboard className="h-4 w-4" />, accent: "Admin" },
   { label: "Usuários", href: "/admin/usuarios", icon: <UsersRound className="h-4 w-4" /> },
-  { label: "Imóveis", href: "/admin/imoveis", icon: <Building2 className="h-4 w-4" /> },
+  { label: "Espaços", href: "/admin/imoveis", icon: <Building2 className="h-4 w-4" /> },
   { label: "Profissionais", href: "/admin/profissionais", icon: <UserRound className="h-4 w-4" /> },
   { label: "Reservas", href: "/admin/reservas", icon: <CalendarCheck className="h-4 w-4" /> },
   { label: "Cupons", href: "/admin/cupons", icon: <TicketPercent className="h-4 w-4" /> },
@@ -79,7 +79,7 @@ function initials(name?: string | null) {
 
 function roleLabel(role?: string) {
   if (role === "ADMIN") return "Administrador";
-  if (role === "HOST") return "Parceiro";
+  if (role === "HOST") return "Anunciante";
   return "Cliente premium";
 }
 
@@ -163,7 +163,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
 
         <nav className="relative flex-1 overflow-y-auto px-3 py-4">
           <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.26em] text-white/28">
-            {isProfessionalArea ? "Área profissional" : role === "HOST" ? "Área parceira" : "Área cliente"}
+            {isProfessionalArea ? "Área profissional" : role === "HOST" ? "Área anunciante" : "Área cliente"}
           </p>
           <div className="space-y-1.5">
             {nav.map((navItem) => {
@@ -228,10 +228,10 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
           ) : role === "GUEST" ? (
             <div className="mt-5 rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(204,31,47,0.06))] p-3">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f5d78c]">
-                Concierge discreto
+                Encontre profissionais
               </p>
               <p className="mt-2 text-xs leading-5 text-white/48">
-                Explore perfis verificados e organize seus contatos com privacidade.
+                Veja perfis verificados, favoritas e mensagens em poucos toques.
               </p>
               <Link
                 href="/profissionais"

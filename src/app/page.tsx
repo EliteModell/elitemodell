@@ -1,10 +1,8 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
-  BadgeCheck,
   Building2,
   Camera,
   ChevronRight,
@@ -13,7 +11,6 @@ import {
   HousePlus,
   LockKeyhole,
   MapPin,
-  Search,
   ShieldCheck,
   Star,
   UserRoundCheck,
@@ -29,34 +26,32 @@ const GOLD_DIM = "rgba(212,168,67,0.12)";
 const GOLD_MID = "rgba(212,168,67,0.28)";
 const PLAYFAIR = "var(--font-playfair), serif";
 
-const cities = ["Belo Horizonte", "Nova Lima", "Lagoa Santa", "Contagem", "São Paulo", "Rio de Janeiro"];
-
 const properties = [
   {
     id: 1,
-    title: "Apartamento Lourdes",
+    title: "Suite discreta Lourdes",
     city: "Belo Horizonte, MG",
     price: 890,
     image: "/property-bh-luxury.png",
-    type: "Apartamento",
+    type: "Suite premium",
     details: "ambiente reservado · garagem · portaria 24h",
   },
   {
     id: 2,
-    title: "Casa Reservada",
+    title: "Local reservado Itauna",
     city: "Itaúna, MG",
     price: 650,
     image: "/property-itauna-country.png",
-    type: "Casa",
+    type: "Quarto privado",
     details: "piscina · privacidade · acesso discreto",
   },
   {
     id: 3,
-    title: "Loft Privativo",
+    title: "Flat privativo",
     city: "Itaúna, MG",
     price: 420,
     image: "/property-itauna-loft.png",
-    type: "Loft",
+    type: "Flat discreto",
     details: "suíte · entrada discreta · Wi-Fi",
   },
 ];
@@ -70,48 +65,35 @@ const verificationItems = [
 const quickActions = [
   {
     label: "Busco prazer",
-    href: "/buscar?tab=acompanhantes&q=Belo%20Horizonte",
-    text: "Encontre companhia para momentos especiais e discretos.",
+    href: "/dashboard",
+    text: "Acesse sua area cliente de forma privada e simples.",
     icon: Heart,
   },
   {
     label: "Anunciar imóvel",
     href: "/anfitriao/imoveis/novo",
-    text: "Cadastre um espaço reservado e alcance clientes qualificados.",
+    text: "Cadastre um espaco reservado para atendimento discreto.",
     icon: HousePlus,
   },
   {
-    label: "Alugar imóvel",
+    label: "Alugar quarto",
     href: "/buscar?tab=imoveis&q=Belo%20Horizonte",
-    text: "Encontre casas, flats e apartamentos discretos para sua estadia.",
+    text: "Encontre quartos, suites e flats para atendimento.",
     icon: LockKeyhole,
   },
   {
     label: "Sou profissional",
-    href: "/cadastro",
+    href: "/cadastro?tipo=profissional",
     text: "Cadastre seu perfil com documentos, fotos reais e biometria.",
     icon: UserRoundPlus,
   },
 ];
 
 export default function HomePage() {
-  const router = useRouter();
-  const [city, setCity] = useState("Belo Horizonte");
-  const [category, setCategory] = useState("mulheres");
-
   const featuredProfiles = useMemo(
     () => mockProfiles.filter((profile) => profile.verified).slice(0, 3),
     []
   );
-
-  function submitSearch(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const params = new URLSearchParams();
-    params.set("tab", category === "imoveis" ? "imoveis" : "acompanhantes");
-    if (category !== "imoveis") params.set("sub", category);
-    if (city.trim()) params.set("q", city.trim());
-    router.push(`/buscar?${params.toString()}`);
-  }
 
   return (
     <div className="home-shell">
@@ -125,11 +107,6 @@ export default function HomePage() {
               <div className="eyebrow">
                 A plataforma premium do Brasil
               </div>
-              <h1 className="premium-title">
-                <span>Acompanhantes</span>
-                <span>de luxo.</span>
-                <span>Experiências inesquecíveis.</span>
-              </h1>
               <div className="hero-signature">Discrição. Elegância. Sofisticação.</div>
               <div className="hero-benefits">
                 <span><ShieldCheck size={18} /> Discrição total e segurança</span>
@@ -139,55 +116,6 @@ export default function HomePage() {
               <Link className="hero-cta" href="/buscar?tab=acompanhantes&q=Belo%20Horizonte">
                 Encontre sua companhia ideal <ChevronRight size={22} />
               </Link>
-
-              <form className="search-console" onSubmit={submitSearch}>
-                <label className="field field-large">
-                  <span>Cidade</span>
-                  <input
-                    value={city}
-                    onChange={(event) => setCity(event.target.value)}
-                    placeholder="Belo Horizonte, Nova Lima, Lagoa Santa..."
-                    list="home-cities"
-                  />
-                  <datalist id="home-cities">
-                    {cities.map((item) => (
-                      <option key={item} value={item} />
-                    ))}
-                  </datalist>
-                </label>
-
-                <div className="field category-field" role="group" aria-label="Categoria">
-                  <span>Categoria</span>
-                  <div className="category-options">
-                    {[
-                      ["mulheres", "Mulheres"],
-                      ["trans", "Trans"],
-                      ["homens", "Homens"],
-                      ["imoveis", "Imóveis"],
-                    ].map(([value, label]) => (
-                      <button
-                        key={value}
-                        type="button"
-                        className={category === value ? "active" : ""}
-                        onClick={() => setCategory(value)}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <button type="submit" className="search-submit">
-                  <Search size={18} />
-                  Buscar
-                </button>
-              </form>
-
-              <div className="trust-strip">
-                <span><ShieldCheck size={16} /> Perfis verificados</span>
-                <span><Camera size={16} /> Fotos reais</span>
-                <span><BadgeCheck size={16} /> Dados privados</span>
-              </div>
             </div>
           </div>
         </section>
@@ -278,9 +206,9 @@ export default function HomePage() {
           <div className="section-head">
             <div>
               <span>Locais selecionados</span>
-              <h2>Imóveis discretos para esse tipo de serviço</h2>
+              <h2>Quartos e suites discretas para atendimento</h2>
             </div>
-            <Link href="/buscar?tab=imoveis">Ver imóveis <ChevronRight size={16} /></Link>
+            <Link href="/buscar?tab=imoveis">Ver quartos <ChevronRight size={16} /></Link>
           </div>
 
           <div className="property-grid">
@@ -295,7 +223,7 @@ export default function HomePage() {
                   <h3>{property.title}</h3>
                   <p>{property.city}</p>
                   <small>{property.details}</small>
-                  <strong><Building2 size={16} /> R$ {property.price}/noite</strong>
+                  <strong><Building2 size={16} /> R$ {property.price}/periodo</strong>
                 </div>
               </Link>
             ))}
@@ -312,7 +240,7 @@ export default function HomePage() {
             </p>
           </div>
           <div className="operator-actions">
-            <Link href="/cadastro">Criar conta profissional</Link>
+            <Link href="/cadastro?tipo=profissional">Criar conta profissional</Link>
             <Link href="/anfitriao/imoveis/novo">Anunciar imóvel</Link>
           </div>
         </section>
@@ -361,13 +289,14 @@ export default function HomePage() {
           z-index: 1;
           max-width: 1280px;
           margin: 0 auto;
-          min-height: calc(100vh - 190px);
+          min-height: calc(100vh - 210px);
           display: flex;
           align-items: center;
         }
 
         .hero-copy {
-          max-width: 610px;
+          max-width: 640px;
+          padding-top: 24px;
         }
 
         .eyebrow,
@@ -384,7 +313,6 @@ export default function HomePage() {
           text-transform: uppercase;
         }
 
-        .hero-copy h1,
         .section-head h2,
         .verification-copy h2,
         .operator-section h2,
@@ -394,42 +322,20 @@ export default function HomePage() {
           letter-spacing: 0;
         }
 
-        .hero-copy h1 {
-          max-width: 790px;
-          margin: 18px 0;
-          font-size: clamp(42px, 6vw, 82px);
-          line-height: 0.98;
-          font-weight: 700;
-        }
-
-        .premium-title span {
-          display: block;
-          background: linear-gradient(135deg, #ffffff 0%, #e8dfc8 18%, #ffffff 36%, #d4a843 62%, #f5d78c 78%, #ffffff 100%);
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-          text-shadow: 0 22px 55px rgba(212,168,67,0.12);
-        }
-
-        .premium-title span:nth-child(2) {
-          background: linear-gradient(135deg, #ffe5a0 0%, #d4a843 26%, #f5d78c 48%, #9e7b2a 78%, #fff2bf 100%);
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-
         .hero-signature {
           color: #f4d98c;
-          font-size: clamp(18px, 2vw, 22px);
+          font-size: clamp(24px, 3.4vw, 42px);
           font-weight: 800;
           letter-spacing: 0.2px;
-          margin: 0 0 24px;
+          margin: 18px 0 22px;
+          max-width: 600px;
+          line-height: 1.05;
         }
 
         .hero-benefits {
           display: grid;
-          gap: 12px;
-          margin: 0 0 34px;
+          gap: 10px;
+          margin: 0 0 22px;
         }
 
         .hero-benefits span {
@@ -448,23 +354,25 @@ export default function HomePage() {
         }
 
         .hero-cta {
-          width: min(100%, 610px);
-          min-height: 64px;
+          width: min(100%, 560px);
+          min-height: 58px;
           display: inline-flex;
           align-items: center;
-          justify-content: center;
+          justify-content: space-between;
           gap: 18px;
+          margin-top: 6px;
+          padding: 0 18px 0 24px;
           border: 1.5px solid rgba(212,168,67,0.82);
           border-radius: 12px;
-          background: rgba(6,14,27,0.22);
+          background: rgba(6,14,27,0.18);
           color: #f5d78c;
           text-decoration: none;
           text-transform: uppercase;
           letter-spacing: 4px;
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 900;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 18px 44px rgba(0,0,0,0.32);
-          backdrop-filter: blur(8px);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 18px 44px rgba(0,0,0,0.26);
+          backdrop-filter: blur(6px);
         }
 
         .hero-copy p,
@@ -475,124 +383,6 @@ export default function HomePage() {
           color: #9fb0c8;
           font-size: 16px;
           line-height: 1.75;
-        }
-
-        .search-console {
-          display: grid;
-          grid-template-columns: minmax(250px, 1fr) minmax(278px, 0.82fr) 148px;
-          gap: 8px;
-          max-width: 790px;
-          margin-top: 26px;
-          padding: 8px;
-          background:
-            linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.015)),
-            rgba(6, 14, 27, 0.76);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 24px;
-          backdrop-filter: blur(18px);
-          box-shadow:
-            0 24px 80px rgba(0,0,0,0.38),
-            inset 0 1px 0 rgba(255,255,255,0.08);
-        }
-
-        .field {
-          min-width: 0;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          padding: 11px 13px;
-          background:
-            linear-gradient(180deg, rgba(12,24,40,0.92), rgba(7,16,29,0.92));
-          border: 1px solid rgba(255,255,255,0.065);
-          border-radius: 20px;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-        }
-
-        .field span {
-          color: #64748b;
-          font-size: 10px;
-          font-weight: 800;
-          letter-spacing: 1.4px;
-          text-transform: uppercase;
-        }
-
-        .field input {
-          width: 100%;
-          min-width: 0;
-          border: 0;
-          outline: 0;
-          background: transparent;
-          color: #f1f5f9;
-          font-size: 14px;
-        }
-
-        .category-field {
-          justify-content: center;
-        }
-
-        .category-options {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 4px;
-        }
-
-        .category-options button {
-          min-width: 0;
-          min-height: 30px;
-          border: 0;
-          border-radius: 999px;
-          background: rgba(255,255,255,0.035);
-          color: #9fb0c8;
-          font-size: 11px;
-          font-weight: 800;
-          cursor: pointer;
-          transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-        }
-
-        .category-options button.active {
-          background: linear-gradient(135deg, rgba(255,224,139,0.32), rgba(212,168,67,0.18));
-          color: #fff0bf;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 8px 20px rgba(0,0,0,0.2);
-        }
-
-        .search-submit {
-          min-height: 62px;
-          border: 0;
-          border-radius: 20px;
-          background: linear-gradient(135deg, #ffe08b 0%, #d4a843 52%, #ad8129 100%);
-          color: #060e1b;
-          font-size: 15px;
-          font-weight: 900;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          cursor: pointer;
-          box-shadow: 0 12px 30px rgba(212,168,67,0.22), inset 0 1px 0 rgba(255,255,255,0.32);
-        }
-
-        .trust-strip {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 8px;
-          max-width: 790px;
-          margin-top: 16px;
-        }
-
-        .trust-strip span {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          min-height: 42px;
-          padding: 8px 10px;
-          border: 1px solid rgba(212,168,67,0.16);
-          border-radius: 12px;
-          background: rgba(6,14,27,0.54);
-          color: #cbd5e1;
-          font-size: 12px;
-          white-space: nowrap;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
         }
 
         .live-board {
@@ -1117,8 +907,8 @@ export default function HomePage() {
 
         @media (max-width: 680px) {
           .market-hero {
-            min-height: auto;
-            padding: 58px 18px 18px;
+            min-height: 620px;
+            padding: 52px 18px 30px;
             overflow: hidden;
           }
 
@@ -1128,7 +918,7 @@ export default function HomePage() {
               linear-gradient(180deg, rgba(2,7,14,0) 0%, rgba(2,7,14,0.05) 58%, rgba(6,14,27,0.8) 100%),
               url("/hero-sofa-model.png");
             background-position: 60% top;
-            background-size: auto 760px;
+            background-size: auto 700px;
             background-repeat: no-repeat;
             background-color: #060e1b;
           }
@@ -1136,36 +926,31 @@ export default function HomePage() {
           .hero-content {
             min-height: auto;
             align-items: flex-start;
-            padding-top: 42px;
+            padding-top: 70px;
           }
 
           .hero-copy {
             max-width: none;
+            padding-top: 0;
           }
 
           .eyebrow {
-            max-width: 66%;
+            max-width: 74%;
             font-size: 10px;
             letter-spacing: 2px;
           }
 
-          .hero-copy h1 {
-            max-width: 68%;
-            margin: 12px 0 14px;
-            font-size: clamp(31px, 8.9vw, 41px);
-            line-height: 1;
-          }
-
           .hero-signature {
-            max-width: 70%;
-            margin-bottom: 20px;
-            font-size: 16px;
+            max-width: 74%;
+            margin: 16px 0 18px;
+            font-size: clamp(24px, 7.2vw, 32px);
+            line-height: 1.05;
           }
 
           .hero-benefits {
-            gap: 10px;
-            max-width: 68%;
-            margin-bottom: 24px;
+            gap: 9px;
+            max-width: 72%;
+            margin-bottom: 20px;
           }
 
           .hero-benefits span {
@@ -1175,7 +960,8 @@ export default function HomePage() {
 
           .hero-cta {
             width: min(82%, 520px);
-            min-height: 44px;
+            min-height: 48px;
+            margin-top: 4px;
             padding: 0 13px 0 18px;
             justify-content: space-between;
             border-radius: 9px;
@@ -1187,62 +973,10 @@ export default function HomePage() {
             white-space: nowrap;
           }
 
-          .search-console {
-            grid-template-columns: 1fr;
-            gap: 9px;
-            margin-top: 26px;
-            padding: 9px;
-            border: 1px solid rgba(212,168,67,0.18);
-            border-radius: 22px;
-            overflow: visible;
-            background: rgba(6,14,27,0.42);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-            backdrop-filter: none;
-            -webkit-backdrop-filter: none;
-          }
-
           .market-hero + .section-block {
             position: relative;
             z-index: 2;
             background: #060e1b;
-          }
-
-          .field {
-            padding: 12px 14px;
-            border: 1px solid rgba(255,255,255,0.035);
-            border-radius: 18px;
-            background: rgba(5,13,24,0.62);
-          }
-
-          .category-options {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 6px;
-          }
-
-          .category-options button {
-            min-height: 38px;
-            font-size: 11px;
-            background: rgba(15,25,40,0.72);
-          }
-
-          .category-options button.active {
-            background: linear-gradient(135deg, rgba(212,168,67,0.72), rgba(124,98,43,0.68));
-            color: #fff4c7;
-            box-shadow: none;
-          }
-
-          .search-submit {
-            min-height: 52px;
-            border-radius: 999px;
-            background: linear-gradient(135deg, #ffe08b 0%, #d4a843 56%, #b98c2e 100%);
-            box-shadow: none;
-            transform: none;
-            color: #060e1b;
-            -webkit-tap-highlight-color: transparent;
-          }
-
-          .trust-strip {
-            display: none;
           }
 
           .home-shell nav,

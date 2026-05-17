@@ -54,7 +54,7 @@ function ReservarContent() {
     fetch(`/api/properties/${propertyId}`)
       .then(r => r.json())
       .then(d => setProperty(d))
-      .catch(() => toast.error("Erro ao carregar imóvel."))
+      .catch(() => toast.error("Erro ao carregar quarto."))
       .finally(() => setLoadingProp(false));
   }, [propertyId]);
 
@@ -159,10 +159,10 @@ function ReservarContent() {
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   if (loadingProp) {
-    return <div style={{ color: "#94a3b8", padding: "100px 24px", textAlign: "center" }}>Carregando imóvel...</div>;
+    return <div style={{ color: "#94a3b8", padding: "100px 24px", textAlign: "center" }}>Carregando quarto...</div>;
   }
   if (!property) {
-    return <div style={{ color: "#94a3b8", padding: "100px 24px", textAlign: "center" }}>Imóvel não encontrado.</div>;
+    return <div style={{ color: "#94a3b8", padding: "100px 24px", textAlign: "center" }}>Quarto nao encontrado.</div>;
   }
 
   return (
@@ -171,7 +171,7 @@ function ReservarContent() {
       <div style={{ marginBottom: 32 }}>
         <Link href={`/imoveis/${propertyId}`} style={{ color: GOLD, textDecoration: "none", fontSize: 14, display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
-          Voltar ao imóvel
+          Voltar ao quarto
         </Link>
         <h1 style={{ fontSize: 28, fontWeight: 800, color: "#f1f5f9", marginBottom: 4 }}>Confirmar reserva</h1>
         <p style={{ color: "#475569", fontSize: 15 }}>Revise os detalhes antes de confirmar</p>
@@ -181,13 +181,13 @@ function ReservarContent() {
         {/* Left */}
         <div>
           <section style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, padding: 24, marginBottom: 20 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9", marginBottom: 16 }}>Sua viagem</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9", marginBottom: 16 }}>Seu periodo</h2>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               {[
                 { label: "Check-in", value: fmtDate(checkIn) },
                 { label: "Check-out", value: fmtDate(checkOut) },
-                { label: "Duração", value: `${nights} noite${nights > 1 ? "s" : ""}` },
-                { label: "Hóspedes", value: `${guests} hóspede${guests > 1 ? "s" : ""}` },
+                { label: "Duracao", value: `${nights} periodo${nights > 1 ? "s" : ""}` },
+                { label: "Pessoas", value: `${guests} pessoa${guests > 1 ? "s" : ""}` },
               ].map((d) => (
                 <div key={d.label}>
                   <div style={{ fontSize: 11, color: "#475569", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>{d.label}</div>
@@ -198,7 +198,7 @@ function ReservarContent() {
           </section>
 
           <section style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, padding: 24, marginBottom: 20 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9", marginBottom: 16 }}>Dados do hóspede</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9", marginBottom: 16 }}>Dados para confirmacao</h2>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <div>
                 <label style={{ fontSize: 12, color: "#94a3b8", display: "block", marginBottom: 6 }}>Nome</label>
@@ -287,7 +287,7 @@ function ReservarContent() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16, paddingBottom: 16, borderBottom: `1px solid ${GOLD_DIM}` }}>
               {[
-                { label: `R$ ${fmt(property.pricePerNight)} × ${nights} noite${nights > 1 ? "s" : ""}`, value: subtotal },
+                { label: `R$ ${fmt(property.pricePerNight)} × ${nights} periodo${nights > 1 ? "s" : ""}`, value: subtotal },
                 { label: "Taxa de limpeza", value: cleaningFee },
                 { label: "Taxa de serviço (10%)", value: serviceFee },
                 ...(couponApplied ? [{ label: "Cupom ELITE10", value: -discount }] : []),

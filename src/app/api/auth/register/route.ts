@@ -35,21 +35,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email ou telefone não encontrado" }, { status: 400 });
     }
 
-    if (!birthDate || !isAgeOfMajority(birthDate)) {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    const hasBirthDate = Boolean(birthDate || existing?.birthDate);
+    const birthDateIsValid = birthDate ? isAgeOfMajority(birthDate) : Boolean(existing?.birthDate);
+
+    if (!hasBirthDate || !birthDateIsValid) {
       return NextResponse.json(
         { error: "Você deve ter 18 anos ou mais para se registrar" },
         { status: 400 }
       );
     }
 
-    if (!lgpdConsent || !termsConsent) {
+    if (!(lgpdConsent || existing?.lgpdConsent) || !(termsConsent || existing?.termsConsent)) {
       return NextResponse.json(
         { error: "Você deve aceitar os Termos de Uso e Política de Privacidade" },
         { status: 400 }
       );
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       const user = await prisma.user.update({
         where: { id: existing.id },
@@ -59,7 +62,7 @@ export async function POST(req: NextRequest) {
           phone: existing.phone ?? phone ?? null,
           role: existing.role === "ADMIN" ? "ADMIN" : role,
           category: category ?? existing.category,
-          birthDate: new Date(birthDate),
+          birthDate: birthDate ? new Date(birthDate) : existing.birthDate,
           lgpdConsent: existing.lgpdConsent || lgpdConsent,
           termsConsent: existing.termsConsent || termsConsent,
           consentDate: existing.consentDate ?? new Date(),
@@ -76,6 +79,13 @@ export async function POST(req: NextRequest) {
       }
 
       return NextResponse.json(user, { status: 200 });
+    }
+
+    if (!birthDate) {
+      return NextResponse.json(
+        { error: "Você deve ter 18 anos ou mais para se registrar" },
+        { status: 400 }
+      );
     }
 
     const user = await prisma.user.create({

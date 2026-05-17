@@ -42,12 +42,12 @@ const acompanhantes = {
 };
 
 const imoveis = [
-  { id: 1, titulo: "Apartamento Lourdes", cidade: "Belo Horizonte, MG", preco: 890, foto: "/property-bh-luxury.png", quartos: 2, avaliacao: 4.9, tipo: "Apartamento", tags: ["Portaria 24h"] },
-  { id: 2, titulo: "Casa Reservada Itaúna", cidade: "Itaúna, MG", preco: 650, foto: "/property-itauna-country.png", quartos: 3, avaliacao: 4.9, tipo: "Casa", tags: ["Com piscina"] },
-  { id: 3, titulo: "Loft Privativo Itaúna", cidade: "Itaúna, MG", preco: 420, foto: "/property-itauna-loft.png", quartos: 1, avaliacao: 4.8, tipo: "Loft", tags: ["Entrada discreta"] },
-  { id: 4, titulo: "Flat Savassi", cidade: "Belo Horizonte, MG", preco: 720, foto: "/property-bh-luxury.png", quartos: 1, avaliacao: 4.8, tipo: "Flat", tags: ["Portaria 24h"] },
-  { id: 5, titulo: "Casa Alphaville", cidade: "Nova Lima, MG", preco: 980, foto: "/property-itauna-country.png", quartos: 4, avaliacao: 5.0, tipo: "Casa", tags: ["Com piscina"] },
-  { id: 6, titulo: "Studio Centro", cidade: "Belo Horizonte, MG", preco: 380, foto: "/property-itauna-loft.png", quartos: 1, avaliacao: 4.7, tipo: "Studio", tags: ["Entrada discreta"] },
+  { id: 1, titulo: "Suite discreta Lourdes", cidade: "Belo Horizonte, MG", preco: 890, foto: "/property-bh-luxury.png", quartos: 1, avaliacao: 4.9, tipo: "Suite premium", tags: ["Portaria", "Entrada discreta"] },
+  { id: 2, titulo: "Quarto privado Itauna", cidade: "Itauna, MG", preco: 650, foto: "/property-itauna-country.png", quartos: 1, avaliacao: 4.9, tipo: "Quarto privado", tags: ["Privacidade acustica"] },
+  { id: 3, titulo: "Flat privativo Itauna", cidade: "Itauna, MG", preco: 420, foto: "/property-itauna-loft.png", quartos: 1, avaliacao: 4.8, tipo: "Flat discreto", tags: ["Entrada discreta"] },
+  { id: 4, titulo: "Studio reservado Savassi", cidade: "Belo Horizonte, MG", preco: 720, foto: "/property-bh-luxury.png", quartos: 1, avaliacao: 4.8, tipo: "Studio reservado", tags: ["Portaria"] },
+  { id: 5, titulo: "Local discreto Nova Lima", cidade: "Nova Lima, MG", preco: 980, foto: "/property-itauna-country.png", quartos: 1, avaliacao: 5.0, tipo: "Motel parceiro", tags: ["Garagem"] },
+  { id: 6, titulo: "Quarto centro", cidade: "Belo Horizonte, MG", preco: 380, foto: "/property-itauna-loft.png", quartos: 1, avaliacao: 4.7, tipo: "Quarto privado", tags: ["Entrada discreta"] },
 ];
 
 const FILTROS = ["Online agora", "Com avaliações", "Com local", "Até R$300", "Exclusivas"] as const;
@@ -65,7 +65,11 @@ function BuscarContent() {
   function toggleFiltro(f: Filtro) {
     setFiltros((prev) => {
       const next = new Set(prev);
-      next.has(f) ? next.delete(f) : next.add(f);
+      if (next.has(f)) {
+        next.delete(f);
+      } else {
+        next.add(f);
+      }
       return next;
     });
   }
@@ -123,7 +127,7 @@ function BuscarContent() {
 
             {/* Tipo toggle */}
             <div style={{ display: "flex", gap: 0, background: "#0f172a", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, overflow: "hidden", flexShrink: 0 }}>
-              {([["acompanhantes", "Acompanhantes"], ["imoveis", "Imóveis"]] as const).map(([tab, label]) => (
+              {([["acompanhantes", "Acompanhantes"], ["imoveis", "Quartos"]] as const).map(([tab, label]) => (
                 <button key={tab} onClick={() => setMainTab(tab)}
                   style={{ padding: "9px 16px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, background: mainTab === tab ? GOLD : "transparent", color: mainTab === tab ? "#060e1b" : "#475569", transition: "all 0.2s", fontFamily: PLAYFAIR }}>
                   {label}
@@ -138,7 +142,7 @@ function BuscarContent() {
                 <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
               <input value={busca} onChange={(e) => setBusca(e.target.value)}
-                placeholder={mainTab === "acompanhantes" ? "Nome, serviço ou especialidade..." : "Cidade, tipo ou comodidade..."}
+                placeholder={mainTab === "acompanhantes" ? "Nome, serviço ou especialidade..." : "Cidade, bairro ou estrutura..."}
                 style={{ width: "100%", padding: "10px 14px 10px 36px", background: "#0f172a", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, color: "#f1f5f9", fontSize: 14, outline: "none", boxSizing: "border-box", transition: "border-color 0.2s" }}
                 onFocus={(e) => ((e.target as HTMLElement).style.borderColor = GOLD)}
                 onBlur={(e) => ((e.target as HTMLElement).style.borderColor = GOLD_DIM)} />
@@ -295,11 +299,11 @@ function BuscarContent() {
           </>
         )}
 
-        {/* ── IMÓVEIS ── */}
+        {/* ── QUARTOS ── */}
         {mainTab === "imoveis" && (
           <>
             <div className="filtros-scroll" style={{ marginBottom: 20 }}>
-              {["Apartamento", "Casa", "Studio", "Loft", "Flat", "Com piscina", "Entrada discreta"].map((f) => {
+              {["Quarto privado", "Suite premium", "Flat discreto", "Studio reservado", "Motel parceiro", "Entrada discreta"].map((f) => {
                 const ativo = filtroImovel === f;
                 return (
                   <button key={f} onClick={() => setFiltroImovel(ativo ? null : f)}
@@ -313,7 +317,7 @@ function BuscarContent() {
             <div className="imovel-grid">
               {imoveis.filter((i) => {
                 if (busca && !i.cidade.toLowerCase().includes(busca.toLowerCase()) && !i.titulo.toLowerCase().includes(busca.toLowerCase())) return false;
-                if (filtroImovel === "Com piscina" || filtroImovel === "Entrada discreta") return i.tags.includes(filtroImovel);
+                if (filtroImovel === "Entrada discreta") return i.tags.includes(filtroImovel);
                 if (filtroImovel) return i.tipo === filtroImovel;
                 return true;
               }).map((im) => (
@@ -329,10 +333,10 @@ function BuscarContent() {
                     </div>
                     <div style={{ padding: "14px 16px" }}>
                       <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: 16, color: "#f1f5f9", fontFamily: PLAYFAIR }}>{im.titulo}</p>
-                      <p style={{ margin: "0 0 10px", fontSize: 13, color: "#475569" }}>{im.cidade} · {im.quartos} {im.quartos === 1 ? "quarto" : "quartos"}</p>
+                      <p style={{ margin: "0 0 10px", fontSize: 13, color: "#475569" }}>{im.cidade} · local discreto</p>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <span style={{ color: GOLD, fontWeight: 800, fontSize: 16, fontFamily: PLAYFAIR }}>
-                          R${im.preco}<span style={{ color: "#475569", fontSize: 12, fontWeight: 400, fontFamily: "var(--font-inter), sans-serif" }}>/noite</span>
+                          R${im.preco}<span style={{ color: "#475569", fontSize: 12, fontWeight: 400, fontFamily: "var(--font-inter), sans-serif" }}>/periodo</span>
                         </span>
                         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>

@@ -9,7 +9,7 @@ const problems = [
   },
   {
     title: "Dificuldade em gerenciar locais",
-    desc: "Não há uma forma eficiente de cadastrar, organizar e controlar os imóveis.",
+    desc: "Não há uma forma eficiente de cadastrar, organizar e controlar locais discretos.",
   },
   {
     title: "Pouco controle sobre clientes",

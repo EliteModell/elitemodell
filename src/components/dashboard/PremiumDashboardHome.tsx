@@ -1,28 +1,24 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- Cards mix uploads and remote profile images. */
+/* eslint-disable @next/next/no-img-element -- Profile images can come from uploads and remote providers. */
 
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
 import {
-  ArrowRight,
   BadgeCheck,
   CalendarCheck,
-  Camera,
-  CheckCircle2,
-  Clock3,
-  Compass,
+  ChevronRight,
   Crown,
+  Eye,
   Heart,
-  LockKeyhole,
   MapPin,
   MessageCircle,
-  PhoneCall,
+  Pencil,
+  Search,
   ShieldCheck,
   Sparkles,
   Star,
-  UserRound,
 } from "lucide-react";
 
 export type DashboardHomeData = {
@@ -68,33 +64,96 @@ export type DashboardHomeData = {
     contactMethod: string;
     image: string | null;
     verified: boolean;
+    age: number | null;
   }>;
-  recommendedProfessionals: Array<{
-    id: string;
-    slug: string;
-    name: string;
-    city: string;
-    state: string;
-    rating: number;
-    verified: boolean;
-    featured: boolean;
-    price: number | null;
-    image: string | null;
-    attendanceTypes: string[];
-  }>;
+  recommendedProfessionals: Array<ProfessionalCardData>;
+};
+
+type ProfessionalCardData = {
+  id: string;
+  slug: string;
+  name: string;
+  city: string;
+  state: string;
+  rating: number;
+  verified: boolean;
+  featured: boolean;
+  price: number | null;
+  image: string | null;
+  attendanceTypes: string[];
+  age: number | null;
 };
 
 const container: Variants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
+  show: { opacity: 1, transition: { staggerChildren: 0.05 } },
 };
 
 const item: Variants = {
-  hidden: { opacity: 0, y: 14 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.38, ease: "easeOut" } },
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.34, ease: "easeOut" } },
 };
 
-const professionalFallbacks = ["/model.jpeg", "/model1.jpg", "/model2.jpg"];
+const fallbackProfiles: ProfessionalCardData[] = [
+  {
+    id: "lora-demo",
+    slug: "lora",
+    name: "Lora",
+    city: "Sao Paulo",
+    state: "SP",
+    rating: 5,
+    verified: true,
+    featured: true,
+    price: 650,
+    image: "/model.jpeg",
+    attendanceTypes: ["Local proprio", "Hotel"],
+    age: 26,
+  },
+  {
+    id: "amanda-demo",
+    slug: "amanda-r",
+    name: "Amanda R.",
+    city: "Belo Horizonte",
+    state: "MG",
+    rating: 4.9,
+    verified: true,
+    featured: true,
+    price: 520,
+    image: "/model1.jpg",
+    attendanceTypes: ["Jantar", "Viagens"],
+    age: 24,
+  },
+  {
+    id: "leticia-demo",
+    slug: "leticia-m",
+    name: "Leticia M.",
+    city: "Rio de Janeiro",
+    state: "RJ",
+    rating: 4.8,
+    verified: true,
+    featured: false,
+    price: 480,
+    image: "/model2.jpg",
+    attendanceTypes: ["Massagem", "Hotel"],
+    age: 29,
+  },
+  {
+    id: "marina-demo",
+    slug: "marina-v",
+    name: "Marina V.",
+    city: "Curitiba",
+    state: "PR",
+    rating: 4.9,
+    verified: true,
+    featured: true,
+    price: 590,
+    image: "/model1.jpg",
+    attendanceTypes: ["Eventos", "Local proprio"],
+    age: 27,
+  },
+];
+
+const profileFallbacks = ["/model.jpeg", "/model1.jpg", "/model2.jpg"];
 
 function initials(name?: string | null) {
   if (!name) return "EM";
@@ -107,7 +166,7 @@ function initials(name?: string | null) {
 }
 
 function firstName(name?: string | null) {
-  return name?.split(" ").filter(Boolean)[0] ?? "cliente";
+  return name?.split(" ").filter(Boolean)[0] ?? "voce";
 }
 
 function money(value: number) {
@@ -127,358 +186,392 @@ function shortDate(value: string) {
   }).format(new Date(value));
 }
 
-function statusLabel(status: string) {
+function appointmentStatus(status: string) {
   const labels: Record<string, string> = {
-    PENDING: "Aguardando confirmação",
+    PENDING: "Pendente",
     CONFIRMED: "Confirmado",
     CANCELLED: "Cancelado",
-    COMPLETED: "Concluído",
-    NO_SHOW: "Não compareceu",
+    COMPLETED: "Concluido",
+    NO_SHOW: "Ausente",
   };
   return labels[status] ?? status;
 }
 
-function onboardingProgress(data: DashboardHomeData["onboarding"]) {
-  const done = data.filter((step) => step.done).length;
-  return Math.round((done / Math.max(data.length, 1)) * 100);
+function isOnline(index: number, featured?: boolean) {
+  return featured || index % 3 !== 2;
 }
 
-function StatCard({
-  icon,
-  label,
-  value,
-  helper,
+function SectionHeader({
+  title,
+  href = "/profissionais",
+  compact = false,
 }: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  helper: string;
+  title: string;
+  href?: string;
+  compact?: boolean;
 }) {
   return (
-    <motion.div
-      variants={item}
-      whileHover={{ y: -3 }}
-      className="rounded-[8px] border border-white/10 bg-white/[0.045] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.22)] backdrop-blur-xl transition-colors hover:border-[#d4a843]/35"
+    <div className="mb-3 flex items-center justify-between gap-3 px-0.5">
+      <h2 className={`${compact ? "text-base" : "text-lg"} font-black text-white`}>{title}</h2>
+      <Link href={href} className="inline-flex items-center gap-1 text-xs font-black text-[#f5d78c]">
+        Ver
+        <ChevronRight className="h-3.5 w-3.5" />
+      </Link>
+    </div>
+  );
+}
+
+function ProfileCard({
+  pro,
+  index,
+  large = false,
+}: {
+  pro: ProfessionalCardData;
+  index: number;
+  large?: boolean;
+}) {
+  const online = isOnline(index, pro.featured);
+  const image = pro.image ?? profileFallbacks[index % profileFallbacks.length];
+
+  return (
+    <Link
+      href={`/profissionais/${pro.slug}`}
+      className="group block overflow-hidden rounded-[8px] border border-white/10 bg-[#111113] shadow-[0_22px_70px_rgba(0,0,0,0.34)] transition hover:border-[#d4a843]/45"
     >
-      <span className="mb-4 grid h-10 w-10 place-items-center rounded-[8px] border border-[#d4a843]/20 bg-[#d4a843]/10 text-[#f5d78c]">
-        {icon}
-      </span>
-      <p className="text-2xl font-black text-white">{value}</p>
-      <p className="mt-1 text-sm font-semibold text-white/74">{label}</p>
-      <p className="mt-2 text-xs leading-5 text-white/40">{helper}</p>
-    </motion.div>
-  );
-}
-
-function SectionTitle({ eyebrow, title, href }: { eyebrow: string; title: string; href?: string }) {
-  return (
-    <div className="mb-4 flex items-end justify-between gap-4">
-      <div>
-        <p className="mb-1 text-[10px] font-black uppercase tracking-[0.22em] text-[#d4a843]">
-          {eyebrow}
-        </p>
-        <h2 className="text-lg font-black text-white">{title}</h2>
+      <div className={`relative overflow-hidden bg-white/5 ${large ? "aspect-[3/4]" : "aspect-[4/5]"}`}>
+        <img
+          src={image}
+          alt={pro.name}
+          className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105"
+        />
+        <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black ${
+              online ? "bg-emerald-500/90 text-[#03130b]" : "bg-black/62 text-white/72"
+            }`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${online ? "bg-[#03130b]" : "bg-white/45"}`} />
+            {online ? "Online" : "Hoje"}
+          </span>
+          {pro.verified ? (
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-black/58 text-[#f5d78c] backdrop-blur">
+              <BadgeCheck className="h-4 w-4" />
+            </span>
+          ) : null}
+        </div>
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/55 to-transparent p-3">
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-xl font-black text-white">{pro.name}</p>
+              <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-white/72">
+                <MapPin className="h-3.5 w-3.5 text-[#f5d78c]" />
+                {pro.city}, {pro.state}
+                {pro.age ? ` - ${pro.age} anos` : ""}
+              </p>
+            </div>
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/12 px-2.5 py-1 text-xs font-black text-white">
+              <Star className="h-3.5 w-3.5 fill-[#f5d78c] text-[#f5d78c]" />
+              {pro.rating.toFixed(1)}
+            </span>
+          </div>
+        </div>
       </div>
-      {href ? (
-        <Link href={href} className="inline-flex items-center gap-1 text-sm font-bold text-[#f5d78c]">
-          Ver
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-      ) : null}
-    </div>
+      <div className="grid gap-3 p-3">
+        <div className="flex min-h-7 flex-wrap gap-1.5">
+          {pro.attendanceTypes.slice(0, 2).map((type) => (
+            <span key={type} className="rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] font-bold text-white/68">
+              {type}
+            </span>
+          ))}
+          {pro.featured ? (
+            <span className="rounded-full bg-[#cc1f2f]/18 px-2.5 py-1 text-[11px] font-black text-[#ff9aa4]">
+              Destaque
+            </span>
+          ) : null}
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="truncate text-sm font-black text-[#f5d78c]">
+            {pro.price ? money(pro.price) : "Valor no perfil"}
+          </p>
+          <span className="inline-flex h-9 items-center justify-center rounded-[8px] bg-[#d4a843] px-3 text-xs font-black text-[#120d08]">
+            Visualizar
+          </span>
+        </div>
+      </div>
+    </Link>
   );
 }
 
-function EmptyMoment({ title, body }: { title: string; body: string }) {
+function ProfileRail({
+  title,
+  profiles,
+  href,
+  large,
+}: {
+  title: string;
+  profiles: ProfessionalCardData[];
+  href?: string;
+  large?: boolean;
+}) {
   return (
-    <div className="rounded-[8px] border border-dashed border-white/12 bg-black/18 p-5 text-center">
-      <Sparkles className="mx-auto mb-3 h-5 w-5 text-[#d4a843]" />
-      <p className="font-bold text-white">{title}</p>
-      <p className="mt-1 text-sm leading-6 text-white/45">{body}</p>
-    </div>
+    <motion.section variants={item}>
+      <SectionHeader title={title} href={href} />
+      <div className="-mx-4 grid auto-cols-[78%] grid-flow-col gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:auto-cols-[46%] sm:px-0 lg:grid-flow-row lg:grid-cols-4">
+        {profiles.map((pro, index) => (
+          <ProfileCard key={`${title}-${pro.id}`} pro={pro} index={index} large={large} />
+        ))}
+      </div>
+    </motion.section>
+  );
+}
+
+function MiniProfileRow({ pro, index }: { pro: ProfessionalCardData; index: number }) {
+  const online = isOnline(index, pro.featured);
+
+  return (
+    <Link
+      href={`/profissionais/${pro.slug}`}
+      className="flex items-center gap-3 rounded-[8px] border border-white/10 bg-white/[0.045] p-2.5 transition hover:border-[#d4a843]/35"
+    >
+      <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded-[8px] bg-white/8">
+        <img
+          src={pro.image ?? profileFallbacks[index % profileFallbacks.length]}
+          alt={pro.name}
+          className="h-full w-full object-cover object-top"
+        />
+        <span className={`absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full border border-black ${online ? "bg-emerald-400" : "bg-white/45"}`} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          <p className="truncate text-sm font-black text-white">{pro.name}</p>
+          {pro.verified ? <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-[#f5d78c]" /> : null}
+        </div>
+        <p className="mt-1 truncate text-xs text-white/50">
+          {pro.city} {pro.age ? `- ${pro.age} anos` : ""}
+        </p>
+        <p className="mt-1 text-xs font-bold text-[#f5d78c]">{online ? "Online agora" : "Disponivel hoje"}</p>
+      </div>
+      <ChevronRight className="h-4 w-4 text-white/28" />
+    </Link>
+  );
+}
+
+function Appointments({
+  appointments,
+  profiles,
+}: {
+  appointments: DashboardHomeData["recentAppointments"];
+  profiles: ProfessionalCardData[];
+}) {
+  return (
+    <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-[#101012] p-4">
+      <SectionHeader title="Agendamentos" href="/dashboard/reservas" compact />
+      <div className="grid gap-2.5">
+        {appointments.length > 0
+          ? appointments.slice(0, 3).map((appointment, index) => (
+              <Link
+                key={appointment.id}
+                href={`/profissionais/${appointment.slug}`}
+                className="flex items-center gap-3 rounded-[8px] bg-black/22 p-2.5"
+              >
+                <div className="h-14 w-12 shrink-0 overflow-hidden rounded-[8px] bg-white/8">
+                  <img
+                    src={appointment.image ?? profileFallbacks[index % profileFallbacks.length]}
+                    alt={appointment.name}
+                    className="h-full w-full object-cover object-top"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-black text-white">{appointment.name}</p>
+                  <p className="mt-1 text-xs text-white/48">
+                    {shortDate(appointment.date)} - {appointmentStatus(appointment.status)}
+                  </p>
+                </div>
+                <CalendarCheck className="h-4 w-4 text-[#f5d78c]" />
+              </Link>
+            ))
+          : profiles.slice(0, 2).map((pro, index) => (
+              <Link
+                key={`agenda-${pro.id}`}
+                href={`/profissionais/${pro.slug}`}
+                className="flex items-center gap-3 rounded-[8px] bg-black/22 p-2.5"
+              >
+                <div className="h-14 w-12 shrink-0 overflow-hidden rounded-[8px] bg-white/8">
+                  <img
+                    src={pro.image ?? profileFallbacks[index % profileFallbacks.length]}
+                    alt={pro.name}
+                    className="h-full w-full object-cover object-top"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-black text-white">{pro.name}</p>
+                  <p className="mt-1 text-xs text-white/48">Escolha um horario no perfil</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-white/28" />
+              </Link>
+            ))}
+      </div>
+    </motion.section>
   );
 }
 
 export default function PremiumDashboardHome({ data }: { data: DashboardHomeData }) {
-  const progress = onboardingProgress(data.onboarding);
   const name = firstName(data.user.name);
-  const smartMessage =
-    data.stats.favoriteProfiles > 0
-      ? "Sua curadoria já começou. Continue salvando perfis para refinar recomendações e contatos."
-      : "Explore profissionais verificados e monte uma curadoria discreta, segura e pessoal.";
+  const profiles = data.recommendedProfessionals.length > 0 ? data.recommendedProfessionals : fallbackProfiles;
+  const recommended = profiles.slice(0, 8);
+  const favorites = profiles.filter((pro) => pro.featured || pro.verified).slice(0, 4);
+  const recent = data.recentAppointments.length
+    ? data.recentAppointments.map((appointment, index) => ({
+        id: `recent-${appointment.id}`,
+        slug: appointment.slug,
+        name: appointment.name,
+        city: appointment.city,
+        state: appointment.state,
+        rating: 4.9,
+        verified: appointment.verified,
+        featured: index === 0,
+        price: null,
+        image: appointment.image,
+        attendanceTypes: ["Ja visto", "Perfil salvo"],
+        age: appointment.age,
+      }))
+    : profiles.slice(1, 5);
+  const onlineNow = profiles.filter((pro, index) => isOnline(index, pro.featured)).slice(0, 6);
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-5 pb-20 md:pb-0">
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-5 pb-24 md:pb-0">
+      <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-[#101012] p-4 shadow-[0_30px_100px_rgba(0,0,0,0.35)]">
+        <div className="flex items-center gap-3">
+          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[8px] border border-[#d4a843]/35 bg-[#d4a843]/12">
+            {data.user.image ? (
+              <img src={data.user.image} alt={data.user.name ?? "Avatar"} className="h-full w-full object-cover" />
+            ) : (
+              <div className="grid h-full w-full place-items-center text-lg font-black text-[#f5d78c]">
+                {initials(data.user.name)}
+              </div>
+            )}
+            <span className="absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full border border-[#101012] bg-emerald-400" />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xl font-black text-white">Oi, {name}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <span className="inline-flex items-center gap-1 rounded-full border border-[#d4a843]/24 bg-[#d4a843]/10 px-2.5 py-1 text-[11px] font-black text-[#f5d78c]">
+                <Crown className="h-3.5 w-3.5" />
+                {data.vip.label}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-bold text-white/70">
+                Saldo {money(data.user.credits)}
+              </span>
+            </div>
+          </div>
+
+          <Link
+            href="/dashboard/perfil"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-[8px] border border-white/10 bg-white/[0.055] text-white/72 transition hover:border-[#d4a843]/35 hover:text-[#f5d78c]"
+            aria-label="Editar perfil"
+          >
+            <Pencil className="h-4 w-4" />
+          </Link>
+        </div>
+
+        <Link
+          href="/profissionais"
+          className="mt-4 flex h-12 items-center gap-3 rounded-[8px] border border-white/10 bg-black/24 px-3 text-sm font-semibold text-white/52"
+        >
+          <Search className="h-4 w-4 text-[#f5d78c]" />
+          Buscar profissionais
+        </Link>
+      </motion.section>
+
+      <ProfileRail title="Profissionais recomendadas para voce" profiles={recommended} large />
+
       <motion.section
         variants={item}
-        className="relative overflow-hidden rounded-[8px] border border-white/10 bg-[linear-gradient(135deg,rgba(20,20,22,0.97),rgba(58,9,14,0.72)_48%,rgba(7,7,8,0.98))] p-4 shadow-[0_32px_110px_rgba(0,0,0,0.38)] sm:p-6"
+        className="grid gap-3 rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.12),rgba(204,31,47,0.11),rgba(255,255,255,0.035))] p-4 sm:grid-cols-[1fr_auto]"
       >
-        <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(245,215,140,0.85),transparent)]" />
-        <div className="relative grid gap-5 lg:grid-cols-[1.25fr_0.75fr] lg:items-center">
-          <div>
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#d4a843]/25 bg-black/25 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#f5d78c]">
-              <Sparkles className="h-3.5 w-3.5" />
-              Cliente premium
-            </div>
-            <h1 className="max-w-3xl text-3xl font-black leading-tight text-white sm:text-5xl">
-              Olá, {name}. Sua curadoria discreta está pronta.
-            </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-white/62 sm:text-base">
-              {smartMessage}
-            </p>
-            <div className="mt-5 grid gap-3 sm:flex sm:flex-wrap">
-              <Link
-                href="/profissionais"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-[8px] bg-[#d4a843] px-5 text-sm font-black text-[#100d09] shadow-[0_14px_34px_rgba(212,168,67,0.22)] transition hover:bg-[#f5d78c]"
-              >
-                <Compass className="h-4 w-4" />
-                Explorar profissionais
-              </Link>
-              <Link
-                href="/dashboard/reservas"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-[8px] border border-white/12 bg-white/[0.06] px-5 text-sm font-bold text-white transition hover:border-[#cc1f2f]/45 hover:bg-[#cc1f2f]/12"
-              >
-                <CalendarCheck className="h-4 w-4" />
-                Meus agendamentos
-              </Link>
-            </div>
-          </div>
-
-          <div className="rounded-[8px] border border-white/10 bg-black/28 p-4 backdrop-blur-xl">
-            <div className="flex items-center gap-4">
-              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[8px] border border-[#d4a843]/35 bg-[#d4a843]/12 sm:h-20 sm:w-20">
-                {data.user.image ? (
-                  <img src={data.user.image} alt={data.user.name ?? "Avatar"} className="h-full w-full object-cover" />
-                ) : (
-                  <div className="grid h-full w-full place-items-center text-xl font-black text-[#f5d78c]">
-                    {initials(data.user.name)}
-                  </div>
-                )}
-                <span className="absolute bottom-1.5 right-1.5 grid h-5 w-5 place-items-center rounded-full bg-[#0a0a0b] text-[#d4a843]">
-                  <BadgeCheck className="h-3.5 w-3.5" />
-                </span>
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-lg font-black text-white">{data.user.name ?? "Perfil Elite"}</p>
-                <p className="truncate text-sm text-white/45">{data.user.email ?? "Email pendente"}</p>
-                <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#d4a843]/25 bg-[#d4a843]/10 px-3 py-1 text-xs font-black text-[#f5d78c]">
-                  <Crown className="h-3.5 w-3.5" />
-                  {data.vip.label}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 grid grid-cols-[76px_1fr] gap-4 sm:grid-cols-[92px_1fr]">
-              <div
-                className="grid h-[76px] w-[76px] place-items-center rounded-full sm:h-[92px] sm:w-[92px]"
-                style={{
-                  background: `conic-gradient(#d4a843 ${progress * 3.6}deg, rgba(255,255,255,0.1) 0deg)`,
-                }}
-              >
-                <div className="grid h-[60px] w-[60px] place-items-center rounded-full bg-[#0b0b0c] text-base font-black text-white sm:h-[74px] sm:w-[74px] sm:text-lg">
-                  {progress}%
-                </div>
-              </div>
-              <div>
-                <p className="text-sm font-black text-white">Onboarding</p>
-                <p className="mt-1 text-xs leading-5 text-white/45">
-                  Complete o perfil para receber recomendações mais pessoais.
-                </p>
-                <Link
-                  href="/dashboard/perfil"
-                  className="mt-3 inline-flex items-center gap-1 text-xs font-black uppercase tracking-[0.16em] text-[#d4a843] hover:text-white"
-                >
-                  Ajustar perfil
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-            </div>
-          </div>
+        <div>
+          <p className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.18em] text-[#f5d78c]">
+            <Sparkles className="h-4 w-4" />
+            Premium
+          </p>
+          <h2 className="mt-2 text-xl font-black text-white">Perfis verificados perto de voce</h2>
+          <p className="mt-1 text-sm leading-6 text-white/55">
+            Fotos em destaque, status online e acesso rapido ao perfil.
+          </p>
         </div>
+        <Link
+          href="/profissionais"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#120d08]"
+        >
+          Explorar
+          <ChevronRight className="h-4 w-4" />
+        </Link>
       </motion.section>
 
-      <motion.section variants={container} className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <StatCard
-          icon={<CalendarCheck className="h-5 w-5" />}
-          label="Ativos"
-          value={String(data.stats.activeAppointments)}
-          helper="Agendamentos em andamento."
-        />
-        <StatCard
-          icon={<Heart className="h-5 w-5" />}
-          label="Favoritos"
-          value={String(data.stats.favoriteProfiles)}
-          helper="Perfis salvos na curadoria."
-        />
-        <StatCard
-          icon={<PhoneCall className="h-5 w-5" />}
-          label="Contatos"
-          value={String(data.stats.totalAppointments)}
-          helper="Experiências iniciadas."
-        />
-        <StatCard
-          icon={<Crown className="h-5 w-5" />}
-          label="Nível"
-          value={data.vip.label}
-          helper={data.vip.description}
-        />
-      </motion.section>
+      <ProfileRail title="Favoritas" profiles={favorites.length ? favorites : profiles.slice(0, 4)} href="/dashboard/favoritos" />
 
-      <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl sm:p-6">
-        <SectionTitle eyebrow="Curadoria" title="Profissionais recomendadas" href="/profissionais" />
-        <div className="-mx-4 grid auto-cols-[82%] grid-flow-col gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid-flow-row sm:grid-cols-2 sm:px-0 lg:grid-cols-4">
-          {data.recommendedProfessionals.length > 0 ? (
-            data.recommendedProfessionals.slice(0, 8).map((pro, index) => (
+      <div className="grid gap-5 xl:grid-cols-[1fr_0.86fr]">
+        <motion.section variants={item}>
+          <SectionHeader title="Visualizadas recentemente" />
+          <div className="grid gap-2.5">
+            {recent.slice(0, 4).map((pro, index) => (
               <Link
-                key={pro.id}
+                key={`recent-${pro.id}`}
                 href={`/profissionais/${pro.slug}`}
-                className="group overflow-hidden rounded-[8px] border border-white/10 bg-black/22 transition hover:border-[#d4a843]/35 hover:bg-black/32"
+                className="flex items-center gap-3 rounded-[8px] border border-white/10 bg-[#101012] p-2.5 transition hover:border-[#d4a843]/35"
               >
-                <div className="relative aspect-[4/5] overflow-hidden bg-white/5">
+                <div className="h-20 w-16 shrink-0 overflow-hidden rounded-[8px] bg-white/8">
                   <img
-                    src={pro.image ?? professionalFallbacks[index % professionalFallbacks.length]}
+                    src={pro.image ?? profileFallbacks[index % profileFallbacks.length]}
                     alt={pro.name}
-                    className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105"
+                    className="h-full w-full object-cover object-top"
                   />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/35 to-transparent p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="truncate text-base font-black text-white">{pro.name}</p>
-                      {pro.verified ? <BadgeCheck className="h-4 w-4 shrink-0 text-[#d4a843]" /> : null}
-                    </div>
-                    <p className="mt-1 flex items-center gap-1 text-xs text-white/70">
-                      <MapPin className="h-3.5 w-3.5 text-[#d4a843]" />
-                      {pro.city}, {pro.state}
-                    </p>
-                  </div>
                 </div>
-                <div className="p-3">
-                  <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.07] px-2.5 py-1 font-bold text-white/75">
-                      <Star className="h-3.5 w-3.5 fill-[#d4a843] text-[#d4a843]" />
-                      {pro.rating.toFixed(1)}
-                    </span>
-                    {pro.featured ? (
-                      <span className="rounded-full bg-[#cc1f2f]/15 px-2.5 py-1 font-bold text-[#ff9aa4]">
-                        Destaque
-                      </span>
-                    ) : null}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <p className="truncate text-base font-black text-white">{pro.name}</p>
+                    {pro.verified ? <BadgeCheck className="h-4 w-4 shrink-0 text-[#f5d78c]" /> : null}
                   </div>
-                  <p className="mt-3 text-sm font-black text-[#f5d78c]">
-                    {pro.price ? `A partir de ${money(pro.price)}` : "Consulta reservada"}
+                  <p className="mt-1 text-xs text-white/50">
+                    {pro.city}, {pro.state} {pro.age ? `- ${pro.age} anos` : ""}
+                  </p>
+                  <p className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-white/58">
+                    <Eye className="h-3.5 w-3.5 text-[#f5d78c]" />
+                    Ver novamente
                   </p>
                 </div>
+                <ChevronRight className="h-4 w-4 text-white/28" />
               </Link>
-            ))
-          ) : (
-            <div className="sm:col-span-2 lg:col-span-4">
-              <EmptyMoment
-                title="Curadoria em construção"
-                body="Novos perfis verificados entram aqui assim que forem aprovados."
-              />
-            </div>
-          )}
-        </div>
-      </motion.section>
-
-      <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-        <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl sm:p-6">
-          <SectionTitle eyebrow="Ritual" title="Próximos passos" />
-          <div className="space-y-3">
-            {data.onboarding.map((step) => (
-              <div key={step.label} className="flex gap-3 rounded-[8px] border border-white/8 bg-black/18 p-3">
-                <span
-                  className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full border ${
-                    step.done
-                      ? "border-[#d4a843]/40 bg-[#d4a843]/15 text-[#f5d78c]"
-                      : "border-white/10 bg-white/[0.04] text-white/35"
-                  }`}
-                >
-                  {step.done ? <CheckCircle2 className="h-4 w-4" /> : <Clock3 className="h-4 w-4" />}
-                </span>
-                <div>
-                  <p className="text-sm font-black text-white">{step.label}</p>
-                  <p className="mt-1 text-xs leading-5 text-white/42">{step.detail}</p>
-                </div>
-              </div>
             ))}
           </div>
         </motion.section>
 
-        <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl sm:p-6">
-          <SectionTitle eyebrow="Agenda" title="Agendamentos recentes" href="/dashboard/reservas" />
-          <div className="grid gap-3">
-            {data.recentAppointments.length > 0 ? (
-              data.recentAppointments.map((appointment, index) => (
-                <Link
-                  key={appointment.id}
-                  href={`/profissionais/${appointment.slug}`}
-                  className="group flex gap-3 rounded-[8px] border border-white/8 bg-black/18 p-3 transition hover:border-[#cc1f2f]/35"
-                >
-                  <div className="h-16 w-14 shrink-0 overflow-hidden rounded-[8px] bg-white/5">
-                    <img
-                      src={appointment.image ?? professionalFallbacks[index % professionalFallbacks.length]}
-                      alt={appointment.name}
-                      className="h-full w-full object-cover object-top"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="truncate text-sm font-black text-white">{appointment.name}</p>
-                      {appointment.verified ? <BadgeCheck className="h-4 w-4 shrink-0 text-[#d4a843]" /> : null}
-                    </div>
-                    <p className="mt-1 text-xs text-white/42">
-                      {shortDate(appointment.date)} · {statusLabel(appointment.status)}
-                    </p>
-                    <p className="mt-1 text-xs text-white/35">
-                      {appointment.city}, {appointment.state} · {appointment.duration} min
-                    </p>
-                  </div>
-                </Link>
-              ))
-            ) : (
-              <EmptyMoment
-                title="Agenda limpa"
-                body="Quando você iniciar contato com uma profissional, o histórico aparece aqui."
-              />
-            )}
-          </div>
-        </motion.section>
+        <Appointments appointments={data.recentAppointments} profiles={profiles} />
       </div>
 
-      <motion.section
-        variants={item}
-        className="grid gap-4 rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(204,31,47,0.08),rgba(255,255,255,0.035))] p-4 backdrop-blur-xl sm:grid-cols-3 sm:p-6"
-      >
-        <div className="sm:col-span-2">
-          <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-[#f5d78c]">
-            <MessageCircle className="h-4 w-4" />
-            Experiência discreta
-          </p>
-          <h2 className="text-xl font-black text-white">Curadoria adulta premium, discreta e focada em profissionais.</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-white/52">
-            {data.city
-              ? `Vamos priorizar perfis verificados em ${data.city}, com segurança, sigilo e curadoria visual.`
-              : "Explore perfis, salve favoritos e agende experiências sem linguagem imobiliária no painel do cliente."}
-          </p>
+      <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-[#101012] p-4">
+        <SectionHeader title="Profissionais online agora" />
+        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+          {onlineNow.map((pro, index) => (
+            <MiniProfileRow key={`online-${pro.id}`} pro={pro} index={index} />
+          ))}
         </div>
-        <div className="grid gap-2 text-sm">
-          <div className="flex items-center gap-2 text-white/70">
-            <ShieldCheck className="h-4 w-4 text-[#d4a843]" />
-            Conta protegida
-          </div>
-          <div className="flex items-center gap-2 text-white/70">
-            <LockKeyhole className="h-4 w-4 text-[#d4a843]" />
-            Navegação discreta
-          </div>
-          <div className="flex items-center gap-2 text-white/70">
-            <Camera className="h-4 w-4 text-[#d4a843]" />
-            Perfis verificados
-          </div>
-          <div className="flex items-center gap-2 text-white/70">
-            <UserRound className="h-4 w-4 text-[#d4a843]" />
-            {data.stats.totalAppointments} contatos iniciados
-          </div>
-        </div>
+      </motion.section>
+
+      <motion.section variants={item} className="grid gap-3 rounded-[8px] border border-white/10 bg-black/22 p-4 sm:grid-cols-3">
+        <Link href="/dashboard/favoritos" className="flex items-center gap-3 rounded-[8px] bg-white/[0.045] p-3">
+          <Heart className="h-5 w-5 text-[#f5d78c]" />
+          <span className="text-sm font-black text-white">Minhas favoritas</span>
+        </Link>
+        <Link href="/dashboard/mensagens" className="flex items-center gap-3 rounded-[8px] bg-white/[0.045] p-3">
+          <MessageCircle className="h-5 w-5 text-[#f5d78c]" />
+          <span className="text-sm font-black text-white">Mensagens</span>
+        </Link>
+        <Link href="/privacy" className="flex items-center gap-3 rounded-[8px] bg-white/[0.045] p-3">
+          <ShieldCheck className="h-5 w-5 text-[#f5d78c]" />
+          <span className="text-sm font-black text-white">Discreto e seguro</span>
+        </Link>
       </motion.section>
     </motion.div>
   );

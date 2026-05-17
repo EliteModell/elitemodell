@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any -- Existing auth error payloads are provider-specific. */
+
+import { useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -13,9 +15,11 @@ type Category = "MULHER" | "TRANS" | "HOMEM";
 type Step = "form" | "verify" | "phone";
 type BirthPart = "day" | "month" | "year";
 type PendingAuthMethod = "google" | "sms" | null;
+type AuthError = { code?: string; name?: string; message?: string };
 
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
+const PROPERTY_DRAFT_KEY = "elitemodell_property_draft_v1";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -39,6 +43,10 @@ const blurGray = (e: React.FocusEvent<HTMLInputElement>) => {
 
 function onlyDigits(value: string, maxLength: number) {
   return value.replace(/\D/g, "").slice(0, maxLength);
+}
+
+function asAuthError(err: unknown): AuthError {
+  return typeof err === "object" && err !== null ? (err as AuthError) : {};
 }
 
 function composeBirthDate(parts: Record<BirthPart, string>) {
@@ -164,16 +172,41 @@ export default function CadastroPage() {
   const isAuthenticated = status === "authenticated";
   const isLoggedUpgradeFlow = isAuthenticated && form.accountType !== "GUEST";
 
-  const roles = [
-    { value: "GUEST", label: "Cliente", desc: "Quero buscar acompanhantes verificadas ou reservar imoveis." },
-    { value: "PROFESSIONAL", label: "Profissional anunciante", desc: "Quero anunciar meu perfil com documento, fotos e biometria." },
-    { value: "PROPERTY_HOST", label: "Anfitriao de imovel", desc: "Quero cadastrar imoveis premium para reserva." },
-  ];
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const draft = params.get("draft");
+    const tipo = params.get("tipo");
+    const hasRoomDraft = Boolean(localStorage.getItem(PROPERTY_DRAFT_KEY));
+
+    window.setTimeout(() => {
+      if (hasRoomDraft || draft === "quarto" || draft === "imovel") {
+        setForm((current) => ({ ...current, accountType: "PROPERTY_HOST", category: "" }));
+        return;
+      }
+
+      if (tipo === "profissional") {
+        setForm((current) => ({ ...current, accountType: "PROFESSIONAL" }));
+      }
+    }, 0);
+  }, []);
+
   const categories = [
     { value: "MULHER", label: "Mulher" },
     { value: "HOMEM", label: "Homem" },
     { value: "TRANS", label: "Trans" },
   ];
+  const accountSubtitle =
+    form.accountType === "PROFESSIONAL"
+      ? "Cadastro profissional +18"
+      : form.accountType === "PROPERTY_HOST"
+        ? "Conta de anunciante +18"
+        : "Cadastro seguro +18";
+  const accountHint =
+    form.accountType === "PROFESSIONAL"
+      ? "Depois da conta, voce segue direto para as etapas do perfil profissional."
+      : form.accountType === "PROPERTY_HOST"
+        ? "Seu rascunho fica salvo. Depois da conta, voce volta para publicar o espaco."
+        : "";
 
   function handleBirthPartChange(part: BirthPart, value: string) {
     const maxLength = part === "year" ? 4 : 2;
@@ -247,7 +280,9 @@ export default function CadastroPage() {
 
   function nextPath() {
     if (form.accountType === "PROFESSIONAL") return "/profissional/novo";
-    if (form.accountType === "PROPERTY_HOST") return "/anfitriao";
+    if (form.accountType === "PROPERTY_HOST") {
+      return localStorage.getItem(PROPERTY_DRAFT_KEY) ? "/anfitriao/imoveis/novo?finalizar=1" : "/anfitriao";
+    }
     return "/dashboard";
   }
 
@@ -278,13 +313,14 @@ export default function CadastroPage() {
       }
       sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload()));
       setStep("verify");
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const authError = asAuthError(err);
       const msg: Record<string, string> = {
         user_already_exists: "Este email ja esta cadastrado.",
         weak_password: "Senha fraca. Use no minimo 6 caracteres.",
         invalid_email: "Email invalido.",
       };
-      toast.error(msg[err?.code] ?? msg[err?.name] ?? err?.message ?? "Erro ao criar conta.");
+      toast.error(msg[authError.code ?? ""] ?? msg[authError.name ?? ""] ?? authError.message ?? "Erro ao criar conta.");
     } finally {
       setLoading(false);
     }
@@ -302,15 +338,21 @@ export default function CadastroPage() {
         options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
       if (error) throw error;
-    } catch (err: any) {
-      toast.error(err?.message ?? "Erro ao entrar com Google.");
+    } catch (err: unknown) {
+      toast.error(asAuthError(err).message ?? "Erro ao entrar com Google.");
     } finally {
       setLoading(false);
     }
   }
 
   async function handleContinueExistingAccount() {
-    if (!validateRequiredForm(false, true)) return;
+    if (!isLoggedUpgradeFlow && !validateRequiredForm(false, true)) return;
+
+    if (form.accountType === "PROFESSIONAL" && !form.category) {
+      setErrors((current) => ({ ...current, category: "Selecione a categoria do anúncio" }));
+      toast.error("Selecione a categoria do anúncio.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -330,8 +372,8 @@ export default function CadastroPage() {
 
       router.push(nextPath());
       router.refresh();
-    } catch (err: any) {
-      toast.error(err?.message ?? "Nao foi possivel continuar o cadastro.");
+    } catch (err: unknown) {
+      toast.error(asAuthError(err).message ?? "Nao foi possivel continuar o cadastro.");
     } finally {
       setLoading(false);
     }
@@ -351,8 +393,8 @@ export default function CadastroPage() {
       if (error) throw error;
       toast.success("Código enviado!");
       setOtpSent(true);
-    } catch (err: any) {
-      toast.error(err?.message ?? "Erro ao enviar SMS.");
+    } catch (err: unknown) {
+      toast.error(asAuthError(err).message ?? "Erro ao enviar SMS.");
     } finally {
       setLoading(false);
     }
@@ -376,8 +418,8 @@ export default function CadastroPage() {
       } else {
         toast.error("Erro ao autenticar.");
       }
-    } catch (err: any) {
-      toast.error(err?.message ?? "Código inválido ou expirado.");
+    } catch (err: unknown) {
+      toast.error(asAuthError(err).message ?? "Codigo invalido ou expirado.");
     } finally {
       setLoading(false);
     }
@@ -441,30 +483,11 @@ export default function CadastroPage() {
     <div style={{ width: "100%", maxWidth: 460, background: "#0b1420", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 16, padding: "40px 36px", position: "relative", zIndex: 1 }}>
       <GoldLine />
       <Logo />
-      <p style={{ color: "#475569", fontSize: 14, textAlign: "center", marginTop: -18, marginBottom: 24 }}>Cadastro seguro +18</p>
+      <p style={{ color: "#475569", fontSize: 14, textAlign: "center", marginTop: -18, marginBottom: accountHint ? 8 : 24 }}>{accountSubtitle}</p>
+      {accountHint && (
+        <p style={{ color: "#64748b", fontSize: 12, textAlign: "center", lineHeight: 1.5, margin: "0 0 22px" }}>{accountHint}</p>
+      )}
       <div id="recaptcha-cadastro" />
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 18 }}>
-        {roles.map((r) => (
-          <button
-            key={r.value}
-            type="button"
-            onClick={() => setForm({ ...form, accountType: r.value as AccountType, category: r.value === "PROFESSIONAL" ? form.category : "" })}
-            style={{
-              padding: "13px 14px",
-              background: form.accountType === r.value ? "rgba(212,168,67,0.08)" : "#0f172a",
-              border: `1.5px solid ${form.accountType === r.value ? "rgba(212,168,67,0.5)" : "#1e293b"}`,
-              borderRadius: 8,
-              color: form.accountType === r.value ? "#f1f5f9" : "#475569",
-              cursor: "pointer",
-              textAlign: "left",
-            }}
-          >
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 3 }}>{r.label}</div>
-            <div style={{ fontSize: 11, lineHeight: 1.4, color: form.accountType === r.value ? "#94a3b8" : "#334155" }}>{r.desc}</div>
-          </button>
-        ))}
-      </div>
 
       {form.accountType === "PROFESSIONAL" && (
         <div style={{ marginBottom: 18 }}>
@@ -511,7 +534,7 @@ export default function CadastroPage() {
       {isLoggedUpgradeFlow ? (
         <div style={{ marginBottom: 20, padding: 14, borderRadius: 8, border: "1px solid rgba(212,168,67,0.24)", background: "rgba(15,23,42,0.72)" }}>
           <p style={{ color: "#f1f5f9", fontSize: 14, fontWeight: 800, margin: "0 0 6px" }}>
-            Continuar como {form.accountType === "PROFESSIONAL" ? "profissional anunciante" : "anfitriao de imovel"}
+            Continuar como {form.accountType === "PROFESSIONAL" ? "profissional anunciante" : "anunciante de espaco"}
           </p>
           <p style={{ color: "#64748b", fontSize: 12, lineHeight: 1.5, margin: "0 0 12px" }}>
             Voce ja esta logado. Vamos atualizar sua conta e abrir as etapas do cadastro.
@@ -522,7 +545,7 @@ export default function CadastroPage() {
             disabled={loading}
             style={{ width: "100%", padding: "13px", background: loading ? "#9e7b2a" : GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}
           >
-            {loading ? "Preparando cadastro..." : form.accountType === "PROFESSIONAL" ? "Ir para as fases do cadastro" : "Ir para cadastro de imovel"}
+            {loading ? "Preparando cadastro..." : form.accountType === "PROFESSIONAL" ? "Ir para as fases do cadastro" : "Voltar ao anuncio"}
           </button>
         </div>
       ) : (

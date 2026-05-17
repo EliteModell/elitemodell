@@ -20,16 +20,16 @@ const amenityIcons: Record<string, string> = {
 
 const mockProperty = {
   id: "1",
-  title: "Cobertura de Luxo com Vista Panorâmica",
+  title: "Suite discreta com entrada reservada",
   city: "São Paulo",
   state: "SP",
   address: "Jardins, São Paulo - SP",
-  type: "Cobertura",
-  description: `Uma experiência única no coração de São Paulo. Esta deslumbrante cobertura oferece uma vista panorâmica de 360° da cidade, combinando design moderno com todo o conforto que você merece.
+  type: "Suite premium",
+  description: `Espaco discreto no coracao de Sao Paulo, pensado para atendimento profissional com privacidade, conforto e acesso reservado.
 
-Com acabamentos de alto padrão, cozinha gourmet totalmente equipada e área de lazer privativa, é o espaço perfeito para casais, famílias ou grupos que buscam o melhor da cidade.
+Conta com cama, banheiro privativo, Wi-Fi, ar-condicionado e entrada discreta. A localizacao exata e combinada apenas depois da reserva confirmada.
 
-A localização privilegiada no bairro dos Jardins coloca você a poucos minutos dos melhores restaurantes, boutiques e pontos turísticos de São Paulo.`,
+Indicado para profissionais que precisam de um local seguro, limpo e sem exposicao desnecessaria.`,
   pricePerNight: 850,
   cleaningFee: 150,
   serviceFee: 80,
@@ -39,14 +39,14 @@ A localização privilegiada no bairro dos Jardins coloca você a poucos minutos
   bathrooms: 2,
   checkInTime: "14:00",
   checkOutTime: "12:00",
-  minNights: 2,
+  minNights: 1,
   rating: 4.9,
   totalReviews: 42,
   allowPets: false,
   allowSmoking: false,
   allowParties: false,
   instantBook: true,
-  amenities: ["Wi-Fi", "Piscina", "Ar-condicionado", "Cozinha", "Estacionamento", "TV", "Lavanderia"],
+  amenities: ["Wi-Fi", "Ar-condicionado", "Banheiro privativo", "Espelho", "Garagem", "Entrada discreta", "Portaria"],
   host: {
     name: "Carlos Mendes",
     image: null,
@@ -56,6 +56,8 @@ A localização privilegiada no bairro dos Jardins coloca você a poucos minutos
     memberSince: "2022",
   },
 };
+
+type BackendAmenity = { name: string };
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -104,7 +106,7 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
         <span style={{ fontSize: 26, fontWeight: 800, color: "#cc0000" }}>
           R$ {property.pricePerNight.toLocaleString("pt-BR")}
         </span>
-        <span style={{ color: "#666", fontSize: 14 }}>/noite</span>
+        <span style={{ color: "#666", fontSize: 14 }}>/periodo</span>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
           <span style={{ color: "#cc0000" }}>★</span>
           <span style={{ color: "#ccc", fontSize: 13, fontWeight: 600 }}>{property.rating}</span>
@@ -149,7 +151,7 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
           style={{ width: "100%", padding: "10px 12px", background: "#0d0d0d", border: "1px solid #2a2a2a", borderRadius: 8, color: "#fff", fontSize: 13, outline: "none" }}
         >
           {Array.from({ length: property.maxGuests }, (_, i) => i + 1).map((n) => (
-            <option key={n} value={n} style={{ background: "#111" }}>{n} hóspede{n > 1 ? "s" : ""}</option>
+            <option key={n} value={n} style={{ background: "#111" }}>{n} pessoa{n > 1 ? "s" : ""}</option>
           ))}
         </select>
       </div>
@@ -158,7 +160,7 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
       {nights > 0 && (
         <div style={{ marginBottom: 16, padding: "14px", background: "#0d0d0d", borderRadius: 8, border: "1px solid #1a1a1a" }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#888", marginBottom: 8 }}>
-            <span>R$ {property.pricePerNight.toLocaleString("pt-BR")} × {nights} noite{nights > 1 ? "s" : ""}</span>
+                <span>R$ {property.pricePerNight.toLocaleString("pt-BR")} × {nights} periodo{nights > 1 ? "s" : ""}</span>
             <span style={{ color: "#ccc" }}>R$ {subtotal.toLocaleString("pt-BR")}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#888", marginBottom: 8 }}>
@@ -178,7 +180,7 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
 
       {nights > 0 && nights < property.minNights && (
         <p style={{ fontSize: 12, color: "#cc4444", marginBottom: 12 }}>
-          Mínimo de {property.minNights} noites para este imóvel.
+          Minimo de {property.minNights} periodo para este espaco.
         </p>
       )}
 
@@ -227,7 +229,7 @@ export default function PropertyDetailPage() {
         setFetched({
           ...mockProperty,
           ...d,
-          amenities: (d.amenities ?? []).map((a: any) => a.name),
+          amenities: (d.amenities ?? []).map((a: BackendAmenity) => a.name),
           host: d.host ?? mockProperty.host,
         });
       })
@@ -241,7 +243,7 @@ export default function PropertyDetailPage() {
     return (
       <div style={{ background: "#0d0d0d", minHeight: "100vh" }}>
         <Navbar />
-        <div style={{ color: "#94a3b8", padding: "120px 24px", textAlign: "center" }}>Carregando imóvel...</div>
+        <div style={{ color: "#94a3b8", padding: "120px 24px", textAlign: "center" }}>Carregando quarto...</div>
       </div>
     );
   }
@@ -253,7 +255,7 @@ export default function PropertyDetailPage() {
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "96px 24px 60px" }}>
         {/* Breadcrumb */}
         <div style={{ display: "flex", gap: 8, fontSize: 13, color: "#666", marginBottom: 20, alignItems: "center" }}>
-          <Link href="/imoveis" style={{ color: "#cc0000", textDecoration: "none" }}>Imóveis</Link>
+          <Link href="/imoveis" style={{ color: "#cc0000", textDecoration: "none" }}>Quartos</Link>
           <span>›</span>
           <span>{p.city}, {p.state}</span>
           <span>›</span>
@@ -330,7 +332,7 @@ export default function PropertyDetailPage() {
                   {p.type} em {p.city}
                 </h2>
                 <div style={{ display: "flex", gap: 12, fontSize: 14, color: "#888" }}>
-                  <span>{p.maxGuests} hóspedes</span>
+                  <span>{p.maxGuests} pessoas</span>
                   <span>·</span>
                   <span>{p.bedrooms} quarto{p.bedrooms > 1 ? "s" : ""}</span>
                   <span>·</span>
@@ -357,7 +359,7 @@ export default function PropertyDetailPage() {
                 >
                   {p.host.name[0]}
                 </div>
-                <div style={{ fontSize: 12, color: "#666" }}>Anfitrião</div>
+                <div style={{ fontSize: 12, color: "#666" }}>Anunciante</div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "#ccc" }}>{p.host.name}</div>
               </div>
             </div>
@@ -366,7 +368,7 @@ export default function PropertyDetailPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 16, paddingBottom: 28, borderBottom: "1px solid #1a1a1a", marginBottom: 28 }}>
               {[
                 { icon: "⚡", title: "Reserva instantânea", desc: "Confirme sua reserva sem esperar aprovação." },
-                { icon: "📅", title: `Check-in às ${p.checkInTime} · Check-out às ${p.checkOutTime}`, desc: `Mínimo de ${p.minNights} noites.` },
+                { icon: "📅", title: `Disponivel a partir de ${p.checkInTime}`, desc: `Uso minimo de ${p.minNights} periodo.` },
                 { icon: "🔒", title: "Segurança e privacidade", desc: "Plataforma verificada com proteção total de dados." },
               ].map((h, i) => (
                 <div key={i} style={{ display: "flex", gap: 14 }}>
@@ -381,7 +383,7 @@ export default function PropertyDetailPage() {
 
             {/* Description */}
             <div style={{ paddingBottom: 28, borderBottom: "1px solid #1a1a1a", marginBottom: 28 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 14 }}>Sobre o imóvel</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 14 }}>Sobre o espaco</h3>
               <p style={{ color: "#888", fontSize: 15, lineHeight: 1.8, whiteSpace: "pre-line" }}>{p.description}</p>
             </div>
 
@@ -400,7 +402,7 @@ export default function PropertyDetailPage() {
 
             {/* Rules */}
             <div style={{ paddingBottom: 28, borderBottom: "1px solid #1a1a1a", marginBottom: 28 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 14 }}>Regras da casa</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 14 }}>Uso do espaco</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {[
                   { label: "Pets permitidos", value: p.allowPets },

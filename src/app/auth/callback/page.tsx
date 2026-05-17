@@ -9,7 +9,16 @@ type PendingRegistration = {
   accountType?: "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
 };
 
+const PROPERTY_DRAFT_KEY = "elitemodell_property_draft_v1";
+const PROPERTY_DRAFT_FINAL_PATH = "/anfitriao/imoveis/novo?finalizar=1";
+
+function hasPropertyDraft() {
+  return Boolean(localStorage.getItem(PROPERTY_DRAFT_KEY));
+}
+
 async function getPostLoginPath() {
+  if (hasPropertyDraft()) return PROPERTY_DRAFT_FINAL_PATH;
+
   const res = await fetch("/api/users/me");
   if (!res.ok) return "/dashboard";
 
@@ -20,7 +29,9 @@ async function getPostLoginPath() {
 
 function getRegistrationPath(pending: PendingRegistration | null) {
   if (pending?.accountType === "PROFESSIONAL") return "/profissional/novo";
-  if (pending?.accountType === "PROPERTY_HOST") return "/anfitriao";
+  if (pending?.accountType === "PROPERTY_HOST") {
+    return hasPropertyDraft() ? PROPERTY_DRAFT_FINAL_PATH : "/anfitriao";
+  }
   return "/dashboard";
 }
 

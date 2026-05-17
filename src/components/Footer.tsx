@@ -76,7 +76,7 @@ export default function Footer() {
               </span>
             </a>
             <p style={{ color: "#64748b", fontSize: 13, lineHeight: 1.7 }}>
-              A plataforma que conecta modelos, clientes e imóveis com
+              A plataforma que conecta acompanhantes, clientes e quartos discretos com
               segurança, privacidade e controle total.
             </p>
           </div>

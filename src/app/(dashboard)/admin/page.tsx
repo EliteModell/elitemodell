@@ -45,13 +45,13 @@ export default async function AdminPage() {
 
   const stats = [
     { label: "Usuarios totais", value: totalUsers.toLocaleString("pt-BR") },
-    { label: "Imoveis ativos", value: activeProperties.toLocaleString("pt-BR") },
+    { label: "Espacos ativos", value: activeProperties.toLocaleString("pt-BR") },
     { label: "Profissionais ativos", value: activeProfessionals.toLocaleString("pt-BR") },
     { label: "Reservas no mes", value: bookingsThisMonth.toLocaleString("pt-BR") },
   ];
 
   const alerts = [
-    { label: "Imoveis pendentes", value: pendingProperties, href: "/admin/imoveis" },
+    { label: "Espacos pendentes", value: pendingProperties, href: "/admin/imoveis" },
     { label: "Profissionais pendentes", value: pendingProfessionals, href: "/admin/profissionais" },
     { label: "Denuncias pendentes", value: pendingReports, href: "/admin/reservas" },
   ];
@@ -94,7 +94,7 @@ export default async function AdminPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
         {[
           { href: "/admin/usuarios", label: "Usuarios", desc: "Auditar contas e permissoes" },
-          { href: "/admin/imoveis", label: "Imoveis", desc: "Revisar anuncios pendentes" },
+          { href: "/admin/imoveis", label: "Espacos", desc: "Revisar anuncios pendentes" },
           { href: "/admin/profissionais", label: "Profissionais", desc: "Validar documentos e perfis" },
           { href: "/admin/cupons", label: "Cupons", desc: "Consultar cupons cadastrados" },
         ].map((link) => (
