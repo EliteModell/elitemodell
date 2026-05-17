@@ -43,7 +43,7 @@ export default function ProfissionaisPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [onlyVerified, setOnlyVerified] = useState(false);
 
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchProfessionals = useCallback(async (params: {
     search?: string;
@@ -85,12 +85,14 @@ export default function ProfissionaisPage() {
 
   // Debounce search + priceMax
   useEffect(() => {
-    clearTimeout(searchTimer.current);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
       setPage(1);
       fetchProfessionals({ search, category, priceMax, sortBy, verified: onlyVerified, page: 1 });
     }, 400);
-    return () => clearTimeout(searchTimer.current);
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
   }, [search, priceMax]);
 
   const featured = professionals.filter((p) => p.featured);

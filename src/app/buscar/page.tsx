@@ -99,11 +99,13 @@ function BuscarContent() {
 
   useEffect(() => {
     if (mainTab !== "acompanhantes") return;
-    clearTimeout(searchTimer.current);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
       fetchPerfis(SUB_TO_CATEGORY[subTab], busca);
     }, 400);
-    return () => clearTimeout(searchTimer.current);
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
   }, [busca]);
 
   function toggleFiltro(f: Filtro) {
@@ -247,7 +249,7 @@ function BuscarContent() {
                   <div className="perfil-card">
                     {/* Foto */}
                     <div className="perfil-foto" style={{ background: "#1a2a40", position: "relative" }}>
-                      <img src={a.foto} alt={a.nome}
+                      <img src={a.foto ?? "/brand/elite-modell-icon.svg"} alt={a.nome}
                         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(6,14,27,0.92) 0%, rgba(6,14,27,0.2) 50%, transparent 100%)" }} />
                       {/* Badge online - visível só no desktop */}
