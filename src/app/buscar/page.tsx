@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
@@ -7,7 +7,6 @@ import Footer from "@/components/Footer";
 import FiltersModal from "@/components/FiltersModal";
 import Stories from "@/components/Stories";
 import BottomNav from "@/components/BottomNav";
-import { mockProfiles } from "@/lib/mockProfiles";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
@@ -16,29 +15,26 @@ const PLAYFAIR = "var(--font-playfair), serif";
 type MainTab = "acompanhantes" | "imoveis";
 type SubTab = "mulheres" | "trans" | "homens";
 
-// Converte mockProfiles para o formato do buscar
-const acompanhantes = {
-  mulheres: mockProfiles.filter(p => p.categoria === "mulheres").map(p => ({
-    id: p.id, nome: p.displayName, cidade: `${p.city}, ${p.state}`,
-    preco: p.priceMin, foto: p.image, online: p.online,
-    avaliacao: p.rating, total: p.totalReviews,
-    idade: p.idade, local: p.local,
-    servicos: p.specialties, bio: p.bio.split("\n")[0],
-  })),
-  trans: mockProfiles.filter(p => p.categoria === "trans").map(p => ({
-    id: p.id, nome: p.displayName, cidade: `${p.city}, ${p.state}`,
-    preco: p.priceMin, foto: p.image, online: p.online,
-    avaliacao: p.rating, total: p.totalReviews,
-    idade: p.idade, local: p.local,
-    servicos: p.specialties, bio: p.bio.split("\n")[0],
-  })),
-  homens: mockProfiles.filter(p => p.categoria === "homens").map(p => ({
-    id: p.id, nome: p.displayName, cidade: `${p.city}, ${p.state}`,
-    preco: p.priceMin, foto: p.image, online: p.online,
-    avaliacao: p.rating, total: p.totalReviews,
-    idade: p.idade, local: p.local,
-    servicos: p.specialties, bio: p.bio.split("\n")[0],
-  })),
+const SUB_TO_CATEGORY: Record<SubTab, string> = {
+  mulheres: "MULHER",
+  trans: "TRANS",
+  homens: "HOMEM",
+};
+
+function calcAge(birthDate?: string | null): number | null {
+  if (!birthDate) return null;
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  if (today.getMonth() - birth.getMonth() < 0 || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+type CardPerfil = {
+  id: string; slug: string; nome: string; cidade: string;
+  preco: number | null; foto: string | null; online: boolean;
+  avaliacao: number; total: number; idade: number | null;
+  local: string | null; servicos: string[]; bio: string;
 };
 
 const imoveis = [
@@ -61,26 +57,69 @@ function BuscarContent() {
   const [showFilters, setShowFilters] = useState(false);
   const [filtros, setFiltros] = useState<Set<Filtro>>(new Set());
   const [filtroImovel, setFiltroImovel] = useState<string | null>(null);
+  const [perfis, setPerfis] = useState<CardPerfil[]>([]);
+  const [loading, setLoading] = useState(false);
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const fetchPerfis = useCallback(async (category: string, search: string) => {
+    setLoading(true);
+    try {
+      const qs = new URLSearchParams({ category, sortBy: "rating" });
+      if (search) qs.set("search", search);
+      const res = await fetch(`/api/professionals?${qs}`);
+      const data = await res.json();
+      const list: CardPerfil[] = (data.professionals ?? []).map((p: any) => ({
+        id: p.id,
+        slug: p.slug,
+        nome: p.displayName,
+        cidade: `${p.city}, ${p.state}`,
+        preco: p.priceMin ?? p.pricePerHour ?? null,
+        foto: p.image ?? null,
+        online: false,
+        avaliacao: p.rating ?? 0,
+        total: p.totalReviews ?? 0,
+        idade: calcAge(p.birthDate),
+        local: p.attendanceTypes?.[0] ?? null,
+        servicos: (p.specialties ?? []).map((s: any) => s.name),
+        bio: p.bio ?? "",
+      }));
+      setPerfis(list);
+    } catch {
+      setPerfis([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (mainTab === "acompanhantes") {
+      fetchPerfis(SUB_TO_CATEGORY[subTab], busca);
+    }
+  }, [subTab, mainTab, fetchPerfis]);
+
+  useEffect(() => {
+    if (mainTab !== "acompanhantes") return;
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      fetchPerfis(SUB_TO_CATEGORY[subTab], busca);
+    }, 400);
+    return () => clearTimeout(searchTimer.current);
+  }, [busca]);
 
   function toggleFiltro(f: Filtro) {
     setFiltros((prev) => {
       const next = new Set(prev);
-      if (next.has(f)) {
-        next.delete(f);
-      } else {
-        next.add(f);
-      }
+      next.has(f) ? next.delete(f) : next.add(f);
       return next;
     });
   }
 
-  const lista = acompanhantes[subTab].filter((a) => {
-    if (busca && !a.cidade.toLowerCase().includes(busca.toLowerCase()) && !a.nome.toLowerCase().includes(busca.toLowerCase())) return false;
+  const lista = perfis.filter((a) => {
     if (filtros.has("Online agora") && !a.online) return false;
     if (filtros.has("Com avaliações") && a.avaliacao < 4.8) return false;
     if (filtros.has("Com local") && !a.servicos.some(s => s.toLowerCase().includes("local"))) return false;
-    if (filtros.has("Até R$300") && a.preco > 300) return false;
-    if (filtros.has("Exclusivas") && a.preco < 400) return false;
+    if (filtros.has("Até R$300") && (a.preco ?? 0) > 300) return false;
+    if (filtros.has("Exclusivas") && (a.preco ?? 0) < 400) return false;
     return true;
   });
 
@@ -198,13 +237,13 @@ function BuscarContent() {
             </div>
 
             <p style={{ fontSize: 12, color: "#475569", marginBottom: 14 }}>
-              {lista.length} perfil{lista.length !== 1 ? "is" : ""} encontrado{lista.length !== 1 ? "s" : ""}
+              {loading ? "Buscando..." : `${lista.length} perfil${lista.length !== 1 ? "is" : ""} encontrado${lista.length !== 1 ? "s" : ""}`}
             </p>
 
             {/* Grid de perfis */}
             <div className="perfil-grid">
               {lista.map((a) => (
-                <Link key={a.id} href={`/profissionais/${a.id}`} style={{ textDecoration: "none" }}>
+                <Link key={a.id} href={`/profissionais/${a.slug}`} style={{ textDecoration: "none" }}>
                   <div className="perfil-card">
                     {/* Foto */}
                     <div className="perfil-foto" style={{ background: "#1a2a40", position: "relative" }}>
