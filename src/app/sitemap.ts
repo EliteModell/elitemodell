@@ -11,7 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: now,
       changeFrequency: "weekly",
       priority: 1,
-      images: [`${siteUrl}/brand/elite-modell-preview.png`],
+      images: [`${siteUrl}/og-image.png`],
     },
     {
       url: `${siteUrl}/buscar`,
