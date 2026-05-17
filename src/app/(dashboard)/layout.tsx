@@ -79,7 +79,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span className="text-sm">Buscar profissionais, favoritos e agendamentos</span>
               </div>
               <div className="min-w-0 lg:hidden">
-                <p className="text-sm font-black text-white">EliteModell</p>
+                <p className="text-sm font-black">
+                  <span className="bg-[linear-gradient(135deg,#ffe5a0_0%,#d4a843_22%,#f5d78c_50%,#9e7b2a_100%)] bg-clip-text text-transparent">elite</span>
+                  <span className="text-white">modell</span>
+                </p>
                 <p className="truncate text-xs text-white/38">{session?.user?.email ?? "Conta discreta"}</p>
               </div>
             </div>

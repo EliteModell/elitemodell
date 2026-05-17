@@ -94,66 +94,27 @@ const item: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.34, ease: "easeOut" } },
 };
 
-const fallbackProfiles: ProfessionalCardData[] = [
-  {
-    id: "lora-demo",
-    slug: "lora",
-    name: "Lora",
-    city: "São Paulo",
-    state: "SP",
-    rating: 5,
-    verified: true,
-    featured: true,
-    price: 650,
-    image: "/model.jpeg",
-    attendanceTypes: ["Local próprio", "Hotel"],
-    age: 26,
-  },
-  {
-    id: "amanda-demo",
-    slug: "amanda-r",
-    name: "Amanda R.",
-    city: "Belo Horizonte",
-    state: "MG",
-    rating: 4.9,
-    verified: true,
-    featured: true,
-    price: 520,
-    image: "/model1.jpg",
-    attendanceTypes: ["Jantar", "Viagens"],
-    age: 24,
-  },
-  {
-    id: "leticia-demo",
-    slug: "leticia-m",
-    name: "Leticia M.",
-    city: "Rio de Janeiro",
-    state: "RJ",
-    rating: 4.8,
-    verified: true,
-    featured: false,
-    price: 480,
-    image: "/model2.jpg",
-    attendanceTypes: ["Massagem", "Hotel"],
-    age: 29,
-  },
-  {
-    id: "marina-demo",
-    slug: "marina-v",
-    name: "Marina V.",
-    city: "Curitiba",
-    state: "PR",
-    rating: 4.9,
-    verified: true,
-    featured: true,
-    price: 590,
-    image: "/model1.jpg",
-    attendanceTypes: ["Eventos", "Local próprio"],
-    age: 27,
-  },
-];
-
-const profileFallbacks = ["/model.jpeg", "/model1.jpg", "/model2.jpg"];
+function ComingSoonProfiles() {
+  return (
+    <motion.section variants={item} className="rounded-[8px] border border-[#d4a843]/20 bg-[linear-gradient(135deg,rgba(212,168,67,0.07),rgba(255,255,255,0.02))] p-8 text-center">
+      <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-[8px] border border-[#d4a843]/25 bg-[#d4a843]/10 text-[#f5d78c]">
+        <Sparkles className="h-7 w-7" />
+      </div>
+      <p className="mb-1 text-xs font-black uppercase tracking-[0.22em] text-[#d4a843]">Em breve</p>
+      <h2 className="mb-3 text-2xl font-black text-white">Profissionais chegando</h2>
+      <p className="mx-auto max-w-sm text-sm leading-6 text-white/50">
+        Esta semana iniciamos os primeiros cadastros verificados. Em breve você encontrará perfis reais com fotos, avaliações e disponibilidade atualizada.
+      </p>
+      <Link
+        href="/profissionais"
+        className="mt-6 inline-flex items-center gap-2 rounded-[8px] bg-[#d4a843] px-5 py-3 text-sm font-black text-[#120d08] transition hover:bg-[#f5d78c]"
+      >
+        Ver área de profissionais
+        <ChevronRight className="h-4 w-4" />
+      </Link>
+    </motion.section>
+  );
+}
 
 function initials(name?: string | null) {
   if (!name) return "EM";
@@ -417,7 +378,8 @@ function Appointments({
 
 export default function PremiumDashboardHome({ data }: { data: DashboardHomeData }) {
   const name = firstName(data.user.name);
-  const profiles = data.recommendedProfessionals.length > 0 ? data.recommendedProfessionals : fallbackProfiles;
+  const profiles = data.recommendedProfessionals;
+  const hasProfiles = profiles.length > 0;
   const recommended = profiles.slice(0, 8);
   const favorites = profiles.filter((pro) => pro.featured || pro.verified).slice(0, 4);
   const recent = data.recentAppointments.length
@@ -435,11 +397,11 @@ export default function PremiumDashboardHome({ data }: { data: DashboardHomeData
         attendanceTypes: ["Já visto", "Perfil salvo"],
         age: appointment.age,
       }))
-    : profiles.slice(1, 5);
+    : [];
   const onlineNow = profiles.filter((pro, index) => isOnline(index, pro.featured)).slice(0, 6);
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-5 pb-24 md:pb-0">
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-5 pb-28 md:pb-0">
       <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-[#101012] p-4 shadow-[0_30px_100px_rgba(0,0,0,0.35)]">
         <div className="flex items-center gap-3">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[8px] border border-[#d4a843]/35 bg-[#d4a843]/12">
@@ -477,98 +439,100 @@ export default function PremiumDashboardHome({ data }: { data: DashboardHomeData
 
         <Link
           href="/profissionais"
-          className="mt-4 flex h-12 items-center gap-3 rounded-[8px] border border-white/10 bg-black/24 px-3 text-sm font-semibold text-white/52"
+          className="mt-4 flex h-12 items-center gap-3 rounded-[8px] border border-white/10 bg-[#0a0a0c] px-3 text-sm font-semibold text-white/52"
         >
           <Search className="h-4 w-4 text-[#f5d78c]" />
           Buscar profissionais
         </Link>
       </motion.section>
 
-      <ProfileRail title="Profissionais recomendadas para você" profiles={recommended} large />
+      {hasProfiles ? (
+        <>
+          <ProfileRail title="Profissionais recomendadas para você" profiles={recommended} large />
 
-      <motion.section
-        variants={item}
-        className="grid gap-3 rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.12),rgba(204,31,47,0.11),rgba(255,255,255,0.035))] p-4 sm:grid-cols-[1fr_auto]"
-      >
-        <div>
-          <p className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.18em] text-[#f5d78c]">
-            <Sparkles className="h-4 w-4" />
-            Premium
-          </p>
-          <h2 className="mt-2 text-xl font-black text-white">Perfis verificados perto de você</h2>
-          <p className="mt-1 text-sm leading-6 text-white/55">
-            Fotos em destaque, status online e acesso rápido ao perfil.
-          </p>
-        </div>
-        <Link
-          href="/profissionais"
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#120d08]"
-        >
-          Explorar
-          <ChevronRight className="h-4 w-4" />
-        </Link>
-      </motion.section>
+          <motion.section
+            variants={item}
+            className="grid gap-3 rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.12),rgba(204,31,47,0.11),rgba(255,255,255,0.035))] p-4 sm:grid-cols-[1fr_auto]"
+          >
+            <div>
+              <p className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.18em] text-[#f5d78c]">
+                <Sparkles className="h-4 w-4" />
+                Premium
+              </p>
+              <h2 className="mt-2 text-xl font-black text-white">Perfis verificados perto de você</h2>
+              <p className="mt-1 text-sm leading-6 text-white/55">Fotos em destaque, status online e acesso rápido ao perfil.</p>
+            </div>
+            <Link href="/profissionais" className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#120d08]">
+              Explorar
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </motion.section>
 
-      <ProfileRail title="Favoritas" profiles={favorites.length ? favorites : profiles.slice(0, 4)} href="/dashboard/favoritos" />
+          {favorites.length > 0 && <ProfileRail title="Favoritas" profiles={favorites} href="/dashboard/favoritos" />}
 
-      <div className="grid gap-5 xl:grid-cols-[1fr_0.86fr]">
-        <motion.section variants={item}>
-          <SectionHeader title="Visualizadas recentemente" />
-          <div className="grid gap-2.5">
-            {recent.slice(0, 4).map((pro, index) => (
-              <Link
-                key={`recent-${pro.id}`}
-                href={`/profissionais/${pro.slug}`}
-                className="flex items-center gap-3 rounded-[8px] border border-white/10 bg-[#101012] p-2.5 transition hover:border-[#d4a843]/35"
-              >
-                <div className="h-20 w-16 shrink-0 overflow-hidden rounded-[8px] bg-white/8">
-                  <img
-                    src={pro.image ?? profileFallbacks[index % profileFallbacks.length]}
-                    alt={pro.name}
-                    className="h-full w-full object-cover object-top"
-                  />
+          {recent.length > 0 && (
+            <div className="grid gap-5 xl:grid-cols-[1fr_0.86fr]">
+              <motion.section variants={item}>
+                <SectionHeader title="Visualizadas recentemente" />
+                <div className="grid gap-2.5">
+                  {recent.slice(0, 4).map((pro) => (
+                    <Link
+                      key={`recent-${pro.id}`}
+                      href={`/profissionais/${pro.slug}`}
+                      className="flex items-center gap-3 rounded-[8px] border border-white/10 bg-[#101012] p-2.5 transition hover:border-[#d4a843]/35"
+                    >
+                      <div className="h-20 w-16 shrink-0 overflow-hidden rounded-[8px] bg-[#1a1a1c]">
+                        {pro.image ? (
+                          <img src={pro.image} alt={pro.name} className="h-full w-full object-cover object-top" />
+                        ) : (
+                          <div className="grid h-full w-full place-items-center text-sm font-black text-[#f5d78c]">{initials(pro.name)}</div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <p className="truncate text-base font-black text-white">{pro.name}</p>
+                          {pro.verified ? <BadgeCheck className="h-4 w-4 shrink-0 text-[#f5d78c]" /> : null}
+                        </div>
+                        <p className="mt-1 text-xs text-white/50">{pro.city}, {pro.state}{pro.age ? ` - ${pro.age} anos` : ""}</p>
+                        <p className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-white/58">
+                          <Eye className="h-3.5 w-3.5 text-[#f5d78c]" />
+                          Ver novamente
+                        </p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-white/28" />
+                    </Link>
+                  ))}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <p className="truncate text-base font-black text-white">{pro.name}</p>
-                    {pro.verified ? <BadgeCheck className="h-4 w-4 shrink-0 text-[#f5d78c]" /> : null}
-                  </div>
-                  <p className="mt-1 text-xs text-white/50">
-                    {pro.city}, {pro.state} {pro.age ? `- ${pro.age} anos` : ""}
-                  </p>
-                  <p className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-white/58">
-                    <Eye className="h-3.5 w-3.5 text-[#f5d78c]" />
-                    Ver novamente
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-white/28" />
-              </Link>
-            ))}
-          </div>
-        </motion.section>
+              </motion.section>
+              <Appointments appointments={data.recentAppointments} profiles={profiles} />
+            </div>
+          )}
 
-        <Appointments appointments={data.recentAppointments} profiles={profiles} />
-      </div>
+          {onlineNow.length > 0 && (
+            <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-[#101012] p-4">
+              <SectionHeader title="Profissionais online agora" />
+              <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+                {onlineNow.map((pro, index) => (
+                  <MiniProfileRow key={`online-${pro.id}`} pro={pro} index={index} />
+                ))}
+              </div>
+            </motion.section>
+          )}
+        </>
+      ) : (
+        <ComingSoonProfiles />
+      )}
 
-      <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-[#101012] p-4">
-        <SectionHeader title="Profissionais online agora" />
-        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
-          {onlineNow.map((pro, index) => (
-            <MiniProfileRow key={`online-${pro.id}`} pro={pro} index={index} />
-          ))}
-        </div>
-      </motion.section>
-
-      <motion.section variants={item} className="grid gap-3 rounded-[8px] border border-white/10 bg-black/22 p-4 sm:grid-cols-3">
-        <Link href="/dashboard/favoritos" className="flex items-center gap-3 rounded-[8px] bg-white/[0.045] p-3">
+      <motion.section variants={item} className="grid gap-3 rounded-[8px] border border-white/10 bg-[#0d0d0f] p-4 sm:grid-cols-3">
+        <Link href="/dashboard/favoritos" className="flex items-center gap-3 rounded-[8px] bg-[#141416] p-3">
           <Heart className="h-5 w-5 text-[#f5d78c]" />
           <span className="text-sm font-black text-white">Minhas favoritas</span>
         </Link>
-        <Link href="/dashboard/mensagens" className="flex items-center gap-3 rounded-[8px] bg-white/[0.045] p-3">
+        <Link href="/dashboard/mensagens" className="flex items-center gap-3 rounded-[8px] bg-[#141416] p-3">
           <MessageCircle className="h-5 w-5 text-[#f5d78c]" />
           <span className="text-sm font-black text-white">Mensagens</span>
         </Link>
-        <Link href="/privacy" className="flex items-center gap-3 rounded-[8px] bg-white/[0.045] p-3">
+        <Link href="/privacy" className="flex items-center gap-3 rounded-[8px] bg-[#141416] p-3">
           <ShieldCheck className="h-5 w-5 text-[#f5d78c]" />
           <span className="text-sm font-black text-white">Discreto e seguro</span>
         </Link>

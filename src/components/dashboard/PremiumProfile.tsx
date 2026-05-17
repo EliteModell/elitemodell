@@ -156,7 +156,7 @@ function Metric({
     <motion.div
       variants={item}
       whileHover={{ y: -4 }}
-      className="rounded-[8px] border border-white/10 bg-white/[0.045] p-4 backdrop-blur-xl transition hover:border-[#d4a843]/35"
+      className="rounded-[8px] border border-white/10 bg-[#0d0d0f] p-4 transition hover:border-[#d4a843]/35"
     >
       <div className="mb-4 grid h-11 w-11 place-items-center rounded-[8px] border border-[#d4a843]/20 bg-[#d4a843]/10 text-[#f5d78c]">
         {icon}
@@ -216,7 +216,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
   }
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6 pb-28 md:pb-0">
       <motion.section
         variants={item}
         className="relative overflow-hidden rounded-[8px] border border-white/10 bg-[linear-gradient(135deg,rgba(8,8,9,0.98),rgba(64,12,18,0.68)_48%,rgba(18,16,12,0.96))] p-5 shadow-[0_32px_110px_rgba(0,0,0,0.38)] sm:p-7"
@@ -232,9 +232,14 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
                   {initials(profile.name)}
                 </div>
               )}
-              <span className="absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-full border border-[#d4a843]/25 bg-[#0a0a0b] text-[#d4a843]">
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                aria-label="Alterar foto de perfil"
+                className="absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-full border border-[#d4a843]/25 bg-[#0a0a0b] text-[#d4a843] transition hover:border-[#d4a843]/55 hover:bg-[#0f0f10]"
+              >
                 <Camera className="h-4 w-4" />
-              </span>
+              </button>
             </div>
 
             <div className="min-w-0">
@@ -251,7 +256,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
             </div>
           </div>
 
-          <div className="rounded-[8px] border border-white/10 bg-black/25 p-4 backdrop-blur-xl">
+          <div className="rounded-[8px] border border-white/10 bg-[#0d0d0f] p-4">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-black text-white">Status da conta</p>
@@ -301,7 +306,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
       </motion.section>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_0.85fr]">
-        <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl sm:p-6">
+        <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-[#0d0d0f] p-5 sm:p-6">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="mb-1 text-[11px] font-black uppercase tracking-[0.24em] text-[#d4a843]">
@@ -370,14 +375,14 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
           )}
         </motion.section>
 
-        <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl sm:p-6">
+        <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-[#0d0d0f] p-5 sm:p-6">
           <p className="mb-1 text-[11px] font-black uppercase tracking-[0.24em] text-[#d4a843]">
             Onboarding
           </p>
           <h2 className="mb-5 text-xl font-black text-white">Experiência personalizada</h2>
           <div className="space-y-3">
             {data.onboarding.map((step) => (
-              <div key={step.label} className="flex gap-3 rounded-[8px] border border-white/8 bg-black/18 p-3">
+              <div key={step.label} className="flex gap-3 rounded-[8px] border border-white/8 bg-[#0a0a0c] p-3">
                 <span
                   className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full border ${
                     step.done
@@ -405,7 +410,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[0.85fr_1fr]">
-        <motion.section variants={item} className="rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(255,255,255,0.035))] p-5 backdrop-blur-xl sm:p-6">
+        <motion.section variants={item} className="rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(255,255,255,0.02))] p-5 sm:p-6">
           <p className="mb-1 text-[11px] font-black uppercase tracking-[0.24em] text-[#d4a843]">
             Badges
           </p>
@@ -432,7 +437,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
           </div>
         </motion.section>
 
-        <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl sm:p-6">
+        <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-[#0d0d0f] p-5 sm:p-6">
           <p className="mb-1 text-[11px] font-black uppercase tracking-[0.24em] text-[#d4a843]">
             Histórico
           </p>
@@ -440,7 +445,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
           {data.recentHistory.length > 0 ? (
             <div className="space-y-3">
               {data.recentHistory.map((entry) => (
-                <div key={`${entry.type}-${entry.id}`} className="flex gap-3 rounded-[8px] border border-white/8 bg-black/18 p-3">
+                <div key={`${entry.type}-${entry.id}`} className="flex gap-3 rounded-[8px] border border-white/8 bg-[#0a0a0c] p-3">
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/20 bg-[#d4a843]/10 text-[#f5d78c]">
                     <UserRound className="h-4 w-4" />
                   </span>
@@ -457,7 +462,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
               ))}
             </div>
           ) : (
-            <div className="rounded-[8px] border border-dashed border-white/12 bg-black/18 p-6 text-center">
+            <div className="rounded-[8px] border border-dashed border-white/12 bg-[#0a0a0c] p-6 text-center">
               <MapPin className="mx-auto mb-3 h-5 w-5 text-[#d4a843]" />
               <p className="font-black text-white">Histórico em branco</p>
               <p className="mt-1 text-sm leading-6 text-white/45">
