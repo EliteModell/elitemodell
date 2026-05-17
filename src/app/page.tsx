@@ -338,18 +338,18 @@ export default function HomePage() {
 
         @media (max-width: 680px) {
           .market-hero {
-            min-height: 430px;
-            padding: 36px 18px 8px;
+            min-height: 500px;
+            padding: 32px 16px 10px;
             overflow: hidden;
           }
 
           .hero-bg {
             background-image:
-              linear-gradient(90deg, rgba(5,5,5,0.92) 0%, rgba(5,5,5,0.66) 34%, rgba(5,5,5,0.2) 62%, rgba(5,5,5,0.02) 100%),
-              linear-gradient(180deg, rgba(5,5,5,0) 0%, rgba(5,5,5,0.05) 58%, rgba(5,5,5,0.86) 100%),
+              linear-gradient(90deg, rgba(5,5,5,0.94) 0%, rgba(5,5,5,0.72) 31%, rgba(5,5,5,0.28) 60%, rgba(5,5,5,0.04) 100%),
+              linear-gradient(180deg, rgba(5,5,5,0) 0%, rgba(5,5,5,0.06) 52%, rgba(5,5,5,0.78) 100%),
               url("/hero-sofa-model.png");
-            background-position: 64% top;
-            background-size: auto 590px;
+            background-position: center top;
+            background-size: cover;
             background-repeat: no-repeat;
             background-color: #050505;
           }
@@ -357,7 +357,7 @@ export default function HomePage() {
           .hero-content {
             min-height: auto;
             align-items: flex-start;
-            padding-top: 70px;
+            padding-top: 74px;
           }
 
           .hero-copy {
@@ -366,20 +366,21 @@ export default function HomePage() {
           }
 
           .eyebrow {
-            max-width: 74%;
-            font-size: 10px;
+            max-width: 52%;
+            font-size: 10.5px;
+            line-height: 1.35;
             letter-spacing: 0;
           }
 
           .hero-benefits {
             gap: 9px;
-            max-width: 68%;
-            margin: 18px 0 0;
+            max-width: 54%;
+            margin: 16px 0 0;
           }
 
           .hero-benefits span {
             gap: 10px;
-            font-size: 13.5px;
+            font-size: 13.2px;
           }
 
           .market-hero + .section-block {
@@ -402,12 +403,12 @@ export default function HomePage() {
           }
 
           .section-block {
-            padding: 48px 16px 58px;
+            padding: 42px 14px 92px;
           }
 
           .quick-actions.section-block {
             isolation: isolate;
-            padding-top: 20px;
+            padding-top: 30px;
           }
 
           .section-head {
@@ -420,12 +421,12 @@ export default function HomePage() {
           }
 
           .quick-actions .section-head h2 {
-            font-size: 38px;
+            font-size: 36px;
           }
 
           .action-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
+            gap: 12px;
             border: 0;
             border-radius: 0;
             overflow: visible;
@@ -433,10 +434,10 @@ export default function HomePage() {
           }
 
           .action-tile {
-            min-height: 154px;
+            min-height: 186px;
             display: flex;
             flex-direction: column;
-            padding: 14px;
+            padding: 16px;
             border: 1px solid ${GOLD_DIM};
             border-radius: 14px;
             background: #111;
@@ -454,7 +455,7 @@ export default function HomePage() {
           }
 
           .action-tile strong {
-            min-height: 44px;
+            min-height: 42px;
             font-size: 19px;
             line-height: 1.05;
             margin-bottom: 7px;
@@ -492,6 +493,38 @@ export default function HomePage() {
             padding: 8px 10px;
             font-size: 9.8px;
             letter-spacing: 0;
+          }
+        }
+
+        @media (max-width: 380px) {
+          .market-hero {
+            min-height: 480px;
+          }
+
+          .eyebrow,
+          .hero-benefits {
+            max-width: 57%;
+          }
+
+          .hero-benefits span {
+            font-size: 12.5px;
+          }
+
+          .quick-actions .section-head h2 {
+            font-size: 33px;
+          }
+
+          .action-grid {
+            gap: 10px;
+          }
+
+          .action-tile {
+            min-height: 182px;
+            padding: 14px;
+          }
+
+          .action-tile strong {
+            font-size: 18px;
           }
         }
       `}</style>
