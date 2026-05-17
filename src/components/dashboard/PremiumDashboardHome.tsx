@@ -100,10 +100,10 @@ function ComingSoonProfiles() {
       <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-[8px] border border-[#d4a843]/25 bg-[#d4a843]/10 text-[#f5d78c]">
         <Sparkles className="h-7 w-7" />
       </div>
-      <p className="mb-1 text-xs font-black uppercase tracking-[0.22em] text-[#d4a843]">Em breve</p>
-      <h2 className="mb-3 text-2xl font-black text-white">Profissionais chegando</h2>
+      <p className="mb-1 text-xs font-black uppercase tracking-[0.22em] text-[#d4a843]">Curadoria ativa</p>
+      <h2 className="mb-3 text-2xl font-black text-white">Perfis em análise</h2>
       <p className="mx-auto max-w-sm text-sm leading-6 text-white/50">
-        Esta semana iniciamos os primeiros cadastros verificados. Em breve você encontrará perfis reais com fotos, avaliações e disponibilidade atualizada.
+        Cada perfil passa por verificação antes de aparecer aqui. Estamos avaliando os primeiros cadastros para garantir qualidade e autenticidade.
       </p>
       <Link
         href="/profissionais"
