@@ -6,7 +6,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#060e1b",
+        background: "#050505",
         padding: "24px",
         position: "relative",
         overflow: "hidden",
@@ -29,7 +29,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           style={{
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(to right, rgba(6,14,27,0.2) 0%, rgba(6,14,27,0.92) 100%)",
+            background: "linear-gradient(to right, rgba(5,5,5,0.22) 0%, rgba(5,5,5,0.94) 100%)",
           }}
         />
       </div>
@@ -51,7 +51,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           style={{
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(to left, rgba(6,14,27,0.2) 0%, rgba(6,14,27,0.92) 100%)",
+            background: "linear-gradient(to left, rgba(5,5,5,0.22) 0%, rgba(5,5,5,0.94) 100%)",
           }}
         />
       </div>

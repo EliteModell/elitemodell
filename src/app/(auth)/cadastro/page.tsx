@@ -12,9 +12,9 @@ import { supabaseAuth } from "@/lib/supabase-client";
 
 type AccountType = "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
 type Category = "MULHER" | "TRANS" | "HOMEM";
-type Step = "form" | "verify" | "phone";
+type Step = "form" | "verify";
 type BirthPart = "day" | "month" | "year";
-type PendingAuthMethod = "google" | "sms" | null;
+type PendingAuthMethod = "google" | null;
 type AuthError = { code?: string; name?: string; message?: string };
 
 const GOLD = "#d4a843";
@@ -24,10 +24,10 @@ const PROPERTY_DRAFT_KEY = "elitemodell_property_draft_v1";
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "11px 14px",
-  background: "#0f172a",
-  border: "1px solid #1e293b",
+  background: "#111",
+  border: "1px solid rgba(212,168,67,0.16)",
   borderRadius: 8,
-  color: "#f1f5f9",
+  color: "#f4f1ea",
   fontSize: 14,
   outline: "none",
   boxSizing: "border-box",
@@ -38,7 +38,7 @@ const focusGold = (e: React.FocusEvent<HTMLInputElement>) => {
   e.target.style.borderColor = GOLD;
 };
 const blurGray = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.target.style.borderColor = "#1e293b";
+  e.target.style.borderColor = "rgba(212,168,67,0.16)";
 };
 
 function onlyDigits(value: string, maxLength: number) {
@@ -55,6 +55,10 @@ function composeBirthDate(parts: Record<BirthPart, string>) {
   }
 
   return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
 }
 
 const GoldLine = () => (
@@ -81,14 +85,6 @@ const GoogleIcon = (
   </svg>
 );
 
-const SmsIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-    <rect x="5" y="2" width="14" height="20" rx="2" />
-    <path d="M12 18h.01" />
-    <path d="M9 6h6" />
-  </svg>
-);
-
 function AuthMethodButton({
   disabled,
   icon,
@@ -107,33 +103,36 @@ function AuthMethodButton({
       disabled={disabled}
       style={{
         width: "100%",
-        height: 54,
-        background: "rgba(15,23,42,0.72)",
-        border: "1px solid rgba(212,168,67,0.24)",
+        height: 56,
+        background: "#f8fafc",
+        border: "1px solid rgba(255,255,255,0.86)",
         borderRadius: 8,
-        color: "#cbd5e1",
+        color: "#0f172a",
         fontSize: 14,
-        fontWeight: 700,
+        fontWeight: 800,
         cursor: disabled ? "not-allowed" : "pointer",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         gap: 10,
-        marginBottom: 10,
+        marginBottom: 18,
         opacity: disabled ? 0.68 : 1,
-        transition: "border-color 0.2s, background 0.2s, color 0.2s",
+        boxShadow: "0 16px 38px rgba(0,0,0,0.26)",
+        transition: "border-color 0.2s, background 0.2s, color 0.2s, transform 0.2s",
       }}
       onMouseEnter={(e) => {
         if (disabled) return;
         e.currentTarget.style.borderColor = "rgba(212,168,67,0.5)";
-        e.currentTarget.style.background = "rgba(15,23,42,0.95)";
-        e.currentTarget.style.color = "#f1f5f9";
+        e.currentTarget.style.background = "#fff7df";
+        e.currentTarget.style.color = "#060e1b";
+        e.currentTarget.style.transform = "translateY(-1px)";
       }}
       onMouseLeave={(e) => {
         if (disabled) return;
-        e.currentTarget.style.borderColor = "rgba(212,168,67,0.24)";
-        e.currentTarget.style.background = "rgba(15,23,42,0.72)";
-        e.currentTarget.style.color = "#cbd5e1";
+        e.currentTarget.style.borderColor = "rgba(255,255,255,0.86)";
+        e.currentTarget.style.background = "#f8fafc";
+        e.currentTarget.style.color = "#0f172a";
+        e.currentTarget.style.transform = "translateY(0)";
       }}
     >
       <span style={{ width: 22, height: 22, display: "grid", placeItems: "center", color: "#d4a843" }}>
@@ -165,9 +164,6 @@ export default function CadastroPage() {
     month: "",
     year: "",
   });
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
   const [pendingAuthMethod, setPendingAuthMethod] = useState<PendingAuthMethod>(null);
   const monthRef = useRef<HTMLInputElement>(null);
   const yearRef = useRef<HTMLInputElement>(null);
@@ -226,7 +222,7 @@ export default function CadastroPage() {
     const newErrors: Record<string, string> = {};
 
     if (includeEmailFields && !form.name.trim()) newErrors.name = "Nome é obrigatório";
-    if (includeEmailFields && !form.email.includes("@")) newErrors.email = "Email inválido";
+    if (includeEmailFields && !isValidEmail(form.email)) newErrors.email = "Email inválido";
     if (includeEmailFields && form.password.length < 6) newErrors.password = "Mínimo 6 caracteres";
 
     if (!form.birthDate) {
@@ -300,7 +296,7 @@ export default function CadastroPage() {
     setLoading(true);
     try {
       const { data, error } = await supabaseAuth.auth.signUp({
-        email: form.email,
+        email: form.email.trim().toLowerCase(),
         password: form.password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
@@ -385,99 +381,14 @@ export default function CadastroPage() {
     }
   }
 
-  async function handleSendOtp(e: React.FormEvent) {
-    e.preventDefault();
-    setPendingAuthMethod("sms");
-    if (!validateRequiredForm(false, true)) return;
-
-    setLoading(true);
-    try {
-      const { error } = await supabaseAuth.auth.signInWithOtp({
-        phone: `+55${phone}`,
-        options: { data: registrationPayload() },
-      });
-      if (error) throw error;
-      toast.success("Código enviado!");
-      setOtpSent(true);
-    } catch (err: unknown) {
-      toast.error(asAuthError(err).message ?? "Erro ao enviar SMS.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleVerifyPhone(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const { data, error } = await supabaseAuth.auth.verifyOtp({
-        phone: `+55${phone}`,
-        token: otp,
-        type: "sms",
-      });
-      if (error || !data.session?.access_token) throw error ?? new Error("Codigo invalido.");
-      await registerUser(data.session.access_token);
-      const res = await signIn("supabase", { accessToken: data.session.access_token, redirect: false });
-      if (res?.ok) {
-        router.push(nextPath());
-        router.refresh();
-      } else {
-        toast.error("Erro ao autenticar.");
-      }
-    } catch (err: unknown) {
-      toast.error(asAuthError(err).message ?? "Codigo invalido ou expirado.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  if (step === "phone") {
-    return (
-      <div style={{ width: "100%", maxWidth: 420, background: "#0b1420", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 16, padding: "40px 36px", position: "relative", zIndex: 1 }}>
-        <GoldLine />
-        <div id="recaptcha-cadastro" />
-        <Logo />
-        <p style={{ color: "#475569", fontSize: 14, textAlign: "center", marginTop: -16, marginBottom: 28 }}>Cadastro via SMS</p>
-
-        {!otpSent ? (
-          <form onSubmit={handleSendOtp} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div>
-              <label style={{ display: "block", fontSize: 13, color: "#94a3b8", marginBottom: 6, fontWeight: 500 }}>Número de celular</label>
-              <div style={{ position: "relative" }}>
-                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#475569", fontSize: 14, pointerEvents: "none" }}>BR +55</span>
-                <input type="tel" required value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))} placeholder="11 99999-9999" style={{ ...inputStyle, paddingLeft: 80 }} onFocus={focusGold} onBlur={blurGray} />
-              </div>
-            </div>
-            <button type="submit" disabled={loading || phone.length < 10} style={{ padding: "13px", background: phone.length < 10 ? "rgba(212,168,67,0.3)" : GOLD, color: phone.length < 10 ? "#475569" : "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
-              {loading ? "Enviando..." : "Enviar código"}
-            </button>
-            <button type="button" onClick={() => setStep("form")} style={{ background: "none", border: "none", color: GOLD, fontSize: 13, cursor: "pointer", textAlign: "center" }}>Voltar</button>
-          </form>
-        ) : (
-          <form onSubmit={handleVerifyPhone} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <p style={{ color: "#64748b", fontSize: 13, textAlign: "center", margin: 0 }}>Código enviado para <strong style={{ color: "#94a3b8" }}>+55 {phone}</strong></p>
-            <div>
-              <label style={{ display: "block", fontSize: 13, color: "#94a3b8", marginBottom: 6, fontWeight: 500 }}>Código de 6 dígitos</label>
-              <input type="text" inputMode="numeric" required autoFocus maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" style={{ ...inputStyle, textAlign: "center", fontSize: 22, letterSpacing: 10, fontWeight: 700 }} onFocus={focusGold} onBlur={blurGray} />
-            </div>
-            <button type="submit" disabled={loading || otp.length < 6} style={{ padding: "13px", background: otp.length < 6 ? "rgba(212,168,67,0.3)" : GOLD, color: otp.length < 6 ? "#475569" : "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
-              {loading ? "Verificando..." : "Verificar e entrar"}
-            </button>
-            <button type="button" onClick={() => setOtpSent(false)} style={{ background: "none", border: "none", color: GOLD, fontSize: 13, cursor: "pointer", textAlign: "center" }}>Usar outro número</button>
-          </form>
-        )}
-      </div>
-    );
-  }
-
   if (step === "verify") {
     return (
-      <div style={{ width: "100%", maxWidth: 420, background: "#0b1420", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 16, padding: "48px 36px", position: "relative", zIndex: 1, textAlign: "center" }}>
+      <div style={{ width: "100%", maxWidth: 420, background: "rgba(8,8,8,0.96)", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 16, padding: "48px 36px", position: "relative", zIndex: 1, textAlign: "center" }}>
         <GoldLine />
         <h2 style={{ color: "#f1f5f9", fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>Verifique seu email</h2>
-        <p style={{ color: "#64748b", fontSize: 14, lineHeight: 1.6, margin: "0 0 8px" }}>Enviamos um link de confirmação para</p>
+        <p style={{ color: "#8d8578", fontSize: 14, lineHeight: 1.6, margin: "0 0 8px" }}>Enviamos uma verificação para</p>
         <p style={{ color: GOLD, fontSize: 15, fontWeight: 600, margin: "0 0 24px" }}>{form.email}</p>
-        <p style={{ color: "#334155", fontSize: 13, lineHeight: 1.6, margin: "0 0 32px" }}>Clique no link do email para ativar sua conta. Depois volte aqui para entrar.</p>
+        <p style={{ color: "#615b52", fontSize: 13, lineHeight: 1.6, margin: "0 0 32px" }}>Confirme o email para ativar sua conta. Depois volte aqui para entrar.</p>
         <button onClick={() => router.push("/login")} style={{ width: "100%", padding: "13px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
           Ir para o login
         </button>
@@ -486,15 +397,13 @@ export default function CadastroPage() {
   }
 
   return (
-    <div style={{ width: "100%", maxWidth: 460, background: "#0b1420", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 16, padding: "40px 36px", position: "relative", zIndex: 1 }}>
+    <div style={{ width: "100%", maxWidth: 440, background: "rgba(8,8,8,0.96)", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 16, padding: "42px 34px", position: "relative", zIndex: 1 }}>
       <GoldLine />
       <Logo />
-      <p style={{ color: "#475569", fontSize: 14, textAlign: "center", marginTop: -18, marginBottom: accountHint ? 8 : 24 }}>{accountSubtitle}</p>
+      <p style={{ color: "#8d8578", fontSize: 14, textAlign: "center", marginTop: -18, marginBottom: accountHint ? 8 : 26 }}>{accountSubtitle}</p>
       {accountHint && (
         <p style={{ color: "#64748b", fontSize: 12, textAlign: "center", lineHeight: 1.5, margin: "0 0 22px" }}>{accountHint}</p>
       )}
-      <div id="recaptcha-cadastro" />
-
       {form.accountType === "PROFESSIONAL" && (
         <div style={{ marginBottom: 18 }}>
           <label style={{ display: "block", fontSize: 13, color: "#94a3b8", marginBottom: 8, fontWeight: 500 }}>Categoria do anúncio</label>
@@ -562,20 +471,10 @@ export default function CadastroPage() {
             label="Cadastrar com Google"
             onClick={handleGoogle}
           />
-          <AuthMethodButton
-            disabled={loading}
-            icon={SmsIcon}
-            label="Cadastrar com SMS"
-            onClick={() => {
-              setPendingAuthMethod("sms");
-              if (!validateRequiredForm(false, true)) return;
-              setStep("phone");
-            }}
-          />
 
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
             <div style={{ flex: 1, height: 1, background: "rgba(212,168,67,0.12)" }} />
-            <span style={{ color: "#475569", fontSize: 13 }}>ou com email</span>
+            <span style={{ color: "#8d8578", fontSize: 13 }}>ou cadastre com email</span>
             <div style={{ flex: 1, height: 1, background: "rgba(212,168,67,0.12)" }} />
           </div>
         </>
@@ -683,34 +582,6 @@ export default function CadastroPage() {
           >
             {GoogleIcon}
             {loading ? "Abrindo Google..." : "Continuar com Google"}
-          </button>
-        )}
-
-        {pendingAuthMethod === "sms" && (
-          <button
-            type="button"
-            onClick={() => {
-              if (!validateRequiredForm(false, true)) return;
-              setStep("phone");
-            }}
-            disabled={loading}
-            style={{
-              padding: "13px",
-              background: "rgba(212,168,67,0.12)",
-              color: "#f5d78c",
-              border: "1px solid rgba(212,168,67,0.32)",
-              borderRadius: 8,
-              fontSize: 15,
-              fontWeight: 800,
-              cursor: loading ? "not-allowed" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-            }}
-          >
-            {SmsIcon}
-            Continuar com SMS
           </button>
         )}
 
