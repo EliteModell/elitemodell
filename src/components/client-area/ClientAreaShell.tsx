@@ -21,6 +21,8 @@ import {
   Search,
   Settings,
   Star,
+  Users,
+  Video,
   UserRound,
   X,
 } from "lucide-react";
@@ -244,9 +246,9 @@ export function ClientBottomNav() {
   const pathname = usePathname();
   const items = [
     { href: "/dashboard", label: "Meu painel", icon: <LayoutDashboard className="h-[22px] w-[22px]" /> },
-    { href: "/profissionais", label: "Acompanhantes", icon: <Heart className="h-[22px] w-[22px]" /> },
-    { href: "/dashboard/favoritos", label: "Listas", icon: <List className="h-[22px] w-[22px]" /> },
-    { href: "/dashboard/reservas", label: "Atividade", icon: <Clock3 className="h-[22px] w-[22px]" /> },
+    { href: "/dashboard/acompanhantes", label: "Acompanhantes", icon: <Users className="h-[22px] w-[22px]" /> },
+    { href: "/dashboard/shots", label: "Shots", icon: <Video className="h-[22px] w-[22px]" /> },
+    { href: "/dashboard/avaliacoes", label: "Avaliações", icon: <Star className="h-[22px] w-[22px]" /> },
   ];
 
   return (
@@ -255,7 +257,7 @@ export function ClientBottomNav() {
         {items.map((item) => {
           const active =
             pathname === item.href ||
-            (item.href !== "/dashboard" && pathname?.startsWith(item.href));
+            (item.href !== "/dashboard" && pathname?.startsWith(item.href + "/"));
           return (
             <Link
               key={item.href}

@@ -14,6 +14,7 @@ export const ACCOUNT_ROUTES = {
   painelAcompanhante: "/painel/acompanhante",
   painelAnfitriao: "/painel/anfitriao",
   dashboardCliente: "/dashboard",
+  mainClientFeed: "/dashboard/acompanhantes",
   dashboardAcompanhante: "/profissional",
   dashboardAnfitriao: "/anfitriao",
   verificacaoAcompanhante: "/verificacao/acompanhante",
@@ -83,5 +84,5 @@ export function postLoginPathFromUser(user: PostLoginUser | null | undefined) {
   if (properties.length > 0) return ACCOUNT_ROUTES.verificacaoAnfitriao;
   if (user.role === "HOST" || isHostAccount) return ACCOUNT_ROUTES.onboardingAnfitriao;
 
-  return ACCOUNT_ROUTES.painelCliente;
+  return ACCOUNT_ROUTES.mainClientFeed;
 }
