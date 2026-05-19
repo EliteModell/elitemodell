@@ -1,10 +1,22 @@
 import { defineConfig } from "@playwright/test";
+import * as dotenv from "dotenv";
+import * as path from "path";
+
+// Carrega variáveis do .env para o processo dos workers
+dotenv.config({ path: path.join(__dirname, ".env") });
+
+const STORAGE_PATH = "tests/.auth/user.json";
 
 export default defineConfig({
   testDir: "./tests",
-  timeout: 30_000,
-  retries: 0,
-  reporter: [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]],
+  timeout: 35_000,
+  retries: 1,
+  reporter: [
+    ["list"],
+    ["html", { open: "never", outputFolder: "playwright-report" }],
+    ["json", { outputFile: "playwright-report/results.json" }],
+  ],
+  globalSetup: "./tests/global-setup.ts",
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
@@ -17,9 +29,20 @@ export default defineConfig({
     isMobile: true,
   },
   projects: [
+    /* Projeto 1 — mock de sessão (testes estáticos existentes) */
     {
-      name: "mobile-chrome",
+      name: "mock-session",
+      testMatch: "**/client-area-audit.spec.ts",
       use: { browserName: "chromium" },
+    },
+    /* Projeto 2 — sessão real (testes interativos) */
+    {
+      name: "authenticated",
+      testMatch: "**/client-area-authenticated.spec.ts",
+      use: {
+        browserName: "chromium",
+        storageState: STORAGE_PATH,
+      },
     },
   ],
   webServer: {
