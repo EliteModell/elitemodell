@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import VerificacaoClient from "./VerificacaoClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function VerificacaoPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");

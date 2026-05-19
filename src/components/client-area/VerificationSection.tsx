@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import { CheckCircle2, IdCard, Mail, Phone, ShieldCheck } from "lucide-react";
 

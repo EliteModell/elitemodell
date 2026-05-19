@@ -281,7 +281,7 @@ export default function ClientAreaShell({
       <SideDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
       <main className="mx-auto w-full max-w-[760px] pb-28 md:pb-10">{children}</main>
       <ClientBottomNav />
-      <style jsx global>{`
+      <style>{`
         body {
           background: #edf2f4;
         }

@@ -219,7 +219,7 @@ export default function AgeGate() {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .age-gate {
           position: fixed;
           inset: 0;

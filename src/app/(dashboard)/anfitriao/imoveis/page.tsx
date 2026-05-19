@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requireHostPanel } from "@/lib/account-access";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
+export const dynamic = "force-dynamic";
+
 export default async function ImoveisAnfitriaoPage() {
   await requireHostPanel();
 

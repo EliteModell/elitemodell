@@ -274,7 +274,7 @@ export default function ImoveisPage() {
       </div>
       </>
       )}
-      <style jsx global>{`
+      <style>{`
         .property-card {
           border-color: #2a2620;
           transform: translateY(0);

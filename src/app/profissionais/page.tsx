@@ -240,7 +240,7 @@ export default function ProfissionaisPage() {
         )}
       </div>
 
-      <style jsx global>{`
+      <style>{`
         .prof-card {
           border-color: #1e1e1e;
           transform: translateY(0);

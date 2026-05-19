@@ -1,3 +1,4 @@
+"use client";
 import { ChevronRight, Star, ThumbsUp } from "lucide-react";
 
 function AchievementCard({

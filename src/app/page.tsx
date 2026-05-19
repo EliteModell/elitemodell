@@ -1,15 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ChevronRight,
-  Gem,
-  Heart,
-  HousePlus,
-  LockKeyhole,
-  ShieldCheck,
-  Star,
-  UserRoundPlus,
-} from "lucide-react";
+import { ChevronRight, Gem, Heart, HousePlus, LockKeyhole, ShieldCheck, Star, UserRoundPlus } from "@/components/HomeIcons";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";

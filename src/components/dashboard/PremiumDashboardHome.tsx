@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import { CircleAlert, MessageCircle, Plus, ShieldAlert, Volume2 } from "lucide-react";
 import AchievementsSection from "@/components/client-area/AchievementsSection";

@@ -850,7 +850,7 @@ export default function NovoImovelPage() {
         </footer>
       )}
 
-      <style jsx>{`
+      <style>{`
         .onboarding-shell {
           min-height: 100vh;
           background: #fbfaf7;

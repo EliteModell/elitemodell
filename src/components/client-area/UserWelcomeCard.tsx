@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- User avatars can be remote or uploaded URLs. */
 
+"use client";
 import Link from "next/link";
 import { ChevronRight, EyeOff, MapPin, UserRound } from "lucide-react";
 

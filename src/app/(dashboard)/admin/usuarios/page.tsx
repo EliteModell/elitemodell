@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminUsuariosPage() {
   const session = await getServerSession(authOptions);
   if (session?.user?.role !== "ADMIN") redirect(ACCOUNT_ROUTES.painelCliente);

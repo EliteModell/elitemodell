@@ -136,7 +136,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
 
       </div>
-      <style jsx>{`
+      <style>{`
         .dashboard-content {
           animation: dashboard-fade-in 180ms ease-out both;
         }
