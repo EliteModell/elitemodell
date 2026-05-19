@@ -53,6 +53,56 @@ function BrandLogo() {
   );
 }
 
+function InstagramMark() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+      <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" strokeWidth="2" />
+      <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="2" />
+      <circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" />
+    </svg>
+  );
+}
+
+function XMark() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+      <path
+        d="M5 4h4.2l3.4 4.9L16.8 4H20l-5.9 6.8L21 20h-4.2l-3.9-5.5L8.2 20H5l6.4-7.4L5 4Zm2.2 1.8 10.5 12.5h1.1L8.3 5.8H7.2Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function TelegramMark() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+      <path
+        d="M21 4.7 18 19.1c-.2 1-1 1.2-1.8.7l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.4-4.9 8.9-8c.4-.3-.1-.5-.6-.2L5.7 12.8.9 11.3c-1-.3-1-1 .2-1.5L19.8 2.6c.9-.3 1.6.2 1.2 2.1Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function TikTokMark() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+      <path
+        d="M15.4 3c.4 3 2.1 4.8 4.9 5v3.3a8.3 8.3 0 0 1-4.8-1.5v5.9c0 3.2-2.2 5.4-5.4 5.4-3 0-5.4-2.1-5.4-5.1 0-3.3 2.5-5.5 6.2-5.2v3.4c-1.7-.3-2.8.4-2.8 1.8 0 1.2.9 2 2.1 2 1.3 0 2-.8 2-2.4V3h3.2Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+const socialLinks = [
+  { label: "Instagram", icon: <InstagramMark /> },
+  { label: "X", icon: <XMark /> },
+  { label: "Telegram", icon: <TelegramMark /> },
+  { label: "TikTok", icon: <TikTokMark /> },
+];
+
 export function LocationSearchBar() {
   return (
     <Link
@@ -227,13 +277,31 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 
         {/* Footer */}
         <div className="px-5 pb-8 pt-6 text-center">
-          <p className="text-[11px] font-bold uppercase text-[#f5f0e4]/45">
+          <Link href="/" onClick={onClose} className="mx-auto inline-flex items-center rounded-[8px] border border-[#d4a843]/34 bg-[#d4a843]/10 px-4 py-2 no-underline shadow-[0_12px_30px_rgba(0,0,0,0.22)]">
+            <span className="text-[17px] font-black leading-none">
+              <span className="bg-[linear-gradient(135deg,#ffe5a0_0%,#d4a843_42%,#f5d78c_100%)] bg-clip-text text-transparent">elite</span>
+              <span className="text-[#f5f0e4]">modell</span>
+            </span>
+          </Link>
+          <Link
+            href="/"
+            onClick={onClose}
+            className="mx-auto mt-3 flex h-10 max-w-[210px] items-center justify-center rounded-[8px] border border-[#d4a843]/48 bg-transparent text-[13px] font-bold text-[#f5d78c] no-underline transition-colors active:bg-[#d4a843]/12"
+          >
+            Voltar ao início
+          </Link>
+          <p className="mt-6 text-[11px] font-bold uppercase text-[#f5f0e4]/45">
             Siga a <span className="text-[#f5d78c]">Elite Modell</span>
           </p>
           <div className="mt-4 flex justify-center gap-3">
-            {["IG", "X", "TG", "TK"].map((item) => (
-              <span key={item} className="grid h-9 w-9 place-items-center rounded-full border border-[#d4a843]/18 bg-white/[0.045] text-[10px] font-black text-[#f5d78c]">
-                {item}
+            {socialLinks.map((item) => (
+              <span
+                key={item.label}
+                aria-label={item.label}
+                title={item.label}
+                className="grid h-11 w-11 place-items-center rounded-full border border-[#d4a843]/24 bg-white/[0.045] text-[#f5d78c] shadow-[0_10px_28px_rgba(0,0,0,0.22)]"
+              >
+                {item.icon}
               </span>
             ))}
           </div>
