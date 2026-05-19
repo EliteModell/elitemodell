@@ -1,11 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 const specialtyOptions = [
-  "Modelo Fotográfico", "Modelo Publicitário", "Modelo Fitness", "Modelo Plus Size",
+  "Modelo Fotografico", "Modelo Publicitario", "Modelo Fitness", "Modelo Plus Size",
   "Modelo Editorial", "Atriz/Ator", "Influencer", "Promoter",
-  "Make Artist", "Stylist", "Fotógrafo", "Videomaker",
+  "Make Artist", "Stylist", "Fotografo", "Videomaker",
 ];
 
 type ProfileForm = {
@@ -22,21 +22,82 @@ type ProfileForm = {
   specialties: string[];
 };
 
+type MeResponse = {
+  professional?: {
+    slug: string;
+    displayName: string;
+    bio: string;
+    city: string;
+    state: string;
+    phone?: string | null;
+    whatsapp?: string | null;
+    instagram?: string | null;
+    website?: string | null;
+    priceMin?: number | null;
+    priceMax?: number | null;
+    specialties: { name: string }[];
+  } | null;
+};
+
+const emptyForm: ProfileForm = {
+  displayName: "",
+  bio: "",
+  city: "",
+  state: "",
+  phone: "",
+  whatsapp: "",
+  instagram: "",
+  website: "",
+  priceMin: "",
+  priceMax: "",
+  specialties: [],
+};
+
 export default function EditarPerfilPage() {
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState<ProfileForm>({
-    displayName: "Juliana Oliveira",
-    bio: "Modelo fotográfica e publicitária com 6 anos de experiência.",
-    city: "São Paulo",
-    state: "SP",
-    phone: "11999999999",
-    whatsapp: "11999999999",
-    instagram: "@juliana.oliveira",
-    website: "www.julianaoliveira.com.br",
-    priceMin: "500",
-    priceMax: "2000",
-    specialties: ["Modelo Fotográfico", "Modelo Editorial"] as string[],
-  });
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [profileSlug, setProfileSlug] = useState<string | null>(null);
+  const [form, setForm] = useState<ProfileForm>(emptyForm);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    async function loadProfile() {
+      setInitialLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/users/me", { signal: controller.signal });
+        if (!res.ok) throw new Error("Failed to load profile");
+        const data: MeResponse = await res.json();
+        const professional = data.professional;
+        if (!professional) {
+          setError("Nenhum perfil profissional encontrado para esta conta.");
+          setForm(emptyForm);
+          return;
+        }
+        setProfileSlug(professional.slug);
+        setForm({
+          displayName: professional.displayName ?? "",
+          bio: professional.bio ?? "",
+          city: professional.city ?? "",
+          state: professional.state ?? "",
+          phone: professional.phone ?? "",
+          whatsapp: professional.whatsapp ?? "",
+          instagram: professional.instagram ?? "",
+          website: professional.website ?? "",
+          priceMin: professional.priceMin ? String(professional.priceMin) : "",
+          priceMax: professional.priceMax ? String(professional.priceMax) : "",
+          specialties: professional.specialties?.map((s) => s.name) ?? [],
+        });
+      } catch {
+        if (!controller.signal.aborted) setError("Nao foi possivel carregar seu perfil agora.");
+      } finally {
+        if (!controller.signal.aborted) setInitialLoading(false);
+      }
+    }
+    loadProfile();
+    return () => controller.abort();
+  }, []);
 
   const toggle = (s: string) =>
     setForm((f) => ({
@@ -47,10 +108,39 @@ export default function EditarPerfilPage() {
     }));
 
   async function handleSave() {
+    if (!profileSlug) {
+      toast.error("Perfil profissional nao encontrado.");
+      return;
+    }
+
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    toast.success("Perfil atualizado com sucesso!");
-    setLoading(false);
+    try {
+      const priceMin = Number(form.priceMin);
+      const priceMax = Number(form.priceMax);
+      const res = await fetch(`/api/professionals/${profileSlug}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          displayName: form.displayName,
+          bio: form.bio,
+          city: form.city,
+          state: form.state,
+          phone: form.phone || undefined,
+          whatsapp: form.whatsapp || undefined,
+          instagram: form.instagram || undefined,
+          website: form.website || undefined,
+          priceMin: Number.isFinite(priceMin) && priceMin > 0 ? priceMin : undefined,
+          priceMax: Number.isFinite(priceMax) && priceMax > 0 ? priceMax : undefined,
+          specialties: form.specialties,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to update profile");
+      toast.success("Perfil atualizado com sucesso!");
+    } catch {
+      toast.error("Nao foi possivel salvar o perfil.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const input = {
@@ -73,34 +163,51 @@ export default function EditarPerfilPage() {
       e.currentTarget.style.borderColor = "#2a2a2a";
     },
   };
+  const allSpecialtyOptions = Array.from(new Set([...specialtyOptions, ...form.specialties]));
+
+  if (initialLoading) {
+    return (
+      <div className="premium-card premium-enter" style={{ maxWidth: 700, borderRadius: 8, padding: 24 }}>
+        <div className="premium-skeleton" style={{ height: 24, width: 220, borderRadius: 999 }} />
+        <div className="premium-skeleton" style={{ height: 12, width: "75%", borderRadius: 999, marginTop: 14 }} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="premium-empty-state premium-enter" style={{ maxWidth: 700, borderRadius: 8, padding: 32, color: "#aaa" }}>
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: 700 }}>
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Editar perfil</h1>
-        <p style={{ color: "#666", fontSize: 14 }}>Mantenha suas informações sempre atualizadas.</p>
+        <p style={{ color: "#666", fontSize: 14 }}>Mantenha suas informacoes sempre atualizadas com dados salvos no banco.</p>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        {/* Basic info */}
         <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, padding: "22px" }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 18 }}>Informações básicas</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 18 }}>Informacoes basicas</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div>
-              <label style={label}>Nome artístico / Nome público</label>
+              <label style={label}>Nome artistico / Nome publico</label>
               <input style={input} value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} {...focus} />
             </div>
             <div>
               <label style={label}>Biografia profissional</label>
               <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={5}
-                placeholder="Descreva sua experiência, especialidades e diferenciais..."
+                placeholder="Descreva sua experiencia, especialidades e diferenciais..."
                 style={{ ...input, resize: "vertical" }} {...focus} />
               <p style={{ fontSize: 12, color: "#555", marginTop: 4 }}>{form.bio.length}/1000 caracteres</p>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
               <div>
                 <label style={label}>Cidade</label>
-                <input style={input} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="São Paulo" {...focus} />
+                <input style={input} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Sao Paulo" {...focus} />
               </div>
               <div>
                 <label style={label}>Estado</label>
@@ -110,12 +217,11 @@ export default function EditarPerfilPage() {
           </div>
         </div>
 
-        {/* Specialties */}
         <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, padding: "22px" }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 6 }}>Especialidades</h2>
           <p style={{ fontSize: 13, color: "#666", marginBottom: 16 }}>Selecione todas que se aplicam ao seu trabalho.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {specialtyOptions.map((s) => (
+            {allSpecialtyOptions.map((s) => (
               <button
                 key={s}
                 onClick={() => toggle(s)}
@@ -131,29 +237,27 @@ export default function EditarPerfilPage() {
                   transition: "all 0.15s",
                 }}
               >
-                {form.specialties.includes(s) ? "✓ " : ""}{s}
+                {form.specialties.includes(s) ? "OK " : ""}{s}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Pricing */}
         <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, padding: "22px" }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 18 }}>Faixa de preço</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 18 }}>Faixa de preco</h2>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
-              <label style={label}>Preço mínimo (R$)</label>
+              <label style={label}>Preco minimo (R$)</label>
               <input type="number" style={input} value={form.priceMin} onChange={(e) => setForm({ ...form, priceMin: e.target.value })} placeholder="500" {...focus} />
             </div>
             <div>
-              <label style={label}>Preço máximo (R$)</label>
+              <label style={label}>Preco maximo (R$)</label>
               <input type="number" style={input} value={form.priceMax} onChange={(e) => setForm({ ...form, priceMax: e.target.value })} placeholder="2000" {...focus} />
             </div>
           </div>
-          <p style={{ fontSize: 12, color: "#555", marginTop: 10 }}>Os valores são uma referência. O preço final é negociado com cada cliente.</p>
+          <p style={{ fontSize: 12, color: "#555", marginTop: 10 }}>Os valores sao uma referencia. O preco final e negociado com cada cliente.</p>
         </div>
 
-        {/* Contact */}
         <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, padding: "22px" }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 18 }}>Contato e redes</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -161,7 +265,7 @@ export default function EditarPerfilPage() {
               { key: "phone", label: "Telefone", placeholder: "11 99999-9999" },
               { key: "whatsapp", label: "WhatsApp (para contato direto)", placeholder: "11 99999-9999" },
               { key: "instagram", label: "Instagram", placeholder: "@seuperfil" },
-              { key: "website", label: "Site / Portfólio", placeholder: "www.seuperfil.com" },
+              { key: "website", label: "Site / Portfolio", placeholder: "www.seuperfil.com" },
             ].map((f) => (
               <div key={f.key}>
                 <label style={label}>{f.label}</label>
@@ -171,7 +275,6 @@ export default function EditarPerfilPage() {
           </div>
         </div>
 
-        {/* Save */}
         <button
           onClick={handleSave}
           disabled={loading}
@@ -189,7 +292,7 @@ export default function EditarPerfilPage() {
           onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = "#e00000"; }}
           onMouseLeave={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = "#cc0000"; }}
         >
-          {loading ? "Salvando..." : "Salvar alterações"}
+          {loading ? "Salvando..." : "Salvar alteracoes"}
         </button>
       </div>
     </div>

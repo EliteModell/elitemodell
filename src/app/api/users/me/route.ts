@@ -22,7 +22,26 @@ export async function GET() {
     select: {
       id: true, name: true, email: true, image: true, phone: true, phoneVerified: true, phoneVerifiedAt: true,
       document: true, role: true, accountType: true, category: true, birthDate: true, verified: true, credits: true,
-      createdAt: true, hostProfile: true, professional: { select: { id: true, status: true } },
+      createdAt: true, hostProfile: true, professional: {
+        select: {
+          id: true,
+          slug: true,
+          status: true,
+          displayName: true,
+          bio: true,
+          city: true,
+          state: true,
+          phone: true,
+          whatsapp: true,
+          instagram: true,
+          website: true,
+          priceMin: true,
+          priceMax: true,
+          image: true,
+          galleryUrls: true,
+          specialties: { select: { name: true } },
+        },
+      },
       properties: { select: { id: true, status: true }, orderBy: { createdAt: "desc" } },
     },
   });

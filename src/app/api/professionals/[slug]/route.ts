@@ -103,6 +103,8 @@ const updateSchema = z.object({
   website: z.string().optional(),
   priceMin: z.number().positive().optional(),
   priceMax: z.number().positive().optional(),
+  image: z.string().url().nullable().optional(),
+  galleryUrls: z.array(z.string().url()).max(12).optional(),
   specialties: z.array(z.string()).optional(),
 });
 
