@@ -4,19 +4,27 @@ import { CirclePlus, UserRound } from "lucide-react";
 
 export default function HistorySection() {
   return (
-    <section className="bg-[#e7edf0] px-5 py-12">
-      <span className="inline-flex rounded-full bg-[#fff4da] px-4 py-1.5 text-sm font-black text-[#a9822d]">
-        exclusivo premium
-      </span>
-      <h2 className="mt-7 text-[30px] font-black text-[#202a30]">Histórico de perfis</h2>
+    <section className="bg-[#f0f3f5] px-4 py-8">
+      <div className="mb-4">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fef3d6] px-3 py-1 text-[12px] font-semibold text-[#a9822d]">
+          ✦ exclusivo premium
+        </span>
+      </div>
 
-      <div className="py-16 text-center text-[#617781]">
-        <UserRound className="mx-auto h-20 w-20 stroke-[1.7]" />
-        <p className="mx-auto mt-7 max-w-[360px] text-[22px] leading-8">
+      <h2 className="text-[18px] font-bold text-[#1f2a30]">Histórico de perfis</h2>
+
+      <div className="py-10 text-center">
+        <div className="mx-auto grid h-[62px] w-[62px] place-items-center rounded-full bg-[#e4eaec]">
+          <UserRound className="h-8 w-8 stroke-[1.5] text-[#8fa0a8]" />
+        </div>
+        <p className="mx-auto mt-5 max-w-[260px] text-[14px] leading-6 text-[#566570]">
           Você ainda não possui nenhum perfil acessado no seu histórico.
         </p>
-        <Link href="/profissionais" className="mt-7 inline-flex items-center gap-2 text-[20px] text-[#617781] underline">
-          <CirclePlus className="h-6 w-6" />
+        <Link
+          href="/profissionais"
+          className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#566570] underline underline-offset-2"
+        >
+          <CirclePlus className="h-4 w-4" />
           Encontre acompanhantes
         </Link>
       </div>

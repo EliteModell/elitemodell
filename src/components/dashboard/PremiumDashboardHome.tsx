@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { CircleAlert, MessageCircle, Plus, ShieldAlert, Volume2 } from "lucide-react";
+import { CircleAlert, MessageCircle, ShieldAlert } from "lucide-react";
 import AchievementsSection from "@/components/client-area/AchievementsSection";
 import HistorySection from "@/components/client-area/HistorySection";
 import ListsSection from "@/components/client-area/ListsSection";
@@ -62,23 +62,27 @@ function hasRealEmail(email: string | null) {
   return Boolean(email && !email.startsWith("phone_"));
 }
 
+function Divider() {
+  return <div className="h-[6px] bg-[#f0f3f5]" />;
+}
+
 function ReviewsSection() {
   return (
-    <section id="avaliacoes" className="bg-white px-5 py-10">
+    <section className="bg-white px-4 py-8">
       <div className="flex items-start gap-3">
-        <CircleAlert className="mt-1 h-7 w-7 shrink-0 text-[#202a30]" />
-        <div>
-          <h2 className="text-[21px] font-black text-[#202a30]">Você ainda não fez nenhuma avaliação</h2>
-          <p className="mt-4 text-[19px] leading-7 text-[#59666d]">Sua avaliação ajuda clientes e acompanhantes.</p>
-          <p className="mt-3 text-[19px] font-bold text-[#a9822d]">Contratou um(a) acompanhante?</p>
-          <p className="mt-3 text-[19px] leading-7 text-[#202a30]">
-            Vá até o perfil do(a) acompanhante e compartilhe como foi a experiência do seu atendimento.
+        <CircleAlert className="mt-0.5 h-[20px] w-[20px] shrink-0 text-[#5a6a71]" />
+        <div className="min-w-0">
+          <h2 className="text-[16px] font-bold text-[#1f2a30]">Você ainda não fez nenhuma avaliação</h2>
+          <p className="mt-1.5 text-[13px] leading-5 text-[#566570]">Sua avaliação ajuda clientes e acompanhantes.</p>
+          <p className="mt-1.5 text-[13px] font-semibold text-[#a9822d]">Contratou um(a) acompanhante?</p>
+          <p className="mt-1.5 text-[13px] leading-5 text-[#566570]">
+            Vá até o perfil e compartilhe como foi a experiência.
           </p>
         </div>
       </div>
       <Link
         href="/profissionais"
-        className="mt-8 flex h-[60px] items-center justify-center rounded-[8px] border border-[#c9a84c] bg-white text-[18px] font-black text-[#a9822d] no-underline"
+        className="mt-6 flex h-[46px] items-center justify-center rounded-[10px] border border-[#c9a84c] bg-white text-[14px] font-semibold text-[#a9822d] no-underline transition-colors active:bg-[#fef9f0]"
       >
         Avalie agora
       </Link>
@@ -86,43 +90,29 @@ function ReviewsSection() {
   );
 }
 
-function VoiceSection() {
-  return (
-    <section className="border-y border-[#dbe1e3] bg-white px-5 py-9">
-      <h2 className="flex items-center gap-3 text-[24px] font-black text-[#202a30]">
-        <Volume2 className="h-7 w-7" />
-        Preferências de atendimento
-      </h2>
-      <button className="mt-7 flex h-[60px] w-full items-center justify-center gap-3 rounded-[8px] border-0 bg-[#c9a84c] text-[22px] font-black text-[#11191d]">
-        <Plus className="h-7 w-7" />
-        Ajustar minhas preferências
-      </button>
-    </section>
-  );
-}
-
 function SafetyCard() {
   return (
-    <section className="bg-[#e7edf0] px-5 py-9">
-      <article className="rounded-[10px] bg-white p-6 shadow-[0_3px_16px_rgba(20,31,36,0.06)]">
-        <div className="flex items-center gap-4">
-          <span className="h-3 w-3 rounded-full bg-[#c9a84c]" />
-          <h2 className="min-w-0 flex-1 text-[24px] font-black text-[#202a30]">
-            Segurança da conta
-          </h2>
-          <ShieldAlert className="h-7 w-7 text-[#202a30]" />
+    <section className="bg-[#f0f3f5] px-4 py-8">
+      <div className="rounded-[14px] bg-white p-5 shadow-[0_2px_12px_rgba(20,31,36,0.06)]">
+        <div className="flex items-center gap-3">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#c9a84c]" />
+          <h2 className="min-w-0 flex-1 text-[16px] font-bold text-[#1f2a30]">Segurança da conta</h2>
+          <ShieldAlert className="h-5 w-5 text-[#5a6a71]" />
         </div>
-        <div className="mt-6 rounded-[8px] bg-[#f2f5f6] p-5">
-          <h3 className="text-[25px] font-black text-[#202a30]">Canais oficiais</h3>
-          <p className="mt-3 text-[19px] leading-7 text-[#4f5d64]">
+        <div className="mt-4 rounded-[10px] bg-[#f5f8f9] p-4">
+          <h3 className="text-[15px] font-bold text-[#1f2a30]">Canais oficiais</h3>
+          <p className="mt-1.5 text-[13px] leading-5 text-[#566570]">
             Nunca informe senhas, códigos ou documentos fora da plataforma. Em caso de dúvida, fale com o suporte.
           </p>
-          <Link href="/dashboard/mensagens" className="mt-6 inline-flex items-center gap-2 text-[18px] font-black text-[#a9822d] no-underline">
-            <MessageCircle className="h-5 w-5" />
+          <Link
+            href="/dashboard/atendimento"
+            className="mt-4 inline-flex items-center gap-2 text-[13px] font-semibold text-[#a9822d] no-underline"
+          >
+            <MessageCircle className="h-4 w-4" />
             Falar com atendimento
           </Link>
         </div>
-      </article>
+      </div>
     </section>
   );
 }
@@ -149,19 +139,22 @@ export default function PremiumDashboardHome({
   ];
 
   return (
-    <div className="bg-white">
+    <div>
       <UserWelcomeCard
         name={data.user.name}
         image={data.user.image}
         city={data.city}
         credits={data.stats.credits}
       />
+      <Divider />
       <VerificationSection steps={verificationSteps} />
+      <Divider />
       <ListsSection />
+      <Divider />
       <HistorySection />
       <AchievementsSection />
+      <Divider />
       <ReviewsSection />
-      <VoiceSection />
       <SafetyCard />
     </div>
   );
