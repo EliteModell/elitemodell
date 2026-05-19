@@ -12,11 +12,11 @@ function InfoRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-4 border-b border-[#e1e6e8] py-4 last:border-0">
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#edf2f4] text-[#5f7179]">{icon}</span>
+    <div className="flex items-center gap-4 border-b border-white/10 py-4 last:border-0">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/14 bg-white/[0.045] text-[#f5d78c]">{icon}</span>
       <div className="min-w-0 flex-1">
-        <p className="text-[14px] font-bold uppercase tracking-[0.08em] text-[#7a858b]">{label}</p>
-        <p className="mt-1 truncate text-[18px] font-black text-[#202a30]">{value}</p>
+        <p className="text-[12px] font-bold uppercase text-[#f5f0e4]/42">{label}</p>
+        <p className="mt-1 truncate text-[16px] font-black text-[#f5f0e4]">{value}</p>
       </div>
     </div>
   );
@@ -40,9 +40,9 @@ export default function ProfileInfoSection({
   privacyOk: boolean;
 }) {
   return (
-    <div className="bg-white px-5 py-8">
-      <section className="rounded-[8px] border border-[#e0e5e7] bg-white p-5">
-        <h2 className="text-[25px] font-black text-[#202a30]">Informações pessoais</h2>
+    <div className="client-page-tight">
+      <section className="client-card p-5">
+        <h2 className="text-[22px] font-black text-[#f5f0e4]">Informações pessoais</h2>
         <div className="mt-4">
           <InfoRow icon={<UserRound className="h-5 w-5" />} label="Nome" value={name ?? "Não informado"} />
           <InfoRow icon={<Mail className="h-5 w-5" />} label="E-mail" value={email ?? "Não informado"} />
@@ -51,8 +51,8 @@ export default function ProfileInfoSection({
         </div>
       </section>
 
-      <section className="mt-7 rounded-[8px] border border-[#e0e5e7] bg-[#f8faf9] p-5">
-        <h2 className="text-[25px] font-black text-[#202a30]">Segurança e privacidade</h2>
+      <section className="client-panel mt-4 p-5">
+        <h2 className="text-[22px] font-black text-[#f5f0e4]">Segurança e privacidade</h2>
         <div className="mt-4">
           <InfoRow icon={<BadgeCheck className="h-5 w-5" />} label="E-mail" value={emailVerified ? "Validado" : "Pendente"} />
           <InfoRow icon={<Phone className="h-5 w-5" />} label="Telefone" value={phoneVerified ? "Verificado" : "Pendente"} />

@@ -27,6 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { supabaseAuth } from "@/lib/supabase-client";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 function initials(name?: string | null) {
   if (!name) return "EM";
@@ -40,12 +41,12 @@ function initials(name?: string | null) {
 
 function BrandLogo() {
   return (
-    <Link href="/dashboard" className="relative inline-flex items-center no-underline" aria-label="Elite Modell">
-      <span className="relative inline-flex items-center rounded-[8px] border border-[#c9a84c]/30 bg-[#c9a84c]/[0.06] px-3 py-1.5">
-        <span className="pointer-events-none absolute -right-1 -top-2.5 select-none text-[13px] leading-none text-[#c9a84c]">✦</span>
-        <span className="text-[18px] font-black leading-none tracking-[-0.04em]">
-          <span className="bg-[linear-gradient(135deg,#c9a84c_0%,#a9822d_50%,#c9a84c_100%)] bg-clip-text text-transparent">elite</span>
-          <span className="text-[#202a30]">modell</span>
+    <Link href={ACCOUNT_ROUTES.mainClientFeed} className="relative inline-flex items-center no-underline" aria-label="Elite Modell">
+      <span className="relative inline-flex items-center rounded-[8px] border border-[#d4a843]/30 bg-white/[0.045] px-3 py-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.22)]">
+        <span className="pointer-events-none absolute -right-1 -top-2 select-none text-[12px] leading-none text-[#f5d78c]">✦</span>
+        <span className="text-[18px] font-black leading-none">
+          <span className="bg-[linear-gradient(135deg,#ffe5a0_0%,#d4a843_42%,#f5d78c_100%)] bg-clip-text text-transparent">elite</span>
+          <span className="text-[#f5f0e4]">modell</span>
         </span>
       </span>
     </Link>
@@ -55,11 +56,11 @@ function BrandLogo() {
 export function LocationSearchBar() {
   return (
     <Link
-      href="/buscar"
-      className="flex h-[50px] items-center rounded-[10px] border border-[#d0d7da] bg-white px-4 text-[15px] text-[#7a858b] no-underline shadow-[0_1px_4px_rgba(30,42,48,0.06)]"
+      href={ACCOUNT_ROUTES.mainClientFeed}
+      className="client-input flex h-[48px] items-center px-4 text-[14px] no-underline"
     >
-      <span className="min-w-0 flex-1 truncate">Selecionar cidade</span>
-      <Search className="h-5 w-5 shrink-0 text-[#202a30]" />
+      <Search className="mr-2 h-4 w-4 shrink-0 text-[#d4a843]" />
+      <span className="min-w-0 flex-1 truncate text-[#f5f0e4]/62">Explorar por cidade, nome ou estilo</span>
     </Link>
   );
 }
@@ -72,22 +73,22 @@ export function MobileHeader({
   backHref?: string;
 }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-[#c9a84c]/20 bg-white shadow-[0_1px_8px_rgba(20,31,36,0.07)]">
-      <div className="mx-auto max-w-[760px] px-4 pb-3 pt-4">
+    <header className="sticky top-0 z-30 border-b border-[#d4a843]/14 bg-[#08090a]/88 shadow-[0_12px_38px_rgba(0,0,0,0.26)] backdrop-blur-2xl">
+      <div className="mx-auto max-w-[760px] px-4 pb-3 pt-3">
         <div className="grid h-11 grid-cols-[44px_1fr_44px] items-center">
           {backHref ? (
-            <Link href={backHref} className="grid h-10 w-10 place-items-center text-[#64727a]" aria-label="Voltar">
+            <Link href={backHref} className="grid h-10 w-10 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/72" aria-label="Voltar">
               <ChevronRight className="h-6 w-6 rotate-180" />
             </Link>
           ) : (
-            <button type="button" onClick={onMenu} className="grid h-10 w-10 place-items-center text-[#64727a]" aria-label="Abrir menu">
+            <button type="button" onClick={onMenu} className="grid h-10 w-10 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/72" aria-label="Abrir menu">
               <Menu className="h-6 w-6" />
             </button>
           )}
           <div className="flex justify-center">
             <BrandLogo />
           </div>
-          <Link href="/notifications" className="grid h-10 w-10 place-items-center justify-self-end text-[#60747b]" aria-label="Notificações">
+          <Link href="/notifications" className="grid h-10 w-10 place-items-center justify-self-end rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/72" aria-label="Notificações">
             <Bell className="h-5 w-5" />
           </Link>
         </div>
@@ -118,13 +119,13 @@ function DrawerItem({
     <Link
       href={href}
       onClick={onClick}
-      className={`flex min-h-[56px] items-center gap-3.5 border-b border-[#e8edef] px-5 text-[15px] no-underline transition-colors active:bg-[#f5f8f9] ${
-        active ? "font-semibold text-[#a9822d]" : "font-medium text-[#1f2a30]"
+      className={`mx-3 flex min-h-[52px] items-center gap-3 rounded-[8px] px-3 text-[14px] no-underline transition-colors active:bg-white/10 ${
+        active ? "border border-[#d4a843]/26 bg-[#d4a843]/12 font-bold text-[#f5d78c]" : "text-[#f5f0e4]/72"
       }`}
     >
-      <span className={`grid h-6 w-6 shrink-0 place-items-center ${active ? "text-[#a9822d]" : "text-[#5a6a71]"}`}>{icon}</span>
+      <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-[8px] ${active ? "bg-[#d4a843]/16 text-[#f5d78c]" : "bg-white/[0.045] text-[#f5f0e4]/52"}`}>{icon}</span>
       <span className="min-w-0 flex-1">{label}</span>
-      {expandable ? <span className="text-[16px] leading-none text-[#9aabaf]">›</span> : null}
+      {expandable ? <span className="text-[16px] leading-none text-[#f5f0e4]/34">›</span> : null}
     </Link>
   );
 }
@@ -139,17 +140,18 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   }
 
   const nav = [
-    { href: "/dashboard", label: "Painel", icon: <LayoutDashboard className="h-[18px] w-[18px]" /> },
-    { href: "/dashboard/perfil", label: "Perfil", icon: <UserRound className="h-[18px] w-[18px]" /> },
-    { href: "/dashboard/favoritos", label: "Listas", icon: <List className="h-[18px] w-[18px]" /> },
-    { href: "/dashboard/reservas", label: "Histórico", icon: <Clock3 className="h-[18px] w-[18px]" /> },
-    { href: "/profissionais", label: "Acompanhantes", icon: <Heart className="h-[18px] w-[18px]" /> },
-    { href: "/dashboard/planos", label: "Seja Elite Premium", icon: <Star className="h-[18px] w-[18px]" /> },
-    { href: "/dashboard/carteira", label: "Carteira", icon: <CreditCard className="h-[18px] w-[18px]" /> },
-    { href: "/dashboard/planos", label: "Gerenciar planos", icon: <Settings className="h-[18px] w-[18px]" /> },
-    { href: "/dashboard/configuracoes", label: "Configurações do cadastro", icon: <Settings className="h-[18px] w-[18px]" />, expandable: true },
-    { href: "/dashboard/atendimento", label: "Central de Atendimento", icon: <CircleHelp className="h-[18px] w-[18px]" />, expandable: true },
-    { href: "/dashboard/informacoes", label: "Informações importantes", icon: <Info className="h-[18px] w-[18px]" />, expandable: true },
+    { href: "/dashboard/acompanhantes", label: "Explorar acompanhantes", icon: <Users className="h-5 w-5" /> },
+    { href: "/dashboard/shots", label: "Shots", icon: <Video className="h-5 w-5" /> },
+    { href: "/dashboard/favoritos", label: "Listas e favoritos", icon: <List className="h-5 w-5" /> },
+    { href: "/dashboard/avaliacoes", label: "Avaliações", icon: <Star className="h-5 w-5" /> },
+    { href: "/dashboard", label: "Painel da conta", icon: <LayoutDashboard className="h-5 w-5" /> },
+    { href: "/dashboard/perfil", label: "Perfil", icon: <UserRound className="h-5 w-5" /> },
+    { href: "/dashboard/reservas", label: "Histórico", icon: <Clock3 className="h-5 w-5" /> },
+    { href: "/dashboard/planos", label: "Elite Premium", icon: <Star className="h-5 w-5" /> },
+    { href: "/dashboard/carteira", label: "Carteira", icon: <CreditCard className="h-5 w-5" /> },
+    { href: "/dashboard/configuracoes", label: "Configurações", icon: <Settings className="h-5 w-5" />, expandable: true },
+    { href: "/dashboard/atendimento", label: "Atendimento", icon: <CircleHelp className="h-5 w-5" />, expandable: true },
+    { href: "/dashboard/informacoes", label: "Informações importantes", icon: <Info className="h-5 w-5" />, expandable: true },
   ];
 
   return (
@@ -161,49 +163,52 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
         onClick={onClose}
       />
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-[80vw] max-w-[380px] overflow-y-auto bg-[#f5f8f9] shadow-[20px_0_60px_rgba(16,24,28,0.22)] transition-transform duration-300 ease-out ${
+        className={`fixed inset-y-0 left-0 z-50 w-[84vw] max-w-[390px] overflow-y-auto border-r border-[#d4a843]/14 bg-[#090a0b] shadow-[26px_0_80px_rgba(0,0,0,0.48)] transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Drawer header */}
-        <div className="sticky top-0 z-10 border-b border-[#dde3e5] bg-white/96 px-4 py-3 backdrop-blur">
+        <div className="sticky top-0 z-10 border-b border-white/10 bg-[#090a0b]/92 px-4 py-3 backdrop-blur-2xl">
           <div className="grid grid-cols-[40px_1fr_40px] items-center">
-            <button type="button" onClick={onClose} className="grid h-9 w-9 place-items-center text-[#64727a]" aria-label="Fechar menu">
+            <button type="button" onClick={onClose} className="grid h-9 w-9 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/72" aria-label="Fechar menu">
               <X className="h-5 w-5" />
             </button>
             <div className="flex justify-center">
               <BrandLogo />
             </div>
-            <Link href="/notifications" onClick={onClose} className="grid h-9 w-9 place-items-center justify-self-end text-[#60747b]" aria-label="Notificações">
+            <Link href="/notifications" onClick={onClose} className="grid h-9 w-9 place-items-center justify-self-end rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/72" aria-label="Notificações">
               <Bell className="h-5 w-5" />
             </Link>
           </div>
         </div>
 
         {/* User info */}
-        <div className="flex items-center gap-3.5 border-b border-[#dde3e5] bg-white px-5 py-5">
-          <div className="h-[60px] w-[60px] shrink-0 overflow-hidden rounded-full border-2 border-[#c9a84c]/40 bg-[#d7dee1] shadow-sm">
+        <div className="mx-3 mt-4 flex items-center gap-3.5 rounded-[8px] border border-[#d4a843]/16 bg-white/[0.055] p-4">
+          <div className="h-[58px] w-[58px] shrink-0 overflow-hidden rounded-full border-2 border-[#d4a843]/50 bg-[#1b1d1f] shadow-[0_0_32px_rgba(212,168,67,0.14)]">
             {session?.user?.image ? (
               <img src={session.user.image} alt={session.user.name ?? "Avatar"} className="h-full w-full object-cover" />
             ) : (
-              <div className="grid h-full w-full place-items-center text-[17px] font-black text-[#8b6b25]">{initials(session?.user?.name)}</div>
+              <div className="grid h-full w-full place-items-center text-[17px] font-black text-[#f5d78c]">{initials(session?.user?.name)}</div>
             )}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-[16px] font-bold text-[#1f2a30]">{session?.user?.name ?? "Cliente Elite"}</p>
-            <p className="mt-0.5 truncate text-[12px] text-[#6a7a81]">{session?.user?.email ?? "Conta discreta"}</p>
+            <p className="truncate text-[16px] font-bold text-[#f5f0e4]">{session?.user?.name ?? "Cliente Elite"}</p>
+            <p className="mt-0.5 truncate text-[12px] text-[#f5f0e4]/48">{session?.user?.email ?? "Conta discreta"}</p>
+            <p className="mt-2 inline-flex rounded-full border border-[#d4a843]/22 bg-[#d4a843]/10 px-2.5 py-1 text-[10px] font-bold uppercase text-[#f5d78c]">
+              acesso cliente
+            </p>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="mt-2 bg-white">
+        <nav className="mt-4 space-y-1 pb-2">
           {nav.map((item) => (
             <DrawerItem
               key={`${item.href}-${item.label}`}
               href={item.href}
               icon={item.icon}
               label={item.label}
-              active={pathname === item.href && item.href !== "/dashboard/planos"}
+              active={pathname === item.href || (item.href !== "/dashboard" && pathname?.startsWith(item.href + "/"))}
               expandable={item.expandable}
               onClick={onClose}
             />
@@ -211,28 +216,28 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           <button
             type="button"
             onClick={handleSignOut}
-            className="flex min-h-[56px] w-full items-center gap-3.5 border-b border-[#e8edef] px-5 text-left text-[15px] font-medium text-[#1f2a30] transition-colors active:bg-[#f5f8f9]"
+            className="mx-3 flex min-h-[52px] w-[calc(100%-1.5rem)] items-center gap-3 rounded-[8px] px-3 text-left text-[14px] font-medium text-[#f5f0e4]/72 transition-colors active:bg-white/10"
           >
-            <span className="grid h-6 w-6 place-items-center text-[#5a6a71]">
-              <LogOut className="h-[18px] w-[18px]" />
+            <span className="grid h-9 w-9 place-items-center rounded-[8px] bg-white/[0.045] text-[#f5f0e4]/52">
+              <LogOut className="h-5 w-5" />
             </span>
             Sair
           </button>
         </nav>
 
         {/* Footer */}
-        <div className="px-5 py-8 text-center">
-          <p className="text-[12px] uppercase tracking-[0.14em] text-[#5c686e]">
-            Siga a <span className="font-bold text-[#a9822d]">Elite Modell</span>
+        <div className="px-5 pb-8 pt-6 text-center">
+          <p className="text-[11px] font-bold uppercase text-[#f5f0e4]/45">
+            Siga a <span className="text-[#f5d78c]">Elite Modell</span>
           </p>
           <div className="mt-4 flex justify-center gap-3">
-            {["IG", "FB", "X", "SP", "TG", "TK"].map((item) => (
-              <span key={item} className="grid h-8 w-8 place-items-center rounded-full bg-[#e8eef0] text-[10px] font-black text-[#4a5a61] shadow-sm">
+            {["IG", "X", "TG", "TK"].map((item) => (
+              <span key={item} className="grid h-9 w-9 place-items-center rounded-full border border-[#d4a843]/18 bg-white/[0.045] text-[10px] font-black text-[#f5d78c]">
                 {item}
               </span>
             ))}
           </div>
-          <div className="mt-5 flex justify-center gap-5 text-[12px] text-[#56646b]">
+          <div className="mt-5 flex justify-center gap-5 text-[12px] text-[#f5f0e4]/46">
             <Link href="/terms" onClick={onClose} className="text-inherit underline">Termos</Link>
             <Link href="/privacy" onClick={onClose} className="text-inherit underline">Privacidade</Link>
           </div>
@@ -245,15 +250,15 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 export function ClientBottomNav() {
   const pathname = usePathname();
   const items = [
-    { href: "/dashboard", label: "Meu painel", icon: <LayoutDashboard className="h-[22px] w-[22px]" /> },
-    { href: "/dashboard/acompanhantes", label: "Acompanhantes", icon: <Users className="h-[22px] w-[22px]" /> },
+    { href: "/dashboard/acompanhantes", label: "Explorar", icon: <Users className="h-[22px] w-[22px]" /> },
     { href: "/dashboard/shots", label: "Shots", icon: <Video className="h-[22px] w-[22px]" /> },
-    { href: "/dashboard/avaliacoes", label: "Avaliações", icon: <Star className="h-[22px] w-[22px]" /> },
+    { href: "/dashboard/favoritos", label: "Listas", icon: <Heart className="h-[22px] w-[22px]" /> },
+    { href: "/dashboard", label: "Painel", icon: <LayoutDashboard className="h-[22px] w-[22px]" /> },
   ];
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-[#d7dddf] bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(19,31,36,0.09)] md:hidden">
-      <div className="mx-auto grid h-[62px] max-w-[760px] grid-cols-4">
+    <nav className="fixed inset-x-0 bottom-0 z-30 px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] md:hidden">
+      <div className="mx-auto grid h-[66px] max-w-[720px] grid-cols-4 rounded-[8px] border border-[#d4a843]/18 bg-[#090a0b]/92 p-1 shadow-[0_-18px_50px_rgba(0,0,0,0.36)] backdrop-blur-2xl">
         {items.map((item) => {
           const active =
             pathname === item.href ||
@@ -262,13 +267,10 @@ export function ClientBottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`relative flex flex-col items-center justify-center gap-1 text-[11px] font-semibold no-underline ${
-                active ? "text-[#a9822d]" : "text-[#6b7a81]"
+              className={`relative flex flex-col items-center justify-center gap-1 rounded-[8px] text-[10px] font-bold no-underline transition-colors ${
+                active ? "bg-[#d4a843]/14 text-[#f5d78c]" : "text-[#f5f0e4]/46"
               }`}
             >
-              {active ? (
-                <span className="absolute left-[22%] right-[22%] top-0 h-[2.5px] rounded-b-full bg-[#c9a84c]" />
-              ) : null}
               <span>{item.icon}</span>
               <span>{item.label}</span>
             </Link>
@@ -289,15 +291,15 @@ export default function ClientAreaShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#f0f3f5] text-[#202a30]">
+    <div className="client-premium min-h-screen">
       <MobileHeader onMenu={() => setDrawerOpen(true)} backHref={backHref} />
       <SideDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      <main className="mx-auto w-full max-w-[760px] pb-[calc(62px+env(safe-area-inset-bottom)+12px)]">
+      <main className="client-shell-content mx-auto w-full max-w-[760px] pb-[calc(86px+env(safe-area-inset-bottom)+12px)]">
         {children}
       </main>
       <ClientBottomNav />
       <style>{`
-        body { background: #f0f3f5; }
+        body { background: #070809; }
       `}</style>
     </div>
   );

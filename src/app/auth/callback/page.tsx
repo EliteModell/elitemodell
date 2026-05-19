@@ -24,7 +24,7 @@ const PROFESSIONAL_CATEGORIES = ["MULHER", "HOMEM", "TRANS"];
 
 async function getPostLoginPath() {
   const res = await fetch("/api/users/me", { cache: "no-store" });
-  if (!res.ok) return ACCOUNT_ROUTES.painelCliente;
+  if (!res.ok) return ACCOUNT_ROUTES.mainClientFeed;
 
   const user = await res.json();
   const isProfessional = PROFESSIONAL_CATEGORIES.includes(user.category);
@@ -70,7 +70,7 @@ function getRegistrationPath(pending: PendingRegistration | null) {
   if (pending?.accountType === "PROPERTY_HOST") {
     return hasPropertyDraft() ? PROPERTY_DRAFT_FINAL_PATH : ACCOUNT_ROUTES.onboardingAnfitriao;
   }
-  return ACCOUNT_ROUTES.painelCliente;
+  return ACCOUNT_ROUTES.mainClientFeed;
 }
 
 function CallbackCard({ message, success }: { message: string; success?: boolean }) {
@@ -249,7 +249,7 @@ function AuthCallbackContent() {
 
       const targetPath = pendingRegistration
         ? getRegistrationPath(pendingRegistration)
-        : await resolveWithTimeout(getPostLoginPath(), ACCOUNT_ROUTES.painelCliente);
+        : await resolveWithTimeout(getPostLoginPath(), ACCOUNT_ROUTES.mainClientFeed);
 
       if (!active) return;
       setSuccess(true);

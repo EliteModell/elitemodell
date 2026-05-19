@@ -90,7 +90,7 @@ async function getPostLoginPath() {
   if (localStorage.getItem(PROPERTY_DRAFT_KEY)) return PROPERTY_DRAFT_FINAL_PATH;
 
   const res = await fetch("/api/users/me");
-  if (!res.ok) return ACCOUNT_ROUTES.painelCliente;
+  if (!res.ok) return ACCOUNT_ROUTES.mainClientFeed;
   const user = await res.json();
   return postLoginPathFromUser(user);
 }

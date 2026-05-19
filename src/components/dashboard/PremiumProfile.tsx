@@ -137,7 +137,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
   }
 
   return (
-    <div className="bg-white">
+    <div>
       <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={handlePhotoUpload} />
 
       <ProfileHeaderCard
@@ -151,41 +151,41 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
       />
 
       {editing ? (
-        <section className="bg-white px-5 py-8">
-          <form onSubmit={saveProfile} className="rounded-[8px] border border-[#e0e5e7] bg-white p-5">
+        <section className="client-page-tight">
+          <form onSubmit={saveProfile} className="client-card p-5">
             <div className="mb-6 flex items-center justify-between gap-4">
-              <h2 className="text-[25px] font-black text-[#202a30]">Editar dados</h2>
-              <button type="button" onClick={() => setEditing(false)} className="grid h-11 w-11 place-items-center rounded-full bg-[#edf2f4] text-[#536168]">
+              <h2 className="text-[22px] font-black text-[#f5f0e4]">Editar dados</h2>
+              <button type="button" onClick={() => setEditing(false)} className="grid h-11 w-11 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/68">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <label className="block">
-              <span className="text-[14px] font-black uppercase tracking-[0.08em] text-[#7a858b]">Nome</span>
+              <span className="text-[12px] font-black uppercase text-[#f5f0e4]/48">Nome</span>
               <input
                 value={form.name}
                 onChange={(event) => setForm({ ...form, name: event.target.value })}
-                className="mt-2 h-[56px] w-full rounded-[8px] border border-[#cbd2d4] bg-white px-4 text-[18px] text-[#202a30] outline-none focus:border-[#c9a84c]"
+                className="client-input mt-2 h-[54px] w-full px-4 text-[16px]"
                 placeholder="Seu nome"
                 required
               />
             </label>
             <label className="mt-5 block">
-              <span className="text-[14px] font-black uppercase tracking-[0.08em] text-[#7a858b]">Telefone</span>
+              <span className="text-[12px] font-black uppercase text-[#f5f0e4]/48">Telefone</span>
               <input
                 value={form.phone}
                 onChange={(event) => setForm({ ...form, phone: maskPhone(event.target.value) })}
-                className="mt-2 h-[56px] w-full rounded-[8px] border border-[#cbd2d4] bg-white px-4 text-[18px] text-[#202a30] outline-none focus:border-[#c9a84c]"
+                className="client-input mt-2 h-[54px] w-full px-4 text-[16px]"
                 placeholder="(31) 99999-9999"
                 inputMode="tel"
               />
             </label>
-            <p className="mt-4 text-[15px] leading-6 text-[#64727a]">
+            <p className="mt-4 text-[14px] leading-6 text-[#f5f0e4]/58">
               A foto é atualizada pelo botão no cartão superior e aparece imediatamente após o envio.
             </p>
             <button
               type="submit"
               disabled={saving}
-              className="mt-6 flex h-[58px] w-full items-center justify-center gap-3 rounded-[8px] border-0 bg-[#c9a84c] text-[18px] font-black text-[#11191d] disabled:opacity-60"
+              className="client-primary-button mt-6 flex w-full items-center justify-center gap-3 text-[16px] disabled:opacity-60"
             >
               <Save className="h-5 w-5" />
               {saving ? "Salvando..." : "Salvar alterações"}

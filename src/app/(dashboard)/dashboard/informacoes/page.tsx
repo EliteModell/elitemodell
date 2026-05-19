@@ -35,36 +35,40 @@ const sections = [
 
 export default function InformacoesPage() {
   return (
-    <div className="px-4 py-6 space-y-3">
+    <div className="client-page space-y-3">
       <div className="mb-4">
-        <h1 className="text-[20px] font-bold text-[#1f2a30]">Informações importantes</h1>
-        <p className="mt-1 text-[13px] text-[#566570]">Documentos e políticas da plataforma Elite Modell.</p>
+        <p className="client-kicker">Transparência</p>
+        <h1 className="client-title mt-1">Informações importantes</h1>
+        <p className="client-subtitle mt-2">Documentos e políticas da plataforma Elite Modell.</p>
       </div>
 
       {sections.map((section) => (
-        <div
+        <details
           key={section.title}
-          className="rounded-[14px] bg-white p-5 shadow-[0_2px_8px_rgba(20,31,36,0.06)]"
+          className="client-card group p-5"
         >
-          <div className="flex items-start justify-between gap-3">
+          <summary className="flex cursor-pointer list-none items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <h2 className="text-[15px] font-bold text-[#1f2a30]">{section.title}</h2>
-              <p className="mt-1.5 text-[13px] leading-5 text-[#566570]">{section.summary}</p>
+              <h2 className="text-[16px] font-bold text-[#f5f0e4]">{section.title}</h2>
+              <p className="mt-1.5 text-[13px] leading-5 text-[#f5f0e4]/58">{section.summary}</p>
             </div>
-            <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-[#9aabaf]" />
-          </div>
+            <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-[#f5d78c] transition-transform group-open:rotate-180" />
+          </summary>
+          <p className="mt-4 border-t border-white/10 pt-4 text-[13px] leading-6 text-[#f5f0e4]/54">
+            Consulte esta orientação sempre que precisar. As políticas completas ficam disponíveis para leitura nos links oficiais.
+          </p>
           {section.href && (
             <Link
               href={section.href}
-              className="mt-4 inline-block text-[13px] font-semibold text-[#a9822d] no-underline"
+              className="mt-4 inline-block text-[13px] font-semibold text-[#f5d78c] no-underline"
             >
               Ler completo →
             </Link>
           )}
-        </div>
+        </details>
       ))}
 
-      <p className="pt-2 text-center text-[12px] text-[#8fa0a8]">
+      <p className="pt-2 text-center text-[12px] text-[#f5f0e4]/38">
         Elite Modell © {new Date().getFullYear()} — Todos os direitos reservados.
       </p>
     </div>

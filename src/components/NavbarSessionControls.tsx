@@ -71,8 +71,8 @@ export default function NavbarSessionControls({
         ) : null}
         {status === "loading" ? null : session ? (
           <>
-            <Link href={ACCOUNT_ROUTES.painelCliente} onClick={onNavigate} style={{ padding: "10px 14px", borderRadius: 8, color: "#d4a843", textDecoration: "none", fontSize: 14, border: "1px solid rgba(212,168,67,0.2)" }}>
-              Minha conta
+            <Link href={ACCOUNT_ROUTES.mainClientFeed} onClick={onNavigate} style={{ padding: "10px 14px", borderRadius: 8, color: "#d4a843", textDecoration: "none", fontSize: 14, border: "1px solid rgba(212,168,67,0.2)" }}>
+              Explorar
             </Link>
             <button type="button" onClick={handleSignOut} style={{ padding: "10px 14px", borderRadius: 8, color: "#d4a843", background: "transparent", fontSize: 14, border: "1px solid rgba(212,168,67,0.2)", textAlign: "left" }}>
               Sair
@@ -99,8 +99,8 @@ export default function NavbarSessionControls({
   if (session) {
     return (
       <>
-        <Link className="nav-auth-link" href={ACCOUNT_ROUTES.painelCliente} style={{ padding: "8px 18px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14, fontWeight: 500, border: "1px solid rgba(212,168,67,0.2)" }}>
-          {session.user?.name?.split(" ")[0] ?? "Minha conta"}
+        <Link className="nav-auth-link" href={ACCOUNT_ROUTES.mainClientFeed} style={{ padding: "8px 18px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14, fontWeight: 500, border: "1px solid rgba(212,168,67,0.2)" }}>
+          {session.user?.name?.split(" ")[0] ?? "Explorar"}
         </Link>
         <button className="nav-auth-link" onClick={handleSignOut} style={{ padding: "8px 18px", borderRadius: 8, background: "transparent", border: "1px solid rgba(212,168,67,0.3)", color: "#d4a843", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
           Sair

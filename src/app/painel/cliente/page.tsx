@@ -6,5 +6,5 @@ export const dynamic = "force-dynamic";
 
 export default async function PainelClientePage() {
   await requireClientPanel();
-  redirect(ACCOUNT_ROUTES.dashboardCliente);
+  redirect(ACCOUNT_ROUTES.mainClientFeed);
 }

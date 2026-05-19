@@ -51,9 +51,9 @@ export default function BottomNav() {
       ),
     }] : []),
     {
-      href: session ? ACCOUNT_ROUTES.painelCliente : ACCOUNT_ROUTES.login,
-      label: session ? "Perfil" : "Entrar",
-      active: pathname === ACCOUNT_ROUTES.dashboardCliente || pathname === ACCOUNT_ROUTES.painelCliente || pathname === ACCOUNT_ROUTES.login,
+      href: session ? ACCOUNT_ROUTES.mainClientFeed : ACCOUNT_ROUTES.login,
+      label: session ? "Explorar" : "Entrar",
+      active: pathname === ACCOUNT_ROUTES.mainClientFeed || pathname === ACCOUNT_ROUTES.painelCliente || pathname === ACCOUNT_ROUTES.login,
       icon: (active: boolean) => (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? GOLD : "#475569"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>

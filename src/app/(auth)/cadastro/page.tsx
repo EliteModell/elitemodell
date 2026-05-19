@@ -225,7 +225,7 @@ export default function CadastroPage() {
 
   useEffect(() => {
     if (hydrated && status === "authenticated" && accountTypeSelected && form.accountType === "GUEST") {
-      router.replace(ACCOUNT_ROUTES.painelCliente);
+      router.replace(ACCOUNT_ROUTES.mainClientFeed);
     }
   }, [accountTypeSelected, form.accountType, hydrated, router, status]);
 
@@ -337,7 +337,7 @@ export default function CadastroPage() {
     if (form.accountType === "PROPERTY_HOST") {
       return ACCOUNT_ROUTES.onboardingAnfitriao;
     }
-    return ACCOUNT_ROUTES.painelCliente;
+    return ACCOUNT_ROUTES.mainClientFeed;
   }
 
   async function handleSubmit(e: React.FormEvent) {

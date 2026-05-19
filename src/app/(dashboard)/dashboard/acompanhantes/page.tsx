@@ -46,36 +46,37 @@ function ProfessionalCard({ p }: { p: Professional }) {
   const price = p.pricePerHour ?? p.priceMin;
 
   return (
-    <article className="overflow-hidden rounded-[14px] bg-white shadow-[0_2px_12px_rgba(20,31,36,0.08)]">
+    <article className="client-card overflow-hidden">
       {/* Cover photo */}
-      <div className="relative h-[200px] w-full bg-[#d5d9db]">
+      <div className="relative h-[230px] w-full bg-[#17191b]">
         {cover ? (
           <img src={cover} alt={p.displayName} className="h-full w-full object-cover" />
         ) : (
-          <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[#e0e5e7] to-[#c8ced1]">
-            <span className="text-[48px] font-black text-white/40">
+          <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[#2b2211] via-[#17191b] to-[#3a1015]">
+            <span className="text-[48px] font-black text-[#f5d78c]/35">
               {p.displayName[0]?.toUpperCase()}
             </span>
           </div>
         )}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#101214] to-transparent" />
         {/* Badges */}
         <div className="absolute left-3 top-3 flex gap-1.5">
           {p.verified && (
-            <span className="flex items-center gap-1 rounded-full bg-[#0d1318]/75 px-2 py-0.5 text-[11px] font-semibold text-[#4d9b56] backdrop-blur-sm">
+            <span className="flex items-center gap-1 rounded-full border border-white/10 bg-[#0d1318]/78 px-2 py-1 text-[11px] font-semibold text-[#7ed58a] backdrop-blur-sm">
               <BadgeCheck className="h-3.5 w-3.5" />
               Verificada
             </span>
           )}
           {p.featured && (
-            <span className="rounded-full bg-[#c9a84c]/90 px-2 py-0.5 text-[11px] font-semibold text-[#0d1318]">
+            <span className="rounded-full bg-[#d4a843] px-2 py-1 text-[11px] font-semibold text-[#0d1318]">
               Destaque
             </span>
           )}
         </div>
         {/* Price */}
         {price ? (
-          <div className="absolute bottom-3 right-3 rounded-[8px] bg-[#0d1318]/80 px-2.5 py-1 backdrop-blur-sm">
-            <p className="text-[12px] font-bold text-[#c9a84c]">
+          <div className="absolute bottom-3 right-3 rounded-[8px] border border-[#d4a843]/24 bg-[#0d1318]/80 px-2.5 py-1 backdrop-blur-sm">
+            <p className="text-[12px] font-bold text-[#f5d78c]">
               {price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/h
             </p>
           </div>
@@ -85,35 +86,35 @@ function ProfessionalCard({ p }: { p: Professional }) {
       {/* Info */}
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="text-[16px] font-bold text-[#1f2a30]">{p.displayName}</h3>
+          <h3 className="text-[17px] font-bold text-[#f5f0e4]">{p.displayName}</h3>
           <div className="flex shrink-0 items-center gap-1">
-            <Star className="h-3.5 w-3.5 fill-[#c9a84c] text-[#c9a84c]" />
-            <span className="text-[13px] font-semibold text-[#1f2a30]">{p.rating.toFixed(1)}</span>
-            <span className="text-[12px] text-[#8fa0a8]">({p.totalReviews})</span>
+            <Star className="h-3.5 w-3.5 fill-[#d4a843] text-[#d4a843]" />
+            <span className="text-[13px] font-semibold text-[#f5f0e4]">{p.rating.toFixed(1)}</span>
+            <span className="text-[12px] text-[#f5f0e4]/40">({p.totalReviews})</span>
           </div>
         </div>
 
-        <div className="mt-1.5 flex items-center gap-1.5 text-[13px] text-[#6a7a81]">
+        <div className="mt-1.5 flex items-center gap-1.5 text-[13px] text-[#f5f0e4]/52">
           <MapPin className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">{p.city}, {p.state}</span>
         </div>
 
         {p.bio ? (
-          <p className="mt-2 line-clamp-2 text-[13px] leading-5 text-[#566570]">{p.bio}</p>
+          <p className="mt-2 line-clamp-2 text-[13px] leading-5 text-[#f5f0e4]/58">{p.bio}</p>
         ) : null}
 
         {/* Actions */}
         <div className="mt-4 flex gap-2">
           <Link
             href={`/profissionais/${p.slug}`}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[#d0d7da] bg-white py-2.5 text-[13px] font-semibold text-[#1f2a30] no-underline"
+            className="client-secondary-button flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[13px] no-underline"
           >
             Ver perfil
             <ChevronRight className="h-4 w-4" />
           </Link>
           <button
             type="button"
-            className="flex items-center gap-1.5 rounded-[10px] bg-[#c9a84c] px-4 py-2.5 text-[13px] font-semibold text-[#0d1318]"
+            className="client-primary-button flex min-h-0 items-center gap-1.5 px-4 py-2.5 text-[13px]"
           >
             <Phone className="h-4 w-4" />
             Contato
@@ -150,18 +151,18 @@ function FilterDrawer({
         onClick={onClose}
       />
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 rounded-t-[20px] bg-white p-5 pb-8 shadow-[0_-8px_40px_rgba(0,0,0,0.15)] transition-transform duration-300 ${open ? "translate-y-0" : "translate-y-full"}`}
+        className={`fixed inset-x-0 bottom-0 z-50 border-t border-[#d4a843]/18 bg-[#090a0b] p-5 pb-8 shadow-[0_-20px_70px_rgba(0,0,0,0.5)] transition-transform duration-300 ${open ? "translate-y-0" : "translate-y-full"}`}
       >
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-[17px] font-bold text-[#1f2a30]">Filtros</h2>
-          <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full bg-[#f0f3f5] text-[#5a6a71]">
+          <h2 className="text-[17px] font-bold text-[#f5f0e4]">Filtros</h2>
+          <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/70">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="space-y-5">
           <div>
-            <p className="mb-2.5 text-[13px] font-semibold uppercase tracking-[0.08em] text-[#6a7a81]">Categoria</p>
+            <p className="mb-2.5 text-[12px] font-semibold uppercase text-[#f5f0e4]/48">Categoria</p>
             <div className="flex flex-wrap gap-2">
               {CATEGORIES.map((c) => (
                 <button
@@ -170,8 +171,8 @@ function FilterDrawer({
                   onClick={() => onCategory(c.value)}
                   className={`rounded-full px-4 py-2 text-[13px] font-semibold transition-colors ${
                     category === c.value
-                      ? "bg-[#1f2a30] text-white"
-                      : "border border-[#d0d7da] bg-white text-[#4a5a61]"
+                      ? "client-chip-active"
+                      : "client-chip"
                   }`}
                 >
                   {c.label}
@@ -181,7 +182,7 @@ function FilterDrawer({
           </div>
 
           <div>
-            <p className="mb-2.5 text-[13px] font-semibold uppercase tracking-[0.08em] text-[#6a7a81]">Ordenar por</p>
+            <p className="mb-2.5 text-[12px] font-semibold uppercase text-[#f5f0e4]/48">Ordenar por</p>
             <div className="flex flex-wrap gap-2">
               {[
                 { value: "rating", label: "Mais avaliados" },
@@ -195,8 +196,8 @@ function FilterDrawer({
                   onClick={() => onSortBy(s.value)}
                   className={`rounded-full px-4 py-2 text-[13px] font-semibold transition-colors ${
                     sortBy === s.value
-                      ? "bg-[#1f2a30] text-white"
-                      : "border border-[#d0d7da] bg-white text-[#4a5a61]"
+                      ? "client-chip-active"
+                      : "client-chip"
                   }`}
                 >
                   {s.label}
@@ -205,10 +206,10 @@ function FilterDrawer({
             </div>
           </div>
 
-          <label className="flex cursor-pointer items-center justify-between rounded-[12px] border border-[#e4eaec] bg-white p-4">
+          <label className="client-panel-soft flex cursor-pointer items-center justify-between p-4">
             <div>
-              <p className="text-[14px] font-semibold text-[#1f2a30]">Somente verificadas</p>
-              <p className="mt-0.5 text-[12px] text-[#6a7a81]">Perfis com identidade confirmada</p>
+              <p className="text-[14px] font-semibold text-[#f5f0e4]">Somente verificadas</p>
+              <p className="mt-0.5 text-[12px] text-[#f5f0e4]/48">Perfis com identidade confirmada</p>
             </div>
             <div
               className={`relative h-6 w-11 rounded-full transition-colors ${onlyVerified ? "bg-[#4d9b56]" : "bg-[#d0d7da]"}`}
@@ -224,7 +225,7 @@ function FilterDrawer({
         <button
           type="button"
           onClick={onClose}
-          className="mt-6 h-[48px] w-full rounded-[12px] bg-[#1f2a30] text-[15px] font-semibold text-white"
+          className="client-primary-button mt-6 w-full text-[15px]"
         >
           Aplicar filtros
         </button>
@@ -306,25 +307,31 @@ export default function AcompanhantesPage() {
 
   return (
     <>
+      <section className="client-page-header">
+        <p className="client-kicker">Descoberta</p>
+        <h1 className="client-title mt-1">Explorar acompanhantes</h1>
+        <p className="client-subtitle mt-2">Encontre perfis verificados por cidade, estilo e avaliações.</p>
+      </section>
+
       {/* Sticky search + filter header */}
-      <div className="sticky top-0 z-20 bg-[#f0f3f5] pb-3 pt-4 shadow-[0_2px_8px_rgba(20,31,36,0.06)]">
+      <div className="sticky top-[116px] z-20 border-y border-[#d4a843]/10 bg-[#090a0b]/86 pb-3 pt-4 shadow-[0_14px_34px_rgba(0,0,0,0.22)] backdrop-blur-2xl">
         <div className="px-4">
           {/* Search + filter button */}
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8fa0a8]" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#d4a843]" />
               <input
                 type="text"
                 placeholder="Buscar nome ou cidade..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-[44px] w-full rounded-[10px] border border-[#d0d7da] bg-white pl-9 pr-4 text-[14px] text-[#1f2a30] placeholder:text-[#8fa0a8] outline-none focus:border-[#c9a84c]"
+                className="client-input h-[44px] w-full pl-9 pr-4 text-[14px]"
               />
             </div>
             <button
               type="button"
               onClick={() => setFilterOpen(true)}
-              className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[10px] border border-[#d0d7da] bg-white text-[#5a6a71]"
+              className="client-secondary-button flex h-[44px] min-h-0 w-[44px] shrink-0 items-center justify-center"
               aria-label="Filtros"
             >
               <SlidersHorizontal className="h-5 w-5" />
@@ -340,8 +347,8 @@ export default function AcompanhantesPage() {
                 onClick={() => setActiveCategory(c.value)}
                 className={`shrink-0 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors ${
                   activeCategory === c.value
-                    ? "bg-[#1f2a30] text-white"
-                    : "border border-[#d0d7da] bg-white text-[#4a5a61]"
+                    ? "client-chip-active"
+                    : "client-chip"
                 }`}
               >
                 {c.label}
@@ -349,13 +356,13 @@ export default function AcompanhantesPage() {
             ))}
             {/* City quick filter */}
             <div className="relative shrink-0">
-              <MapPin className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8fa0a8]" />
+              <MapPin className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#d4a843]" />
               <input
                 type="text"
                 placeholder="Cidade"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                className="h-[34px] w-[110px] rounded-full border border-[#d0d7da] bg-white pl-7 pr-3 text-[12px] text-[#1f2a30] placeholder:text-[#8fa0a8] outline-none focus:border-[#c9a84c]"
+                className="client-input h-[34px] w-[112px] rounded-full pl-7 pr-3 text-[12px]"
               />
             </div>
           </div>
@@ -365,7 +372,7 @@ export default function AcompanhantesPage() {
       {/* Results count */}
       {!loading && (
         <div className="px-4 pt-4 pb-1">
-          <p className="text-[13px] text-[#6a7a81]">
+          <p className="text-[13px] text-[#f5f0e4]/52">
             {total > 0 ? `${total} acompanhantes encontradas` : "Nenhuma acompanhante encontrada"}
           </p>
         </div>
@@ -375,19 +382,19 @@ export default function AcompanhantesPage() {
       <div className="px-4 pt-3 pb-4 space-y-4">
         {loading && professionals.length === 0 ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-[320px] animate-pulse rounded-[14px] bg-[#e4eaec]" />
+            <div key={i} className="premium-skeleton h-[340px] rounded-[8px]" />
           ))
         ) : professionals.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-16 text-center">
-            <div className="grid h-16 w-16 place-items-center rounded-full bg-[#e4eaec]">
-              <Filter className="h-8 w-8 text-[#8fa0a8]" />
+          <div className="client-empty flex flex-col items-center gap-3 px-5 py-12 text-center">
+            <div className="grid h-16 w-16 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045]">
+              <Filter className="h-8 w-8 text-[#f5d78c]" />
             </div>
-            <p className="text-[15px] font-semibold text-[#1f2a30]">Nenhuma acompanhante encontrada</p>
-            <p className="text-[13px] text-[#6a7a81]">Tente ajustar os filtros ou buscar em outra cidade.</p>
+            <p className="text-[15px] font-semibold text-[#f5f0e4]">Nenhuma acompanhante encontrada</p>
+            <p className="text-[13px] text-[#f5f0e4]/56">Tente ajustar os filtros ou buscar em outra cidade.</p>
             <button
               type="button"
               onClick={() => { setSearch(""); setActiveCategory(""); setCity(""); }}
-              className="mt-2 rounded-full border border-[#c9a84c] px-5 py-2 text-[13px] font-semibold text-[#a9822d]"
+              className="client-secondary-button mt-2 min-h-0 px-5 py-2 text-[13px]"
             >
               Limpar filtros
             </button>
@@ -402,7 +409,7 @@ export default function AcompanhantesPage() {
                 type="button"
                 onClick={() => void fetchMore()}
                 disabled={loading}
-                className="h-[48px] w-full rounded-[12px] border border-[#d0d7da] bg-white text-[14px] font-semibold text-[#1f2a30] transition-colors active:bg-[#f5f8f9]"
+                className="client-secondary-button w-full text-[14px] transition-colors active:bg-white/10"
               >
                 {loading ? "Carregando..." : "Ver mais"}
               </button>

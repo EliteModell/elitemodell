@@ -62,10 +62,10 @@ function ReviewCard({ review }: { review: ReviewItem }) {
   if (!pro) return null;
 
   return (
-    <div className="rounded-[14px] bg-white p-4 shadow-[0_2px_8px_rgba(20,31,36,0.06)]">
+    <div className="client-card p-4">
       {/* Professional info */}
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 overflow-hidden rounded-full border border-[#e4eaec] bg-[#d5d9db]">
+        <div className="h-10 w-10 overflow-hidden rounded-full border border-[#d4a843]/30 bg-[#1b1d1f]">
           {pro.image ? (
             <img src={pro.image} alt={pro.displayName} className="h-full w-full object-cover" />
           ) : (
@@ -76,10 +76,10 @@ function ReviewCard({ review }: { review: ReviewItem }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">
-            <p className="truncate text-[14px] font-semibold text-[#1f2a30]">{pro.displayName}</p>
+            <p className="truncate text-[14px] font-semibold text-[#f5f0e4]">{pro.displayName}</p>
             {pro.verified && <BadgeCheck className="h-4 w-4 shrink-0 text-[#4d9b56]" />}
           </div>
-          <p className="flex items-center gap-1 text-[12px] text-[#6a7a81]">
+          <p className="flex items-center gap-1 text-[12px] text-[#f5f0e4]/50">
             <MapPin className="h-3 w-3" />
             {pro.city}, {pro.state}
           </p>
@@ -90,22 +90,22 @@ function ReviewCard({ review }: { review: ReviewItem }) {
       <div className="mt-3">
         <StarRow rating={review.rating} />
         {review.comment ? (
-          <p className="mt-2 text-[13px] leading-5 text-[#566570] line-clamp-3">{review.comment}</p>
+          <p className="mt-2 text-[13px] leading-5 text-[#f5f0e4]/60 line-clamp-3">{review.comment}</p>
         ) : (
-          <p className="mt-2 text-[13px] italic text-[#8fa0a8]">Sem comentário.</p>
+          <p className="mt-2 text-[13px] italic text-[#f5f0e4]/38">Sem comentário.</p>
         )}
       </div>
 
       {/* Date + CTA */}
       <div className="mt-3 flex items-center justify-between">
-        <p className="text-[11px] text-[#8fa0a8]">
+        <p className="text-[11px] text-[#f5f0e4]/38">
           {new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "numeric" }).format(
             new Date(review.createdAt)
           )}
         </p>
         <Link
           href={`/profissionais/${pro.slug}`}
-          className="flex items-center gap-1 text-[12px] font-semibold text-[#a9822d] no-underline"
+          className="flex items-center gap-1 text-[12px] font-semibold text-[#f5d78c] no-underline"
         >
           Ver acompanhante
           <ChevronRight className="h-3.5 w-3.5" />
@@ -119,9 +119,9 @@ function RecommendCard({ p }: { p: Professional }) {
   return (
     <Link
       href={`/profissionais/${p.slug}`}
-      className="flex min-w-[140px] flex-col items-center rounded-[14px] bg-white p-3 shadow-[0_2px_8px_rgba(20,31,36,0.06)] no-underline"
+      className="client-panel-soft flex min-w-[140px] flex-col items-center p-3 no-underline"
     >
-      <div className="h-14 w-14 overflow-hidden rounded-full border-2 border-[#c9a84c]/40 bg-[#d5d9db]">
+      <div className="h-14 w-14 overflow-hidden rounded-full border-2 border-[#d4a843]/40 bg-[#1b1d1f]">
         {p.image ? (
           <img src={p.image} alt={p.displayName} className="h-full w-full object-cover" />
         ) : (
@@ -130,12 +130,12 @@ function RecommendCard({ p }: { p: Professional }) {
           </div>
         )}
       </div>
-      <p className="mt-2 max-w-[120px] truncate text-center text-[13px] font-semibold text-[#1f2a30]">
+      <p className="mt-2 max-w-[120px] truncate text-center text-[13px] font-semibold text-[#f5f0e4]">
         {p.displayName}
       </p>
       <div className="mt-1 flex items-center gap-1">
         <Star className="h-3 w-3 fill-[#c9a84c] text-[#c9a84c]" />
-        <span className="text-[12px] font-semibold text-[#1f2a30]">{p.rating.toFixed(1)}</span>
+        <span className="text-[12px] font-semibold text-[#f5f0e4]">{p.rating.toFixed(1)}</span>
       </div>
     </Link>
   );
@@ -195,17 +195,23 @@ export default function AvaliacoesPage() {
 
   return (
     <>
+      <section className="client-page-header">
+        <p className="client-kicker">Confiança real</p>
+        <h1 className="client-title mt-1">Avaliações</h1>
+        <p className="client-subtitle mt-2">Veja experiências recentes e descubra perfis bem avaliados.</p>
+      </section>
+
       {/* Sticky search */}
-      <div className="sticky top-0 z-20 border-b border-[#e4eaec] bg-[#f0f3f5] pb-3 pt-4">
+      <div className="sticky top-[116px] z-20 border-y border-[#d4a843]/10 bg-[#090a0b]/86 pb-3 pt-4 backdrop-blur-2xl">
         <div className="px-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8fa0a8]" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#d4a843]" />
             <input
               type="text"
               placeholder="Buscar por cidade..."
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="h-[44px] w-full rounded-[10px] border border-[#d0d7da] bg-white pl-9 pr-4 text-[14px] text-[#1f2a30] placeholder:text-[#8fa0a8] outline-none focus:border-[#c9a84c]"
+              className="client-input h-[44px] w-full pl-9 pr-4 text-[14px]"
             />
           </div>
         </div>
@@ -215,16 +221,16 @@ export default function AvaliacoesPage() {
         {/* Stats */}
         {!loading && stats.total > 0 && (
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-[14px] bg-white p-4 shadow-[0_2px_8px_rgba(20,31,36,0.06)] text-center">
-              <p className="text-[26px] font-bold text-[#1f2a30]">{stats.total}</p>
-              <p className="mt-0.5 text-[12px] text-[#6a7a81]">avaliações</p>
+            <div className="client-panel-soft p-4 text-center">
+              <p className="text-[26px] font-bold text-[#f5f0e4]">{stats.total}</p>
+              <p className="mt-0.5 text-[12px] text-[#f5f0e4]/48">avaliações</p>
             </div>
-            <div className="rounded-[14px] bg-white p-4 shadow-[0_2px_8px_rgba(20,31,36,0.06)] text-center">
+            <div className="client-panel-soft p-4 text-center">
               <div className="flex items-center justify-center gap-1.5">
                 <Star className="h-5 w-5 fill-[#c9a84c] text-[#c9a84c]" />
-                <p className="text-[26px] font-bold text-[#1f2a30]">{stats.avgRating.toFixed(1)}</p>
+                <p className="text-[26px] font-bold text-[#f5f0e4]">{stats.avgRating.toFixed(1)}</p>
               </div>
-              <p className="mt-0.5 text-[12px] text-[#6a7a81]">média geral</p>
+              <p className="mt-0.5 text-[12px] text-[#f5f0e4]/48">média geral</p>
             </div>
           </div>
         )}
@@ -233,8 +239,8 @@ export default function AvaliacoesPage() {
         {recommended.length > 0 && (
           <div>
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-[16px] font-bold text-[#1f2a30]">Mais bem avaliadas</h2>
-              <Link href="/dashboard/acompanhantes" className="text-[13px] font-semibold text-[#a9822d] no-underline">
+              <h2 className="text-[16px] font-bold text-[#f5f0e4]">Mais bem avaliadas</h2>
+              <Link href="/dashboard/acompanhantes" className="text-[13px] font-semibold text-[#f5d78c] no-underline">
                 Ver todas
               </Link>
             </div>
@@ -248,29 +254,29 @@ export default function AvaliacoesPage() {
 
         {/* Reviews list */}
         <div>
-          <h2 className="mb-3 flex items-center gap-2 text-[16px] font-bold text-[#1f2a30]">
-            <MessageSquare className="h-5 w-5 text-[#5a6a71]" />
+          <h2 className="mb-3 flex items-center gap-2 text-[16px] font-bold text-[#f5f0e4]">
+            <MessageSquare className="h-5 w-5 text-[#f5d78c]" />
             Avaliações recentes
           </h2>
 
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-[130px] animate-pulse rounded-[14px] bg-[#e4eaec]" />
+                <div key={i} className="premium-skeleton h-[130px] rounded-[8px]" />
               ))}
             </div>
           ) : reviews.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-[14px] bg-white py-10 text-center shadow-[0_2px_8px_rgba(20,31,36,0.06)]">
-              <div className="grid h-14 w-14 place-items-center rounded-full bg-[#f0f3f5]">
-                <ThumbsUp className="h-7 w-7 text-[#8fa0a8]" />
+            <div className="client-empty flex flex-col items-center gap-3 px-5 py-10 text-center">
+              <div className="grid h-14 w-14 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045]">
+                <ThumbsUp className="h-7 w-7 text-[#f5d78c]" />
               </div>
-              <p className="text-[14px] font-semibold text-[#1f2a30]">Nenhuma avaliação encontrada</p>
-              <p className="text-[13px] text-[#6a7a81]">
+              <p className="text-[14px] font-semibold text-[#f5f0e4]">Nenhuma avaliação encontrada</p>
+              <p className="text-[13px] text-[#f5f0e4]/54">
                 {city ? `Não há avaliações em "${city}" ainda.` : "Seja o primeiro a avaliar!"}
               </p>
               <Link
                 href="/dashboard/acompanhantes"
-                className="mt-2 rounded-full border border-[#c9a84c] px-5 py-2 text-[13px] font-semibold text-[#a9822d] no-underline"
+                className="client-secondary-button mt-2 min-h-0 px-5 py-2 text-[13px] no-underline"
               >
                 Encontrar acompanhantes
               </Link>

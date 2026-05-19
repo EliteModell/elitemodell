@@ -32,18 +32,19 @@ export default function ProfileHeaderCard({
   onEdit: () => void;
 }) {
   return (
-    <section className="bg-[#e7edf0] px-5 py-8">
-      <div className="rounded-[8px] bg-white p-6 text-center shadow-[0_1px_0_rgba(20,31,36,0.05)]">
-        <div className="mx-auto h-[126px] w-[126px] overflow-hidden rounded-full border-4 border-white bg-[#d9e0e3] shadow-[0_8px_26px_rgba(28,38,43,0.12)]">
+    <section className="client-page-header">
+      <div className="client-panel relative overflow-hidden p-6 text-center">
+        <div className="pointer-events-none absolute inset-x-10 top-0 h-32 bg-[#d4a843]/10 blur-3xl" />
+        <div className="relative mx-auto h-[126px] w-[126px] overflow-hidden rounded-full border-4 border-[#d4a843]/30 bg-[#1b1d1f] shadow-[0_0_46px_rgba(212,168,67,0.16)]">
           {image ? (
             <img src={image} alt={name ?? "Avatar"} className="h-full w-full object-cover" />
           ) : (
-            <div className="grid h-full w-full place-items-center text-3xl font-black text-[#8b6b25]">{initials(name)}</div>
+            <div className="grid h-full w-full place-items-center text-3xl font-black text-[#f5d78c]">{initials(name)}</div>
           )}
         </div>
-        <h1 className="mt-5 text-[28px] font-black text-[#202a30]">{name ?? "Cliente Elite"}</h1>
-        <p className="mt-1 break-words text-[16px] text-[#64727a]">{email ?? "Conta discreta"}</p>
-        <p className="mx-auto mt-3 inline-flex items-center gap-2 rounded-full bg-[#eef7ef] px-4 py-2 text-sm font-black text-[#3e8d4a]">
+        <h1 className="relative mt-5 text-[28px] font-black text-[#f5f0e4]">{name ?? "Cliente Elite"}</h1>
+        <p className="relative mt-1 break-words text-[15px] text-[#f5f0e4]/56">{email ?? "Conta discreta"}</p>
+        <p className="relative mx-auto mt-3 inline-flex items-center gap-2 rounded-full border border-[#4d9b56]/30 bg-[#4d9b56]/12 px-4 py-2 text-sm font-black text-[#7ed58a]">
           <ShieldCheck className="h-4 w-4" />
           {verified ? "Conta verificada" : "Verificação em andamento"}
         </p>
@@ -53,7 +54,7 @@ export default function ProfileHeaderCard({
             type="button"
             onClick={onChoosePhoto}
             disabled={uploading}
-            className="flex h-[56px] items-center justify-center gap-3 rounded-[8px] border border-[#202a30] bg-white text-[17px] font-black text-[#202a30] disabled:opacity-60"
+            className="client-secondary-button flex items-center justify-center gap-3 text-[16px] disabled:opacity-60"
           >
             {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
             {uploading ? "Enviando foto..." : "Trocar foto"}
@@ -61,7 +62,7 @@ export default function ProfileHeaderCard({
           <button
             type="button"
             onClick={onEdit}
-            className="flex h-[56px] items-center justify-center gap-3 rounded-[8px] border-0 bg-[#c9a84c] text-[17px] font-black text-[#11191d]"
+            className="client-primary-button flex items-center justify-center gap-3 text-[16px]"
           >
             <Pencil className="h-5 w-5" />
             Editar dados

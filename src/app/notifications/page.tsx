@@ -12,7 +12,7 @@ export default async function NotificationsPage() {
   if (!session?.user?.id) redirect(ACCOUNT_ROUTES.login);
 
   return (
-    <ClientAreaShell backHref="/dashboard">
+    <ClientAreaShell backHref="/dashboard/acompanhantes">
       <NotificationsEmptyState />
     </ClientAreaShell>
   );

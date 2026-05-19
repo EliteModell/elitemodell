@@ -20,34 +20,35 @@ function ContactCard({
       href={href}
       target={external ? "_blank" : undefined}
       rel={external ? "noopener noreferrer" : undefined}
-      className="flex min-h-[70px] items-center gap-4 rounded-[14px] border border-[#e4eaec] bg-white p-4 no-underline shadow-[0_2px_8px_rgba(20,31,36,0.05)] transition-colors active:bg-[#f5f8f9]"
+      className="client-card flex min-h-[72px] items-center gap-4 p-4 no-underline transition-colors active:bg-white/10"
     >
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px] bg-[#fef3d6] text-[#a9822d]">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/12 text-[#f5d78c]">
         {icon}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[15px] font-semibold text-[#1f2a30]">{title}</p>
-        <p className="mt-0.5 text-[12px] text-[#6a7a81]">{subtitle}</p>
+        <p className="text-[15px] font-semibold text-[#f5f0e4]">{title}</p>
+        <p className="mt-0.5 text-[12px] text-[#f5f0e4]/50">{subtitle}</p>
       </div>
-      <ChevronRight className="h-4 w-4 shrink-0 text-[#9aabaf]" />
+      <ChevronRight className="h-4 w-4 shrink-0 text-[#f5d78c]" />
     </a>
   );
 }
 
 export default function AtendimentoPage() {
   return (
-    <div className="px-4 py-6 space-y-5">
+    <div className="client-page space-y-5">
       <div>
-        <h1 className="text-[20px] font-bold text-[#1f2a30]">Central de Atendimento</h1>
-        <p className="mt-1 text-[13px] text-[#566570]">
+        <p className="client-kicker">Suporte seguro</p>
+        <h1 className="client-title mt-1">Central de Atendimento</h1>
+        <p className="client-subtitle mt-2">
           Nossa equipe está disponível para ajudar de forma segura e discreta.
         </p>
       </div>
 
       {/* Notice */}
-      <div className="rounded-[14px] border border-[#f0d88a]/40 bg-[#fef9f0] p-4">
-        <p className="text-[13px] font-semibold text-[#a9822d]">Atenção</p>
-        <p className="mt-1 text-[13px] leading-5 text-[#7a6020]">
+      <div className="client-panel p-4">
+        <p className="text-[13px] font-semibold text-[#f5d78c]">Atenção</p>
+        <p className="mt-1 text-[13px] leading-5 text-[#f5f0e4]/60">
           Nunca peça ou forneça dados pessoais fora dos canais oficiais abaixo. A Elite Modell nunca solicita senhas.
         </p>
       </div>
@@ -77,24 +78,32 @@ export default function AtendimentoPage() {
       </div>
 
       {/* FAQ */}
-      <div className="rounded-[14px] bg-white p-5 shadow-[0_2px_12px_rgba(20,31,36,0.06)]">
-        <h2 className="text-[15px] font-bold text-[#1f2a30]">Dúvidas frequentes</h2>
+      <div className="client-card p-5">
+        <h2 className="text-[18px] font-bold text-[#f5f0e4]">Dúvidas frequentes</h2>
         {[
           "Como funciona a verificação de conta?",
           "Como cancelar meu plano?",
           "Meus dados são seguros?",
           "Como solicitar reembolso?",
-        ].map((faq) => (
-          <div key={faq} className="mt-3 flex items-center gap-3 border-t border-[#f0f3f5] pt-3">
-            <p className="flex-1 text-[13px] text-[#566570]">{faq}</p>
-            <ChevronRight className="h-4 w-4 shrink-0 text-[#9aabaf]" />
-          </div>
+        ].map((faq, index) => (
+          <details key={faq} className="group mt-3 border-t border-white/10 pt-3">
+            <summary className="flex min-h-[44px] cursor-pointer list-none items-center gap-3 text-[14px] font-semibold text-[#f5f0e4]">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[8px] bg-white/[0.045] text-[12px] text-[#f5d78c]">
+                {index + 1}
+              </span>
+              <span className="flex-1">{faq}</span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-[#f5d78c] transition-transform group-open:rotate-90" />
+            </summary>
+            <p className="pb-2 pl-11 pr-1 text-[13px] leading-5 text-[#f5f0e4]/56">
+              Nossa equipe orienta pelo canal oficial e mantém sua privacidade em todas as etapas.
+            </p>
+          </details>
         ))}
       </div>
 
       <Link
         href="/dashboard/informacoes"
-        className="block text-center text-[13px] font-semibold text-[#a9822d] no-underline"
+        className="block text-center text-[13px] font-semibold text-[#f5d78c] no-underline"
       >
         Ver informações importantes →
       </Link>

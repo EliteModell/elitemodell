@@ -4,19 +4,19 @@ import { UserRound } from "lucide-react";
 
 function ListCard({ title }: { title: string }) {
   return (
-    <article className="overflow-hidden rounded-[12px] border border-[#e4eaec] bg-white shadow-[0_2px_8px_rgba(22,32,38,0.06)]">
+    <article className="client-panel-soft overflow-hidden">
       <div className="grid aspect-square grid-cols-2">
-        <div className="bg-[#c8cdd0]" />
-        <div className="bg-[#d5d9db]" />
-        <div className="bg-[#d5d9db]" />
-        <div className="grid place-items-center bg-[#b8bdc0] text-[22px] font-black tracking-[0.14em] text-white">
+        <div className="bg-[linear-gradient(135deg,#2b2211,#d4a843)] opacity-80" />
+        <div className="bg-[linear-gradient(135deg,#191b1d,#3d3430)]" />
+        <div className="bg-[linear-gradient(135deg,#18191b,#8f1d24)] opacity-75" />
+        <div className="grid place-items-center bg-[#111315] text-[22px] font-black text-[#f5d78c]">
           ···
         </div>
       </div>
       <div className="p-3.5">
-        <h3 className="min-h-[40px] text-[13px] font-semibold leading-5 text-[#1f2a30]">{title}</h3>
-        <p className="mt-1.5 text-[12px] text-[#6a7a81]">Automática</p>
-        <p className="mt-1 flex items-center gap-1 text-[12px] text-[#6a7a81]">
+        <h3 className="min-h-[40px] text-[13px] font-semibold leading-5 text-[#f5f0e4]">{title}</h3>
+        <p className="mt-1.5 text-[12px] text-[#f5f0e4]/46">Automática</p>
+        <p className="mt-1 flex items-center gap-1 text-[12px] text-[#f5f0e4]/46">
           <UserRound className="h-3.5 w-3.5" />
           0 perfil
         </p>
@@ -27,9 +27,12 @@ function ListCard({ title }: { title: string }) {
 
 export default function ListsSection() {
   return (
-    <section className="bg-white px-4 py-8">
-      <h2 className="text-[18px] font-bold text-[#1f2a30]">Listas</h2>
-      <p className="mt-2 text-[13px] leading-5 text-[#566570]">
+    <section className="client-page-tight">
+      <div className="mb-4">
+        <p className="client-kicker">Coleções privadas</p>
+        <h2 className="mt-1 text-[20px] font-bold text-[#f5f0e4]">Listas</h2>
+      </div>
+      <p className="text-[13px] leading-5 text-[#f5f0e4]/58">
         Crie listas para salvar e organizar suas publicações favoritas. Só você terá acesso às listas criadas.
       </p>
 
@@ -41,13 +44,13 @@ export default function ListsSection() {
       <div className="mt-6 space-y-0">
         <button
           type="button"
-          className="h-[48px] w-full rounded-[10px] border border-[#1f2a30] bg-white text-[15px] font-semibold text-[#1f2a30] transition-colors active:bg-[#f5f8f9]"
+          className="client-secondary-button w-full text-[15px]"
         >
           Criar Lista
         </button>
         <Link
           href="/dashboard/favoritos"
-          className="block py-4 text-center text-[15px] font-semibold text-[#1f2a30] no-underline"
+          className="block py-4 text-center text-[15px] font-semibold text-[#f5d78c] no-underline"
         >
           Mostrar todas
         </Link>

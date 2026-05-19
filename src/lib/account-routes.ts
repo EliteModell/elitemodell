@@ -67,7 +67,7 @@ type PostLoginUser = {
 };
 
 export function postLoginPathFromUser(user: PostLoginUser | null | undefined) {
-  if (!user) return ACCOUNT_ROUTES.painelCliente;
+  if (!user) return ACCOUNT_ROUTES.mainClientFeed;
   if (user.redirectTo) return user.redirectTo;
   if (user.role === "ADMIN") return ACCOUNT_ROUTES.admin;
 

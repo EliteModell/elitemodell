@@ -30,39 +30,41 @@ const plans = [
 
 export default function PlanosPage() {
   return (
-    <div className="px-4 py-6 space-y-4">
+    <div className="client-page space-y-4">
       <div className="mb-2">
-        <h1 className="text-[20px] font-bold text-[#1f2a30]">Planos</h1>
-        <p className="mt-1 text-[13px] text-[#566570]">Escolha o plano ideal para sua experiência.</p>
+        <p className="client-kicker">Elite Premium</p>
+        <h1 className="client-title mt-1">Planos</h1>
+        <p className="client-subtitle mt-2">Escolha o plano ideal para sua experiência.</p>
       </div>
 
       {plans.map((plan) => (
         <div
           key={plan.name}
-          className={`rounded-[14px] p-5 shadow-[0_2px_12px_rgba(20,31,36,0.08)] ${
-            plan.gold ? "bg-[#0d1318] text-white" : "border border-[#e4eaec] bg-white text-[#1f2a30]"
+          className={`p-5 ${
+            plan.gold ? "client-panel relative overflow-hidden text-white" : "client-card text-[#f5f0e4]"
           }`}
         >
+          {plan.gold ? <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-[#d4a843]/16 blur-3xl" /> : null}
           {plan.gold && (
-            <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#c9a84c]/20 px-3 py-1 text-[12px] font-semibold text-[#c9a84c]">
+            <div className="relative mb-3 inline-flex items-center gap-1.5 rounded-full border border-[#d4a843]/24 bg-[#d4a843]/14 px-3 py-1 text-[12px] font-semibold text-[#f5d78c]">
               <Star className="h-3.5 w-3.5 fill-current" />
               Recomendado
             </div>
           )}
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className={`text-[18px] font-bold ${plan.gold ? "text-white" : "text-[#1f2a30]"}`}>
+              <h2 className={`text-[19px] font-bold ${plan.gold ? "text-white" : "text-[#f5f0e4]"}`}>
                 {plan.name}
               </h2>
-              <p className={`mt-0.5 text-[13px] ${plan.gold ? "text-white/60" : "text-[#566570]"}`}>
+              <p className={`mt-0.5 text-[13px] ${plan.gold ? "text-white/60" : "text-[#f5f0e4]/58"}`}>
                 {plan.description}
               </p>
             </div>
             <div className="text-right">
-              <p className={`text-[22px] font-bold ${plan.gold ? "text-[#c9a84c]" : "text-[#1f2a30]"}`}>
+              <p className={`text-[22px] font-bold ${plan.gold ? "text-[#f5d78c]" : "text-[#f5f0e4]"}`}>
                 {plan.price}
               </p>
-              <p className={`text-[12px] ${plan.gold ? "text-white/50" : "text-[#6a7a81]"}`}>{plan.period}</p>
+              <p className={`text-[12px] ${plan.gold ? "text-white/50" : "text-[#f5f0e4]/46"}`}>{plan.period}</p>
             </div>
           </div>
 
@@ -71,24 +73,24 @@ export default function PlanosPage() {
               <li key={f} className="flex items-center gap-2.5">
                 <span
                   className={`grid h-5 w-5 shrink-0 place-items-center rounded-full ${
-                    plan.gold ? "bg-[#c9a84c]/20 text-[#c9a84c]" : "bg-[#f0f3f5] text-[#4d9b56]"
+                    plan.gold ? "bg-[#c9a84c]/20 text-[#f5d78c]" : "bg-[#4d9b56]/14 text-[#7ed58a]"
                   }`}
                 >
                   <Check className="h-3 w-3" />
                 </span>
-                <span className={`text-[13px] ${plan.gold ? "text-white/75" : "text-[#566570]"}`}>{f}</span>
+                <span className={`text-[13px] ${plan.gold ? "text-white/75" : "text-[#f5f0e4]/60"}`}>{f}</span>
               </li>
             ))}
           </ul>
 
           <button
             type="button"
-            className={`mt-6 h-[48px] w-full rounded-[10px] text-[15px] font-semibold transition-opacity active:opacity-80 ${
+            className={`mt-6 h-[48px] w-full rounded-[8px] text-[15px] font-semibold transition-opacity active:opacity-80 ${
               plan.current
-                ? "border border-[#d0d7da] bg-white text-[#6a7a81] cursor-default"
+                ? "border border-white/10 bg-white/[0.045] text-[#f5f0e4]/46 cursor-default"
                 : plan.gold
-                ? "bg-[#c9a84c] text-[#0d1318]"
-                : "bg-[#1f2a30] text-white"
+                ? "client-primary-button"
+                : "client-secondary-button"
             }`}
           >
             {plan.current ? "Plano atual" : "Assinar agora"}
