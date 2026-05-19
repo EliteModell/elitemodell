@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
+import { enforceRateLimit, getClientIP } from "@/lib/security";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,6 +14,34 @@ const supabase = createClient(
 const ALLOWED_IMAGE = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const ALLOWED_DOC   = [...ALLOWED_IMAGE, "application/pdf"];
 const ALLOWED_VIDEO = [...ALLOWED_IMAGE, "video/mp4", "video/webm", "video/quicktime"];
+const ALLOWED_ROOT_FOLDERS = new Set(["verificacao", "documentos", "properties", "profiles", "stories"]);
+
+function normalizeFolder(folder: string) {
+  const segments = folder
+    .replace(/\\/g, "/")
+    .split("/")
+    .map((segment) => segment.trim())
+    .filter((segment) => /^[a-zA-Z0-9_-]+$/.test(segment));
+  const root = segments[0] && ALLOWED_ROOT_FOLDERS.has(segments[0]) ? segments[0] : "stories";
+  return [root, ...segments.slice(1, 4)].join("/");
+}
+
+function headerText(bytes: Uint8Array, start: number, length: number) {
+  return String.fromCharCode(...bytes.slice(start, start + length));
+}
+
+async function hasExpectedSignature(file: File) {
+  const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  if (file.type === "image/jpeg" || file.type === "image/jpg") {
+    return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  }
+  if (file.type === "image/png") return bytes[0] === 0x89 && headerText(bytes, 1, 3) === "PNG";
+  if (file.type === "image/webp") return headerText(bytes, 0, 4) === "RIFF" && headerText(bytes, 8, 4) === "WEBP";
+  if (file.type === "application/pdf") return headerText(bytes, 0, 4) === "%PDF";
+  if (file.type === "video/mp4" || file.type === "video/quicktime") return headerText(bytes, 4, 4) === "ftyp";
+  if (file.type === "video/webm") return bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3;
+  return false;
+}
 
 // Mapeamento folder → bucket + configurações
 function resolveBucket(folder: string): {
@@ -43,8 +72,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
+  const requestIp = getClientIP(req);
+  const limited = enforceRateLimit(
+    `upload:${session.user.id}:${requestIp}`,
+    40,
+    15 * 60 * 1000,
+    "Muitos uploads em pouco tempo. Tente novamente em instantes."
+  );
+  if (limited) return limited;
+
   const url    = new URL(req.url);
-  const folder = url.searchParams.get("folder") ?? "stories";
+  const folder = normalizeFolder(url.searchParams.get("folder") ?? "stories");
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
@@ -67,6 +105,10 @@ export async function POST(req: NextRequest) {
   }
 
   // Sanitiza extensão
+  if (!(await hasExpectedSignature(file))) {
+    return NextResponse.json({ error: "Arquivo rejeitado: assinatura binaria nao corresponde ao tipo informado." }, { status: 400 });
+  }
+
   const mimeToExt: Record<string, string> = {
     "image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png", "image/webp": "webp",
     "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov",
@@ -76,9 +118,10 @@ export async function POST(req: NextRequest) {
   const propertyId = folder.startsWith("properties/")
     ? folder.split("/").filter(Boolean)[1]
     : null;
+  const filename = `${Date.now()}-${globalThis.crypto.randomUUID()}.${ext}`;
   const path = propertyId
-    ? `properties/${session.user.id}/${propertyId}/${Date.now()}.${ext}`
-    : `${folder}/${session.user.id}/${Date.now()}.${ext}`;
+    ? `properties/${session.user.id}/${propertyId}/${filename}`
+    : `${folder}/${session.user.id}/${filename}`;
   const buffer = Buffer.from(await file.arrayBuffer());
 
   const { error } = await supabase.storage

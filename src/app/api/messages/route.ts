@@ -1,33 +1,34 @@
-// Mensagens vinculadas a uma Booking — chat hóspede ↔ anfitrião
+// Mensagens vinculadas a uma Booking: chat hospede <-> anfitriao
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { enforceRateLimit, sanitizeInput } from "@/lib/security";
 
 const createSchema = z.object({
-  bookingId: z.string(),
-  content:   z.string().min(1).max(2000),
+  bookingId: z.string().cuid(),
+  content: z.string().min(1).max(2000),
 });
 
 async function isBookingParticipant(bookingId: string, userId: string) {
-  const b = await prisma.booking.findUnique({
+  const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: { property: { select: { hostId: true } } },
   });
-  if (!b) return false;
-  return b.guestId === userId || b.property.hostId === userId;
+  if (!booking) return false;
+  return booking.guestId === userId || booking.property.hostId === userId;
 }
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  if (!session?.user) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const bookingId = searchParams.get("bookingId");
-  const since = searchParams.get("since"); // ISO date para polling incremental
-  if (!bookingId) return NextResponse.json({ error: "bookingId obrigatório." }, { status: 400 });
+  const since = searchParams.get("since");
+  if (!bookingId) return NextResponse.json({ error: "bookingId obrigatorio." }, { status: 400 });
 
   if (!(await isBookingParticipant(bookingId, session.user.id))) {
     return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
@@ -43,10 +44,9 @@ export async function GET(req: NextRequest) {
     take: 200,
   });
 
-  // Marca como lidas as que não são minhas
   await prisma.message.updateMany({
     where: { bookingId, senderId: { not: session.user.id }, read: false },
-    data:  { read: true },
+    data: { read: true },
   });
 
   return NextResponse.json(messages);
@@ -54,11 +54,16 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  if (!session?.user) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
+
+  const limited = enforceRateLimit(`messages:${session.user.id}`, 60, 60 * 1000, "Muitas mensagens em pouco tempo.");
+  if (limited) return limited;
 
   try {
     const body = await req.json();
     const data = createSchema.parse(body);
+    const content = sanitizeInput(data.content);
+    if (!content) return NextResponse.json({ error: "Mensagem vazia." }, { status: 400 });
 
     if (!(await isBookingParticipant(data.bookingId, session.user.id))) {
       return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
@@ -67,8 +72,8 @@ export async function POST(req: NextRequest) {
     const message = await prisma.message.create({
       data: {
         bookingId: data.bookingId,
-        senderId:  session.user.id,
-        content:   data.content,
+        senderId: session.user.id,
+        content,
       },
       include: { sender: { select: { id: true, name: true, image: true } } },
     });

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { AppointmentStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { enforceRateLimit } from "@/lib/security";
 
 const createSchema = z.object({
   professionalSlug: z.string(),
@@ -62,6 +63,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  const limited = enforceRateLimit(`appointments:${session.user.id}`, 20, 60 * 60 * 1000, "Muitos agendamentos em pouco tempo.");
+  if (limited) return limited;
 
   try {
     const body = await req.json();
@@ -108,6 +111,8 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "NÃ£o autorizado." }, { status: 401 });
+  const limited = enforceRateLimit(`appointments-update:${session.user.id}`, 60, 60 * 1000, "Muitas atualizacoes em pouco tempo.");
+  if (limited) return limited;
 
   try {
     const body = await req.json();

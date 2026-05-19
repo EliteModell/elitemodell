@@ -17,7 +17,7 @@ export async function GET(
     include: {
       photos:    { orderBy: { order: "asc" } },
       amenities: true,
-      host:      { select: { id: true, name: true, image: true, createdAt: true } },
+      host:      { select: { name: true, image: true, createdAt: true } },
       reviews:   {
         include: { author: { select: { name: true, image: true } } },
         orderBy: { createdAt: "desc" },
@@ -40,5 +40,7 @@ export async function GET(
     return NextResponse.json({ error: "Local disponivel apenas para profissionais aprovadas." }, { status: 403 });
   }
 
-  return NextResponse.json(property);
+  const { hostId, ...publicProperty } = property;
+  void hostId;
+  return NextResponse.json(publicProperty);
 }

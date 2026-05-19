@@ -7,9 +7,10 @@ import { BookingStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { canCreatePropertyUseRequest } from "@/lib/property-access";
+import { sanitizeInput } from "@/lib/security";
 
 const createSchema = z.object({
-  propertyId: z.string(),
+  propertyId: z.string().cuid(),
   checkIn: z.string(),
   checkOut: z.string(),
   guests: z.number().int().positive(),
@@ -135,7 +136,7 @@ export async function POST(req: NextRequest) {
         totalPrice,
         paymentMethod: data.paymentMethod,
         couponCode: data.couponCode,
-        notes: data.notes,
+        notes: data.notes ? sanitizeInput(data.notes) : undefined,
         status: property.instantBook ? "CONFIRMED" : "PENDING",
         hostPayout: totalPrice * 0.9,
       },

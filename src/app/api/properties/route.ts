@@ -90,8 +90,14 @@ export async function GET(req: NextRequest) {
     prisma.property.count({ where }),
   ]);
 
+  const publicProperties = properties.map((property) => {
+    const { hostId, ...safe } = property;
+    void hostId;
+    return safe;
+  });
+
   return NextResponse.json(
-    { properties, total, page, pages: Math.ceil(total / limit) },
+    { properties: publicProperties, total, page, pages: Math.ceil(total / limit) },
     { headers: { "Cache-Control": "private, max-age=30" } },
   );
 }

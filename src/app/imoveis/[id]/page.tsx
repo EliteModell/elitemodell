@@ -43,7 +43,7 @@ type PropertyDetail = {
   totalReviews: number;
   photos: { id: string; url: string; caption?: string | null }[];
   amenities: { id: string; name: string }[];
-  host: { id: string; name: string | null; image: string | null; createdAt: string };
+  host: { name: string | null; image: string | null; createdAt: string };
   reviews: {
     rating: number;
     cleanliness: number;

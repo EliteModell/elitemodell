@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { isAgeOfMajority } from "@/lib/age-validation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { enforceRateLimit, getClientIP } from "@/lib/security";
 
 const schema = z.object({
   accessToken: z.string(),
@@ -17,6 +18,9 @@ const schema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(`register:${getClientIP(req)}`, 20, 60 * 60 * 1000, "Muitas tentativas de cadastro. Tente novamente mais tarde.");
+  if (limited) return limited;
+
   try {
     const body = await req.json();
     const { accessToken, role, accountType, category, birthDate, lgpdConsent, termsConsent } = schema.parse(body);

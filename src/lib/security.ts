@@ -3,10 +3,19 @@
  * Rate limiting, validações, e proteções gerais
  */
 
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 // Armazenar tentativas de requisição em memória (em produção usar Redis)
 const requestCounts = new Map<string, { count: number; resetAt: number }>();
+let lastPruneAt = 0;
+
+function pruneExpiredRateLimits(now: number) {
+  if (now - lastPruneAt < 60 * 1000) return;
+  lastPruneAt = now;
+  for (const [key, record] of requestCounts.entries()) {
+    if (now >= record.resetAt) requestCounts.delete(key);
+  }
+}
 
 /**
  * Rate limiting simples (verificar de 5 em 5 min)
@@ -20,6 +29,7 @@ export function checkRateLimit(
   windowMs: number = 5 * 60 * 1000
 ): { allowed: boolean; remaining: number; resetIn: number } {
   const now = Date.now();
+  pruneExpiredRateLimits(now);
   const record = requestCounts.get(identifier);
 
   if (!record || now >= record.resetAt) {
@@ -34,6 +44,26 @@ export function checkRateLimit(
 
   record.count++;
   return { allowed: true, remaining: maxRequests - record.count, resetIn: record.resetAt - now };
+}
+
+export function rateLimitResponse(resetIn: number, message = "Muitas tentativas. Tente novamente em instantes.") {
+  return NextResponse.json(
+    { error: message },
+    {
+      status: 429,
+      headers: { "Retry-After": String(Math.max(1, Math.ceil(resetIn / 1000))) },
+    }
+  );
+}
+
+export function enforceRateLimit(
+  identifier: string,
+  maxRequests: number,
+  windowMs: number,
+  message?: string
+): NextResponse | null {
+  const limit = checkRateLimit(identifier, maxRequests, windowMs);
+  return limit.allowed ? null : rateLimitResponse(limit.resetIn, message);
 }
 
 /**
