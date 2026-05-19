@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { motion } from "framer-motion";
 import { Bell, Menu, Search, ShieldCheck, Sparkles } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import DashSidebar from "@/components/DashSidebar";
+import ClientAreaShell from "@/components/client-area/ClientAreaShell";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 function LoadingScreen() {
@@ -44,6 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => document.removeEventListener("mousedown", handleClick);
   }, [notifOpen]);
   const isPublicPropertyDraft = pathname === ACCOUNT_ROUTES.onboardingAnfitriao;
+  const isClientArea = pathname === ACCOUNT_ROUTES.dashboardCliente || pathname.startsWith(`${ACCOUNT_ROUTES.dashboardCliente}/`);
 
   useEffect(() => {
     if (status === "unauthenticated" && !isPublicPropertyDraft) {
@@ -66,6 +66,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </div>
     );
+  }
+
+  if (isClientArea) {
+    return <ClientAreaShell>{children}</ClientAreaShell>;
   }
 
   return (
@@ -127,16 +131,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        <motion.main
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
-          className="relative flex-1 px-4 py-5 pb-8 sm:px-6 sm:py-6 md:px-8 lg:px-10"
-        >
+        <main className="dashboard-content relative flex-1 px-4 py-5 pb-8 sm:px-6 sm:py-6 md:px-8 lg:px-10">
           <div className="mx-auto w-full max-w-[1480px]">{children}</div>
-        </motion.main>
+        </main>
 
       </div>
+      <style jsx>{`
+        .dashboard-content {
+          animation: dashboard-fade-in 180ms ease-out both;
+        }
+        @keyframes dashboard-fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .dashboard-content {
+            animation: none;
+          }
+        }
+      `}</style>
     </div>
   );
 }

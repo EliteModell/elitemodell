@@ -19,7 +19,9 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { accessToken, role, category, birthDate, lgpdConsent, termsConsent } = schema.parse(body);
+    const { accessToken, role, accountType, category, birthDate, lgpdConsent, termsConsent } = schema.parse(body);
+    const publicAccountType =
+      accountType === "PROFESSIONAL" ? "model" : accountType === "PROPERTY_HOST" ? "host" : "client";
 
     const supabase = createSupabaseServerClient();
     const { data, error } = await supabase.auth.getUser(accessToken);
@@ -61,6 +63,7 @@ export async function POST(req: NextRequest) {
           image: existing.image ?? (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
           phone: existing.phone ?? phone ?? null,
           role: existing.role === "ADMIN" ? "ADMIN" : role,
+          accountType: existing.accountType === "admin" ? "admin" : publicAccountType,
           category: category ?? existing.category,
           birthDate: birthDate ? new Date(birthDate) : existing.birthDate,
           lgpdConsent: existing.lgpdConsent || lgpdConsent,
@@ -95,6 +98,7 @@ export async function POST(req: NextRequest) {
         image: (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
         phone: phone ?? null,
         role,
+        accountType: publicAccountType,
         category: category ?? null,
         birthDate: new Date(birthDate),
         lgpdConsent,

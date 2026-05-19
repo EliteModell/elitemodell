@@ -15,6 +15,13 @@ VALUES
     ARRAY['image/jpeg','image/jpg','image/png','image/webp']
   ),
   (
+    'properties',
+    'properties',
+    true,
+    10485760,
+    ARRAY['image/jpeg','image/jpg','image/png','image/webp']
+  ),
+  (
     'documentos',
     'documentos',
     false,   -- PRIVADO: nunca acessível diretamente por URL pública
@@ -40,6 +47,9 @@ ON CONFLICT (id) DO UPDATE SET
 DROP POLICY IF EXISTS "profiles_public_read"   ON storage.objects;
 DROP POLICY IF EXISTS "profiles_auth_insert"   ON storage.objects;
 DROP POLICY IF EXISTS "profiles_auth_delete"   ON storage.objects;
+DROP POLICY IF EXISTS "properties_public_read" ON storage.objects;
+DROP POLICY IF EXISTS "properties_auth_insert" ON storage.objects;
+DROP POLICY IF EXISTS "properties_auth_delete" ON storage.objects;
 
 CREATE POLICY "profiles_public_read" ON storage.objects
   FOR SELECT USING (bucket_id = 'profiles');
@@ -54,6 +64,23 @@ CREATE POLICY "profiles_auth_insert" ON storage.objects
 CREATE POLICY "profiles_auth_delete" ON storage.objects
   FOR DELETE USING (
     bucket_id = 'profiles'
+    AND auth.role() = 'authenticated'
+  );
+
+-- Fotos de locais: leitura publica dos arquivos aprovados pela aplicacao.
+-- Upload/delete passam pela API autenticada e usam caminho properties/{user_id}/{property_id}/{photo_id}.jpg.
+CREATE POLICY "properties_public_read" ON storage.objects
+  FOR SELECT USING (bucket_id = 'properties');
+
+CREATE POLICY "properties_auth_insert" ON storage.objects
+  FOR INSERT WITH CHECK (
+    bucket_id = 'properties'
+    AND auth.role() = 'authenticated'
+  );
+
+CREATE POLICY "properties_auth_delete" ON storage.objects
+  FOR DELETE USING (
+    bucket_id = 'properties'
     AND auth.role() = 'authenticated'
   );
 

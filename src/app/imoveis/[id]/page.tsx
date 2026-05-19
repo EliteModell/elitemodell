@@ -226,13 +226,26 @@ function BookingCard({ property }: { property: typeof mockProperty }) {
 
 export default function PropertyDetailPage() {
   const params = useParams();
+  const { data: session, status } = useSession();
   const id = String(params?.id ?? "");
   const [fetched, setFetched] = useState<typeof mockProperty | null>(null);
   const [loading, setLoading] = useState(true);
+  const [blocked, setBlocked] = useState(false);
+  const canSeeLocations =
+    session?.user?.role === "ADMIN" ||
+    session?.user?.accountType === "model" ||
+    session?.user?.accountType === "professional" ||
+    session?.user?.isProfessional === true;
+  const blockedByRole = status !== "loading" && !canSeeLocations;
 
   useEffect(() => {
+    if (status === "loading") return;
+    if (!canSeeLocations) return;
     fetch(`/api/properties/${id}`)
-      .then(r => r.ok ? r.json() : null)
+      .then(r => {
+        if (!r.ok) setBlocked(true);
+        return r.ok ? r.json() : null;
+      })
       .then(d => {
         if (!d) return;
         // Adapta dados do backend (amenities/photos vêm em arrays de objetos)
@@ -245,15 +258,36 @@ export default function PropertyDetailPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, status, canSeeLocations]);
 
-  const p = fetched ?? mockProperty;
+  const p = fetched;
+
+  if (blockedByRole || blocked) {
+    return (
+      <div style={{ background: INK, minHeight: "100vh" }}>
+        <Navbar />
+        <div style={{ color: MUTED, padding: "120px 24px", textAlign: "center" }}>
+          Locais disponíveis apenas para profissionais aprovadas.
+        </div>
+      </div>
+    );
+  }
 
   if (loading && !fetched) {
     return (
       <div style={{ background: INK, minHeight: "100vh" }}>
         <Navbar />
         <div style={{ color: MUTED, padding: "120px 24px", textAlign: "center" }}>Carregando ambiente...</div>
+      </div>
+    );
+  }
+  if (!p) {
+    return (
+      <div style={{ background: INK, minHeight: "100vh" }}>
+        <Navbar />
+        <div style={{ color: MUTED, padding: "120px 24px", textAlign: "center" }}>
+          Locais disponíveis apenas para profissionais aprovadas.
+        </div>
       </div>
     );
   }

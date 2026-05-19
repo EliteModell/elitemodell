@@ -1,5 +1,4 @@
-"use client";
-
+import Image from "next/image";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -56,7 +55,17 @@ export default function HomePage() {
 
       <main>
         <section className="market-hero">
-          <div className="hero-bg" aria-hidden="true" />
+          <div className="hero-bg" aria-hidden="true">
+            <Image
+              src="/hero-sofa-model.png"
+              alt=""
+              fill
+              priority
+              quality={72}
+              sizes="100vw"
+              className="hero-image"
+            />
+          </div>
           <div className="hero-content">
             <div className="hero-copy">
               <div className="eyebrow">A plataforma premium do Brasil</div>
@@ -134,13 +143,27 @@ export default function HomePage() {
           z-index: 0;
           pointer-events: none;
           background-color: #050505;
-          background-image:
-            linear-gradient(90deg, rgba(5,5,5,0.92) 0%, rgba(5,5,5,0.74) 42%, rgba(5,5,5,0.18) 72%, rgba(5,5,5,0.04) 100%),
-            linear-gradient(180deg, rgba(5,5,5,0.08) 0%, rgba(5,5,5,0.18) 62%, #050505 100%),
-            url("/hero-sofa-model.png");
-          background-size: cover;
-          background-position: center 42%;
-          background-repeat: no-repeat;
+        }
+
+        .hero-image {
+          object-fit: cover;
+          object-position: center 42%;
+        }
+
+        .hero-bg::before,
+        .hero-bg::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          z-index: 1;
+        }
+
+        .hero-bg::before {
+          background: linear-gradient(90deg, rgba(5,5,5,0.92) 0%, rgba(5,5,5,0.74) 42%, rgba(5,5,5,0.18) 72%, rgba(5,5,5,0.04) 100%);
+        }
+
+        .hero-bg::after {
+          background: linear-gradient(180deg, rgba(5,5,5,0.08) 0%, rgba(5,5,5,0.18) 62%, #050505 100%);
         }
 
         .hero-content {
@@ -355,14 +378,19 @@ export default function HomePage() {
           }
 
           .hero-bg {
-            background-image:
-              linear-gradient(90deg, rgba(5,5,5,0.94) 0%, rgba(5,5,5,0.72) 31%, rgba(5,5,5,0.28) 60%, rgba(5,5,5,0.04) 100%),
-              linear-gradient(180deg, rgba(5,5,5,0) 0%, rgba(5,5,5,0.06) 52%, rgba(5,5,5,0.78) 100%),
-              url("/hero-sofa-model.png");
-            background-position: center top;
-            background-size: cover;
-            background-repeat: no-repeat;
             background-color: #050505;
+          }
+
+          .hero-image {
+            object-position: center top;
+          }
+
+          .hero-bg::before {
+            background: linear-gradient(90deg, rgba(5,5,5,0.94) 0%, rgba(5,5,5,0.72) 31%, rgba(5,5,5,0.28) 60%, rgba(5,5,5,0.04) 100%);
+          }
+
+          .hero-bg::after {
+            background: linear-gradient(180deg, rgba(5,5,5,0) 0%, rgba(5,5,5,0.06) 52%, rgba(5,5,5,0.78) 100%);
           }
 
           .hero-content {

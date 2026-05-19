@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
+import { AppointmentStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status");
   const role = session.user.role;
 
-  const where: any = {};
+  const where: Prisma.AppointmentWhereInput = {};
 
   if (role === "ADMIN") {
     // admin sees all
@@ -37,7 +38,9 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  if (status) where.status = status;
+  if (status && Object.values(AppointmentStatus).includes(status as AppointmentStatus)) {
+    where.status = status as AppointmentStatus;
+  }
 
   const appointments = await prisma.appointment.findMany({
     where,

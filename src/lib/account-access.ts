@@ -15,6 +15,7 @@ export async function getCurrentAccountAccess() {
     select: {
       id: true,
       role: true,
+      accountType: true,
       category: true,
       professional: { select: { id: true, status: true, rejectReason: true } },
       properties: {
@@ -27,7 +28,7 @@ export async function getCurrentAccountAccess() {
   if (!user) return null;
 
   const isAdmin = user.role === "ADMIN";
-  const isCompanionIntent = isProfessionalCategory(user.category);
+  const isCompanionIntent = user.accountType === "model" || isProfessionalCategory(user.category);
   const companionStatus = user.professional?.status ?? null;
   const hostStatuses = user.properties.map((property) => property.status);
 
@@ -40,7 +41,7 @@ export async function getCurrentAccountAccess() {
     companionApproved: companionStatus === "ACTIVE",
     companionInReview: Boolean(companionStatus && companionStatus !== "ACTIVE"),
     hasHostRequest: user.properties.length > 0,
-    hasHostIntent: user.role === "HOST" && !isCompanionIntent,
+    hasHostIntent: (user.role === "HOST" || user.accountType === "host") && !isCompanionIntent,
     hostApproved: hostStatuses.includes("ACTIVE"),
     hostInReview: hostStatuses.some((status) => status !== "ACTIVE"),
     postLoginPath: postLoginPathFromUser(user),

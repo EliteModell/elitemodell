@@ -1,6 +1,7 @@
 "use client";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -48,59 +49,70 @@ function BuscarContent() {
   const [filtros, setFiltros] = useState<Set<Filtro>>(new Set());
   const [perfis, setPerfis] = useState<CardPerfil[]>([]);
   const [loading, setLoading] = useState(false);
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const fetchPerfis = useCallback(async (category: string, search: string) => {
-    setLoading(true);
-    try {
-      const qs = new URLSearchParams({ category, sortBy: "rating" });
-      if (search) qs.set("search", search);
-      const res = await fetch(`/api/professionals?${qs}`);
-      const data = await res.json();
-      const list: CardPerfil[] = (data.professionals ?? []).map((p: any) => ({
-        id: p.id,
-        slug: p.slug,
-        nome: p.displayName,
-        cidade: `${p.city}, ${p.state}`,
-        preco: p.priceMin ?? p.pricePerHour ?? null,
-        foto: p.image ?? null,
-        online: false,
-        avaliacao: p.rating ?? 0,
-        total: p.totalReviews ?? 0,
-        idade: calcAge(p.birthDate),
-        local: p.attendanceTypes?.[0] ?? null,
-        servicos: (p.specialties ?? []).map((s: any) => s.name),
-        bio: p.bio ?? "",
-      }));
-      setPerfis(list);
-    } catch {
-      setPerfis([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (mainTab === "acompanhantes") {
-      fetchPerfis(SUB_TO_CATEGORY[subTab], busca);
-    }
-  }, [subTab, mainTab, fetchPerfis]);
 
   useEffect(() => {
     if (mainTab !== "acompanhantes") return;
-    if (searchTimer.current) clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => {
-      fetchPerfis(SUB_TO_CATEGORY[subTab], busca);
-    }, 400);
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setLoading(true);
+      try {
+        const qs = new URLSearchParams({ category: SUB_TO_CATEGORY[subTab], sortBy: "rating" });
+        if (busca) qs.set("search", busca);
+        const res = await fetch(`/api/professionals?${qs}`, { signal: controller.signal });
+        const data = await res.json();
+        const list: CardPerfil[] = (data.professionals ?? []).map((p: {
+          id: string;
+          slug: string;
+          displayName: string;
+          city: string;
+          state: string;
+          priceMin?: number | null;
+          pricePerHour?: number | null;
+          image?: string | null;
+          rating?: number;
+          totalReviews?: number;
+          birthDate?: string | null;
+          attendanceTypes?: string[];
+          specialties?: Array<{ name: string }>;
+          bio?: string;
+        }) => ({
+          id: p.id,
+          slug: p.slug,
+          nome: p.displayName,
+          cidade: `${p.city}, ${p.state}`,
+          preco: p.priceMin ?? p.pricePerHour ?? null,
+          foto: p.image ?? null,
+          online: false,
+          avaliacao: p.rating ?? 0,
+          total: p.totalReviews ?? 0,
+          idade: calcAge(p.birthDate),
+          local: p.attendanceTypes?.[0] ?? null,
+          servicos: (p.specialties ?? []).map((s) => s.name),
+          bio: p.bio ?? "",
+        }));
+        setPerfis(list);
+      } catch {
+        if (!controller.signal.aborted) setPerfis([]);
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }, 280);
+
     return () => {
-      if (searchTimer.current) clearTimeout(searchTimer.current);
+      window.clearTimeout(timer);
+      controller.abort();
     };
-  }, [busca]);
+  }, [busca, mainTab, subTab]);
 
   function toggleFiltro(f: Filtro) {
     setFiltros((prev) => {
       const next = new Set(prev);
-      next.has(f) ? next.delete(f) : next.add(f);
+      if (next.has(f)) {
+        next.delete(f);
+      } else {
+        next.add(f);
+      }
       return next;
     });
   }
@@ -408,8 +420,13 @@ function BuscarContent() {
                   <div className="perfil-card">
                     {/* Foto */}
                     <div className="perfil-foto" style={{ background: "#1a2a40", position: "relative" }}>
-                      <img src={a.foto ?? "/android-chrome-512x512.png"} alt={a.nome}
-                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                      <Image
+                        src={a.foto ?? "/android-chrome-512x512.png"}
+                        alt={a.nome}
+                        fill
+                        sizes="(max-width: 640px) 100vw, 260px"
+                        style={{ objectFit: "cover" }}
+                      />
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(6,14,27,0.92) 0%, rgba(6,14,27,0.2) 50%, transparent 100%)" }} />
                       {/* Badge online - visível só no desktop */}
                       <div className="desktop-badge" style={{ position: "absolute", top: 10, left: 10 }}>

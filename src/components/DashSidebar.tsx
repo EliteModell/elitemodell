@@ -4,7 +4,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
 import { signOut, useSession } from "next-auth/react";
 import {
   BadgePlus,
@@ -101,17 +100,9 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
 
   return (
     <>
-      <AnimatePresence>
-        {mobileOpen ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/78 backdrop-blur-sm md:hidden"
-          />
-        ) : null}
-      </AnimatePresence>
+      {mobileOpen ? (
+        <div onClick={onClose} className="fixed inset-0 z-40 bg-black/78 backdrop-blur-sm md:hidden" />
+      ) : null}
 
       <aside
         className={`dash-sidebar fixed inset-y-0 left-0 z-50 flex w-[80vw] max-w-[320px] flex-col border-r border-white/10 bg-[#070708] shadow-[24px_0_90px_rgba(0,0,0,0.55)] transition-transform duration-300 md:w-[280px] md:translate-x-0 ${
@@ -125,7 +116,6 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
           <div className="flex items-center justify-between">
           <Link href="/" onClick={onClose} className="inline-flex items-center gap-2 no-underline">
             <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-[8px] bg-black">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/brand/elite-modell-source.png" alt="Elite Modell" className="h-full w-full object-contain" />
             </span>
             <span className="text-xl font-black tracking-[-0.02em]">
@@ -216,10 +206,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                     </span>
                   ) : null}
                   {active ? (
-                    <motion.span
-                      layoutId="sidebar-active"
-                      className="absolute right-2 h-1.5 w-1.5 rounded-full bg-[#d4a843] shadow-[0_0_18px_rgba(212,168,67,0.95)]"
-                    />
+                    <span className="absolute right-2 h-1.5 w-1.5 rounded-full bg-[#d4a843] shadow-[0_0_18px_rgba(212,168,67,0.95)]" />
                   ) : null}
                 </Link>
               );

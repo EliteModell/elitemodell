@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div
@@ -20,11 +22,17 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           top: 0,
           width: "38%",
           height: "100%",
-          backgroundImage: "url(/model1.jpg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center top",
         }}
+        aria-hidden="true"
       >
+        <Image
+          src="/model1.jpg"
+          alt=""
+          fill
+          sizes="38vw"
+          quality={62}
+          style={{ objectFit: "cover", objectPosition: "center top" }}
+        />
         <div
           style={{
             position: "absolute",
@@ -42,11 +50,17 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           top: 0,
           width: "38%",
           height: "100%",
-          backgroundImage: "url(/model2.jpg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center top",
         }}
+        aria-hidden="true"
       >
+        <Image
+          src="/model2.jpg"
+          alt=""
+          fill
+          sizes="38vw"
+          quality={62}
+          style={{ objectFit: "cover", objectPosition: "center top" }}
+        />
         <div
           style={{
             position: "absolute",

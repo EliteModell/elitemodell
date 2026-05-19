@@ -1,7 +1,23 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  poweredByHeader: false,
+  serverExternalPackages: ["mercadopago"],
+  images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 60 * 60 * 24 * 30,
+    remotePatterns: [
+      { protocol: "https", hostname: "*.supabase.co", pathname: "/storage/v1/object/**" },
+      { protocol: "https", hostname: "lh3.googleusercontent.com", pathname: "/**" },
+      { protocol: "https", hostname: "avatars.githubusercontent.com", pathname: "/**" },
+      { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
+      { protocol: "https", hostname: "res.cloudinary.com", pathname: "/**" },
+    ],
+  },
+  experimental: {
+    turbopackFileSystemCacheForBuild: true,
+    webpackMemoryOptimizations: true,
+  },
 };
 
 export default nextConfig;

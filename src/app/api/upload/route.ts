@@ -27,7 +27,10 @@ function resolveBucket(folder: string): {
   if (folder.startsWith("documentos")) {
     return { bucket: "documentos", isPrivate: true,  maxBytes: 10 * 1024 * 1024, allowedTypes: ALLOWED_DOC   };
   }
-  if (folder.startsWith("profiles") || folder.startsWith("properties")) {
+  if (folder.startsWith("properties")) {
+    return { bucket: "properties", isPrivate: false, maxBytes: 10 * 1024 * 1024, allowedTypes: ALLOWED_IMAGE };
+  }
+  if (folder.startsWith("profiles")) {
     return { bucket: "profiles",   isPrivate: false, maxBytes: 10 * 1024 * 1024, allowedTypes: ALLOWED_IMAGE };
   }
   // stories (legado + novos)
@@ -69,8 +72,13 @@ export async function POST(req: NextRequest) {
     "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov",
     "application/pdf": "pdf",
   };
-  const ext  = mimeToExt[file.type] ?? "bin";
-  const path = `${folder}/${session.user.id}/${Date.now()}.${ext}`;
+  const ext = mimeToExt[file.type] ?? "bin";
+  const propertyId = folder.startsWith("properties/")
+    ? folder.split("/").filter(Boolean)[1]
+    : null;
+  const path = propertyId
+    ? `properties/${session.user.id}/${propertyId}/${Date.now()}.${ext}`
+    : `${folder}/${session.user.id}/${Date.now()}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
 
   const { error } = await supabase.storage

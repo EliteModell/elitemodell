@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
@@ -106,28 +107,31 @@ export default function ProfissionalProfilePage() {
   }
 
   useEffect(() => {
+    const controller = new AbortController();
+
     async function load() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/professionals/${slug}`);
+        const res = await fetch(`/api/professionals/${slug}`, { signal: controller.signal });
         if (res.status === 404) { setNotFound(true); return; }
         if (!res.ok) throw new Error();
         const data: ApiProfessional = await res.json();
         setPro(data);
 
         // Busca perfis similares na mesma cidade
-        const simRes = await fetch(`/api/professionals?city=${encodeURIComponent(data.city)}&sortBy=rating`);
+        const simRes = await fetch(`/api/professionals?city=${encodeURIComponent(data.city)}&sortBy=rating`, { signal: controller.signal });
         if (simRes.ok) {
           const simData = await simRes.json();
           setSimilar((simData.professionals ?? []).filter((p: SimilarPro) => p.id !== data.id).slice(0, 3));
         }
       } catch {
-        setNotFound(true);
+        if (!controller.signal.aborted) setNotFound(true);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
     load();
+    return () => controller.abort();
   }, [slug]);
 
   if (loading) {
@@ -200,7 +204,15 @@ export default function ProfissionalProfilePage() {
       <div style={{ paddingTop: 64 }}>
         <div style={{ height: 380, position: "relative", overflow: "hidden" }}>
           {coverImage ? (
-            <img src={coverImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 15%" }} />
+            <Image
+              src={coverImage}
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              quality={72}
+              style={{ objectFit: "cover", objectPosition: "center 15%" }}
+            />
           ) : (
             <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #0b1420, #1a0a0a)" }} />
           )}
@@ -220,7 +232,13 @@ export default function ProfissionalProfilePage() {
           <div style={{ display: "flex", gap: 14, alignItems: "center", marginTop: -48, marginBottom: 16 }}>
             <div style={{ width: 88, height: 88, borderRadius: "50%", flexShrink: 0, border: `3px solid ${GOLD}`, overflow: "hidden", background: "#0b1420", boxShadow: `0 0 24px rgba(212,168,67,0.3)`, position: "relative", zIndex: 10 }}>
               {pro.image ? (
-                <img src={pro.image} alt={pro.displayName} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+                <Image
+                  src={pro.image}
+                  alt={pro.displayName}
+                  fill
+                  sizes="88px"
+                  style={{ objectFit: "cover", objectPosition: "top" }}
+                />
               ) : (
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: 28, fontWeight: 800, color: GOLD }}>
                   {pro.displayName.split(" ").map((n) => n[0]).slice(0, 2).join("")}
@@ -331,7 +349,13 @@ export default function ProfissionalProfilePage() {
               {fotosExibidas.map((url, i) => (
                 <div key={i} onClick={() => setPhotoOpen(i)}
                   style={{ aspectRatio: "3/4", overflow: "hidden", borderRadius: 6, cursor: "pointer", position: "relative", background: "#0b1420" }}>
-                  <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+                  <Image
+                    src={url}
+                    alt=""
+                    fill
+                    sizes="(max-width: 720px) 33vw, 220px"
+                    style={{ objectFit: "cover", objectPosition: "top" }}
+                  />
                   <div style={{ position: "absolute", bottom: 5, right: 5, background: "rgba(6,14,27,0.85)", borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                   </div>
@@ -351,8 +375,14 @@ export default function ProfissionalProfilePage() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "#f1f5f9", fontFamily: PLAYFAIR }}>Mídia de verificação</span>
               </div>
-              <div style={{ position: "relative", borderRadius: 14, overflow: "hidden", border: `1px solid ${GOLD_MID}` }}>
-                <img src={pro.verificationUrl} alt="Verificação" style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", objectPosition: "top", display: "block" }} />
+              <div style={{ position: "relative", aspectRatio: "16/9", borderRadius: 14, overflow: "hidden", border: `1px solid ${GOLD_MID}` }}>
+                <Image
+                  src={pro.verificationUrl}
+                  alt="Verificação"
+                  fill
+                  sizes="(max-width: 720px) 100vw, 720px"
+                  style={{ objectFit: "cover", objectPosition: "top" }}
+                />
                 <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(6,14,27,0.7) 0%, transparent 60%)" }} />
                 <div style={{ position: "absolute", top: 12, right: 12, display: "flex", alignItems: "center", gap: 6, background: "rgba(6,14,27,0.85)", border: `1px solid ${GOLD_MID}`, borderRadius: 20, padding: "4px 12px" }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
@@ -572,7 +602,13 @@ export default function ProfissionalProfilePage() {
                   <div style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, overflow: "hidden" }}>
                     <div style={{ height: 160, position: "relative", overflow: "hidden" }}>
                       {p.image ? (
-                        <img src={p.image} alt={p.displayName} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+                        <Image
+                          src={p.image}
+                          alt={p.displayName}
+                          fill
+                          sizes="140px"
+                          style={{ objectFit: "cover", objectPosition: "top" }}
+                        />
                       ) : (
                         <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #0b1420, #1a0a0a)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, color: GOLD }}>
                           {p.displayName[0]}
@@ -612,7 +648,15 @@ export default function ProfissionalProfilePage() {
       {/* Lightbox */}
       {photoOpen !== null && allPhotos[photoOpen] && (
         <div onClick={() => setPhotoOpen(null)} style={{ position: "fixed", inset: 0, background: "rgba(4,10,20,0.97)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <img src={allPhotos[photoOpen]} alt="" style={{ maxHeight: "90vh", maxWidth: "95vw", objectFit: "contain", borderRadius: 8 }} />
+          <div style={{ position: "relative", width: "95vw", height: "90vh" }}>
+            <Image
+              src={allPhotos[photoOpen]}
+              alt=""
+              fill
+              sizes="95vw"
+              style={{ objectFit: "contain", borderRadius: 8 }}
+            />
+          </div>
           <button onClick={() => setPhotoOpen(null)} style={{ position: "absolute", top: 20, right: 20, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, width: 36, height: 36, borderRadius: "50%", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
           {photoOpen > 0 && (
             <button onClick={(e) => { e.stopPropagation(); setPhotoOpen(photoOpen - 1); }} style={{ position: "absolute", left: 16, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>

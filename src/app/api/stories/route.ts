@@ -4,6 +4,20 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+type StoryGroupResponse = {
+  userId: string;
+  nome: string;
+  foto: string | null;
+  stories: Array<{
+    id: string;
+    mediaUrl: string;
+    mediaType: string;
+    thumbnail: string | null;
+    views: number;
+    createdAt: Date;
+  }>;
+};
+
 export async function GET() {
   const now = new Date();
   const stories = await prisma.story.findMany({
@@ -22,7 +36,7 @@ export async function GET() {
   });
 
   const grouped = Object.values(
-    stories.reduce((acc: Record<string, any>, s) => {
+    stories.reduce<Record<string, StoryGroupResponse>>((acc, s) => {
       if (!acc[s.userId]) {
         acc[s.userId] = {
           userId: s.userId,

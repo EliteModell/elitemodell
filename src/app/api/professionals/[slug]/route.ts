@@ -81,7 +81,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
     ...professional,
   };
   delete publicProfessional.userId;
-  return NextResponse.json(publicProfessional);
+  const cacheControl = professional.status === "ACTIVE"
+    ? session
+      ? "private, max-age=30"
+      : "public, s-maxage=60, stale-while-revalidate=180"
+    : "no-store";
+
+  return NextResponse.json(publicProfessional, {
+    headers: { "Cache-Control": cacheControl },
+  });
 }
 
 const updateSchema = z.object({

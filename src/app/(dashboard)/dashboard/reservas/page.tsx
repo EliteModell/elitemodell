@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BadgeCheck, CalendarCheck, Clock3, Compass, MapPin, Sparkles } from "lucide-react";
+import { CalendarCheck, Clock3, Compass, MessageCircle, Star } from "lucide-react";
 
 type Appointment = {
   id: string;
@@ -18,11 +18,11 @@ type Appointment = {
 
 function statusLabel(status: string) {
   const labels: Record<string, string> = {
-    PENDING: "Aguardando confirmação",
+    PENDING: "Aguardando",
     CONFIRMED: "Confirmado",
     CANCELLED: "Cancelado",
     COMPLETED: "Concluído",
-    NO_SHOW: "Não compareceu",
+    NO_SHOW: "Ausente",
   };
   return labels[status] ?? status;
 }
@@ -49,68 +49,61 @@ export default function ReservasPage() {
   }, []);
 
   return (
-    <div className="space-y-5 pb-20 md:pb-0">
-      <section className="rounded-[8px] border border-white/10 bg-[linear-gradient(135deg,rgba(20,20,22,0.97),rgba(58,9,14,0.65),rgba(7,7,8,0.98))] p-4 shadow-[0_28px_90px_rgba(0,0,0,0.35)] sm:p-6">
-        <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-[#f5d78c]">
-          <CalendarCheck className="h-4 w-4" />
-          Agenda cliente
-        </p>
-        <h1 className="text-3xl font-black text-white">Meus agendamentos</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/52">
-          Acompanhe contatos e experiências iniciadas com profissionais verificadas.
-        </p>
+    <div className="bg-white px-5 py-8">
+      <h1 className="text-[34px] font-black text-[#202a30]">Atividade</h1>
+      <p className="mt-4 text-[19px] leading-7 text-[#59666d]">
+        Histórico, agendamentos e avaliações ficam organizados em um só lugar.
+      </p>
+
+      <section className="mt-8 rounded-[10px] border border-[#e0e5e7] bg-white p-5">
+        <h2 className="flex items-center gap-3 text-[24px] font-black text-[#202a30]">
+          <CalendarCheck className="h-7 w-7 text-[#a9822d]" />
+          Agendamentos
+        </h2>
+
+        {loading ? (
+          <div className="mt-6 h-24 animate-pulse rounded-[8px] bg-[#edf2f4]" />
+        ) : appointments.length === 0 ? (
+          <div className="py-12 text-center">
+            <Compass className="mx-auto h-16 w-16 text-[#617781]" />
+            <p className="mt-6 text-[22px] font-black text-[#202a30]">Nenhum agendamento ainda</p>
+            <p className="mt-3 text-[17px] leading-6 text-[#64727a]">Explore perfis e inicie contato quando encontrar alguém alinhado ao seu momento.</p>
+            <Link href="/profissionais" className="mt-7 flex h-[56px] items-center justify-center rounded-[8px] bg-[#c9a84c] text-[17px] font-black text-[#11191d] no-underline">
+              Explorar acompanhantes
+            </Link>
+          </div>
+        ) : (
+          <div className="mt-5 grid gap-3">
+            {appointments.map((appointment) => (
+              <Link
+                key={appointment.id}
+                href={appointment.professional?.slug ? `/profissionais/${appointment.professional.slug}` : "/dashboard/reservas"}
+                className="rounded-[8px] border border-[#e0e5e7] bg-[#f8faf9] p-4 text-[#202a30] no-underline"
+              >
+                <p className="text-[18px] font-black">{appointment.professional?.displayName ?? "Profissional"}</p>
+                <p className="mt-2 flex items-center gap-2 text-[15px] text-[#64727a]">
+                  <Clock3 className="h-4 w-4" />
+                  {dateLabel(appointment.date)} · {appointment.duration} min
+                </p>
+                <p className="mt-2 text-sm font-black text-[#a9822d]">{statusLabel(appointment.status)}</p>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
-      {loading ? (
-        <div className="rounded-[8px] border border-white/10 bg-white/[0.04] p-5">
-          <div className="premium-shimmer h-24 rounded-[8px] bg-white/5" />
-        </div>
-      ) : appointments.length === 0 ? (
-        <div className="rounded-[8px] border border-dashed border-white/12 bg-white/[0.04] p-6 text-center">
-          <Sparkles className="mx-auto mb-3 h-6 w-6 text-[#d4a843]" />
-          <p className="text-lg font-black text-white">Nenhum agendamento ainda</p>
-          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/45">
-            Explore perfis verificados e inicie contato quando encontrar uma profissional alinhada ao seu momento.
-          </p>
-          <Link
-            href="/profissionais"
-            className="mt-5 inline-flex h-12 items-center justify-center gap-2 rounded-[8px] bg-[#d4a843] px-5 text-sm font-black text-[#100d09] transition hover:bg-[#f5d78c]"
-          >
-            <Compass className="h-4 w-4" />
-            Explorar profissionais
-          </Link>
-        </div>
-      ) : (
-        <div className="grid gap-3">
-          {appointments.map((appointment) => (
-            <Link
-              key={appointment.id}
-              href={appointment.professional?.slug ? `/profissionais/${appointment.professional.slug}` : "/dashboard/reservas"}
-              className="rounded-[8px] border border-white/10 bg-white/[0.04] p-4 text-white no-underline transition hover:border-[#d4a843]/35 hover:bg-white/[0.06]"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="flex items-center gap-2 truncate font-black text-white">
-                    {appointment.professional?.displayName ?? "Profissional"}
-                    <BadgeCheck className="h-4 w-4 shrink-0 text-[#d4a843]" />
-                  </p>
-                  <p className="mt-2 flex items-center gap-2 text-sm text-white/45">
-                    <Clock3 className="h-4 w-4 text-[#d4a843]" />
-                    {dateLabel(appointment.date)} · {appointment.duration} min
-                  </p>
-                  <p className="mt-1 flex items-center gap-2 text-sm text-white/45">
-                    <MapPin className="h-4 w-4 text-[#d4a843]" />
-                    Contato via {appointment.contactMethod}
-                  </p>
-                </div>
-                <span className="shrink-0 rounded-full border border-[#d4a843]/20 bg-[#d4a843]/10 px-3 py-1 text-xs font-black text-[#f5d78c]">
-                  {statusLabel(appointment.status)}
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      <section className="mt-7 rounded-[10px] bg-[#edf2f4] p-5">
+        <h2 className="flex items-center gap-3 text-[24px] font-black text-[#202a30]">
+          <Star className="h-7 w-7 text-[#a9822d]" />
+          Avaliações
+        </h2>
+        <p className="mt-4 text-[18px] leading-7 text-[#59666d]">Você ainda não fez nenhuma avaliação.</p>
+        <p className="mt-2 text-[18px] leading-7 text-[#202a30]">Quando contratar um atendimento, compartilhe sua experiência pelo perfil da acompanhante.</p>
+        <Link href="/profissionais" className="mt-6 flex h-[56px] items-center justify-center gap-2 rounded-[8px] border border-[#c9a84c] bg-white text-[17px] font-black text-[#a9822d] no-underline">
+          <MessageCircle className="h-5 w-5" />
+          Avaliar agora
+        </Link>
+      </section>
     </div>
   );
 }

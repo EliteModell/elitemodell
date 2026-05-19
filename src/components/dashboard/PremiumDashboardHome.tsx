@@ -1,65 +1,10 @@
-"use client";
-
-/* eslint-disable @next/next/no-img-element -- Profile images can come from uploads and remote providers. */
-
 import Link from "next/link";
-import { motion } from "framer-motion";
-import type { Variants } from "framer-motion";
-import {
-  CalendarCheck,
-  ChevronRight,
-  CheckCircle2,
-  Clock,
-  Compass,
-  Crown,
-  Heart,
-  MessageCircle,
-  Pencil,
-  Search,
-  ShieldCheck,
-  UserRound,
-} from "lucide-react";
-
-function VerificationBanner({ status }: { status?: string }) {
-  if (status === "VERIFIED" || !status) return null;
-
-  if (status === "PENDING_REVIEW") {
-    return (
-      <motion.section variants={item} className="rounded-[8px] border border-[#d4a843]/35 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(212,168,67,0.03))] p-4">
-        <div className="flex items-start gap-3">
-          <Clock className="h-5 w-5 shrink-0 text-[#d4a843] mt-0.5" />
-          <div>
-            <p className="text-sm font-black text-white">Verificação em análise</p>
-            <p className="mt-1 text-xs text-white/50 leading-5">
-              Sua solicitação foi recebida. Assim que aprovada, você terá acesso completo à plataforma.
-            </p>
-          </div>
-        </div>
-      </motion.section>
-    );
-  }
-
-  return (
-    <motion.section variants={item} className="rounded-[8px] border border-[#cc1f2f]/35 bg-[rgba(204,31,47,0.07)] p-4">
-      <div className="flex items-start gap-3">
-        <ShieldCheck className="h-5 w-5 shrink-0 text-[#ff9aa4] mt-0.5" />
-        <div className="flex-1">
-          <p className="text-sm font-black text-white">Verificação necessária</p>
-          <p className="mt-1 text-xs text-white/50 leading-5">
-            Confirme sua maioridade para acessar perfis, favoritos, mensagens e agendamentos.
-          </p>
-          <Link
-            href="/dashboard/verificacao"
-            className="mt-3 inline-flex items-center gap-1.5 rounded-[8px] bg-[#d4a843] px-3 py-2 text-xs font-black text-[#060e1b]"
-          >
-            Verificar agora
-            <ChevronRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-      </div>
-    </motion.section>
-  );
-}
+import { CircleAlert, MessageCircle, Plus, ShieldAlert, Volume2 } from "lucide-react";
+import AchievementsSection from "@/components/client-area/AchievementsSection";
+import HistorySection from "@/components/client-area/HistorySection";
+import ListsSection from "@/components/client-area/ListsSection";
+import UserWelcomeCard from "@/components/client-area/UserWelcomeCard";
+import VerificationSection, { type VerificationStep } from "@/components/client-area/VerificationSection";
 
 export type DashboardHomeData = {
   user: {
@@ -67,6 +12,9 @@ export type DashboardHomeData = {
     email: string | null;
     image: string | null;
     phone: string | null;
+    phoneVerified?: boolean;
+    phoneVerifiedAt?: string | null;
+    document?: string | null;
     verified: boolean;
     credits: number;
     createdAt: string;
@@ -109,226 +57,111 @@ export type DashboardHomeData = {
   recommendedProfessionals: Array<unknown>;
 };
 
-const container: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
-};
-
-const item: Variants = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
-};
-
-function initials(name?: string | null) {
-  if (!name) return "EM";
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
+function hasRealEmail(email: string | null) {
+  return Boolean(email && !email.startsWith("phone_"));
 }
 
-function firstName(name?: string | null) {
-  return name?.split(" ").filter(Boolean)[0] ?? "você";
+function ReviewsSection() {
+  return (
+    <section id="avaliacoes" className="bg-white px-5 py-10">
+      <div className="flex items-start gap-3">
+        <CircleAlert className="mt-1 h-7 w-7 shrink-0 text-[#202a30]" />
+        <div>
+          <h2 className="text-[21px] font-black text-[#202a30]">Você ainda não fez nenhuma avaliação</h2>
+          <p className="mt-4 text-[19px] leading-7 text-[#59666d]">Sua avaliação ajuda clientes e acompanhantes.</p>
+          <p className="mt-3 text-[19px] font-bold text-[#a9822d]">Contratou um(a) acompanhante?</p>
+          <p className="mt-3 text-[19px] leading-7 text-[#202a30]">
+            Vá até o perfil do(a) acompanhante e compartilhe como foi a experiência do seu atendimento.
+          </p>
+        </div>
+      </div>
+      <Link
+        href="/profissionais"
+        className="mt-8 flex h-[60px] items-center justify-center rounded-[8px] border border-[#c9a84c] bg-white text-[18px] font-black text-[#a9822d] no-underline"
+      >
+        Avalie agora
+      </Link>
+    </section>
+  );
 }
 
-function shortDate(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "short",
-  }).format(new Date(value));
+function VoiceSection() {
+  return (
+    <section className="border-y border-[#dbe1e3] bg-white px-5 py-9">
+      <h2 className="flex items-center gap-3 text-[24px] font-black text-[#202a30]">
+        <Volume2 className="h-7 w-7" />
+        Preferências de atendimento
+      </h2>
+      <button className="mt-7 flex h-[60px] w-full items-center justify-center gap-3 rounded-[8px] border-0 bg-[#c9a84c] text-[22px] font-black text-[#11191d]">
+        <Plus className="h-7 w-7" />
+        Ajustar minhas preferências
+      </button>
+    </section>
+  );
 }
 
-function appointmentStatus(status: string) {
-  const labels: Record<string, string> = {
-    PENDING: "Pendente",
-    CONFIRMED: "Confirmado",
-    CANCELLED: "Cancelado",
-    COMPLETED: "Concluído",
-    NO_SHOW: "Ausente",
-  };
-  return labels[status] ?? status;
+function SafetyCard() {
+  return (
+    <section className="bg-[#e7edf0] px-5 py-9">
+      <article className="rounded-[10px] bg-white p-6 shadow-[0_3px_16px_rgba(20,31,36,0.06)]">
+        <div className="flex items-center gap-4">
+          <span className="h-3 w-3 rounded-full bg-[#c9a84c]" />
+          <h2 className="min-w-0 flex-1 text-[24px] font-black text-[#202a30]">
+            Segurança da conta
+          </h2>
+          <ShieldAlert className="h-7 w-7 text-[#202a30]" />
+        </div>
+        <div className="mt-6 rounded-[8px] bg-[#f2f5f6] p-5">
+          <h3 className="text-[25px] font-black text-[#202a30]">Canais oficiais</h3>
+          <p className="mt-3 text-[19px] leading-7 text-[#4f5d64]">
+            Nunca informe senhas, códigos ou documentos fora da plataforma. Em caso de dúvida, fale com o suporte.
+          </p>
+          <Link href="/dashboard/mensagens" className="mt-6 inline-flex items-center gap-2 text-[18px] font-black text-[#a9822d] no-underline">
+            <MessageCircle className="h-5 w-5" />
+            Falar com atendimento
+          </Link>
+        </div>
+      </article>
+    </section>
+  );
 }
 
-export default function PremiumDashboardHome({ data, clientStatus }: { data: DashboardHomeData; clientStatus?: string }) {
-  const name = firstName(data.user.name);
-  const allDone = data.onboarding.every((s) => s.done);
-  const pendingSteps = data.onboarding.filter((s) => !s.done);
-
-  const navCards = [
+export default function PremiumDashboardHome({
+  data,
+}: {
+  data: DashboardHomeData;
+  clientStatus?: string;
+}) {
+  const verificationSteps: VerificationStep[] = [
     {
-      href: "/profissionais",
-      icon: <Compass className="h-5 w-5" />,
-      label: "Explorar",
-      desc: "Perfis verificados",
+      label: hasRealEmail(data.user.email) ? "E-mail validado" : "Informar e-mail",
+      done: hasRealEmail(data.user.email),
     },
     {
-      href: "/dashboard/favoritos",
-      icon: <Heart className="h-5 w-5" />,
-      label: "Favoritos",
-      desc: data.stats.favoriteProfiles > 0 ? `${data.stats.favoriteProfiles} salvos` : "Nenhum ainda",
+      label: data.user.phoneVerified || data.user.phoneVerifiedAt ? "Telefone validado" : "Verificar telefone",
+      done: Boolean(data.user.phoneVerified || data.user.phoneVerifiedAt),
     },
     {
-      href: "/dashboard/mensagens",
-      icon: <MessageCircle className="h-5 w-5" />,
-      label: "Mensagens",
-      desc: "Conversas",
-    },
-    {
-      href: "/dashboard/reservas",
-      icon: <CalendarCheck className="h-5 w-5" />,
-      label: "Agendamentos",
-      desc: data.stats.totalAppointments > 0 ? `${data.stats.totalAppointments} no total` : "Nenhum ainda",
+      label: data.user.document || data.user.verified ? "Documento validado" : "Verificar documento",
+      done: Boolean(data.user.document || data.user.verified),
     },
   ];
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-4 pb-10">
-
-      <VerificationBanner status={clientStatus} />
-
-      {/* Welcome card */}
-      <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-[#0d0d0f] p-5">
-        <div className="flex items-center gap-4">
-          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[8px] border border-[#d4a843]/35 bg-[#d4a843]/12">
-            {data.user.image ? (
-              <img src={data.user.image} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <div className="grid h-full w-full place-items-center text-base font-black text-[#f5d78c]">
-                {initials(data.user.name)}
-              </div>
-            )}
-            <span className="absolute bottom-1 right-1 h-2 w-2 rounded-full border border-[#0d0d0f] bg-emerald-400" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-lg font-black text-white">Olá, {name}</p>
-            <div className="mt-1.5 flex items-center gap-1.5">
-              <Crown className="h-3.5 w-3.5 text-[#d4a843]" />
-              <span className="text-xs font-black text-[#f5d78c]">{data.vip.label}</span>
-            </div>
-          </div>
-          <Link
-            href="/dashboard/perfil"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-[8px] border border-white/10 bg-[#0a0a0c] text-white/45 transition hover:border-[#d4a843]/35 hover:text-[#f5d78c]"
-            aria-label="Editar perfil"
-          >
-            <Pencil className="h-4 w-4" />
-          </Link>
-        </div>
-        <p className="mt-4 text-sm leading-6 text-white/40">
-          Explore profissionais verificados, salve favoritos e acompanhe suas conversas com total discrição.
-        </p>
-      </motion.section>
-
-      {/* Nav cards */}
-      <motion.div variants={item} className="grid grid-cols-2 gap-3">
-        {navCards.map((card) => (
-          <Link
-            key={card.href}
-            href={card.href}
-            className="group rounded-[8px] border border-white/10 bg-[#0d0d0f] p-4 transition hover:border-[#d4a843]/35"
-          >
-            <div className="mb-3 grid h-10 w-10 place-items-center rounded-[8px] border border-[#d4a843]/20 bg-[#d4a843]/10 text-[#f5d78c] transition group-hover:bg-[#d4a843]/16">
-              {card.icon}
-            </div>
-            <p className="font-black text-white">{card.label}</p>
-            <p className="mt-0.5 text-xs text-white/38">{card.desc}</p>
-          </Link>
-        ))}
-      </motion.div>
-
-      {/* Minha conta */}
-      <motion.section variants={item}>
-        <Link
-          href="/dashboard/perfil"
-          className="flex items-center gap-3 rounded-[8px] border border-white/10 bg-[#0d0d0f] p-4 transition hover:border-[#d4a843]/35"
-        >
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/20 bg-[#d4a843]/10 text-[#f5d78c]">
-            <UserRound className="h-5 w-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-black text-white">Minha conta</p>
-            <p className="mt-0.5 truncate text-xs text-white/38">
-              {data.user.name ?? "Perfil Elite"} · {data.user.email}
-            </p>
-          </div>
-          <ChevronRight className="h-4 w-4 shrink-0 text-white/20" />
-        </Link>
-      </motion.section>
-
-      {/* Busca rápida */}
-      <motion.section variants={item}>
-        <Link
-          href="/profissionais"
-          className="flex h-12 items-center gap-3 rounded-[8px] border border-white/10 bg-[#0a0a0c] px-4 text-sm text-white/45 transition hover:border-[#d4a843]/25"
-        >
-          <Search className="h-4 w-4 text-[#d4a843]" />
-          Buscar profissionais por nome ou cidade...
-        </Link>
-      </motion.section>
-
-      {/* Agendamentos recentes */}
-      {data.recentAppointments.length > 0 && (
-        <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-[#0d0d0f] p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm font-black text-white">Agendamentos recentes</p>
-            <Link href="/dashboard/reservas" className="text-xs font-black text-[#f5d78c]">
-              Ver todos
-            </Link>
-          </div>
-          <div className="space-y-2">
-            {data.recentAppointments.slice(0, 3).map((a) => (
-              <Link
-                key={a.id}
-                href={`/profissionais/${a.slug}`}
-                className="flex items-center gap-3 rounded-[8px] bg-[#0a0a0c] p-3"
-              >
-                <div className="h-12 w-10 shrink-0 overflow-hidden rounded-[8px] bg-[#1a1a1c]">
-                  {a.image ? (
-                    <img src={a.image} alt={a.name} className="h-full w-full object-cover object-top" />
-                  ) : (
-                    <div className="grid h-full w-full place-items-center text-xs font-black text-[#f5d78c]/40">
-                      {initials(a.name)}
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-black text-white">{a.name}</p>
-                  <p className="mt-0.5 text-xs text-white/40">
-                    {shortDate(a.date)} · {appointmentStatus(a.status)}
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-white/20" />
-              </Link>
-            ))}
-          </div>
-        </motion.section>
-      )}
-
-      {/* Primeiros passos */}
-      {!allDone && (
-        <motion.section variants={item} className="rounded-[8px] border border-white/10 bg-[#0d0d0f] p-4">
-          <p className="mb-3 text-[11px] font-black uppercase tracking-[0.22em] text-[#d4a843]">
-            Primeiros passos
-          </p>
-          <div className="space-y-2">
-            {pendingSteps.slice(0, 3).map((step) => (
-              <div key={step.label} className="flex items-center gap-3 rounded-[8px] bg-[#0a0a0c] px-3 py-2.5">
-                <Clock className="h-4 w-4 shrink-0 text-white/25" />
-                <p className="text-sm text-white/70">{step.label}</p>
-              </div>
-            ))}
-            {data.onboarding.filter((s) => s.done).map((step) => (
-              <div key={step.label} className="flex items-center gap-3 rounded-[8px] px-3 py-2.5">
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-[#d4a843]" />
-                <p className="text-sm text-white/35 line-through">{step.label}</p>
-              </div>
-            ))}
-          </div>
-        </motion.section>
-      )}
-
-    </motion.div>
+    <div className="bg-white">
+      <UserWelcomeCard
+        name={data.user.name}
+        image={data.user.image}
+        city={data.city}
+        credits={data.stats.credits}
+      />
+      <VerificationSection steps={verificationSteps} />
+      <ListsSection />
+      <HistorySection />
+      <AchievementsSection />
+      <ReviewsSection />
+      <VoiceSection />
+      <SafetyCard />
+    </div>
   );
 }

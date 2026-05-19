@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 
@@ -113,10 +114,10 @@ export async function GET(req: NextRequest) {
   const category  = searchParams.get("category");
   const priceMax  = searchParams.get("priceMax");
   const sortBy    = searchParams.get("sortBy") ?? "rating";
-  const page      = Number(searchParams.get("page") ?? 1);
+  const page      = Math.max(1, Number(searchParams.get("page") ?? 1));
   const limit     = 12;
 
-  const where: any = { status: "ACTIVE" };
+  const where: Prisma.ProfessionalWhereInput = { status: "ACTIVE" };
 
   if (search) {
     where.OR = [
@@ -130,7 +131,7 @@ export async function GET(req: NextRequest) {
   if (priceMax) where.priceMin = { lte: Number(priceMax) };
   if (specialty) where.specialties = { some: { name: { contains: specialty, mode: "insensitive" } } };
 
-  const orderBy: any =
+  const orderBy: Prisma.ProfessionalOrderByWithRelationInput =
     sortBy === "price_asc"  ? { priceMin: "asc" } :
     sortBy === "price_desc" ? { priceMin: "desc" } :
     sortBy === "reviews"    ? { totalReviews: "desc" } :
@@ -160,7 +161,10 @@ export async function GET(req: NextRequest) {
     prisma.professional.count({ where }),
   ]);
 
-  return NextResponse.json({ professionals, total, page, pages: Math.ceil(total / limit) });
+  return NextResponse.json(
+    { professionals, total, page, pages: Math.ceil(total / limit) },
+    { headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120" } },
+  );
 }
 
 export async function POST(req: NextRequest) {

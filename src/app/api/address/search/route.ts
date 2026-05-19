@@ -2,6 +2,19 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 
+type GooglePlaceSuggestion = {
+  placePrediction?: GooglePlacePrediction;
+};
+
+type GooglePlacePrediction = {
+  place?: string;
+  text?: { text?: string };
+  structuredFormat?: {
+    mainText?: { text?: string };
+    secondaryText?: { text?: string };
+  };
+};
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const input = searchParams.get("input")?.trim() ?? "";
@@ -38,11 +51,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ suggestions: [], provider: "google", error: "Erro no Google Places." }, { status: 502 });
   }
 
-  const data = await res.json();
+  const data = await res.json() as { suggestions?: GooglePlaceSuggestion[] };
   const suggestions = (data.suggestions ?? [])
-    .map((item: any) => item.placePrediction)
-    .filter(Boolean)
-    .map((prediction: any) => ({
+    .map((item) => item.placePrediction)
+    .filter((prediction): prediction is GooglePlacePrediction => Boolean(prediction))
+    .map((prediction) => ({
       placeId: String(prediction.place ?? "").replace("places/", ""),
       text: prediction.text?.text ?? "",
       mainText: prediction.structuredFormat?.mainText?.text ?? prediction.text?.text ?? "",

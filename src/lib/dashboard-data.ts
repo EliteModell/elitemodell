@@ -8,6 +8,9 @@ type DashboardUser = {
   email: string | null;
   image: string | null;
   phone: string | null;
+  phoneVerified?: boolean;
+  phoneVerifiedAt?: Date | null;
+  document?: string | null;
   role: string;
   verified: boolean;
   credits: number;
@@ -100,8 +103,8 @@ function getOnboarding(user: DashboardUser, savedProfiles: number, activeAppoint
       detail: "Complete seu perfil com foto e nome para personalizar a experiência.",
     },
     {
-      label: "Informar telefone",
-      done: Boolean(user.phone),
+      label: "Verificar telefone",
+      done: Boolean(user.phoneVerified || user.phoneVerifiedAt),
       detail: "Seu telefone fica protegido e é usado apenas para suporte.",
     },
     {
@@ -131,6 +134,9 @@ async function getCoreData(userId: string) {
       email: true,
       image: true,
       phone: true,
+      phoneVerified: true,
+      phoneVerifiedAt: true,
+      document: true,
       role: true,
       verified: true,
       credits: true,
@@ -241,6 +247,9 @@ export async function getDashboardHomeData(userId: string): Promise<DashboardHom
       email: user.email,
       image: user.image,
       phone: user.phone,
+      phoneVerified: user.phoneVerified,
+      phoneVerifiedAt: iso(user.phoneVerifiedAt),
+      document: user.document,
       verified: user.verified,
       credits: user.credits,
       createdAt: user.createdAt.toISOString(),
@@ -312,6 +321,9 @@ export async function getPremiumProfileData(userId: string): Promise<PremiumProf
       email: user.email,
       image: user.image,
       phone: user.phone,
+      phoneVerified: user.phoneVerified,
+      phoneVerifiedAt: iso(user.phoneVerifiedAt),
+      document: user.document,
       role: user.role,
       verified: user.verified,
       credits: user.credits,

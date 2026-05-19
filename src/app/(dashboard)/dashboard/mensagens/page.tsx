@@ -1,59 +1,46 @@
 "use client";
 
 import Link from "next/link";
-import { MessageCircle, Search } from "lucide-react";
-
-/* eslint-disable @next/next/no-img-element -- Local profile previews keep this route lightweight. */
-
-const quickContacts = [
-  { name: "Lora", city: "São Paulo", image: "/model.jpeg", slug: "lora" },
-  { name: "Amanda R.", city: "Belo Horizonte", image: "/model1.jpg", slug: "amanda-r" },
-  { name: "Letícia M.", city: "Rio de Janeiro", image: "/model2.jpg", slug: "leticia-m" },
-];
+import { CircleHelp, MessageCircle, Search } from "lucide-react";
 
 export default function MensagensPage() {
   return (
-    <main className="space-y-5 pb-24 md:pb-0">
-      <section className="rounded-[8px] border border-white/10 bg-[#101012] p-4">
-        <div className="flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-[8px] bg-[#d4a843]/12 text-[#f5d78c]">
-            <MessageCircle className="h-5 w-5" />
+    <main className="bg-white px-5 py-8">
+      <h1 className="text-[34px] font-black text-[#202a30]">Central de atendimento</h1>
+      <p className="mt-4 text-[19px] leading-7 text-[#59666d]">
+        Encontre ajuda, acompanhe conversas e tire dúvidas sobre sua conta.
+      </p>
+
+      <section className="mt-8 rounded-[10px] border border-[#e0e5e7] bg-white p-5">
+        <div className="flex items-start gap-4">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[#edf2f4] text-[#617781]">
+            <MessageCircle className="h-7 w-7" />
           </span>
           <div>
-            <h1 className="text-xl font-black text-white">Mensagens</h1>
-            <p className="mt-1 text-sm text-white/50">Seus contatos aparecem aqui.</p>
+            <h2 className="text-[24px] font-black text-[#202a30]">Nenhuma conversa ativa</h2>
+            <p className="mt-3 text-[17px] leading-6 text-[#64727a]">
+              Quando você iniciar contato com um perfil ou com o suporte, a conversa aparecerá aqui.
+            </p>
           </div>
         </div>
 
-        <Link
-          href="/profissionais"
-          className="mt-4 flex h-12 items-center gap-3 rounded-[8px] border border-white/10 bg-black/24 px-3 text-sm font-semibold text-white/52"
-        >
-          <Search className="h-4 w-4 text-[#f5d78c]" />
-          Buscar profissionais
+        <Link href="/profissionais" className="mt-7 flex h-[56px] items-center justify-center gap-2 rounded-[8px] bg-[#c9a84c] text-[17px] font-black text-[#11191d] no-underline">
+          <Search className="h-5 w-5" />
+          Explorar acompanhantes
         </Link>
       </section>
 
-      <section className="rounded-[8px] border border-white/10 bg-[#101012] p-4">
-        <h2 className="mb-3 text-base font-black text-white">Comece uma conversa</h2>
-        <div className="grid gap-2.5">
-          {quickContacts.map((contact) => (
-            <Link
-              key={contact.slug}
-              href={`/profissionais/${contact.slug}`}
-              className="flex items-center gap-3 rounded-[8px] border border-white/10 bg-white/[0.045] p-2.5"
-            >
-              <div className="h-16 w-14 shrink-0 overflow-hidden rounded-[8px] bg-white/8">
-                <img src={contact.image} alt={contact.name} className="h-full w-full object-cover object-top" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-black text-white">{contact.name}</p>
-                <p className="mt-1 text-xs text-white/50">{contact.city}</p>
-                <p className="mt-1 text-xs font-bold text-[#f5d78c]">Ver perfil</p>
-              </div>
-            </Link>
-          ))}
-        </div>
+      <section className="mt-7 rounded-[10px] bg-[#edf2f4] p-5">
+        <h2 className="flex items-center gap-3 text-[24px] font-black text-[#202a30]">
+          <CircleHelp className="h-7 w-7" />
+          Precisa de ajuda?
+        </h2>
+        <p className="mt-4 text-[17px] leading-6 text-[#64727a]">
+          Nossa equipe responde por canais oficiais. Nunca envie senhas, códigos ou documentos fora da plataforma.
+        </p>
+        <button type="button" className="mt-6 h-[56px] w-full rounded-[8px] border border-[#202a30] bg-white text-[17px] font-black text-[#202a30]">
+          Abrir chamado
+        </button>
       </section>
     </main>
   );

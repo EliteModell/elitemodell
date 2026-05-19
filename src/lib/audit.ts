@@ -3,8 +3,6 @@
  * Registra ações administrativas e de moderação
  */
 
-import { prisma } from "./prisma";
-
 export type AuditAction = 
   | "USER_CREATED"
   | "USER_VERIFIED"
@@ -55,8 +53,10 @@ export async function logAudit({
       action,
       targetType,
       targetId,
+      changes,
       reason,
       ipAddress,
+      userAgent,
     });
 
     // TODO: Descomentar quando adicionar AuditLog ao schema
@@ -83,6 +83,8 @@ export async function logAudit({
  */
 export async function getAuditHistory(targetId: string, targetType: string) {
   try {
+    void targetId;
+    void targetType;
     // TODO: Implementar quando adicionar AuditLog ao schema
     // return await prisma.auditLog.findMany({
     //   where: { targetId, targetType },

@@ -40,9 +40,10 @@ export function checkRateLimit(
  * Extrai IP do cliente (considerando proxies)
  */
 export function getClientIP(request: NextRequest): string {
+  const cloudflare = request.headers.get("cf-connecting-ip");
   const forwarded = request.headers.get("x-forwarded-for");
   const real = request.headers.get("x-real-ip");
-  return forwarded?.split(",")[0].trim() || real || "unknown";
+  return cloudflare || forwarded?.split(",")[0].trim() || real || "unknown";
 }
 
 /**

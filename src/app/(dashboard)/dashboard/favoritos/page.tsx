@@ -1,34 +1,44 @@
 "use client";
 
 import Link from "next/link";
-import { Compass, Heart, Sparkles } from "lucide-react";
+import { Heart, Plus, UserRound } from "lucide-react";
+
+function EmptyListCard({ title }: { title: string }) {
+  return (
+    <article className="rounded-[10px] border border-[#dfe5e7] bg-white p-5 shadow-[0_2px_12px_rgba(20,31,36,0.05)]">
+      <div className="grid h-24 w-24 place-items-center rounded-[8px] bg-[#edf2f4] text-[#6a7980]">
+        <Heart className="h-9 w-9" />
+      </div>
+      <h2 className="mt-5 text-[22px] font-black text-[#202a30]">{title}</h2>
+      <p className="mt-2 text-[16px] leading-6 text-[#64727a]">0 perfil salvo</p>
+    </article>
+  );
+}
 
 export default function FavoritosPage() {
   return (
-    <div className="space-y-5 pb-20 md:pb-0">
-      <section className="rounded-[8px] border border-white/10 bg-[linear-gradient(135deg,rgba(20,20,22,0.97),rgba(58,9,14,0.65),rgba(7,7,8,0.98))] p-4 shadow-[0_28px_90px_rgba(0,0,0,0.35)] sm:p-6">
-        <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-[#f5d78c]">
-          <Heart className="h-4 w-4" />
-          Curadoria pessoal
-        </p>
-        <h1 className="text-3xl font-black text-white">Perfis favoritos</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/52">
-          Sua lista privada de profissionais salvas aparecerá aqui.
-        </p>
-      </section>
+    <div className="bg-white px-5 py-8">
+      <h1 className="text-[34px] font-black text-[#202a30]">Listas e favoritos</h1>
+      <p className="mt-4 text-[19px] leading-7 text-[#59666d]">
+        Organize perfis salvos em listas privadas. Ninguém além de você tem acesso a essas informações.
+      </p>
 
-      <div className="rounded-[8px] border border-dashed border-white/12 bg-white/[0.04] p-6 text-center">
-        <Sparkles className="mx-auto mb-3 h-6 w-6 text-[#d4a843]" />
-        <p className="text-lg font-black text-white">Favoritos de perfis em preparação</p>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/45">
-          Continue explorando a curadoria e monte uma lista discreta com os perfis que combinam com você.
-        </p>
-        <Link
-          href="/profissionais"
-          className="mt-5 inline-flex h-12 items-center justify-center gap-2 rounded-[8px] bg-[#d4a843] px-5 text-sm font-black text-[#100d09] transition hover:bg-[#f5d78c]"
-        >
-          <Compass className="h-4 w-4" />
-          Explorar profissionais
+      <div className="mt-8 grid gap-4">
+        <EmptyListCard title="Perfis curtidos" />
+        <EmptyListCard title="Perfis seguidos" />
+      </div>
+
+      <button type="button" className="mt-8 flex h-[60px] w-full items-center justify-center gap-3 rounded-[8px] border border-[#202a30] bg-white text-[20px] font-black text-[#202a30]">
+        <Plus className="h-6 w-6" />
+        Criar lista
+      </button>
+
+      <div className="mt-12 rounded-[10px] bg-[#edf2f4] px-5 py-10 text-center">
+        <UserRound className="mx-auto h-16 w-16 text-[#617781]" />
+        <p className="mt-6 text-[22px] font-black text-[#202a30]">Você ainda não salvou perfis.</p>
+        <p className="mt-3 text-[17px] leading-6 text-[#64727a]">Explore acompanhantes e toque em favorito para montar sua lista.</p>
+        <Link href="/profissionais" className="mt-7 flex h-[56px] items-center justify-center rounded-[8px] bg-[#c9a84c] text-[17px] font-black text-[#11191d] no-underline">
+          Explorar acompanhantes
         </Link>
       </div>
     </div>

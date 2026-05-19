@@ -11,6 +11,11 @@ export default function BottomNav() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+  const canSeeLocations =
+    session?.user?.role === "ADMIN" ||
+    session?.user?.accountType === "model" ||
+    session?.user?.accountType === "professional" ||
+    session?.user?.isProfessional === true;
 
   const tab = searchParams.get("tab") ?? "";
 
@@ -35,16 +40,16 @@ export default function BottomNav() {
         </svg>
       ),
     },
-    {
+    ...(canSeeLocations ? [{
       href: "/buscar?tab=imoveis",
-      label: "Quartos",
+      label: "Locais",
       active: pathname === "/buscar" && tab === "imoveis",
       icon: (active: boolean) => (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? GOLD : "#475569"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/>
         </svg>
       ),
-    },
+    }] : []),
     {
       href: session ? ACCOUNT_ROUTES.painelCliente : ACCOUNT_ROUTES.login,
       label: session ? "Perfil" : "Entrar",

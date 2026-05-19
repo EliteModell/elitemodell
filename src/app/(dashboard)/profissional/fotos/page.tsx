@@ -1,5 +1,6 @@
 "use client";
-import { useState, useRef } from "react";
+/* eslint-disable @next/next/no-img-element -- Fotos novas usam blob: URLs locais para preview imediato antes do upload. */
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 type Photo = {
@@ -20,6 +21,15 @@ export default function ProfissionalFotosPage() {
   const [photos, setPhotos] = useState<Photo[]>(mockPhotos);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const localObjectUrlsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const localObjectUrls = localObjectUrlsRef.current;
+    return () => {
+      localObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+      localObjectUrls.clear();
+    };
+  }, []);
 
   function setCover(id: string) {
     setPhotos((prev) => prev.map((p) => ({ ...p, cover: p.id === id })));
@@ -27,7 +37,14 @@ export default function ProfissionalFotosPage() {
   }
 
   function removePhoto(id: string) {
-    setPhotos((prev) => prev.filter((p) => p.id !== id));
+    setPhotos((prev) => {
+      const removed = prev.find((p) => p.id === id);
+      if (removed?.url.startsWith("blob:")) {
+        URL.revokeObjectURL(removed.url);
+        localObjectUrlsRef.current.delete(removed.url);
+      }
+      return prev.filter((p) => p.id !== id);
+    });
     toast.success("Foto removida.");
   }
 
@@ -73,6 +90,7 @@ export default function ProfissionalFotosPage() {
     }
     files.forEach((file) => {
       const url = URL.createObjectURL(file);
+      localObjectUrlsRef.current.add(url);
       const newPhoto: Photo = {
         id: `ph-${Date.now()}-${Math.random()}`,
         url,

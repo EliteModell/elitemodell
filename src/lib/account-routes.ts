@@ -4,9 +4,12 @@ export type InternalAccountType = "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
 export const ACCOUNT_ROUTES = {
   login: "/login",
   cadastro: "/cadastro",
-  cadastroCliente: "/cadastro?tipo=cliente",
-  cadastroAcompanhante: "/cadastro?tipo=acompanhante",
-  cadastroAnfitriao: "/cadastro?tipo=anfitriao",
+  cadastroCliente: "/app/consumer/register",
+  verificarTelefoneCliente: "/app/consumer/verify-phone",
+  loginCliente: "/app/consumer/login",
+  cadastroAcompanhante: "/cadastro-modelo",
+  cadastroAnfitriao: "/cadastro-anfitriao",
+  verificarTelefoneAnfitriao: "/cadastro-anfitriao/verificar-telefone",
   painelCliente: "/painel/cliente",
   painelAcompanhante: "/painel/acompanhante",
   painelAnfitriao: "/painel/anfitriao",
@@ -55,6 +58,7 @@ export function cadastroHref(tipo: CadastroTipo) {
 
 type PostLoginUser = {
   role?: string | null;
+  accountType?: string | null;
   category?: string | null;
   professional?: { status?: string | null } | null;
   properties?: Array<{ status?: string | null }> | null;
@@ -67,15 +71,17 @@ export function postLoginPathFromUser(user: PostLoginUser | null | undefined) {
   if (user.role === "ADMIN") return ACCOUNT_ROUTES.admin;
 
   const professionalStatus = user.professional?.status;
+  const isModelAccount = user.accountType === "model";
+  const isHostAccount = user.accountType === "host";
   const isProfessionalIntent = isProfessionalCategory(user.category);
   if (professionalStatus === "ACTIVE") return ACCOUNT_ROUTES.painelAcompanhante;
-  if (!professionalStatus && isProfessionalIntent) return ACCOUNT_ROUTES.onboardingAcompanhante;
-  if (professionalStatus || isProfessionalIntent) return ACCOUNT_ROUTES.verificacaoAcompanhante;
+  if (!professionalStatus && (isProfessionalIntent || isModelAccount)) return ACCOUNT_ROUTES.onboardingAcompanhante;
+  if (professionalStatus || isProfessionalIntent || isModelAccount) return ACCOUNT_ROUTES.verificacaoAcompanhante;
 
   const properties = user.properties ?? [];
   if (properties.some((property) => property.status === "ACTIVE")) return ACCOUNT_ROUTES.painelAnfitriao;
   if (properties.length > 0) return ACCOUNT_ROUTES.verificacaoAnfitriao;
-  if (user.role === "HOST") return ACCOUNT_ROUTES.onboardingAnfitriao;
+  if (user.role === "HOST" || isHostAccount) return ACCOUNT_ROUTES.onboardingAnfitriao;
 
   return ACCOUNT_ROUTES.painelCliente;
 }

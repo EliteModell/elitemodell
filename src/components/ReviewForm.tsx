@@ -30,8 +30,8 @@ export default function ReviewForm({ professionalId, appointmentId, onSubmitted 
       if (!res.ok) throw new Error(d.error ?? "Erro ao enviar avaliação.");
       toast.success("Avaliação enviada!");
       onSubmitted?.();
-    } catch (err: any) {
-      toast.error(err?.message ?? "Erro ao enviar avaliação.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar avaliação.");
     } finally { setLoading(false); }
   }
 

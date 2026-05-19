@@ -137,6 +137,9 @@ model User {
   password        String?
   image           String?
   phone           String?
+  phoneVerified   Boolean      @default(false)
+  phoneVerifiedAt DateTime?
+  accountType     String       @default("client")
   document        String?
   birthDate       DateTime?
   role            UserRole     @default(GUEST)
@@ -175,6 +178,39 @@ model User {
   stories            Story[]
   reportsCreated     Report[]       @relation("ReportAuthor")
   auditLogsCreated   AuditLog[]     @relation("AuditAdmin")
+  phoneVerificationCodes PhoneVerificationCode[]
+
+  @@index([phone])
+  @@index([accountType])
+}
+
+model PhoneVerificationCode {
+  id          String    @id @default(cuid())
+  phone       String
+  codeHash    String
+  accountType String    @default("client")
+  channel     String    @default("sms")
+  expiresAt   DateTime
+  attempts    Int       @default(0)
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+  sentAt      DateTime?
+  deliveryProvider String?
+  providerMessageId String?
+  sendError   String?
+  requestIp   String?
+  termsConsent Boolean   @default(false)
+  lgpdConsent  Boolean   @default(false)
+  ageConfirmed Boolean   @default(false)
+  ownershipConfirmed Boolean @default(false)
+  userId      String?
+
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([phone, accountType, createdAt])
+  @@index([phone, accountType, usedAt, expiresAt])
+  @@index([requestIp, createdAt])
+  @@index([expiresAt])
 }
 
 model Story {
@@ -290,6 +326,10 @@ model Property {
   blockedDates    BlockedDate[]
   favorites       Favorite[]
   seasonalPricing SeasonalPrice[]
+
+  @@index([status, city])
+  @@index([status, pricePerNight])
+  @@index([hostId, status])
 }
 
 model PropertyPhoto {
@@ -367,6 +407,10 @@ model Booking {
   review        Review?
   messages      Message[]
   payment       Payment?
+
+  @@index([guestId, status, createdAt])
+  @@index([propertyId, status, checkIn, checkOut])
+  @@index([paymentId])
 }
 
 model Payment {
@@ -573,6 +617,11 @@ model Professional {
   schedule     Schedule[]
   appointments Appointment[]
   reviews      ProfessionalReview[]
+
+  @@index([status, featured, rating, totalReviews, createdAt])
+  @@index([status, city])
+  @@index([status, escortCategory])
+  @@index([status, priceMin])
 }
 
 model ProfessionalPhoto {
@@ -625,6 +674,9 @@ model Appointment {
   professional   Professional       @relation(fields: [professionalId], references: [id])
   client         User               @relation("ClientAppointments", fields: [clientId], references: [id])
   review         ProfessionalReview?
+
+  @@index([clientId, status, createdAt])
+  @@index([professionalId, status, date])
 }
 
 model ProfessionalReview {

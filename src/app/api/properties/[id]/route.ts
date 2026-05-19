@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { isApprovedProfessional } from "@/lib/property-access";
 
 export async function GET(
   _req: NextRequest,
@@ -33,6 +34,10 @@ export async function GET(
     session?.user?.role === "ADMIN" || property.hostId === session?.user?.id;
   if (property.status !== "ACTIVE" && !canViewDraft) {
     return NextResponse.json({ error: "Imóvel não encontrado." }, { status: 404 });
+  }
+
+  if (property.status === "ACTIVE" && !canViewDraft && !(await isApprovedProfessional(session?.user))) {
+    return NextResponse.json({ error: "Local disponivel apenas para profissionais aprovadas." }, { status: 403 });
   }
 
   return NextResponse.json(property);

@@ -79,7 +79,7 @@ export async function POST(
     }
 
     return NextResponse.json(updated);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[VERIFY DOCS ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

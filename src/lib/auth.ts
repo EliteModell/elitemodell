@@ -1,6 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./prisma";
+import { verifyPhoneAuthToken } from "./phone-otp";
 import { createSupabaseServerClient } from "./supabase-server";
 
 export const authOptions: NextAuthOptions = {
@@ -63,6 +64,14 @@ export const authOptions: NextAuthOptions = {
             }
 
             const role = metadata.role === "HOST" ? "HOST" : "GUEST";
+            const metadataAccountType =
+              metadata.accountType === "PROFESSIONAL"
+                ? "model"
+                : metadata.accountType === "PROPERTY_HOST"
+                  ? "host"
+                  : metadata.accountType === "model" || metadata.accountType === "host"
+                    ? metadata.accountType
+                    : "client";
             const metadataCategory =
               typeof metadata.category === "string" ? metadata.category : undefined;
             const category = ["MULHER", "HOMEM", "TRANS"].includes(metadataCategory ?? "")
@@ -78,6 +87,7 @@ export const authOptions: NextAuthOptions = {
                 phone: phone ?? null,
                 emailVerified,
                 role,
+                accountType: metadataAccountType,
                 category,
                 birthDate,
                 lgpdConsent: hasConsent,
@@ -124,6 +134,44 @@ export const authOptions: NextAuthOptions = {
         }
       },
     }),
+    CredentialsProvider({
+      id: "phone-otp-token",
+      name: "Phone OTP",
+      credentials: {
+        token: { label: "Token", type: "text" },
+      },
+      async authorize(credentials) {
+        const token = credentials?.token ? verifyPhoneAuthToken(credentials.token) : null;
+        if (!token) return null;
+
+        const user = await prisma.user.findUnique({
+          where: { id: token.userId },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            role: true,
+            phone: true,
+            phoneVerified: true,
+            phoneVerifiedAt: true,
+            blocked: true,
+          },
+        });
+
+        if (!user || user.blocked || user.phone !== token.phone || (!user.phoneVerified && !user.phoneVerifiedAt)) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          role: user.role,
+        };
+      },
+    }),
   ],
   callbacks: {
     async jwt({ token, user }) {
@@ -142,6 +190,7 @@ export const authOptions: NextAuthOptions = {
             email: true,
             image: true,
             role: true,
+            accountType: true,
             clientStatus: true,
             professional: { select: { id: true } },
             blocked: true,
@@ -157,6 +206,7 @@ export const authOptions: NextAuthOptions = {
           token.email = dbUser.email;
           token.picture = dbUser.image;
           token.role = dbUser.role;
+          token.accountType = dbUser.accountType;
           token.clientStatus = dbUser.clientStatus;
           token.isProfessional = !!dbUser.professional;
         }
@@ -170,6 +220,7 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.email as string | null;
         session.user.image = token.picture as string | null;
         session.user.role = token.role as string;
+        session.user.accountType = token.accountType as string;
         session.user.clientStatus = token.clientStatus as string;
         session.user.isProfessional = token.isProfessional ?? false;
       }

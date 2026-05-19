@@ -19,7 +19,7 @@ export default function AgendaPage() {
   ]);
   const [loading, setLoading] = useState(false);
 
-  const update = (i: number, field: keyof DaySchedule, value: any) => {
+  const update = <K extends keyof DaySchedule>(i: number, field: K, value: DaySchedule[K]) => {
     setSchedule((s) => s.map((d, idx) => idx === i ? { ...d, [field]: value } : d));
   };
 

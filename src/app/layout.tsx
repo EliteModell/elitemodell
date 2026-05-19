@@ -2,13 +2,14 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
-import AgeGate from "@/components/AgeGate";
+import AgeGateLoader from "@/components/AgeGateLoader";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const playfair = Playfair_Display({
   subsets: ["latin"],
   weight: ["700"],
   variable: "--font-playfair",
+  display: "swap",
 });
 
 const siteUrl = "https://elitemodell.com.br";
@@ -134,7 +135,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
         <Providers>
-          <AgeGate />
+          <AgeGateLoader />
           {children}
         </Providers>
       </body>

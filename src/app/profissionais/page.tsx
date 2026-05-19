@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
@@ -44,57 +45,38 @@ export default function ProfissionaisPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [onlyVerified, setOnlyVerified] = useState(false);
 
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const fetchProfessionals = useCallback(async (params: {
-    search?: string;
-    category?: string;
-    priceMax?: number;
-    sortBy?: string;
-    verified?: boolean;
-    page?: number;
-  }) => {
-    setLoading(true);
-    try {
-      const qs = new URLSearchParams();
-      if (params.search) qs.set("search", params.search);
-      if (params.category) qs.set("category", params.category);
-      if (params.priceMax && params.priceMax < 6000) qs.set("priceMax", String(params.priceMax));
-      if (params.sortBy) qs.set("sortBy", params.sortBy);
-      if (params.page && params.page > 1) qs.set("page", String(params.page));
-
-      const res = await fetch(`/api/professionals?${qs}`);
-      const data = await res.json();
-
-      let list: ApiProfessional[] = data.professionals ?? [];
-      if (params.verified) list = list.filter((p) => p.verified);
-
-      setProfessionals(list);
-      setTotal(data.total ?? 0);
-      setPages(data.pages ?? 1);
-    } catch {
-      setProfessionals([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Re-busca quando sortBy, category ou page muda
   useEffect(() => {
-    fetchProfessionals({ search, category, priceMax, sortBy, verified: onlyVerified, page });
-  }, [sortBy, category, page, onlyVerified, fetchProfessionals]);
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setLoading(true);
+      try {
+        const qs = new URLSearchParams();
+        if (search) qs.set("search", search);
+        if (category) qs.set("category", category);
+        if (priceMax < 6000) qs.set("priceMax", String(priceMax));
+        if (sortBy) qs.set("sortBy", sortBy);
+        if (page > 1) qs.set("page", String(page));
 
-  // Debounce search + priceMax
-  useEffect(() => {
-    if (searchTimer.current) clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => {
-      setPage(1);
-      fetchProfessionals({ search, category, priceMax, sortBy, verified: onlyVerified, page: 1 });
-    }, 400);
+        const res = await fetch(`/api/professionals?${qs}`, { signal: controller.signal });
+        const data = await res.json();
+        let list: ApiProfessional[] = data.professionals ?? [];
+        if (onlyVerified) list = list.filter((p) => p.verified);
+
+        setProfessionals(list);
+        setTotal(data.total ?? 0);
+        setPages(data.pages ?? 1);
+      } catch {
+        if (!controller.signal.aborted) setProfessionals([]);
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }, 260);
+
     return () => {
-      if (searchTimer.current) clearTimeout(searchTimer.current);
+      window.clearTimeout(timer);
+      controller.abort();
     };
-  }, [search, priceMax]);
+  }, [search, category, priceMax, sortBy, onlyVerified, page]);
 
   const featured = professionals.filter((p) => p.featured);
   const rest = professionals.filter((p) => !p.featured);
@@ -121,7 +103,7 @@ export default function ProfissionaisPage() {
               </svg>
               <input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 placeholder="Nome, cidade ou serviço..."
                 style={{ width: "100%", padding: "12px 14px 12px 38px", background: "#111", border: "1px solid #222", borderRadius: 10, color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box" }}
                 onFocus={(e) => ((e.target as HTMLElement).style.borderColor = "#d4a843")}
@@ -171,7 +153,7 @@ export default function ProfissionaisPage() {
                   <label style={{ fontSize: 13, color: "#aaa", fontWeight: 600, display: "block", marginBottom: 12 }}>
                     Preço máximo: <span style={{ color: "#d4a843" }}>R$ {priceMax.toLocaleString("pt-BR")}</span>
                   </label>
-                  <input type="range" min={200} max={6000} step={100} value={priceMax} onChange={(e) => setPriceMax(Number(e.target.value))} style={{ accentColor: "#d4a843", width: 220 }} />
+                  <input type="range" min={200} max={6000} step={100} value={priceMax} onChange={(e) => { setPriceMax(Number(e.target.value)); setPage(1); }} style={{ accentColor: "#d4a843", width: 220 }} />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <label style={{ fontSize: 13, color: "#aaa", fontWeight: 600 }}>Outros</label>
@@ -257,12 +239,34 @@ export default function ProfissionaisPage() {
           </>
         )}
       </div>
+
+      <style jsx global>{`
+        .prof-card {
+          border-color: #1e1e1e;
+          transform: translateY(0);
+          will-change: transform;
+        }
+        .prof-card.featured {
+          border-color: rgba(212,168,67,0.15);
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .prof-card:hover {
+            border-color: rgba(212,168,67,0.4);
+            transform: translateY(-3px);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .prof-card {
+            transition: none !important;
+            transform: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
 
 function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: boolean }) {
-  const [hover, setHover] = useState(false);
   const photoCount = (pro.galleryUrls?.length ?? 0) + (pro.photos?.length ?? 0);
   const coverPhoto = pro.photos?.find((p) => p.cover)?.url ?? pro.image;
   const specialtyNames = pro.specialties.map((s) => s.name);
@@ -270,17 +274,15 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
   return (
     <Link href={`/profissionais/${pro.slug}`} style={{ textDecoration: "none", display: "block" }}>
       <div
+        className={featured ? "prof-card featured" : "prof-card"}
         style={{
           background: "#111",
-          border: `1px solid ${hover ? "rgba(212,168,67,0.4)" : featured ? "rgba(212,168,67,0.15)" : "#1e1e1e"}`,
+          border: "1px solid",
           borderRadius: 14,
           overflow: "hidden",
           transition: "border-color 0.2s, transform 0.2s",
-          transform: hover ? "translateY(-3px)" : "none",
           position: "relative",
         }}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
       >
         {featured && (
           <div style={{ position: "absolute", top: 12, left: 12, zIndex: 2, padding: "3px 10px", background: "#d4a843", color: "#060e1b", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
@@ -291,7 +293,13 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
         {/* Foto de capa */}
         <div style={{ height: 180, background: "linear-gradient(135deg, #0b1420 0%, #111 60%, #0d0d1a 100%)", position: "relative", overflow: "hidden" }}>
           {coverPhoto ? (
-            <img src={coverPhoto} alt={pro.displayName} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+            <Image
+              src={coverPhoto}
+              alt={pro.displayName}
+              fill
+              sizes={featured ? "(max-width: 768px) 100vw, 380px" : "(max-width: 768px) 100vw, 340px"}
+              style={{ objectFit: "cover", objectPosition: "top" }}
+            />
           ) : (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
               <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(212,168,67,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 800, color: "#d4a843", border: "3px solid rgba(212,168,67,0.3)" }}>

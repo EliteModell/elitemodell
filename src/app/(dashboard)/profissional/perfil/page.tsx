@@ -8,9 +8,23 @@ const specialtyOptions = [
   "Make Artist", "Stylist", "Fotógrafo", "Videomaker",
 ];
 
+type ProfileForm = {
+  displayName: string;
+  bio: string;
+  city: string;
+  state: string;
+  phone: string;
+  whatsapp: string;
+  instagram: string;
+  website: string;
+  priceMin: string;
+  priceMax: string;
+  specialties: string[];
+};
+
 export default function EditarPerfilPage() {
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ProfileForm>({
     displayName: "Juliana Oliveira",
     bio: "Modelo fotográfica e publicitária com 6 anos de experiência.",
     city: "São Paulo",
@@ -51,7 +65,14 @@ export default function EditarPerfilPage() {
     boxSizing: "border-box" as const,
   };
   const label = { fontSize: 13, color: "#aaa", display: "block", marginBottom: 6, fontWeight: 500 } as const;
-  const focus = { onFocus: (e: any) => (e.target.style.borderColor = "#cc0000"), onBlur: (e: any) => (e.target.style.borderColor = "#2a2a2a") };
+  const focus = {
+    onFocus: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      e.currentTarget.style.borderColor = "#cc0000";
+    },
+    onBlur: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      e.currentTarget.style.borderColor = "#2a2a2a";
+    },
+  };
 
   return (
     <div style={{ maxWidth: 700 }}>
@@ -144,7 +165,7 @@ export default function EditarPerfilPage() {
             ].map((f) => (
               <div key={f.key}>
                 <label style={label}>{f.label}</label>
-                <input style={input} value={(form as any)[f.key]} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })} placeholder={f.placeholder} {...focus} />
+                <input style={input} value={form[f.key as keyof Pick<ProfileForm, "phone" | "whatsapp" | "instagram" | "website">]} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })} placeholder={f.placeholder} {...focus} />
               </div>
             ))}
           </div>

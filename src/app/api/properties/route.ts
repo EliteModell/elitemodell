@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Prisma, PropertyType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { canViewApprovedProperties } from "@/lib/property-access";
 
 const createSchema = z.object({
   title: z.string().min(5),
@@ -40,13 +41,18 @@ const createSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!(await canViewApprovedProperties(session?.user))) {
+    return NextResponse.json({ error: "Locais disponiveis apenas para profissionais aprovadas." }, { status: 403 });
+  }
+
   const { searchParams } = new URL(req.url);
   const search = searchParams.get("search");
   const city = searchParams.get("city");
-  const guests = Number(searchParams.get("guests") ?? 1);
+  const models = Number(searchParams.get("models") ?? searchParams.get("guests") ?? 1);
   const priceMax = Number(searchParams.get("priceMax") ?? 99999);
   const sortBy = searchParams.get("sortBy") ?? "rating";
-  const page = Number(searchParams.get("page") ?? 1);
+  const page = Math.max(1, Number(searchParams.get("page") ?? 1));
   const limit = 12;
 
   const where: Prisma.PropertyWhereInput = { status: "ACTIVE" };
@@ -60,7 +66,7 @@ export async function GET(req: NextRequest) {
       { address: { contains: locationSearch, mode: "insensitive" } },
     ];
   }
-  if (guests) where.maxGuests = { gte: guests };
+  if (models) where.maxGuests = { gte: models };
   if (priceMax) where.pricePerNight = { lte: priceMax };
 
   const orderBy: Prisma.PropertyOrderByWithRelationInput = sortBy === "price_asc" ? { pricePerNight: "asc" }
@@ -82,7 +88,10 @@ export async function GET(req: NextRequest) {
     prisma.property.count({ where }),
   ]);
 
-  return NextResponse.json({ properties, total, page, pages: Math.ceil(total / limit) });
+  return NextResponse.json(
+    { properties, total, page, pages: Math.ceil(total / limit) },
+    { headers: { "Cache-Control": "private, max-age=30" } },
+  );
 }
 
 export async function POST(req: NextRequest) {

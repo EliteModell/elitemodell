@@ -1,11 +1,10 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
+import Image from "next/image";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
 const GOLD_MID = "rgba(212,168,67,0.3)";
-const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
 
 type Tab = "planos" | "assinaturas" | "trocas";
 type Duration = "3d" | "7d" | "30d" | "mensal";
@@ -213,11 +212,6 @@ export default function PlanosPage() {
   const [simulateOpen, setSimulateOpen] = useState<string | null>(null);
   const [pontosQtd, setPontosQtd] = useState(10);
   const [activePlans, setActivePlans] = useState<Record<string, boolean>>({ "super-top": true, "telefone": true });
-
-  function getPlanPrice(plan: Plan) {
-    const idx = selectedDuration[plan.id] ?? 2;
-    return plan.prices[idx] ?? plan.prices[0];
-  }
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto" }}>
@@ -461,7 +455,7 @@ export default function PlanosPage() {
                         </div>
                         <div style={{ display: "flex", gap: 12, padding: 14, alignItems: "flex-start" }}>
                           <div style={{ width: 70, height: 90, borderRadius: 8, overflow: "hidden", flexShrink: 0, background: "#0f172a" }}>
-                            <img src="/model.jpeg" alt="preview" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "38% top" }} />
+                            <Image src="/model.jpeg" alt="preview" width={140} height={180} sizes="70px" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "38% top" }} />
                           </div>
                           <div style={{ flex: 1 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
@@ -616,7 +610,7 @@ export default function PlanosPage() {
             </div>
             <div style={{ padding: 18, display: "flex", gap: 14, alignItems: "flex-start" }}>
               <div style={{ width: 100, height: 130, borderRadius: 10, overflow: "hidden", flexShrink: 0 }}>
-                <img src="/model.jpeg" alt="sim" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "38% top" }} />
+                <Image src="/model.jpeg" alt="sim" width={200} height={260} sizes="100px" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "38% top" }} />
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>

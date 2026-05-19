@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- Upload previews can be blob/data/private URLs before the final hosted image is available. */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -19,6 +20,11 @@ const labelStyle: React.CSSProperties = {
   display: "block", fontSize: 11, color: "#64748b", fontWeight: 700,
   textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8,
 };
+
+type ArrayFormField = "attendanceTypes" | "servesGenders" | "idiomas" | "diasDisponiveis" | "services" | "fetishes" | "paymentMethods";
+type SingleFormField = "escortCategory" | "hairColor" | "eyeColor" | "ethnicity" | "signo";
+type BooleanFormField = "hasTattoos" | "hasSilicone" | "isDepilada";
+type PriceFormField = "price30min" | "pricePerHour" | "price2h" | "priceOvernight" | "priceWebcam";
 
 /* ── listas de opções ───────────────────────────────────── */
 const CABELOS   = ["Loira", "Morena", "Ruiva", "Castanho", "Colorido", "Preto", "Sem cabelo"];
@@ -312,14 +318,14 @@ export default function ProfissionalNovoPage() {
     if (part === "day" && cleaned.length === 2) birthMonthRef.current?.focus();
     if (part === "month" && cleaned.length === 2) birthYearRef.current?.focus();
   }
-  function toggleArr(field: string, val: string) {
+  function toggleArr(field: ArrayFormField, val: string) {
     setForm((f) => {
-      const arr = (f as any)[field] as string[];
+      const arr = f[field];
       return { ...f, [field]: arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val] };
     });
   }
-  function toggleSingle(field: string, val: string) {
-    setForm((f) => ({ ...f, [field]: (f as any)[field] === val ? "" : val }));
+  function toggleSingle(field: SingleFormField, val: string) {
+    setForm((f) => ({ ...f, [field]: f[field] === val ? "" : val }));
   }
 
   /* ── upload helper ────────────────────────────────────── */
@@ -716,8 +722,11 @@ export default function ProfissionalNovoPage() {
               {[["hasTattoos", form.hasTattoos ? "🖋️ Com tatuagens" : "Sem tatuagens"],
                 ["hasSilicone", form.hasSilicone ? "✨ Com silicone" : "Sem silicone"],
                 ["isDepilada", form.isDepilada ? "✨ Depilada" : "Não depilada"]].map(([field, label]) => (
-                <button key={String(field)} type="button" onClick={() => set(field as any, !(form as any)[field as string])}
-                  style={{ padding: "10px 18px", borderRadius: 20, cursor: "pointer", fontSize: 13, fontWeight: 600, border: `1.5px solid ${(form as any)[field as string] ? GOLD : "#1e293b"}`, background: (form as any)[field as string] ? GOLD_DIM : "transparent", color: (form as any)[field as string] ? "#f1f5f9" : "#475569" }}>
+                <button key={String(field)} type="button" onClick={() => {
+                  const key = field as BooleanFormField;
+                  set(key, !form[key]);
+                }}
+                  style={{ padding: "10px 18px", borderRadius: 20, cursor: "pointer", fontSize: 13, fontWeight: 600, border: `1.5px solid ${form[field as BooleanFormField] ? GOLD : "#1e293b"}`, background: form[field as BooleanFormField] ? GOLD_DIM : "transparent", color: form[field as BooleanFormField] ? "#f1f5f9" : "#475569" }}>
                   {String(label)}
                 </button>
               ))}
@@ -803,7 +812,7 @@ export default function ProfissionalNovoPage() {
                   <label style={labelStyle}>{label}</label>
                   <div style={{ position: "relative" }}>
                     <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#475569", fontSize: 14, fontWeight: 700 }}>R$</span>
-                    <input type="number" min={0} value={(form as any)[field]} onChange={(e) => set(field as any, e.target.value)}
+                    <input type="number" min={0} value={form[field as PriceFormField]} onChange={(e) => set(field as PriceFormField, e.target.value)}
                       style={{ ...inputStyle, paddingLeft: 40 }} placeholder="0,00" />
                   </div>
                 </div>

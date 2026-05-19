@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- QR Code PIX arrives as a data URL and should render immediately without image optimization. */
 import { useState, useEffect, Suspense } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -33,6 +34,13 @@ function ReservarContent() {
 
   const [property, setProperty] = useState<Property | null>(null);
   const [loadingProp, setLoadingProp] = useState(true);
+  const [blocked, setBlocked] = useState(false);
+  const canRequestLocation =
+    session?.user?.role === "ADMIN" ||
+    session?.user?.accountType === "model" ||
+    session?.user?.accountType === "professional" ||
+    session?.user?.isProfessional === true;
+  const blockedByRole = !canRequestLocation;
 
   const checkIn = searchParams.get("checkIn") ?? "";
   const checkOut = searchParams.get("checkOut") ?? "";
@@ -51,12 +59,16 @@ function ReservarContent() {
   const [, setPollingPayment] = useState(false);
 
   useEffect(() => {
+    if (!canRequestLocation) return;
     fetch(`/api/properties/${propertyId}`)
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) setBlocked(true);
+        return r.ok ? r.json() : null;
+      })
       .then(d => setProperty(d))
-      .catch(() => toast.error("Erro ao carregar quarto."))
+      .catch(() => toast.error("Erro ao carregar local."))
       .finally(() => setLoadingProp(false));
-  }, [propertyId]);
+  }, [propertyId, canRequestLocation]);
 
   const nights = checkIn && checkOut
     ? Math.max(0, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000))
@@ -158,11 +170,15 @@ function ReservarContent() {
   const fmtDate = (d: string) => d ? new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "";
   const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+  if (blockedByRole || blocked) {
+    return <div style={{ color: "#94a3b8", padding: "100px 24px", textAlign: "center" }}>Locais disponíveis apenas para profissionais aprovadas.</div>;
+  }
+
   if (loadingProp) {
-    return <div style={{ color: "#94a3b8", padding: "100px 24px", textAlign: "center" }}>Carregando quarto...</div>;
+    return <div style={{ color: "#94a3b8", padding: "100px 24px", textAlign: "center" }}>Carregando local...</div>;
   }
   if (!property) {
-    return <div style={{ color: "#94a3b8", padding: "100px 24px", textAlign: "center" }}>Quarto não encontrado.</div>;
+    return <div style={{ color: "#94a3b8", padding: "100px 24px", textAlign: "center" }}>Locais disponíveis apenas para profissionais aprovadas.</div>;
   }
 
   return (
@@ -171,7 +187,7 @@ function ReservarContent() {
       <div style={{ marginBottom: 32 }}>
         <Link href={`/imoveis/${propertyId}`} style={{ color: GOLD, textDecoration: "none", fontSize: 14, display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
-          Voltar ao quarto
+          Voltar ao local
         </Link>
         <h1 style={{ fontSize: 28, fontWeight: 800, color: "#f1f5f9", marginBottom: 4 }}>Confirmar reserva</h1>
         <p style={{ color: "#475569", fontSize: 15 }}>Revise os detalhes antes de confirmar</p>

@@ -76,8 +76,8 @@ export default function ChatBox({ bookingId, title }: Props) {
       const msg = await res.json();
       if (!res.ok) throw new Error(msg.error ?? "Erro ao enviar.");
       setMessages(prev => [...prev, msg]);
-    } catch (err: any) {
-      toast.error(err?.message ?? "Erro ao enviar.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar.");
       setInput(content);
     } finally { setSending(false); }
   }

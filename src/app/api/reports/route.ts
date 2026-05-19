@@ -2,9 +2,10 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
+import { ReportStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import { checkRateLimit, getClientIP, sanitizeInput } from "@/lib/security";
+import { checkRateLimit, sanitizeInput } from "@/lib/security";
 
 const reportSchema = z.object({
   targetType: z.enum(["USER", "PROFESSIONAL", "PROPERTY", "CONTENT"]),
@@ -34,7 +35,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Rate limiting: máx 5 denúncias por hora
-    const clientIP = getClientIP(req);
     const rateLimit = checkRateLimit(`report:${session.user.id}`, 5, 60 * 60 * 1000);
     if (!rateLimit.allowed) {
       return NextResponse.json(
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(report, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[REPORT ERROR]", error);
 
     if (error instanceof z.ZodError) {
@@ -100,11 +100,14 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status") ?? "PENDING";
+    const where = status !== "ALL" && Object.values(ReportStatus).includes(status as ReportStatus)
+      ? { status: status as ReportStatus }
+      : {};
     const page = Number(searchParams.get("page") ?? 1);
     const limit = 20;
 
     const reports = await prisma.report.findMany({
-      where: status !== "ALL" ? { status: status as any } : {},
+      where,
       include: {
         author: {
           select: { id: true, name: true, email: true },
@@ -116,7 +119,7 @@ export async function GET(req: NextRequest) {
     });
 
     const total = await prisma.report.count({
-      where: status !== "ALL" ? { status: status as any } : {},
+      where,
     });
 
     return NextResponse.json({
@@ -128,7 +131,7 @@ export async function GET(req: NextRequest) {
         pages: Math.ceil(total / limit),
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[GET REPORTS ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

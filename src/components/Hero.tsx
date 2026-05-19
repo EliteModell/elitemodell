@@ -1,5 +1,4 @@
-"use client";
-
+import Image from "next/image";
 import Link from "next/link";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
@@ -16,11 +15,15 @@ export default function Hero() {
           lineHeight: 0,
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src="/hero-model.jpeg"
           alt=""
           aria-hidden="true"
+          width={1536}
+          height={1024}
+          priority
+          quality={72}
+          sizes="100vw"
           style={{ width: "100%", height: "auto", display: "block" }}
         />
 

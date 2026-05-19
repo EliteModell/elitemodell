@@ -181,6 +181,7 @@ export default function CadastroPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const draft = params.get("draft");
+    const legacyClientEmail = params.get("legacy") === "cliente";
     const tipo = normalizeCadastroTipo(params.get("tipo"));
     const hasRoomDraft = Boolean(localStorage.getItem(PROPERTY_DRAFT_KEY));
 
@@ -194,7 +195,17 @@ export default function CadastroPage() {
       }
 
       if (tipo === "anfitriao") {
-        router.replace(ACCOUNT_ROUTES.onboardingAnfitriao);
+        router.replace(ACCOUNT_ROUTES.cadastroAnfitriao);
+        return;
+      }
+
+      if (tipo === "acompanhante" && !legacyClientEmail) {
+        router.replace(ACCOUNT_ROUTES.cadastroAcompanhante);
+        return;
+      }
+
+      if (tipo === "cliente" && !legacyClientEmail) {
+        router.replace(ACCOUNT_ROUTES.cadastroCliente);
         return;
       }
 
@@ -451,7 +462,7 @@ export default function CadastroPage() {
         title: "Cadastrar meu imóvel",
         desc: "Cadastre um ambiente discreto primeiro. A conta entra no final e a publicação passa por aprovação.",
         action: "Começar cadastro do imóvel",
-        directHref: ACCOUNT_ROUTES.onboardingAnfitriao,
+        directHref: ACCOUNT_ROUTES.cadastroAnfitriao,
       },
     ];
 

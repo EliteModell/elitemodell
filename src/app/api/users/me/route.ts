@@ -20,8 +20,8 @@ export async function GET() {
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
-      id: true, name: true, email: true, image: true, phone: true,
-      document: true, role: true, category: true, birthDate: true, verified: true, credits: true,
+      id: true, name: true, email: true, image: true, phone: true, phoneVerified: true, phoneVerifiedAt: true,
+      document: true, role: true, accountType: true, category: true, birthDate: true, verified: true, credits: true,
       createdAt: true, hostProfile: true, professional: { select: { id: true, status: true } },
       properties: { select: { id: true, status: true }, orderBy: { createdAt: "desc" } },
     },
@@ -37,6 +37,20 @@ export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
     const data = updateSchema.parse(body);
+    if (data.phone) {
+      const current = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { phone: true },
+      });
+      const normalized = data.phone.replace(/\D/g, "").replace(/^55/, "").slice(0, 11);
+      if (normalized && normalized !== current?.phone) {
+        return NextResponse.json(
+          { error: "Altere o telefone pelo fluxo de verificacao por codigo." },
+          { status: 400 }
+        );
+      }
+      delete data.phone;
+    }
 
     const user = await prisma.user.update({
       where: { id: session.user.id },

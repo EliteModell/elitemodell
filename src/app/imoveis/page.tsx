@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { useSession } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 import { Building2, LockKeyhole, Search, SlidersHorizontal, Star } from "lucide-react";
 
@@ -24,8 +26,14 @@ interface Property {
 }
 
 export default function ImoveisPage() {
+  const { data: session, status } = useSession();
+  const canSeeLocations =
+    session?.user?.role === "ADMIN" ||
+    session?.user?.accountType === "model" ||
+    session?.user?.accountType === "professional" ||
+    session?.user?.isProfessional === true;
   const [search, setSearch] = useState("");
-  const [guests, setGuests] = useState(1);
+  const [models, setModels] = useState(1);
   const [priceMax, setPriceMax] = useState(2000);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -35,21 +43,32 @@ export default function ImoveisPage() {
 
   // Carrega quartos/espaços da API com debounce nos filtros
   useEffect(() => {
-    const t = setTimeout(() => {
+    if (status === "loading") return;
+    if (!canSeeLocations) return;
+
+    const controller = new AbortController();
+    const t = window.setTimeout(async () => {
       const qs = new URLSearchParams();
       if (search) qs.set("search", search);
-      if (guests > 1) qs.set("guests", String(guests));
+      if (models > 1) qs.set("models", String(models));
       if (priceMax < 2000) qs.set("priceMax", String(priceMax));
       qs.set("sortBy", sortBy);
       setLoading(true);
-      fetch(`/api/properties?${qs}`)
-        .then(r => r.json())
-        .then(d => setProperties(d.properties ?? []))
-        .catch(() => setProperties([]))
-        .finally(() => setLoading(false));
+      try {
+        const response = await fetch(`/api/properties?${qs}`, { signal: controller.signal });
+        const data = await response.json();
+        setProperties(data.properties ?? []);
+      } catch {
+        if (!controller.signal.aborted) setProperties([]);
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
     }, 250);
-    return () => clearTimeout(t);
-  }, [search, guests, priceMax, sortBy]);
+    return () => {
+      window.clearTimeout(t);
+      controller.abort();
+    };
+  }, [canSeeLocations, models, priceMax, search, sortBy, status]);
 
   const toggleAmenity = (a: string) =>
     setSelectedAmenities((prev) => prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]);
@@ -64,6 +83,18 @@ export default function ImoveisPage() {
   return (
     <div style={{ background: "#050505", minHeight: "100vh", color: "#f4f1ea" }}>
       <Navbar />
+      {status !== "loading" && !canSeeLocations ? (
+        <div style={{ maxWidth: 720, margin: "0 auto", padding: "128px 24px", textAlign: "center" }}>
+          <p style={{ margin: "0 0 10px", color: "#d4a843", fontSize: 11, fontWeight: 900, letterSpacing: 2.4, textTransform: "uppercase" }}>Área exclusiva</p>
+          <h1 style={{ margin: "0 0 14px", color: "#f4f1ea", fontSize: "clamp(30px, 6vw, 54px)", lineHeight: 1 }}>
+            Locais disponíveis apenas para profissionais aprovadas.
+          </h1>
+          <p style={{ color: "#b8b1a6", lineHeight: 1.7 }}>
+            Clientes comuns, visitantes e contas sem verificação não podem visualizar ou solicitar uso desses espaços.
+          </p>
+        </div>
+      ) : (
+      <>
 
       {/* Search bar */}
       <div style={{ paddingTop: 80, background: "#070707", borderBottom: "1px solid rgba(212,168,67,0.14)" }}>
@@ -107,12 +138,12 @@ export default function ImoveisPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#111", border: "1px solid #2a2620", borderRadius: 8, padding: "0 14px" }}>
               <LockKeyhole size={16} color="#8d8578" />
               <select
-                value={guests}
-                onChange={(e) => setGuests(Number(e.target.value))}
+                value={models}
+                onChange={(e) => setModels(Number(e.target.value))}
                 style={{ background: "transparent", border: "none", color: "#cfc8ba", fontSize: 14, padding: "11px 0", outline: "none", cursor: "pointer" }}
               >
                 {[1,2,3,4,5,6,8,10,12].map((n) => (
-                  <option key={n} value={n} style={{ background: "#111" }}>até {n} pessoa{n > 1 ? "s" : ""}</option>
+                  <option key={n} value={n} style={{ background: "#111" }}>até {n} modelo{n > 1 ? "s" : ""}</option>
                 ))}
               </select>
             </div>
@@ -231,9 +262,9 @@ export default function ImoveisPage() {
         {filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: "60px 0" }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🏠</div>
-            <p style={{ color: "#666", fontSize: 16 }}>Nenhum quarto encontrado com esses filtros.</p>
+            <p style={{ color: "#666", fontSize: 16 }}>Nenhum local encontrado com esses filtros.</p>
             <button
-              onClick={() => { setSearch(""); setGuests(1); setPriceMax(2000); setSelectedAmenities([]); }}
+              onClick={() => { setSearch(""); setModels(1); setPriceMax(2000); setSelectedAmenities([]); }}
               style={{ marginTop: 16, padding: "10px 24px", background: "#d4a843", color: "#080704", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 800 }}
             >
               Limpar filtros
@@ -241,12 +272,33 @@ export default function ImoveisPage() {
           </div>
         )}
       </div>
+      </>
+      )}
+      <style jsx global>{`
+        .property-card {
+          border-color: #2a2620;
+          transform: translateY(0);
+          will-change: transform;
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .property-card:hover {
+            border-color: rgba(212,168,67,0.34);
+            transform: translateY(-3px);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .property-card {
+            transition: none !important;
+            transform: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
 
 function PropertyCard({ property: p }: { property: Property }) {
-  const [hover, setHover] = useState(false);
+  const coverPhoto = p.photos?.[0]?.url;
 
   return (
     <Link
@@ -254,16 +306,14 @@ function PropertyCard({ property: p }: { property: Property }) {
       style={{ textDecoration: "none", display: "block" }}
     >
       <div
+        className="property-card"
         style={{
           background: "#111",
-          border: `1px solid ${hover ? "rgba(212,168,67,0.34)" : "#2a2620"}`,
+          border: "1px solid",
           borderRadius: 12,
           overflow: "hidden",
           transition: "border-color 0.2s, transform 0.2s",
-          transform: hover ? "translateY(-3px)" : "none",
         }}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
       >
         {/* Image */}
         <div
@@ -277,7 +327,17 @@ function PropertyCard({ property: p }: { property: Property }) {
           }}
         >
           <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center, rgba(212,168,67,0.10) 0%, transparent 70%)" }} />
-          <Building2 size={44} color="#4a4030" strokeWidth={1.3} style={{ position: "relative", zIndex: 1 }} />
+          {coverPhoto ? (
+            <Image
+              src={coverPhoto}
+              alt={p.title}
+              fill
+              sizes="(max-width: 768px) 100vw, 340px"
+              style={{ objectFit: "cover" }}
+            />
+          ) : (
+            <Building2 size={44} color="#4a4030" strokeWidth={1.3} style={{ position: "relative", zIndex: 1 }} />
+          )}
           <div
             style={{
               position: "absolute",

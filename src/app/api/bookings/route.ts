@@ -6,6 +6,7 @@ import { differenceInCalendarDays } from "date-fns";
 import { BookingStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { canCreatePropertyUseRequest } from "@/lib/property-access";
 
 const createSchema = z.object({
   propertyId: z.string(),
@@ -20,6 +21,9 @@ const createSchema = z.object({
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  if (!(await canCreatePropertyUseRequest(session.user))) {
+    return NextResponse.json({ error: "Solicitações de uso de local são exclusivas para profissionais aprovadas." }, { status: 403 });
+  }
 
   const { searchParams } = new URL(req.url);
   const role = session.user.role;
@@ -69,13 +73,13 @@ export async function POST(req: NextRequest) {
 
     const property = await prisma.property.findUnique({ where: { id: data.propertyId } });
     if (!property || property.status !== "ACTIVE") {
-      return NextResponse.json({ error: "Imóvel não disponível." }, { status: 404 });
+      return NextResponse.json({ error: "Local não disponível." }, { status: 404 });
     }
     if (property.hostId === session.user.id) {
       return NextResponse.json({ error: "Você não pode reservar seu próprio espaço." }, { status: 400 });
     }
     if (data.guests > property.maxGuests) {
-      return NextResponse.json({ error: `Este espaço aceita no máximo ${property.maxGuests} pessoas.` }, { status: 400 });
+      return NextResponse.json({ error: `Este local aceita no máximo ${property.maxGuests} modelos por vez.` }, { status: 400 });
     }
 
     if (nights < property.minNights) {
@@ -93,7 +97,7 @@ export async function POST(req: NextRequest) {
       },
     });
     if (conflict) {
-      return NextResponse.json({ error: "Imóvel já reservado nestas datas." }, { status: 409 });
+      return NextResponse.json({ error: "Local já possui solicitação confirmada neste período." }, { status: 409 });
     }
 
     // Coupon

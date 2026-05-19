@@ -2,7 +2,15 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 
-function pickAddressPart(components: any[], type: string, short = false) {
+type AddressComponent = {
+  longText?: string;
+  shortText?: string;
+  long_name?: string;
+  short_name?: string;
+  types?: string[];
+};
+
+function pickAddressPart(components: AddressComponent[], type: string, short = false) {
   const component = components.find((item) => item.types?.includes(type));
   return short ? component?.shortText ?? component?.short_name ?? "" : component?.longText ?? component?.long_name ?? "";
 }

@@ -1,0 +1,142 @@
+"use client";
+
+import Link from "next/link";
+import { signOut, useSession } from "next-auth/react";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import { supabaseAuth } from "@/lib/supabase-client";
+
+type Variant = "desktopLinks" | "authActions" | "mobileMenu";
+
+const navLinkStyle = {
+  padding: "8px 16px",
+  borderRadius: 8,
+  color: "#b8b1a6",
+  textDecoration: "none",
+  fontSize: 14,
+  fontWeight: 500,
+  transition: "all 0.2s",
+};
+
+function canSeeLocations(session: ReturnType<typeof useSession>["data"]) {
+  return (
+    session?.user?.role === "ADMIN" ||
+    session?.user?.accountType === "model" ||
+    session?.user?.accountType === "professional" ||
+    session?.user?.isProfessional === true
+  );
+}
+
+export default function NavbarSessionControls({
+  variant,
+  onNavigate,
+}: {
+  variant: Variant;
+  onNavigate?: () => void;
+}) {
+  const { data: session, status } = useSession();
+  const showLocations = canSeeLocations(session);
+
+  async function handleSignOut() {
+    await supabaseAuth.auth.signOut();
+    await signOut({ callbackUrl: "/" });
+  }
+
+  if (variant === "desktopLinks") {
+    if (!showLocations) return null;
+    return (
+      <Link
+        href="/buscar?tab=imoveis"
+        style={navLinkStyle}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = "#f4f1ea";
+          e.currentTarget.style.background = "rgba(212,168,67,0.06)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = "#b8b1a6";
+          e.currentTarget.style.background = "transparent";
+        }}
+      >
+        Locais
+      </Link>
+    );
+  }
+
+  if (variant === "mobileMenu") {
+    return (
+      <>
+        {showLocations ? (
+          <Link href="/buscar?tab=imoveis" onClick={onNavigate} style={{ padding: "10px 14px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14 }}>
+            Locais
+          </Link>
+        ) : null}
+        {status === "loading" ? null : session ? (
+          <>
+            <Link href={ACCOUNT_ROUTES.painelCliente} onClick={onNavigate} style={{ padding: "10px 14px", borderRadius: 8, color: "#d4a843", textDecoration: "none", fontSize: 14, border: "1px solid rgba(212,168,67,0.2)" }}>
+              Minha conta
+            </Link>
+            <button type="button" onClick={handleSignOut} style={{ padding: "10px 14px", borderRadius: 8, color: "#d4a843", background: "transparent", fontSize: 14, border: "1px solid rgba(212,168,67,0.2)", textAlign: "left" }}>
+              Sair
+            </button>
+          </>
+        ) : (
+          <>
+            <Link href={ACCOUNT_ROUTES.login} onClick={onNavigate} style={{ padding: "10px 14px", borderRadius: 8, color: "#d4a843", textDecoration: "none", fontSize: 14, border: "1px solid rgba(212,168,67,0.2)" }}>
+              Entrar
+            </Link>
+            <Link href={ACCOUNT_ROUTES.cadastro} onClick={onNavigate} style={{ padding: "10px 14px", borderRadius: 8, background: "#d4a843", color: "#080704", textDecoration: "none", fontSize: 14, fontWeight: 800, textAlign: "center" }}>
+              Cadastrar
+            </Link>
+          </>
+        )}
+      </>
+    );
+  }
+
+  if (status === "loading") {
+    return <span className="hidden h-9 w-[142px] rounded-[8px] border border-[rgba(212,168,67,0.14)] bg-white/[0.025] sm:block" aria-hidden="true" />;
+  }
+
+  if (session) {
+    return (
+      <>
+        <Link className="nav-auth-link" href={ACCOUNT_ROUTES.painelCliente} style={{ padding: "8px 18px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14, fontWeight: 500, border: "1px solid rgba(212,168,67,0.2)" }}>
+          {session.user?.name?.split(" ")[0] ?? "Minha conta"}
+        </Link>
+        <button className="nav-auth-link" onClick={handleSignOut} style={{ padding: "8px 18px", borderRadius: 8, background: "transparent", border: "1px solid rgba(212,168,67,0.3)", color: "#d4a843", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+          Sair
+        </button>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Link
+        className="nav-auth-link login-link"
+        href={ACCOUNT_ROUTES.login}
+        style={{ padding: "8px 22px", borderRadius: 8, color: "#d4a843", textDecoration: "none", fontSize: 14, fontWeight: 600, border: "1px solid rgba(212,168,67,0.3)", transition: "all 0.2s", background: "transparent" }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "rgba(212,168,67,0.07)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "transparent";
+        }}
+      >
+        Entrar
+      </Link>
+      <Link
+        className="nav-auth-link signup-link"
+        href={ACCOUNT_ROUTES.cadastro}
+        style={{ padding: "8px 22px", borderRadius: 8, background: "linear-gradient(135deg, #f5d78c, #d4a843)", color: "#080704", textDecoration: "none", fontSize: 14, fontWeight: 800, transition: "background 0.2s" }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "#e8bb47";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "#d4a843";
+        }}
+      >
+        Cadastrar
+      </Link>
+    </>
+  );
+}

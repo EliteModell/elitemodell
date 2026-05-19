@@ -1,449 +1,580 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- Draft previews use local data URLs before authenticated upload. */
+/* eslint-disable @next/next/no-img-element -- Previews show files selected on the device before final review. */
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
+import {
+  AirVent,
+  Bath,
+  BedDouble,
+  Building2,
+  Camera,
+  Car,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  DoorOpen,
+  Flame,
+  Home,
+  Hotel,
+  ImagePlus,
+  KeyRound,
+  Lamp,
+  MapPin,
+  Minus,
+  Plus,
+  Shield,
+  ShowerHead,
+  Sofa,
+  Sparkles,
+  Store,
+  Tv,
+  Wifi,
+} from "lucide-react";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 const GOLD = "#d4a843";
-const GOLD_DIM = "rgba(212,168,67,0.10)";
-const GOLD_MID = "rgba(212,168,67,0.28)";
-const DRAFT_KEY = "elitemodell_property_draft_v1";
+const DRAFT_KEY = "elitemodell_location_onboarding_v2";
 
-const spaceTypes = ["APARTMENT", "HOUSE", "LOFT", "STUDIO", "HOTEL", "OTHER"] as const;
-type SpaceTypeValue = (typeof spaceTypes)[number];
+type LocationType =
+  | "HOUSE"
+  | "APARTMENT"
+  | "PRIVATE_ROOM"
+  | "PRIVATE_SUITE"
+  | "HOTEL"
+  | "MOTEL"
+  | "FLAT"
+  | "STUDIO"
+  | "LOFT"
+  | "PRIVATE_OFFICE"
+  | "RESERVED_SPACE"
+  | "OTHER";
+type PricingMode = "platform" | "direct" | "approval";
+type PhotoStatus = "uploading" | "uploaded" | "error";
 
-const typeLabels: Record<SpaceTypeValue, string> = {
-  APARTMENT: "Quarto privado",
-  HOUSE: "Suite premium",
-  LOFT: "Flat discreto",
-  STUDIO: "Studio reservado",
-  HOTEL: "Motel parceiro",
-  OTHER: "Local compartilhado",
-};
-
-const structureOptions = [
-  "Cama",
-  "Banheiro privativo",
-  "Ar-condicionado",
-  "Wi-Fi",
-  "Espelho",
-  "Garagem",
-  "Segurança",
-  "Portaria",
-  "Privacidade acústica",
-  "Entrada discreta",
-];
-
-const hourOptions = ["24h", "Manhã e tarde", "Noite", "Madrugada", "Sob consulta"];
-const bookingModes = ["Por hora", "Diária"];
-const weekDays = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"];
-const steps = ["Localização", "Tipo", "Estrutura", "Funcionamento", "Fotos", "Valores", "Finalização"];
-
-type DraftPhoto = {
+type UploadedPhoto = {
   id: string;
-  name: string;
-  type: string;
-  dataUrl?: string;
   url?: string;
+  preview: string;
+  name: string;
+  status: PhotoStatus;
+  error?: string;
+  cover?: boolean;
 };
 
-type RoomDraftForm = {
+type DraftForm = {
+  draftId: string;
+  type: LocationType | "";
+  useMode: string;
+  country: string;
+  zipCode: string;
+  address: string;
+  number: string;
+  complement: string;
+  bairro: string;
   city: string;
   state: string;
-  bairro: string;
-  region: string;
-  referencePoint: string;
-  type: SpaceTypeValue;
-  structure: string[];
-  serviceAllowed: boolean;
-  availableHours: string;
-  bookingModes: string[];
-  weeklyAvailability: string[];
-  photos: DraftPhoto[];
-  hourlyRate: string;
-  dayRate: string;
-  optionalFee: string;
+  locationPrivacy: string;
+  bedrooms: number;
+  bathrooms: number;
+  beds: number;
+  maxModels: number;
+  amenities: string[];
+  safetyItems: string[];
+  safetyInfo: string[];
+  rules: Record<string, boolean>;
+  allowedHours: string;
+  rulesText: string;
+  photos: UploadedPhoto[];
+  title: string;
+  description: string;
+  priceHour: string;
+  pricePeriod: string;
+  priceDay: string;
+  cleaningFee: string;
+  pricingMode: PricingMode;
+  availabilityMode: string;
+  days: string[];
+  startTime: string;
+  endTime: string;
 };
 
-type SavedDraft = {
-  form: RoomDraftForm;
-  step: number;
-  updatedAt: string;
+type CardOption<T extends string = string> = {
+  value: T;
+  label: string;
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
 };
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "13px 14px",
-  background: "#111",
-  border: "1px solid #2a2620",
-  borderRadius: 10,
-  color: "#f4f1ea",
-  fontSize: 14,
-  outline: "none",
-  boxSizing: "border-box",
-};
+const locationTypes: CardOption<LocationType>[] = [
+  { value: "HOUSE", label: "Casa", icon: Home },
+  { value: "APARTMENT", label: "Apartamento", icon: Building2 },
+  { value: "PRIVATE_ROOM", label: "Quarto privativo", icon: BedDouble },
+  { value: "PRIVATE_SUITE", label: "Suíte privativa", icon: Bath },
+  { value: "HOTEL", label: "Hotel", icon: Hotel },
+  { value: "MOTEL", label: "Motel", icon: KeyRound },
+  { value: "FLAT", label: "Flat", icon: Building2 },
+  { value: "STUDIO", label: "Studio", icon: Lamp },
+  { value: "LOFT", label: "Loft", icon: DoorOpen },
+  { value: "PRIVATE_OFFICE", label: "Sala privativa", icon: Store },
+  { value: "RESERVED_SPACE", label: "Espaço reservado", icon: Shield },
+  { value: "OTHER", label: "Outro", icon: Sparkles },
+];
 
-const labelStyle: React.CSSProperties = {
-  display: "block",
-  fontSize: 11,
-  color: "#8d8578",
-  fontWeight: 900,
-  textTransform: "uppercase",
-  letterSpacing: 1.4,
-  marginBottom: 8,
-};
+const useModes = [
+  "Exclusivo para atendimentos",
+  "Uso compartilhado com horários reservados",
+  "Disponível apenas em dias específicos",
+  "Disponível mediante aprovação",
+];
 
-function emptyForm(): RoomDraftForm {
+const privacyOptions = [
+  "Mostrar localização aproximada para modelos",
+  "Mostrar localização exata somente após aprovação",
+  "Nunca exibir publicamente o endereço completo",
+];
+
+const amenities: CardOption[] = [
+  { value: "Wi-Fi", label: "Wi-Fi", icon: Wifi },
+  { value: "Ar-condicionado", label: "Ar-condicionado", icon: AirVent },
+  { value: "TV", label: "TV", icon: Tv },
+  { value: "Banheiro privativo", label: "Banheiro privativo", icon: Bath },
+  { value: "Chuveiro", label: "Chuveiro", icon: ShowerHead },
+  { value: "Frigobar", label: "Frigobar", icon: Store },
+  { value: "Cama", label: "Cama", icon: BedDouble },
+  { value: "Sofá", label: "Sofá", icon: Sofa },
+  { value: "Espelho grande", label: "Espelho grande", icon: Sparkles },
+  { value: "Iluminação boa", label: "Iluminação boa", icon: Lamp },
+  { value: "Som ambiente", label: "Som ambiente", icon: Tv },
+  { value: "Estacionamento", label: "Estacionamento", icon: Car },
+  { value: "Entrada discreta", label: "Entrada discreta", icon: DoorOpen },
+  { value: "Portaria", label: "Portaria", icon: Shield },
+  { value: "Elevador", label: "Elevador", icon: Building2 },
+  { value: "Cozinha", label: "Cozinha", icon: Store },
+  { value: "Toalhas disponíveis", label: "Toalhas disponíveis", icon: Sparkles },
+  { value: "Lençóis disponíveis", label: "Lençóis disponíveis", icon: BedDouble },
+  { value: "Produtos de higiene", label: "Produtos de higiene", icon: Bath },
+  { value: "Hidromassagem", label: "Hidromassagem", icon: ShowerHead },
+  { value: "Piscina", label: "Piscina", icon: Sparkles },
+  { value: "Área externa", label: "Área externa", icon: Home },
+  { value: "Varanda", label: "Varanda", icon: DoorOpen },
+  { value: "Vista privilegiada", label: "Vista privilegiada", icon: Sparkles },
+];
+
+const safetyItems: CardOption[] = [
+  { value: "Câmera externa", label: "Câmera externa", icon: Camera },
+  { value: "Portaria", label: "Portaria", icon: Shield },
+  { value: "Controle de acesso", label: "Controle de acesso", icon: KeyRound },
+  { value: "Fechadura eletrônica", label: "Fechadura eletrônica", icon: KeyRound },
+  { value: "Alarme", label: "Alarme", icon: Shield },
+  { value: "Detector de fumaça", label: "Detector de fumaça", icon: Flame },
+  { value: "Extintor", label: "Extintor", icon: Flame },
+  { value: "Saída de emergência", label: "Saída de emergência", icon: DoorOpen },
+  { value: "Iluminação externa", label: "Iluminação externa", icon: Lamp },
+  { value: "Segurança no prédio/condomínio", label: "Segurança no prédio", icon: Building2 },
+  { value: "Interfone", label: "Interfone", icon: Shield },
+  { value: "Estacionamento seguro", label: "Estacionamento seguro", icon: Car },
+];
+
+const safetyInfo = [
+  "Câmera de segurança na parte externa",
+  "Câmera em área comum",
+  "Medidor de ruído",
+  "Portaria com identificação",
+  "Entrada compartilhada",
+  "Animais no local",
+  "Armas na propriedade",
+  "Moradores no mesmo imóvel",
+  "Outros riscos ou observações importantes",
+];
+
+const ruleItems = [
+  "Permitido receber cliente no local?",
+  "Necessário aviso prévio?",
+  "Tem limite de tempo por atendimento?",
+  "Tem taxa de limpeza?",
+  "Permite pernoite?",
+  "Permite uso recorrente?",
+  "Exige documento na entrada?",
+];
+
+const weekDays = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+
+const stepTitles = [
+  "Introdução",
+  "Tipo de local",
+  "Uso do local",
+  "Endereço",
+  "Mapa",
+  "Estrutura",
+  "Comodidades",
+  "Segurança",
+  "Informações",
+  "Regras",
+  "Fotos",
+  "Título",
+  "Descrição",
+  "Condições",
+  "Disponibilidade",
+  "Revisão",
+  "Enviado",
+];
+
+function createDraftId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  return `property-${Date.now()}`;
+}
+
+function emptyForm(): DraftForm {
   return {
+    draftId: createDraftId(),
+    type: "",
+    useMode: "",
+    country: "Brasil - BR",
+    zipCode: "",
+    address: "",
+    number: "",
+    complement: "",
+    bairro: "",
     city: "",
     state: "",
-    bairro: "",
-    region: "",
-    referencePoint: "",
-    type: "APARTMENT",
-    structure: [],
-    serviceAllowed: true,
-    availableHours: "Sob consulta",
-    bookingModes: ["Por hora"],
-    weeklyAvailability: ["Seg", "Ter", "Qua", "Qui", "Sex"],
+    locationPrivacy: "Mostrar localização aproximada para modelos",
+    bedrooms: 1,
+    bathrooms: 1,
+    beds: 1,
+    maxModels: 1,
+    amenities: [],
+    safetyItems: [],
+    safetyInfo: [],
+    rules: {},
+    allowedHours: "",
+    rulesText: "",
     photos: [],
-    hourlyRate: "",
-    dayRate: "",
-    optionalFee: "",
+    title: "",
+    description: "",
+    priceHour: "",
+    pricePeriod: "",
+    priceDay: "",
+    cleaningFee: "",
+    pricingMode: "approval",
+    availabilityMode: "",
+    days: [],
+    startTime: "08:00",
+    endTime: "22:00",
   };
 }
 
-function errorMessage(err: unknown, fallback: string) {
-  return err instanceof Error ? err.message : fallback;
+function isUploaded(photo: UploadedPhoto) {
+  return photo.status === "uploaded" && Boolean(photo.url);
 }
 
-function Section({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
+function propertyEnumFromType(type: LocationType | "") {
+  if (type === "HOUSE") return "HOUSE";
+  if (type === "APARTMENT" || type === "FLAT") return "APARTMENT";
+  if (type === "STUDIO") return "STUDIO";
+  if (type === "LOFT") return "LOFT";
+  if (type === "HOTEL" || type === "MOTEL") return "HOTEL";
+  return "OTHER";
+}
+
+async function compressImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) throw new Error("Envie apenas arquivos de imagem.");
+  if (file.size <= 2.5 * 1024 * 1024) return file;
+
+  const bitmap = await createImageBitmap(file);
+  const maxSide = 1800;
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return file;
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
+  if (!blob) return file;
+  return new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" });
+}
+
+function OptionCard<T extends string>({
+  option,
+  active,
+  onClick,
+}: {
+  option: CardOption<T>;
+  active: boolean;
+  onClick: () => void;
+}) {
+  const Icon = option.icon;
   return (
-    <section className="step-section">
-      <div className="section-title">
-        <h2>{title}</h2>
-        {desc ? <p>{desc}</p> : null}
-      </div>
-      {children}
-    </section>
+    <button type="button" className={active ? "select-card active" : "select-card"} onClick={onClick}>
+      <Icon size={28} strokeWidth={1.7} />
+      <span>{option.label}</span>
+    </button>
   );
 }
 
-function normalizeDraft(raw: unknown): SavedDraft | null {
-  if (!raw || typeof raw !== "object") return null;
-  const maybe = raw as Partial<SavedDraft>;
-  if (!maybe.form || typeof maybe.form !== "object") return null;
-
-  const current = emptyForm();
-  const incoming = maybe.form as Partial<RoomDraftForm> & {
-    amenities?: string[];
-    address?: string;
-    photos?: Array<DraftPhoto | string>;
-    pricePerNight?: string;
-    cleaningFee?: string;
-  };
-
-  const photos: DraftPhoto[] = [];
-  if (Array.isArray(incoming.photos)) {
-    incoming.photos.forEach((photo, index) => {
-      if (typeof photo === "string") {
-        photos.push({ id: `saved-${index}`, name: `Foto ${index + 1}`, type: "image/jpeg", url: photo });
-        return;
-      }
-      if (!photo || typeof photo !== "object") return;
-      if (photo.dataUrl || photo.url) {
-        photos.push({
-          id: photo.id || `saved-${index}`,
-          name: photo.name || `Foto ${index + 1}`,
-          type: photo.type || "image/jpeg",
-          dataUrl: photo.dataUrl,
-          url: photo.url,
-        });
-      }
-    });
-  }
-
-  return {
-    form: {
-      ...current,
-      ...incoming,
-      city: incoming.city ?? current.city,
-      state: incoming.state ?? current.state,
-      bairro: incoming.bairro ?? current.bairro,
-      region: incoming.region ?? incoming.address ?? current.region,
-      referencePoint: incoming.referencePoint ?? "",
-      type: spaceTypes.includes(incoming.type as SpaceTypeValue) ? (incoming.type as SpaceTypeValue) : current.type,
-      structure: Array.isArray(incoming.structure)
-        ? incoming.structure
-        : Array.isArray(incoming.amenities)
-          ? incoming.amenities
-          : current.structure,
-      bookingModes: Array.isArray(incoming.bookingModes)
-        ? incoming.bookingModes.map((mode) => mode === "Diaria" ? "Diária" : mode)
-        : current.bookingModes,
-      weeklyAvailability: Array.isArray(incoming.weeklyAvailability) ? incoming.weeklyAvailability : current.weeklyAvailability,
-      hourlyRate: incoming.hourlyRate ?? "",
-      dayRate: incoming.dayRate ?? incoming.pricePerNight ?? "",
-      optionalFee: incoming.optionalFee ?? incoming.cleaningFee ?? "",
-      photos,
-    },
-    step: typeof maybe.step === "number" ? Math.min(Math.max(maybe.step, 0), steps.length - 1) : 0,
-    updatedAt: typeof maybe.updatedAt === "string" ? maybe.updatedAt : new Date().toISOString(),
-  };
-}
-
-async function readPhoto(file: File): Promise<DraftPhoto> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result !== "string") {
-        reject(new Error("Não foi possível ler a imagem."));
-        return;
-      }
-
-      resolve({
-        id: `${file.name}-${file.size}-${file.lastModified}`,
-        name: file.name,
-        type: file.type,
-        dataUrl: reader.result,
-      });
-    };
-    reader.onerror = () => reject(new Error("Não foi possível ler a imagem."));
-    reader.readAsDataURL(file);
-  });
-}
-
-async function dataUrlToFile(photo: DraftPhoto) {
-  if (!photo.dataUrl) throw new Error("Foto local sem dados.");
-  const res = await fetch(photo.dataUrl);
-  const blob = await res.blob();
-  return new File([blob], photo.name || "espaco.jpg", { type: photo.type || blob.type || "image/jpeg" });
+function Counter({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div className="counter-row">
+      <span>{label}</span>
+      <div>
+        <button type="button" onClick={() => onChange(Math.max(0, value - 1))} disabled={value <= 0} aria-label={`Diminuir ${label}`}>
+          <Minus size={18} />
+        </button>
+        <strong>{value}</strong>
+        <button type="button" onClick={() => onChange(value + 1)} aria-label={`Aumentar ${label}`}>
+          <Plus size={18} />
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function NovoImovelPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [step, setStep] = useState(0);
+  const [form, setForm] = useState<DraftForm>(() => emptyForm());
   const [hydrated, setHydrated] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [form, setForm] = useState<RoomDraftForm>(() => emptyForm());
+  const [saving, setSaving] = useState(false);
+  const progress = ((step + 1) / stepTitles.length) * 100;
+  const uploadedPhotos = form.photos.filter(isUploaded);
 
-  const progress = ((step + 1) / steps.length) * 100;
-  const isAuthenticated = status === "authenticated";
+  const selectedType = locationTypes.find((item) => item.value === form.type);
+
   const canPublish = session?.user?.role === "HOST" || session?.user?.role === "ADMIN";
-  const photoCount = form.photos.length;
-
-  const summary = useMemo(
-    () => [
-      { label: "Local", value: form.bairro && form.city ? `${form.bairro}, ${form.city}` : "Pendente" },
-      { label: "Tipo", value: typeLabels[form.type] },
-      { label: "Estrutura", value: `${form.structure.length} itens` },
-      { label: "Valor", value: form.hourlyRate ? `R$ ${form.hourlyRate}/h` : form.dayRate ? `R$ ${form.dayRate}/dia` : "Pendente" },
-    ],
-    [form.bairro, form.city, form.dayRate, form.hourlyRate, form.structure.length, form.type]
-  );
-
-  function setField<K extends keyof RoomDraftForm>(key: K, value: RoomDraftForm[K]) {
-    setForm((current) => ({ ...current, [key]: value }));
-  }
-
-  function toggleList(key: "structure" | "bookingModes" | "weeklyAvailability", value: string) {
-    const current = form[key];
-    setField(key, current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
-  }
 
   useEffect(() => {
     const raw = localStorage.getItem(DRAFT_KEY);
     if (raw) {
       try {
-        const saved = normalizeDraft(JSON.parse(raw));
-        if (saved) {
-          window.setTimeout(() => {
-            setForm(saved.form);
-            // Nunca restaurar além da primeira etapa incompleta —
-            // impede pular para Finalização com campos vazios.
-            setStep(firstIncompleteStep(saved.form));
-          }, 0);
+        const saved = JSON.parse(raw) as { form?: Partial<DraftForm>; step?: number };
+        if (saved.form) {
+          setForm({ ...emptyForm(), ...saved.form, photos: saved.form.photos ?? [] });
+          setStep(Math.min(Math.max(saved.step ?? 0, 0), stepTitles.length - 2));
         }
       } catch {
         localStorage.removeItem(DRAFT_KEY);
       }
     }
-    window.setTimeout(() => setHydrated(true), 0);
+    setHydrated(true);
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
-    try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, step, updatedAt: new Date().toISOString() }));
-    } catch {
-      toast.error("Não foi possível salvar o rascunho neste navegador.");
-    }
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, step, updatedAt: new Date().toISOString() }));
   }, [form, hydrated, step]);
 
-  function validateStep(target: number, f: RoomDraftForm = form) {
-    if (target === 0) {
-      if (!f.city.trim()) return "Informe a cidade.";
-      if (!f.bairro.trim()) return "Informe o bairro.";
-      if (!f.region.trim()) return "Informe a região do espaço.";
-    }
-    if (target === 2 && f.structure.length < 3) return "Selecione pelo menos 3 itens de estrutura.";
-    if (target === 3) {
-      if (f.bookingModes.length === 0) return "Escolha se aceita por hora, diária ou ambos.";
-      if (f.weeklyAvailability.length === 0) return "Informe a disponibilidade semanal.";
-    }
-    if (target === 4 && f.photos.length === 0) return "Envie pelo menos uma foto do espaço.";
-    if (target === 5) {
-      if (f.bookingModes.includes("Por hora") && (!f.hourlyRate || Number(f.hourlyRate) <= 0)) {
-        return "Informe o valor por hora.";
-      }
-      if (f.bookingModes.includes("Diária") && (!f.dayRate || Number(f.dayRate) <= 0)) {
-        return "Informe o valor da diária.";
-      }
-    }
-    return null;
+  function setField<K extends keyof DraftForm>(key: K, value: DraftForm[K]) {
+    setForm((current) => ({ ...current, [key]: value }));
   }
 
-  function firstIncompleteStep(f: RoomDraftForm): number {
-    for (let i = 0; i < steps.length - 1; i++) {
-      if (validateStep(i, f) !== null) return i;
-    }
-    return steps.length - 1;
+  function toggleList(key: "amenities" | "safetyItems" | "safetyInfo" | "days", value: string) {
+    setForm((current) => {
+      const list = current[key];
+      return { ...current, [key]: list.includes(value) ? list.filter((item) => item !== value) : [...list, value] };
+    });
   }
 
-  function validateAllListingSteps() {
-    for (let index = 0; index <= 5; index += 1) {
-      const error = validateStep(index);
-      if (error) {
-        setStep(index);
-        return error;
-      }
-    }
-    return null;
+  function updateRule(rule: string, value: boolean) {
+    setForm((current) => ({ ...current, rules: { ...current.rules, [rule]: value } }));
   }
 
-  function next() {
-    const error = validateStep(step);
-    if (error) return toast.error(error);
-    setStep((current) => Math.min(current + 1, steps.length - 1));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  function validate(target = step) {
+    if (target === 1 && !form.type) return false;
+    if (target === 2 && !form.useMode) return false;
+    if (target === 3) return Boolean(form.zipCode && form.address && form.number && form.bairro && form.city && form.state);
+    if (target === 4 && !form.locationPrivacy) return false;
+    if (target === 5) return form.bathrooms > 0 && form.maxModels > 0;
+    if (target === 6 && form.amenities.length === 0) return false;
+    if (target === 7 && form.safetyItems.length === 0) return false;
+    if (target === 10) return uploadedPhotos.length >= 5 && form.photos.every((photo) => photo.status !== "uploading");
+    if (target === 11) return form.title.trim().length >= 5 && form.title.trim().length <= 50;
+    if (target === 12) return form.description.trim().length >= 30;
+    if (target === 14) return Boolean(form.availabilityMode && (form.availabilityMode !== "Dias específicos" || form.days.length > 0));
+    return true;
   }
 
-  async function uploadPhoto(file: File) {
-    if (form.photos.length >= 12) return toast.error("Limite de 12 fotos por espaço.");
-    if (!file.type.startsWith("image/")) return toast.error("Envie apenas imagens.");
-    if (file.size > 6 * 1024 * 1024) return toast.error("Use imagens de até 6MB para salvar o rascunho.");
+  async function fillCep(cep: string) {
+    const clean = cep.replace(/\D/g, "");
+    setField("zipCode", cep);
+    if (clean.length !== 8) return;
 
-    setUploading(true);
     try {
-      const photo = await readPhoto(file);
-      setField("photos", [...form.photos, photo]);
-      toast.success("Foto adicionada ao rascunho.");
-    } catch (err) {
-      toast.error(errorMessage(err, "Erro ao adicionar foto."));
-    } finally {
-      setUploading(false);
+      const res = await fetch(`/api/address/cep/${clean}`);
+      const data = await res.json();
+      if (!res.ok) return;
+      setForm((current) => ({
+        ...current,
+        address: data.street ?? data.logradouro ?? current.address,
+        bairro: data.neighborhood ?? data.bairro ?? current.bairro,
+        city: data.city ?? data.localidade ?? current.city,
+        state: data.state ?? data.uf ?? current.state,
+      }));
+    } catch {}
+  }
+
+  async function uploadFiles(files: FileList | File[]) {
+    const incoming = Array.from(files);
+    for (const original of incoming) {
+      const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+      if (!allowed.includes(original.type)) {
+        toast.error("Use fotos em JPG, PNG ou WebP.");
+        continue;
+      }
+      if (original.size > 10 * 1024 * 1024) {
+        toast.error("Cada foto pode ter no máximo 10MB.");
+        continue;
+      }
+
+      const id = createDraftId();
+      const preview = URL.createObjectURL(original);
+      setForm((current) => ({
+        ...current,
+        photos: [...current.photos, { id, name: original.name, preview, status: "uploading", cover: current.photos.length === 0 }],
+      }));
+
+      try {
+        const file = await compressImage(original);
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch(`/api/upload?folder=properties/${form.draftId}`, { method: "POST", body: fd });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.url) throw new Error(typeof data.error === "string" ? data.error : "Falha no upload da foto.");
+        setForm((current) => ({
+          ...current,
+          photos: current.photos.map((photo) => photo.id === id ? { ...photo, url: data.url, status: "uploaded" } : photo),
+        }));
+      } catch (err) {
+        setForm((current) => ({
+          ...current,
+          photos: current.photos.map((photo) => photo.id === id ? { ...photo, status: "error", error: err instanceof Error ? err.message : "Erro ao enviar." } : photo),
+        }));
+        toast.error(err instanceof Error ? err.message : "Erro ao enviar foto.");
+      }
     }
   }
 
   function movePhoto(index: number, direction: -1 | 1) {
-    const nextIndex = index + direction;
-    if (nextIndex < 0 || nextIndex >= form.photos.length) return;
-    const nextPhotos = [...form.photos];
-    [nextPhotos[index], nextPhotos[nextIndex]] = [nextPhotos[nextIndex], nextPhotos[index]];
-    setField("photos", nextPhotos);
+    const next = index + direction;
+    if (next < 0 || next >= form.photos.length) return;
+    const photos = [...form.photos];
+    [photos[index], photos[next]] = [photos[next], photos[index]];
+    setField("photos", photos);
   }
 
-  async function uploadDraftPhotos() {
-    const uploaded: string[] = [];
-    for (const photo of form.photos) {
-      if (photo.url) {
-        uploaded.push(photo.url);
-        continue;
+  function removePhoto(id: string) {
+    const remaining = form.photos.filter((photo) => photo.id !== id);
+    if (remaining.length && !remaining.some((photo) => photo.cover)) remaining[0].cover = true;
+    setField("photos", remaining);
+  }
+
+  function makeCover(id: string) {
+    setField("photos", form.photos.map((photo) => ({ ...photo, cover: photo.id === id })));
+  }
+
+  function next() {
+    if (!validate()) {
+      toast.error(step === 10 ? "Adicione no mínimo 5 fotos enviadas com sucesso." : "Preencha esta etapa para avançar.");
+      return;
+    }
+    setStep((current) => Math.min(current + 1, stepTitles.length - 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function back() {
+    setStep((current) => Math.max(current - 1, 0));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function saveAndExit() {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, step, updatedAt: new Date().toISOString() }));
+    toast.success("Rascunho salvo.");
+    router.push(ACCOUNT_ROUTES.dashboardAnfitriao);
+  }
+
+  const summary = useMemo(() => [
+    ["Tipo", selectedType?.label ?? "Pendente"],
+    ["Localização", [form.bairro, form.city, form.state].filter(Boolean).join(", ") || "Pendente"],
+    ["Comodidades", `${form.amenities.length} itens selecionados`],
+    ["Segurança", `${form.safetyItems.length} itens selecionados`],
+    ["Fotos", `${uploadedPhotos.length} fotos enviadas`],
+    ["Título", form.title || "Pendente"],
+    ["Disponibilidade", form.availabilityMode || "Pendente"],
+    ["Condições", form.priceHour ? `R$ ${form.priceHour}/h` : form.pricePeriod ? `R$ ${form.pricePeriod}/período` : "Opcional"],
+  ], [form, selectedType?.label, uploadedPhotos.length]);
+
+  async function submit() {
+    for (let i = 1; i <= 14; i += 1) {
+      if (!validate(i)) {
+        setStep(i);
+        toast.error("Revise as etapas obrigatórias antes de enviar.");
+        return;
       }
-
-      const file = await dataUrlToFile(photo);
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/upload?folder=properties", { method: "POST", body: fd });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.url) throw new Error(typeof data.error === "string" ? data.error : "Erro no upload.");
-      uploaded.push(data.url as string);
     }
-    return uploaded;
-  }
-
-  function buildDescription() {
-    return [
-      `${typeLabels[form.type]} para atendimento discreto em ${form.bairro}, ${form.city}.`,
-      `Região: ${form.region}.`,
-      form.referencePoint ? `Ponto de referência: ${form.referencePoint}.` : "",
-      `Estrutura: ${form.structure.join(", ")}.`,
-      `Funcionamento: ${form.serviceAllowed ? "atendimento permitido" : "atendimento sob avaliação"}; ${form.availableHours}; ${form.bookingModes.join(" e ")}.`,
-      `Disponibilidade: ${form.weeklyAvailability.join(", ")}.`,
-      form.hourlyRate ? `Valor por hora: R$ ${form.hourlyRate}.` : "",
-      form.dayRate ? `Diária: R$ ${form.dayRate}.` : "",
-    ].filter(Boolean).join("\n");
-  }
-
-  async function handleSubmit() {
-    const error = validateAllListingSteps();
-    if (error) return toast.error(error);
-
-    if (!isAuthenticated) {
-      setStep(steps.length - 1);
-      return toast.error("Crie uma conta para publicar seu anúncio.");
+    if (status !== "authenticated") {
+      toast.error("Entre com sua conta de anfitrião para enviar.");
+      return;
     }
-
     if (!canPublish) {
-      setStep(steps.length - 1);
-      return toast.error("Ative sua conta de anunciante para publicar.");
+      toast.error("Sua conta precisa estar habilitada como anfitrião.");
+      return;
     }
 
-    setLoading(true);
+    setSaving(true);
     try {
-      toast.loading("Preparando fotos...", { id: "property-submit" });
-      const photos = await uploadDraftPhotos();
-      toast.loading("Enviando para análise...", { id: "property-submit" });
-
-      const visibleLocation = [form.referencePoint || form.region, form.bairro, form.city, form.state].filter(Boolean).join(", ");
+      const orderedPhotos = [...form.photos].sort((a, b) => Number(Boolean(b.cover)) - Number(Boolean(a.cover))).filter(isUploaded);
       const payload = {
-        title: `${typeLabels[form.type]} em ${form.bairro}`,
-        description: buildDescription(),
-        type: form.type,
-        address: visibleLocation || `${form.bairro}, ${form.city}`,
+        title: form.title.trim(),
+        description: [
+          form.description.trim(),
+          "",
+          `Uso do local: ${form.useMode}.`,
+          `Privacidade: ${form.locationPrivacy}.`,
+          `Regras: ${form.allowedHours ? `Horário permitido: ${form.allowedHours}. ` : ""}${form.rulesText}`,
+          `Informações de segurança: ${form.safetyInfo.join(", ") || "Sem observações adicionais"}.`,
+        ].join("\n"),
+        type: propertyEnumFromType(form.type),
+        address: `${form.address}, ${form.number}${form.complement ? ` - ${form.complement}` : ""}`,
         bairro: form.bairro,
         city: form.city,
-        state: form.state || "BR",
-        country: "Brasil",
-        zipCode: "",
-        pricePerNight: Number(form.dayRate || form.hourlyRate),
-        cleaningFee: form.optionalFee ? Number(form.optionalFee) : 0,
-        maxGuests: 2,
-        bedrooms: 1,
-        beds: 1,
-        bathrooms: form.structure.includes("Banheiro privativo") ? 1 : 1,
-        checkInTime: form.availableHours === "Noite" ? "18:00" : form.availableHours === "Madrugada" ? "22:00" : "08:00",
-        checkOutTime: form.availableHours === "Manhã e tarde" ? "18:00" : "23:59",
+        state: form.state,
+        country: form.country,
+        zipCode: form.zipCode,
+        pricePerNight: Number(form.priceDay || form.pricePeriod || form.priceHour || 1),
+        cleaningFee: Number(form.cleaningFee || 0),
+        maxGuests: form.maxModels,
+        bedrooms: Math.max(1, form.bedrooms),
+        beds: Math.max(1, form.beds),
+        bathrooms: Math.max(1, form.bathrooms),
+        checkInTime: form.startTime,
+        checkOutTime: form.endTime,
         minNights: 1,
         instantBook: false,
         allowPets: false,
         allowSmoking: false,
         allowParties: false,
         amenities: [
-          ...form.structure,
-          `Atendimento: ${form.serviceAllowed ? "permitido" : "sob avaliação"}`,
-          `Horário: ${form.availableHours}`,
-          `Modalidade: ${form.bookingModes.join(" e ")}`,
-          `Disponibilidade: ${form.weeklyAvailability.join(", ")}`,
-        ],
-        photos,
+          selectedType?.label ? `Tipo: ${selectedType.label}` : "",
+          ...form.amenities,
+          ...form.safetyItems.map((item) => `Segurança: ${item}`),
+          `Disponibilidade: ${form.availabilityMode}`,
+          form.days.length ? `Dias: ${form.days.join(", ")}` : "",
+          `Pagamento: ${form.pricingMode === "platform" ? "pela plataforma" : form.pricingMode === "direct" ? "direto" : "sob aprovação"}`,
+        ].filter(Boolean),
+        photos: orderedPhotos.map((photo) => photo.url),
       };
 
       const res = await fetch("/api/properties", {
@@ -452,743 +583,802 @@ export default function NovoImovelPage() {
         body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Revise os dados do espaço.");
-
+      if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Não foi possível enviar o local.");
       localStorage.removeItem(DRAFT_KEY);
-      toast.success("Espaço enviado para aprovação.", { id: "property-submit" });
-      router.push(ACCOUNT_ROUTES.verificacaoAnfitriao);
-      router.refresh();
+      setStep(16);
+      toast.success("Cadastro enviado para análise.");
     } catch (err) {
-      toast.error(errorMessage(err, "Erro ao cadastrar espaço."), { id: "property-submit" });
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar cadastro.");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   }
 
-  function authHref(path: "/cadastro" | "/login") {
-    return `${path}?draft=quarto&tipo=anfitriao`;
-  }
+  const canGoNext = validate();
 
   return (
-    <div className={status !== "authenticated" ? "property-draft-shell public-draft" : "property-draft-shell"}>
-      {status !== "authenticated" ? (
-        <header className="draft-topbar">
-          <Link href="/" className="draft-logo">
-            <span className="draft-logo-star">✦</span>
-            <span className="draft-logo-word"><span>elite</span>modell</span>
-          </Link>
-          <Link href={authHref("/login")} className="draft-login">
-            Entrar
-          </Link>
-        </header>
-      ) : null}
+    <main className="onboarding-shell">
+      <header className="top-actions">
+        <button type="button" onClick={saveAndExit}>Salvar e sair</button>
+        <Link href="/suporte">Dúvidas?</Link>
+      </header>
 
-      <div className="draft-hero">
-        <p>EliteModell Reserve</p>
-        <h1>Anuncie um ambiente discreto para profissionais.</h1>
-        <span>Cadastre um espaço reservado para atendimento profissional. A conta fica para o final e o rascunho fica salvo neste dispositivo.</span>
-      </div>
-
-      <div className="draft-progress">
-        <div>
-          <span>Etapa {step + 1} de {steps.length}</span>
-          <strong>{steps[step]}</strong>
-        </div>
-        <span>{Math.round(progress)}%</span>
-      </div>
-      <div className="progress-track">
-        <div style={{ width: `${progress}%` }} />
-      </div>
-
-      <div className="draft-card">
+      <section className="step-panel">
         {step === 0 && (
-          <Section title="Onde fica o espaço?" desc="A busca mostra cidade, bairro e região. O detalhe sensível fica privado.">
-            <div className="form-stack">
-              <div className="city-grid">
-                <div>
-                  <label style={labelStyle}>Cidade *</label>
-                  <input style={inputStyle} value={form.city} onChange={(event) => setField("city", event.target.value)} placeholder="Belo Horizonte" />
-                </div>
-                <div>
-                  <label style={labelStyle}>UF</label>
-                  <input style={inputStyle} value={form.state} onChange={(event) => setField("state", event.target.value.toUpperCase().slice(0, 2))} placeholder="MG" />
-                </div>
-              </div>
-              <div className="two-grid">
-                <div>
-                  <label style={labelStyle}>Bairro *</label>
-                  <input style={inputStyle} value={form.bairro} onChange={(event) => setField("bairro", event.target.value)} placeholder="Savassi" />
-                </div>
-                <div>
-                  <label style={labelStyle}>Região *</label>
-                  <input style={inputStyle} value={form.region} onChange={(event) => setField("region", event.target.value)} placeholder="Centro-sul, próximo a avenidas" />
-                </div>
-              </div>
-              <div>
-                <label style={labelStyle}>Ponto de referência opcional</label>
-                <input style={inputStyle} value={form.referencePoint} onChange={(event) => setField("referencePoint", event.target.value)} placeholder="Shopping, hotel, avenida ou metrô próximo" />
-              </div>
-            </div>
-          </Section>
+          <div className="intro-screen">
+            <div className="intro-mark"><Shield size={54} /></div>
+            <h1>Cadastre seu local para receber modelos com segurança e discrição</h1>
+            <p>Você poderá cadastrar casas, apartamentos, suítes, flats ou espaços privados disponíveis para atendimento. As informações serão avaliadas antes da publicação.</p>
+            <button type="button" onClick={next} className="primary standalone">Começar cadastro</button>
+          </div>
         )}
 
         {step === 1 && (
-          <Section title="Tipo do espaço" desc="Escolha como profissionais vão reconhecer o local.">
-            <div className="type-grid">
-              {spaceTypes.map((type) => (
-                <button key={type} type="button" onClick={() => setField("type", type)} className={form.type === type ? "option active" : "option"}>
-                  {typeLabels[type]}
-                </button>
+          <>
+            <StepTitle title="Qual tipo de local você quer cadastrar?" />
+            <div className="card-grid">
+              {locationTypes.map((option) => (
+                <OptionCard key={option.value} option={option} active={form.type === option.value} onClick={() => setField("type", option.value)} />
               ))}
             </div>
-          </Section>
+          </>
         )}
 
         {step === 2 && (
-          <Section title="Estrutura disponível" desc="Itens objetivos ajudam a profissional decidir rápido.">
-            <div className="amenity-grid">
-              {structureOptions.map((item) => (
-                <button key={item} type="button" onClick={() => toggleList("structure", item)} className={form.structure.includes(item) ? "option active" : "option"}>
-                  {item}
-                </button>
+          <>
+            <StepTitle title="Como esse local será disponibilizado?" helper="Essa informação ajuda as modelos a entenderem como o espaço funciona antes de solicitar o uso." />
+            <div className="stack">
+              {useModes.map((mode) => (
+                <button key={mode} type="button" className={form.useMode === mode ? "choice active" : "choice"} onClick={() => setField("useMode", mode)}>{mode}</button>
               ))}
             </div>
-          </Section>
+          </>
         )}
 
         {step === 3 && (
-          <Section title="Funcionamento" desc="Mostre como o local pode ser usado sem criar conversa desnecessaria.">
-            <div className="form-stack">
-              <label className="switch-row">
-                <input type="checkbox" checked={form.serviceAllowed} onChange={(event) => setField("serviceAllowed", event.target.checked)} />
-                <span>
-                  <strong>Atendimento permitido</strong>
-                  <small>O espaço aceita uso profissional e discreto.</small>
-                </span>
-              </label>
-
-              <div>
-                <label style={labelStyle}>Horário disponível</label>
-                <div className="chip-grid">
-                  {hourOptions.map((option) => (
-                    <button key={option} type="button" onClick={() => setField("availableHours", option)} className={form.availableHours === option ? "chip active" : "chip"}>
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label style={labelStyle}>Modalidade</label>
-                <div className="chip-grid">
-                  {bookingModes.map((mode) => (
-                    <button key={mode} type="button" onClick={() => toggleList("bookingModes", mode)} className={form.bookingModes.includes(mode) ? "chip active" : "chip"}>
-                      {mode}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label style={labelStyle}>Disponibilidade semanal</label>
-                <div className="week-grid">
-                  {weekDays.map((day) => (
-                    <button key={day} type="button" onClick={() => toggleList("weeklyAvailability", day)} className={form.weeklyAvailability.includes(day) ? "chip active" : "chip"}>
-                      {day}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          <>
+            <StepTitle title="Informe o endereço do local" helper="Buscaremos o endereço pelo CEP quando possível. Você pode ajustar tudo manualmente." />
+            <div className="form-grid">
+              <Input label="País/região" value={form.country} onChange={(value) => setField("country", value)} />
+              <Input label="CEP" value={form.zipCode} onChange={fillCep} />
+              <Input label="Endereço" value={form.address} onChange={(value) => setField("address", value)} />
+              <Input label="Número" value={form.number} onChange={(value) => setField("number", value)} />
+              <Input label="Complemento" value={form.complement} onChange={(value) => setField("complement", value)} />
+              <Input label="Bairro" value={form.bairro} onChange={(value) => setField("bairro", value)} />
+              <Input label="Cidade" value={form.city} onChange={(value) => setField("city", value)} />
+              <Input label="Estado" value={form.state} onChange={(value) => setField("state", value.toUpperCase().slice(0, 2))} />
             </div>
-          </Section>
+            <p className="privacy-note">O endereço exato não será exibido publicamente. Ele será compartilhado apenas quando houver uma solicitação aprovada ou conforme regra definida pela plataforma.</p>
+          </>
         )}
 
         {step === 4 && (
-          <Section title="Fotos" desc={`Upload simples pelo celular. Arraste a ordem usando os botões. ${photoCount}/12`}>
-            <label className="upload-box">
-              {uploading ? "Adicionando..." : "Toque para adicionar fotos"}
-              <input type="file" accept="image/*" hidden onChange={(event) => { if (event.target.files?.[0]) uploadPhoto(event.target.files[0]); event.currentTarget.value = ""; }} />
-            </label>
-            <div className="photo-grid">
-              {form.photos.map((photo, index) => (
-                <div key={photo.id} className="photo-preview">
-                  <img src={photo.url ?? photo.dataUrl} alt={`Foto ${index + 1}`} />
-                  <div className="photo-actions">
-                    <button type="button" onClick={() => movePhoto(index, -1)} disabled={index === 0}>↑</button>
-                    <button type="button" onClick={() => movePhoto(index, 1)} disabled={index === form.photos.length - 1}>↓</button>
-                    <button type="button" onClick={() => setField("photos", form.photos.filter((item) => item.id !== photo.id))}>x</button>
-                  </div>
-                </div>
+          <>
+            <StepTitle title="Confirme a localização do local" />
+            <div className="map-card">
+              <div className="map-pin"><MapPin size={28} fill={GOLD} color="#111" /></div>
+              <div className="address-chip"><MapPin size={18} /> {[form.address, form.number, form.bairro, form.city, form.state].filter(Boolean).join(", ")}</div>
+            </div>
+            <div className="stack">
+              {privacyOptions.map((option) => (
+                <button key={option} type="button" className={form.locationPrivacy === option ? "choice active" : "choice"} onClick={() => setField("locationPrivacy", option)}>{option}</button>
               ))}
             </div>
-          </Section>
+          </>
         )}
 
         {step === 5 && (
-          <Section title="Valores" desc="Mostre o preço de forma direta. Taxa extra é opcional.">
-            <div className="form-stack">
-              <div className="two-grid">
-                <div>
-                  <label style={labelStyle}>Valor por hora</label>
-                  <input type="number" inputMode="numeric" style={inputStyle} value={form.hourlyRate} onChange={(event) => setField("hourlyRate", event.target.value)} placeholder="120" />
-                </div>
-                <div>
-                  <label style={labelStyle}>Valor diária</label>
-                  <input type="number" inputMode="numeric" style={inputStyle} value={form.dayRate} onChange={(event) => setField("dayRate", event.target.value)} placeholder="450" />
-                </div>
-              </div>
-              <div>
-                <label style={labelStyle}>Taxa opcional</label>
-                <input type="number" inputMode="numeric" style={inputStyle} value={form.optionalFee} onChange={(event) => setField("optionalFee", event.target.value)} placeholder="0" />
-              </div>
-            </div>
-          </Section>
+          <>
+            <StepTitle title="Qual estrutura o local oferece?" />
+            <Counter label="Quantidade de quartos disponíveis" value={form.bedrooms} onChange={(value) => setField("bedrooms", value)} />
+            <Counter label="Quantidade de banheiros" value={form.bathrooms} onChange={(value) => setField("bathrooms", value)} />
+            <Counter label="Camas, macas ou sofás utilizáveis" value={form.beds} onChange={(value) => setField("beds", value)} />
+            <Counter label="Máximo de modelos usando o local por vez" value={form.maxModels} onChange={(value) => setField("maxModels", Math.max(1, value))} />
+          </>
         )}
 
         {step === 6 && (
-          <Section title="Finalização" desc="Seu anúncio já está montado. Agora vinculamos a uma conta segura.">
-            <div className="summary-grid">
-              {summary.map((item) => (
-                <div key={item.label}>
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
+          <>
+            <StepTitle title="O que o local oferece?" />
+            <div className="card-grid">
+              {amenities.map((option) => (
+                <OptionCard key={option.value} option={option} active={form.amenities.includes(option.value)} onClick={() => toggleList("amenities", option.value)} />
+              ))}
+            </div>
+          </>
+        )}
+
+        {step === 7 && (
+          <>
+            <StepTitle title="Quais itens de segurança o local possui?" />
+            <div className="card-grid">
+              {safetyItems.map((option) => (
+                <OptionCard key={option.value} option={option} active={form.safetyItems.includes(option.value)} onClick={() => toggleList("safetyItems", option.value)} />
+              ))}
+            </div>
+            <p className="privacy-note">Câmeras em áreas internas de atendimento não são permitidas. Caso existam câmeras externas, informe com transparência.</p>
+          </>
+        )}
+
+        {step === 8 && (
+          <>
+            <StepTitle title="Compartilhe informações importantes de segurança" helper="O local possui alguma dessas opções?" />
+            <div className="checkbox-list">
+              {safetyInfo.map((item) => (
+                <label key={item}><span>{item}</span><input type="checkbox" checked={form.safetyInfo.includes(item)} onChange={() => toggleList("safetyInfo", item)} /></label>
+              ))}
+            </div>
+            <p className="privacy-note">Essas informações ajudam a manter a segurança das modelos e a transparência da plataforma.</p>
+          </>
+        )}
+
+        {step === 9 && (
+          <>
+            <StepTitle title="Quais são as regras do local?" />
+            <Input label="Horário permitido de uso" value={form.allowedHours} onChange={(value) => setField("allowedHours", value)} placeholder="Ex.: 08h às 22h, sob agendamento" />
+            <div className="checkbox-list">
+              {ruleItems.map((item) => (
+                <label key={item}><span>{item}</span><input type="checkbox" checked={Boolean(form.rules[item])} onChange={(event) => updateRule(item, event.target.checked)} /></label>
+              ))}
+            </div>
+            <Textarea label="Descreva regras importantes do local" value={form.rulesText} onChange={(value) => setField("rulesText", value)} />
+          </>
+        )}
+
+        {step === 10 && (
+          <>
+            <StepTitle title="Adicione fotos do local" helper="Você precisa adicionar no mínimo 5 fotos para continuar. Mostre os ambientes principais com boa iluminação." />
+            <label className="upload-box">
+              <ImagePlus size={34} />
+              <strong>Adicionar fotos</strong>
+              <span>Entrada, suíte, banheiro, área principal e comodidade especial</span>
+              <input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(event) => { if (event.target.files) uploadFiles(event.target.files); event.currentTarget.value = ""; }} />
+            </label>
+            <div className="photo-list">
+              {form.photos.map((photo, index) => (
+                <article key={photo.id} className="photo-item">
+                  <img src={photo.url ?? photo.preview} alt={photo.name} />
+                  <div>
+                    <strong>{photo.cover ? "Foto de capa" : `Foto ${index + 1}`}</strong>
+                    <span className={photo.status}>{photo.status === "uploading" ? "Enviando..." : photo.status === "uploaded" ? "Enviada com sucesso" : photo.error ?? "Falha no envio"}</span>
+                    <div className="photo-actions">
+                      <button type="button" onClick={() => makeCover(photo.id)}>Capa</button>
+                      <button type="button" onClick={() => movePhoto(index, -1)} disabled={index === 0}>Subir</button>
+                      <button type="button" onClick={() => movePhoto(index, 1)} disabled={index === form.photos.length - 1}>Descer</button>
+                      <button type="button" onClick={() => removePhoto(photo.id)}>Excluir</button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+            <p className="privacy-note">{uploadedPhotos.length}/5 fotos enviadas com sucesso.</p>
+          </>
+        )}
+
+        {step === 11 && (
+          <>
+            <StepTitle title="Agora, dê um título para o seu local" helper="Títulos curtos funcionam melhor. Você poderá alterar depois." />
+            <Textarea label="Título" value={form.title} onChange={(value) => setField("title", value.slice(0, 50))} placeholder="Suíte discreta no Centro" maxLength={50} />
+            <span className="counter-text">{form.title.length}/50</span>
+          </>
+        )}
+
+        {step === 12 && (
+          <>
+            <StepTitle title="Descreva o local para as modelos" helper="Evite colocar dados sensíveis ou endereço completo na descrição pública." />
+            <Textarea label="Descrição" value={form.description} onChange={(value) => setField("description", value)} placeholder="Descreva o ambiente, diferenciais, privacidade, acesso, conforto e regras importantes." rows={8} />
+          </>
+        )}
+
+        {step === 13 && (
+          <>
+            <StepTitle title="Defina o valor de uso do local" helper="Se o financeiro ainda não estiver ativo para este local, deixe os valores em branco e use aprovação manual." />
+            <div className="form-grid">
+              <Input label="Preço por hora" value={form.priceHour} onChange={(value) => setField("priceHour", value)} type="number" />
+              <Input label="Preço por período" value={form.pricePeriod} onChange={(value) => setField("pricePeriod", value)} type="number" />
+              <Input label="Preço por diária" value={form.priceDay} onChange={(value) => setField("priceDay", value)} type="number" />
+              <Input label="Taxa de limpeza" value={form.cleaningFee} onChange={(value) => setField("cleaningFee", value)} type="number" />
+            </div>
+            <div className="stack compact">
+              {[
+                ["platform", "Pagamento pela plataforma"],
+                ["direct", "Pagamento direto"],
+                ["approval", "Condição definida após aprovação"],
+              ].map(([value, label]) => (
+                <button key={value} type="button" className={form.pricingMode === value ? "choice active" : "choice"} onClick={() => setField("pricingMode", value as PricingMode)}>{label}</button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {step === 14 && (
+          <>
+            <StepTitle title="Quando o local fica disponível?" />
+            <div className="stack compact">
+              {["Todos os dias", "Dias específicos", "Apenas com aprovação manual", "Horários personalizados"].map((item) => (
+                <button key={item} type="button" className={form.availabilityMode === item ? "choice active" : "choice"} onClick={() => setField("availabilityMode", item)}>{item}</button>
+              ))}
+            </div>
+            <div className="day-grid">
+              {weekDays.map((day) => <button key={day} type="button" className={form.days.includes(day) ? "day active" : "day"} onClick={() => toggleList("days", day)}>{day}</button>)}
+            </div>
+            <div className="form-grid two">
+              <Input label="Horário inicial" value={form.startTime} onChange={(value) => setField("startTime", value)} type="time" />
+              <Input label="Horário final" value={form.endTime} onChange={(value) => setField("endTime", value)} type="time" />
+            </div>
+          </>
+        )}
+
+        {step === 15 && (
+          <>
+            <StepTitle title="Revise seu cadastro" />
+            <div className="review-grid">
+              {summary.map(([label, value], index) => (
+                <div key={label}>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                  <button type="button" onClick={() => setStep([1, 3, 6, 7, 10, 11, 14, 13][index] ?? 1)}>Editar seção</button>
                 </div>
               ))}
             </div>
-
-            {status === "loading" ? (
-              <div className="auth-final">Verificando sua sessão...</div>
-            ) : !isAuthenticated ? (
-              <div className="auth-final">
-                <h3>Crie sua conta para publicar</h3>
-                <p>O rascunho fica salvo. Depois da conta criada, você volta para finalizar o envio.</p>
-                <div className="auth-actions">
-                  <Link href={authHref("/cadastro")} className="gold-link">Criar conta e publicar</Link>
-                  <Link href={authHref("/login")} className="outline-link">Já tenho conta</Link>
-                </div>
-              </div>
-            ) : !canPublish ? (
-              <div className="auth-final">
-                <h3>Ative a conta de anunciante</h3>
-                <p>Sua conta já existe. Falta liberar o perfil de anunciante para enviar este espaço.</p>
-                <Link href={authHref("/cadastro")} className="gold-link">Ativar como anunciante</Link>
-              </div>
-            ) : (
-              <div className="auth-final">
-                <h3>Tudo pronto para análise</h3>
-                <p>As fotos serão enviadas agora e o espaço entrará em revisão.</p>
-                <button type="button" onClick={handleSubmit} disabled={loading} className="gold-button wide">
-                  {loading ? "Enviando..." : "Enviar para aprovação"}
-                </button>
-              </div>
-            )}
-          </Section>
+            <button type="button" className="primary standalone" onClick={submit} disabled={saving}>{saving ? "Enviando..." : "Enviar para análise"}</button>
+          </>
         )}
 
-        <div className="navigation-row">
-          <button type="button" onClick={() => setStep((current) => Math.max(0, current - 1))} disabled={step === 0} className="back-button">
-            Voltar
-          </button>
-          {step < steps.length - 1 ? (
-            <button type="button" onClick={next} className="gold-button">
-              {step === 5 ? "Finalizar" : "Continuar"}
+        {step === 16 && (
+          <div className="intro-screen">
+            <div className="intro-mark"><Check size={56} /></div>
+            <h1>Cadastro enviado para análise</h1>
+            <p>Nossa equipe irá revisar as informações antes de liberar o local para as modelos.</p>
+            <div className="next-steps">
+              {["Análise de segurança", "Validação das fotos", "Aprovação do local", "Publicação na área das modelos"].map((item) => <span key={item}>{item}</span>)}
+            </div>
+            <Link href={ACCOUNT_ROUTES.verificacaoAnfitriao} className="primary standalone">Acompanhar análise</Link>
+          </div>
+        )}
+      </section>
+
+      {step > 0 && step < 16 && (
+        <footer className="fixed-footer">
+          <div className="progress"><span style={{ width: `${progress}%` }} /></div>
+          <div className="footer-actions">
+            <button type="button" className="back" onClick={back}><ChevronLeft size={20} /> Voltar</button>
+            <button type="button" className="primary" onClick={next} disabled={!canGoNext}>
+              Avançar <ChevronRight size={20} />
             </button>
-          ) : (
-            <button type="button" onClick={handleSubmit} disabled={loading || !canPublish} className="gold-button navigation-submit">
-              {loading ? "Enviando..." : canPublish ? "Publicar" : "Conta primeiro"}
-            </button>
-          )}
-        </div>
-      </div>
+          </div>
+        </footer>
+      )}
 
       <style jsx>{`
-        .property-draft-shell {
-          width: min(100%, 920px);
-          margin: 0 auto;
-          padding: 0 0 90px;
+        .onboarding-shell {
+          min-height: 100vh;
+          background: #fbfaf7;
+          color: #171717;
+          padding: max(24px, env(safe-area-inset-top)) 18px 124px;
         }
-
-        .property-draft-shell.public-draft {
-          padding-top: 72px;
-        }
-
-        .draft-topbar {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          z-index: 100;
+        .top-actions {
+          max-width: 720px;
+          margin: 0 auto 34px;
           display: flex;
-          align-items: center;
           justify-content: space-between;
-          gap: 16px;
-          height: 64px;
-          margin: 0;
-          padding: 0 max(14px, env(safe-area-inset-right)) 0 max(14px, env(safe-area-inset-left));
-          border-bottom: 1px solid rgba(212,168,67,0.16);
-          background: rgba(5,5,5,0.94);
-          backdrop-filter: blur(18px);
-          box-shadow: 0 18px 46px rgba(0,0,0,0.28);
+          gap: 12px;
         }
-
-        .draft-logo {
-          position: relative;
-          display: inline-flex;
-          align-items: center;
-          min-height: 40px;
-          padding: 6px 14px;
-          border: 1.5px solid rgba(212,168,67,0.34);
-          border-radius: 10px;
-          background: rgba(255,255,255,0.025);
-          color: #f4f1ea;
-          text-decoration: none;
-          box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
-        }
-
-        .draft-logo-star {
-          position: absolute;
-          top: -10px;
-          right: -5px;
-          color: ${GOLD};
-          font-size: 16px;
-          line-height: 1;
-          user-select: none;
-        }
-
-        .draft-logo-word {
-          font-size: 22px;
-          font-weight: 900;
-          letter-spacing: -1px;
-        }
-
-        .draft-logo-word span {
-          background: linear-gradient(135deg, #ffe5a0 0%, #d4a843 35%, #f5d78c 62%, #9e7b2a 100%);
-          background-clip: text;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-
-        .draft-login,
-        .outline-link {
-          border: 1px solid rgba(212,168,67,0.34);
-          border-radius: 10px;
-          color: ${GOLD};
-          padding: 10px 18px;
-          text-decoration: none;
-          font-size: 13px;
-          font-weight: 900;
-          background: rgba(255,255,255,0.025);
-          box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
-          white-space: nowrap;
-        }
-
-        .draft-hero {
-          margin-bottom: 22px;
-          border: 1px solid rgba(212, 168, 67, 0.18);
-          border-radius: 12px;
-          padding: 22px;
-          background:
-            linear-gradient(135deg, rgba(212, 168, 67, 0.12), rgba(255,255,255,0.025)),
-            #111;
-          box-shadow: 0 24px 80px rgba(0,0,0,0.28);
-        }
-
-        .draft-hero p,
-        .draft-progress span:first-child {
-          margin: 0 0 8px;
-          color: ${GOLD};
-          font-size: 11px;
-          font-weight: 900;
-          letter-spacing: 2.5px;
-          text-transform: uppercase;
-        }
-
-        .draft-hero h1 {
-          margin: 0;
-          color: #f4f1ea;
-          font-size: clamp(26px, 5vw, 38px);
-          line-height: 1.05;
-          font-weight: 950;
-        }
-
-        .draft-hero > span {
-          display: block;
-          margin-top: 12px;
-          color: #b8b1a6;
-          font-size: 13px;
-          line-height: 1.6;
-        }
-
-        .draft-progress {
-          display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
-          gap: 16px;
-          margin-bottom: 8px;
-        }
-
-        .draft-progress strong {
-          display: block;
-          color: #f4f1ea;
-          font-size: 17px;
-        }
-
-        .draft-progress > span {
-          color: ${GOLD};
-          font-size: 13px;
-          font-weight: 900;
-        }
-
-        .progress-track {
-          height: 5px;
-          margin-bottom: 22px;
-          overflow: hidden;
+        .top-actions button,
+        .top-actions a {
+          min-height: 42px;
+          border: 1px solid #ded8ca;
           border-radius: 999px;
-          background: #24211d;
-        }
-
-        .progress-track div {
-          height: 100%;
-          border-radius: inherit;
-          background: linear-gradient(90deg, #ffe08b, ${GOLD});
-          transition: width 0.25s ease;
-        }
-
-        .draft-card {
-          border: 1px solid ${GOLD_MID};
-          border-radius: 12px;
-          background: #111;
-          padding: 24px;
-          box-shadow: 0 28px 90px rgba(0,0,0,0.32);
-        }
-
-        .step-section {
-          margin-bottom: 24px;
-        }
-
-        .section-title {
-          border-bottom: 1px solid ${GOLD_DIM};
-          padding-bottom: 10px;
-          margin-bottom: 16px;
-        }
-
-        .section-title h2 {
-          color: #f1f5f9;
-          font-size: 16px;
-          font-weight: 900;
-          margin: 0;
-        }
-
-        .section-title p {
-          color: #64748b;
-          font-size: 12px;
-          line-height: 1.6;
-          margin: 6px 0 0;
-        }
-
-        .form-stack {
-          display: grid;
-          gap: 14px;
-        }
-
-        .type-grid,
-        .amenity-grid,
-        .chip-grid,
-        .week-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-          gap: 10px;
-        }
-
-        .week-grid {
-          grid-template-columns: repeat(7, minmax(58px, 1fr));
-        }
-
-        .city-grid {
-          display: grid;
-          grid-template-columns: 1fr 92px;
-          gap: 12px;
-        }
-
-        .two-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 12px;
-        }
-
-        .option,
-        .chip {
-          min-height: 48px;
-          border: 1.5px solid #1e293b;
-          border-radius: 10px;
-          background: #0b1420;
-          color: #64748b;
-          padding: 11px 12px;
-          text-align: left;
-          font-weight: 850;
-          cursor: pointer;
-        }
-
-        .chip {
-          text-align: center;
-        }
-
-        .option.active,
-        .chip.active {
-          border-color: ${GOLD};
-          background: ${GOLD_DIM};
-          color: #f1f5f9;
-        }
-
-        .switch-row {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          border: 1px solid ${GOLD_MID};
-          border-radius: 12px;
-          background: rgba(212,168,67,0.06);
-          padding: 14px;
-          color: #f1f5f9;
-        }
-
-        .switch-row input {
-          width: 20px;
-          height: 20px;
-          accent-color: ${GOLD};
-        }
-
-        .switch-row strong,
-        .switch-row small {
-          display: block;
-        }
-
-        .switch-row small {
-          margin-top: 3px;
-          color: #64748b;
-          font-size: 12px;
-        }
-
-        .upload-box {
-          display: block;
-          margin-bottom: 14px;
-          border: 2px dashed ${GOLD_MID};
-          border-radius: 12px;
-          background: ${GOLD_DIM};
-          color: #f1f5f9;
-          cursor: pointer;
-          font-size: 13px;
-          font-weight: 900;
-          padding: 26px;
-          text-align: center;
-        }
-
-        .photo-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-          gap: 10px;
-        }
-
-        .photo-preview {
-          position: relative;
-          overflow: hidden;
-          aspect-ratio: 4 / 3;
-          border: 1px solid rgba(212,168,67,0.14);
-          border-radius: 10px;
-          background: #0b1420;
-        }
-
-        .photo-preview img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .photo-actions {
-          position: absolute;
-          inset-inline: 6px;
-          bottom: 6px;
-          display: flex;
-          gap: 5px;
-        }
-
-        .photo-actions button {
-          width: 28px;
-          height: 26px;
-          border: 0;
-          border-radius: 999px;
-          background: rgba(6,14,27,0.88);
-          color: #fff;
-          cursor: pointer;
-          font-size: 12px;
-        }
-
-        .photo-actions button:disabled {
-          opacity: 0.35;
-          cursor: default;
-        }
-
-        .summary-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 10px;
-          margin-bottom: 18px;
-        }
-
-        .summary-grid div {
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 12px;
-          background: #0b1420;
-          padding: 13px;
-        }
-
-        .summary-grid span {
-          display: block;
-          margin-bottom: 7px;
-          color: #64748b;
-          font-size: 10px;
-          font-weight: 900;
-          letter-spacing: 1.4px;
-          text-transform: uppercase;
-        }
-
-        .summary-grid strong {
-          color: #f8fafc;
+          background: #fff;
+          color: #171717;
+          padding: 0 17px;
           font-size: 14px;
-        }
-
-        .auth-final {
-          border: 1px solid ${GOLD_MID};
-          border-radius: 14px;
-          background: linear-gradient(135deg, rgba(212,168,67,0.10), rgba(255,255,255,0.025));
-          color: #94a3b8;
-          padding: 18px;
-        }
-
-        .auth-final h3 {
-          margin: 0 0 8px;
-          color: #f8fafc;
-          font-size: 18px;
-        }
-
-        .auth-final p {
-          margin: 0 0 16px;
-          font-size: 13px;
-          line-height: 1.6;
-        }
-
-        .auth-actions,
-        .navigation-row {
-          display: flex;
-          gap: 12px;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .gold-button,
-        .gold-link {
+          font-weight: 800;
+          text-decoration: none;
           display: inline-flex;
-          min-height: 46px;
           align-items: center;
           justify-content: center;
-          border: 0;
-          border-radius: 10px;
-          background: ${GOLD};
-          color: #07111f;
-          cursor: pointer;
-          font-size: 14px;
+        }
+        .step-panel {
+          max-width: 720px;
+          margin: 0 auto;
+        }
+        .intro-screen {
+          min-height: calc(100vh - 220px);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: flex-start;
+          gap: 18px;
+        }
+        .intro-mark {
+          width: 96px;
+          height: 96px;
+          border-radius: 28px;
+          display: grid;
+          place-items: center;
+          background: #15120d;
+          color: ${GOLD};
+          box-shadow: 0 22px 50px rgba(20, 16, 10, 0.16);
+        }
+        h1 {
+          margin: 0;
+          font-size: clamp(32px, 9vw, 54px);
+          line-height: 0.98;
+          letter-spacing: 0;
           font-weight: 950;
-          padding: 0 20px;
-          text-decoration: none;
         }
-
-        .gold-button:disabled {
-          cursor: not-allowed;
-          opacity: 0.55;
+        p {
+          margin: 0;
+          color: #6f6a60;
+          font-size: 17px;
+          line-height: 1.55;
         }
-
-        .gold-button.wide {
+        .helper {
+          margin-top: 12px;
+        }
+        .step-title {
+          margin-bottom: 28px;
+        }
+        .card-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 14px;
+        }
+        .select-card {
+          min-height: 128px;
+          border: 1.5px solid #ded8ca;
+          border-radius: 12px;
+          background: #fff;
+          color: #171717;
+          padding: 18px;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 18px;
+          text-align: left;
+          font-size: 17px;
+          font-weight: 850;
+        }
+        .select-card.active,
+        .choice.active,
+        .day.active {
+          border-color: ${GOLD};
+          background: rgba(212,168,67,0.12);
+          box-shadow: inset 0 0 0 1px ${GOLD};
+        }
+        .stack {
+          display: grid;
+          gap: 12px;
+        }
+        .stack.compact {
+          margin-top: 18px;
+        }
+        .choice {
+          min-height: 68px;
+          border: 1.5px solid #ded8ca;
+          border-radius: 14px;
+          background: #fff;
+          padding: 18px;
+          text-align: left;
+          color: #171717;
+          font-size: 16px;
+          font-weight: 850;
+        }
+        .form-grid {
+          display: grid;
+          gap: 12px;
+        }
+        .form-grid.two {
+          grid-template-columns: 1fr 1fr;
+          margin-top: 16px;
+        }
+        .field {
+          display: grid;
+          gap: 7px;
+        }
+        .field label {
+          color: #6f6a60;
+          font-size: 12px;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+        }
+        .field input,
+        .field textarea {
+          width: 100%;
+          box-sizing: border-box;
+          border: 1.5px solid #cfc8b8;
+          border-radius: 12px;
+          background: #fff;
+          color: #171717;
+          min-height: 54px;
+          padding: 14px;
+          font: inherit;
+          outline: none;
+        }
+        .field textarea {
+          min-height: 150px;
+          resize: vertical;
+        }
+        .privacy-note {
+          margin-top: 16px;
+          border-left: 3px solid ${GOLD};
+          padding-left: 14px;
+          font-size: 14px;
+          color: #6f6a60;
+        }
+        .map-card {
+          height: 390px;
+          border-radius: 22px;
+          background:
+            linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px),
+            linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
+            #ede7dc;
+          background-size: 46px 46px;
+          position: relative;
+          overflow: hidden;
+          margin-bottom: 18px;
+        }
+        .map-pin {
+          position: absolute;
+          left: 50%;
+          top: 55%;
+          transform: translate(-50%, -50%);
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          background: #161616;
+          display: grid;
+          place-items: center;
+          box-shadow: 0 18px 44px rgba(0,0,0,0.18);
+        }
+        .address-chip {
+          position: absolute;
+          left: 18px;
+          right: 18px;
+          top: 22px;
+          border-radius: 18px;
+          background: #fff;
+          padding: 18px;
+          display: flex;
+          gap: 10px;
+          align-items: center;
+          font-weight: 800;
+          box-shadow: 0 14px 40px rgba(0,0,0,0.08);
+        }
+        .counter-row {
+          min-height: 78px;
+          border-bottom: 1px solid #e2dccf;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          font-size: 17px;
+          font-weight: 760;
+        }
+        .counter-row div {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+        .counter-row button {
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          border: 1px solid #d8d2c6;
+          background: #fff;
+          display: grid;
+          place-items: center;
+        }
+        .counter-row button:disabled {
+          opacity: 0.35;
+        }
+        .checkbox-list {
+          display: grid;
+          gap: 4px;
+        }
+        .checkbox-list label {
+          min-height: 56px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          border-bottom: 1px solid #e5dfd3;
+          font-size: 16px;
+          font-weight: 720;
+        }
+        .checkbox-list input {
+          width: 24px;
+          height: 24px;
+          accent-color: ${GOLD};
+        }
+        .upload-box {
+          min-height: 300px;
+          border: 2px dashed #c9c1b2;
+          border-radius: 22px;
+          background: #fff;
+          display: grid;
+          place-items: center;
+          align-content: center;
+          gap: 10px;
+          text-align: center;
+          cursor: pointer;
+          color: #171717;
+        }
+        .upload-box strong {
+          font-size: 18px;
+        }
+        .upload-box span {
+          max-width: 360px;
+          color: #7d766a;
+          font-size: 14px;
+          line-height: 1.45;
+        }
+        .photo-list {
+          display: grid;
+          gap: 14px;
+          margin-top: 18px;
+        }
+        .photo-item {
+          display: grid;
+          grid-template-columns: 120px 1fr;
+          gap: 14px;
+          background: #fff;
+          border: 1px solid #ded8ca;
+          border-radius: 16px;
+          padding: 10px;
+        }
+        .photo-item img {
+          width: 120px;
+          height: 100px;
+          object-fit: cover;
+          border-radius: 12px;
+          background: #eee;
+        }
+        .photo-item strong,
+        .photo-item span {
+          display: block;
+        }
+        .photo-item span {
+          margin-top: 4px;
+          color: #6f6a60;
+          font-size: 13px;
+        }
+        .photo-item span.uploaded {
+          color: #12753f;
+        }
+        .photo-item span.error {
+          color: #9f241f;
+        }
+        .photo-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-top: 12px;
+        }
+        .photo-actions button {
+          border: 1px solid #ded8ca;
+          border-radius: 999px;
+          background: #fbfaf7;
+          padding: 7px 10px;
+          font-size: 12px;
+          font-weight: 800;
+        }
+        .counter-text {
+          display: block;
+          margin-top: 8px;
+          color: #6f6a60;
+          font-weight: 800;
+        }
+        .day-grid {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 8px;
+          margin-top: 16px;
+        }
+        .day {
+          min-height: 44px;
+          border: 1px solid #ded8ca;
+          border-radius: 999px;
+          background: #fff;
+          font-weight: 900;
+        }
+        .review-grid {
+          display: grid;
+          gap: 12px;
+          margin-bottom: 22px;
+        }
+        .review-grid div {
+          border: 1px solid #ded8ca;
+          border-radius: 16px;
+          background: #fff;
+          padding: 16px;
+        }
+        .review-grid span {
+          display: block;
+          color: #6f6a60;
+          font-size: 12px;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+        }
+        .review-grid strong {
+          display: block;
+          margin: 7px 0 12px;
+          font-size: 16px;
+        }
+        .review-grid button {
+          border: 0;
+          background: transparent;
+          padding: 0;
+          color: ${GOLD};
+          font-weight: 900;
+        }
+        .next-steps {
+          display: grid;
+          gap: 10px;
           width: 100%;
         }
-
-        .back-button {
-          min-height: 46px;
-          border: 1px solid ${GOLD_MID};
-          border-radius: 10px;
-          background: transparent;
-          color: ${GOLD};
-          cursor: pointer;
-          font-size: 14px;
+        .next-steps span {
+          border: 1px solid #ded8ca;
+          background: #fff;
+          border-radius: 14px;
+          padding: 14px;
+          font-weight: 850;
+        }
+        .primary {
+          min-height: 58px;
+          border: 0;
+          border-radius: 16px;
+          background: #171717;
+          color: #fff;
+          padding: 0 24px;
+          font-size: 16px;
           font-weight: 900;
-          padding: 0 18px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          text-decoration: none;
         }
-
-        .back-button:disabled {
-          border-color: #1e293b;
-          color: #334155;
-          cursor: default;
+        .primary:disabled {
+          background: #eee9df;
+          color: #b7afa1;
         }
-
-        .navigation-row {
-          border-top: 1px solid ${GOLD_DIM};
-          padding-top: 18px;
+        .standalone {
+          width: 100%;
+          margin-top: 8px;
         }
-
-        .navigation-submit {
-          min-width: 150px;
+        .fixed-footer {
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 30;
+          background: rgba(255,255,255,0.96);
+          border-top: 1px solid #ded8ca;
+          padding-bottom: env(safe-area-inset-bottom);
+          backdrop-filter: blur(16px);
         }
-
-        @media (max-width: 720px) {
-          .property-draft-shell {
-            padding-bottom: 70px;
+        .progress {
+          height: 5px;
+          background: #e8e2d6;
+        }
+        .progress span {
+          display: block;
+          height: 100%;
+          background: #171717;
+          transition: width 0.2s ease;
+        }
+        .footer-actions {
+          max-width: 720px;
+          margin: 0 auto;
+          padding: 18px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 14px;
+        }
+        .back {
+          min-height: 54px;
+          border: 0;
+          background: transparent;
+          color: #171717;
+          font-size: 16px;
+          font-weight: 900;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        @media (min-width: 760px) {
+          .form-grid {
+            grid-template-columns: 1fr 1fr;
           }
-
-          .draft-hero {
-            padding: 18px;
+          .field:has(textarea) {
+            grid-column: 1 / -1;
           }
-
-          .draft-card {
-            border-radius: 16px;
-            padding: 18px;
+        }
+        @media (max-width: 520px) {
+          .onboarding-shell {
+            padding-left: 18px;
+            padding-right: 18px;
           }
-
-          .city-grid,
-          .two-grid,
-          .summary-grid {
-            grid-template-columns: 1fr;
+          .card-grid {
+            gap: 10px;
           }
-
-          .type-grid,
-          .amenity-grid,
-          .chip-grid {
-            grid-template-columns: 1fr;
+          .select-card {
+            min-height: 116px;
+            padding: 14px;
+            font-size: 15px;
           }
-
-          .week-grid {
-            grid-template-columns: repeat(4, 1fr);
+          .form-grid.two,
+          .day-grid {
+            grid-template-columns: repeat(2, 1fr);
           }
-
-          .auth-actions {
-            flex-direction: column;
-            align-items: stretch;
+          .photo-item {
+            grid-template-columns: 96px 1fr;
           }
-
-          .gold-button,
-          .gold-link,
-          .outline-link {
-            width: 100%;
-          }
-
-          .navigation-row {
-            position: sticky;
-            bottom: 0;
-            z-index: 3;
-            margin: 0 -18px -18px;
-            padding: 12px 18px;
-            background: rgba(7,17,31,0.94);
-            backdrop-filter: blur(16px);
+          .photo-item img {
+            width: 96px;
+            height: 96px;
           }
         }
       `}</style>
+    </main>
+  );
+}
+
+function StepTitle({ title, helper }: { title: string; helper?: string }) {
+  return (
+    <div className="step-title">
+      <h1>{title}</h1>
+      {helper ? <p className="helper">{helper}</p> : null}
+    </div>
+  );
+}
+
+function Input({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: string;
+}) {
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} type={type} />
+    </div>
+  );
+}
+
+function Textarea({
+  label,
+  value,
+  onChange,
+  placeholder,
+  rows,
+  maxLength,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  rows?: number;
+  maxLength?: number;
+}) {
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <textarea value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} rows={rows} maxLength={maxLength} />
     </div>
   );
 }

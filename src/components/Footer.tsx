@@ -1,4 +1,3 @@
-"use client";
 export default function Footer() {
   const socialLinks = [
     {
@@ -50,6 +49,34 @@ export default function Footer() {
         padding: "48px 24px 32px",
       }}
     >
+      <style>{`
+        .footer-link {
+          display: block;
+          color: #8d8578;
+          text-decoration: none;
+          font-size: 14px;
+          margin-bottom: 8px;
+          transition: color 0.2s;
+        }
+        .footer-link:hover {
+          color: #f4f1ea;
+        }
+        .social-link {
+          width: 40px;
+          height: 40px;
+          border-radius: 8px;
+          border: 1px solid rgba(212,168,67,0.16);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #8d8578;
+          transition: color 0.2s, border-color 0.2s;
+        }
+        .social-link:hover {
+          color: #d4a843;
+          border-color: rgba(212,168,67,0.34);
+        }
+      `}</style>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <div
           style={{
@@ -91,16 +118,7 @@ export default function Footer() {
                 <a
                   key={l}
                   href="#"
-                  style={{
-                    display: "block",
-                    color: "#8d8578",
-                    textDecoration: "none",
-                    fontSize: 14,
-                    marginBottom: 8,
-                    transition: "color 0.2s",
-                  }}
-                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#f4f1ea")}
-                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#8d8578")}
+                  className="footer-link"
                 >
                   {l}
                 </a>
@@ -114,16 +132,7 @@ export default function Footer() {
                 <a
                   key={l}
                   href="#"
-                  style={{
-                    display: "block",
-                    color: "#8d8578",
-                    textDecoration: "none",
-                    fontSize: 14,
-                    marginBottom: 8,
-                    transition: "color 0.2s",
-                  }}
-                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#f4f1ea")}
-                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#8d8578")}
+                  className="footer-link"
                 >
                   {l}
                 </a>
@@ -142,25 +151,7 @@ export default function Footer() {
                   key={s.label}
                   href={s.href}
                   aria-label={s.label}
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 8,
-                    border: "1px solid rgba(212,168,67,0.16)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#8d8578",
-                    transition: "color 0.2s, border-color 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.color = "#d4a843";
-                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(212,168,67,0.34)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.color = "#8d8578";
-                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(212,168,67,0.16)";
-                  }}
+                  className="social-link"
                 >
                   {s.icon}
                 </a>
