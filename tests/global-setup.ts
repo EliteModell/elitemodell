@@ -11,15 +11,39 @@ import * as path from "path";
 const STORAGE_PATH = path.join(__dirname, ".auth", "user.json");
 const BASE_URL = "http://localhost:3000";
 
-export default async function globalSetup(_config: FullConfig) {
+function writeEmptyStorageState() {
+  fs.mkdirSync(path.dirname(STORAGE_PATH), { recursive: true });
+  fs.writeFileSync(STORAGE_PATH, JSON.stringify({ cookies: [], origins: [] }));
+}
+
+function selectedProjectsFromArgv() {
+  const selected = new Set<string>();
+  for (let i = 0; i < process.argv.length; i += 1) {
+    const arg = process.argv[i];
+    if (arg === "--project" && process.argv[i + 1]) selected.add(process.argv[i + 1]);
+    if (arg.startsWith("--project=")) selected.add(arg.slice("--project=".length));
+  }
+  return selected;
+}
+
+export default async function globalSetup(config: FullConfig) {
+  const selectedProjects = selectedProjectsFromArgv();
+  const hasAuthenticatedProject = config.projects.some((project) => project.name === "authenticated");
+  const shouldLogin = hasAuthenticatedProject && (selectedProjects.size === 0 || selectedProjects.has("authenticated"));
+
+  if (!shouldLogin) {
+    console.warn("\n[global-setup] Projeto autenticado nao selecionado; login real ignorado.\n");
+    writeEmptyStorageState();
+    return;
+  }
+
   const email = process.env.TEST_USER_EMAIL;
   const password = process.env.TEST_USER_PASSWORD;
 
   if (!email || !password) {
     console.warn("\n[global-setup] TEST_USER_EMAIL / TEST_USER_PASSWORD não definidos — testes autenticados serão pulados.\n");
     // Cria um storageState vazio para não quebrar o setup
-    fs.mkdirSync(path.dirname(STORAGE_PATH), { recursive: true });
-    fs.writeFileSync(STORAGE_PATH, JSON.stringify({ cookies: [], origins: [] }));
+    writeEmptyStorageState();
     return;
   }
 
@@ -64,7 +88,7 @@ export default async function globalSetup(_config: FullConfig) {
   } catch (err) {
     console.error(`[global-setup] Falha no login: ${(err as Error).message}`);
     // Salva estado vazio para não quebrar os testes (eles vão pular graciosamente)
-    fs.writeFileSync(STORAGE_PATH, JSON.stringify({ cookies: [], origins: [] }));
+    writeEmptyStorageState();
   } finally {
     await browser.close();
   }

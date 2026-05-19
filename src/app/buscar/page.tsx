@@ -443,6 +443,7 @@ function BuscarContent() {
                         alt={a.nome}
                         fill
                         sizes="(max-width: 640px) 100vw, 260px"
+                        quality={70}
                         style={{ objectFit: "cover" }}
                       />
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(6,14,27,0.92) 0%, rgba(6,14,27,0.2) 50%, transparent 100%)" }} />

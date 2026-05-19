@@ -114,8 +114,10 @@ export async function GET(req: NextRequest) {
   const category  = searchParams.get("category");
   const priceMax  = searchParams.get("priceMax");
   const sortBy    = searchParams.get("sortBy") ?? "rating";
-  const page      = Math.max(1, Number(searchParams.get("page") ?? 1));
-  const limit     = 12;
+  const pageParam = Number(searchParams.get("page") ?? 1);
+  const page      = Number.isFinite(pageParam) ? Math.max(1, Math.floor(pageParam)) : 1;
+  const limitParam = Number(searchParams.get("limit") ?? 12);
+  const limit     = Number.isFinite(limitParam) ? Math.min(24, Math.max(1, Math.floor(limitParam))) : 12;
 
   const where: Prisma.ProfessionalWhereInput = { status: "ACTIVE" };
 

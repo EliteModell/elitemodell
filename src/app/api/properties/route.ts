@@ -52,8 +52,10 @@ export async function GET(req: NextRequest) {
   const models = Number(searchParams.get("models") ?? searchParams.get("guests") ?? 1);
   const priceMax = Number(searchParams.get("priceMax") ?? 99999);
   const sortBy = searchParams.get("sortBy") ?? "rating";
-  const page = Math.max(1, Number(searchParams.get("page") ?? 1));
-  const limit = 12;
+  const pageParam = Number(searchParams.get("page") ?? 1);
+  const page = Number.isFinite(pageParam) ? Math.max(1, Math.floor(pageParam)) : 1;
+  const limitParam = Number(searchParams.get("limit") ?? 12);
+  const limit = Number.isFinite(limitParam) ? Math.min(24, Math.max(1, Math.floor(limitParam))) : 12;
 
   const where: Prisma.PropertyWhereInput = { status: "ACTIVE" };
   const locationSearch = search || city;

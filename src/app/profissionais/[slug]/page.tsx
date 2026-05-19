@@ -119,7 +119,7 @@ export default function ProfissionalProfilePage() {
         setPro(data);
 
         // Busca perfis similares na mesma cidade
-        const simRes = await fetch(`/api/professionals?city=${encodeURIComponent(data.city)}&sortBy=rating`, { signal: controller.signal });
+        const simRes = await fetch(`/api/professionals?city=${encodeURIComponent(data.city)}&sortBy=rating&limit=4`, { signal: controller.signal });
         if (simRes.ok) {
           const simData = await simRes.json();
           setSimilar((simData.professionals ?? []).filter((p: SimilarPro) => p.id !== data.id).slice(0, 3));
@@ -208,7 +208,7 @@ export default function ProfissionalProfilePage() {
               src={coverImage}
               alt=""
               fill
-              priority
+              preload
               sizes="100vw"
               quality={72}
               style={{ objectFit: "cover", objectPosition: "center 15%" }}

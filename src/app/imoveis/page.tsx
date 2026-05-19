@@ -387,6 +387,7 @@ function PropertyCard({ property: p }: { property: Property }) {
               alt={p.title}
               fill
               sizes="(max-width: 768px) 100vw, 340px"
+              quality={70}
               style={{ objectFit: "cover" }}
             />
           ) : (

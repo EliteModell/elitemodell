@@ -374,7 +374,6 @@ test.describe("Bottom nav — não cobre conteúdo", () => {
       const mainBox = await page.locator("main").boundingBox();
       if (!mainBox) return;
 
-      const mainBottom = mainBox.y + mainBox.height;
 
       // O conteúdo deve terminar ANTES do topo da nav (com folga de padding)
       // O padding-bottom do main é calc(62px + ...) ≈ 74px

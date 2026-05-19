@@ -51,7 +51,7 @@ export default function HomePage() {
               src="/hero-sofa-model.png"
               alt=""
               fill
-              priority
+              preload
               quality={72}
               sizes="100vw"
               className="hero-image"

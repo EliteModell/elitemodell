@@ -21,7 +21,7 @@ export default function Hero() {
           aria-hidden="true"
           width={1536}
           height={1024}
-          priority
+          preload
           quality={72}
           sizes="100vw"
           style={{ width: "100%", height: "auto", display: "block" }}

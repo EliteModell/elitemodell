@@ -342,6 +342,7 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
               alt={pro.displayName}
               fill
               sizes={featured ? "(max-width: 768px) 100vw, 380px" : "(max-width: 768px) 100vw, 340px"}
+              quality={70}
               style={{ objectFit: "cover", objectPosition: "top" }}
             />
           ) : (
