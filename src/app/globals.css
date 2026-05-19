@@ -43,6 +43,7 @@ body {
   color: var(--foreground);
   font-family: "Inter", "Segoe UI", Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
 }
 
 ::selection {
@@ -91,4 +92,141 @@ body {
 .premium-shimmer {
   background: linear-gradient(90deg, transparent, rgba(245, 215, 140, 0.08), transparent);
   animation: premiumShimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes premiumFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.premium-enter {
+  animation: premiumFadeUp 220ms ease-out both;
+}
+
+.premium-surface {
+  border: 1px solid rgba(212, 168, 67, 0.16);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.055), rgba(212, 168, 67, 0.025)),
+    #0c0c0d;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.premium-card {
+  border: 1px solid rgba(212, 168, 67, 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02)),
+    #101010;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .premium-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(212, 168, 67, 0.34);
+    box-shadow: 0 22px 68px rgba(0, 0, 0, 0.34);
+  }
+}
+
+.premium-interactive {
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.premium-interactive:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.premium-button {
+  min-height: 44px;
+  border: 1px solid rgba(212, 168, 67, 0.24);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f6d979, #d4a843 52%, #a57920);
+  color: #080704;
+  box-shadow: 0 14px 34px rgba(212, 168, 67, 0.14);
+  font-weight: 850;
+}
+
+.premium-control {
+  border: 1px solid rgba(212, 168, 67, 0.16);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--foreground);
+  outline: none;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.premium-control:focus,
+.premium-control:focus-visible {
+  border-color: rgba(245, 215, 140, 0.72);
+  box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.12);
+}
+
+.premium-skeleton {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.055)),
+    rgba(255, 255, 255, 0.05);
+  background-size: 220% 100%;
+  animation: premiumSkeleton 1.35s ease-in-out infinite;
+}
+
+@keyframes premiumSkeleton {
+  0% {
+    background-position: 180% 0;
+  }
+  100% {
+    background-position: -80% 0;
+  }
+}
+
+.premium-empty-state {
+  border: 1px solid rgba(212, 168, 67, 0.16);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(212, 168, 67, 0.10), transparent 46%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.04), rgba(212, 168, 67, 0.025)),
+    #080808;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.28);
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(245, 215, 140, 0.82);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

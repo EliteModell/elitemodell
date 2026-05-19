@@ -40,6 +40,8 @@ export default function ImoveisPage() {
   const [sortBy, setSortBy] = useState("rating");
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   // Carrega quartos/espaços da API com debounce nos filtros
   useEffect(() => {
@@ -54,12 +56,17 @@ export default function ImoveisPage() {
       if (priceMax < 2000) qs.set("priceMax", String(priceMax));
       qs.set("sortBy", sortBy);
       setLoading(true);
+      setError(null);
       try {
         const response = await fetch(`/api/properties?${qs}`, { signal: controller.signal });
+        if (!response.ok) throw new Error("Failed to load properties");
         const data = await response.json();
         setProperties(data.properties ?? []);
       } catch {
-        if (!controller.signal.aborted) setProperties([]);
+        if (!controller.signal.aborted) {
+          setProperties([]);
+          setError("Nao foi possivel carregar os ambientes agora.");
+        }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -68,7 +75,7 @@ export default function ImoveisPage() {
       window.clearTimeout(t);
       controller.abort();
     };
-  }, [canSeeLocations, models, priceMax, search, sortBy, status]);
+  }, [canSeeLocations, models, priceMax, search, sortBy, status, reloadKey]);
 
   const toggleAmenity = (a: string) =>
     setSelectedAmenities((prev) => prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]);
@@ -247,6 +254,25 @@ export default function ImoveisPage() {
           {loading ? "Carregando..." : `${filtered.length} espaço${filtered.length !== 1 ? "s" : ""} reservado${filtered.length !== 1 ? "s" : ""} encontrado${filtered.length !== 1 ? "s" : ""}`}
         </p>
 
+        {loading ? <PropertyGridSkeleton /> : null}
+
+        {!loading && error ? (
+          <div className="premium-empty-state premium-enter" style={{ textAlign: "center", padding: "46px 22px", borderRadius: 8 }}>
+            <p style={{ margin: "0 0 8px", color: "#d4a843", fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase" }}>Instabilidade temporaria</p>
+            <h2 style={{ margin: "0 0 10px", color: "#f4f1ea", fontSize: 26, fontWeight: 850 }}>Nao conseguimos atualizar os ambientes.</h2>
+            <p style={{ margin: "0 auto 20px", maxWidth: 460, color: "#b8b1a6", lineHeight: 1.6 }}>{error}</p>
+            <button
+              type="button"
+              className="premium-button premium-interactive"
+              onClick={() => setReloadKey((key) => key + 1)}
+              style={{ padding: "0 20px", cursor: "pointer" }}
+            >
+              Tentar novamente
+            </button>
+          </div>
+        ) : null}
+
+        {!loading && !error ? (
         <div
           style={{
             display: "grid",
@@ -258,8 +284,9 @@ export default function ImoveisPage() {
             <PropertyCard key={p.id} property={p} />
           ))}
         </div>
+        ) : null}
 
-        {filtered.length === 0 && (
+        {!loading && !error && filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: "60px 0" }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🏠</div>
             <p style={{ color: "#666", fontSize: 16 }}>Nenhum local encontrado com esses filtros.</p>
@@ -279,12 +306,18 @@ export default function ImoveisPage() {
           border-color: #2a2620;
           transform: translateY(0);
           will-change: transform;
+          box-shadow: 0 18px 48px rgba(0,0,0,0.28);
+          contain: layout paint;
         }
         @media (hover: hover) and (pointer: fine) {
           .property-card:hover {
             border-color: rgba(212,168,67,0.34);
             transform: translateY(-3px);
+            box-shadow: 0 24px 72px rgba(0,0,0,0.36);
           }
+        }
+        .property-card:active {
+          transform: translateY(1px) scale(0.995);
         }
         @media (prefers-reduced-motion: reduce) {
           .property-card {
@@ -293,6 +326,27 @@ export default function ImoveisPage() {
           }
         }
       `}</style>
+    </div>
+  );
+}
+
+function PropertyGridSkeleton() {
+  return (
+    <div className="premium-enter" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 24 }}>
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="premium-card" style={{ borderRadius: 8, overflow: "hidden" }}>
+          <div className="premium-skeleton" style={{ height: 200 }} />
+          <div style={{ padding: 16 }}>
+            <div className="premium-skeleton" style={{ height: 18, width: "72%", borderRadius: 999 }} />
+            <div className="premium-skeleton" style={{ height: 12, width: "42%", borderRadius: 999, marginTop: 10 }} />
+            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+              <div className="premium-skeleton" style={{ height: 24, width: 84, borderRadius: 999 }} />
+              <div className="premium-skeleton" style={{ height: 24, width: 70, borderRadius: 999 }} />
+            </div>
+            <div className="premium-skeleton" style={{ height: 34, width: "100%", borderRadius: 8, marginTop: 18 }} />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

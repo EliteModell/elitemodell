@@ -34,9 +34,11 @@ const CATEGORY_LABELS: Record<string, string> = {
 export default function ProfissionaisPage() {
   const [professionals, setProfessionals] = useState<ApiProfessional[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
@@ -49,6 +51,7 @@ export default function ProfissionaisPage() {
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       setLoading(true);
+      setError(null);
       try {
         const qs = new URLSearchParams();
         if (search) qs.set("search", search);
@@ -58,6 +61,7 @@ export default function ProfissionaisPage() {
         if (page > 1) qs.set("page", String(page));
 
         const res = await fetch(`/api/professionals?${qs}`, { signal: controller.signal });
+        if (!res.ok) throw new Error("Failed to load professionals");
         const data = await res.json();
         let list: ApiProfessional[] = data.professionals ?? [];
         if (onlyVerified) list = list.filter((p) => p.verified);
@@ -66,7 +70,10 @@ export default function ProfissionaisPage() {
         setTotal(data.total ?? 0);
         setPages(data.pages ?? 1);
       } catch {
-        if (!controller.signal.aborted) setProfessionals([]);
+        if (!controller.signal.aborted) {
+          setProfessionals([]);
+          setError("Nao foi possivel carregar os profissionais agora.");
+        }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -76,7 +83,7 @@ export default function ProfissionaisPage() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [search, category, priceMax, sortBy, onlyVerified, page]);
+  }, [search, category, priceMax, sortBy, onlyVerified, page, reloadKey]);
 
   const featured = professionals.filter((p) => p.featured);
   const rest = professionals.filter((p) => !p.featured);
@@ -171,14 +178,24 @@ export default function ProfissionaisPage() {
       {/* Resultados */}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px" }}>
 
-        {loading && (
-          <div style={{ textAlign: "center", padding: "60px 0", color: "#555" }}>
-            <div style={{ fontSize: 32, marginBottom: 12, animation: "spin 1s linear infinite" }}>⟳</div>
-            Buscando profissionais...
+        {loading ? <ProfessionalGridSkeleton /> : null}
+        {!loading && error && (
+          <div className="premium-empty-state premium-enter" style={{ textAlign: "center", padding: "46px 22px", borderRadius: 8 }}>
+            <p style={{ margin: "0 0 8px", color: "#d4a843", fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase" }}>Instabilidade temporaria</p>
+            <h2 style={{ margin: "0 0 10px", color: "#f4f1ea", fontSize: 26, fontWeight: 850 }}>Nao conseguimos atualizar a lista.</h2>
+            <p style={{ margin: "0 auto 20px", maxWidth: 460, color: "#b8b1a6", lineHeight: 1.6 }}>{error}</p>
+            <button
+              type="button"
+              className="premium-button premium-interactive"
+              onClick={() => setReloadKey((key) => key + 1)}
+              style={{ padding: "0 20px", cursor: "pointer" }}
+            >
+              Tentar novamente
+            </button>
           </div>
         )}
 
-        {!loading && (
+        {!loading && !error && (
           <>
             {/* Em destaque */}
             {featured.length > 0 && !search && !category && (
@@ -245,6 +262,8 @@ export default function ProfissionaisPage() {
           border-color: #1e1e1e;
           transform: translateY(0);
           will-change: transform;
+          box-shadow: 0 18px 48px rgba(0,0,0,0.28);
+          contain: layout paint;
         }
         .prof-card.featured {
           border-color: rgba(212,168,67,0.15);
@@ -253,7 +272,11 @@ export default function ProfissionaisPage() {
           .prof-card:hover {
             border-color: rgba(212,168,67,0.4);
             transform: translateY(-3px);
+            box-shadow: 0 24px 72px rgba(0,0,0,0.36);
           }
+        }
+        .prof-card:active {
+          transform: translateY(1px) scale(0.995);
         }
         @media (prefers-reduced-motion: reduce) {
           .prof-card {
@@ -262,6 +285,27 @@ export default function ProfissionaisPage() {
           }
         }
       `}</style>
+    </div>
+  );
+}
+
+function ProfessionalGridSkeleton() {
+  return (
+    <div className="premium-enter" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="premium-card" style={{ borderRadius: 8, overflow: "hidden" }}>
+          <div className="premium-skeleton" style={{ height: 180 }} />
+          <div style={{ padding: 16 }}>
+            <div className="premium-skeleton" style={{ height: 18, width: "58%", borderRadius: 999 }} />
+            <div className="premium-skeleton" style={{ height: 12, width: "42%", borderRadius: 999, marginTop: 10 }} />
+            <div className="premium-skeleton" style={{ height: 42, width: "100%", borderRadius: 8, marginTop: 16 }} />
+            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+              <div className="premium-skeleton" style={{ height: 24, width: 76, borderRadius: 999 }} />
+              <div className="premium-skeleton" style={{ height: 24, width: 62, borderRadius: 999 }} />
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -49,6 +49,7 @@ function BuscarContent() {
   const [filtros, setFiltros] = useState<Set<Filtro>>(new Set());
   const [perfis, setPerfis] = useState<CardPerfil[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (mainTab !== "acompanhantes") return;
@@ -56,10 +57,12 @@ function BuscarContent() {
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       setLoading(true);
+      setError(null);
       try {
         const qs = new URLSearchParams({ category: SUB_TO_CATEGORY[subTab], sortBy: "rating" });
         if (busca) qs.set("search", busca);
         const res = await fetch(`/api/professionals?${qs}`, { signal: controller.signal });
+        if (!res.ok) throw new Error("Failed to load professionals");
         const data = await res.json();
         const list: CardPerfil[] = (data.professionals ?? []).map((p: {
           id: string;
@@ -93,7 +96,10 @@ function BuscarContent() {
         }));
         setPerfis(list);
       } catch {
-        if (!controller.signal.aborted) setPerfis([]);
+        if (!controller.signal.aborted) {
+          setPerfis([]);
+          setError("Nao foi possivel carregar os perfis agora.");
+        }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -135,8 +141,9 @@ function BuscarContent() {
           grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
           gap: 14px;
         }
-        .perfil-card { border-radius: 16px; overflow: hidden; background: #111; border: 1px solid #2a2620; transition: transform 0.2s, border-color 0.2s; cursor: pointer; }
-        .perfil-card:hover { transform: translateY(-3px); border-color: rgba(212,168,67,0.3); }
+        .perfil-card { border-radius: 8px; overflow: hidden; background: #111; border: 1px solid #2a2620; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; cursor: pointer; box-shadow: 0 18px 48px rgba(0,0,0,0.28); contain: layout paint; }
+        .perfil-card:hover { transform: translateY(-3px); border-color: rgba(212,168,67,0.3); box-shadow: 0 24px 72px rgba(0,0,0,0.36); }
+        .perfil-card:active { transform: translateY(1px) scale(0.995); }
         .perfil-foto { position: relative; padding-top: 130%; }
         .perfil-info { padding: 14px 16px; }
         @media (max-width: 640px) {
@@ -414,6 +421,17 @@ function BuscarContent() {
             </p>
 
             {/* Grid de perfis */}
+            {loading ? <BuscarProfilesSkeleton /> : null}
+
+            {!loading && error ? (
+              <div className="premium-empty-state premium-enter" style={{ textAlign: "center", padding: "42px 20px", borderRadius: 8 }}>
+                <p style={{ margin: "0 0 8px", color: GOLD, fontSize: 10, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase" }}>Instabilidade temporaria</p>
+                <h2 style={{ margin: "0 0 10px", color: "#f4f1ea", fontFamily: PLAYFAIR, fontSize: "clamp(1.8rem, 5vw, 3rem)", lineHeight: 1 }}>Nao conseguimos atualizar os perfis.</h2>
+                <p style={{ margin: "0 auto", maxWidth: 460, color: "#a9a297", fontSize: 14, lineHeight: 1.7 }}>{error}</p>
+              </div>
+            ) : null}
+
+            {!loading && !error ? (
             <div className="perfil-grid">
               {lista.map((a) => (
                 <Link key={a.id} href={`/profissionais/${a.slug}`} style={{ textDecoration: "none" }}>
@@ -503,8 +521,9 @@ function BuscarContent() {
                 </Link>
               ))}
             </div>
+            ) : null}
 
-            {!loading && lista.length === 0 && (
+            {!loading && !error && lista.length === 0 && (
               <div className="profiles-empty">
                 <div className="profiles-empty-inner">
                   <span className="profiles-empty-kicker">Curadoria em andamento</span>
@@ -556,6 +575,27 @@ function BuscarContent() {
       </div>
 
       <Footer />
+    </div>
+  );
+}
+
+function BuscarProfilesSkeleton() {
+  return (
+    <div className="perfil-grid premium-enter">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="premium-card" style={{ borderRadius: 8, overflow: "hidden" }}>
+          <div className="premium-skeleton" style={{ height: 300 }} />
+          <div style={{ padding: "14px 16px" }}>
+            <div className="premium-skeleton" style={{ height: 16, width: "48%", borderRadius: 999 }} />
+            <div className="premium-skeleton" style={{ height: 24, width: "62%", borderRadius: 8, marginTop: 10 }} />
+            <div className="premium-skeleton" style={{ height: 12, width: "70%", borderRadius: 999, marginTop: 10 }} />
+            <div style={{ display: "flex", gap: 6, marginTop: 14 }}>
+              <div className="premium-skeleton" style={{ height: 22, width: 76, borderRadius: 999 }} />
+              <div className="premium-skeleton" style={{ height: 22, width: 62, borderRadius: 999 }} />
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
