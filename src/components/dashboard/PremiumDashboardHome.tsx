@@ -108,38 +108,44 @@ function QuickActionGrid({
       : "Saldo protegido e acesso rapido a sua carteira.";
 
   return (
-    <section className="px-4 pb-3 pt-2">
-      <div className="grid grid-cols-2 gap-3">
-        <ActionCard
-          href="/dashboard/acompanhantes"
-          icon={<Search className="h-6 w-6" />}
-          title="Explorar"
-          description="Veja perfis reais quando houver disponibilidade na sua cidade."
-          cta="Acessar"
-        />
-        <ActionCard
-          href="/dashboard/favoritos"
-          icon={<Heart className="h-6 w-6" />}
-          title="Listas"
-          description="Guarde curtidos, seguidos e colecoes privadas sem exposicao."
-          cta="Abrir"
-        />
-        <ActionCard
-          href="/dashboard/carteira"
-          icon={<CreditCard className="h-6 w-6" />}
-          title="Carteira"
-          description={walletText}
-          cta="Ver saldo"
-        />
-        <ActionCard
-          href="/dashboard/perfil"
-          icon={<ShieldCheck className="h-6 w-6" />}
-          title="Verificar"
-          description={`${verificationDone}/3 etapas concluidas para reforcar sua conta.`}
-          cta="Validar"
-        />
-      </div>
-    </section>
+    <>
+      <section
+        className="px-4 pb-7 pt-4"
+        style={{ background: "linear-gradient(180deg, #0e0f11 0%, #111214 100%)" }}
+      >
+        <div className="grid grid-cols-2 gap-3">
+          <ActionCard
+            href="/dashboard/acompanhantes"
+            icon={<Search className="h-6 w-6" />}
+            title="Explorar"
+            description="Veja perfis reais quando houver disponibilidade na sua cidade."
+            cta="Acessar"
+          />
+          <ActionCard
+            href="/dashboard/favoritos"
+            icon={<Heart className="h-6 w-6" />}
+            title="Listas"
+            description="Guarde curtidos, seguidos e colecoes privadas sem exposicao."
+            cta="Abrir"
+          />
+          <ActionCard
+            href="/dashboard/carteira"
+            icon={<CreditCard className="h-6 w-6" />}
+            title="Carteira"
+            description={walletText}
+            cta="Ver saldo"
+          />
+          <ActionCard
+            href="/dashboard/perfil"
+            icon={<ShieldCheck className="h-6 w-6" />}
+            title="Verificar"
+            description={`${verificationDone}/3 etapas concluidas para reforcar sua conta.`}
+            cta="Validar"
+          />
+        </div>
+      </section>
+      <div style={{ height: 28, background: "linear-gradient(180deg, #111214 0%, #ffffff 100%)" }} />
+    </>
   );
 }
 
