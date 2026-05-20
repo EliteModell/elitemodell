@@ -387,6 +387,64 @@ body {
   box-shadow: 0 18px 54px rgba(0, 0, 0, 0.24);
 }
 
+/* Professional profile card — overlay-image layout with tap animation */
+.client-profile-card {
+  border: 1px solid rgba(230, 198, 112, 0.15);
+  border-radius: 12px;
+  background: #101214;
+  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.client-profile-card:active {
+  transform: scale(0.985);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .client-profile-card:hover {
+    border-color: rgba(212, 168, 67, 0.32);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.36), 0 0 0 1px rgba(212, 168, 67, 0.10);
+  }
+}
+
+/* Compact carousel card */
+.client-carousel-card {
+  border: 1px solid rgba(230, 198, 112, 0.14);
+  border-radius: 10px;
+  background: #17191b;
+  overflow: hidden;
+  transition: transform 150ms ease;
+}
+
+.client-carousel-card:active {
+  transform: scale(0.96);
+}
+
+/* Stats pill */
+.client-stat-pill {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* Section divider with label */
+.client-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+}
+
+.client-section-divider::before,
+.client-section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 168, 67, 0.16), transparent);
+}
+
 button,
 a,
 input,

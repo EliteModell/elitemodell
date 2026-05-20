@@ -2,10 +2,13 @@ import { defineConfig } from "@playwright/test";
 import * as dotenv from "dotenv";
 import * as path from "path";
 
-// Carrega variáveis do .env para o processo dos workers
 dotenv.config({ path: path.join(__dirname, ".env") });
 
 const STORAGE_PATH = "tests/.auth/user.json";
+
+// Em CI, nenhum servidor está rodando previamente — usamos o dev server.
+// Localmente, reutilizamos o servidor já em execução para não precisar de build.
+const IS_CI = !!process.env.CI;
 
 export default defineConfig({
   testDir: "./tests",
@@ -17,6 +20,7 @@ export default defineConfig({
     ["json", { outputFile: "playwright-report/results.json" }],
   ],
   globalSetup: "./tests/global-setup.ts",
+  globalTeardown: "./tests/global-teardown.ts",
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
@@ -29,13 +33,11 @@ export default defineConfig({
     isMobile: true,
   },
   projects: [
-    /* Projeto 1 — mock de sessão (testes estáticos existentes) */
     {
       name: "mock-session",
       testMatch: "**/client-area-audit.spec.ts",
       use: { browserName: "chromium" },
     },
-    /* Projeto 2 — sessão real (testes interativos) */
     {
       name: "authenticated",
       testMatch: "**/client-area-authenticated.spec.ts",
@@ -46,9 +48,14 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run start",
+    // Usa next diretamente (evita que npm engula SIGTERM e cause timeout no teardown).
+    // Em CI: sobe o dev server (não precisa de build prévia).
+    // Local: reutiliza servidor já rodando na 3000.
+    command: IS_CI ? "node_modules/.bin/next dev" : "node_modules/.bin/next start",
     url: "http://localhost:3000",
-    reuseExistingServer: true,
-    timeout: 60_000,
+    reuseExistingServer: !IS_CI,
+    timeout: 120_000,
+    stdout: "pipe",
+    stderr: "pipe",
   },
 });

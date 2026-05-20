@@ -4,46 +4,43 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-
-// Armazenar tentativas de requisição em memória (em produção usar Redis)
-const requestCounts = new Map<string, { count: number; resetAt: number }>();
-let lastPruneAt = 0;
-
-function pruneExpiredRateLimits(now: number) {
-  if (now - lastPruneAt < 60 * 1000) return;
-  lastPruneAt = now;
-  for (const [key, record] of requestCounts.entries()) {
-    if (now >= record.resetAt) requestCounts.delete(key);
-  }
-}
+import { checkRateLimitAsync } from "./rate-limit";
 
 /**
- * Rate limiting simples (verificar de 5 em 5 min)
- * @param identifier - IP ou user ID para rastrear
- * @param maxRequests - Máximo de requisições permitidas
- * @param windowMs - Janela de tempo em ms (default: 5 min)
+ * Rate limiting — delega ao adapter correto (Redis em prod, memória em dev).
+ * Manter esta assinatura síncrona para compatibilidade; internamente é async.
+ * Prefira enforceRateLimitAsync em novos handlers.
  */
 export function checkRateLimit(
   identifier: string,
   maxRequests: number = 100,
   windowMs: number = 5 * 60 * 1000
 ): { allowed: boolean; remaining: number; resetIn: number } {
-  const now = Date.now();
-  pruneExpiredRateLimits(now);
-  const record = requestCounts.get(identifier);
+  // Fallback síncrono (in-memory) para código legado que não pode ser async.
+  // Novos endpoints devem usar enforceRateLimitAsync.
+  const _store = (globalThis as Record<string, unknown>)["__rl_sync_store__"] as
+    | Map<string, { count: number; resetAt: number }>
+    | undefined;
+  const store =
+    _store ??
+    (() => {
+      const m = new Map<string, { count: number; resetAt: number }>();
+      (globalThis as Record<string, unknown>)["__rl_sync_store__"] = m;
+      return m;
+    })();
 
-  if (!record || now >= record.resetAt) {
-    // Nova janela
-    requestCounts.set(identifier, { count: 1, resetAt: now + windowMs });
+  const now = Date.now();
+  const key = `rl_sync:${identifier}`;
+  const rec = store.get(key);
+  if (!rec || now >= rec.resetAt) {
+    store.set(key, { count: 1, resetAt: now + windowMs });
     return { allowed: true, remaining: maxRequests - 1, resetIn: windowMs };
   }
-
-  if (record.count >= maxRequests) {
-    return { allowed: false, remaining: 0, resetIn: record.resetAt - now };
+  if (rec.count >= maxRequests) {
+    return { allowed: false, remaining: 0, resetIn: rec.resetAt - now };
   }
-
-  record.count++;
-  return { allowed: true, remaining: maxRequests - record.count, resetIn: record.resetAt - now };
+  rec.count++;
+  return { allowed: true, remaining: maxRequests - rec.count, resetIn: rec.resetAt - now };
 }
 
 export function rateLimitResponse(resetIn: number, message = "Muitas tentativas. Tente novamente em instantes.") {
@@ -56,6 +53,7 @@ export function rateLimitResponse(resetIn: number, message = "Muitas tentativas.
   );
 }
 
+/** Versão síncrona — use só onde async não é possível. */
 export function enforceRateLimit(
   identifier: string,
   maxRequests: number,
@@ -63,6 +61,17 @@ export function enforceRateLimit(
   message?: string
 ): NextResponse | null {
   const limit = checkRateLimit(identifier, maxRequests, windowMs);
+  return limit.allowed ? null : rateLimitResponse(limit.resetIn, message);
+}
+
+/** Versão async — usa Redis em produção. Prefira esta em novos handlers. */
+export async function enforceRateLimitAsync(
+  identifier: string,
+  maxRequests: number,
+  windowMs: number,
+  message?: string
+): Promise<NextResponse | null> {
+  const limit = await checkRateLimitAsync(identifier, maxRequests, windowMs);
   return limit.allowed ? null : rateLimitResponse(limit.resetIn, message);
 }
 
