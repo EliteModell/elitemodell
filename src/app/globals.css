@@ -421,6 +421,13 @@ body {
   color: #6b4d08;
 }
 
+.client-explore-search-panel .client-chip-active {
+  border-color: #d4a843;
+  background: #fdf3d6;
+  color: #4a2e00;
+  font-weight: 900;
+}
+
 .client-empty {
   border: 1px solid rgba(245, 215, 140, 0.16);
   border-radius: 8px;

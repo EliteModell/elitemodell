@@ -312,7 +312,7 @@ function EmptyState({
   ].filter(Boolean) as string[];
 
   return (
-    <section className="client-empty mb-[calc(180px+env(safe-area-inset-bottom))] overflow-hidden pb-16 pt-12">
+    <section className="client-empty mb-[calc(180px+env(safe-area-inset-bottom))] overflow-hidden pb-16 pt-12 mt-2">
       <div className="flex flex-col items-center px-6 text-center">
         <div className="grid h-[68px] w-[68px] place-items-center rounded-[16px] border border-[#d4a843]/26 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.14)]">
           {hasFilters ? <Search className="h-8 w-8" /> : <ShieldCheck className="h-8 w-8" />}
@@ -477,7 +477,7 @@ export default function AcompanhantesPage() {
         </div>
       </section>
 
-      <section className="px-0 pb-10">
+      <section className="px-0 pb-16">
         <div className="client-explore-search-panel">
           <div className="flex items-start justify-between gap-4">
             <div>
