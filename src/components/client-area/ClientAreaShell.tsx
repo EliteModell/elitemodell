@@ -392,8 +392,8 @@ export function ClientBottomNav() {
   ];
 
   return (
-    <nav className="client-bottom-nav fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+16px)] transition-all duration-200 md:hidden">
-      <div className="mx-auto grid h-[64px] max-w-[720px] grid-cols-4 rounded-[14px] border border-[#d4a843]/18 bg-[#090a0b]/94 p-1 shadow-[0_-14px_38px_rgba(0,0,0,0.38)] backdrop-blur-2xl">
+    <nav className="client-bottom-nav fixed inset-x-0 bottom-0 z-40 px-3 pb-[env(safe-area-inset-bottom)] transition-all duration-200 md:hidden">
+      <div className="mx-auto grid h-[60px] max-w-[720px] grid-cols-4 rounded-[14px] border border-[#d4a843]/18 bg-[#090a0b]/94 p-1 shadow-[0_-12px_30px_rgba(0,0,0,0.30)] backdrop-blur-2xl">
         {items.map((item) => {
           const active =
             pathname === item.href ||
