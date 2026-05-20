@@ -148,48 +148,49 @@ function EmptyShotsState({
 }) {
   return (
     <div className="space-y-4">
-      <section className="client-empty px-5 py-8 text-center">
-        <div className="mx-auto grid h-14 w-14 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
-          <Users className="h-7 w-7" />
-        </div>
-        <h2 className="mx-auto mt-4 max-w-[330px] text-[20px] font-black leading-6 text-[#f5f0e4]">
-          {hasFilters ? "Nenhum Shot encontrado nessa busca" : "Quando houver publicacoes, elas aparecerao aqui"}
-        </h2>
-        <p className="mx-auto mt-3 max-w-[330px] text-[14px] leading-6 text-[#f5f0e4]/58">
-          {hasFilters
-            ? "Tente uma cidade diferente ou veja todos os perfis enquanto os Shots entram no ar."
-            : "Shots reais de perfis disponiveis na sua cidade serao exibidos nesta area, sem sobrepor busca e filtros."}
-        </p>
-        <div className="mt-5 grid gap-2 sm:mx-auto sm:max-w-[420px] sm:grid-cols-2">
-          <Link
-            href="/dashboard/acompanhantes"
-            className="client-primary-button inline-flex min-h-0 items-center justify-center gap-2 px-5 py-3 text-[13px] no-underline"
-          >
-            Explorar acompanhantes
-          </Link>
-          {hasFilters && (
-            <button
-              type="button"
-              onClick={onClear}
-              className="client-secondary-button min-h-0 px-5 py-3 text-[13px]"
+      <section className="client-empty overflow-hidden py-10">
+        <div className="flex flex-col items-center px-6 text-center">
+          <div className="grid h-[64px] w-[64px] place-items-center rounded-[14px] border border-[#d4a843]/22 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.12)]">
+            {hasFilters ? <Search className="h-7 w-7" /> : <Users className="h-7 w-7" />}
+          </div>
+          <h2 className="mt-5 max-w-[300px] text-[22px] font-black leading-tight text-[#f5f0e4]">
+            {hasFilters ? "Nenhum Shot encontrado" : "Em breve, fotos reais por cidade"}
+          </h2>
+          <p className="mt-3 max-w-[280px] text-[13px] leading-[1.65] text-[#f5f0e4]/56">
+            {hasFilters
+              ? "Tente uma cidade diferente ou limpe os filtros para ver todos."
+              : "Quando houver perfis ativos na sua cidade, as fotos aparecem aqui automaticamente."}
+          </p>
+          <div className="mt-6 flex w-full max-w-[320px] flex-col gap-2">
+            <Link
+              href="/dashboard/acompanhantes"
+              className="client-primary-button flex min-h-0 items-center justify-center gap-2 py-3 text-[14px] font-bold no-underline"
             >
-              Limpar filtros
-            </button>
-          )}
+              <Search className="h-4 w-4" />
+              Explorar acompanhantes
+            </Link>
+            {hasFilters && (
+              <button
+                type="button"
+                onClick={onClear}
+                className="client-secondary-button min-h-0 py-2.5 text-[13px]"
+              >
+                Limpar filtros
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
-      <section className="client-card p-4">
-        <div className="flex items-start gap-3">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
-            <Camera className="h-5 w-5" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-[15px] font-bold text-[#f5f0e4]">Vitrine visual preparada</p>
-            <p className="mt-1 text-[13px] leading-5 text-[#f5f0e4]/56">
-              A grade vai ocupar mais espaco quando houver fotos, mantendo filtros separados e toque facil no celular.
-            </p>
-          </div>
+      <section className="client-card flex items-start gap-3 p-4">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
+          <Camera className="h-5 w-5" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[14px] font-bold text-[#f5f0e4]">Vitrine visual preparada</p>
+          <p className="mt-1 text-[12px] leading-5 text-[#f5f0e4]/52">
+            Quando houver fotos, a grade ocupa toda a tela com toque facil no celular.
+          </p>
         </div>
       </section>
     </div>
@@ -238,13 +239,19 @@ export default function ShotsPage() {
       <section className="px-0 pb-5">
         <div className="client-explore-hero" style={{ minHeight: 260 }}>
           <div className="relative z-10">
-            <p className="text-[12px] font-black uppercase tracking-widest text-[#f5d78c]/80">Feed visual</p>
+            <p
+              style={{ color: "rgba(212,168,67,0.88)", fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em" }}
+            >
+              Feed visual
+            </p>
             <div className="mt-2.5 h-px w-9 bg-[#d4a843]/50" />
             <h1 className="mt-3 bg-[linear-gradient(135deg,#fff8e8_0%,#f5f0e4_22%,#f5d78c_55%,#d4a843_100%)] bg-clip-text text-[64px] font-black leading-[0.90] text-transparent">
               Shots
             </h1>
-            <p className="mt-4 max-w-[260px] text-[13px] leading-[1.65] text-[#f5f0e4]/50">
-              Fotos de perfis verificados perto de voce, organizadas por cidade.
+            <p
+              style={{ color: "rgba(245,240,228,0.54)", fontSize: 13, lineHeight: 1.65, marginTop: 14, maxWidth: 260 }}
+            >
+              Meninas verificadas perto de voce. Fotos reais, por cidade.
             </p>
           </div>
         </div>
