@@ -86,7 +86,7 @@ export default function FavoritosPage() {
       </section>
 
       {/* ── Conteúdo ── */}
-      <div className="client-page space-y-16" style={{ paddingTop: 24, paddingBottom: 120 }}>
+      <div className="client-page" style={{ display: "grid", gap: 52, paddingTop: 28, paddingBottom: 220 }}>
         {/* Cards de coleção */}
         <div className="grid gap-5">
           <CollectionCard
@@ -102,7 +102,7 @@ export default function FavoritosPage() {
         </div>
 
         {/* Empty state — flex col para centralizar o ícone de verdade */}
-        <section className="client-empty overflow-hidden pb-16 pt-10">
+        <section className="client-empty overflow-hidden pb-20 pt-12">
           <div className="flex flex-col items-center px-6 text-center">
             <div className="grid h-[64px] w-[64px] place-items-center rounded-[14px] border border-[#d4a843]/22 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.12)]">
               <Users className="h-8 w-8" />
@@ -122,7 +122,7 @@ export default function FavoritosPage() {
         </section>
 
         {/* Como usar */}
-        <section className="client-card p-5 pb-8">
+        <section className="client-card p-5 pb-10 pt-7">
           <h2 className="text-[18px] font-black text-[#f5f0e4]">Como usar suas listas</h2>
           <ul className="mt-4 space-y-4">
             <Tip>Curta perfis para criar uma selecao privada de interesse.</Tip>
