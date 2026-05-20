@@ -190,7 +190,7 @@ function FilterDrawer({
         onClick={onClose}
       />
       <div
-        className={`fixed inset-x-0 bottom-0 z-[120] max-h-[min(92dvh,720px)] overflow-y-auto rounded-t-[22px] border-t border-[#d4a843]/20 bg-[#0c0d0e] px-5 pb-[calc(env(safe-area-inset-bottom)+150px)] pt-3 shadow-[0_-28px_90px_rgba(0,0,0,0.62)] transition-transform duration-300 ${
+        className={`fixed inset-x-0 bottom-0 z-[120] max-h-[min(78dvh,580px)] overflow-y-auto rounded-t-[22px] border-t border-[#d4a843]/20 bg-[#0c0d0e] px-5 pb-[calc(env(safe-area-inset-bottom)+80px)] pt-3 shadow-[0_-28px_90px_rgba(0,0,0,0.62)] transition-transform duration-300 ${
           open ? "translate-y-0" : "pointer-events-none translate-y-full"
         }`}
         aria-hidden={!open}
@@ -284,17 +284,32 @@ function FilterDrawer({
   );
 }
 
+const SORT_LABELS: Record<string, string> = {
+  price_asc: "Menor preco",
+  price_desc: "Maior preco",
+  recent: "Mais recentes",
+};
+
 function EmptyState({
   hasFilters,
+  activeCategory,
+  sortBy,
   onClear,
   onExploreCity,
 }: {
   hasFilters: boolean;
+  activeCategory: string;
+  sortBy: string;
   onClear: () => void;
   onExploreCity: () => void;
 }) {
+  const activeTags = [
+    activeCategory ? CATEGORIES.find((c) => c.value === activeCategory)?.label : null,
+    sortBy !== "rating" ? SORT_LABELS[sortBy] : null,
+  ].filter(Boolean) as string[];
+
   return (
-    <section className="client-empty mb-[calc(180px+env(safe-area-inset-bottom))] overflow-hidden py-12">
+    <section className="client-empty mb-[calc(180px+env(safe-area-inset-bottom))] overflow-hidden pb-16 pt-12">
       <div className="flex flex-col items-center px-6 text-center">
         <div className="grid h-[68px] w-[68px] place-items-center rounded-[16px] border border-[#d4a843]/26 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.14)]">
           {hasFilters ? <Search className="h-8 w-8" /> : <ShieldCheck className="h-8 w-8" />}
@@ -305,6 +320,18 @@ function EmptyState({
         <h2 className="mt-2 max-w-[300px] text-[24px] font-black leading-tight text-[#f5f0e4]">
           {hasFilters ? "Nenhum perfil encontrado" : "Escolha uma cidade para ver os perfis"}
         </h2>
+        {activeTags.length > 0 && (
+          <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+            {activeTags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-[#d4a843]/28 bg-[#d4a843]/12 px-3 py-1 text-[11px] font-bold uppercase text-[#f5d78c]"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
         <p className="mt-3 max-w-[290px] text-[13px] leading-[1.65] text-[#f5f0e4]/56">
           {hasFilters
             ? "Tente uma categoria mais ampla ou busque por outra cidade."
@@ -558,7 +585,7 @@ export default function AcompanhantesPage() {
         {loading && professionals.length === 0 ? (
           Array.from({ length: 3 }).map((_, i) => <ProfileCardSkeleton key={i} />)
         ) : professionals.length === 0 ? (
-          <EmptyState hasFilters={hasFilters} onClear={clearFilters} onExploreCity={focusCity} />
+          <EmptyState hasFilters={hasFilters} activeCategory={activeCategory} sortBy={sortBy} onClear={clearFilters} onExploreCity={focusCity} />
         ) : (
           <>
             {professionals.map((p) => (
