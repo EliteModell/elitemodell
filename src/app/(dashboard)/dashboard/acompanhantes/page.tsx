@@ -172,6 +172,15 @@ function FilterDrawer({
 }) {
   return (
     <>
+      {open && (
+        <style>{`
+          .client-bottom-nav {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            transform: translateY(120%) !important;
+          }
+        `}</style>
+      )}
       <div
         className={`fixed inset-0 z-[65] bg-black/64 backdrop-blur-[3px] transition-opacity duration-300 ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
@@ -179,7 +188,7 @@ function FilterDrawer({
         onClick={onClose}
       />
       <div
-        className={`fixed inset-x-0 bottom-0 z-[70] max-h-[min(92dvh,720px)] overflow-y-auto rounded-t-[22px] border-t border-[#d4a843]/20 bg-[#0c0d0e] px-5 pb-[calc(env(safe-area-inset-bottom)+34px)] pt-3 shadow-[0_-28px_90px_rgba(0,0,0,0.62)] transition-transform duration-300 ${
+        className={`fixed inset-x-0 bottom-0 z-[70] max-h-[min(92dvh,720px)] overflow-y-auto rounded-t-[22px] border-t border-[#d4a843]/20 bg-[#0c0d0e] px-5 pb-[calc(env(safe-area-inset-bottom)+64px)] pt-3 shadow-[0_-28px_90px_rgba(0,0,0,0.62)] transition-transform duration-300 ${
           open ? "translate-y-0" : "pointer-events-none translate-y-full"
         }`}
         aria-hidden={!open}
@@ -244,7 +253,7 @@ function FilterDrawer({
 
           <div className="client-panel-soft flex items-center justify-between gap-4 p-4">
             <div className="min-w-0">
-              <p className="text-[15px] font-bold text-[#f5f0e4]">Somente verificadas</p>
+            <p className="text-[15px] font-bold text-[#f5f0e4]">Somente verificadas</p>
               <p className="mt-1 text-[12px] leading-4 text-[#f5f0e4]/50">Perfis com identidade confirmada</p>
             </div>
             <button
@@ -424,12 +433,9 @@ export default function AcompanhantesPage() {
         <div className="client-explore-hero">
           <div className="relative z-10">
             <p className="text-[12px] font-black uppercase text-[#f5d78c]/90">Explorar perfis</p>
-            <h1 className="mt-3 max-w-[360px] text-[42px] font-black leading-[0.98] text-[#f5f0e4]">
+            <h1 className="mt-3 max-w-[360px] bg-[linear-gradient(135deg,#fff8e8_0%,#f5f0e4_28%,#f5d78c_58%,#d4a843_100%)] bg-clip-text text-[42px] font-black leading-[0.98] text-transparent">
               Perfis verificados perto de voce
             </h1>
-            <p className="mt-4 max-w-[340px] text-[15px] leading-6 text-[#f5f0e4]/66">
-              Veja perfis com fotos, cidade e avaliacoes. Use a busca para encontrar opcoes com mais confianca.
-            </p>
           </div>
         </div>
       </section>
@@ -520,9 +526,9 @@ export default function AcompanhantesPage() {
           <button
             type="button"
             onClick={() => setFilterOpen(true)}
-            className="client-secondary-button mt-5 flex w-full min-h-0 items-center justify-center gap-2 py-3 text-[15px]"
+            className="client-secondary-button mt-7 flex min-h-[62px] w-full items-center justify-center gap-3 rounded-[14px] px-4 text-[16px]"
           >
-            <SlidersHorizontal className="h-4.5 w-4.5" />
+            <SlidersHorizontal className="h-5 w-5" />
             Filtros avancados
           </button>
 
