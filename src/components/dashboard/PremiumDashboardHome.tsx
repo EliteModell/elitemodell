@@ -157,8 +157,8 @@ function QuickStatsSection({
   vip: DashboardHomeData["vip"];
 }) {
   return (
-    <section className="px-4 pb-5 pt-2">
-      <div className="client-panel overflow-hidden p-4">
+    <section className="client-page-tight" style={{ paddingBottom: 20 }}>
+      <div className="client-card overflow-hidden p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[11px] font-black uppercase tracking-wide text-[#f5d78c]/70">Nivel atual</p>
