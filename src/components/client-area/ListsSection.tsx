@@ -61,7 +61,7 @@ export default function ListsSection() {
 
       <Link
         href="/dashboard/favoritos"
-        className="client-secondary-button mt-4 flex min-h-0 items-center justify-center gap-2 py-2.5 text-[13px] no-underline"
+        className="client-secondary-button mb-5 mt-6 flex min-h-0 items-center justify-center gap-2 py-3 text-[13px] no-underline"
       >
         <ListPlus className="h-4 w-4" />
         Criar lista
