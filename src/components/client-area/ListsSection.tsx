@@ -1,25 +1,27 @@
 "use client";
 import Link from "next/link";
-import { UserRound } from "lucide-react";
+import { ChevronRight, Heart, ListPlus, UserRoundCheck } from "lucide-react";
 
-function ListCard({ title }: { title: string }) {
+function ListCard({
+  title,
+  text,
+  icon,
+}: {
+  title: string;
+  text: string;
+  icon: React.ReactNode;
+}) {
   return (
-    <article className="client-panel-soft overflow-hidden">
-      <div className="grid aspect-square grid-cols-2">
-        <div className="bg-[linear-gradient(135deg,#2b2211,#d4a843)] opacity-80" />
-        <div className="bg-[linear-gradient(135deg,#191b1d,#3d3430)]" />
-        <div className="bg-[linear-gradient(135deg,#18191b,#8f1d24)] opacity-75" />
-        <div className="grid place-items-center bg-[#111315] text-[22px] font-black text-[#f5d78c]">
-          ···
+    <article className="client-card p-4">
+      <div className="flex items-start gap-3">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
+          {icon}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-[14px] font-bold leading-5 text-[#f5f0e4]">{title}</h3>
+          <p className="mt-1 text-[12px] leading-5 text-[#f5f0e4]/50">{text}</p>
+          <p className="mt-2 text-[11px] font-bold uppercase text-[#f5f0e4]/38">0 perfil salvo</p>
         </div>
-      </div>
-      <div className="p-3.5">
-        <h3 className="min-h-[40px] text-[13px] font-semibold leading-5 text-[#f5f0e4]">{title}</h3>
-        <p className="mt-1.5 text-[12px] text-[#f5f0e4]/46">Automática</p>
-        <p className="mt-1 flex items-center gap-1 text-[12px] text-[#f5f0e4]/46">
-          <UserRound className="h-3.5 w-3.5" />
-          0 perfil
-        </p>
       </div>
     </article>
   );
@@ -28,33 +30,43 @@ function ListCard({ title }: { title: string }) {
 export default function ListsSection() {
   return (
     <section className="client-page-tight">
-      <div className="mb-4">
-        <p className="client-kicker">Coleções privadas</p>
-        <h2 className="mt-1 text-[20px] font-bold text-[#f5f0e4]">Listas</h2>
-      </div>
-      <p className="text-[13px] leading-5 text-[#f5f0e4]/58">
-        Crie listas para salvar e organizar suas publicações favoritas. Só você terá acesso às listas criadas.
-      </p>
-
-      <div className="mt-6 grid grid-cols-2 gap-3">
-        <ListCard title="Perfis de fotos curtidas" />
-        <ListCard title="Perfis seguidos" />
-      </div>
-
-      <div className="mt-6 space-y-0">
-        <button
-          type="button"
-          className="client-secondary-button w-full text-[15px]"
-        >
-          Criar Lista
-        </button>
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="client-kicker">Colecoes privadas</p>
+          <h2 className="mt-1 text-[20px] font-bold text-[#f5f0e4]">Listas</h2>
+        </div>
         <Link
           href="/dashboard/favoritos"
-          className="block py-4 text-center text-[15px] font-semibold text-[#f5d78c] no-underline"
+          className="shrink-0 text-[13px] font-bold text-[#f5d78c] no-underline"
         >
-          Mostrar todas
+          Ver tudo
         </Link>
       </div>
+      <p className="mt-3 text-[13px] leading-5 text-[#f5f0e4]/56">
+        Organize perfis reais quando comecar a salvar acompanhantes.
+      </p>
+
+      <div className="mt-4 grid gap-3">
+        <ListCard
+          title="Perfis curtidos"
+          text="Os perfis marcados com coracao ficarao agrupados aqui."
+          icon={<Heart className="h-5 w-5" />}
+        />
+        <ListCard
+          title="Perfis seguidos"
+          text="Acompanhe novidades sem misturar com sua lista de curtidos."
+          icon={<UserRoundCheck className="h-5 w-5" />}
+        />
+      </div>
+
+      <Link
+        href="/dashboard/favoritos"
+        className="client-secondary-button mt-4 flex min-h-0 items-center justify-center gap-2 py-2.5 text-[13px] no-underline"
+      >
+        <ListPlus className="h-4 w-4" />
+        Criar lista
+        <ChevronRight className="h-4 w-4" />
+      </Link>
     </section>
   );
 }

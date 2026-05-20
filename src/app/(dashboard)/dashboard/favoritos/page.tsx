@@ -1,61 +1,104 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Heart, Plus, Users } from "lucide-react";
+import { CheckCircle2, ChevronRight, Heart, Plus, Search, UserRoundCheck, Users } from "lucide-react";
 
-function ListRow({ title, count = 0 }: { title: string; count?: number }) {
+function CollectionCard({
+  title,
+  description,
+  icon,
+}: {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+}) {
   return (
-    <div className="client-card flex items-center gap-4 p-4">
-      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/16 bg-[#d4a843]/8">
-        <Heart className="h-5 w-5 text-[#f5d78c]" />
+    <article className="client-card p-4">
+      <div className="flex items-start gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
+          {icon}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h2 className="min-w-0 flex-1 text-[15px] font-bold text-[#f5f0e4]">{title}</h2>
+            <ChevronRight className="h-4 w-4 shrink-0 text-[#f5d78c]/70" />
+          </div>
+          <p className="mt-1.5 text-[13px] leading-5 text-[#f5f0e4]/52">{description}</p>
+          <p className="mt-3 text-[11px] font-bold uppercase text-[#f5f0e4]/36">0 perfil salvo</p>
+        </div>
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-[15px] font-semibold text-[#f5f0e4]">{title}</p>
-        <p className="mt-0.5 text-[12px] text-[#f5f0e4]/44">{count} perfil salvo</p>
-      </div>
-      <ChevronRight className="h-5 w-5 shrink-0 text-[#f5f0e4]/28" />
-    </div>
+    </article>
+  );
+}
+
+function Tip({ children }: { children: React.ReactNode }) {
+  return (
+    <li className="flex gap-3">
+      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#f5d78c]" />
+      <span className="text-[13px] leading-5 text-[#f5f0e4]/58">{children}</span>
+    </li>
   );
 }
 
 export default function FavoritosPage() {
   return (
-    <div className="px-4 pb-6 pt-5">
-      <p className="client-kicker">Coleções privadas</p>
-      <h1 className="client-title mt-1">Listas</h1>
-      <p className="client-subtitle mt-2">
-        Organize perfis em listas privadas. Só você tem acesso.
-      </p>
-
-      <div className="mt-6 space-y-3">
-        <ListRow title="Perfis curtidos" />
-        <ListRow title="Perfis seguidos" />
+    <div className="px-4 pb-[calc(126px+env(safe-area-inset-bottom))] pt-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="client-kicker">Colecoes privadas</p>
+          <h1 className="client-title mt-1">Listas</h1>
+          <p className="client-subtitle mt-2">
+            Salve perfis reais, acompanhe favoritos e organize escolhas sem exposicao.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="client-secondary-button flex min-h-0 shrink-0 items-center gap-1.5 px-3 py-2 text-[12px] font-bold"
+          title="Recurso de listas personalizadas em breve"
+        >
+          <Plus className="h-4 w-4" />
+          Lista
+        </button>
       </div>
 
-      <button
-        type="button"
-        className="client-secondary-button mt-4 flex w-full items-center justify-center gap-2.5 text-[14px] font-semibold"
-      >
-        <Plus className="h-5 w-5" />
-        Criar nova lista
-      </button>
+      <div className="mt-5 grid gap-3">
+        <CollectionCard
+          title="Perfis curtidos"
+          description="Acompanhantes que voce marcar com coracao aparecerao aqui."
+          icon={<Heart className="h-5 w-5" />}
+        />
+        <CollectionCard
+          title="Perfis seguidos"
+          description="Use esta area para acompanhar novidades de perfis salvos."
+          icon={<UserRoundCheck className="h-5 w-5" />}
+        />
+      </div>
 
-      {/* Empty state */}
-      <div className="mt-8 flex min-h-[240px] flex-col items-center justify-center rounded-[12px] border border-white/[0.06] bg-white/[0.02] px-5 py-10 text-center">
-        <div className="mb-5 grid h-16 w-16 place-items-center rounded-full border border-[#d4a843]/16 bg-[#d4a843]/8">
-          <Users className="h-8 w-8 text-[#f5d78c]" />
+      <section className="client-empty mt-5 px-5 py-7 text-center">
+        <div className="mx-auto grid h-14 w-14 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
+          <Users className="h-7 w-7" />
         </div>
-        <p className="text-[17px] font-bold text-[#f5f0e4]">Nenhum perfil salvo</p>
-        <p className="mt-2 max-w-[260px] text-[13px] leading-5 text-[#f5f0e4]/50">
-          Explore acompanhantes e salve os perfis que mais gostou.
+        <h2 className="mt-4 text-[18px] font-bold text-[#f5f0e4]">Comece salvando perfis</h2>
+        <p className="mx-auto mt-2 max-w-[290px] text-[13px] leading-5 text-[#f5f0e4]/54">
+          Quando encontrar acompanhantes reais que combinam com sua busca, salve para voltar depois com rapidez.
         </p>
         <Link
           href="/dashboard/acompanhantes"
-          className="client-primary-button mt-6 flex items-center gap-2 px-8 text-[14px] no-underline"
+          className="client-primary-button mx-auto mt-5 inline-flex min-h-0 items-center gap-2 px-5 py-2.5 text-[13px] no-underline"
         >
-          Explorar acompanhantes
+          <Search className="h-4 w-4" />
+          Explorar cidade
         </Link>
-      </div>
+      </section>
+
+      <section className="client-card mt-5 p-4">
+        <h2 className="text-[16px] font-bold text-[#f5f0e4]">Como usar suas listas</h2>
+        <ul className="mt-4 space-y-3">
+          <Tip>Curta perfis para criar uma selecao privada de interesse.</Tip>
+          <Tip>Siga perfis para acompanhar atualizacoes quando houver publicacoes reais.</Tip>
+          <Tip>Use listas personalizadas para separar cidades, estilos ou momentos.</Tip>
+        </ul>
+      </section>
     </div>
   );
 }

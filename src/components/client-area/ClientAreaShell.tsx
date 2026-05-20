@@ -10,6 +10,7 @@ import {
   Bell,
   ChevronRight,
   CircleHelp,
+  Compass,
   Clock3,
   CreditCard,
   Heart,
@@ -108,13 +109,13 @@ export function LocationSearchBar() {
   return (
     <Link
       href={ACCOUNT_ROUTES.mainClientFeed}
-      className="client-input group flex h-[46px] items-center gap-3 px-4 text-[14px] no-underline transition-all duration-200 active:scale-[0.99]"
+      className="client-input group flex h-[40px] items-center gap-2.5 px-3.5 text-[13px] no-underline transition-all duration-200 active:scale-[0.99]"
     >
       <Search className="h-4 w-4 shrink-0 text-[#d4a843] transition-transform duration-200 group-active:scale-110" />
       <span className="min-w-0 flex-1 truncate text-[#f5f0e4]/50">
         Explorar por cidade, nome ou estilo
       </span>
-      <span className="shrink-0 rounded-full border border-[#d4a843]/22 bg-[#d4a843]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase text-[#f5d78c]">
+      <span className="shrink-0 rounded-full border border-[#d4a843]/20 bg-[#d4a843]/8 px-2 py-0.5 text-[10px] font-bold uppercase text-[#f5d78c]">
         Buscar
       </span>
     </Link>
@@ -129,9 +130,12 @@ export function MobileHeader({
   onMenu: () => void;
   backHref?: string;
 }) {
+  const pathname = usePathname();
+  const isExplore = pathname === ACCOUNT_ROUTES.mainClientFeed;
+
   return (
     <header className="sticky top-0 z-30 border-b border-[#d4a843]/14 bg-[#08090a]/90 shadow-[0_12px_38px_rgba(0,0,0,0.26)] backdrop-blur-2xl">
-      <div className="mx-auto max-w-[760px] px-4 pb-3 pt-3">
+      <div className={`mx-auto max-w-[760px] px-4 pt-3 ${isExplore ? "pb-2" : "pb-3"}`}>
         <div className="grid h-11 grid-cols-[44px_1fr_44px] items-center">
           {backHref ? (
             <Link
@@ -162,9 +166,11 @@ export function MobileHeader({
             <Bell className="h-5 w-5" />
           </Link>
         </div>
-        <div className="mt-3">
-          <LocationSearchBar />
-        </div>
+        {!isExplore && (
+          <div className="mt-3">
+            <LocationSearchBar />
+          </div>
+        )}
       </div>
     </header>
   );
@@ -375,15 +381,15 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 export function ClientBottomNav() {
   const pathname = usePathname();
   const items = [
-    { href: "/dashboard/acompanhantes", label: "Explorar", icon: <Users className="h-[22px] w-[22px]" /> },
-    { href: "/dashboard/shots", label: "Shots", icon: <Video className="h-[22px] w-[22px]" /> },
-    { href: "/dashboard/favoritos", label: "Listas", icon: <Heart className="h-[22px] w-[22px]" /> },
-    { href: "/dashboard", label: "Painel", icon: <LayoutDashboard className="h-[22px] w-[22px]" /> },
+    { href: "/dashboard/acompanhantes", label: "Explorar", icon: <Compass className="h-[23px] w-[23px]" /> },
+    { href: "/dashboard/shots", label: "Shots", icon: <Video className="h-[23px] w-[23px]" /> },
+    { href: "/dashboard/favoritos", label: "Listas", icon: <Heart className="h-[23px] w-[23px]" /> },
+    { href: "/dashboard", label: "Painel", icon: <LayoutDashboard className="h-[23px] w-[23px]" /> },
   ];
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] md:hidden">
-      <div className="mx-auto grid h-[58px] max-w-[720px] grid-cols-4 rounded-[10px] border border-[#d4a843]/16 bg-[#090a0b]/96 p-1 shadow-[0_-14px_40px_rgba(0,0,0,0.38)] backdrop-blur-2xl">
+    <nav className="fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] md:hidden">
+      <div className="mx-auto grid h-[70px] max-w-[720px] grid-cols-4 rounded-[16px] border border-[#d4a843]/18 bg-[#090a0b]/94 p-1.5 shadow-[0_-18px_50px_rgba(0,0,0,0.42)] backdrop-blur-2xl">
         {items.map((item) => {
           const active =
             pathname === item.href ||
@@ -392,13 +398,14 @@ export function ClientBottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`relative flex flex-col items-center justify-center gap-1 rounded-[8px] text-[10px] font-bold no-underline transition-all duration-200 ${
-                active ? "bg-[#d4a843]/14 text-[#f5d78c]" : "text-[#f5f0e4]/44"
+              className={`relative flex flex-col items-center justify-center gap-1.5 rounded-[12px] text-[11px] font-bold leading-none no-underline transition-all duration-200 ${
+                active
+                  ? "border border-[#d4a843]/28 bg-[#d4a843]/15 text-[#f5d78c] shadow-[0_10px_24px_rgba(212,168,67,0.10)]"
+                  : "text-[#f5f0e4]/48"
               }`}
             >
-              {/* Active gold indicator bar */}
               {active && (
-                <span className="absolute inset-x-4 top-0.5 h-[2px] rounded-full bg-[#d4a843] shadow-[0_0_8px_rgba(212,168,67,0.65)]" />
+                <span className="absolute inset-x-5 top-1 h-[2px] rounded-full bg-[#d4a843] shadow-[0_0_8px_rgba(212,168,67,0.65)]" />
               )}
               <span
                 className={`transition-transform duration-200 ${active ? "scale-110" : "scale-100"}`}
@@ -428,11 +435,11 @@ export default function ClientAreaShell({
     <div className="client-premium min-h-screen">
       <MobileHeader onMenu={() => setDrawerOpen(true)} backHref={backHref} />
       <SideDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      <main className="client-shell-content mx-auto w-full max-w-[760px] pb-[calc(86px+env(safe-area-inset-bottom)+12px)]">
+      <main className="client-shell-content mx-auto w-full max-w-[760px] pb-[calc(142px+env(safe-area-inset-bottom))]">
         {children}
       </main>
       <ClientBottomNav />
-      <style>{`body { background: #070809; }`}</style>
+      <style>{`body { background: #070809 url("/brand/client-area-bg.jpg") center top / cover fixed no-repeat; }`}</style>
     </div>
   );
 }

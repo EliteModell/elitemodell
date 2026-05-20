@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   BadgeCheck,
+  Camera,
   Heart,
   MapPin,
   MessageCircle,
@@ -44,8 +45,8 @@ function ShotCard({ item }: { item: ShotItem }) {
   return (
     <article className="client-card overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-3">
-        <Link href={`/profissionais/${item.slug}`} className="flex items-center gap-3 no-underline">
-          <div className="h-9 w-9 overflow-hidden rounded-full border-2 border-[#d4a843]/36 bg-[#1b1d1f]">
+        <Link href={`/profissionais/${item.slug}`} className="flex min-w-0 items-center gap-3 no-underline">
+          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border-2 border-[#d4a843]/36 bg-[#1b1d1f]">
             {item.image ? (
               <img src={item.image} alt={item.displayName} className="h-full w-full object-cover" />
             ) : (
@@ -54,10 +55,10 @@ function ShotCard({ item }: { item: ShotItem }) {
               </div>
             )}
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-1">
-              <p className="text-[14px] font-semibold text-[#f5f0e4]">{item.displayName}</p>
-              {item.verified && <BadgeCheck className="h-4 w-4 text-[#4d9b56]" />}
+              <p className="truncate text-[14px] font-semibold text-[#f5f0e4]">{item.displayName}</p>
+              {item.verified && <BadgeCheck className="h-4 w-4 shrink-0 text-[#4d9b56]" />}
             </div>
             <p className="flex items-center gap-1 text-[12px] text-[#f5f0e4]/48">
               <MapPin className="h-3 w-3" />
@@ -76,9 +77,7 @@ function ShotCard({ item }: { item: ShotItem }) {
           <img src={mainPhoto} alt={item.displayName} className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-[#141618]">
-            <span className="text-[72px] font-black text-[#f5f0e4]/8">
-              {item.displayName[0]?.toUpperCase()}
-            </span>
+            <Camera className="h-12 w-12 text-[#f5f0e4]/18" />
           </div>
         )}
         {photos.length > 1 && (
@@ -113,7 +112,7 @@ function ShotCard({ item }: { item: ShotItem }) {
         </div>
         {item.totalReviews > 0 && (
           <p className="mt-2 text-[12px] text-[#f5f0e4]/40">
-            {item.totalReviews} avaliação{item.totalReviews !== 1 ? "ões" : ""}
+            {item.totalReviews} avaliacao{item.totalReviews !== 1 ? "es" : ""}
           </p>
         )}
       </div>
@@ -121,7 +120,6 @@ function ShotCard({ item }: { item: ShotItem }) {
   );
 }
 
-/* ─── Loading skeleton ─── */
 function ShotSkeleton() {
   return (
     <div className="client-card overflow-hidden">
@@ -136,6 +134,55 @@ function ShotSkeleton() {
       <div className="px-4 py-3">
         <div className="premium-skeleton h-4 w-32 rounded-full" />
       </div>
+    </div>
+  );
+}
+
+function EmptyShotPreview() {
+  return (
+    <div className="client-card overflow-hidden">
+      <div className="flex items-center gap-3 px-4 py-3">
+        <div className="h-9 w-9 rounded-full border border-white/10 bg-white/[0.045]" />
+        <div className="space-y-2">
+          <div className="h-3 w-28 rounded-full bg-white/[0.08]" />
+          <div className="h-3 w-20 rounded-full bg-white/[0.06]" />
+        </div>
+      </div>
+      <div className="grid aspect-square place-items-center bg-[#101214]/86">
+        <div className="grid h-16 w-16 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
+          <Camera className="h-8 w-8" />
+        </div>
+      </div>
+      <div className="px-4 py-3">
+        <div className="h-3.5 w-36 rounded-full bg-white/[0.07]" />
+      </div>
+    </div>
+  );
+}
+
+function EmptyShotsState() {
+  return (
+    <div className="space-y-4">
+      <section className="client-empty px-5 py-7 text-center">
+        <div className="mx-auto grid h-14 w-14 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
+          <Users className="h-7 w-7" />
+        </div>
+        <h2 className="mt-4 text-[18px] font-bold text-[#f5f0e4]">Quando houver publicacoes, elas aparecerao aqui</h2>
+        <p className="mx-auto mt-2 max-w-[300px] text-[13px] leading-5 text-[#f5f0e4]/54">
+          Shots reais de perfis disponiveis na sua cidade serao exibidos nesta area.
+        </p>
+        <Link
+          href="/dashboard/acompanhantes"
+          className="client-primary-button mx-auto mt-5 inline-flex min-h-0 items-center gap-2 px-5 py-2.5 text-[13px] no-underline"
+        >
+          Explorar acompanhantes
+        </Link>
+      </section>
+
+      <section>
+        <p className="mb-3 text-[12px] font-bold uppercase text-[#f5f0e4]/42">Preview da vitrine</p>
+        <EmptyShotPreview />
+      </section>
     </div>
   );
 }
@@ -171,24 +218,22 @@ export default function ShotsPage() {
 
   return (
     <>
-      {/* Header */}
       <section className="px-4 pb-4 pt-5">
         <p className="client-kicker">Feed visual</p>
         <h1 className="client-title mt-1">Shots</h1>
         <p className="client-subtitle mt-1.5">Fotos de perfis verificados por cidade.</p>
       </section>
 
-      {/* Sticky filters */}
-      <div className="sticky top-[116px] z-20 border-y border-white/[0.07] bg-[#07090a]/94 pb-3 pt-3 backdrop-blur-2xl">
+      <div className="sticky top-[110px] z-20 border-y border-white/[0.07] bg-[#07090a]/94 pb-2.5 pt-2.5 backdrop-blur-2xl">
         <div className="px-4">
           <div className="relative mb-2.5">
             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#d4a843]" />
             <input
               type="text"
-              placeholder="Filtrar por cidade…"
+              placeholder="Filtrar por cidade"
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="client-input h-[42px] w-full pl-10 pr-4 text-[14px]"
+              className="client-input h-[38px] w-full pl-10 pr-4 text-[13px]"
             />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
@@ -208,29 +253,13 @@ export default function ShotsPage() {
         </div>
       </div>
 
-      {/* Feed */}
-      <div className="px-4 pb-6 pt-4">
+      <div className="px-4 pb-[calc(170px+env(safe-area-inset-bottom))] pt-4">
         {loading ? (
           <div className="space-y-4">
             {Array.from({ length: 2 }).map((_, i) => <ShotSkeleton key={i} />)}
           </div>
         ) : items.length === 0 ? (
-          /* Empty state — fills viewport, no black void */
-          <div className="flex min-h-[calc(100dvh-300px)] flex-col items-center justify-center text-center">
-            <div className="mb-6 grid h-20 w-20 place-items-center rounded-full border border-[#d4a843]/16 bg-[#d4a843]/8">
-              <Users className="h-9 w-9 text-[#f5d78c]" />
-            </div>
-            <h2 className="text-[20px] font-bold text-[#f5f0e4]">Nenhum shot ainda</h2>
-            <p className="mt-2.5 max-w-[280px] text-[14px] leading-6 text-[#f5f0e4]/50">
-              Acompanhantes publicam fotos aqui. Explore perfis para descobrir quem está disponível.
-            </p>
-            <Link
-              href="/dashboard/acompanhantes"
-              className="client-primary-button mt-8 flex items-center gap-2 px-8 no-underline"
-            >
-              Explorar perfis
-            </Link>
-          </div>
+          <EmptyShotsState />
         ) : (
           <div className="space-y-4">
             {items.map((item) => <ShotCard key={item.id} item={item} />)}

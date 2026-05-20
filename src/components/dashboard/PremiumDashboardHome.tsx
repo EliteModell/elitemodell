@@ -3,9 +3,12 @@ import Link from "next/link";
 import {
   ChevronRight,
   CircleAlert,
+  CreditCard,
+  Heart,
   MessageCircle,
+  Search,
   ShieldAlert,
-  Users,
+  ShieldCheck,
 } from "lucide-react";
 import AchievementsSection from "@/components/client-area/AchievementsSection";
 import HistorySection from "@/components/client-area/HistorySection";
@@ -64,11 +67,82 @@ function hasRealEmail(email: string | null) {
   return Boolean(email && !email.startsWith("phone_"));
 }
 
-function Divider() {
-  return <div className="mx-4 my-1 h-px bg-white/[0.06]" />;
+function ActionCard({
+  href,
+  icon,
+  title,
+  description,
+  cta,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  cta: string;
+}) {
+  return (
+    <Link href={href} className="client-action-card group no-underline">
+      <span className="grid h-12 w-12 place-items-center rounded-[8px] border border-[#d4a843]/26 bg-[#d4a843]/10 text-[#f5d78c]">
+        {icon}
+      </span>
+      <span className="mt-6 block text-[20px] font-black leading-6 text-[#f5f0e4]">{title}</span>
+      <span className="mt-3 block min-h-[42px] text-[13px] leading-5 text-[#f5f0e4]/56">{description}</span>
+      <span className="mt-5 flex items-center justify-between text-[12px] font-black uppercase text-[#f5d78c]">
+        {cta}
+        <ChevronRight className="h-4 w-4 transition-transform group-active:translate-x-0.5" />
+      </span>
+    </Link>
+  );
 }
 
-/* ─── Account stats strip ─── */
+function QuickActionGrid({
+  credits,
+  verificationDone,
+}: {
+  credits: number;
+  verificationDone: number;
+}) {
+  const walletText =
+    credits > 0
+      ? `${credits.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} disponivel`
+      : "Saldo protegido e acesso rapido a sua carteira.";
+
+  return (
+    <section className="px-4 pb-3 pt-2">
+      <div className="grid grid-cols-2 gap-3">
+        <ActionCard
+          href="/dashboard/acompanhantes"
+          icon={<Search className="h-6 w-6" />}
+          title="Explorar"
+          description="Veja perfis reais quando houver disponibilidade na sua cidade."
+          cta="Acessar"
+        />
+        <ActionCard
+          href="/dashboard/favoritos"
+          icon={<Heart className="h-6 w-6" />}
+          title="Listas"
+          description="Guarde curtidos, seguidos e colecoes privadas sem exposicao."
+          cta="Abrir"
+        />
+        <ActionCard
+          href="/dashboard/carteira"
+          icon={<CreditCard className="h-6 w-6" />}
+          title="Carteira"
+          description={walletText}
+          cta="Ver saldo"
+        />
+        <ActionCard
+          href="/dashboard/perfil"
+          icon={<ShieldCheck className="h-6 w-6" />}
+          title="Verificar"
+          description={`${verificationDone}/3 etapas concluidas para reforcar sua conta.`}
+          cta="Validar"
+        />
+      </div>
+    </section>
+  );
+}
+
 function QuickStatsSection({
   stats,
   vip,
@@ -77,89 +151,58 @@ function QuickStatsSection({
   vip: DashboardHomeData["vip"];
 }) {
   return (
-    <section className="px-4 pb-5 pt-2">
-      <div className="flex overflow-hidden rounded-[10px] border border-white/[0.07] bg-white/[0.03]">
-        <div className="flex flex-1 flex-col items-center py-4">
-          <p className="text-[24px] font-black leading-none text-[#f5f0e4]">
-            {stats.completedAppointments}
-          </p>
-          <p className="mt-1.5 text-[11px] text-[#f5f0e4]/44">Concluídos</p>
+    <section className="px-4 py-3">
+      <div className="client-panel p-4">
+        <div className="grid grid-cols-3 gap-2">
+          <div className="client-stat-pill px-3 py-3">
+            <p className="text-[19px] font-black leading-none text-[#f5f0e4]">{stats.completedAppointments}</p>
+            <p className="mt-1 text-[11px] text-[#f5f0e4]/46">Concluidos</p>
+          </div>
+          <div className="client-stat-pill px-3 py-3">
+            <p className="text-[19px] font-black leading-none text-[#f5f0e4]">{stats.favoriteProfiles}</p>
+            <p className="mt-1 text-[11px] text-[#f5f0e4]/46">Salvos</p>
+          </div>
+          <div className="client-stat-pill px-3 py-3">
+            <p className="truncate text-[14px] font-black leading-none text-[#f5d78c]">{vip.label}</p>
+            <p className="mt-1 text-[11px] text-[#f5f0e4]/46">Nivel</p>
+          </div>
         </div>
-        <div className="my-3.5 w-px bg-white/[0.08]" />
-        <div className="flex flex-1 flex-col items-center py-4">
-          <p className="text-[24px] font-black leading-none text-[#f5f0e4]">
-            {stats.favoriteProfiles}
-          </p>
-          <p className="mt-1.5 text-[11px] text-[#f5f0e4]/44">Favoritos</p>
-        </div>
-        <div className="my-3.5 w-px bg-white/[0.08]" />
-        <div className="flex flex-1 flex-col items-center py-4">
-          <p className="truncate px-2 text-[15px] font-black leading-none text-[#f5d78c]">
-            {vip.label}
-          </p>
-          <p className="mt-1.5 text-[11px] text-[#f5f0e4]/44">Nível VIP</p>
-        </div>
-      </div>
 
-      {/* Progress bar */}
-      <div className="mt-2.5">
-        <div className="mb-1 flex items-center justify-between">
-          <p className="text-[11px] text-[#f5f0e4]/38">{vip.description}</p>
-          <p className="text-[11px] font-bold text-[#f5d78c]">{vip.progress}%</p>
-        </div>
-        <div className="h-[3px] overflow-hidden rounded-full bg-white/[0.08]">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-[#4d9b56] to-[#d4a843] transition-all duration-700"
-            style={{ width: `${Math.max(3, vip.progress)}%` }}
-          />
+        <div className="mt-4">
+          <div className="flex items-start justify-between gap-3">
+            <p className="min-w-0 text-[12px] leading-5 text-[#f5f0e4]/50">{vip.description}</p>
+            <p className="shrink-0 text-[12px] font-bold text-[#f5d78c]">{vip.progress}%</p>
+          </div>
+          <div className="mt-2 h-[4px] overflow-hidden rounded-full bg-white/[0.08]">
+            <div
+              className="h-full rounded-full bg-[#d4a843] transition-all duration-700"
+              style={{ width: `${Math.max(3, vip.progress)}%` }}
+            />
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-/* ─── Explore CTA (replaces fake recommended profiles) ─── */
-function ExploreSection() {
-  return (
-    <section className="client-page-tight">
-      <Link href="/dashboard/acompanhantes" className="block no-underline">
-        <div className="client-panel flex items-center gap-4 p-5">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-[10px] border border-[#d4a843]/18 bg-[#d4a843]/8">
-            <Users className="h-6 w-6 text-[#f5d78c]" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="client-kicker">Descoberta</p>
-            <h2 className="mt-0.5 text-[17px] font-bold text-[#f5f0e4]">Explorar acompanhantes</h2>
-            <p className="mt-1 text-[13px] text-[#f5f0e4]/52">
-              Perfis verificados por cidade e avaliações.
-            </p>
-          </div>
-          <ChevronRight className="h-5 w-5 shrink-0 text-[#f5d78c]" />
-        </div>
-      </Link>
-    </section>
-  );
-}
-
-/* ─── Reviews prompt ─── */
 function ReviewsSection() {
   return (
     <section className="client-page-tight">
-      <div className="client-card p-5">
+      <div className="client-card p-4">
         <div className="flex items-start gap-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[8px] border border-white/[0.07] bg-white/[0.04] text-[#f5d78c]">
-            <CircleAlert className="h-[20px] w-[20px]" />
+            <CircleAlert className="h-5 w-5" />
           </span>
           <div className="min-w-0">
-            <h2 className="text-[16px] font-bold text-[#f5f0e4]">Você ainda não fez avaliações</h2>
-            <p className="mt-1.5 text-[13px] leading-5 text-[#f5f0e4]/52">
-              Avalie acompanhantes após uma contratação e ajude a comunidade.
+            <h2 className="text-[15px] font-bold text-[#f5f0e4]">Avaliacoes aparecerao depois</h2>
+            <p className="mt-1 text-[13px] leading-5 text-[#f5f0e4]/52">
+              Quando voce tiver experiencias concluídas, podera registrar avaliacoes de forma discreta.
             </p>
           </div>
         </div>
         <Link
           href="/dashboard/acompanhantes"
-          className="client-secondary-button mt-5 flex items-center justify-center text-[14px] no-underline"
+          className="client-secondary-button mt-4 flex min-h-0 items-center justify-center py-2.5 text-[13px] no-underline"
         >
           Explorar perfis
         </Link>
@@ -168,22 +211,24 @@ function ReviewsSection() {
   );
 }
 
-/* ─── Safety card ─── */
 function SafetyCard() {
   return (
-    <section className="client-page-tight pb-10">
-      <div className="client-panel p-5">
-        <div className="flex items-center gap-3">
-          <span className="h-2 w-2 rounded-full bg-[#d4a843]" />
-          <h2 className="min-w-0 flex-1 text-[15px] font-bold text-[#f5f0e4]">Segurança da conta</h2>
-          <ShieldAlert className="h-5 w-5 text-[#f5d78c]" />
+    <section className="client-page-tight" style={{ paddingBottom: "calc(180px + env(safe-area-inset-bottom))" }}>
+      <div className="client-panel p-4">
+        <div className="flex items-start gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/20 bg-[#d4a843]/10 text-[#f5d78c]">
+            <ShieldAlert className="h-5 w-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-[16px] font-bold text-[#f5f0e4]">Seguranca da conta</h2>
+            <p className="mt-1.5 text-[13px] leading-5 text-[#f5f0e4]/54">
+              Nunca informe senhas, codigos ou documentos fora da plataforma.
+            </p>
+          </div>
         </div>
-        <p className="mt-3 text-[13px] leading-5 text-[#f5f0e4]/52">
-          Nunca informe senhas, códigos ou documentos fora da plataforma. Em caso de dúvida, fale com o suporte.
-        </p>
         <Link
           href="/dashboard/atendimento"
-          className="mt-4 inline-flex items-center gap-2 text-[13px] font-semibold text-[#f5d78c] no-underline"
+          className="client-secondary-button mt-4 flex min-h-0 items-center justify-center gap-2 py-2.5 text-[13px] no-underline"
         >
           <MessageCircle className="h-4 w-4" />
           Falar com atendimento
@@ -213,26 +258,17 @@ export default function PremiumDashboardHome({
       done: Boolean(data.user.document || data.user.verified),
     },
   ];
+  const verificationDone = verificationSteps.filter((step) => step.done).length;
 
   return (
     <div>
-      <UserWelcomeCard
-        name={data.user.name}
-        image={data.user.image}
-        city={data.city}
-        credits={data.stats.credits}
-      />
+      <UserWelcomeCard name={data.user.name} image={data.user.image} city={data.city} />
+      <QuickActionGrid credits={data.stats.credits} verificationDone={verificationDone} />
       <QuickStatsSection stats={data.stats} vip={data.vip} />
-      <Divider />
       <VerificationSection steps={verificationSteps} />
-      <Divider />
-      <ExploreSection />
-      <Divider />
       <ListsSection />
-      <Divider />
       <HistorySection />
       <AchievementsSection />
-      <Divider />
       <ReviewsSection />
       <SafetyCard />
     </div>

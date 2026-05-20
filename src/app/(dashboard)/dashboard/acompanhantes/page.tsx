@@ -2,17 +2,19 @@
 
 /* eslint-disable @next/next/no-img-element -- Profile photos come from uploaded URLs */
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   BadgeCheck,
+  Camera,
   ChevronRight,
   MapPin,
   Phone,
   Search,
-  Star,
+  ShieldCheck,
   SlidersHorizontal,
-  Users,
+  Sparkles,
+  Star,
   X,
 } from "lucide-react";
 
@@ -41,24 +43,22 @@ const CATEGORIES = [
   { value: "TRANS", label: "Trans" },
 ];
 
-/* ─── Loading skeleton ─── */
 function ProfileCardSkeleton() {
   return (
     <div className="overflow-hidden rounded-[12px] border border-white/[0.06] bg-[#101214]">
-      <div className="premium-skeleton h-[260px] w-full" />
+      <div className="premium-skeleton h-[250px] w-full" />
       <div className="space-y-2 px-4 py-3">
         <div className="premium-skeleton h-4 w-[52%] rounded-full" />
         <div className="premium-skeleton h-3.5 w-[36%] rounded-full" />
       </div>
       <div className="flex gap-2.5 px-4 pb-4">
-        <div className="premium-skeleton h-11 flex-1 rounded-[8px]" />
-        <div className="premium-skeleton h-11 w-[108px] rounded-[8px]" />
+        <div className="premium-skeleton h-10 flex-1 rounded-[8px]" />
+        <div className="premium-skeleton h-10 w-[104px] rounded-[8px]" />
       </div>
     </div>
   );
 }
 
-/* ─── Professional card (overlay design) ─── */
 function ProfessionalCard({ p }: { p: Professional }) {
   const cover = p.photos?.find((ph) => ph.cover)?.url ?? p.image ?? null;
   const price = p.pricePerHour ?? p.priceMin;
@@ -66,27 +66,21 @@ function ProfessionalCard({ p }: { p: Professional }) {
 
   return (
     <article className="client-profile-card">
-      <div className="relative h-[260px] w-full overflow-hidden bg-[#17191b]">
+      <div className="relative h-[250px] w-full overflow-hidden bg-[#17191b]">
         {cover ? (
           <img src={cover} alt={p.displayName} className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-[#141618]">
-            <span className="text-[52px] font-black text-[#f5f0e4]/10">
-              {p.displayName[0]?.toUpperCase()}
-            </span>
+            <Camera className="h-12 w-12 text-[#f5f0e4]/18" />
           </div>
         )}
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-black/95 via-black/55 to-transparent" />
 
-        {/* Top badges */}
         <div className="absolute left-3 top-3 flex gap-1.5">
           {isOnline ? (
             <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/70 px-2.5 py-1 text-[11px] font-bold text-[#5ede6d] backdrop-blur-sm">
-              <span className="relative flex h-2 w-2 shrink-0">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#5ede6d] opacity-60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#5ede6d]" />
-              </span>
+              <span className="h-2 w-2 rounded-full bg-[#5ede6d]" />
               Online
             </span>
           ) : p.verified ? (
@@ -102,14 +96,15 @@ function ProfessionalCard({ p }: { p: Professional }) {
           )}
         </div>
 
-        {/* Bottom overlay */}
         <div className="absolute inset-x-0 bottom-0 p-4">
           <div className="flex items-end justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="text-[19px] font-bold leading-tight text-white">{p.displayName}</h3>
+              <h3 className="truncate text-[19px] font-bold leading-tight text-white">{p.displayName}</h3>
               <div className="mt-0.5 flex items-center gap-1.5">
                 <MapPin className="h-3 w-3 shrink-0 text-white/50" />
-                <span className="truncate text-[12px] text-white/65">{p.city}, {p.state}</span>
+                <span className="truncate text-[12px] text-white/65">
+                  {p.city}, {p.state}
+                </span>
               </div>
             </div>
             {price ? (
@@ -123,7 +118,6 @@ function ProfessionalCard({ p }: { p: Professional }) {
         </div>
       </div>
 
-      {/* Info strip */}
       <div className="flex items-center gap-2.5 border-t border-white/[0.05] px-4 py-2.5">
         {p.verified && <BadgeCheck className="h-4 w-4 shrink-0 text-[#7ed58a]" />}
         <div className="flex items-center gap-1">
@@ -138,18 +132,17 @@ function ProfessionalCard({ p }: { p: Professional }) {
         ) : null}
       </div>
 
-      {/* Actions */}
       <div className="flex gap-2.5 px-4 pb-4">
         <Link
           href={`/profissionais/${p.slug}`}
-          className="client-secondary-button flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[14px] font-bold no-underline"
+          className="client-secondary-button flex min-h-0 flex-1 items-center justify-center gap-1.5 py-2.5 text-[13px] font-bold no-underline"
         >
           Ver perfil
           <ChevronRight className="h-4 w-4" />
         </Link>
         <button
           type="button"
-          className="client-primary-button flex min-h-0 items-center gap-1.5 px-5 py-2.5 text-[14px]"
+          className="client-primary-button flex min-h-0 items-center gap-1.5 px-4 py-2.5 text-[13px]"
         >
           <Phone className="h-4 w-4" />
           Contato
@@ -159,7 +152,6 @@ function ProfessionalCard({ p }: { p: Professional }) {
   );
 }
 
-/* ─── Filter bottom sheet ─── */
 function FilterDrawer({
   open,
   onClose,
@@ -182,33 +174,45 @@ function FilterDrawer({
   return (
     <>
       <div
-        className={`fixed inset-0 z-40 bg-black/55 backdrop-blur-[2px] transition-opacity duration-300 ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        className={`fixed inset-0 z-[65] bg-black/62 backdrop-blur-[3px] transition-opacity duration-300 ${
+          open ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
         onClick={onClose}
       />
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 rounded-t-[16px] border-t border-[#d4a843]/16 bg-[#0c0d0e] p-5 pb-10 shadow-[0_-24px_80px_rgba(0,0,0,0.55)] transition-transform duration-300 ${open ? "translate-y-0" : "translate-y-full"}`}
+        className={`fixed inset-x-0 bottom-0 z-[70] max-h-[min(78dvh,620px)] overflow-y-auto rounded-t-[22px] border-t border-[#d4a843]/20 bg-[#0c0d0e] px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-3 shadow-[0_-28px_90px_rgba(0,0,0,0.62)] transition-transform duration-300 ${
+          open ? "translate-y-0" : "pointer-events-none translate-y-full"
+        }`}
+        aria-hidden={!open}
       >
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-[18px] font-bold text-[#f5f0e4]">Filtros</h2>
+        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-white/16" />
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <p className="client-kicker">Ajuste sua busca</p>
+            <h2 className="mt-1 text-[22px] font-black leading-none text-[#f5f0e4]">Filtros</h2>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="grid h-8 w-8 place-items-center rounded-[8px] border border-white/10 bg-white/[0.04] text-[#f5f0e4]/60"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] border border-white/10 bg-white/[0.04] text-[#f5f0e4]/64"
+            aria-label="Fechar filtros"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-6">
           <div>
-            <p className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-[#f5f0e4]/40">Categoria</p>
-            <div className="flex flex-wrap gap-2">
+            <p className="mb-3 text-[11px] font-black uppercase text-[#f5f0e4]/44">Categoria</p>
+            <div className="grid grid-cols-2 gap-2">
               {CATEGORIES.map((c) => (
                 <button
                   key={c.value}
                   type="button"
                   onClick={() => onCategory(c.value)}
-                  className={`rounded-full px-4 py-2 text-[13px] font-semibold transition-colors ${category === c.value ? "client-chip-active" : "client-chip"}`}
+                  className={`min-h-[44px] rounded-[10px] px-4 text-[14px] font-bold transition-colors ${
+                    category === c.value ? "client-chip-active" : "client-chip"
+                  }`}
                 >
                   {c.label}
                 </button>
@@ -217,19 +221,21 @@ function FilterDrawer({
           </div>
 
           <div>
-            <p className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-[#f5f0e4]/40">Ordenar por</p>
-            <div className="flex flex-wrap gap-2">
+            <p className="mb-3 text-[11px] font-black uppercase text-[#f5f0e4]/44">Ordenar por</p>
+            <div className="grid grid-cols-2 gap-2">
               {[
                 { value: "rating", label: "Mais avaliados" },
-                { value: "price_asc", label: "Menor preço" },
-                { value: "price_desc", label: "Maior preço" },
+                { value: "price_asc", label: "Menor preco" },
+                { value: "price_desc", label: "Maior preco" },
                 { value: "recent", label: "Mais recentes" },
               ].map((s) => (
                 <button
                   key={s.value}
                   type="button"
                   onClick={() => onSortBy(s.value)}
-                  className={`rounded-full px-4 py-2 text-[13px] font-semibold transition-colors ${sortBy === s.value ? "client-chip-active" : "client-chip"}`}
+                  className={`min-h-[44px] rounded-[10px] px-3 text-[13px] font-bold transition-colors ${
+                    sortBy === s.value ? "client-chip-active" : "client-chip"
+                  }`}
                 >
                   {s.label}
                 </button>
@@ -237,23 +243,30 @@ function FilterDrawer({
             </div>
           </div>
 
-          <label className="client-panel-soft flex cursor-pointer items-center justify-between p-4">
-            <div>
-              <p className="text-[14px] font-semibold text-[#f5f0e4]">Somente verificadas</p>
-              <p className="mt-0.5 text-[12px] text-[#f5f0e4]/46">Perfis com identidade confirmada</p>
+          <div className="client-panel-soft flex items-center justify-between gap-4 p-4">
+            <div className="min-w-0">
+              <p className="text-[15px] font-bold text-[#f5f0e4]">Somente verificadas</p>
+              <p className="mt-1 text-[12px] leading-4 text-[#f5f0e4]/50">Perfis com identidade confirmada</p>
             </div>
-            <div
-              className={`relative h-6 w-11 rounded-full transition-colors ${onlyVerified ? "bg-[#4d9b56]" : "bg-white/18"}`}
+            <button
+              type="button"
+              className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+                onlyVerified ? "bg-[#4d9b56]" : "bg-white/18"
+              }`}
               onClick={() => onOnlyVerified(!onlyVerified)}
+              aria-pressed={onlyVerified}
+              aria-label="Somente verificadas"
             >
               <span
-                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${onlyVerified ? "translate-x-5" : "translate-x-0.5"}`}
+                className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${
+                  onlyVerified ? "translate-x-5" : "translate-x-0.5"
+                }`}
               />
-            </div>
-          </label>
+            </button>
+          </div>
         </div>
 
-        <button type="button" onClick={onClose} className="client-primary-button mt-6 w-full text-[15px]">
+        <button type="button" onClick={onClose} className="client-primary-button mt-7 w-full text-[16px]">
           Aplicar filtros
         </button>
       </div>
@@ -261,35 +274,86 @@ function FilterDrawer({
   );
 }
 
-/* ─── Empty state ─── */
-function EmptyState({ hasFilters, onClear }: { hasFilters: boolean; onClear: () => void }) {
+function EmptyProfileSlot() {
   return (
-    <div className="flex min-h-[calc(100dvh-300px)] flex-col items-center justify-center px-6 text-center">
-      <div className="mb-6 grid h-20 w-20 place-items-center rounded-full border border-[#d4a843]/16 bg-[#d4a843]/8">
-        <Users className="h-9 w-9 text-[#f5d78c]" />
+    <article className="client-card overflow-hidden">
+      <div className="grid aspect-[4/5] place-items-center bg-[#101214]/86">
+        <div className="grid h-14 w-14 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
+          <Camera className="h-7 w-7" />
+        </div>
       </div>
-      <h2 className="text-[20px] font-bold text-[#f5f0e4]">
-        {hasFilters ? "Nenhum perfil encontrado" : "Nenhum perfil disponível"}
-      </h2>
-      <p className="mt-2.5 max-w-[280px] text-[14px] leading-6 text-[#f5f0e4]/50">
-        {hasFilters
-          ? "Tente ajustar os filtros ou buscar em outra cidade."
-          : "Os perfis verificados aparecerão aqui em breve."}
-      </p>
-      {hasFilters && (
-        <button
-          type="button"
-          onClick={onClear}
-          className="client-secondary-button mt-7 min-h-0 px-7 py-3 text-[14px]"
-        >
-          Limpar filtros
-        </button>
-      )}
+      <div className="space-y-2 p-3">
+        <div className="h-3.5 w-2/3 rounded-full bg-white/[0.08]" />
+        <div className="h-3 w-1/2 rounded-full bg-white/[0.06]" />
+      </div>
+    </article>
+  );
+}
+
+function EmptyState({
+  hasFilters,
+  onClear,
+  onExploreCity,
+}: {
+  hasFilters: boolean;
+  onClear: () => void;
+  onExploreCity: () => void;
+}) {
+  return (
+    <div className="space-y-5">
+      <section className="client-empty relative overflow-hidden px-5 py-8 text-center">
+        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(245,215,140,0.55),transparent)]" />
+        <div className="mx-auto grid h-16 w-16 place-items-center rounded-[14px] border border-[#d4a843]/26 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.12)]">
+          {hasFilters ? <Search className="h-7 w-7" /> : <Sparkles className="h-7 w-7" />}
+        </div>
+        <p className="mt-5 text-[11px] font-black uppercase text-[#f5d78c]/82">
+          {hasFilters ? "Sem resultado nessa combinacao" : "Curadoria em andamento"}
+        </p>
+        <h2 className="mx-auto mt-2 max-w-[320px] text-[24px] font-black leading-tight text-[#f5f0e4]">
+          {hasFilters ? "Nenhum perfil encontrado" : "A vitrine da sua cidade vai aparecer aqui"}
+        </h2>
+        <p className="mx-auto mt-3 max-w-[330px] text-[14px] leading-6 text-[#f5f0e4]/58">
+          {hasFilters
+            ? "Tente uma categoria mais ampla, limpe os filtros ou busque por outra cidade."
+            : "Use a busca para escolher uma cidade. Quando houver perfis verificados, a grade fica pronta sem bagunca."}
+        </p>
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+          <button
+            type="button"
+            onClick={hasFilters ? onClear : onExploreCity}
+            className="client-primary-button flex min-h-0 items-center justify-center gap-2 px-5 py-3 text-[14px]"
+          >
+            {hasFilters ? "Limpar filtros" : "Escolher cidade"}
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onExploreCity}
+            className="client-secondary-button flex min-h-0 items-center justify-center gap-2 px-5 py-3 text-[14px]"
+          >
+            <MapPin className="h-4 w-4" />
+            Trocar cidade
+          </button>
+        </div>
+      </section>
+
+      <section>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className="text-[12px] font-black uppercase text-[#f5f0e4]/46">Previa da vitrine</p>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#d4a843]/16 bg-[#d4a843]/8 px-2.5 py-1 text-[11px] font-bold text-[#f5d78c]/84">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            verificada
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <EmptyProfileSlot />
+          <EmptyProfileSlot />
+        </div>
+      </section>
     </div>
   );
 }
 
-/* ─── Page ─── */
 export default function AcompanhantesPage() {
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [loading, setLoading] = useState(true);
@@ -324,7 +388,7 @@ export default function AcompanhantesPage() {
       setPage(nextPage);
       setHasMore(nextPage < (data.pages ?? 1));
     } catch {
-      /* ignore */
+      /* keep current list */
     } finally {
       setLoading(false);
     }
@@ -365,55 +429,98 @@ export default function AcompanhantesPage() {
   function clearFilters() {
     setSearch("");
     setActiveCategory("");
+    setCategory("");
     setCity("");
     setOnlyVerified(false);
   }
 
+  function focusCity() {
+    document.querySelector<HTMLInputElement>('[data-client-city-filter="true"]')?.focus();
+  }
+
   return (
     <>
-      {/* Page header */}
-      <section className="px-4 pb-4 pt-5">
-        <p className="client-kicker">Descoberta</p>
-        <h1 className="client-title mt-1">Explorar</h1>
-        <p className="client-subtitle mt-1.5">Perfis verificados por cidade, estilo e avaliações.</p>
+      <section className="px-4 pb-4 pt-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="client-kicker">Descoberta Elite</p>
+            <h1 className="mt-1 text-[34px] font-black leading-none text-[#f5f0e4]">Explorar</h1>
+            <p className="mt-2 max-w-[340px] text-[14px] leading-5 text-[#f5f0e4]/60">
+              Encontre perfis por cidade, estilo e confianca em uma tela mais limpa.
+            </p>
+          </div>
+          <span className="mt-1 inline-flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[#d4a843]/22 bg-[#d4a843]/10 px-3 py-2 text-[11px] font-black uppercase text-[#f5d78c]">
+            <Sparkles className="h-3.5 w-3.5" />
+            Elite
+          </span>
+        </div>
+
+        <div className="mt-5 grid grid-cols-3 gap-2">
+          {[
+            { label: "Verificadas", icon: <ShieldCheck className="h-4 w-4" /> },
+            { label: "Por cidade", icon: <MapPin className="h-4 w-4" /> },
+            { label: "Avaliadas", icon: <Star className="h-4 w-4" /> },
+          ].map((item) => (
+            <div key={item.label} className="client-stat-pill flex min-h-[42px] items-center justify-center gap-1.5 px-2 text-[11px] font-bold text-[#f5f0e4]/70">
+              <span className="text-[#f5d78c]">{item.icon}</span>
+              <span className="truncate">{item.label}</span>
+            </div>
+          ))}
+        </div>
       </section>
 
-      {/* Sticky search + category bar */}
-      <div className="sticky top-[116px] z-20 border-y border-white/[0.07] bg-[#07090a]/94 pb-3 pt-3 backdrop-blur-2xl">
-        <div className="px-4">
+      <div className="sticky top-[64px] z-20 border-y border-white/[0.07] bg-[#07090a]/96 py-3 backdrop-blur-2xl">
+        <div className="space-y-3 px-4">
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#d4a843]" />
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#d4a843]" />
               <input
                 type="text"
-                placeholder="Nome, cidade ou estilo…"
+                placeholder="Buscar nome, cidade ou estilo"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="client-input h-[42px] w-full pl-10 pr-4 text-[14px]"
+                className="client-input client-search-input h-[52px] w-full pl-12 pr-11 text-[15px] font-semibold"
               />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-[#f5f0e4]/58"
+                  aria-label="Limpar busca"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
             <button
               type="button"
               onClick={() => setFilterOpen(true)}
-              className={`flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[8px] border transition-colors ${
+              className={`relative flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[14px] border transition-colors ${
                 onlyVerified || sortBy !== "rating"
                   ? "border-[#d4a843]/40 bg-[#d4a843]/12 text-[#f5d78c]"
                   : "border-white/[0.09] bg-white/[0.05] text-[#f5f0e4]/60"
               }`}
               aria-label="Filtros"
             >
-              <SlidersHorizontal className="h-4.5 w-4.5" />
+              <SlidersHorizontal className="h-5 w-5" />
+              {(onlyVerified || sortBy !== "rating") && (
+                <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-[#f5d78c] shadow-[0_0_10px_rgba(245,215,140,0.75)]" />
+              )}
             </button>
           </div>
 
-          {/* Category chips */}
-          <div className="mt-2.5 flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
             {CATEGORIES.map((c) => (
               <button
                 key={c.value}
                 type="button"
-                onClick={() => setActiveCategory(c.value)}
-                className={`shrink-0 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors ${activeCategory === c.value ? "client-chip-active" : "client-chip"}`}
+                onClick={() => {
+                  setActiveCategory(c.value);
+                  setCategory(c.value);
+                }}
+                className={`min-h-[38px] shrink-0 rounded-full px-4 text-[14px] font-bold transition-colors ${
+                  activeCategory === c.value ? "client-chip-active" : "client-chip"
+                }`}
               >
                 {c.label}
               </button>
@@ -425,14 +532,25 @@ export default function AcompanhantesPage() {
                 placeholder="Cidade"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                className="client-input h-[34px] w-[112px] rounded-full pl-7 pr-3 text-[12px]"
+                className="client-input client-pill-input h-[38px] w-[136px] pl-8 pr-3 text-[13px] font-semibold"
+                data-client-city-filter="true"
               />
             </div>
           </div>
+
+          {hasFilters && (
+            <div className="flex items-center justify-between gap-3 rounded-[10px] border border-[#d4a843]/14 bg-[#d4a843]/8 px-3 py-2">
+              <span className="min-w-0 truncate text-[12px] font-semibold text-[#f5f0e4]/58">
+                Filtros ativos na busca
+              </span>
+              <button type="button" onClick={clearFilters} className="shrink-0 text-[12px] font-black text-[#f5d78c]">
+                Limpar
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Results count */}
       {!loading && professionals.length > 0 && (
         <div className="flex items-center justify-between px-4 pb-2 pt-4">
           <p className="text-[13px] text-[#f5f0e4]/40">{total} perfis</p>
@@ -444,12 +562,11 @@ export default function AcompanhantesPage() {
         </div>
       )}
 
-      {/* Cards */}
-      <div className="space-y-4 px-4 pb-6 pt-3">
+      <div className="space-y-4 px-4 pb-[calc(190px+env(safe-area-inset-bottom))] pt-3">
         {loading && professionals.length === 0 ? (
           Array.from({ length: 3 }).map((_, i) => <ProfileCardSkeleton key={i} />)
         ) : professionals.length === 0 ? (
-          <EmptyState hasFilters={hasFilters} onClear={clearFilters} />
+          <EmptyState hasFilters={hasFilters} onClear={clearFilters} onExploreCity={focusCity} />
         ) : (
           <>
             {professionals.map((p) => (
@@ -467,7 +584,7 @@ export default function AcompanhantesPage() {
             )}
             {!hasMore && professionals.length > 4 && (
               <p className="pb-2 text-center text-[12px] text-[#f5f0e4]/28">
-                Você viu todos os perfis disponíveis
+                Voce viu todos os perfis disponiveis
               </p>
             )}
           </>
@@ -478,7 +595,10 @@ export default function AcompanhantesPage() {
         open={filterOpen}
         onClose={() => setFilterOpen(false)}
         category={category}
-        onCategory={(v) => { setCategory(v); setActiveCategory(v); }}
+        onCategory={(v) => {
+          setCategory(v);
+          setActiveCategory(v);
+        }}
         sortBy={sortBy}
         onSortBy={setSortBy}
         onlyVerified={onlyVerified}
