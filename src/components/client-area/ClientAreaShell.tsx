@@ -388,8 +388,8 @@ export function ClientBottomNav() {
   ];
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] md:hidden">
-      <div className="mx-auto grid h-[70px] max-w-[720px] grid-cols-4 rounded-[16px] border border-[#d4a843]/18 bg-[#090a0b]/94 p-1.5 shadow-[0_-18px_50px_rgba(0,0,0,0.42)] backdrop-blur-2xl">
+    <nav className="client-bottom-nav fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+6px)] transition-all duration-200 md:hidden">
+      <div className="mx-auto grid h-[64px] max-w-[720px] grid-cols-4 rounded-[14px] border border-[#d4a843]/18 bg-[#090a0b]/94 p-1 shadow-[0_-14px_38px_rgba(0,0,0,0.38)] backdrop-blur-2xl">
         {items.map((item) => {
           const active =
             pathname === item.href ||
@@ -398,14 +398,14 @@ export function ClientBottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`relative flex flex-col items-center justify-center gap-1.5 rounded-[12px] text-[11px] font-bold leading-none no-underline transition-all duration-200 ${
+              className={`relative flex flex-col items-center justify-center gap-1 rounded-[11px] text-[11px] font-bold leading-none no-underline transition-all duration-200 ${
                 active
                   ? "border border-[#d4a843]/28 bg-[#d4a843]/15 text-[#f5d78c] shadow-[0_10px_24px_rgba(212,168,67,0.10)]"
                   : "text-[#f5f0e4]/48"
               }`}
             >
               {active && (
-                <span className="absolute inset-x-5 top-1 h-[2px] rounded-full bg-[#d4a843] shadow-[0_0_8px_rgba(212,168,67,0.65)]" />
+                <span className="absolute inset-x-5 top-0.5 h-[2px] rounded-full bg-[#d4a843] shadow-[0_0_8px_rgba(212,168,67,0.65)]" />
               )}
               <span
                 className={`transition-transform duration-200 ${active ? "scale-110" : "scale-100"}`}
@@ -435,7 +435,7 @@ export default function ClientAreaShell({
     <div className="client-premium min-h-screen">
       <MobileHeader onMenu={() => setDrawerOpen(true)} backHref={backHref} />
       <SideDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      <main className="client-shell-content mx-auto w-full max-w-[760px] pb-[calc(142px+env(safe-area-inset-bottom))]">
+      <main className="client-shell-content mx-auto w-full max-w-[760px] pb-[calc(122px+env(safe-area-inset-bottom))]">
         {children}
       </main>
       <ClientBottomNav />

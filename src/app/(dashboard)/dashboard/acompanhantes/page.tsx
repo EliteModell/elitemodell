@@ -13,7 +13,6 @@ import {
   Search,
   ShieldCheck,
   SlidersHorizontal,
-  Sparkles,
   Star,
   X,
 } from "lucide-react";
@@ -174,22 +173,22 @@ function FilterDrawer({
   return (
     <>
       <div
-        className={`fixed inset-0 z-[65] bg-black/62 backdrop-blur-[3px] transition-opacity duration-300 ${
+        className={`fixed inset-0 z-[65] bg-black/64 backdrop-blur-[3px] transition-opacity duration-300 ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         onClick={onClose}
       />
       <div
-        className={`fixed inset-x-0 bottom-0 z-[70] max-h-[min(78dvh,620px)] overflow-y-auto rounded-t-[22px] border-t border-[#d4a843]/20 bg-[#0c0d0e] px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-3 shadow-[0_-28px_90px_rgba(0,0,0,0.62)] transition-transform duration-300 ${
+        className={`fixed inset-x-0 bottom-0 z-[70] max-h-[min(92dvh,720px)] overflow-y-auto rounded-t-[22px] border-t border-[#d4a843]/20 bg-[#0c0d0e] px-5 pb-[calc(env(safe-area-inset-bottom)+34px)] pt-3 shadow-[0_-28px_90px_rgba(0,0,0,0.62)] transition-transform duration-300 ${
           open ? "translate-y-0" : "pointer-events-none translate-y-full"
         }`}
         aria-hidden={!open}
       >
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-white/16" />
-        <div className="mb-5 flex items-start justify-between gap-4">
+        <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <p className="client-kicker">Ajuste sua busca</p>
-            <h2 className="mt-1 text-[22px] font-black leading-none text-[#f5f0e4]">Filtros</h2>
+            <p className="client-kicker">Organizar resultados</p>
+            <h2 className="mt-1 text-[24px] font-black leading-none text-[#f5f0e4]">Filtrar perfis</h2>
           </div>
           <button
             type="button"
@@ -210,7 +209,7 @@ function FilterDrawer({
                   key={c.value}
                   type="button"
                   onClick={() => onCategory(c.value)}
-                  className={`min-h-[44px] rounded-[10px] px-4 text-[14px] font-bold transition-colors ${
+                  className={`min-h-[48px] rounded-[12px] px-4 text-[15px] font-bold transition-colors ${
                     category === c.value ? "client-chip-active" : "client-chip"
                   }`}
                 >
@@ -233,7 +232,7 @@ function FilterDrawer({
                   key={s.value}
                   type="button"
                   onClick={() => onSortBy(s.value)}
-                  className={`min-h-[44px] rounded-[10px] px-3 text-[13px] font-bold transition-colors ${
+                  className={`min-h-[48px] rounded-[12px] px-3 text-[13px] font-bold transition-colors ${
                     sortBy === s.value ? "client-chip-active" : "client-chip"
                   }`}
                 >
@@ -274,22 +273,6 @@ function FilterDrawer({
   );
 }
 
-function EmptyProfileSlot() {
-  return (
-    <article className="client-card overflow-hidden">
-      <div className="grid aspect-[4/5] place-items-center bg-[#101214]/86">
-        <div className="grid h-14 w-14 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
-          <Camera className="h-7 w-7" />
-        </div>
-      </div>
-      <div className="space-y-2 p-3">
-        <div className="h-3.5 w-2/3 rounded-full bg-white/[0.08]" />
-        <div className="h-3 w-1/2 rounded-full bg-white/[0.06]" />
-      </div>
-    </article>
-  );
-}
-
 function EmptyState({
   hasFilters,
   onClear,
@@ -300,57 +283,41 @@ function EmptyState({
   onExploreCity: () => void;
 }) {
   return (
-    <div className="space-y-5">
-      <section className="client-empty relative overflow-hidden px-5 py-8 text-center">
-        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(245,215,140,0.55),transparent)]" />
-        <div className="mx-auto grid h-16 w-16 place-items-center rounded-[14px] border border-[#d4a843]/26 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.12)]">
-          {hasFilters ? <Search className="h-7 w-7" /> : <Sparkles className="h-7 w-7" />}
-        </div>
-        <p className="mt-5 text-[11px] font-black uppercase text-[#f5d78c]/82">
-          {hasFilters ? "Sem resultado nessa combinacao" : "Curadoria em andamento"}
-        </p>
-        <h2 className="mx-auto mt-2 max-w-[320px] text-[24px] font-black leading-tight text-[#f5f0e4]">
-          {hasFilters ? "Nenhum perfil encontrado" : "A vitrine da sua cidade vai aparecer aqui"}
-        </h2>
-        <p className="mx-auto mt-3 max-w-[330px] text-[14px] leading-6 text-[#f5f0e4]/58">
-          {hasFilters
-            ? "Tente uma categoria mais ampla, limpe os filtros ou busque por outra cidade."
-            : "Use a busca para escolher uma cidade. Quando houver perfis verificados, a grade fica pronta sem bagunca."}
-        </p>
-        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
-          <button
-            type="button"
-            onClick={hasFilters ? onClear : onExploreCity}
-            className="client-primary-button flex min-h-0 items-center justify-center gap-2 px-5 py-3 text-[14px]"
-          >
-            {hasFilters ? "Limpar filtros" : "Escolher cidade"}
-            <ChevronRight className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={onExploreCity}
-            className="client-secondary-button flex min-h-0 items-center justify-center gap-2 px-5 py-3 text-[14px]"
-          >
-            <MapPin className="h-4 w-4" />
-            Trocar cidade
-          </button>
-        </div>
-      </section>
-
-      <section>
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <p className="text-[12px] font-black uppercase text-[#f5f0e4]/46">Previa da vitrine</p>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#d4a843]/16 bg-[#d4a843]/8 px-2.5 py-1 text-[11px] font-bold text-[#f5d78c]/84">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            verificada
-          </span>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <EmptyProfileSlot />
-          <EmptyProfileSlot />
-        </div>
-      </section>
-    </div>
+    <section className="client-empty relative overflow-hidden px-5 py-9 text-center">
+      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(245,215,140,0.55),transparent)]" />
+      <div className="mx-auto grid h-16 w-16 place-items-center rounded-[14px] border border-[#d4a843]/26 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.12)]">
+        {hasFilters ? <Search className="h-7 w-7" /> : <ShieldCheck className="h-7 w-7" />}
+      </div>
+      <p className="mt-5 text-[11px] font-black uppercase text-[#f5d78c]/82">
+        {hasFilters ? "Sem resultado nessa busca" : "Perfis verificados"}
+      </p>
+      <h2 className="mx-auto mt-2 max-w-[330px] text-[25px] font-black leading-tight text-[#f5f0e4]">
+        {hasFilters ? "Nenhum perfil encontrado" : "Escolha uma cidade para ver os perfis"}
+      </h2>
+      <p className="mx-auto mt-3 max-w-[330px] text-[14px] leading-6 text-[#f5f0e4]/58">
+        {hasFilters
+          ? "Tente uma categoria mais ampla, limpe os filtros ou busque por outra cidade."
+          : "Quando houver perfis ativos e verificados, eles aparecem aqui com foto, cidade, avaliacoes e contato."}
+      </p>
+      <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+        <button
+          type="button"
+          onClick={hasFilters ? onClear : onExploreCity}
+          className="client-primary-button flex min-h-0 items-center justify-center gap-2 px-5 py-3 text-[14px]"
+        >
+          {hasFilters ? "Limpar filtros" : "Escolher cidade"}
+          <ChevronRight className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={onExploreCity}
+          className="client-secondary-button flex min-h-0 items-center justify-center gap-2 px-5 py-3 text-[14px]"
+        >
+          <MapPin className="h-4 w-4" />
+          Trocar cidade
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -424,7 +391,19 @@ export default function AcompanhantesPage() {
     return () => controller.abort();
   }, [search, activeCategory, city, sortBy, onlyVerified]);
 
-  const hasFilters = Boolean(search || activeCategory || city || onlyVerified);
+  useEffect(() => {
+    if (filterOpen) {
+      document.body.dataset.clientFiltersOpen = "true";
+    } else {
+      delete document.body.dataset.clientFiltersOpen;
+    }
+
+    return () => {
+      delete document.body.dataset.clientFiltersOpen;
+    };
+  }, [filterOpen]);
+
+  const hasFilters = Boolean(search || activeCategory || city || onlyVerified || sortBy !== "rating");
 
   function clearFilters() {
     setSearch("");
@@ -432,6 +411,7 @@ export default function AcompanhantesPage() {
     setCategory("");
     setCity("");
     setOnlyVerified(false);
+    setSortBy("rating");
   }
 
   function focusCity() {
@@ -440,120 +420,128 @@ export default function AcompanhantesPage() {
 
   return (
     <>
-      <section className="px-4 pb-4 pt-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="client-kicker">Descoberta Elite</p>
-            <h1 className="mt-1 text-[34px] font-black leading-none text-[#f5f0e4]">Explorar</h1>
-            <p className="mt-2 max-w-[340px] text-[14px] leading-5 text-[#f5f0e4]/60">
-              Encontre perfis por cidade, estilo e confianca em uma tela mais limpa.
+      <section className="px-4 pb-7 pt-5">
+        <div className="client-explore-hero">
+          <div className="relative z-10">
+            <p className="text-[12px] font-black uppercase text-[#f5d78c]/90">Explorar perfis</p>
+            <h1 className="mt-3 max-w-[360px] text-[42px] font-black leading-[0.98] text-[#f5f0e4]">
+              Perfis verificados perto de voce
+            </h1>
+            <p className="mt-4 max-w-[340px] text-[15px] leading-6 text-[#f5f0e4]/66">
+              Veja perfis com fotos, cidade e avaliacoes. Use a busca para encontrar opcoes com mais confianca.
             </p>
           </div>
-          <span className="mt-1 inline-flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[#d4a843]/22 bg-[#d4a843]/10 px-3 py-2 text-[11px] font-black uppercase text-[#f5d78c]">
-            <Sparkles className="h-3.5 w-3.5" />
-            Elite
-          </span>
-        </div>
-
-        <div className="mt-5 grid grid-cols-3 gap-2">
-          {[
-            { label: "Verificadas", icon: <ShieldCheck className="h-4 w-4" /> },
-            { label: "Por cidade", icon: <MapPin className="h-4 w-4" /> },
-            { label: "Avaliadas", icon: <Star className="h-4 w-4" /> },
-          ].map((item) => (
-            <div key={item.label} className="client-stat-pill flex min-h-[42px] items-center justify-center gap-1.5 px-2 text-[11px] font-bold text-[#f5f0e4]/70">
-              <span className="text-[#f5d78c]">{item.icon}</span>
-              <span className="truncate">{item.label}</span>
-            </div>
-          ))}
         </div>
       </section>
 
-      <div className="sticky top-[64px] z-20 border-y border-white/[0.07] bg-[#07090a]/96 py-3 backdrop-blur-2xl">
-        <div className="space-y-3 px-4">
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#d4a843]" />
-              <input
-                type="text"
-                placeholder="Buscar nome, cidade ou estilo"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="client-input client-search-input h-[52px] w-full pl-12 pr-11 text-[15px] font-semibold"
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-[#f5f0e4]/58"
-                  aria-label="Limpar busca"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
+      <section className="px-4 pb-6">
+        <div className="client-explore-search-panel">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="client-kicker">Busca</p>
+              <h2 className="mt-1 text-[24px] font-black leading-tight text-[#f5f0e4]">Escolha onde procurar</h2>
             </div>
             <button
               type="button"
               onClick={() => setFilterOpen(true)}
-              className={`relative flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[14px] border transition-colors ${
+              className={`grid h-12 w-12 shrink-0 place-items-center rounded-[12px] border transition-colors ${
                 onlyVerified || sortBy !== "rating"
-                  ? "border-[#d4a843]/40 bg-[#d4a843]/12 text-[#f5d78c]"
-                  : "border-white/[0.09] bg-white/[0.05] text-[#f5f0e4]/60"
+                  ? "border-[#d4a843]/40 bg-[#d4a843]/14 text-[#f5d78c]"
+                  : "border-white/[0.09] bg-white/[0.06] text-[#f5f0e4]/64"
               }`}
               aria-label="Filtros"
             >
               <SlidersHorizontal className="h-5 w-5" />
-              {(onlyVerified || sortBy !== "rating") && (
-                <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-[#f5d78c] shadow-[0_0_10px_rgba(245,215,140,0.75)]" />
-              )}
             </button>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c.value}
-                type="button"
-                onClick={() => {
-                  setActiveCategory(c.value);
-                  setCategory(c.value);
-                }}
-                className={`min-h-[38px] shrink-0 rounded-full px-4 text-[14px] font-bold transition-colors ${
-                  activeCategory === c.value ? "client-chip-active" : "client-chip"
-                }`}
-              >
-                {c.label}
-              </button>
-            ))}
-            <div className="relative shrink-0">
-              <MapPin className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#d4a843]" />
-              <input
+          <div className="mt-6 space-y-4">
+            <label className="block">
+              <span className="mb-2 block text-[12px] font-black uppercase text-[#f5f0e4]/46">Cidade</span>
+              <div className="client-explore-field">
+                <MapPin className="h-5 w-5 shrink-0 text-[#f5d78c]" />
+                <input
+                  type="text"
+                  placeholder="Digite a cidade"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="h-full min-w-0 flex-1 bg-transparent text-[17px] font-bold text-[#f5f0e4] outline-none placeholder:text-[#f5f0e4]/34"
+                  data-client-city-filter="true"
+                />
+              </div>
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-[12px] font-black uppercase text-[#f5f0e4]/46">Nome ou estilo</span>
+              <div className="client-explore-field">
+                <Search className="h-5 w-5 shrink-0 text-[#f5d78c]" />
+                <input
                 type="text"
-                placeholder="Cidade"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="client-input client-pill-input h-[38px] w-[136px] pl-8 pr-3 text-[13px] font-semibold"
-                data-client-city-filter="true"
-              />
+                  placeholder="nome, bairro ou estilo"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="h-full min-w-0 flex-1 bg-transparent text-[17px] font-bold text-[#f5f0e4] outline-none placeholder:text-[#f5f0e4]/34"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-[#f5f0e4]/58"
+                    aria-label="Limpar busca"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </label>
+          </div>
+
+          <div className="mt-6">
+            <p className="mb-3 text-[12px] font-black uppercase text-[#f5f0e4]/46">Categoria</p>
+            <div className="grid grid-cols-2 gap-2">
+              {CATEGORIES.map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory(c.value);
+                    setCategory(c.value);
+                  }}
+                  className={`min-h-[48px] rounded-[12px] px-4 text-[15px] font-black transition-colors ${
+                    activeCategory === c.value ? "client-chip-active" : "client-chip"
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
             </div>
           </div>
 
+          <button
+            type="button"
+            onClick={() => setFilterOpen(true)}
+            className="client-secondary-button mt-5 flex w-full min-h-0 items-center justify-center gap-2 py-3 text-[15px]"
+          >
+            <SlidersHorizontal className="h-4.5 w-4.5" />
+            Filtros avancados
+          </button>
+
           {hasFilters && (
-            <div className="flex items-center justify-between gap-3 rounded-[10px] border border-[#d4a843]/14 bg-[#d4a843]/8 px-3 py-2">
-              <span className="min-w-0 truncate text-[12px] font-semibold text-[#f5f0e4]/58">
-                Filtros ativos na busca
+            <div className="mt-4 flex items-center justify-between gap-3 rounded-[12px] border border-[#d4a843]/16 bg-[#d4a843]/8 px-3 py-3">
+              <span className="min-w-0 truncate text-[13px] font-semibold text-[#f5f0e4]/62">
+                Busca personalizada ativa
               </span>
-              <button type="button" onClick={clearFilters} className="shrink-0 text-[12px] font-black text-[#f5d78c]">
+              <button type="button" onClick={clearFilters} className="shrink-0 text-[13px] font-black text-[#f5d78c]">
                 Limpar
               </button>
             </div>
           )}
         </div>
-      </div>
+      </section>
 
       {!loading && professionals.length > 0 && (
-        <div className="flex items-center justify-between px-4 pb-2 pt-4">
-          <p className="text-[13px] text-[#f5f0e4]/40">{total} perfis</p>
+        <div className="flex items-center justify-between px-4 pb-2">
+          <p className="text-[13px] text-[#f5f0e4]/48">{total} perfis encontrados</p>
           {hasFilters && (
             <button type="button" onClick={clearFilters} className="text-[12px] font-semibold text-[#f5d78c]">
               Limpar filtros
@@ -562,7 +550,7 @@ export default function AcompanhantesPage() {
         </div>
       )}
 
-      <div className="space-y-4 px-4 pb-[calc(190px+env(safe-area-inset-bottom))] pt-3">
+      <div className="space-y-4 px-4 pb-[calc(170px+env(safe-area-inset-bottom))]">
         {loading && professionals.length === 0 ? (
           Array.from({ length: 3 }).map((_, i) => <ProfileCardSkeleton key={i} />)
         ) : professionals.length === 0 ? (
