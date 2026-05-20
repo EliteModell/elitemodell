@@ -20,14 +20,14 @@ function ContactCard({
       href={href}
       target={external ? "_blank" : undefined}
       rel={external ? "noopener noreferrer" : undefined}
-      className="client-card flex min-h-[72px] items-center gap-4 p-4 no-underline transition-colors active:bg-white/10"
+      className="flex min-h-[92px] items-center gap-4 border-y border-[#d4a843]/12 bg-white/[0.025] p-5 text-[#f5f0e4] no-underline transition-colors active:bg-white/10"
     >
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/12 text-[#f5d78c]">
+      <span className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/12 text-[#f5d78c]">
         {icon}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[15px] font-semibold text-[#f5f0e4]">{title}</p>
-        <p className="mt-0.5 text-[12px] text-[#f5f0e4]/50">{subtitle}</p>
+        <p className="text-[17px] font-bold text-[#f5f0e4]">{title}</p>
+        <p className="mt-1 text-[13px] text-[#f5f0e4]/54">{subtitle}</p>
       </div>
       <ChevronRight className="h-4 w-4 shrink-0 text-[#f5d78c]" />
     </a>
@@ -36,7 +36,7 @@ function ContactCard({
 
 export default function AtendimentoPage() {
   return (
-    <div className="client-page space-y-5">
+    <div className="client-page space-y-7">
       <div>
         <p className="client-kicker">Suporte seguro</p>
         <h1 className="client-title mt-1">Central de Atendimento</h1>
@@ -46,9 +46,9 @@ export default function AtendimentoPage() {
       </div>
 
       {/* Notice */}
-      <div className="client-panel p-4">
-        <p className="text-[13px] font-semibold text-[#f5d78c]">Atenção</p>
-        <p className="mt-1 text-[13px] leading-5 text-[#f5f0e4]/60">
+      <div className="client-panel p-6">
+        <p className="text-[14px] font-bold text-[#f5d78c]">Atenção</p>
+        <p className="mt-2 text-[14px] leading-6 text-[#f5f0e4]/62">
           Nunca peça ou forneça dados pessoais fora dos canais oficiais abaixo. A Elite Modell nunca solicita senhas.
         </p>
       </div>
@@ -79,15 +79,15 @@ export default function AtendimentoPage() {
 
       {/* FAQ */}
       <div className="client-card p-5">
-        <h2 className="text-[18px] font-bold text-[#f5f0e4]">Dúvidas frequentes</h2>
+        <h2 className="text-[21px] font-black text-[#f5f0e4]">Dúvidas frequentes</h2>
         {[
           "Como funciona a verificação de conta?",
           "Como cancelar meu plano?",
           "Meus dados são seguros?",
           "Como solicitar reembolso?",
         ].map((faq, index) => (
-          <details key={faq} className="group mt-3 border-t border-white/10 pt-3">
-            <summary className="flex min-h-[44px] cursor-pointer list-none items-center gap-3 text-[14px] font-semibold text-[#f5f0e4]">
+          <details key={faq} className="group mt-4 border-t border-white/10 pt-4">
+            <summary className="flex min-h-[54px] cursor-pointer list-none items-center gap-3 text-[15px] font-bold text-[#f5f0e4]">
               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[8px] bg-white/[0.045] text-[12px] text-[#f5d78c]">
                 {index + 1}
               </span>

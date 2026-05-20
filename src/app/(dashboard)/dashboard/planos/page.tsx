@@ -30,8 +30,8 @@ const plans = [
 
 export default function PlanosPage() {
   return (
-    <div className="client-page space-y-4">
-      <div className="mb-2">
+    <div className="client-page space-y-6">
+      <div className="mb-1">
         <p className="client-kicker">Elite Premium</p>
         <h1 className="client-title mt-1">Planos</h1>
         <p className="client-subtitle mt-2">Escolha o plano ideal para sua experiência.</p>
@@ -40,35 +40,35 @@ export default function PlanosPage() {
       {plans.map((plan) => (
         <div
           key={plan.name}
-          className={`p-5 ${
+          className={`p-6 ${
             plan.gold ? "client-panel relative overflow-hidden text-white" : "client-card text-[#f5f0e4]"
           }`}
         >
           {plan.gold ? <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-[#d4a843]/16 blur-3xl" /> : null}
           {plan.gold && (
-            <div className="relative mb-3 inline-flex items-center gap-1.5 rounded-full border border-[#d4a843]/24 bg-[#d4a843]/14 px-3 py-1 text-[12px] font-semibold text-[#f5d78c]">
+            <div className="relative mb-4 inline-flex items-center gap-1.5 rounded-full border border-[#d4a843]/24 bg-[#d4a843]/14 px-3 py-1.5 text-[12px] font-bold text-[#f5d78c]">
               <Star className="h-3.5 w-3.5 fill-current" />
               Recomendado
             </div>
           )}
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className={`text-[19px] font-bold ${plan.gold ? "text-white" : "text-[#f5f0e4]"}`}>
+              <h2 className={`text-[22px] font-black ${plan.gold ? "text-white" : "text-[#f5f0e4]"}`}>
                 {plan.name}
               </h2>
-              <p className={`mt-0.5 text-[13px] ${plan.gold ? "text-white/60" : "text-[#f5f0e4]/58"}`}>
+              <p className={`mt-1 text-[14px] leading-5 ${plan.gold ? "text-white/60" : "text-[#f5f0e4]/58"}`}>
                 {plan.description}
               </p>
             </div>
             <div className="text-right">
-              <p className={`text-[22px] font-bold ${plan.gold ? "text-[#f5d78c]" : "text-[#f5f0e4]"}`}>
+              <p className={`text-[25px] font-black ${plan.gold ? "text-[#f5d78c]" : "text-[#f5f0e4]"}`}>
                 {plan.price}
               </p>
               <p className={`text-[12px] ${plan.gold ? "text-white/50" : "text-[#f5f0e4]/46"}`}>{plan.period}</p>
             </div>
           </div>
 
-          <ul className="mt-5 space-y-2.5">
+          <ul className="mt-6 space-y-3.5">
             {plan.features.map((f) => (
               <li key={f} className="flex items-center gap-2.5">
                 <span
@@ -78,14 +78,14 @@ export default function PlanosPage() {
                 >
                   <Check className="h-3 w-3" />
                 </span>
-                <span className={`text-[13px] ${plan.gold ? "text-white/75" : "text-[#f5f0e4]/60"}`}>{f}</span>
+                <span className={`text-[14px] leading-5 ${plan.gold ? "text-white/75" : "text-[#f5f0e4]/60"}`}>{f}</span>
               </li>
             ))}
           </ul>
 
           <button
             type="button"
-            className={`mt-6 h-[48px] w-full rounded-[8px] text-[15px] font-semibold transition-opacity active:opacity-80 ${
+            className={`mt-7 h-[56px] w-full rounded-[8px] text-[16px] font-black transition-opacity active:opacity-80 ${
               plan.current
                 ? "border border-white/10 bg-white/[0.045] text-[#f5f0e4]/46 cursor-default"
                 : plan.gold

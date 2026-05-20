@@ -175,6 +175,8 @@ function FilterDrawer({
       {open && (
         <style>{`
           .client-bottom-nav {
+            display: none !important;
+            visibility: hidden !important;
             opacity: 0 !important;
             pointer-events: none !important;
             transform: translateY(120%) !important;
@@ -188,7 +190,7 @@ function FilterDrawer({
         onClick={onClose}
       />
       <div
-        className={`fixed inset-x-0 bottom-0 z-[70] max-h-[min(92dvh,720px)] overflow-y-auto rounded-t-[22px] border-t border-[#d4a843]/20 bg-[#0c0d0e] px-5 pb-[calc(env(safe-area-inset-bottom)+64px)] pt-3 shadow-[0_-28px_90px_rgba(0,0,0,0.62)] transition-transform duration-300 ${
+        className={`fixed inset-x-0 bottom-0 z-[120] max-h-[min(92dvh,720px)] overflow-y-auto rounded-t-[22px] border-t border-[#d4a843]/20 bg-[#0c0d0e] px-5 pb-[calc(env(safe-area-inset-bottom)+150px)] pt-3 shadow-[0_-28px_90px_rgba(0,0,0,0.62)] transition-transform duration-300 ${
           open ? "translate-y-0" : "pointer-events-none translate-y-full"
         }`}
         aria-hidden={!open}
@@ -292,7 +294,7 @@ function EmptyState({
   onExploreCity: () => void;
 }) {
   return (
-    <section className="client-empty relative overflow-hidden px-5 py-9 text-center">
+    <section className="relative mb-[calc(112px+env(safe-area-inset-bottom))] overflow-hidden border-y border-[#d4a843]/12 bg-white/[0.025] px-5 pb-12 pt-10 text-center">
       <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(245,215,140,0.55),transparent)]" />
       <div className="mx-auto grid h-16 w-16 place-items-center rounded-[14px] border border-[#d4a843]/26 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.12)]">
         {hasFilters ? <Search className="h-7 w-7" /> : <ShieldCheck className="h-7 w-7" />}
@@ -429,7 +431,7 @@ export default function AcompanhantesPage() {
 
   return (
     <>
-      <section className="px-4 pb-7 pt-5">
+      <section className="px-0 pb-7 pt-5">
         <div className="client-explore-hero">
           <div className="relative z-10">
             <p className="text-[12px] font-black uppercase text-[#f5d78c]/90">Explorar perfis</p>
@@ -440,7 +442,7 @@ export default function AcompanhantesPage() {
         </div>
       </section>
 
-      <section className="px-4 pb-6">
+      <section className="px-0 pb-7">
         <div className="client-explore-search-panel">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -523,15 +525,6 @@ export default function AcompanhantesPage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setFilterOpen(true)}
-            className="client-secondary-button mt-7 flex min-h-[62px] w-full items-center justify-center gap-3 rounded-[14px] px-4 text-[16px]"
-          >
-            <SlidersHorizontal className="h-5 w-5" />
-            Filtros avancados
-          </button>
-
           {hasFilters && (
             <div className="mt-4 flex items-center justify-between gap-3 rounded-[12px] border border-[#d4a843]/16 bg-[#d4a843]/8 px-3 py-3">
               <span className="min-w-0 truncate text-[13px] font-semibold text-[#f5f0e4]/62">
@@ -556,7 +549,7 @@ export default function AcompanhantesPage() {
         </div>
       )}
 
-      <div className="space-y-4 px-4 pb-[calc(170px+env(safe-area-inset-bottom))]">
+      <div className="space-y-5 px-4 pb-[calc(250px+env(safe-area-inset-bottom))]">
         {loading && professionals.length === 0 ? (
           Array.from({ length: 3 }).map((_, i) => <ProfileCardSkeleton key={i} />)
         ) : professionals.length === 0 ? (

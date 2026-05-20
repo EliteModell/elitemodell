@@ -109,13 +109,15 @@ export function LocationSearchBar() {
   return (
     <Link
       href={ACCOUNT_ROUTES.mainClientFeed}
-      className="client-input group flex h-[40px] items-center gap-2.5 px-3.5 text-[13px] no-underline transition-all duration-200 active:scale-[0.99]"
+      className="client-input client-search-input group flex min-h-[52px] items-center gap-3 px-4 text-[14px] no-underline transition-all duration-200 active:scale-[0.99]"
     >
-      <Search className="h-4 w-4 shrink-0 text-[#d4a843] transition-transform duration-200 group-active:scale-110" />
-      <span className="min-w-0 flex-1 truncate text-[#f5f0e4]/50">
-        Explorar por cidade, nome ou estilo
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c] transition-transform duration-200 group-active:scale-105">
+        <Search className="h-[18px] w-[18px]" />
       </span>
-      <span className="shrink-0 rounded-full border border-[#d4a843]/20 bg-[#d4a843]/8 px-2 py-0.5 text-[10px] font-bold uppercase text-[#f5d78c]">
+      <span className="min-w-0 flex-1 truncate font-semibold text-[#f5f0e4]/62">
+        Cidade, nome ou estilo
+      </span>
+      <span className="shrink-0 rounded-[8px] border border-[#d4a843]/24 bg-[#d4a843]/14 px-3 py-1.5 text-[11px] font-black uppercase text-[#f5d78c]">
         Buscar
       </span>
     </Link>
@@ -134,8 +136,8 @@ export function MobileHeader({
   const isExplore = pathname === ACCOUNT_ROUTES.mainClientFeed;
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[#d4a843]/14 bg-[#08090a]/90 shadow-[0_12px_38px_rgba(0,0,0,0.26)] backdrop-blur-2xl">
-      <div className={`mx-auto max-w-[760px] px-4 pt-3 ${isExplore ? "pb-2" : "pb-3"}`}>
+    <header className="sticky top-0 z-30 border-b border-[#d4a843]/14 bg-[#08090a]/92 shadow-[0_16px_46px_rgba(0,0,0,0.30)] backdrop-blur-2xl">
+      <div className={`mx-auto max-w-[760px] px-4 pt-4 ${isExplore ? "pb-3" : "pb-4"}`}>
         <div className="grid h-11 grid-cols-[44px_1fr_44px] items-center">
           {backHref ? (
             <Link
@@ -167,7 +169,7 @@ export function MobileHeader({
           </Link>
         </div>
         {!isExplore && (
-          <div className="mt-3">
+          <div className="mt-4">
             <LocationSearchBar />
           </div>
         )}

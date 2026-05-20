@@ -202,8 +202,8 @@ export default function AvaliacoesPage() {
       </section>
 
       {/* Sticky search */}
-      <div className="sticky top-[116px] z-20 border-y border-[#d4a843]/10 bg-[#090a0b]/86 pb-3 pt-4 backdrop-blur-2xl">
-        <div className="px-4">
+      <div className="px-4 pb-5 pt-2">
+        <div className="client-panel p-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#d4a843]" />
             <input
@@ -211,13 +211,13 @@ export default function AvaliacoesPage() {
               placeholder="Buscar por cidade..."
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="client-input h-[44px] w-full pl-9 pr-4 text-[14px]"
+              className="client-input h-[54px] w-full pl-10 pr-4 text-[15px] font-semibold"
             />
           </div>
         </div>
       </div>
 
-      <div className="px-4 py-5 space-y-5">
+      <div className="space-y-7 px-4 pb-[calc(150px+env(safe-area-inset-bottom))] pt-2">
         {/* Stats */}
         {!loading && stats.total > 0 && (
           <div className="grid grid-cols-2 gap-3">
@@ -266,12 +266,12 @@ export default function AvaliacoesPage() {
               ))}
             </div>
           ) : reviews.length === 0 ? (
-            <div className="client-empty flex flex-col items-center gap-3 px-5 py-10 text-center">
-              <div className="grid h-14 w-14 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045]">
-                <ThumbsUp className="h-7 w-7 text-[#f5d78c]" />
+            <div className="flex min-h-[220px] flex-col items-center justify-center gap-4 border-y border-[#d4a843]/12 bg-white/[0.025] px-5 py-12 text-center">
+              <div className="grid h-16 w-16 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045]">
+                <ThumbsUp className="h-8 w-8 text-[#f5d78c]" />
               </div>
-              <p className="text-[14px] font-semibold text-[#f5f0e4]">Nenhuma avaliação encontrada</p>
-              <p className="text-[13px] text-[#f5f0e4]/54">
+              <p className="text-[16px] font-black text-[#f5f0e4]">Nenhuma avaliação encontrada</p>
+              <p className="text-[14px] leading-6 text-[#f5f0e4]/56">
                 {city ? `Não há avaliações em "${city}" ainda.` : "Seja o primeiro a avaliar!"}
               </p>
               <Link

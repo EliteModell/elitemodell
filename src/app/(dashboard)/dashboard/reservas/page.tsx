@@ -56,17 +56,17 @@ export default function ReservasPage() {
         Histórico, agendamentos e avaliações ficam organizados em um só lugar.
       </p>
 
-      <section className="client-card mt-6 p-5">
-        <h2 className="flex items-center gap-3 text-[22px] font-black text-[#f5f0e4]">
+      <section className="client-card mt-8 p-6">
+        <h2 className="flex items-center gap-3 text-[25px] font-black text-[#f5f0e4]">
           <CalendarCheck className="h-7 w-7 text-[#f5d78c]" />
           Agendamentos
         </h2>
 
         {loading ? (
-          <div className="premium-skeleton mt-6 h-24 rounded-[8px]" />
+          <div className="premium-skeleton mt-7 h-36 rounded-[8px]" />
         ) : appointments.length === 0 ? (
-          <div className="py-12 text-center">
-            <Compass className="mx-auto h-14 w-14 text-[#f5d78c]" />
+          <div className="py-14 text-center">
+            <Compass className="mx-auto h-16 w-16 text-[#f5d78c]" />
             <p className="mt-6 text-[21px] font-black text-[#f5f0e4]">Nenhum agendamento ainda</p>
             <p className="mt-3 text-[15px] leading-6 text-[#f5f0e4]/58">Explore perfis e inicie contato quando encontrar alguém alinhado ao seu momento.</p>
             <Link href="/dashboard/acompanhantes" className="client-primary-button mt-7 flex items-center justify-center text-[16px] no-underline">
@@ -93,14 +93,14 @@ export default function ReservasPage() {
         )}
       </section>
 
-      <section className="client-panel mt-5 p-5">
-        <h2 className="flex items-center gap-3 text-[22px] font-black text-[#f5f0e4]">
+      <section className="client-panel mt-7 p-6">
+        <h2 className="flex items-center gap-3 text-[25px] font-black text-[#f5f0e4]">
           <Star className="h-7 w-7 text-[#f5d78c]" />
           Avaliações
         </h2>
-        <p className="mt-4 text-[15px] leading-6 text-[#f5f0e4]/58">Você ainda não fez nenhuma avaliação.</p>
-        <p className="mt-2 text-[15px] leading-6 text-[#f5f0e4]">Quando contratar um atendimento, compartilhe sua experiência pelo perfil da acompanhante.</p>
-        <Link href="/dashboard/acompanhantes" className="client-secondary-button mt-6 flex items-center justify-center gap-2 text-[16px] no-underline">
+        <p className="mt-5 text-[16px] leading-7 text-[#f5f0e4]/58">Você ainda não fez nenhuma avaliação.</p>
+        <p className="mt-3 text-[16px] leading-7 text-[#f5f0e4]">Quando contratar um atendimento, compartilhe sua experiência pelo perfil da acompanhante.</p>
+        <Link href="/dashboard/acompanhantes" className="client-secondary-button mt-7 flex min-h-[54px] items-center justify-center gap-2 text-[16px] no-underline">
           <MessageCircle className="h-5 w-5" />
           Avaliar agora
         </Link>

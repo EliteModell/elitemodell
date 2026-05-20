@@ -35,8 +35,8 @@ const sections = [
 
 export default function InformacoesPage() {
   return (
-    <div className="client-page space-y-3">
-      <div className="mb-4">
+    <div className="client-page space-y-5">
+      <div className="mb-2">
         <p className="client-kicker">Transparência</p>
         <h1 className="client-title mt-1">Informações importantes</h1>
         <p className="client-subtitle mt-2">Documentos e políticas da plataforma Elite Modell.</p>
@@ -45,16 +45,16 @@ export default function InformacoesPage() {
       {sections.map((section) => (
         <details
           key={section.title}
-          className="client-card group p-5"
+          className="client-card group p-6"
         >
           <summary className="flex cursor-pointer list-none items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <h2 className="text-[16px] font-bold text-[#f5f0e4]">{section.title}</h2>
-              <p className="mt-1.5 text-[13px] leading-5 text-[#f5f0e4]/58">{section.summary}</p>
+              <h2 className="text-[18px] font-black text-[#f5f0e4]">{section.title}</h2>
+              <p className="mt-2 text-[14px] leading-6 text-[#f5f0e4]/60">{section.summary}</p>
             </div>
             <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-[#f5d78c] transition-transform group-open:rotate-180" />
           </summary>
-          <p className="mt-4 border-t border-white/10 pt-4 text-[13px] leading-6 text-[#f5f0e4]/54">
+          <p className="mt-5 border-t border-white/10 pt-5 text-[14px] leading-7 text-[#f5f0e4]/56">
             Consulte esta orientação sempre que precisar. As políticas completas ficam disponíveis para leitura nos links oficiais.
           </p>
           {section.href && (
