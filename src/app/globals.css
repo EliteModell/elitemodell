@@ -220,33 +220,16 @@ body {
   --client-bg: #070809;
   --client-surface: #101214;
   --client-surface-2: #17191b;
-  --client-line: rgba(230, 198, 112, 0.14);
-  --client-line-soft: rgba(255, 255, 255, 0.08);
+  --client-line: rgba(230, 198, 112, 0.13);
+  --client-line-soft: rgba(255, 255, 255, 0.07);
   --client-gold: #d4a843;
   --client-gold-soft: #f5d78c;
   --client-text: #f5f0e4;
   --client-muted: rgba(245, 240, 228, 0.62);
   --client-faint: rgba(245, 240, 228, 0.42);
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 12% -12%, rgba(212, 168, 67, 0.18), transparent 34%),
-    radial-gradient(circle at 92% 4%, rgba(150, 22, 31, 0.14), transparent 30%),
-    linear-gradient(180deg, #0b0b0c 0%, #070809 42%, #0e0f10 100%);
+  background: #070809;
   color: var(--client-text);
-}
-
-.client-premium::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.16;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
-  background-size: 42px 42px;
-  mask-image: linear-gradient(to bottom, black, transparent 68%);
 }
 
 .client-shell-content {
