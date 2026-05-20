@@ -13,19 +13,17 @@ function CollectionCard({
   icon: React.ReactNode;
 }) {
   return (
-    <article className="border-y border-[#d4a843]/12 bg-white/[0.025] py-5">
-      <div className="flex items-start gap-4">
-        <span className="grid h-[54px] w-[54px] shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
-          {icon}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h2 className="min-w-0 flex-1 text-[18px] font-black text-[#f5f0e4]">{title}</h2>
-            <ChevronRight className="h-4 w-4 shrink-0 text-[#f5d78c]/70" />
-          </div>
-          <p className="mt-2 text-[14px] leading-6 text-[#f5f0e4]/56">{description}</p>
-          <p className="mt-4 text-[12px] font-bold uppercase text-[#f5f0e4]/38">0 perfil salvo</p>
+    <article className="client-card flex items-start gap-4 p-4">
+      <span className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[10px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <h2 className="min-w-0 flex-1 text-[17px] font-black text-[#f5f0e4]">{title}</h2>
+          <ChevronRight className="h-4 w-4 shrink-0 text-[#f5d78c]/60" />
         </div>
+        <p className="mt-1.5 text-[13px] leading-5 text-[#f5f0e4]/56">{description}</p>
+        <p className="mt-3 text-[11px] font-bold uppercase text-[#f5f0e4]/36">0 perfil salvo</p>
       </div>
     </article>
   );

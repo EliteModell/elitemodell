@@ -151,33 +151,42 @@ function QuickStatsSection({
   vip: DashboardHomeData["vip"];
 }) {
   return (
-    <section className="px-4 py-3">
-      <div className="client-panel p-4">
-        <div className="grid grid-cols-3 gap-2">
-          <div className="client-stat-pill px-3 py-3">
-            <p className="text-[19px] font-black leading-none text-[#f5f0e4]">{stats.completedAppointments}</p>
-            <p className="mt-1 text-[11px] text-[#f5f0e4]/46">Concluidos</p>
+    <section className="px-4 pb-5 pt-2">
+      <div className="client-panel overflow-hidden p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-black uppercase tracking-wide text-[#f5d78c]/70">Nivel atual</p>
+            <p className="mt-0.5 text-[20px] font-black leading-tight text-[#f5d78c]">{vip.label}</p>
           </div>
-          <div className="client-stat-pill px-3 py-3">
-            <p className="text-[19px] font-black leading-none text-[#f5f0e4]">{stats.favoriteProfiles}</p>
-            <p className="mt-1 text-[11px] text-[#f5f0e4]/46">Salvos</p>
-          </div>
-          <div className="client-stat-pill px-3 py-3">
-            <p className="truncate text-[14px] font-black leading-none text-[#f5d78c]">{vip.label}</p>
-            <p className="mt-1 text-[11px] text-[#f5f0e4]/46">Nivel</p>
-          </div>
+          <span className="shrink-0 rounded-full border border-[#d4a843]/24 bg-[#d4a843]/10 px-2.5 py-1 text-[13px] font-black text-[#f5d78c]">
+            {vip.progress}%
+          </span>
+        </div>
+        <p className="mt-1.5 text-[12px] leading-[1.5] text-[#f5f0e4]/46">{vip.description}</p>
+
+        <div className="mt-3 h-[4px] overflow-hidden rounded-full bg-[rgba(30,24,14,0.06)]">
+          <div
+            className="h-full rounded-full bg-[#d4a843] transition-all duration-700"
+            style={{ width: `${Math.max(3, vip.progress)}%` }}
+          />
         </div>
 
-        <div className="mt-4">
-          <div className="flex items-start justify-between gap-3">
-            <p className="min-w-0 text-[12px] leading-5 text-[#f5f0e4]/50">{vip.description}</p>
-            <p className="shrink-0 text-[12px] font-bold text-[#f5d78c]">{vip.progress}%</p>
+        <div className="my-4 h-px bg-[rgba(30,24,14,0.07)]" />
+
+        <div className="flex items-center gap-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-[26px] font-black leading-none text-[#f5f0e4]">{stats.completedAppointments}</p>
+            <p className="mt-1 text-[11px] text-[#f5f0e4]/44">Concluidos</p>
           </div>
-          <div className="mt-2 h-[4px] overflow-hidden rounded-full bg-white/[0.08]">
-            <div
-              className="h-full rounded-full bg-[#d4a843] transition-all duration-700"
-              style={{ width: `${Math.max(3, vip.progress)}%` }}
-            />
+          <div className="h-8 w-px bg-[rgba(30,24,14,0.07)]" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[26px] font-black leading-none text-[#f5f0e4]">{stats.favoriteProfiles}</p>
+            <p className="mt-1 text-[11px] text-[#f5f0e4]/44">Salvos</p>
+          </div>
+          <div className="h-8 w-px bg-[rgba(30,24,14,0.07)]" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[26px] font-black leading-none text-[#f5f0e4]">{stats.totalAppointments}</p>
+            <p className="mt-1 text-[11px] text-[#f5f0e4]/44">Total</p>
           </div>
         </div>
       </div>

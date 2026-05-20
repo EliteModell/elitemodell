@@ -234,9 +234,10 @@ export default function ShotsPage() {
 
   return (
     <div className="px-4 pb-[calc(190px+env(safe-area-inset-bottom))] pt-6">
-      <section className="pb-5">
-        <p className="client-kicker">Feed visual</p>
-        <h1 className="client-title mt-1">Shots</h1>
+      <section className="pb-6">
+        <p className="text-[12px] font-black uppercase tracking-widest text-[#f5d78c]/80">Feed visual</p>
+        <div className="mt-2.5 h-px w-9 bg-[#d4a843]/50" />
+        <h1 className="client-title mt-3">Shots</h1>
         <p className="client-subtitle mt-2 max-w-[420px]">
           Fotos de perfis verificados por cidade, com filtros separados para facilitar no celular.
         </p>
@@ -284,7 +285,7 @@ export default function ShotsPage() {
           </div>
         </label>
 
-        <div className="mt-5">
+        <div className="mt-5 pb-2">
           <p className="mb-3 text-[12px] font-black uppercase text-[#f5f0e4]/48">Categoria</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {FILTERS.map((f) => (
@@ -304,7 +305,7 @@ export default function ShotsPage() {
         </div>
       </section>
 
-      <section className="pt-5">
+      <section className="pt-7">
         {!loading && items.length > 0 && (
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="text-[13px] font-semibold text-[#f5f0e4]/56">

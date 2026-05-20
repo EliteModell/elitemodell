@@ -294,7 +294,7 @@ function EmptyState({
   onExploreCity: () => void;
 }) {
   return (
-    <section className="relative mb-[calc(112px+env(safe-area-inset-bottom))] overflow-hidden border-y border-[#d4a843]/12 bg-white/[0.025] px-5 pb-12 pt-10 text-center">
+    <section className="relative mb-[calc(180px+env(safe-area-inset-bottom))] overflow-hidden border-y border-[#d4a843]/12 bg-white/[0.025] px-5 pb-16 pt-14 text-center">
       <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(245,215,140,0.55),transparent)]" />
       <div className="mx-auto grid h-16 w-16 place-items-center rounded-[14px] border border-[#d4a843]/26 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.12)]">
         {hasFilters ? <Search className="h-7 w-7" /> : <ShieldCheck className="h-7 w-7" />}
@@ -431,18 +431,22 @@ export default function AcompanhantesPage() {
 
   return (
     <>
-      <section className="px-0 pb-7 pt-5">
+      <section className="px-0 pb-5">
         <div className="client-explore-hero">
           <div className="relative z-10">
-            <p className="text-[12px] font-black uppercase text-[#f5d78c]/90">Explorar perfis</p>
-            <h1 className="mt-3 max-w-[360px] bg-[linear-gradient(135deg,#fff8e8_0%,#f5f0e4_28%,#f5d78c_58%,#d4a843_100%)] bg-clip-text text-[42px] font-black leading-[0.98] text-transparent">
+            <p className="text-[12px] font-black uppercase tracking-widest text-[#f5d78c]/80">Explorar perfis</p>
+            <div className="mt-2.5 h-px w-9 bg-[#d4a843]/50" />
+            <h1 className="mt-3 max-w-[340px] bg-[linear-gradient(135deg,#fff8e8_0%,#f5f0e4_28%,#f5d78c_58%,#d4a843_100%)] bg-clip-text text-[38px] font-black leading-[1.05] text-transparent">
               Perfis verificados perto de voce
             </h1>
+            <p className="mt-3 max-w-[270px] text-[13px] leading-[1.6] text-[#f5f0e4]/52">
+              Escolha a cidade e encontre perfis verificados.
+            </p>
           </div>
         </div>
       </section>
 
-      <section className="px-0 pb-7">
+      <section className="px-0 pb-10">
         <div className="client-explore-search-panel">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -504,7 +508,7 @@ export default function AcompanhantesPage() {
             </label>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 pb-3">
             <p className="mb-3 text-[12px] font-black uppercase text-[#f5f0e4]/46">Categoria</p>
             <div className="grid grid-cols-2 gap-2">
               {CATEGORIES.map((c) => (

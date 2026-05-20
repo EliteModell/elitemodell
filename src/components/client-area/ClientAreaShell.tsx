@@ -109,15 +109,15 @@ export function LocationSearchBar() {
   return (
     <Link
       href={ACCOUNT_ROUTES.mainClientFeed}
-      className="client-input client-search-input group flex min-h-[52px] items-center gap-3 px-4 text-[14px] no-underline transition-all duration-200 active:scale-[0.99]"
+      className="group flex min-h-[50px] items-center gap-3 rounded-[10px] border border-white/[0.10] bg-white/[0.07] px-4 text-[14px] no-underline backdrop-blur-sm transition-all duration-200 active:scale-[0.985] active:bg-white/[0.10]"
     >
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c] transition-transform duration-200 group-active:scale-105">
-        <Search className="h-[18px] w-[18px]" />
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[7px] border border-[#d4a843]/22 bg-[#d4a843]/14 text-[#f5d78c] transition-transform duration-200 group-active:scale-105">
+        <Search className="h-4 w-4" />
       </span>
-      <span className="min-w-0 flex-1 truncate font-semibold text-[#f5f0e4]/62">
+      <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-[#f5f0e4]/55">
         Cidade, nome ou estilo
       </span>
-      <span className="shrink-0 rounded-[8px] border border-[#d4a843]/24 bg-[#d4a843]/14 px-3 py-1.5 text-[11px] font-black uppercase text-[#f5d78c]">
+      <span className="shrink-0 rounded-[7px] border border-[#d4a843]/28 bg-[#d4a843]/16 px-3 py-1.5 text-[11px] font-black uppercase text-[#f5d78c]">
         Buscar
       </span>
     </Link>
