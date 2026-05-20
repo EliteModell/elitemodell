@@ -443,7 +443,7 @@ export default function ClientAreaShell({
         {children}
       </main>
       <ClientBottomNav />
-      <style>{`body { background: #f2f2f3; }`}</style>
+      <style>{`body { background: #f3dfaa; }`}</style>
     </div>
   );
 }
