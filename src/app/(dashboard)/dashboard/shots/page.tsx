@@ -233,79 +233,90 @@ export default function ShotsPage() {
   }
 
   return (
-    <div className="px-4 pb-[calc(190px+env(safe-area-inset-bottom))] pt-6">
-      <section className="pb-6">
-        <p className="text-[12px] font-black uppercase tracking-widest text-[#f5d78c]/80">Feed visual</p>
-        <div className="mt-2.5 h-px w-9 bg-[#d4a843]/50" />
-        <h1 className="client-title mt-3">Shots</h1>
-        <p className="client-subtitle mt-2 max-w-[420px]">
-          Fotos de perfis verificados por cidade, com filtros separados para facilitar no celular.
-        </p>
+    <>
+      {/* ── Hero escuro edge-to-edge ── */}
+      <section className="px-0 pb-5">
+        <div className="client-explore-hero" style={{ minHeight: 260 }}>
+          <div className="relative z-10">
+            <p className="text-[12px] font-black uppercase tracking-widest text-[#f5d78c]/80">Feed visual</p>
+            <div className="mt-2.5 h-px w-9 bg-[#d4a843]/50" />
+            <h1 className="mt-3 bg-[linear-gradient(135deg,#fff8e8_0%,#f5f0e4_22%,#f5d78c_55%,#d4a843_100%)] bg-clip-text text-[64px] font-black leading-[0.90] text-transparent">
+              Shots
+            </h1>
+            <p className="mt-4 max-w-[260px] text-[13px] leading-[1.65] text-[#f5f0e4]/50">
+              Fotos de perfis verificados perto de voce, organizadas por cidade.
+            </p>
+          </div>
+        </div>
       </section>
 
-      <section className="client-panel p-4 sm:p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="client-kicker">Buscar shots</p>
-            <h2 className="mt-1 text-[22px] font-black leading-6 text-[#f5f0e4]">Cidade e categoria</h2>
-          </div>
-          {hasFilters && (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="client-secondary-button min-h-0 shrink-0 px-3 py-2 text-[12px]"
-            >
-              Limpar
-            </button>
-          )}
-        </div>
-
-        <label className="mt-5 block">
-          <span className="mb-2 block text-[12px] font-black uppercase text-[#f5f0e4]/48">Cidade</span>
-          <div className="client-explore-field min-h-[54px] rounded-[12px]">
-            <Search className="h-5 w-5 shrink-0 text-[#d4a843]" />
-            <input
-              type="text"
-              placeholder="Digite uma cidade"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              className="h-full min-w-0 flex-1 bg-transparent text-[16px] font-bold text-[#f5f0e4] outline-none placeholder:text-[#f5f0e4]/34"
-              autoComplete="address-level2"
-            />
-            {city && (
+      {/* ── Painel de filtros ── */}
+      <section className="px-0 pb-8">
+        <div className="client-explore-search-panel">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="client-kicker">Filtrar shots</p>
+              <h2 className="mt-1 text-[22px] font-black leading-tight text-[#f5f0e4]">Cidade e categoria</h2>
+            </div>
+            {hasFilters && (
               <button
                 type="button"
-                onClick={() => setCity("")}
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-[#f5f0e4]/58"
-                aria-label="Limpar cidade"
+                onClick={clearFilters}
+                className="client-secondary-button min-h-0 shrink-0 px-3 py-2 text-[12px]"
               >
-                <X className="h-4 w-4" />
+                Limpar
               </button>
             )}
           </div>
-        </label>
 
-        <div className="mt-5 pb-2">
-          <p className="mb-3 text-[12px] font-black uppercase text-[#f5f0e4]/48">Categoria</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {FILTERS.map((f) => (
-              <button
-                key={f.value}
-                type="button"
-                onClick={() => setActiveFilter(f.value)}
-                className={`min-h-[46px] rounded-[10px] px-3 text-[14px] font-black transition-colors ${
-                  activeFilter === f.value ? "client-chip-active" : "client-chip"
-                }`}
-                aria-pressed={activeFilter === f.value}
-              >
-                {f.label}
-              </button>
-            ))}
+          <label className="mt-6 block">
+            <span className="mb-2 block text-[12px] font-black uppercase text-[#f5f0e4]/46">Cidade</span>
+            <div className="client-explore-field">
+              <Search className="h-5 w-5 shrink-0 text-[#f5d78c]" />
+              <input
+                type="text"
+                placeholder="Digite uma cidade"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                className="h-full min-w-0 flex-1 bg-transparent text-[17px] font-bold text-[#f5f0e4] outline-none placeholder:text-[#f5f0e4]/34"
+                autoComplete="address-level2"
+              />
+              {city && (
+                <button
+                  type="button"
+                  onClick={() => setCity("")}
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-[#f5f0e4]/58"
+                  aria-label="Limpar cidade"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </label>
+
+          <div className="mt-5 pb-3">
+            <p className="mb-3 text-[12px] font-black uppercase text-[#f5f0e4]/46">Categoria</p>
+            <div className="grid grid-cols-2 gap-2">
+              {FILTERS.map((f) => (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => setActiveFilter(f.value)}
+                  className={`min-h-[48px] rounded-[12px] px-4 text-[15px] font-black transition-colors ${
+                    activeFilter === f.value ? "client-chip-active" : "client-chip"
+                  }`}
+                  aria-pressed={activeFilter === f.value}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="pt-7">
+      {/* ── Resultados ── */}
+      <div className="px-4 pb-[calc(190px+env(safe-area-inset-bottom))]">
         {!loading && items.length > 0 && (
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="text-[13px] font-semibold text-[#f5f0e4]/56">
@@ -329,7 +340,7 @@ export default function ShotsPage() {
             {items.map((item) => <ShotCard key={item.id} item={item} />)}
           </div>
         )}
-      </section>
-    </div>
+      </div>
+    </>
   );
 }
