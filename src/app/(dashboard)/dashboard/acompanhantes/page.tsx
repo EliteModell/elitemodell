@@ -170,30 +170,13 @@ function FilterDrawer({
   onlyVerified: boolean;
   onOnlyVerified: (v: boolean) => void;
 }) {
+  if (!open) return null;
+
   return (
-    <>
-      {open && (
-        <style>{`
-          .client-bottom-nav {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-            transform: translateY(120%) !important;
-          }
-        `}</style>
-      )}
-      <div
-        className={`fixed inset-0 z-[65] bg-black/20 backdrop-blur-[2px] transition-opacity duration-300 pointer-events-none ${
-          open ? "opacity-100" : "opacity-0"
-        }`}
-      />
-      <div
-        className={`fixed inset-x-0 bottom-0 z-[120] max-h-[min(28dvh,260px)] overflow-y-auto overscroll-contain rounded-t-[22px] border-t border-[#d4a843]/24 bg-white px-5 pb-[calc(env(safe-area-inset-bottom)+26px)] pt-3 shadow-[0_-18px_44px_rgba(23,18,10,0.18)] transition-transform duration-300 md:max-h-[min(52dvh,460px)] ${
-          open ? "translate-y-0" : "pointer-events-none translate-y-full"
-        }`}
-        aria-hidden={!open}
-      >
+    <section
+      data-client-filter-panel="true"
+      className="client-filter-panel scroll-mt-[110px] overflow-hidden rounded-[18px] border border-[#d4a843]/18 bg-white px-5 pb-7 pt-4 shadow-[0_16px_42px_rgba(23,18,10,0.12)]"
+    >
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-[rgba(23,18,10,0.16)]" />
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
@@ -278,8 +261,7 @@ function FilterDrawer({
         <button type="button" onClick={onClose} className="client-primary-button mt-7 w-full text-[16px]">
           Aplicar filtros
         </button>
-      </div>
-    </>
+    </section>
   );
 }
 
@@ -308,7 +290,7 @@ function EmptyState({
   ].filter(Boolean) as string[];
 
   return (
-    <section className="client-empty mb-[calc(240px+env(safe-area-inset-bottom))] overflow-hidden pb-24 pt-12 mt-2">
+    <section className="client-empty mb-8 mt-2 overflow-hidden pb-20 pt-12">
       <div className="flex flex-col items-center px-6 text-center">
         <div className="grid h-[68px] w-[68px] place-items-center rounded-[16px] border border-[#d4a843]/26 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.14)]">
           {hasFilters ? <Search className="h-8 w-8" /> : <ShieldCheck className="h-8 w-8" />}
@@ -441,6 +423,17 @@ export default function AcompanhantesPage() {
     };
   }, [filterOpen]);
 
+  useEffect(() => {
+    if (!filterOpen) return;
+
+    window.setTimeout(() => {
+      document.querySelector<HTMLElement>('[data-client-filter-panel="true"]')?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
+  }, [filterOpen]);
+
   const hasFilters = Boolean(search || activeCategory || city || onlyVerified || sortBy !== "rating");
 
   function clearFilters() {
@@ -482,7 +475,7 @@ export default function AcompanhantesPage() {
             </div>
             <button
               type="button"
-              onClick={() => setFilterOpen(true)}
+              onClick={() => setFilterOpen((current) => !current)}
               className={`grid h-12 w-12 shrink-0 place-items-center rounded-[12px] border transition-colors ${
                 onlyVerified || sortBy !== "rating"
                   ? "border-[#d4a843]/40 bg-[#d4a843]/14 text-[#f5d78c]"
@@ -580,13 +573,41 @@ export default function AcompanhantesPage() {
         </div>
       )}
 
-      <div className="space-y-5 px-4 pb-[calc(250px+env(safe-area-inset-bottom))]">
+      <div className="space-y-10 px-4 pb-[calc(320px+env(safe-area-inset-bottom))]">
         {loading && professionals.length === 0 ? (
           Array.from({ length: 3 }).map((_, i) => <ProfileCardSkeleton key={i} />)
         ) : professionals.length === 0 ? (
-          <EmptyState hasFilters={hasFilters} activeCategory={activeCategory} sortBy={sortBy} onClear={clearFilters} onExploreCity={focusCity} />
+          <>
+            <EmptyState hasFilters={hasFilters} activeCategory={activeCategory} sortBy={sortBy} onClear={clearFilters} onExploreCity={focusCity} />
+            <FilterDrawer
+              open={filterOpen}
+              onClose={() => setFilterOpen(false)}
+              category={category}
+              onCategory={(v) => {
+                setCategory(v);
+                setActiveCategory(v);
+              }}
+              sortBy={sortBy}
+              onSortBy={setSortBy}
+              onlyVerified={onlyVerified}
+              onOnlyVerified={setOnlyVerified}
+            />
+          </>
         ) : (
           <>
+            <FilterDrawer
+              open={filterOpen}
+              onClose={() => setFilterOpen(false)}
+              category={category}
+              onCategory={(v) => {
+                setCategory(v);
+                setActiveCategory(v);
+              }}
+              sortBy={sortBy}
+              onSortBy={setSortBy}
+              onlyVerified={onlyVerified}
+              onOnlyVerified={setOnlyVerified}
+            />
             {professionals.map((p) => (
               <ProfessionalCard key={p.id} p={p} />
             ))}
@@ -608,20 +629,6 @@ export default function AcompanhantesPage() {
           </>
         )}
       </div>
-
-      <FilterDrawer
-        open={filterOpen}
-        onClose={() => setFilterOpen(false)}
-        category={category}
-        onCategory={(v) => {
-          setCategory(v);
-          setActiveCategory(v);
-        }}
-        sortBy={sortBy}
-        onSortBy={setSortBy}
-        onlyVerified={onlyVerified}
-        onOnlyVerified={setOnlyVerified}
-      />
     </>
   );
 }
