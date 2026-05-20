@@ -14,6 +14,7 @@ import {
   Send,
   Star,
   Users,
+  X,
 } from "lucide-react";
 
 type ShotItem = {
@@ -138,50 +139,58 @@ function ShotSkeleton() {
   );
 }
 
-function EmptyShotPreview() {
-  return (
-    <div className="client-card overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-3">
-        <div className="h-9 w-9 rounded-full border border-white/10 bg-white/[0.045]" />
-        <div className="space-y-2">
-          <div className="h-3 w-28 rounded-full bg-white/[0.08]" />
-          <div className="h-3 w-20 rounded-full bg-white/[0.06]" />
-        </div>
-      </div>
-      <div className="grid aspect-square place-items-center bg-[#101214]/86">
-        <div className="grid h-16 w-16 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
-          <Camera className="h-8 w-8" />
-        </div>
-      </div>
-      <div className="px-4 py-3">
-        <div className="h-3.5 w-36 rounded-full bg-white/[0.07]" />
-      </div>
-    </div>
-  );
-}
-
-function EmptyShotsState() {
+function EmptyShotsState({
+  hasFilters,
+  onClear,
+}: {
+  hasFilters: boolean;
+  onClear: () => void;
+}) {
   return (
     <div className="space-y-4">
-      <section className="client-empty px-5 py-7 text-center">
+      <section className="client-empty px-5 py-8 text-center">
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
           <Users className="h-7 w-7" />
         </div>
-        <h2 className="mt-4 text-[18px] font-bold text-[#f5f0e4]">Quando houver publicacoes, elas aparecerao aqui</h2>
-        <p className="mx-auto mt-2 max-w-[300px] text-[13px] leading-5 text-[#f5f0e4]/54">
-          Shots reais de perfis disponiveis na sua cidade serao exibidos nesta area.
+        <h2 className="mx-auto mt-4 max-w-[330px] text-[20px] font-black leading-6 text-[#f5f0e4]">
+          {hasFilters ? "Nenhum Shot encontrado nessa busca" : "Quando houver publicacoes, elas aparecerao aqui"}
+        </h2>
+        <p className="mx-auto mt-3 max-w-[330px] text-[14px] leading-6 text-[#f5f0e4]/58">
+          {hasFilters
+            ? "Tente uma cidade diferente ou veja todos os perfis enquanto os Shots entram no ar."
+            : "Shots reais de perfis disponiveis na sua cidade serao exibidos nesta area, sem sobrepor busca e filtros."}
         </p>
-        <Link
-          href="/dashboard/acompanhantes"
-          className="client-primary-button mx-auto mt-5 inline-flex min-h-0 items-center gap-2 px-5 py-2.5 text-[13px] no-underline"
-        >
-          Explorar acompanhantes
-        </Link>
+        <div className="mt-5 grid gap-2 sm:mx-auto sm:max-w-[420px] sm:grid-cols-2">
+          <Link
+            href="/dashboard/acompanhantes"
+            className="client-primary-button inline-flex min-h-0 items-center justify-center gap-2 px-5 py-3 text-[13px] no-underline"
+          >
+            Explorar acompanhantes
+          </Link>
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="client-secondary-button min-h-0 px-5 py-3 text-[13px]"
+            >
+              Limpar filtros
+            </button>
+          )}
+        </div>
       </section>
 
-      <section>
-        <p className="mb-3 text-[12px] font-bold uppercase text-[#f5f0e4]/42">Preview da vitrine</p>
-        <EmptyShotPreview />
+      <section className="client-card p-4">
+        <div className="flex items-start gap-3">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
+            <Camera className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[15px] font-bold text-[#f5f0e4]">Vitrine visual preparada</p>
+            <p className="mt-1 text-[13px] leading-5 text-[#f5f0e4]/56">
+              A grade vai ocupar mais espaco quando houver fotos, mantendo filtros separados e toque facil no celular.
+            </p>
+          </div>
+        </div>
       </section>
     </div>
   );
@@ -192,6 +201,8 @@ export default function ShotsPage() {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("");
   const [city, setCity] = useState("");
+  const normalizedCity = city.trim();
+  const hasFilters = Boolean(activeFilter || normalizedCity);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -199,7 +210,7 @@ export default function ShotsPage() {
       setLoading(true);
       const qs = new URLSearchParams();
       if (activeFilter) qs.set("category", activeFilter);
-      if (city) qs.set("city", city);
+      if (normalizedCity) qs.set("city", normalizedCity);
       qs.set("limit", "20");
       qs.set("sortBy", "rating");
       try {
@@ -214,58 +225,110 @@ export default function ShotsPage() {
     }
     void load();
     return () => controller.abort();
-  }, [activeFilter, city]);
+  }, [activeFilter, normalizedCity]);
+
+  function clearFilters() {
+    setActiveFilter("");
+    setCity("");
+  }
 
   return (
-    <>
-      <section className="px-4 pb-4 pt-5">
+    <div className="px-4 pb-[calc(190px+env(safe-area-inset-bottom))] pt-6">
+      <section className="pb-5">
         <p className="client-kicker">Feed visual</p>
         <h1 className="client-title mt-1">Shots</h1>
-        <p className="client-subtitle mt-1.5">Fotos de perfis verificados por cidade.</p>
+        <p className="client-subtitle mt-2 max-w-[420px]">
+          Fotos de perfis verificados por cidade, com filtros separados para facilitar no celular.
+        </p>
       </section>
 
-      <div className="sticky top-[110px] z-20 border-y border-white/[0.07] bg-[#07090a]/94 pb-2.5 pt-2.5 backdrop-blur-2xl">
-        <div className="px-4">
-          <div className="relative mb-2.5">
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#d4a843]" />
+      <section className="client-panel p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="client-kicker">Buscar shots</p>
+            <h2 className="mt-1 text-[22px] font-black leading-6 text-[#f5f0e4]">Cidade e categoria</h2>
+          </div>
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="client-secondary-button min-h-0 shrink-0 px-3 py-2 text-[12px]"
+            >
+              Limpar
+            </button>
+          )}
+        </div>
+
+        <label className="mt-5 block">
+          <span className="mb-2 block text-[12px] font-black uppercase text-[#f5f0e4]/48">Cidade</span>
+          <div className="client-explore-field min-h-[54px] rounded-[12px]">
+            <Search className="h-5 w-5 shrink-0 text-[#d4a843]" />
             <input
               type="text"
-              placeholder="Filtrar por cidade"
+              placeholder="Digite uma cidade"
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="client-input h-[38px] w-full pl-10 pr-4 text-[13px]"
+              className="h-full min-w-0 flex-1 bg-transparent text-[16px] font-bold text-[#f5f0e4] outline-none placeholder:text-[#f5f0e4]/34"
+              autoComplete="address-level2"
             />
+            {city && (
+              <button
+                type="button"
+                onClick={() => setCity("")}
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-[#f5f0e4]/58"
+                aria-label="Limpar cidade"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
+        </label>
+
+        <div className="mt-5">
+          <p className="mb-3 text-[12px] font-black uppercase text-[#f5f0e4]/48">Categoria</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {FILTERS.map((f) => (
               <button
                 key={f.value}
                 type="button"
                 onClick={() => setActiveFilter(f.value)}
-                className={`shrink-0 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors ${
+                className={`min-h-[46px] rounded-[10px] px-3 text-[14px] font-black transition-colors ${
                   activeFilter === f.value ? "client-chip-active" : "client-chip"
                 }`}
+                aria-pressed={activeFilter === f.value}
               >
                 {f.label}
               </button>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="px-4 pb-[calc(170px+env(safe-area-inset-bottom))] pt-4">
+      <section className="pt-5">
+        {!loading && items.length > 0 && (
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="text-[13px] font-semibold text-[#f5f0e4]/56">
+              {items.length} shot{items.length !== 1 ? "s" : ""} encontrado{items.length !== 1 ? "s" : ""}
+            </p>
+            {hasFilters && (
+              <button type="button" onClick={clearFilters} className="text-[12px] font-black text-[#f5d78c]">
+                Ver todos
+              </button>
+            )}
+          </div>
+        )}
         {loading ? (
           <div className="space-y-4">
             {Array.from({ length: 2 }).map((_, i) => <ShotSkeleton key={i} />)}
           </div>
         ) : items.length === 0 ? (
-          <EmptyShotsState />
+          <EmptyShotsState hasFilters={hasFilters} onClear={clearFilters} />
         ) : (
           <div className="space-y-4">
             {items.map((item) => <ShotCard key={item.id} item={item} />)}
           </div>
         )}
-      </div>
-    </>
+      </section>
+    </div>
   );
 }

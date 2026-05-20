@@ -134,6 +134,8 @@ export function MobileHeader({
 }) {
   const pathname = usePathname();
   const isExplore = pathname === ACCOUNT_ROUTES.mainClientFeed;
+  const isShots = pathname === "/dashboard/shots";
+  const showHeaderSearch = !isExplore && !isShots;
 
   return (
     <header className="sticky top-0 z-30 border-b border-[#d4a843]/14 bg-[#08090a]/92 shadow-[0_16px_46px_rgba(0,0,0,0.30)] backdrop-blur-2xl">
@@ -168,7 +170,7 @@ export function MobileHeader({
             <Bell className="h-5 w-5" />
           </Link>
         </div>
-        {!isExplore && (
+        {showHeaderSearch && (
           <div className="mt-4">
             <LocationSearchBar />
           </div>
@@ -441,7 +443,7 @@ export default function ClientAreaShell({
         {children}
       </main>
       <ClientBottomNav />
-      <style>{`body { background: #070809 url("/brand/client-area-bg.jpg") center top / cover fixed no-repeat; }`}</style>
+      <style>{`body { background: #ffffff; }`}</style>
     </div>
   );
 }
