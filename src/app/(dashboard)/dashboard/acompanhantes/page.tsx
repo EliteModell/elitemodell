@@ -290,7 +290,7 @@ function EmptyState({
   ].filter(Boolean) as string[];
 
   return (
-    <section className="client-empty mb-10 mt-2 overflow-hidden pb-32 pt-8">
+    <section className="client-empty mb-12 mt-2 overflow-hidden pb-56 pt-8">
       <div className="flex flex-col items-center px-6 text-center">
         <div className="grid h-[68px] w-[68px] place-items-center rounded-[16px] border border-[#d4a843]/26 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.14)]">
           {hasFilters ? <Search className="h-8 w-8" /> : <ShieldCheck className="h-8 w-8" />}
@@ -327,14 +327,16 @@ function EmptyState({
             {hasFilters ? "Limpar filtros" : "Escolher cidade"}
             <ChevronRight className="h-4 w-4" />
           </button>
-          <button
-            type="button"
-            onClick={onExploreCity}
-            className="client-secondary-button flex min-h-0 items-center justify-center gap-2 py-3 text-[14px]"
-          >
-            <MapPin className="h-4 w-4" />
-            Trocar cidade
-          </button>
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={onExploreCity}
+              className="client-secondary-button flex min-h-0 items-center justify-center gap-2 py-3 text-[14px]"
+            >
+              <MapPin className="h-4 w-4" />
+              Trocar cidade
+            </button>
+          )}
         </div>
       </div>
     </section>
@@ -573,7 +575,7 @@ export default function AcompanhantesPage() {
         </div>
       )}
 
-      <div className="space-y-10 px-4 pb-[calc(320px+env(safe-area-inset-bottom))]">
+      <div className="space-y-10 px-4 pb-[calc(420px+env(safe-area-inset-bottom))]">
         {loading && professionals.length === 0 ? (
           Array.from({ length: 3 }).map((_, i) => <ProfileCardSkeleton key={i} />)
         ) : professionals.length === 0 ? (
