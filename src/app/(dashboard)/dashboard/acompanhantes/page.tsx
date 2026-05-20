@@ -184,13 +184,12 @@ function FilterDrawer({
         `}</style>
       )}
       <div
-        className={`fixed inset-0 z-[65] bg-black/64 backdrop-blur-[3px] transition-opacity duration-300 ${
-          open ? "opacity-100" : "pointer-events-none opacity-0"
+        className={`fixed inset-0 z-[65] bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 pointer-events-none ${
+          open ? "opacity-100" : "opacity-0"
         }`}
-        onClick={onClose}
       />
       <div
-        className={`fixed inset-x-0 bottom-0 z-[120] max-h-[min(62dvh,500px)] overflow-y-auto rounded-t-[22px] border-t border-[#d4a843]/20 bg-[#0c0d0e] px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-3 shadow-[0_-28px_90px_rgba(0,0,0,0.62)] transition-transform duration-300 ${
+        className={`fixed inset-x-0 bottom-0 z-[120] max-h-[min(52dvh,460px)] overflow-y-auto rounded-t-[22px] border-t border-[#d4a843]/20 bg-[#0c0d0e] px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-3 shadow-[0_-28px_90px_rgba(0,0,0,0.62)] transition-transform duration-300 ${
           open ? "translate-y-0" : "pointer-events-none translate-y-full"
         }`}
         aria-hidden={!open}
@@ -198,7 +197,7 @@ function FilterDrawer({
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-[rgba(255,255,255,0.18)]" />
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <p style={{ color: "rgba(212,168,67,0.85)", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            <p style={{ color: "rgba(212,168,67,0.85)", fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em" }}>
               Organizar resultados
             </p>
             <h2 style={{ color: "#f5f0e4", fontSize: 24, fontWeight: 900, lineHeight: 1.1, marginTop: 4 }}>Filtrar perfis</h2>
