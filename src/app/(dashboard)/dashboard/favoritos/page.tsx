@@ -40,63 +40,97 @@ function Tip({ children }: { children: React.ReactNode }) {
 
 export default function FavoritosPage() {
   return (
-    <div className="client-page space-y-7">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="client-kicker">Colecoes privadas</p>
-          <h1 className="client-title mt-1">Listas</h1>
-          <p className="client-subtitle mt-2">
-            Salve perfis reais, acompanhe favoritos e organize escolhas sem exposicao.
-          </p>
+    <>
+      {/* ── Hero escuro edge-to-edge ── */}
+      <section className="px-0 pb-5">
+        <div className="client-explore-hero" style={{ minHeight: 220 }}>
+          <div className="relative z-10 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p
+                style={{ color: "rgba(212,168,67,0.88)", fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em" }}
+              >
+                Colecoes privadas
+              </p>
+              <div className="mt-2.5 h-px w-9 bg-[#d4a843]/50" />
+              <h1 className="mt-3 bg-[linear-gradient(135deg,#fff8e8_0%,#f5f0e4_22%,#f5d78c_55%,#d4a843_100%)] bg-clip-text text-[54px] font-black leading-[0.90] text-transparent">
+                Listas
+              </h1>
+              <p
+                style={{ color: "rgba(245,240,228,0.52)", fontSize: 13, lineHeight: 1.65, marginTop: 14, maxWidth: 240 }}
+              >
+                Salve, acompanhe e organize perfis favoritos com privacidade.
+              </p>
+            </div>
+            <button
+              type="button"
+              title="Recurso de listas personalizadas em breve"
+              style={{
+                border: "1px solid rgba(212,168,67,0.30)",
+                background: "rgba(212,168,67,0.12)",
+                color: "#d4a843",
+                borderRadius: 8,
+                padding: "8px 14px",
+                fontSize: 13,
+                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                flexShrink: 0,
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              Lista
+            </button>
+          </div>
         </div>
-        <button
-          type="button"
-          className="client-secondary-button flex min-h-0 shrink-0 items-center gap-1.5 px-3 py-2 text-[12px] font-bold"
-          title="Recurso de listas personalizadas em breve"
-        >
-          <Plus className="h-4 w-4" />
-          Lista
-        </button>
-      </div>
-
-      <div className="grid gap-4">
-        <CollectionCard
-          title="Perfis curtidos"
-          description="Acompanhantes que voce marcar com coracao aparecerao aqui."
-          icon={<Heart className="h-5 w-5" />}
-        />
-        <CollectionCard
-          title="Perfis seguidos"
-          description="Use esta area para acompanhar novidades de perfis salvos."
-          icon={<UserRoundCheck className="h-5 w-5" />}
-        />
-      </div>
-
-      <section className="client-empty px-6 py-10 text-center">
-        <div className="mx-auto grid h-16 w-16 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
-          <Users className="h-8 w-8" />
-        </div>
-        <h2 className="mt-5 text-[22px] font-black text-[#f5f0e4]">Comece salvando perfis</h2>
-        <p className="mx-auto mt-3 max-w-[310px] text-[14px] leading-6 text-[#f5f0e4]/56">
-          Quando encontrar acompanhantes reais que combinam com sua busca, salve para voltar depois com rapidez.
-        </p>
-        <Link
-          href="/dashboard/acompanhantes"
-          className="client-primary-button mx-auto mt-5 inline-flex min-h-0 items-center gap-2 px-5 py-2.5 text-[13px] no-underline"
-        >
-          <Search className="h-4 w-4" />
-          Explorar cidade
-        </Link>
       </section>
 
-      <section className="client-card p-5">
-        <h2 className="text-[20px] font-black text-[#f5f0e4]">Como usar suas listas</h2>
-        <ul className="mt-5 space-y-4">
-          <Tip>Curta perfis para criar uma selecao privada de interesse.</Tip>
-          <Tip>Siga perfis para acompanhar atualizacoes quando houver publicacoes reais.</Tip>
-          <Tip>Use listas personalizadas para separar cidades, estilos ou momentos.</Tip>
-        </ul>
-      </section>
-    </div>
+      {/* ── Conteúdo ── */}
+      <div className="client-page space-y-8" style={{ paddingTop: 20 }}>
+        {/* Cards de coleção */}
+        <div className="grid gap-4">
+          <CollectionCard
+            title="Perfis curtidos"
+            description="Acompanhantes que voce marcar com coracao aparecerao aqui."
+            icon={<Heart className="h-5 w-5" />}
+          />
+          <CollectionCard
+            title="Perfis seguidos"
+            description="Use esta area para acompanhar novidades de perfis salvos."
+            icon={<UserRoundCheck className="h-5 w-5" />}
+          />
+        </div>
+
+        {/* Empty state — flex col para centralizar o ícone de verdade */}
+        <section className="client-empty overflow-hidden py-10">
+          <div className="flex flex-col items-center px-6 text-center">
+            <div className="grid h-[64px] w-[64px] place-items-center rounded-[14px] border border-[#d4a843]/22 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.12)]">
+              <Users className="h-8 w-8" />
+            </div>
+            <h2 className="mt-5 text-[22px] font-black text-[#f5f0e4]">Comece salvando perfis</h2>
+            <p className="mx-auto mt-3 max-w-[290px] text-[13px] leading-[1.65] text-[#f5f0e4]/56">
+              Quando encontrar acompanhantes que combinam, salve para voltar depois com rapidez.
+            </p>
+            <Link
+              href="/dashboard/acompanhantes"
+              className="client-primary-button mt-6 flex min-h-0 w-full max-w-[280px] items-center justify-center gap-2 py-3 text-[14px] font-bold no-underline"
+            >
+              <Search className="h-4 w-4" />
+              Explorar cidade
+            </Link>
+          </div>
+        </section>
+
+        {/* Como usar */}
+        <section className="client-card p-5">
+          <h2 className="text-[18px] font-black text-[#f5f0e4]">Como usar suas listas</h2>
+          <ul className="mt-4 space-y-4">
+            <Tip>Curta perfis para criar uma selecao privada de interesse.</Tip>
+            <Tip>Siga perfis para acompanhar atualizacoes quando houver publicacoes reais.</Tip>
+            <Tip>Use listas personalizadas para separar cidades, estilos ou momentos.</Tip>
+          </ul>
+        </section>
+      </div>
+    </>
   );
 }
