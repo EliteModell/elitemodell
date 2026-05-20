@@ -256,7 +256,7 @@ body {
   position: relative;
   z-index: 1;
   animation: premiumFadeUp 220ms ease-out both;
-  scroll-padding-bottom: calc(140px + env(safe-area-inset-bottom));
+  scroll-padding-bottom: calc(260px + env(safe-area-inset-bottom));
 }
 
 .client-page {
@@ -495,6 +495,10 @@ body[data-client-filters-open="true"] .client-bottom-nav {
   opacity: 0 !important;
   visibility: hidden !important;
   transform: translateY(110%) !important;
+}
+
+body[data-client-filters-open="true"] .client-shell-content {
+  z-index: 80;
 }
 
 @media (max-width: 767px) {

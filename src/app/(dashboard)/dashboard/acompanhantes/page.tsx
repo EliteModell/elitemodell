@@ -184,28 +184,25 @@ function FilterDrawer({
         `}</style>
       )}
       <div
-        className={`fixed inset-0 z-[65] bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 pointer-events-none ${
+        className={`fixed inset-0 z-[65] bg-black/20 backdrop-blur-[2px] transition-opacity duration-300 pointer-events-none ${
           open ? "opacity-100" : "opacity-0"
         }`}
       />
       <div
-        className={`fixed inset-x-0 bottom-0 z-[120] max-h-[min(34dvh,310px)] overflow-y-auto rounded-t-[22px] border-t border-[#d4a843]/20 bg-[#0c0d0e] px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-3 shadow-[0_-28px_90px_rgba(0,0,0,0.62)] transition-transform duration-300 md:max-h-[min(52dvh,460px)] ${
+        className={`fixed inset-x-0 bottom-0 z-[120] max-h-[min(28dvh,260px)] overflow-y-auto overscroll-contain rounded-t-[22px] border-t border-[#d4a843]/24 bg-white px-5 pb-[calc(env(safe-area-inset-bottom)+26px)] pt-3 shadow-[0_-18px_44px_rgba(23,18,10,0.18)] transition-transform duration-300 md:max-h-[min(52dvh,460px)] ${
           open ? "translate-y-0" : "pointer-events-none translate-y-full"
         }`}
         aria-hidden={!open}
       >
-        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-[rgba(255,255,255,0.18)]" />
+        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-[rgba(23,18,10,0.16)]" />
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <p style={{ color: "rgba(212,168,67,0.85)", fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Organizar resultados
-            </p>
-            <h2 style={{ color: "#f5f0e4", fontSize: 24, fontWeight: 900, lineHeight: 1.1, marginTop: 4 }}>Filtrar perfis</h2>
+            <h2 style={{ color: "#17120a", fontSize: 24, fontWeight: 900, lineHeight: 1.1, marginTop: 0 }}>Filtrar perfis</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(245,240,228,0.65)" }}
+            style={{ background: "rgba(23,18,10,0.04)", border: "1px solid rgba(23,18,10,0.12)", color: "rgba(23,18,10,0.62)" }}
             className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px]"
             aria-label="Fechar filtros"
           >
@@ -215,7 +212,7 @@ function FilterDrawer({
 
         <div className="space-y-6">
           <div>
-            <p style={{ color: "rgba(245,240,228,0.50)", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Categoria</p>
+            <p style={{ color: "rgba(23,18,10,0.54)", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Categoria</p>
             <div className="grid grid-cols-2 gap-2">
               {CATEGORIES.map((c) => (
                 <button
@@ -233,7 +230,7 @@ function FilterDrawer({
           </div>
 
           <div>
-            <p style={{ color: "rgba(245,240,228,0.50)", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Ordenar por</p>
+            <p style={{ color: "rgba(23,18,10,0.54)", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Ordenar por</p>
             <div className="grid grid-cols-2 gap-2">
               {[
                 { value: "rating", label: "Mais avaliados" },
@@ -255,10 +252,10 @@ function FilterDrawer({
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-4 rounded-[10px] p-4" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}>
+          <div className="flex items-center justify-between gap-4 rounded-[10px] p-4" style={{ background: "rgba(23,18,10,0.04)", border: "1px solid rgba(23,18,10,0.09)" }}>
             <div className="min-w-0">
-              <p style={{ color: "#f5f0e4", fontSize: 15, fontWeight: 700 }}>Somente verificadas</p>
-              <p style={{ color: "rgba(245,240,228,0.50)", fontSize: 12, lineHeight: 1.4, marginTop: 4 }}>Perfis com identidade confirmada</p>
+              <p style={{ color: "#17120a", fontSize: 15, fontWeight: 700 }}>Somente verificadas</p>
+              <p style={{ color: "rgba(23,18,10,0.56)", fontSize: 12, lineHeight: 1.4, marginTop: 4 }}>Perfis com identidade confirmada</p>
             </div>
             <button
               type="button"
