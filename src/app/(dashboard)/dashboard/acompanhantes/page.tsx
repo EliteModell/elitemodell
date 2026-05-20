@@ -189,7 +189,7 @@ function FilterDrawer({
         }`}
       />
       <div
-        className={`fixed inset-x-0 bottom-0 z-[120] max-h-[min(44dvh,400px)] overflow-y-auto rounded-t-[22px] border-t border-[#d4a843]/20 bg-[#0c0d0e] px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-3 shadow-[0_-28px_90px_rgba(0,0,0,0.62)] transition-transform duration-300 md:max-h-[min(52dvh,460px)] ${
+        className={`fixed inset-x-0 bottom-0 z-[120] max-h-[min(34dvh,310px)] overflow-y-auto rounded-t-[22px] border-t border-[#d4a843]/20 bg-[#0c0d0e] px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-3 shadow-[0_-28px_90px_rgba(0,0,0,0.62)] transition-transform duration-300 md:max-h-[min(52dvh,460px)] ${
           open ? "translate-y-0" : "pointer-events-none translate-y-full"
         }`}
         aria-hidden={!open}

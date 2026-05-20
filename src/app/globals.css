@@ -490,10 +490,11 @@ body {
 }
 
 body[data-client-filters-open="true"] .client-bottom-nav {
+  display: none !important;
   pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(110%);
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: translateY(110%) !important;
 }
 
 @media (max-width: 767px) {
