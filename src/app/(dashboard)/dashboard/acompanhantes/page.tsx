@@ -477,7 +477,7 @@ export default function AcompanhantesPage() {
         </div>
       </section>
 
-      <section className="px-0 pb-16">
+      <section className="px-0 pb-20">
         <div className="client-explore-search-panel">
           <div className="flex items-start justify-between gap-4">
             <div>
