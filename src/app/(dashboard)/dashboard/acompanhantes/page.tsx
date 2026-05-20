@@ -219,7 +219,7 @@ function FilterDrawer({
                 <button
                   key={c.value}
                   type="button"
-                  onClick={() => onCategory(c.value)}
+                  onClick={() => { onCategory(c.value); onClose(); }}
                   className={`min-h-[48px] rounded-[12px] px-4 text-[15px] font-bold transition-colors ${
                     category === c.value ? "client-chip-active" : "client-chip"
                   }`}
@@ -242,7 +242,7 @@ function FilterDrawer({
                 <button
                   key={s.value}
                   type="button"
-                  onClick={() => onSortBy(s.value)}
+                  onClick={() => { onSortBy(s.value); onClose(); }}
                   className={`min-h-[48px] rounded-[12px] px-3 text-[13px] font-bold transition-colors ${
                     sortBy === s.value ? "client-chip-active" : "client-chip"
                   }`}
@@ -294,39 +294,40 @@ function EmptyState({
   onExploreCity: () => void;
 }) {
   return (
-    <section className="relative mb-[calc(180px+env(safe-area-inset-bottom))] overflow-hidden border-y border-[#d4a843]/12 bg-white/[0.025] px-5 pb-16 pt-14 text-center">
-      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(245,215,140,0.55),transparent)]" />
-      <div className="mx-auto grid h-16 w-16 place-items-center rounded-[14px] border border-[#d4a843]/26 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.12)]">
-        {hasFilters ? <Search className="h-7 w-7" /> : <ShieldCheck className="h-7 w-7" />}
-      </div>
-      <p className="mt-5 text-[11px] font-black uppercase text-[#f5d78c]/82">
-        {hasFilters ? "Sem resultado nessa busca" : "Perfis verificados"}
-      </p>
-      <h2 className="mx-auto mt-2 max-w-[330px] text-[25px] font-black leading-tight text-[#f5f0e4]">
-        {hasFilters ? "Nenhum perfil encontrado" : "Escolha uma cidade para ver os perfis"}
-      </h2>
-      <p className="mx-auto mt-3 max-w-[330px] text-[14px] leading-6 text-[#f5f0e4]/58">
-        {hasFilters
-          ? "Tente uma categoria mais ampla, limpe os filtros ou busque por outra cidade."
-          : "Quando houver perfis ativos e verificados, eles aparecem aqui com foto, cidade, avaliacoes e contato."}
-      </p>
-      <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
-        <button
-          type="button"
-          onClick={hasFilters ? onClear : onExploreCity}
-          className="client-primary-button flex min-h-0 items-center justify-center gap-2 px-5 py-3 text-[14px]"
-        >
-          {hasFilters ? "Limpar filtros" : "Escolher cidade"}
-          <ChevronRight className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={onExploreCity}
-          className="client-secondary-button flex min-h-0 items-center justify-center gap-2 px-5 py-3 text-[14px]"
-        >
-          <MapPin className="h-4 w-4" />
-          Trocar cidade
-        </button>
+    <section className="client-empty mb-[calc(180px+env(safe-area-inset-bottom))] overflow-hidden py-12">
+      <div className="flex flex-col items-center px-6 text-center">
+        <div className="grid h-[68px] w-[68px] place-items-center rounded-[16px] border border-[#d4a843]/26 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.14)]">
+          {hasFilters ? <Search className="h-8 w-8" /> : <ShieldCheck className="h-8 w-8" />}
+        </div>
+        <p className="mt-5 text-[11px] font-black uppercase text-[#f5d78c]/82">
+          {hasFilters ? "Sem resultado" : "Perfis verificados"}
+        </p>
+        <h2 className="mt-2 max-w-[300px] text-[24px] font-black leading-tight text-[#f5f0e4]">
+          {hasFilters ? "Nenhum perfil encontrado" : "Escolha uma cidade para ver os perfis"}
+        </h2>
+        <p className="mt-3 max-w-[290px] text-[13px] leading-[1.65] text-[#f5f0e4]/56">
+          {hasFilters
+            ? "Tente uma categoria mais ampla ou busque por outra cidade."
+            : "Quando houver perfis ativos e verificados, eles aparecem aqui com foto, cidade e contato."}
+        </p>
+        <div className="mt-7 flex w-full max-w-[300px] flex-col gap-2.5">
+          <button
+            type="button"
+            onClick={hasFilters ? onClear : onExploreCity}
+            className="client-primary-button flex min-h-0 items-center justify-center gap-2 py-3 text-[14px]"
+          >
+            {hasFilters ? "Limpar filtros" : "Escolher cidade"}
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onExploreCity}
+            className="client-secondary-button flex min-h-0 items-center justify-center gap-2 py-3 text-[14px]"
+          >
+            <MapPin className="h-4 w-4" />
+            Trocar cidade
+          </button>
+        </div>
       </div>
     </section>
   );
