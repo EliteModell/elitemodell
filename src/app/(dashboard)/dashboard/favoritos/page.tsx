@@ -86,9 +86,9 @@ export default function FavoritosPage() {
       </section>
 
       {/* ── Conteúdo ── */}
-      <div className="client-page space-y-8" style={{ paddingTop: 20 }}>
+      <div className="client-page space-y-12" style={{ paddingTop: 24 }}>
         {/* Cards de coleção */}
-        <div className="grid gap-4">
+        <div className="grid gap-5">
           <CollectionCard
             title="Perfis curtidos"
             description="Acompanhantes que voce marcar com coracao aparecerao aqui."
