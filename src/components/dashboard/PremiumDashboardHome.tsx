@@ -228,7 +228,7 @@ function ReviewsSection() {
 
 function SafetyCard() {
   return (
-    <section className="client-page-tight" style={{ paddingBottom: "calc(180px + env(safe-area-inset-bottom))" }}>
+    <section className="client-page-tight" style={{ paddingBottom: "calc(240px + env(safe-area-inset-bottom))" }}>
       <div className="client-panel p-4">
         <div className="flex items-start gap-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/20 bg-[#d4a843]/10 text-[#f5d78c]">
@@ -279,13 +279,15 @@ export default function PremiumDashboardHome({
     <div>
       <UserWelcomeCard name={data.user.name} image={data.user.image} city={data.city} />
       <QuickActionGrid credits={data.stats.credits} verificationDone={verificationDone} />
-      <QuickStatsSection stats={data.stats} vip={data.vip} />
-      <VerificationSection steps={verificationSteps} />
-      <ListsSection />
-      <HistorySection />
-      <AchievementsSection />
-      <ReviewsSection />
-      <SafetyCard />
+      <div style={{ display: "grid", gap: 36, paddingTop: 12, paddingBottom: 120 }}>
+        <QuickStatsSection stats={data.stats} vip={data.vip} />
+        <VerificationSection steps={verificationSteps} />
+        <ListsSection />
+        <HistorySection />
+        <AchievementsSection />
+        <ReviewsSection />
+        <SafetyCard />
+      </div>
     </div>
   );
 }
