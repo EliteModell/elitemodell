@@ -190,7 +190,7 @@ function FilterDrawer({
         onClick={onClose}
       />
       <div
-        className={`fixed inset-x-0 bottom-0 z-[120] max-h-[min(78dvh,580px)] overflow-y-auto rounded-t-[22px] border-t border-[#d4a843]/20 bg-[#0c0d0e] px-5 pb-[calc(env(safe-area-inset-bottom)+80px)] pt-3 shadow-[0_-28px_90px_rgba(0,0,0,0.62)] transition-transform duration-300 ${
+        className={`fixed inset-x-0 bottom-0 z-[120] max-h-[min(62dvh,500px)] overflow-y-auto rounded-t-[22px] border-t border-[#d4a843]/20 bg-[#0c0d0e] px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-3 shadow-[0_-28px_90px_rgba(0,0,0,0.62)] transition-transform duration-300 ${
           open ? "translate-y-0" : "pointer-events-none translate-y-full"
         }`}
         aria-hidden={!open}
@@ -222,7 +222,7 @@ function FilterDrawer({
                 <button
                   key={c.value}
                   type="button"
-                  onClick={() => { onCategory(c.value); onClose(); }}
+                  onClick={() => onCategory(c.value)}
                   className={`min-h-[48px] rounded-[12px] px-4 text-[15px] font-bold transition-colors ${
                     category === c.value ? "client-chip-active" : "client-chip"
                   }`}
@@ -245,7 +245,7 @@ function FilterDrawer({
                 <button
                   key={s.value}
                   type="button"
-                  onClick={() => { onSortBy(s.value); onClose(); }}
+                  onClick={() => onSortBy(s.value)}
                   className={`min-h-[48px] rounded-[12px] px-3 text-[13px] font-bold transition-colors ${
                     sortBy === s.value ? "client-chip-active" : "client-chip"
                   }`}
@@ -436,7 +436,6 @@ export default function AcompanhantesPage() {
   useEffect(() => {
     if (filterOpen) {
       document.body.dataset.clientFiltersOpen = "true";
-      window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
       delete document.body.dataset.clientFiltersOpen;
     }
