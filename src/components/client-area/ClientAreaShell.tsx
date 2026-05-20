@@ -439,7 +439,7 @@ export default function ClientAreaShell({
     <div className="client-premium min-h-screen">
       <MobileHeader onMenu={() => setDrawerOpen(true)} backHref={backHref} />
       <SideDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      <main className="client-shell-content mx-auto w-full max-w-[760px] pb-[calc(122px+env(safe-area-inset-bottom))]">
+      <main className="client-shell-content mx-auto w-full max-w-[760px] pb-[calc(180px+env(safe-area-inset-bottom))]">
         {children}
       </main>
       <ClientBottomNav />

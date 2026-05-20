@@ -195,16 +195,19 @@ function FilterDrawer({
         }`}
         aria-hidden={!open}
       >
-        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-white/16" />
+        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-[rgba(255,255,255,0.18)]" />
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <p className="client-kicker">Organizar resultados</p>
-            <h2 className="mt-1 text-[24px] font-black leading-none text-[#f5f0e4]">Filtrar perfis</h2>
+            <p style={{ color: "rgba(212,168,67,0.85)", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              Organizar resultados
+            </p>
+            <h2 style={{ color: "#f5f0e4", fontSize: 24, fontWeight: 900, lineHeight: 1.1, marginTop: 4 }}>Filtrar perfis</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] border border-white/10 bg-white/[0.04] text-[#f5f0e4]/64"
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(245,240,228,0.65)" }}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px]"
             aria-label="Fechar filtros"
           >
             <X className="h-5 w-5" />
@@ -213,7 +216,7 @@ function FilterDrawer({
 
         <div className="space-y-6">
           <div>
-            <p className="mb-3 text-[11px] font-black uppercase text-[#f5f0e4]/44">Categoria</p>
+            <p style={{ color: "rgba(245,240,228,0.50)", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Categoria</p>
             <div className="grid grid-cols-2 gap-2">
               {CATEGORIES.map((c) => (
                 <button
@@ -231,7 +234,7 @@ function FilterDrawer({
           </div>
 
           <div>
-            <p className="mb-3 text-[11px] font-black uppercase text-[#f5f0e4]/44">Ordenar por</p>
+            <p style={{ color: "rgba(245,240,228,0.50)", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Ordenar por</p>
             <div className="grid grid-cols-2 gap-2">
               {[
                 { value: "rating", label: "Mais avaliados" },
@@ -253,10 +256,10 @@ function FilterDrawer({
             </div>
           </div>
 
-          <div className="client-panel-soft flex items-center justify-between gap-4 p-4">
+          <div className="flex items-center justify-between gap-4 rounded-[10px] p-4" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}>
             <div className="min-w-0">
-            <p className="text-[15px] font-bold text-[#f5f0e4]">Somente verificadas</p>
-              <p className="mt-1 text-[12px] leading-4 text-[#f5f0e4]/50">Perfis com identidade confirmada</p>
+              <p style={{ color: "#f5f0e4", fontSize: 15, fontWeight: 700 }}>Somente verificadas</p>
+              <p style={{ color: "rgba(245,240,228,0.50)", fontSize: 12, lineHeight: 1.4, marginTop: 4 }}>Perfis com identidade confirmada</p>
             </div>
             <button
               type="button"
@@ -433,6 +436,7 @@ export default function AcompanhantesPage() {
   useEffect(() => {
     if (filterOpen) {
       document.body.dataset.clientFiltersOpen = "true";
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
       delete document.body.dataset.clientFiltersOpen;
     }
