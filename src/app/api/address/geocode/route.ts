@@ -25,11 +25,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "GOOGLE_MAPS_API_KEY não configurada." }, { status: 501 });
   }
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://elitemodell.com.br";
+
   if (placeId) {
     const res = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`, {
       headers: {
         "X-Goog-Api-Key": apiKey,
         "X-Goog-FieldMask": "id,formattedAddress,location,addressComponents",
+        "Referer": appUrl,
       },
     });
 
@@ -57,7 +60,7 @@ export async function GET(req: NextRequest) {
   url.searchParams.set("language", "pt-BR");
   url.searchParams.set("key", apiKey);
 
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: { "Referer": appUrl } });
   if (!res.ok) return NextResponse.json({ error: "Erro ao geocodificar endereço." }, { status: 502 });
 
   const data = await res.json();

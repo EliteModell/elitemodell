@@ -31,12 +31,14 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://elitemodell.com.br";
   const res = await fetch("https://places.googleapis.com/v1/places:autocomplete", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "X-Goog-Api-Key": apiKey,
       "X-Goog-FieldMask": "suggestions.placePrediction.place,suggestions.placePrediction.text,suggestions.placePrediction.structuredFormat",
+      "Referer": appUrl,
     },
     body: JSON.stringify({
       input,
