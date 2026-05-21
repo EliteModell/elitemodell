@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- The logo is an SVG brand asset. */
 
 import { useEffect, useMemo, useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -54,32 +54,32 @@ const copy: Record<FlowMode, {
   verifyBack: string;
 }> = {
   client: {
-    title: "Crie sua conta gratis de forma rapida e segura",
-    phoneLabel: "Telefone",
-    phonePlaceholder: "Insira seu numero de telefone",
-    hint: "Vamos enviar um codigo de verificacao para confirmar que o numero pertence a voce.",
-    submit: "Criar conta gratis",
+    title: "Vamos verificar o seu telefone",
+    phoneLabel: "Numero de telefone",
+    phonePlaceholder: "+55 11 96123 4567",
+    hint: "Esta etapa e obrigatoria para manter sua conta segura. Este numero nao sera exibido publicamente.",
+    submit: "Enviar codigo via SMS",
     loginHref: "/app/consumer/login",
     loginLabel: "Ja tenho uma conta",
     verifyBack: "/app/consumer/register",
   },
   model: {
-    title: <>Cadastre-se gratis como <span style={{ color: GOLD }}>acompanhante</span></>,
-    phoneLabel: "Qual seu numero de telefone?",
-    phonePlaceholder: "Digite seu telefone profissional",
-    hint: "Este numero sera validado antes das etapas de perfil, documentos e biometria.",
-    submit: "Continuar",
+    title: "Vamos verificar o seu telefone",
+    phoneLabel: "Numero de telefone",
+    phonePlaceholder: "+55 11 96123 4567",
+    hint: "Esta etapa e obrigatoria para manter seu perfil seguro. Este numero nao sera exibido publicamente. Depois, voce podera escolher outro para mostrar nos seus anuncios.",
+    submit: "Enviar codigo via SMS",
     loginHref: "/modelo/login",
     loginLabel: "Ja tenho conta",
     ownershipLabel: "Confirmo que estou criando meu proprio perfil.",
     verifyBack: "/cadastro-modelo",
   },
   host: {
-    title: <>Cadastre seu espaco como <span style={{ color: GOLD }}>anfitriao</span></>,
-    phoneLabel: "Qual seu numero de telefone?",
-    phonePlaceholder: "Digite seu telefone de contato",
-    hint: "Validamos o telefone antes de liberar o cadastro do local.",
-    submit: "Continuar",
+    title: "Vamos verificar o seu telefone",
+    phoneLabel: "Numero de telefone",
+    phonePlaceholder: "+55 11 96123 4567",
+    hint: "Esta etapa e obrigatoria para manter seu cadastro seguro. Este numero nao sera exibido publicamente no local anunciado.",
+    submit: "Enviar codigo via SMS",
     loginHref: "/login?returnUrl=/anfitriao/imoveis/novo",
     loginLabel: "Ja tenho conta",
     ownershipLabel: "Confirmo que sou responsavel pelo local que vou cadastrar.",
@@ -186,6 +186,98 @@ function LegalFooter() {
   );
 }
 
+function PremiumAuthFooter() {
+  return (
+    <footer className="phone-premium-footer">
+      <section>
+        <Logo />
+        <div className="restricted">Ambiente restrito a maiores de 18 anos</div>
+        <p>
+          A Elite Modell conecta clientes, profissionais e locais reservados com discricao, seguranca e uma experiencia
+          premium. O telefone e usado para verificacao da conta e prevencao de abuso.
+        </p>
+      </section>
+      <div className="groups">
+        <div>
+          <strong>Legal</strong>
+          <Link href="/terms">Termos de Uso</Link>
+          <Link href="/privacy">Politica de Privacidade</Link>
+        </div>
+        <div>
+          <strong>Suporte</strong>
+          <Link href="/dashboard/informacoes">Central de ajuda</Link>
+          <Link href="/esqueci-senha">Recuperar senha</Link>
+        </div>
+        <div>
+          <strong>Seguranca</strong>
+          <Link href="/verificacao">Verificacao de conta</Link>
+          <Link href="/privacy">Como cuidamos dos seus dados</Link>
+        </div>
+      </div>
+      <p className="copyright">Direitos autorais 2026 © Elite Modell</p>
+      <style>{`
+        .phone-premium-footer {
+          width: 100%;
+          max-width: 430px;
+          margin: 34px auto 0;
+          padding: 0 24px calc(30px + env(safe-area-inset-bottom));
+          color: #fff;
+        }
+        .phone-premium-footer section,
+        .phone-premium-footer .groups {
+          border: 1px solid rgba(214,168,58,0.25);
+          border-radius: 24px;
+          background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98));
+          box-shadow: 0 24px 70px rgba(0,0,0,0.34);
+          padding: 24px 18px;
+        }
+        .phone-premium-footer .restricted {
+          width: fit-content;
+          margin-top: 14px;
+          border: 1px solid rgba(214,168,58,0.24);
+          border-radius: 14px;
+          background: rgba(214,168,58,0.12);
+          color: #f5d77a;
+          padding: 10px 12px;
+          font-size: 12px;
+          font-weight: 900;
+          text-transform: uppercase;
+        }
+        .phone-premium-footer p {
+          margin: 18px 0 0;
+          color: #b8b8b8;
+          font-size: 15px;
+          line-height: 1.65;
+        }
+        .phone-premium-footer .groups {
+          display: grid;
+          gap: 24px;
+          margin-top: 18px;
+        }
+        .phone-premium-footer strong {
+          display: block;
+          margin-bottom: 10px;
+          color: #fff;
+          font-size: 17px;
+          font-weight: 950;
+        }
+        .phone-premium-footer a {
+          display: block;
+          color: #b8b8b8;
+          text-decoration: none;
+          padding: 7px 0;
+          font-size: 15px;
+        }
+        .phone-premium-footer .copyright {
+          text-align: center;
+          color: #777;
+          font-size: 13px;
+        }
+      `}</style>
+    </footer>
+  );
+}
+
 function SubmitButton({ children, disabled, premium = false }: { children: React.ReactNode; disabled?: boolean; premium?: boolean }) {
   return (
     <button
@@ -241,13 +333,15 @@ function StatusMessage({ status, message, premium = false }: { status: OtpStatus
 export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; screen: ScreenMode }) {
   const router = useRouter();
   const params = useSearchParams();
+  const { data: session } = useSession();
   const text = copy[mode];
   const storageKey = PHONE_STORAGE_KEY[mode];
   const consentKey = CONSENT_STORAGE_KEY[mode];
   const returnUrl = safeInternalPath(params.get("returnUrl"));
   const isClient = mode === "client";
   const isHost = mode === "host";
-  const isPremium = !isClient;
+  const isPremium = true;
+  const sessionEmail = session?.user?.email;
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [terms, setTerms] = useState(false);
@@ -453,26 +547,48 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
             Alterar telefone
           </button>
         </section>
+        <PremiumAuthFooter />
       </AuthShell>
     );
   }
 
   return (
     <AuthShell backHref={isClient ? undefined : "/"} menu={isClient} premium={isPremium}>
-      <section style={{ width: "100%", maxWidth: isPremium ? 430 : 680, margin: "0 auto", padding: "32px 24px 0" }}>
-        <h1 style={{ fontSize: 34, lineHeight: 1.16, margin: "0 0 20px", color: isPremium ? "#fff" : INK }}>{text.title}</h1>
-        <p style={{ fontSize: 17, color: isPremium ? "#b8b8b8" : "#3d4a51", margin: "0 0 36px", lineHeight: 1.5 }}>{text.hint}</p>
+      <section style={{ width: "100%", maxWidth: 430, margin: "0 auto", padding: "32px 24px 0" }}>
+        <div style={{ textAlign: "center", marginBottom: 42 }}>
+          <p style={{ margin: "0 0 10px", color: "#d6a83a", fontSize: 11, fontWeight: 950, letterSpacing: "0.18em", textTransform: "uppercase" }}>Acesse Elite Modell</p>
+          <h1 style={{ fontSize: 34, lineHeight: 1.08, margin: 0, color: "#fff", fontWeight: 950, letterSpacing: 0 }}>Verificacao obrigatoria</h1>
+          <p style={{ fontSize: 16, color: "#b8b8b8", margin: "12px auto 0", lineHeight: 1.55, maxWidth: 340 }}>Ative sua conta com uma camada extra de seguranca.</p>
+        </div>
+
+        {sessionEmail && (
+          <div style={{ marginBottom: 34 }}>
+            <h2 style={{ margin: "0 0 14px", color: "#fff", fontSize: 22, fontWeight: 950 }}>Seu e-mail</h2>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, color: "#b8b8b8", fontSize: 16, fontWeight: 800 }}>
+              <CheckCircle2 size={22} color="#5bd37a" />
+              <span style={{ overflowWrap: "anywhere" }}>{sessionEmail}</span>
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 18 }}>
+          <Phone size={34} color="#f5d77a" />
+          <h2 style={{ fontSize: 27, lineHeight: 1.12, margin: 0, color: "#fff", fontWeight: 950 }}>{text.title}</h2>
+        </div>
+        <p style={{ fontSize: 18, color: "#d7d7d7", margin: "0 0 34px", lineHeight: 1.58 }}>{text.hint}</p>
         <form onSubmit={handleRegister}>
-          <label style={{ display: "block", fontSize: isClient ? 17 : 22, fontWeight: 900, marginBottom: 12, color: isPremium ? "#d6a83a" : undefined }}>{text.phoneLabel}</label>
+          <label style={{ display: "block", fontSize: 15, fontWeight: 950, marginBottom: 12, color: "#d6a83a", letterSpacing: "0.08em", textTransform: "uppercase" }}>*{text.phoneLabel}</label>
           <div style={{ position: "relative" }}>
-            <Phone size={22} style={{ position: "absolute", left: 20, top: 21, color: isPremium ? "#d6a83a" : "#314047" }} />
+            <span style={{ position: "absolute", left: 16, top: 17, height: 36, minWidth: 54, borderRadius: 12, background: "rgba(214,168,58,0.10)", border: "1px solid rgba(214,168,58,0.24)", color: "#f5d77a", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900 }}>
+              +55
+            </span>
             <input
               value={phone}
               onChange={(e) => setPhone(maskPhone(e.target.value))}
               inputMode="tel"
               autoComplete="tel"
               placeholder={text.phonePlaceholder}
-              style={{ width: "100%", height: 70, border: isPremium ? "1px solid rgba(214,168,58,0.28)" : "1px solid #cdd5d5", borderRadius: isPremium ? 18 : 8, background: isPremium ? "rgba(11,11,13,0.94)" : "#fff", color: isPremium ? "#fff" : INK, padding: "0 18px 0 58px", fontSize: 17, outlineColor: GOLD }}
+              style={{ width: "100%", height: 70, border: "1px solid rgba(214,168,58,0.28)", borderRadius: 18, background: "rgba(11,11,13,0.94)", color: "#fff", padding: "0 18px 0 86px", fontSize: 17, outlineColor: GOLD }}
             />
           </div>
 
@@ -527,7 +643,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
           </p>
         )}
       </section>
-      {!isPremium && <LegalFooter />}
+      <PremiumAuthFooter />
       {privacyOpen && (
         <div role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.42)", display: "grid", placeItems: "center", padding: 20, zIndex: 40 }}>
           <div style={{ background: "#fff", borderRadius: 10, padding: 24, maxWidth: 420, color: INK, boxShadow: "0 18px 60px rgba(0,0,0,0.2)" }}>

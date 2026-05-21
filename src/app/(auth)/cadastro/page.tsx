@@ -149,6 +149,116 @@ function AuthMethodButton({
   );
 }
 
+function AuthInfoFooter() {
+  return (
+    <div className="auth-info-footer">
+      <section className="auth-info-card">
+        <Link href="/" className="auth-info-brand" aria-label="Elite Modell">
+          <span>elite</span>
+          <strong>modell</strong>
+        </Link>
+        <div className="auth-restricted-badge">Ambiente restrito a maiores de 18 anos</div>
+        <p>
+          A Elite Modell conecta clientes, profissionais e locais reservados com discrição, segurança e uma experiência
+          premium. Cadastre-se para acessar recursos, continuar fluxos pendentes ou ativar seu perfil.
+        </p>
+      </section>
+
+      <section className="auth-link-groups">
+        <div>
+          <h2>Legal</h2>
+          <Link href="/terms">Termos de Uso</Link>
+          <Link href="/privacy">Política de Privacidade</Link>
+        </div>
+        <div>
+          <h2>Suporte</h2>
+          <Link href="/dashboard/informacoes">Central de ajuda</Link>
+          <Link href="/esqueci-senha">Recuperar senha</Link>
+        </div>
+        <div>
+          <h2>Segurança</h2>
+          <Link href="/verificacao">Verificação de conta</Link>
+          <Link href="/privacy">Como cuidamos dos seus dados</Link>
+        </div>
+      </section>
+
+      <style>{`
+        .auth-info-footer {
+          width: 100%;
+          max-width: 440px;
+          margin: 24px auto 0;
+          padding-bottom: calc(30px + env(safe-area-inset-bottom));
+        }
+        .auth-info-card,
+        .auth-link-groups {
+          border: 1px solid rgba(214,168,67,0.25);
+          border-radius: 24px;
+          background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98));
+          box-shadow: 0 24px 70px rgba(0,0,0,0.34);
+        }
+        .auth-info-card {
+          padding: 24px 18px;
+        }
+        .auth-info-brand {
+          display: inline-flex;
+          align-items: baseline;
+          gap: 1px;
+          margin-bottom: 14px;
+          text-decoration: none;
+          font-size: 22px;
+          font-weight: 950;
+        }
+        .auth-info-brand span {
+          background: ${GOLD_GRADIENT};
+          background-clip: text;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        .auth-info-brand strong {
+          color: #fff;
+          font: inherit;
+        }
+        .auth-restricted-badge {
+          width: fit-content;
+          border: 1px solid rgba(214,168,67,0.24);
+          border-radius: 14px;
+          background: rgba(214,168,67,0.12);
+          color: #f5d78c;
+          padding: 10px 12px;
+          font-size: 12px;
+          font-weight: 900;
+          text-transform: uppercase;
+        }
+        .auth-info-card p {
+          margin: 18px 0 0;
+          color: #b8b8b8;
+          font-size: 15px;
+          line-height: 1.65;
+        }
+        .auth-link-groups {
+          margin-top: 18px;
+          padding: 24px 18px;
+          display: grid;
+          gap: 24px;
+        }
+        .auth-link-groups h2 {
+          margin: 0 0 12px;
+          color: #fff;
+          font-size: 17px;
+          font-weight: 950;
+        }
+        .auth-link-groups a {
+          display: block;
+          color: #b8b8b8;
+          text-decoration: none;
+          padding: 7px 0;
+          font-size: 15px;
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export default function CadastroPage() {
   const router = useRouter();
   const { status } = useSession();
@@ -467,7 +577,8 @@ export default function CadastroPage() {
     ];
 
     return (
-      <div style={{ width: "100%", maxWidth: 620, background: "rgba(8,8,8,0.96)", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 16, padding: "34px 28px", position: "relative", zIndex: 1 }}>
+      <main style={{ width: "100%", maxWidth: 620, padding: "max(18px, env(safe-area-inset-top)) 0 0" }}>
+      <div style={{ width: "100%", maxWidth: 620, background: "linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98))", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 24, padding: "34px 28px", position: "relative", zIndex: 1, boxShadow: "0 24px 70px rgba(0,0,0,0.34)" }}>
         <GoldLine />
         <Logo />
         <div style={{ textAlign: "center", margin: "-12px 0 24px" }}>
@@ -520,11 +631,14 @@ export default function CadastroPage() {
           Já tem uma conta? <Link href={ACCOUNT_ROUTES.login} style={{ color: GOLD, textDecoration: "none", fontWeight: 700 }}>Entrar</Link>
         </p>
       </div>
+      <AuthInfoFooter />
+      </main>
     );
   }
 
   if (step === "verify") {
     return (
+      <main style={{ width: "100%", maxWidth: 440, padding: "max(18px, env(safe-area-inset-top)) 0 0" }}>
       <div style={{ width: "100%", maxWidth: 420, background: "rgba(8,8,8,0.96)", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 16, padding: "48px 36px", position: "relative", zIndex: 1, textAlign: "center" }}>
         <GoldLine />
         <h2 style={{ color: "#f1f5f9", fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>Verifique seu email</h2>
@@ -535,11 +649,14 @@ export default function CadastroPage() {
           Ir para o login
         </button>
       </div>
+      <AuthInfoFooter />
+      </main>
     );
   }
 
   return (
-    <div style={{ width: "100%", maxWidth: 440, background: "rgba(8,8,8,0.96)", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 16, padding: "42px 34px", position: "relative", zIndex: 1 }}>
+    <main style={{ width: "100%", maxWidth: 440, padding: "max(18px, env(safe-area-inset-top)) 0 0" }}>
+    <div style={{ width: "100%", maxWidth: 440, background: "linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98))", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 24, padding: "42px 34px", position: "relative", zIndex: 1, boxShadow: "0 24px 70px rgba(0,0,0,0.34)" }}>
       <GoldLine />
       <Logo />
       <p style={{ color: "#8d8578", fontSize: 14, textAlign: "center", marginTop: -18, marginBottom: accountHint ? 8 : 26 }}>{accountSubtitle}</p>
@@ -801,5 +918,7 @@ export default function CadastroPage() {
         Já tem uma conta? <Link href={ACCOUNT_ROUTES.login} style={{ color: GOLD, textDecoration: "none", fontWeight: 600 }}>Entrar</Link>
       </p>
     </div>
+    <AuthInfoFooter />
+    </main>
   );
 }
