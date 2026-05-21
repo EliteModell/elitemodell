@@ -266,6 +266,8 @@ export default function PremiumDashboardHome({
   const [showCitySelector, setShowCitySelector] = useState(false);
 
   useEffect(() => {
+    delete document.body.dataset.clientExplore;
+    delete document.body.dataset.clientFiltersOpen;
     document.body.dataset.clientDashboard = "true";
     return () => {
       delete document.body.dataset.clientDashboard;

@@ -1671,17 +1671,31 @@ body[data-client-dashboard="true"] .client-premium,
   --client-text: #ffffff;
   --client-muted: #b8b8b8;
   --client-faint: #7d7d82;
+  position: relative;
+  isolation: isolate;
 }
 
 .client-dashboard-shell::before,
 .client-dashboard-shell::after {
+  pointer-events: none;
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+  background-position: center top !important;
+}
+
+.client-dashboard-shell::before {
   background:
-    radial-gradient(circle at 78% 0%, rgba(245, 184, 59, 0.12), transparent 30%),
-    radial-gradient(circle at 12% 16%, rgba(214, 168, 58, 0.09), transparent 28%),
-    linear-gradient(180deg, #050505 0%, #080807 46%, #050505 100%) !important;
+    radial-gradient(circle at 20% 10%, rgba(214, 168, 58, 0.18), transparent 35%),
+    radial-gradient(circle at 80% 40%, rgba(214, 168, 58, 0.10), transparent 35%),
+    #050505 !important;
+}
+
+.client-dashboard-shell::after {
+  background: linear-gradient(180deg, rgba(5, 5, 5, 0), #050505 72%) !important;
 }
 
 .client-dashboard-shell > header {
+  z-index: 9000 !important;
   border-bottom: 1px solid rgba(214, 168, 58, 0.16) !important;
   background: rgba(5, 5, 5, 0.94) !important;
   box-shadow: 0 16px 46px rgba(0, 0, 0, 0.38) !important;
@@ -1721,7 +1735,9 @@ body[data-client-dashboard="true"] .client-premium,
 }
 
 .client-dashboard-shell .client-shell-content {
-  padding: 0 16px calc(130px + env(safe-area-inset-bottom)) !important;
+  position: relative;
+  z-index: 1;
+  padding: 0 16px calc(190px + env(safe-area-inset-bottom)) !important;
   overflow-x: hidden;
 }
 
@@ -1748,11 +1764,15 @@ body[data-client-dashboard="true"] .client-premium,
 }
 
 .client-dashboard-home {
+  position: relative;
+  z-index: 1;
   width: 100%;
-  padding-bottom: 0;
+  padding-bottom: 150px;
 }
 
 .client-dashboard-welcome {
+  position: relative;
+  z-index: 1;
   margin-top: 24px;
   margin-bottom: 32px;
   padding: 22px 18px;
@@ -1766,6 +1786,8 @@ body[data-client-dashboard="true"] .client-premium,
 }
 
 .client-dashboard-actions {
+  position: relative;
+  z-index: 1;
   width: 100%;
   margin-bottom: 40px;
 }
@@ -1780,6 +1802,8 @@ body[data-client-dashboard="true"] .client-premium,
 .client-dashboard-shell .client-card,
 .client-dashboard-shell .client-panel,
 .client-dashboard-shell .client-empty {
+  position: relative;
+  z-index: 1;
   border: 1px solid rgba(214, 168, 58, 0.25) !important;
   border-radius: 22px !important;
   background:
@@ -1817,9 +1841,11 @@ body[data-client-dashboard="true"] .client-premium,
 }
 
 .client-dashboard-stack {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: 0;
-  padding-bottom: 0;
+  padding-bottom: 120px;
 }
 
 .client-dashboard-section {
@@ -1868,8 +1894,12 @@ body[data-client-dashboard="true"] .client-premium,
   overflow: hidden;
   border-radius: 18px !important;
   background:
-    linear-gradient(90deg, rgba(245, 184, 59, 0.34), rgba(245, 184, 59, 0.06) 38%, transparent),
-    url("/brand/client-area-bg.jpg") center/cover !important;
+    radial-gradient(circle at 25% 50%, rgba(245, 184, 59, 0.28), transparent 34%),
+    linear-gradient(90deg, rgba(245, 184, 59, 0.28), rgba(245, 184, 59, 0.06) 38%, transparent),
+    #08080a !important;
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+  background-position: center !important;
 }
 
 .client-dashboard-history-art svg {
@@ -1881,28 +1911,55 @@ body[data-client-dashboard="true"] .client-premium,
   right: auto !important;
   width: 100%;
   max-width: 430px;
+  height: 86px !important;
   transform: translateX(-50%);
-  padding-left: 8px !important;
-  padding-right: 8px !important;
+  z-index: 9999 !important;
+  padding: 0 8px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
 }
 
 .client-dashboard-shell .client-bottom-nav > div {
   width: 100%;
+  height: 86px !important;
   max-width: 100%;
-  border-color: rgba(214, 168, 58, 0.22) !important;
-  border-radius: 18px 18px 0 0 !important;
-  background: rgba(8, 8, 9, 0.92) !important;
-  box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.48), 0 0 28px rgba(214, 168, 58, 0.06) !important;
+  border: 1px solid rgba(214, 168, 58, 0.28) !important;
+  border-bottom: 0 !important;
+  border-radius: 22px 22px 0 0 !important;
+  background: rgba(5, 5, 5, 0.96) !important;
+  box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.58), 0 0 28px rgba(214, 168, 58, 0.10) !important;
+  backdrop-filter: blur(14px);
 }
 
 .client-dashboard-shell .client-bottom-nav a {
-  color: #8a8a8a !important;
+  color: #b8b8b8 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.client-dashboard-shell .client-bottom-nav a:not([href="/dashboard"]) {
+  color: #a7a7a7 !important;
+}
+
+.client-dashboard-shell .client-bottom-nav a svg,
+.client-dashboard-shell .client-bottom-nav a span {
+  color: currentColor !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .client-dashboard-shell .client-bottom-nav a[href="/dashboard"] {
   border-color: rgba(214, 168, 58, 0.30) !important;
   background: rgba(214, 168, 58, 0.13) !important;
   color: #f5b83b !important;
+  opacity: 1 !important;
+}
+
+.client-dashboard-shell .client-bottom-nav a[href="/dashboard"] svg,
+.client-dashboard-shell .client-bottom-nav a[href="/dashboard"] span {
+  color: #f5b83b !important;
+  opacity: 1 !important;
 }
 
 .client-lists-shell {
