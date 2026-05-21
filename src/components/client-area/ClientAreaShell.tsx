@@ -425,8 +425,17 @@ export function ClientBottomNav() {
         {items.map((item) => {
           const active =
             pathname === item.href ||
-            (item.href === "/dashboard" && pathname === "/dashboard/perfil") ||
-            (item.href !== "/dashboard" && pathname?.startsWith(item.href + "/"));
+            (item.href !== "/dashboard" && pathname?.startsWith(item.href + "/")) ||
+            (item.href === "/dashboard" &&
+              Boolean(
+                pathname?.startsWith("/dashboard") &&
+                  pathname !== "/dashboard/acompanhantes" &&
+                  pathname !== "/dashboard/shots" &&
+                  pathname !== "/dashboard/favoritos" &&
+                  !pathname?.startsWith("/dashboard/acompanhantes/") &&
+                  !pathname?.startsWith("/dashboard/shots/") &&
+                  !pathname?.startsWith("/dashboard/favoritos/"),
+              ));
           return (
             <Link
               key={item.href}
