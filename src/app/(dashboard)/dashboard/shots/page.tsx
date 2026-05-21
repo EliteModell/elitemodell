@@ -147,8 +147,8 @@ function EmptyShotsState({
   onClear: () => void;
 }) {
   return (
-    <div className="space-y-4">
-      <section className="client-empty overflow-hidden py-12">
+    <div className="space-y-8">
+      <section className="client-empty overflow-hidden px-1 py-14">
         <div className="flex flex-col items-center px-6 text-center">
           <div className="grid h-[64px] w-[64px] place-items-center rounded-[14px] border border-[#d4a843]/22 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.12)]">
             {hasFilters ? <Search className="h-7 w-7" /> : <Users className="h-7 w-7" />}
@@ -258,7 +258,7 @@ export default function ShotsPage() {
       </section>
 
       {/* ── Painel de filtros ── */}
-      <section className="px-0 pb-10">
+      <section className="px-0 pb-0">
         <div className="client-explore-search-panel">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
@@ -303,13 +303,13 @@ export default function ShotsPage() {
 
           <div className="mt-5 pb-3">
             <p className="mb-3 text-[12px] font-black uppercase text-[#f5f0e4]/46">Categoria</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {FILTERS.map((f) => (
                 <button
                   key={f.value}
                   type="button"
                   onClick={() => setActiveFilter(f.value)}
-                  className={`min-h-[48px] rounded-[12px] px-4 text-[15px] font-black transition-colors ${
+                  className={`min-h-[54px] rounded-[12px] px-4 text-[15px] font-black transition-colors ${
                     activeFilter === f.value ? "client-chip-active" : "client-chip"
                   }`}
                   aria-pressed={activeFilter === f.value}
@@ -323,7 +323,7 @@ export default function ShotsPage() {
       </section>
 
       {/* ── Resultados ── */}
-      <div className="px-5 pb-[calc(220px+env(safe-area-inset-bottom))]">
+      <div className="mt-1 px-5 pb-[calc(280px+env(safe-area-inset-bottom))]">
         {!loading && items.length > 0 && (
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="text-[13px] font-semibold text-[#f5f0e4]/56">

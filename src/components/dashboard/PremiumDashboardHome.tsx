@@ -144,7 +144,7 @@ function QuickActionGrid({
           />
         </div>
       </section>
-      <div style={{ height: 34, background: "linear-gradient(180deg, #111214 0%, #d4a843 100%)" }} />
+      <div style={{ height: 28, background: "linear-gradient(180deg, #111214 0%, #d4a843 100%)" }} />
     </>
   );
 }
@@ -157,42 +157,42 @@ function QuickStatsSection({
   vip: DashboardHomeData["vip"];
 }) {
   return (
-    <section className="client-page-tight" style={{ paddingBottom: 20 }}>
-      <div className="client-card overflow-hidden p-4">
+    <section className="client-page-tight">
+      <div className="client-card overflow-hidden p-5">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[11px] font-black uppercase tracking-wide text-[#f5d78c]/70">Nivel atual</p>
-            <p className="mt-0.5 text-[20px] font-black leading-tight text-[#f5d78c]">{vip.label}</p>
+            <p className="mt-1 text-[24px] font-black leading-tight text-[#f5d78c]">{vip.label}</p>
           </div>
           <span className="shrink-0 rounded-full border border-[#d4a843]/24 bg-[#d4a843]/10 px-2.5 py-1 text-[13px] font-black text-[#f5d78c]">
             {vip.progress}%
           </span>
         </div>
-        <p className="mt-1.5 text-[12px] leading-[1.5] text-[#f5f0e4]/46">{vip.description}</p>
+        <p className="mt-2 text-[14px] leading-6 text-[#f5f0e4]/46">{vip.description}</p>
 
-        <div className="mt-3 h-[4px] overflow-hidden rounded-full bg-[rgba(30,24,14,0.06)]">
+        <div className="mt-4 h-[5px] overflow-hidden rounded-full bg-[rgba(30,24,14,0.06)]">
           <div
             className="h-full rounded-full bg-[#d4a843] transition-all duration-700"
             style={{ width: `${Math.max(3, vip.progress)}%` }}
           />
         </div>
 
-        <div className="my-4 h-px bg-[rgba(30,24,14,0.07)]" />
+        <div className="my-5 h-px bg-[rgba(30,24,14,0.07)]" />
 
         <div className="flex items-center gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[26px] font-black leading-none text-[#f5f0e4]">{stats.completedAppointments}</p>
-            <p className="mt-1 text-[11px] text-[#f5f0e4]/44">Concluidos</p>
+            <p className="text-[30px] font-black leading-none text-[#f5f0e4]">{stats.completedAppointments}</p>
+            <p className="mt-2 text-[12px] text-[#f5f0e4]/44">Concluidos</p>
           </div>
           <div className="h-8 w-px bg-[rgba(30,24,14,0.07)]" />
           <div className="min-w-0 flex-1">
-            <p className="text-[26px] font-black leading-none text-[#f5f0e4]">{stats.favoriteProfiles}</p>
-            <p className="mt-1 text-[11px] text-[#f5f0e4]/44">Salvos</p>
+            <p className="text-[30px] font-black leading-none text-[#f5f0e4]">{stats.favoriteProfiles}</p>
+            <p className="mt-2 text-[12px] text-[#f5f0e4]/44">Salvos</p>
           </div>
           <div className="h-8 w-px bg-[rgba(30,24,14,0.07)]" />
           <div className="min-w-0 flex-1">
-            <p className="text-[26px] font-black leading-none text-[#f5f0e4]">{stats.totalAppointments}</p>
-            <p className="mt-1 text-[11px] text-[#f5f0e4]/44">Total</p>
+            <p className="text-[30px] font-black leading-none text-[#f5f0e4]">{stats.totalAppointments}</p>
+            <p className="mt-2 text-[12px] text-[#f5f0e4]/44">Total</p>
           </div>
         </div>
       </div>
@@ -279,7 +279,7 @@ export default function PremiumDashboardHome({
     <div>
       <UserWelcomeCard name={data.user.name} image={data.user.image} city={data.city} />
       <QuickActionGrid credits={data.stats.credits} verificationDone={verificationDone} />
-      <div style={{ display: "grid", gap: 48, paddingTop: 18, paddingBottom: 150 }}>
+      <div style={{ display: "grid", gap: 0, paddingTop: 14, paddingBottom: 150 }}>
         <QuickStatsSection stats={data.stats} vip={data.vip} />
         <VerificationSection steps={verificationSteps} />
         <ListsSection />

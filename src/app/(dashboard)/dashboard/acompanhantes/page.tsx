@@ -290,7 +290,7 @@ function EmptyState({
   ].filter(Boolean) as string[];
 
   return (
-    <section className="client-empty mb-14 mt-4 overflow-hidden pb-64 pt-12">
+    <section className="client-empty mb-16 mt-1 overflow-hidden pb-36 pt-12">
       <div className="flex flex-col items-center px-6 text-center">
         <div className="grid h-[68px] w-[68px] place-items-center rounded-[16px] border border-[#d4a843]/26 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.14)]">
           {hasFilters ? <Search className="h-8 w-8" /> : <ShieldCheck className="h-8 w-8" />}
@@ -468,7 +468,7 @@ export default function AcompanhantesPage() {
         </div>
       </section>
 
-      <section className="px-0 pb-24">
+      <section className="px-0 pb-0">
         <div className="client-explore-search-panel">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -532,7 +532,7 @@ export default function AcompanhantesPage() {
 
           <div className="mt-6 pb-3">
             <p className="mb-3 text-[12px] font-black uppercase text-[#f5f0e4]/46">Categoria</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {CATEGORIES.map((c) => (
                 <button
                   key={c.value}
@@ -541,7 +541,7 @@ export default function AcompanhantesPage() {
                     setActiveCategory(c.value);
                     setCategory(c.value);
                   }}
-                  className={`min-h-[48px] rounded-[12px] px-4 text-[15px] font-black transition-colors ${
+                  className={`min-h-[54px] rounded-[12px] px-4 text-[15px] font-black transition-colors ${
                     activeCategory === c.value ? "client-chip-active" : "client-chip"
                   }`}
                 >
@@ -575,7 +575,7 @@ export default function AcompanhantesPage() {
         </div>
       )}
 
-      <div className="space-y-12 px-5 pb-[calc(440px+env(safe-area-inset-bottom))]">
+      <div className="mt-1 space-y-12 px-5 pb-[calc(360px+env(safe-area-inset-bottom))]">
         {loading && professionals.length === 0 ? (
           Array.from({ length: 3 }).map((_, i) => <ProfileCardSkeleton key={i} />)
         ) : professionals.length === 0 ? (

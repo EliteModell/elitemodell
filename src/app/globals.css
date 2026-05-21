@@ -264,7 +264,7 @@ body {
 }
 
 .client-page-tight {
-  padding: 24px 20px 44px;
+  padding: 20px 20px 34px;
 }
 
 .client-page-header {
@@ -451,14 +451,14 @@ body {
   border: 1px solid var(--client-line);
   border-radius: 8px;
   background: var(--client-surface);
-  margin: 0 20px;
+  margin: 0 20px 32px;
   padding: 22px;
   box-shadow: 0 18px 38px rgba(112, 78, 16, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.76);
 }
 
 .client-explore-field {
   display: flex;
-  min-height: 58px;
+  min-height: 62px;
   align-items: center;
   gap: 12px;
   border: 1px solid var(--client-line);
@@ -503,6 +503,7 @@ body[data-client-filters-open="true"] .client-shell-content {
   .client-explore-search-panel {
     margin-left: 20px;
     margin-right: 20px;
+    margin-bottom: 32px;
     border-left: 1px solid var(--client-line);
     border-right: 1px solid var(--client-line);
     border-radius: 8px;
