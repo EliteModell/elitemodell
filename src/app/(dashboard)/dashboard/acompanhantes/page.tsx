@@ -337,7 +337,7 @@ function EmptyState({
             onClick={hasFilters ? onClear : onExploreCity}
             className="client-primary-button flex min-h-0 items-center justify-center gap-2 py-3.5 text-[15px] font-black"
           >
-            {hasFilters ? "Limpar filtros" : "Escolher cidade"}
+            {hasFilters ? "Limpar filtros" : "Explorar cidades"}
             <ChevronRight className="h-4 w-4" />
           </button>
           {hasFilters && (
@@ -356,8 +356,38 @@ function EmptyState({
   );
 }
 
-function CitySelectionScreen({ onSelectCity }: { onSelectCity: (city: string) => void }) {
-  const router = useRouter();
+function ExploreSafetyCard() {
+  return (
+    <section className="client-explore-safety">
+      <div>
+        <span>
+          <ShieldCheck />
+        </span>
+        <div>
+          <h3>Ambiente seguro e verificado</h3>
+          <p>Seus dados estão protegidos.</p>
+        </div>
+      </div>
+      <div>
+        <span>
+          <LockKeyhole />
+        </span>
+        <div>
+          <h3>Privacidade garantida</h3>
+          <p>Informações 100% seguras.</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CitySelectionScreen({
+  onClose,
+  onSelectCity,
+}: {
+  onClose: () => void;
+  onSelectCity: (city: string) => void;
+}) {
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
@@ -427,55 +457,50 @@ function CitySelectionScreen({ onSelectCity }: { onSelectCity: (city: string) =>
   const busy = loadingSuggestions || checking;
 
   return (
-    <div
-      className="min-h-dvh overflow-hidden bg-[#030405] text-white"
-      style={{ animation: "premiumFadeUp 200ms ease-out both" }}
-    >
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_75%_28%,rgba(250,204,21,0.10),transparent_32%),linear-gradient(180deg,#050505_0%,#030405_56%,#050505_100%)]" />
+    <div className="client-city-select">
+      <div className="client-city-bg" />
 
-      <div className="relative mx-auto flex min-h-dvh max-w-[820px] flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+38px)] pt-[calc(env(safe-area-inset-top)+22px)] sm:px-8">
-        <header className="flex items-center justify-between">
-          <span className="text-[30px] font-black leading-none">
-            <span className="bg-[linear-gradient(135deg,#ffb326_0%,#facc15_48%,#fff0b5_100%)] bg-clip-text text-transparent">elite</span>
-            <span className="text-[#fffaf0]">modell</span>
+      <div className="client-city-wrap">
+        <header className="client-city-header">
+          <span className="client-city-logo">
+            <span className="client-city-logo-gold">elite</span>
+            <span className="client-city-logo-white">modell</span>
             <span className="ml-1 text-[#facc15]">✦</span>
           </span>
           <button
             type="button"
-            onClick={() => router.back()}
-            className="grid h-[66px] w-[66px] place-items-center rounded-[14px] border border-[#facc15]/35 bg-[#181307]/65 text-[#facc15] shadow-[0_0_28px_rgba(250,204,21,0.12)] transition hover:bg-[#241a08] active:scale-95"
+            onClick={onClose}
+            className="client-city-close"
             aria-label="Fechar"
           >
-            <X className="h-9 w-9" strokeWidth={2.35} />
+            <X />
           </button>
         </header>
 
-        <section className="relative mt-[66px] min-h-[298px] overflow-visible">
-          <div className="pointer-events-none absolute -right-[72px] -top-[228px] h-[604px] w-[302px] sm:-right-[96px] sm:-top-[326px] sm:h-[820px] sm:w-[410px]" aria-hidden="true">
-            <Image
-              src="/brand/elite-modell%20gps.png"
-              alt=""
-              fill
-              priority
-              sizes="(max-width: 640px) 302px, 410px"
-              className="object-contain"
-            />
-          </div>
-          <div className="pointer-events-none absolute -right-8 top-[116px] h-48 w-[78%] bg-[linear-gradient(90deg,#030405_0%,rgba(3,4,5,0.78)_38%,rgba(3,4,5,0)_100%)] sm:hidden" />
+        <section className="client-city-hero">
+          <Image
+            src="/brand/elite-modell%20gps.png"
+            alt=""
+            width={640}
+            height={520}
+            priority
+            sizes="(max-width: 430px) 100vw, 320px"
+            className="client-city-hero-image"
+          />
 
-          <p className="relative text-[21px] font-black uppercase leading-none tracking-[0.34em] text-[#cfa243] sm:text-[16px]">EXPLORAR PERFIS</p>
-          <h1 className="relative mt-6 text-[64px] font-black leading-[0.98] tracking-[-0.04em] text-[#fffaf0] [text-shadow:0_8px_34px_rgba(0,0,0,0.78)] sm:text-[72px]">
+          <p className="client-city-kicker">EXPLORAR PERFIS</p>
+          <h1 className="client-city-title">
             Selecionar<br />cidade <span className="text-[#facc15]">✦</span>
           </h1>
-          <p className="relative mt-5 text-[28px] leading-[1.32] text-[#d8d8d8] sm:text-[24px]">
+          <p className="client-city-subtitle">
             Escolha uma cidade para ver<br />os perfis disponíveis
           </p>
         </section>
 
-        <section className="relative mt-[28px]">
-          <div className="flex h-[94px] items-center rounded-[14px] border border-[#c89422]/85 bg-[#07090a]/92 shadow-[0_0_0_1px_rgba(250,204,21,0.08),0_22px_60px_rgba(0,0,0,0.46),inset_0_1px_0_rgba(255,255,255,0.045)] transition focus-within:border-[#facc15] focus-within:shadow-[0_0_0_1px_rgba(250,204,21,0.20),0_0_34px_rgba(250,204,21,0.11)]">
-            <div className="grid h-full w-[86px] shrink-0 place-items-center rounded-l-[13px] border-r border-[#c89422]/30 bg-[#17130c]/82">
-              <MapPin className="h-12 w-12 text-[#f5b936] drop-shadow-[0_0_16px_rgba(250,204,21,0.35)]" strokeWidth={2.2} />
+        <section className="client-city-search-section">
+          <div className="client-city-search">
+            <div className="client-city-search-icon">
+              <MapPin />
             </div>
             <input
               ref={inputRef}
@@ -486,65 +511,63 @@ function CitySelectionScreen({ onSelectCity }: { onSelectCity: (city: string) =>
                 setNoResults(null);
               }}
               placeholder="Digite 3 ou mais caracteres"
-              className="min-w-0 flex-1 bg-transparent px-5 text-[29px] font-semibold text-[#fffaf0] outline-none placeholder:font-normal placeholder:text-[#8b8b8b] sm:text-[23px]"
+              className="client-city-input"
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
             />
-            <div className="grid w-[74px] shrink-0 place-items-center">
+            <div className="client-city-search-action">
               {busy ? (
-                <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-[#facc15] border-t-transparent" />
+                <div className="client-city-spinner" />
               ) : input ? (
                 <button
                   type="button"
                   onClick={reset}
-                  className="grid h-10 w-10 place-items-center rounded-full bg-white/8 text-[#facc15] transition active:bg-white/14"
+                  className="client-city-clear"
                   aria-label="Limpar busca"
                 >
-                  <X className="h-5 w-5" />
+                  <X />
                 </button>
               ) : (
-                <Search className="h-10 w-10 text-[#f5b936]" strokeWidth={2.2} />
+                <Search />
               )}
             </div>
           </div>
         </section>
 
-        <main className="relative mt-[74px] flex-1">
+        <main className="client-city-main">
           {noResults && !checking && (
-            <div className="flex flex-col items-center rounded-[18px] border border-[#facc15]/20 bg-white/[0.035] px-6 py-12 text-center shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
-              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#facc15]">Em breve</p>
-              <h2 className="mt-3 text-[28px] font-black leading-[1.1] text-[#fffaf0]">
+            <div className="client-city-empty">
+              <p>Em breve</p>
+              <h2>
                 Terá acompanhantes<br />em {noResults}
               </h2>
               <button
                 type="button"
                 onClick={reset}
-                className="mt-8 flex min-h-12 items-center gap-2 rounded-[14px] border border-[#facc15]/45 bg-[#facc15]/14 px-7 text-[14px] font-bold text-[#facc15] transition active:scale-95"
               >
-                <Search className="h-4 w-4" />
+                <Search />
                 Buscar outra cidade
               </button>
             </div>
           )}
 
           {!noResults && !busy && suggestions.length > 0 && (
-            <ul className="overflow-hidden rounded-[18px] border border-[#facc15]/18 bg-white/[0.035]" role="listbox">
+            <ul className="client-city-suggestions" role="listbox">
               {suggestions.map((s, i) => (
                 <li key={s.placeId} role="option" aria-selected={false}>
                   <button
                     type="button"
                     onClick={() => void handleSelect(s)}
-                    className="flex w-full items-center gap-4 px-5 py-5 text-left transition-colors hover:bg-white/[0.04] active:bg-white/[0.06]"
                     style={{ borderBottom: i < suggestions.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}
                   >
-                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-[13px] border border-[#facc15]/26 bg-[#17130c]/88">
-                      <MapPin className="h-5 w-5 text-[#facc15]" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[16px] font-black text-[#fffaf0]">{s.mainText}</p>
-                      {s.secondaryText && <p className="mt-1 truncate text-[13px] text-[#fffaf0]/48">{s.secondaryText}</p>}
-                    </div>
+                    <span className="client-city-suggestion-icon">
+                      <MapPin />
+                    </span>
+                    <span>
+                      <strong>{s.mainText}</strong>
+                      {s.secondaryText && <small>{s.secondaryText}</small>}
+                    </span>
                   </button>
                 </li>
               ))}
@@ -619,6 +642,7 @@ export default function AcompanhantesPage() {
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState("");
+  const [showCitySelector, setShowCitySelector] = useState(false);
 
   useEffect(() => {
     if (appliedInitial.current) {
@@ -704,6 +728,13 @@ export default function AcompanhantesPage() {
   }, [filterOpen]);
 
   useEffect(() => {
+    document.body.dataset.clientExplore = "true";
+    return () => {
+      delete document.body.dataset.clientExplore;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!filterOpen) return;
 
     window.setTimeout(() => {
@@ -726,21 +757,25 @@ export default function AcompanhantesPage() {
   }
 
   function focusCity() {
-    document.querySelector<HTMLInputElement>('[data-client-city-filter="true"]')?.focus();
+    setShowCitySelector(true);
   }
 
   function handleCitySelect(selectedCity: string) {
     setCity(selectedCity);
+    setShowCitySelector(false);
     router.push(`/dashboard/acompanhantes?city=${encodeURIComponent(selectedCity)}`);
-  }
-
-  if (!city && !search && !activeCategory && !onlyVerified && sortBy === "rating") {
-    return <CitySelectionScreen onSelectCity={handleCitySelect} />;
   }
 
   return (
     <>
-      <section className="bg-[linear-gradient(180deg,#070707_0%,#101010_52%,#1a1a1a_100%)] px-4 pb-8 pt-4 text-white">
+      {showCitySelector && (
+        <CitySelectionScreen
+          onClose={() => setShowCitySelector(false)}
+          onSelectCity={handleCitySelect}
+        />
+      )}
+
+      <section className="client-explore-home">
         <div>
           <p className="text-[14px] font-bold uppercase tracking-wide text-[#f5c242]">EXPLORAR PERFIS</p>
           <h1 className="mt-2 text-[40px] font-black leading-[1.04] tracking-[-0.03em] text-white">
@@ -778,13 +813,15 @@ export default function AcompanhantesPage() {
 
           <div className="space-y-3">
             <label className="block">
-              <span className="sr-only">Cidade</span>
+              <span className="client-explore-field-label">Cidade</span>
               <div className="flex min-h-[54px] items-center gap-3 rounded-[18px] border border-white/[0.10] bg-[#111318] px-4 shadow-[0_0_26px_rgba(245,194,66,0.04)] transition focus-within:border-[#f5c242] focus-within:shadow-[0_0_0_3px_rgba(245,194,66,0.12)]">
                 <MapPin className="h-5 w-5 shrink-0 text-[#f5c242]" />
                 <input
                   type="text"
                   placeholder="Digite a cidade"
                   value={city}
+                  onClick={() => setShowCitySelector(true)}
+                  onFocus={() => setShowCitySelector(true)}
                   onChange={(e) => setCity(e.target.value)}
                   className="min-w-0 flex-1 bg-transparent text-[16px] font-semibold text-white outline-none placeholder:text-white/38"
                   data-client-city-filter="true"
@@ -793,12 +830,12 @@ export default function AcompanhantesPage() {
             </label>
 
             <label className="block">
-              <span className="sr-only">Nome, bairro ou estilo</span>
+              <span className="client-explore-field-label">Nome, bairro ou estilo</span>
               <div className="flex min-h-[54px] items-center gap-3 rounded-[18px] border border-white/[0.10] bg-[#111318] px-4 shadow-[0_0_26px_rgba(245,194,66,0.04)] transition focus-within:border-[#f5c242] focus-within:shadow-[0_0_0_3px_rgba(245,194,66,0.12)]">
                 <Search className="h-5 w-5 shrink-0 text-[#f5c242]" />
                 <input
                   type="text"
-                  placeholder="Nome, bairro ou estilo"
+                  placeholder="Ex.: Jardins, Loira, Universitária..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="min-w-0 flex-1 bg-transparent text-[16px] font-semibold text-white outline-none placeholder:text-white/38"
@@ -869,6 +906,7 @@ export default function AcompanhantesPage() {
         ) : professionals.length === 0 ? (
           <>
             <EmptyState hasFilters={hasFilters} activeCategory={activeCategory} sortBy={sortBy} onClear={clearFilters} onExploreCity={focusCity} />
+            <ExploreSafetyCard />
             <FilterDrawer
               open={filterOpen}
               onClose={() => setFilterOpen(false)}
