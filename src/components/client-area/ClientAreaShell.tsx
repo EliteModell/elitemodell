@@ -144,7 +144,8 @@ export function MobileHeader({
   const isExplore = pathname === ACCOUNT_ROUTES.mainClientFeed;
   const isShots = pathname === "/dashboard/shots";
   const isLists = pathname === "/dashboard/favoritos";
-  const showHeaderSearch = !isExplore && !isShots;
+  const isProfile = pathname === "/dashboard/perfil";
+  const showHeaderSearch = !isExplore && !isShots && !isProfile;
 
   return (
     <header className="sticky top-0 z-30 border-b border-[#d4a843]/14 bg-[#08090a]/92 shadow-[0_16px_46px_rgba(0,0,0,0.30)] backdrop-blur-2xl">
@@ -424,6 +425,7 @@ export function ClientBottomNav() {
         {items.map((item) => {
           const active =
             pathname === item.href ||
+            (item.href === "/dashboard" && pathname === "/dashboard/perfil") ||
             (item.href !== "/dashboard" && pathname?.startsWith(item.href + "/"));
           return (
             <Link
@@ -469,7 +471,7 @@ export default function ClientAreaShell({
   }
 
   return (
-    <div className={`client-premium min-h-screen ${pathname === "/dashboard" ? "client-dashboard-shell" : ""} ${pathname === "/dashboard/favoritos" ? "client-lists-shell" : ""} ${pathname === "/dashboard/shots" ? "client-shots-shell" : ""}`}>
+    <div className={`client-premium min-h-screen ${pathname === "/dashboard" ? "client-dashboard-shell" : ""} ${pathname === "/dashboard/perfil" ? "client-profile-shell" : ""} ${pathname === "/dashboard/favoritos" ? "client-lists-shell" : ""} ${pathname === "/dashboard/shots" ? "client-shots-shell" : ""}`}>
       <MobileHeader
         onMenu={() => setDrawerOpen(true)}
         onCityModal={handleHeaderSearch}

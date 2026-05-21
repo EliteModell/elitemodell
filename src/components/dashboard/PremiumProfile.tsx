@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { Save, X } from "lucide-react";
 import ProfileHeaderCard from "@/components/client-area/ProfileHeaderCard";
@@ -70,8 +70,16 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  useEffect(() => {
+    delete document.body.dataset.clientExplore;
+    delete document.body.dataset.clientFiltersOpen;
+    return () => {
+      delete document.body.dataset.clientFiltersOpen;
+    };
+  }, []);
+
+  async function handlePhotoUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
     if (!file) return;
 
     if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) {
@@ -106,8 +114,8 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
     }
   }
 
-  async function saveProfile(e: React.FormEvent) {
-    e.preventDefault();
+  async function saveProfile(event: React.FormEvent) {
+    event.preventDefault();
     setSaving(true);
 
     try {
@@ -137,7 +145,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
   }
 
   return (
-    <div>
+    <div className="profile-page">
       <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={handlePhotoUpload} />
 
       <ProfileHeaderCard
@@ -151,43 +159,25 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
       />
 
       {editing ? (
-        <section className="client-page-tight">
-          <form onSubmit={saveProfile} className="client-card p-5">
-            <div className="mb-6 flex items-center justify-between gap-4">
-              <h2 className="text-[22px] font-black text-[#f5f0e4]">Editar dados</h2>
-              <button type="button" onClick={() => setEditing(false)} className="grid h-11 w-11 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/68">
-                <X className="h-5 w-5" />
+        <section className="profile-edit-section">
+          <form onSubmit={saveProfile} className="profile-edit-card">
+            <div className="profile-edit-head">
+              <h2>Editar dados</h2>
+              <button type="button" onClick={() => setEditing(false)} aria-label="Fechar edição">
+                <X />
               </button>
             </div>
-            <label className="block">
-              <span className="text-[12px] font-black uppercase text-[#f5f0e4]/48">Nome</span>
-              <input
-                value={form.name}
-                onChange={(event) => setForm({ ...form, name: event.target.value })}
-                className="client-input mt-2 h-[54px] w-full px-4 text-[16px]"
-                placeholder="Seu nome"
-                required
-              />
+            <label>
+              <span>Nome</span>
+              <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Seu nome" required />
             </label>
-            <label className="mt-5 block">
-              <span className="text-[12px] font-black uppercase text-[#f5f0e4]/48">Telefone</span>
-              <input
-                value={form.phone}
-                onChange={(event) => setForm({ ...form, phone: maskPhone(event.target.value) })}
-                className="client-input mt-2 h-[54px] w-full px-4 text-[16px]"
-                placeholder="(31) 99999-9999"
-                inputMode="tel"
-              />
+            <label>
+              <span>Telefone</span>
+              <input value={form.phone} onChange={(event) => setForm({ ...form, phone: maskPhone(event.target.value) })} placeholder="(31) 99999-9999" inputMode="tel" />
             </label>
-            <p className="mt-4 text-[14px] leading-6 text-[#f5f0e4]/58">
-              A foto é atualizada pelo botão no cartão superior e aparece imediatamente após o envio.
-            </p>
-            <button
-              type="submit"
-              disabled={saving}
-              className="client-primary-button mt-6 flex w-full items-center justify-center gap-3 text-[16px] disabled:opacity-60"
-            >
-              <Save className="h-5 w-5" />
+            <p>A foto é atualizada pelo botão no cartão superior e aparece imediatamente após o envio.</p>
+            <button type="submit" disabled={saving} className="profile-save-button">
+              <Save />
               {saving ? "Salvando..." : "Salvar alterações"}
             </button>
           </form>
