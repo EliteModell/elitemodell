@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- User avatars can come from uploaded public URLs. */
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 import CitySearchModal from "@/components/client-area/CitySearchModal";
@@ -438,8 +438,11 @@ export default function ClientAreaShell({
   backHref?: string;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [cityModalOpen, setCityModalOpen] = useState(false);
+  const isInitialExplore = pathname === ACCOUNT_ROUTES.mainClientFeed && !searchParams.has("city");
 
   function handleCitySelect(city: string) {
     router.push(`/dashboard/acompanhantes?city=${encodeURIComponent(city)}`);
@@ -447,22 +450,30 @@ export default function ClientAreaShell({
 
   return (
     <div className="client-premium min-h-screen">
-      <MobileHeader
-        onMenu={() => setDrawerOpen(true)}
-        onCityModal={() => setCityModalOpen(true)}
-        backHref={backHref}
-      />
+      {!isInitialExplore && (
+        <MobileHeader
+          onMenu={() => setDrawerOpen(true)}
+          onCityModal={() => setCityModalOpen(true)}
+          backHref={backHref}
+        />
+      )}
       <SideDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
       <CitySearchModal
         open={cityModalOpen}
         onClose={() => setCityModalOpen(false)}
         onSelectCity={handleCitySelect}
       />
-      <main className="client-shell-content mx-auto w-full max-w-[760px] pb-[calc(280px+env(safe-area-inset-bottom))]">
+      <main
+        className={`mx-auto w-full ${
+          isInitialExplore
+            ? "max-w-[820px] pb-0"
+            : "client-shell-content max-w-[760px] pb-[calc(280px+env(safe-area-inset-bottom))]"
+        }`}
+      >
         {children}
       </main>
-      <ClientBottomNav />
-      <style>{`body { background: #f2f2f3; }`}</style>
+      {!isInitialExplore && <ClientBottomNav />}
+      <style>{`body { background: ${isInitialExplore ? "#030405" : "#f2f2f3"}; }`}</style>
     </div>
   );
 }
