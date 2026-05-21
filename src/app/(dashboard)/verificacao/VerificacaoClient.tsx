@@ -50,8 +50,13 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
         body: JSON.stringify({ consentGiven: true }),
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
+        const data = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(data.error ?? "Erro ao iniciar verificação.");
+      }
+      const data = await res.json() as { url?: string };
+      if (data.url) {
+        window.location.href = data.url;
+        return;
       }
       setStep("submitted");
       toast.success("Solicitação enviada! Aguarde a análise.");
