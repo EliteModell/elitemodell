@@ -262,7 +262,7 @@ function PremiumInvite() {
       </div>
       <button
         type="button"
-        className="hidden min-h-[58px] shrink-0 items-center gap-3 rounded-[12px] border border-[#d4a843]/55 bg-[linear-gradient(135deg,rgba(247,183,51,0.36),rgba(104,74,18,0.78))] px-7 text-[16px] font-black text-[#ffd36d] shadow-[0_0_34px_rgba(212,168,67,0.16)] active:scale-95 sm:flex"
+        className="flex min-h-[58px] shrink-0 items-center gap-3 rounded-[12px] border border-[#d4a843]/55 bg-[linear-gradient(135deg,rgba(247,183,51,0.36),rgba(104,74,18,0.78))] px-5 text-[15px] font-black text-[#ffd36d] shadow-[0_0_34px_rgba(212,168,67,0.16)] active:scale-95 sm:px-7 sm:text-[16px]"
       >
         Seja Premium
         <Crown className="h-5 w-5 fill-[#ffd36d]/30" />
