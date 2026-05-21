@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { accessToken, role, accountType, category, birthDate, lgpdConsent, termsConsent } = schema.parse(body);
+    const savedRole = accountType === "PROPERTY_HOST" ? "GUEST" : role;
     const publicAccountType =
       accountType === "PROFESSIONAL" ? "model" : accountType === "PROPERTY_HOST" ? "host" : "client";
 
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
           name: existing.name ?? (authUser.user_metadata?.name as string | undefined) ?? null,
           image: existing.image ?? (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
           phone: existing.phone ?? phone ?? null,
-          role: existing.role === "ADMIN" ? "ADMIN" : role,
+          role: existing.role === "ADMIN" ? "ADMIN" : savedRole,
           accountType: existing.accountType === "admin" ? "admin" : publicAccountType,
           category: category ?? existing.category,
           birthDate: birthDate ? new Date(birthDate) : existing.birthDate,
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
         select: { id: true, name: true, email: true, role: true },
       });
 
-      if (role === "HOST") {
+      if (savedRole === "HOST") {
         await prisma.hostProfile.upsert({
           where: { userId: existing.id },
           create: { userId: existing.id },
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
         name: (authUser.user_metadata?.name as string | undefined) ?? authUser.email ?? phone ?? null,
         image: (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
         phone: phone ?? null,
-        role,
+        role: savedRole,
         accountType: publicAccountType,
         category: category ?? null,
         birthDate: new Date(birthDate),
@@ -112,7 +113,7 @@ export async function POST(req: NextRequest) {
       select: { id: true, name: true, email: true, role: true },
     });
 
-    if (role === "HOST") {
+    if (savedRole === "HOST") {
       await prisma.hostProfile.create({ data: { userId: user.id } });
     }
 

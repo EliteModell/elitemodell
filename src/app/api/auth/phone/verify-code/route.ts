@@ -160,14 +160,6 @@ export async function POST(req: NextRequest) {
         data: { usedAt: now, attempts: { increment: 1 }, userId: savedUser.id },
       });
 
-      if (body.accountType === "host" && savedUser.role !== "ADMIN") {
-        await tx.hostProfile.upsert({
-          where: { userId: savedUser.id },
-          create: { userId: savedUser.id },
-          update: {},
-        });
-      }
-
       return savedUser;
     });
 

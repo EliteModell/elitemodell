@@ -25,7 +25,7 @@ type AuthError = { code?: string; name?: string; message?: string };
 
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
-const PROPERTY_DRAFT_KEY = "elitemodell_property_draft_v1";
+const PROPERTY_DRAFT_KEY = "elitemodell_location_onboarding_v2";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -306,7 +306,7 @@ export default function CadastroPage() {
 
   function registrationPayload() {
     return {
-      role: form.accountType === "GUEST" ? "GUEST" : "HOST",
+      role: form.accountType === "PROFESSIONAL" ? "HOST" : "GUEST",
       accountType: form.accountType,
       category: form.accountType === "PROFESSIONAL" ? form.category : undefined,
       birthDate: form.birthDate,
@@ -351,7 +351,7 @@ export default function CadastroPage() {
         email: form.email.trim().toLowerCase(),
         password: form.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?returnUrl=${encodeURIComponent(nextPath())}`,
           data: registrationPayload(),
         },
       });
@@ -389,7 +389,7 @@ export default function CadastroPage() {
       sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload()));
       const { error } = await supabaseAuth.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        options: { redirectTo: `${window.location.origin}/auth/callback?returnUrl=${encodeURIComponent(nextPath())}` },
       });
       if (error) throw error;
     } catch (err: unknown) {
@@ -416,7 +416,7 @@ export default function CadastroPage() {
       if (!accessToken) {
         sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload()));
         toast.error("Entre novamente para continuar seu cadastro.");
-        router.push(ACCOUNT_ROUTES.login);
+        router.push(`${ACCOUNT_ROUTES.login}?returnUrl=${encodeURIComponent(nextPath())}`);
         return;
       }
 

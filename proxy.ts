@@ -26,6 +26,7 @@ export async function proxy(request: NextRequest) {
     "/app/consumer/login",
     "/modelo/login",
     "/anfitriao/login",
+    "/anfitriao/imoveis/novo",
     "/auth/callback",
     "/buscar",
     "/imoveis",

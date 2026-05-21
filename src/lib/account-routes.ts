@@ -81,7 +81,7 @@ export function postLoginPathFromUser(user: PostLoginUser | null | undefined) {
 
   const properties = user.properties ?? [];
   if (properties.some((property) => property.status === "ACTIVE")) return ACCOUNT_ROUTES.painelAnfitriao;
-  if (properties.length > 0) return ACCOUNT_ROUTES.verificacaoAnfitriao;
+  if (properties.some((property) => property.status && property.status !== "DRAFT")) return ACCOUNT_ROUTES.verificacaoAnfitriao;
   if (user.role === "HOST" || isHostAccount) return ACCOUNT_ROUTES.onboardingAnfitriao;
 
   return ACCOUNT_ROUTES.mainClientFeed;

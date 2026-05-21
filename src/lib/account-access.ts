@@ -30,7 +30,8 @@ export async function getCurrentAccountAccess() {
   const isAdmin = user.role === "ADMIN";
   const isCompanionIntent = user.accountType === "model" || isProfessionalCategory(user.category);
   const companionStatus = user.professional?.status ?? null;
-  const hostStatuses = user.properties.map((property) => property.status);
+  const submittedHostProperties = user.properties.filter((property) => property.status !== "DRAFT");
+  const hostStatuses = submittedHostProperties.map((property) => property.status);
 
   return {
     user,
@@ -40,7 +41,7 @@ export async function getCurrentAccountAccess() {
     hasCompanionRequest: Boolean(user.professional || isCompanionIntent),
     companionApproved: companionStatus === "ACTIVE",
     companionInReview: Boolean(companionStatus && companionStatus !== "ACTIVE"),
-    hasHostRequest: user.properties.length > 0,
+    hasHostRequest: submittedHostProperties.length > 0,
     hasHostIntent: (user.role === "HOST" || user.accountType === "host") && !isCompanionIntent,
     hostApproved: hostStatuses.includes("ACTIVE"),
     hostInReview: hostStatuses.some((status) => status !== "ACTIVE"),

@@ -348,13 +348,24 @@ export default function NovoImovelPage() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<DraftForm>(() => emptyForm());
   const [hydrated, setHydrated] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const progress = ((step + 1) / stepTitles.length) * 100;
   const uploadedPhotos = form.photos.filter(isUploaded);
 
   const selectedType = locationTypes.find((item) => item.value === form.type);
 
-  const canPublish = session?.user?.role === "HOST" || session?.user?.role === "ADMIN";
+  const canPublish =
+    session?.user?.role === "HOST" || session?.user?.role === "ADMIN" || session?.user?.accountType === "host";
+
+  function currentReturnUrl() {
+    return `${window.location.pathname}${window.location.search}`;
+  }
+
+  function goToLoginForThisStep() {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, step, updatedAt: new Date().toISOString() }));
+    router.push(`${ACCOUNT_ROUTES.login}?returnUrl=${encodeURIComponent(currentReturnUrl())}`);
+  }
 
   useEffect(() => {
     const raw = localStorage.getItem(DRAFT_KEY);
@@ -364,6 +375,7 @@ export default function NovoImovelPage() {
         if (saved.form) {
           setForm({ ...emptyForm(), ...saved.form, photos: saved.form.photos ?? [] });
           setStep(Math.min(Math.max(saved.step ?? 0, 0), stepTitles.length - 2));
+          setDraftLoaded(true);
         }
       } catch {
         localStorage.removeItem(DRAFT_KEY);
@@ -427,6 +439,12 @@ export default function NovoImovelPage() {
   }
 
   async function uploadFiles(files: FileList | File[]) {
+    if (status !== "authenticated") {
+      toast.error("Entre para enviar fotos e manter seu rascunho seguro.");
+      goToLoginForThisStep();
+      return;
+    }
+
     const incoming = Array.from(files);
     for (const original of incoming) {
       const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -502,7 +520,19 @@ export default function NovoImovelPage() {
   function saveAndExit() {
     localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, step, updatedAt: new Date().toISOString() }));
     toast.success("Rascunho salvo.");
-    router.push(ACCOUNT_ROUTES.dashboardAnfitriao);
+    if (status !== "authenticated") {
+      router.push(ACCOUNT_ROUTES.mainClientFeed);
+      return;
+    }
+    router.push(ACCOUNT_ROUTES.verificacaoAnfitriao);
+  }
+
+  function discardDraft() {
+    localStorage.removeItem(DRAFT_KEY);
+    setForm(emptyForm());
+    setStep(0);
+    setDraftLoaded(false);
+    toast.success("Rascunho descartado.");
   }
 
   const summary = useMemo(() => [
@@ -525,7 +555,8 @@ export default function NovoImovelPage() {
       }
     }
     if (status !== "authenticated") {
-      toast.error("Entre com sua conta de anfitrião para enviar.");
+      toast.error("Entre com sua conta para enviar o cadastro.");
+      goToLoginForThisStep();
       return;
     }
     if (!canPublish) {
@@ -599,9 +630,21 @@ export default function NovoImovelPage() {
   return (
     <main className="onboarding-shell">
       <header className="top-actions">
+        <Link href="/" className="flow-brand" aria-label="Elite Modell">
+          <span>elite</span><strong>modell</strong>
+        </Link>
         <button type="button" onClick={saveAndExit}>Salvar e sair</button>
+        <button type="button" onClick={discardDraft}>Descartar rascunho</button>
         <Link href="/suporte">Dúvidas?</Link>
       </header>
+
+      {hydrated && draftLoaded && step < 16 && (
+        <div className="draft-banner">
+          <strong>Cadastro incompleto salvo</strong>
+          <span>Continue de onde parou, edite as etapas abaixo ou descarte o rascunho.</span>
+          <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>Continuar</button>
+        </div>
+      )}
 
       <section className="step-panel">
         {step === 0 && (
@@ -878,6 +921,37 @@ export default function NovoImovelPage() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
+        }
+        .draft-banner {
+          max-width: 720px;
+          margin: -12px auto 28px;
+          border: 1px solid #ded8ca;
+          border-radius: 12px;
+          background: #fff;
+          padding: 14px;
+          display: grid;
+          grid-template-columns: 1fr auto;
+          gap: 5px 14px;
+          align-items: center;
+        }
+        .draft-banner strong,
+        .draft-banner span {
+          display: block;
+        }
+        .draft-banner span {
+          color: #6f6a60;
+          font-size: 14px;
+        }
+        .draft-banner button {
+          grid-row: 1 / span 2;
+          grid-column: 2;
+          border: 0;
+          border-radius: 10px;
+          background: #171717;
+          color: #fff;
+          min-height: 42px;
+          padding: 0 16px;
+          font-weight: 900;
         }
         .step-panel {
           max-width: 720px;
@@ -1324,6 +1398,426 @@ export default function NovoImovelPage() {
             width: 96px;
             height: 96px;
           }
+          .draft-banner {
+            grid-template-columns: 1fr;
+          }
+          .draft-banner button {
+            grid-row: auto;
+            grid-column: auto;
+          }
+        }
+        *,
+        *::before,
+        *::after {
+          box-sizing: border-box;
+        }
+        :global(html),
+        :global(body) {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          overflow-x: hidden;
+          background: #050505;
+        }
+        img,
+        svg {
+          max-width: 100%;
+          height: auto;
+        }
+        .onboarding-shell {
+          width: 100%;
+          max-width: 430px;
+          min-height: 100dvh;
+          margin: 0 auto;
+          overflow-x: hidden;
+          background:
+            radial-gradient(circle at 20% 10%, rgba(214,168,58,0.16), transparent 32%),
+            radial-gradient(circle at 85% 35%, rgba(214,168,58,0.10), transparent 34%),
+            #050505;
+          color: #fff;
+          padding: max(18px, env(safe-area-inset-top)) 16px calc(144px + env(safe-area-inset-bottom));
+        }
+        .top-actions {
+          max-width: 430px;
+          margin: 0 auto 30px;
+          display: grid;
+          grid-template-columns: 1fr auto auto;
+          gap: 10px;
+          align-items: center;
+        }
+        .flow-brand {
+          min-height: 42px;
+          border: 1px solid rgba(214,168,58,0.20);
+          border-radius: 999px;
+          background: rgba(16,16,20,0.72);
+          padding: 0 13px;
+          display: inline-flex;
+          align-items: center;
+          gap: 1px;
+          text-decoration: none;
+          box-shadow: 0 18px 46px rgba(0,0,0,0.24);
+        }
+        .flow-brand span {
+          color: #d6a83a;
+          font-size: 14px;
+          font-weight: 950;
+        }
+        .flow-brand strong {
+          color: #fff;
+          font-size: 14px;
+          font-weight: 950;
+        }
+        .top-actions button,
+        .top-actions a:not(.flow-brand) {
+          min-height: 42px;
+          border: 1px solid rgba(214,168,58,0.25);
+          border-radius: 999px;
+          background: rgba(11,11,13,0.82);
+          color: #f3f3f3;
+          padding: 0 13px;
+          font-size: 12px;
+          font-weight: 900;
+          text-decoration: none;
+          box-shadow: 0 14px 36px rgba(0,0,0,0.22);
+        }
+        .top-actions button:nth-of-type(2) {
+          grid-column: 1 / -1;
+          min-height: 38px;
+          color: #d6a83a;
+          background: rgba(214,168,58,0.08);
+        }
+        .step-panel {
+          max-width: 430px;
+          margin: 0 auto;
+        }
+        .draft-banner {
+          max-width: 430px;
+          margin: -12px auto 28px;
+          border: 1px solid rgba(214,168,58,0.25);
+          border-radius: 18px;
+          background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98));
+          padding: 18px;
+          color: #fff;
+          box-shadow: 0 24px 70px rgba(0,0,0,0.32);
+        }
+        .draft-banner span {
+          color: #b8b8b8;
+        }
+        .draft-banner button {
+          border-radius: 14px;
+          background: linear-gradient(135deg, #f5d77a, #d6a83a 46%, #a77818);
+          color: #070707;
+          box-shadow: 0 14px 34px rgba(214,168,58,0.20);
+        }
+        .intro-screen {
+          min-height: calc(100dvh - 210px);
+          justify-content: center;
+          gap: 22px;
+        }
+        .intro-mark {
+          width: 92px;
+          height: 92px;
+          border-radius: 26px;
+          background: linear-gradient(180deg, #141414, #0b0b0d);
+          color: #d6a83a;
+          border: 1px solid rgba(214,168,58,0.28);
+          box-shadow: 0 26px 80px rgba(214,168,58,0.10), 0 28px 70px rgba(0,0,0,0.55);
+        }
+        h1 {
+          color: #fff;
+          font-size: clamp(32px, 10vw, 46px);
+          line-height: 1.02;
+          letter-spacing: 0;
+          text-wrap: balance;
+        }
+        p,
+        .helper {
+          color: #b8b8b8;
+          font-size: 16px;
+          line-height: 1.62;
+        }
+        .step-title {
+          margin-bottom: 32px;
+        }
+        .step-title > span {
+          display: block;
+          margin-bottom: 12px;
+          color: #d6a83a;
+          font-size: 11px;
+          font-weight: 950;
+          letter-spacing: 0.18em;
+        }
+        .card-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 14px;
+        }
+        .select-card,
+        .choice,
+        .review-grid div,
+        .next-steps span,
+        .photo-item,
+        .checkbox-list label,
+        .counter-row {
+          border: 1px solid rgba(214,168,58,0.25);
+          background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98));
+          color: #fff;
+          box-shadow: 0 22px 60px rgba(0,0,0,0.28);
+        }
+        .select-card {
+          min-height: 126px;
+          border-radius: 18px;
+          padding: 17px;
+          color: #fff;
+        }
+        .select-card svg,
+        .choice svg,
+        .upload-box svg {
+          color: #d6a83a;
+          stroke: #d6a83a;
+        }
+        .select-card.active,
+        .choice.active,
+        .day.active {
+          border-color: rgba(245,184,59,0.72);
+          background: linear-gradient(180deg, rgba(214,168,58,0.18), rgba(16,16,20,0.98));
+          box-shadow: inset 0 0 0 1px rgba(245,184,59,0.38), 0 24px 70px rgba(214,168,58,0.12);
+        }
+        .stack {
+          gap: 16px;
+        }
+        .choice {
+          min-height: 74px;
+          border-radius: 18px;
+          padding: 20px;
+          color: #fff;
+          line-height: 1.35;
+        }
+        .form-grid {
+          gap: 16px;
+        }
+        .form-grid.two {
+          gap: 14px;
+        }
+        .field {
+          gap: 9px;
+        }
+        .field label,
+        .review-grid span {
+          color: #d6a83a;
+          letter-spacing: 0.12em;
+        }
+        .field input,
+        .field textarea {
+          min-height: 58px;
+          border: 1px solid rgba(214,168,58,0.28);
+          border-radius: 18px;
+          background: rgba(11,11,13,0.94);
+          color: #fff;
+          padding: 15px 16px;
+          outline: none;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+          scroll-margin-bottom: 160px;
+        }
+        .field input::placeholder,
+        .field textarea::placeholder {
+          color: rgba(184,184,184,0.55);
+        }
+        .field input:focus,
+        .field textarea:focus {
+          border-color: rgba(245,184,59,0.72);
+          box-shadow: 0 0 0 4px rgba(214,168,58,0.12);
+        }
+        .field textarea {
+          min-height: 154px;
+        }
+        .privacy-note {
+          margin-top: 18px;
+          border: 1px solid rgba(214,168,58,0.22);
+          border-left: 4px solid #d6a83a;
+          border-radius: 16px;
+          background: rgba(16,16,20,0.88);
+          padding: 16px 16px 16px 18px;
+          color: #b8b8b8;
+          font-size: 14px;
+          line-height: 1.55;
+        }
+        .map-card {
+          height: 360px;
+          border: 1px solid rgba(214,168,58,0.25);
+          border-radius: 24px;
+          background:
+            linear-gradient(90deg, rgba(214,168,58,0.09) 1px, transparent 1px),
+            linear-gradient(rgba(214,168,58,0.09) 1px, transparent 1px),
+            radial-gradient(circle at 50% 45%, rgba(214,168,58,0.18), transparent 34%),
+            #101014;
+          background-size: 44px 44px, 44px 44px, auto, auto;
+          box-shadow: 0 28px 80px rgba(0,0,0,0.38);
+        }
+        .map-pin {
+          background: linear-gradient(135deg, #f5d77a, #d6a83a);
+          color: #0b0b0d;
+        }
+        .address-chip {
+          border: 1px solid rgba(214,168,58,0.25);
+          background: rgba(5,5,5,0.82);
+          color: #fff;
+          box-shadow: 0 18px 46px rgba(0,0,0,0.35);
+        }
+        .address-chip svg {
+          color: #d6a83a;
+        }
+        .counter-row {
+          min-height: 82px;
+          border-radius: 18px;
+          border-bottom: 1px solid rgba(214,168,58,0.25);
+          padding: 16px;
+          margin-bottom: 14px;
+        }
+        .counter-row button {
+          border: 1px solid rgba(214,168,58,0.35);
+          background: rgba(214,168,58,0.10);
+          color: #d6a83a;
+        }
+        .checkbox-list {
+          gap: 12px;
+        }
+        .checkbox-list label {
+          min-height: 68px;
+          border-radius: 18px;
+          border-bottom: 1px solid rgba(214,168,58,0.25);
+          padding: 16px;
+        }
+        .checkbox-list input {
+          accent-color: #d6a83a;
+        }
+        .upload-box {
+          min-height: 300px;
+          border: 1.5px dashed rgba(214,168,58,0.42);
+          border-radius: 24px;
+          background: linear-gradient(180deg, rgba(20,20,20,0.96), rgba(11,11,13,0.96));
+          color: #fff;
+          box-shadow: 0 26px 80px rgba(0,0,0,0.34);
+        }
+        .upload-box span,
+        .photo-item span,
+        .counter-text {
+          color: #b8b8b8;
+        }
+        .photo-item {
+          border-radius: 18px;
+          padding: 12px;
+        }
+        .photo-item img {
+          background: #141414;
+          border: 1px solid rgba(214,168,58,0.18);
+        }
+        .photo-item span.uploaded {
+          color: #75d691;
+        }
+        .photo-item span.error {
+          color: #ff8b86;
+        }
+        .photo-actions button {
+          border: 1px solid rgba(214,168,58,0.25);
+          background: rgba(214,168,58,0.08);
+          color: #f3f3f3;
+        }
+        .day-grid {
+          gap: 10px;
+        }
+        .day {
+          min-height: 48px;
+          border: 1px solid rgba(214,168,58,0.25);
+          background: rgba(11,11,13,0.94);
+          color: #fff;
+        }
+        .review-grid {
+          gap: 16px;
+        }
+        .review-grid div,
+        .next-steps span {
+          border-radius: 18px;
+          padding: 18px;
+        }
+        .review-grid strong {
+          color: #fff;
+        }
+        .review-grid button {
+          color: #d6a83a;
+        }
+        .primary {
+          min-height: 58px;
+          border-radius: 18px;
+          background: linear-gradient(135deg, #f5d77a, #d6a83a 45%, #a77818);
+          color: #070707;
+          box-shadow: 0 18px 46px rgba(214,168,58,0.22);
+        }
+        .primary:disabled {
+          background: rgba(214,168,58,0.15);
+          color: rgba(255,255,255,0.38);
+          box-shadow: none;
+        }
+        .fixed-footer {
+          left: 50%;
+          right: auto;
+          bottom: 0;
+          transform: translateX(-50%);
+          width: 100%;
+          max-width: 430px;
+          z-index: 9999;
+          padding: 0 16px calc(14px + env(safe-area-inset-bottom));
+          background: rgba(5,5,5,0.96);
+          border-top: 1px solid rgba(214,168,58,0.25);
+        }
+        .progress {
+          height: 4px;
+          margin: 14px 0 12px;
+          overflow: hidden;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.10);
+        }
+        .progress span {
+          background: linear-gradient(90deg, #d6a83a, #f5d77a);
+        }
+        .footer-actions {
+          max-width: 430px;
+          padding: 0;
+          gap: 14px;
+        }
+        .back {
+          min-height: 56px;
+          border: 1px solid rgba(214,168,58,0.25);
+          border-radius: 18px;
+          background: rgba(16,16,20,0.88);
+          color: #fff;
+          padding: 0 18px;
+        }
+        @media (min-width: 760px) {
+          .form-grid {
+            grid-template-columns: 1fr;
+          }
+          .form-grid.two {
+            grid-template-columns: 1fr 1fr;
+          }
+        }
+        @media (max-width: 390px) {
+          .onboarding-shell {
+            padding-left: 14px;
+            padding-right: 14px;
+          }
+          .top-actions {
+            grid-template-columns: 1fr 1fr;
+          }
+          .flow-brand {
+            grid-column: 1 / -1;
+            justify-content: center;
+          }
+          .card-grid {
+            grid-template-columns: 1fr;
+          }
+          h1 {
+            font-size: 31px;
+          }
         }
       `}</style>
     </main>
@@ -1333,6 +1827,7 @@ export default function NovoImovelPage() {
 function StepTitle({ title, helper }: { title: string; helper?: string }) {
   return (
     <div className="step-title">
+      <span>Cadastro de local</span>
       <h1>{title}</h1>
       {helper ? <p className="helper">{helper}</p> : null}
     </div>

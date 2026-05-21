@@ -12,7 +12,7 @@ export default async function VerificacaoAnfitriaoPage() {
 
   if (access.hostApproved) redirect(ACCOUNT_ROUTES.painelAnfitriao);
 
-  const hasProperty = access.user.properties.length > 0;
+  const hasProperty = access.user.properties.some((property) => property.status !== "DRAFT");
   const title = hasProperty ? "Imóvel aguardando aprovação" : "Cadastro de imóvel em andamento";
   const description = hasProperty
     ? "Seu ambiente reservado foi enviado para curadoria. O painel de anfitrião será liberado apenas depois da aprovação."

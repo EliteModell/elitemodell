@@ -76,7 +76,6 @@ export const authOptions: NextAuthOptions = {
               return null;
             }
 
-            const role = metadata.role === "HOST" ? "HOST" : "GUEST";
             const metadataAccountType =
               metadata.accountType === "PROFESSIONAL"
                 ? "model"
@@ -85,6 +84,7 @@ export const authOptions: NextAuthOptions = {
                   : metadata.accountType === "model" || metadata.accountType === "host"
                     ? metadata.accountType
                     : "client";
+            const role = metadataAccountType === "model" && metadata.role === "HOST" ? "HOST" : "GUEST";
             const metadataCategory =
               typeof metadata.category === "string" ? metadata.category : undefined;
             const category = ["MULHER", "HOMEM", "TRANS"].includes(metadataCategory ?? "")

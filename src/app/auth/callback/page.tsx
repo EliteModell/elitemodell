@@ -10,7 +10,7 @@ type PendingRegistration = {
   accountType?: "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
 };
 
-const PROPERTY_DRAFT_KEY = "elitemodell_property_draft_v1";
+const PROPERTY_DRAFT_KEY = "elitemodell_location_onboarding_v2";
 const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
 const CALLBACK_TIMEOUT_MS = 1800;
 const GOLD = "#d4a843";
@@ -18,6 +18,17 @@ const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 
 
 function hasPropertyDraft() {
   return Boolean(localStorage.getItem(PROPERTY_DRAFT_KEY));
+}
+
+function safeInternalPath(value: string | null) {
+  if (!value) return null;
+  try {
+    const url = new URL(value, window.location.origin);
+    if (url.origin !== window.location.origin) return null;
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return value.startsWith("/") && !value.startsWith("//") ? value : null;
+  }
 }
 
 const PROFESSIONAL_CATEGORIES = ["MULHER", "HOMEM", "TRANS"];
@@ -214,6 +225,7 @@ function AuthCallbackContent() {
 
   useEffect(() => {
     let active = true;
+    const returnUrl = safeInternalPath(searchParams.get("returnUrl") ?? searchParams.get("redirectTo"));
 
     async function finishAuth() {
       const code = searchParams.get("code");
@@ -247,9 +259,9 @@ function AuthCallbackContent() {
       const res = await signIn("supabase", { accessToken, redirect: false });
       if (res?.error) throw new Error("Conta não encontrada. Cadastre-se antes de entrar.");
 
-      const targetPath = pendingRegistration
+      const targetPath = returnUrl ?? (pendingRegistration
         ? getRegistrationPath(pendingRegistration)
-        : await resolveWithTimeout(getPostLoginPath(), ACCOUNT_ROUTES.mainClientFeed);
+        : await resolveWithTimeout(getPostLoginPath(), ACCOUNT_ROUTES.mainClientFeed));
 
       if (!active) return;
       setSuccess(true);
@@ -263,7 +275,7 @@ function AuthCallbackContent() {
     finishAuth().catch((err) => {
       if (!active) return;
       setMessage(err?.message ?? "Não foi possível finalizar o acesso.");
-      setTimeout(() => router.replace(ACCOUNT_ROUTES.login), 1800);
+      setTimeout(() => router.replace(`${ACCOUNT_ROUTES.login}${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ""}`), 1800);
     });
 
     return () => {

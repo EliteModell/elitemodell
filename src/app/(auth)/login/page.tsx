@@ -2,18 +2,19 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- Existing auth error payloads are provider-specific. */
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { ArrowLeft } from "lucide-react";
 import { supabaseAuth } from "@/lib/supabase-client";
 import { ACCOUNT_ROUTES, postLoginPathFromUser } from "@/lib/account-routes";
 
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
-const PROPERTY_DRAFT_KEY = "elitemodell_property_draft_v1";
-const PROPERTY_DRAFT_FINAL_PATH = `${ACCOUNT_ROUTES.onboardingAnfitriao}?finalizar=1`;
+const PROPERTY_DRAFT_KEY = "elitemodell_location_onboarding_v2";
+const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -86,7 +87,20 @@ async function appSignIn(accessToken: string) {
   return signIn("supabase", { accessToken, redirect: false });
 }
 
-async function getPostLoginPath() {
+function safeInternalPath(value: string | null) {
+  if (!value) return null;
+  try {
+    const url = new URL(value, window.location.origin);
+    if (url.origin !== window.location.origin) return null;
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return value.startsWith("/") && !value.startsWith("//") ? value : null;
+  }
+}
+
+async function getPostLoginPath(returnUrl: string | null) {
+  const safeReturnUrl = safeInternalPath(returnUrl);
+  if (safeReturnUrl) return safeReturnUrl;
   if (localStorage.getItem(PROPERTY_DRAFT_KEY)) return PROPERTY_DRAFT_FINAL_PATH;
 
   const res = await fetch("/api/users/me");
@@ -95,10 +109,21 @@ async function getPostLoginPath() {
   return postLoginPathFromUser(user);
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get("returnUrl") ?? searchParams.get("redirectTo");
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
+
+  function handleBack() {
+    const safeReturnUrl = safeInternalPath(returnUrl);
+    if (safeReturnUrl) {
+      router.push(safeReturnUrl);
+      return;
+    }
+    router.back();
+  }
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -115,7 +140,7 @@ export default function LoginPage() {
         toast.error("Erro ao entrar. Tente novamente.");
       } else {
         toast.success("Bem-vindo de volta!");
-        router.push(await getPostLoginPath());
+        router.push(await getPostLoginPath(returnUrl));
         router.refresh();
       }
     } catch (err: any) {
@@ -130,7 +155,11 @@ export default function LoginPage() {
     try {
       const { error } = await supabaseAuth.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback${
+            returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ""
+          }`,
+        },
       });
       if (error) throw error;
     } catch (err: any) {
@@ -153,6 +182,14 @@ export default function LoginPage() {
     }}>
       {/* Linha dourada no topo */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, borderRadius: "16px 16px 0 0", background: "linear-gradient(90deg, transparent 0%, #d4a843 30%, #f5d78c 50%, #d4a843 70%, transparent 100%)" }} />
+      <button
+        type="button"
+        onClick={handleBack}
+        aria-label="Voltar"
+        style={{ position: "absolute", top: 16, left: 16, width: 38, height: 38, borderRadius: 8, border: "1px solid rgba(212,168,67,0.18)", background: "transparent", color: "#94a3b8", display: "grid", placeItems: "center", cursor: "pointer" }}
+      >
+        <ArrowLeft size={18} />
+      </button>
 
       <div id="recaptcha-container" />
 
@@ -205,5 +242,13 @@ export default function LoginPage() {
         <Link href={ACCOUNT_ROUTES.cadastro} style={{ color: GOLD, textDecoration: "none", fontWeight: 600 }}>Cadastre-se</Link>
       </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   );
 }

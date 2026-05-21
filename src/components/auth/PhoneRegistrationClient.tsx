@@ -80,7 +80,7 @@ const copy: Record<FlowMode, {
     phonePlaceholder: "Digite seu telefone de contato",
     hint: "Validamos o telefone antes de liberar o cadastro do local.",
     submit: "Continuar",
-    loginHref: "/login",
+    loginHref: "/login?returnUrl=/anfitriao/imoveis/novo",
     loginLabel: "Ja tenho conta",
     ownershipLabel: "Confirmo que sou responsavel pelo local que vou cadastrar.",
     verifyBack: "/cadastro-anfitriao",
@@ -102,6 +102,17 @@ function isValidPhone(value: string) {
   return /^[1-9]{2}9\d{8}$/.test(digits(value));
 }
 
+function safeInternalPath(value: string | null) {
+  if (!value) return null;
+  try {
+    const url = new URL(value, window.location.origin);
+    if (url.origin !== window.location.origin) return null;
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return value.startsWith("/") && !value.startsWith("//") ? value : null;
+  }
+}
+
 function Logo({ dark = false }: { dark?: boolean }) {
   return (
     <Link href="/" aria-label="Elite Modell" style={{ display: "inline-flex", alignItems: "center" }}>
@@ -114,29 +125,38 @@ function AuthShell({
   children,
   backHref,
   menu,
+  premium = false,
 }: {
   children: React.ReactNode;
   backHref?: string;
   menu?: boolean;
+  premium?: boolean;
 }) {
   return (
-    <main style={{ minHeight: "100vh", background: "#f8faf8", color: INK }}>
+    <main style={{
+      minHeight: "100dvh",
+      overflowX: "hidden",
+      background: premium
+        ? "radial-gradient(circle at 20% 10%, rgba(214,168,58,0.16), transparent 32%), radial-gradient(circle at 85% 35%, rgba(214,168,58,0.10), transparent 34%), #050505"
+        : "#f8faf8",
+      color: premium ? "#fff" : INK,
+    }}>
       <header
         style={{
           height: 88,
-          background: "#fff",
-          borderBottom: "1px solid #e4e8e4",
+          background: premium ? "rgba(5,5,5,0.92)" : "#fff",
+          borderBottom: premium ? "1px solid rgba(214,168,58,0.25)" : "1px solid #e4e8e4",
           display: "grid",
           gridTemplateColumns: "56px 1fr 56px",
           alignItems: "center",
           padding: "0 16px",
-          boxShadow: "0 2px 12px rgba(25, 35, 38, 0.06)",
+          boxShadow: premium ? "0 18px 50px rgba(0,0,0,0.34)" : "0 2px 12px rgba(25, 35, 38, 0.06)",
         }}
       >
         <Link
           href={backHref ?? "/"}
           aria-label={backHref ? "Voltar" : "Abrir menu"}
-          style={{ color: INK, display: "grid", placeItems: "center", textDecoration: "none" }}
+          style={{ color: premium ? "#d6a83a" : INK, display: "grid", placeItems: "center", textDecoration: "none" }}
         >
           {backHref ? <ArrowLeft size={28} /> : menu ? <Menu size={30} /> : null}
         </Link>
@@ -166,7 +186,7 @@ function LegalFooter() {
   );
 }
 
-function SubmitButton({ children, disabled }: { children: React.ReactNode; disabled?: boolean }) {
+function SubmitButton({ children, disabled, premium = false }: { children: React.ReactNode; disabled?: boolean; premium?: boolean }) {
   return (
     <button
       type="submit"
@@ -175,12 +195,15 @@ function SubmitButton({ children, disabled }: { children: React.ReactNode; disab
         width: "100%",
         height: 58,
         border: "none",
-        borderRadius: 8,
-        background: disabled ? "#cad4d9" : GOLD,
-        color: disabled ? "#7a878d" : "#111",
+        borderRadius: premium ? 18 : 8,
+        background: disabled
+          ? premium ? "rgba(214,168,58,0.15)" : "#cad4d9"
+          : premium ? "linear-gradient(135deg, #f5d77a, #d6a83a 45%, #a77818)" : GOLD,
+        color: disabled ? premium ? "rgba(255,255,255,0.38)" : "#7a878d" : "#111",
         fontSize: 17,
         fontWeight: 900,
         cursor: disabled ? "not-allowed" : "pointer",
+        boxShadow: premium && !disabled ? "0 18px 46px rgba(214,168,58,0.22)" : undefined,
       }}
     >
       {children}
@@ -188,7 +211,7 @@ function SubmitButton({ children, disabled }: { children: React.ReactNode; disab
   );
 }
 
-function StatusMessage({ status, message }: { status: OtpStatus; message: string }) {
+function StatusMessage({ status, message, premium = false }: { status: OtpStatus; message: string; premium?: boolean }) {
   if (!message) return null;
   const isError = status === "error";
   const isSuccess = status === "sent" || status === "verified";
@@ -201,10 +224,10 @@ function StatusMessage({ status, message }: { status: OtpStatus; message: string
         gap: 10,
         margin: "18px 0 0",
         padding: 14,
-        borderRadius: 8,
-        border: `1px solid ${isError ? "#f1b5b5" : isSuccess ? "#b8dbc0" : "#dfe4e7"}`,
-        background: isError ? "#fff2f2" : isSuccess ? "#eef8f0" : "#eef0f3",
-        color: isError ? "#8a1f1f" : "#354047",
+        borderRadius: premium ? 16 : 8,
+        border: premium ? `1px solid ${isError ? "rgba(255,139,134,0.42)" : "rgba(214,168,58,0.25)"}` : `1px solid ${isError ? "#f1b5b5" : isSuccess ? "#b8dbc0" : "#dfe4e7"}`,
+        background: premium ? "rgba(16,16,20,0.88)" : isError ? "#fff2f2" : isSuccess ? "#eef8f0" : "#eef0f3",
+        color: premium ? isError ? "#ffb4af" : "#b8b8b8" : isError ? "#8a1f1f" : "#354047",
         fontSize: 14,
         lineHeight: 1.45,
       }}
@@ -221,7 +244,9 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
   const text = copy[mode];
   const storageKey = PHONE_STORAGE_KEY[mode];
   const consentKey = CONSENT_STORAGE_KEY[mode];
+  const returnUrl = safeInternalPath(params.get("returnUrl"));
   const isClient = mode === "client";
+  const isHost = mode === "host";
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [terms, setTerms] = useState(false);
@@ -277,6 +302,8 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
     if (isClient) return terms;
     return terms && adult && ownProfile;
   }, [adult, isClient, loading, ownProfile, phone, terms]);
+  const themedCheckStyle = isHost ? { ...checkStyle, color: "#b8b8b8" } : checkStyle;
+  const themedLinkStyle = isHost ? { ...linkStyle, color: "#f5d77a" } : linkStyle;
 
   async function sendCode(nextPhone = phone) {
     const normalized = digits(nextPhone);
@@ -332,7 +359,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
       return;
     }
     if (await sendCode()) {
-      router.push(`${VERIFY_ROUTE[mode]}?phone=${digits(phone)}`);
+      router.push(`${VERIFY_ROUTE[mode]}?phone=${digits(phone)}${returnUrl ? `&returnUrl=${encodeURIComponent(returnUrl)}` : ""}`);
     }
   }
 
@@ -362,7 +389,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
       setOtpStatus("verified");
       setStatusMessage("Telefone validado com sucesso.");
       toast.success("Telefone verificado.");
-      router.push(data.redirectTo ?? (mode === "host" ? "/anfitriao/imoveis/novo" : mode === "model" ? "/profissional/novo" : "/painel/cliente"));
+      router.push(returnUrl ?? data.redirectTo ?? (mode === "host" ? "/anfitriao/imoveis/novo" : mode === "model" ? "/profissional/novo" : "/painel/cliente"));
       router.refresh();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Nao foi possivel verificar o codigo.";
@@ -376,10 +403,10 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
 
   if (screen === "verify") {
     return (
-      <AuthShell backHref={text.verifyBack}>
-        <section style={{ width: "100%", maxWidth: 680, margin: "0 auto", padding: "32px 24px 0" }}>
-          <h1 style={{ fontSize: 32, lineHeight: 1.14, margin: "0 0 12px", color: INK }}>Digite o codigo enviado</h1>
-          <p style={{ fontSize: 17, lineHeight: 1.5, color: "#5b656b", margin: "0 0 28px" }}>
+      <AuthShell backHref={text.verifyBack} premium={isHost}>
+        <section style={{ width: "100%", maxWidth: isHost ? 430 : 680, margin: "0 auto", padding: "32px 24px 0" }}>
+          <h1 style={{ fontSize: 32, lineHeight: 1.14, margin: "0 0 12px", color: isHost ? "#fff" : INK }}>Digite o codigo enviado</h1>
+          <p style={{ fontSize: 17, lineHeight: 1.5, color: isHost ? "#b8b8b8" : "#5b656b", margin: "0 0 28px" }}>
             Enviamos um codigo de verificacao para {phone || "o telefone informado"}.
           </p>
           <form onSubmit={handleVerify}>
@@ -392,10 +419,10 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
               style={{
                 width: "100%",
                 height: 64,
-                border: "1px solid #cdd5d5",
-                borderRadius: 8,
-                background: "#fff",
-                color: INK,
+                border: isHost ? "1px solid rgba(214,168,58,0.28)" : "1px solid #cdd5d5",
+                borderRadius: isHost ? 18 : 8,
+                background: isHost ? "rgba(11,11,13,0.94)" : "#fff",
+                color: isHost ? "#fff" : INK,
                 textAlign: "center",
                 fontSize: 28,
                 fontWeight: 800,
@@ -403,9 +430,9 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
                 outlineColor: GOLD,
               }}
             />
-            <StatusMessage status={otpStatus} message={statusMessage} />
+            <StatusMessage status={otpStatus} message={statusMessage} premium={isHost} />
             <div style={{ height: 22 }} />
-            <SubmitButton disabled={loading || otpStatus === "verified"}>
+            <SubmitButton disabled={loading || otpStatus === "verified"} premium={isHost}>
               {otpStatus === "verifying" ? "Verificando..." : otpStatus === "verified" ? "Validado" : "Verificar codigo"}
             </SubmitButton>
           </form>
@@ -413,14 +440,14 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
             type="button"
             onClick={() => sendCode()}
             disabled={loading || timer > 0 || otpStatus === "verified"}
-            style={{ marginTop: 22, width: "100%", border: "none", background: "transparent", color: INK, fontSize: 16, fontWeight: 800, cursor: timer > 0 ? "not-allowed" : "pointer" }}
+            style={{ marginTop: 22, width: "100%", border: "none", background: "transparent", color: isHost ? "#d6a83a" : INK, fontSize: 16, fontWeight: 800, cursor: timer > 0 ? "not-allowed" : "pointer" }}
           >
             {timer > 0 ? `Reenviar codigo em ${timer}s` : "Reenviar codigo"}
           </button>
           <button
             type="button"
             onClick={() => router.push(REGISTER_ROUTE[mode])}
-            style={{ marginTop: 18, width: "100%", border: "none", background: "transparent", color: "#526067", fontSize: 15, textDecoration: "underline", cursor: "pointer" }}
+            style={{ marginTop: 18, width: "100%", border: "none", background: "transparent", color: isHost ? "#b8b8b8" : "#526067", fontSize: 15, textDecoration: "underline", cursor: "pointer" }}
           >
             Alterar telefone
           </button>
@@ -430,26 +457,26 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
   }
 
   return (
-    <AuthShell backHref={isClient ? undefined : "/"} menu={isClient}>
-      <section style={{ width: "100%", maxWidth: 680, margin: "0 auto", padding: "32px 24px 0" }}>
-        <h1 style={{ fontSize: 34, lineHeight: 1.16, margin: "0 0 20px", color: INK }}>{text.title}</h1>
-        <p style={{ fontSize: 17, color: "#3d4a51", margin: "0 0 36px", lineHeight: 1.5 }}>{text.hint}</p>
+    <AuthShell backHref={isClient ? undefined : "/"} menu={isClient} premium={isHost}>
+      <section style={{ width: "100%", maxWidth: isHost ? 430 : 680, margin: "0 auto", padding: "32px 24px 0" }}>
+        <h1 style={{ fontSize: 34, lineHeight: 1.16, margin: "0 0 20px", color: isHost ? "#fff" : INK }}>{text.title}</h1>
+        <p style={{ fontSize: 17, color: isHost ? "#b8b8b8" : "#3d4a51", margin: "0 0 36px", lineHeight: 1.5 }}>{text.hint}</p>
         <form onSubmit={handleRegister}>
-          <label style={{ display: "block", fontSize: isClient ? 17 : 22, fontWeight: 900, marginBottom: 12 }}>{text.phoneLabel}</label>
+          <label style={{ display: "block", fontSize: isClient ? 17 : 22, fontWeight: 900, marginBottom: 12, color: isHost ? "#d6a83a" : undefined }}>{text.phoneLabel}</label>
           <div style={{ position: "relative" }}>
-            <Phone size={22} style={{ position: "absolute", left: 20, top: 21, color: "#314047" }} />
+            <Phone size={22} style={{ position: "absolute", left: 20, top: 21, color: isHost ? "#d6a83a" : "#314047" }} />
             <input
               value={phone}
               onChange={(e) => setPhone(maskPhone(e.target.value))}
               inputMode="tel"
               autoComplete="tel"
               placeholder={text.phonePlaceholder}
-              style={{ width: "100%", height: 70, border: "1px solid #cdd5d5", borderRadius: 8, background: "#fff", color: INK, padding: "0 18px 0 58px", fontSize: 17, outlineColor: GOLD }}
+              style={{ width: "100%", height: 70, border: isHost ? "1px solid rgba(214,168,58,0.28)" : "1px solid #cdd5d5", borderRadius: isHost ? 18 : 8, background: isHost ? "rgba(11,11,13,0.94)" : "#fff", color: isHost ? "#fff" : INK, padding: "0 18px 0 58px", fontSize: 17, outlineColor: GOLD }}
             />
           </div>
 
           {!isClient && (
-            <label style={{ ...checkStyle, marginTop: 24 }}>
+            <label style={{ ...themedCheckStyle, marginTop: 24 }}>
               <input type="checkbox" checked={promo} onChange={(e) => setPromo(e.target.checked)} style={nativeCheckStyle} />
               Aceito receber informacoes sobre meu cadastro.
             </label>
@@ -458,40 +485,40 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
           <button
             type="button"
             onClick={() => setPrivacyOpen(true)}
-            style={{ width: "100%", minHeight: 58, border: "none", borderRadius: 8, background: "#eef7ef", display: "flex", alignItems: "center", gap: 14, padding: "0 16px", color: "#233037", fontSize: 17, fontWeight: 800, cursor: "pointer", marginTop: 24 }}
+            style={{ width: "100%", minHeight: 58, border: isHost ? "1px solid rgba(214,168,58,0.25)" : "none", borderRadius: isHost ? 18 : 8, background: isHost ? "rgba(16,16,20,0.88)" : "#eef7ef", display: "flex", alignItems: "center", gap: 14, padding: "0 16px", color: isHost ? "#fff" : "#233037", fontSize: 17, fontWeight: 800, cursor: "pointer", marginTop: 24 }}
           >
-            <ShieldCheck size={23} color="#4a9b5a" />
+            <ShieldCheck size={23} color={isHost ? "#d6a83a" : "#4a9b5a"} />
             <span style={{ flex: 1, textAlign: "left" }}>Privacidade e seguranca</span>
             <Info size={24} />
           </button>
 
-          <label style={{ ...checkStyle, marginTop: 28, fontSize: isClient ? 18 : 16, fontWeight: isClient ? 900 : 500, color: INK }}>
+          <label style={{ ...themedCheckStyle, marginTop: 28, fontSize: isClient ? 18 : 16, fontWeight: isClient ? 900 : 500, color: isHost ? "#b8b8b8" : INK }}>
             <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} style={nativeCheckStyle} />
-            <span>Li e aceito os <Link href="/terms" style={linkStyle}>Termos de Uso</Link> e a <Link href="/privacy" style={linkStyle}>Politica de Privacidade</Link>.</span>
+            <span>Li e aceito os <Link href="/terms" style={themedLinkStyle}>Termos de Uso</Link> e a <Link href="/privacy" style={themedLinkStyle}>Politica de Privacidade</Link>.</span>
           </label>
 
           {!isClient && (
             <>
-              <label style={checkStyle}>
+              <label style={themedCheckStyle}>
                 <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} style={nativeCheckStyle} />
                 Confirmo que sou maior de 18 anos.
               </label>
-              <label style={checkStyle}>
+              <label style={themedCheckStyle}>
                 <input type="checkbox" checked={ownProfile} onChange={(e) => setOwnProfile(e.target.checked)} style={nativeCheckStyle} />
                 {text.ownershipLabel}
               </label>
             </>
           )}
 
-          <StatusMessage status={otpStatus} message={statusMessage} />
+          <StatusMessage status={otpStatus} message={statusMessage} premium={isHost} />
           <div style={{ height: 22 }} />
-          <SubmitButton disabled={!canSubmit || loading}>
+          <SubmitButton disabled={!canSubmit || loading} premium={isHost}>
             {otpStatus === "sending" ? "Enviando..." : otpStatus === "sent" ? "Codigo enviado" : text.submit}
           </SubmitButton>
         </form>
 
         <p style={{ textAlign: "center", margin: "34px 0 0", fontSize: 19, fontWeight: 900 }}>
-          <Link href={text.loginHref} style={{ color: INK, textDecoration: "none" }}>{text.loginLabel}</Link>
+          <Link href={text.loginHref} style={{ color: isHost ? "#d6a83a" : INK, textDecoration: "none" }}>{text.loginLabel}</Link>
         </p>
         {isClient && (
           <p style={{ textAlign: "center", margin: "28px 0", fontSize: 17, color: "#39454c" }}>
@@ -499,7 +526,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
           </p>
         )}
       </section>
-      <LegalFooter />
+      {!isHost && <LegalFooter />}
       {privacyOpen && (
         <div role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.42)", display: "grid", placeItems: "center", padding: 20, zIndex: 40 }}>
           <div style={{ background: "#fff", borderRadius: 10, padding: 24, maxWidth: 420, color: INK, boxShadow: "0 18px 60px rgba(0,0,0,0.2)" }}>

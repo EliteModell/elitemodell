@@ -85,7 +85,7 @@ export function emailForPhone(phone: string, accountType: PhoneAccountType) {
 }
 
 export function roleForPhoneAccount(accountType: PhoneAccountType) {
-  return accountType === "client" ? "GUEST" : "HOST";
+  return accountType === "model" ? "HOST" : "GUEST";
 }
 
 export function nameForPhoneAccount(accountType: PhoneAccountType) {
