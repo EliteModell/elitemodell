@@ -1203,7 +1203,7 @@ body[data-client-filters-open="true"] .client-shell-content {
   z-index: 1;
   width: 100%;
   max-width: 430px;
-  max-height: 80dvh;
+  max-height: 82dvh;
   overflow-y: auto;
   border: 1px solid rgba(214, 168, 58, 0.28) !important;
   border-bottom: 0 !important;
@@ -1213,6 +1213,18 @@ body[data-client-filters-open="true"] .client-shell-content {
     linear-gradient(145deg, rgba(20, 20, 20, 0.98), rgba(8, 8, 8, 0.99)) !important;
   padding: 24px 20px calc(24px + env(safe-area-inset-bottom)) !important;
   box-shadow: 0 -24px 80px rgba(0, 0, 0, 0.62), 0 0 42px rgba(214, 168, 58, 0.12) !important;
+  animation: filterSheetIn 180ms ease-out both;
+}
+
+@keyframes filterSheetIn {
+  from {
+    transform: translateY(18px);
+    opacity: 0.82;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .client-filter-title {
@@ -1251,7 +1263,11 @@ body[data-client-filters-open="true"] .client-shell-content {
 }
 
 .client-filter-option {
+  display: inline-flex;
   min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   border: 1px solid rgba(214, 168, 58, 0.22);
   border-radius: 15px;
   background: #101014;
@@ -1261,10 +1277,27 @@ body[data-client-filters-open="true"] .client-shell-content {
   font-weight: 850;
 }
 
+.client-filter-option span {
+  border-radius: 999px;
+  background: rgba(214, 168, 58, 0.10);
+  padding: 3px 6px;
+  color: #f5b83b;
+  font-size: 10px;
+  font-weight: 900;
+}
+
 .client-filter-option.active {
   border-color: rgba(245, 211, 106, 0.62);
   background: linear-gradient(135deg, #f5d36a, #c99622);
   color: #050505;
+}
+
+.client-filter-option.disabled,
+.client-filter-option:disabled {
+  cursor: not-allowed;
+  border-color: rgba(214, 168, 58, 0.14);
+  color: rgba(255, 255, 255, 0.48);
+  opacity: 1;
 }
 
 .client-filter-toggle-row {
@@ -1335,6 +1368,20 @@ body[data-client-filters-open="true"] .client-shell-content {
   color: #f5b83b;
   font-size: 15px;
   font-weight: 900;
+}
+
+.client-filter-actions {
+  position: sticky;
+  bottom: calc(-24px - env(safe-area-inset-bottom));
+  display: grid;
+  gap: 12px;
+  margin: 10px -20px calc(-24px - env(safe-area-inset-bottom));
+  background: linear-gradient(to top, #050505 82%, rgba(5, 5, 5, 0));
+  padding: 22px 20px calc(24px + env(safe-area-inset-bottom));
+}
+
+.client-filter-actions .client-filter-clear {
+  margin-top: 0;
 }
 
 .client-shell-content .premium-skeleton {

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import {
   BadgeCheck,
   Camera,
@@ -188,9 +189,16 @@ function FilterDrawer({
   onOnlyVerified: (v: boolean) => void;
   onClear: () => void;
 }) {
-  if (!open) return null;
+  const [mounted, setMounted] = useState(false);
 
-  return (
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!open) return null;
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="client-filter-overlay" role="dialog" aria-modal="true" aria-label="Filtrar perfis">
       <button type="button" className="client-filter-backdrop" onClick={onClose} aria-label="Fechar filtros" />
       <section data-client-filter-panel="true" className="client-filter-panel">
@@ -232,7 +240,19 @@ function FilterDrawer({
           </div>
 
           <div>
-            <p className="client-filter-label">Segurança</p>
+            <p className="client-filter-label">Mídia disponível</p>
+            <div className="client-filter-options">
+              {["Com fotos", "Com vídeos", "Com shots"].map((label) => (
+                <button key={label} type="button" className="client-filter-option disabled" disabled>
+                  {label}
+                  <span>Em breve</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="client-filter-label">Verificação</p>
             <div className="client-filter-toggle-row">
               <div className="min-w-0">
                 <p>Somente verificadas</p>
@@ -248,23 +268,53 @@ function FilterDrawer({
                 <span />
               </button>
             </div>
+            <div className="client-filter-options mt-3">
+              {["Perfil com documento confirmado", "Perfil com foto verificada"].map((label) => (
+                <button key={label} type="button" className="client-filter-option disabled" disabled>
+                  {label}
+                  <span>Em breve</span>
+                </button>
+              ))}
+            </div>
           </div>
+
+          {[
+            ["Disponibilidade", ["Disponível agora", "Atendimento hoje", "Online recentemente"]],
+            ["Atendimento", ["Com local", "Atende em hotel", "Atende em domicílio", "Viagem / deslocamento"]],
+            ["Faixa de preço", ["Até R$ 200", "R$ 200 a R$ 400", "R$ 400+"]],
+            ["Características", ["Novas na plataforma", "Mais curtidas", "Perfil premium", "Com descrição completa"]],
+          ].map(([title, options]) => (
+            <div key={String(title)}>
+              <p className="client-filter-label">{String(title)}</p>
+              <div className="client-filter-options">
+                {(options as string[]).map((label) => (
+                  <button key={label} type="button" className="client-filter-option disabled" disabled>
+                    {label}
+                    <span>Em breve</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
 
-        <button type="button" onClick={onClose} className="client-primary-button mt-7 w-full text-[16px]">
-          Aplicar filtros
-        </button>
-        <button type="button" onClick={onClear} className="client-filter-clear">
-          Limpar filtros
-        </button>
+        <div className="client-filter-actions">
+          <button type="button" onClick={onClear} className="client-filter-clear">
+            Limpar filtros
+          </button>
+          <button type="button" onClick={onClose} className="client-primary-button w-full text-[16px]">
+            Aplicar filtros
+          </button>
+        </div>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
 const SORT_LABELS: Record<string, string> = {
-  price_asc: "Menor preco",
-  price_desc: "Maior preco",
+  price_asc: "Menor preço",
+  price_desc: "Maior preço",
   recent: "Mais recentes",
 };
 
@@ -312,7 +362,7 @@ function EmptyState({
         )}
         <p className="mt-4 max-w-[320px] text-[15px] leading-7 text-[#f5f0e4]/56">
           {hasFilters
-            ? "Tente uma categoria mais ampla ou busque por outra cidade."
+            ? "Tente remover alguns filtros ou buscar por outra cidade."
             : "Quando houver perfis ativos e verificados, eles aparecem aqui com foto, cidade e contato."}
         </p>
         <div className="mt-8 flex w-full max-w-[330px] flex-col gap-3">
@@ -729,6 +779,14 @@ export default function AcompanhantesPage() {
     document.querySelector<HTMLInputElement>('[data-client-city-filter="true"]')?.focus();
   }
 
+  const activeFilterLabels = [
+    search ? `Busca: ${search}` : null,
+    activeCategory ? CATEGORIES.find((c) => c.value === activeCategory)?.label : null,
+    city ? city : null,
+    sortBy !== "rating" ? SORT_LABELS[sortBy] : null,
+    onlyVerified ? "Verificadas" : null,
+  ].filter(Boolean) as string[];
+
   return (
     <>
       <section className="client-explore-home">
@@ -829,13 +887,24 @@ export default function AcompanhantesPage() {
         </div>
 
           {hasFilters && (
-            <div className="mt-4 flex items-center justify-between gap-3 rounded-[18px] border border-[#f5c242]/18 bg-[#f5c242]/10 px-4 py-3">
-              <span className="min-w-0 truncate text-[13px] font-semibold text-white/62">
-                Busca personalizada ativa
-              </span>
-              <button type="button" onClick={clearFilters} className="shrink-0 text-[13px] font-black text-[#f5c242]">
-                Limpar
-              </button>
+            <div className="mt-4 rounded-[18px] border border-[#f5c242]/18 bg-[#f5c242]/10 px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="min-w-0 text-[13px] font-semibold text-white/72">
+                  Busca personalizada ativa
+                </span>
+                <button type="button" onClick={clearFilters} className="shrink-0 text-[13px] font-black text-[#f5c242]">
+                  Limpar
+                </button>
+              </div>
+              {activeFilterLabels.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {activeFilterLabels.map((label) => (
+                    <span key={label} className="rounded-full border border-[#f5c242]/18 bg-black/20 px-2.5 py-1 text-[11px] font-bold text-[#f5f0e4]/72">
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           )}
       </section>
@@ -851,6 +920,16 @@ export default function AcompanhantesPage() {
         </div>
       )}
 
+      <FilterDrawer
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        sortBy={sortBy}
+        onSortBy={setSortBy}
+        onlyVerified={onlyVerified}
+        onOnlyVerified={setOnlyVerified}
+        onClear={clearFilters}
+      />
+
       <div className="mt-1 space-y-12 px-5 pb-[calc(360px+env(safe-area-inset-bottom))]">
         {loading && professionals.length === 0 ? (
           Array.from({ length: 3 }).map((_, i) => <ProfileCardSkeleton key={i} />)
@@ -858,27 +937,9 @@ export default function AcompanhantesPage() {
           <>
             <EmptyState hasFilters={hasFilters} activeCategory={activeCategory} sortBy={sortBy} onClear={clearFilters} onExploreCity={focusCity} />
             <ExploreSafetyCard />
-            <FilterDrawer
-              open={filterOpen}
-              onClose={() => setFilterOpen(false)}
-              sortBy={sortBy}
-              onSortBy={setSortBy}
-              onlyVerified={onlyVerified}
-              onOnlyVerified={setOnlyVerified}
-              onClear={clearFilters}
-            />
           </>
         ) : (
           <>
-            <FilterDrawer
-              open={filterOpen}
-              onClose={() => setFilterOpen(false)}
-              sortBy={sortBy}
-              onSortBy={setSortBy}
-              onlyVerified={onlyVerified}
-              onOnlyVerified={setOnlyVerified}
-              onClear={clearFilters}
-            />
             {professionals.map((p) => (
               <ProfessionalCard key={p.id} p={p} />
             ))}
