@@ -2,7 +2,8 @@
 
 /* eslint-disable @next/next/no-img-element -- Profile photos come from uploaded URLs */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   BadgeCheck,
@@ -344,19 +345,30 @@ function EmptyState({
 }
 
 export default function AcompanhantesPage() {
+  const searchParams = useSearchParams();
+  const initialCity = searchParams.get("city") ?? "";
+  const appliedInitial = useRef(false);
+
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
 
-  const [city, setCity] = useState("");
+  const [city, setCity] = useState(initialCity);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [sortBy, setSortBy] = useState("rating");
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState("");
+
+  useEffect(() => {
+    if (appliedInitial.current) {
+      setCity(initialCity);
+    }
+    appliedInitial.current = true;
+  }, [initialCity]);
 
   const fetchMore = useCallback(async () => {
     const nextPage = page + 1;

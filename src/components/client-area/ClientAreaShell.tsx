@@ -3,9 +3,10 @@
 /* eslint-disable @next/next/no-img-element -- User avatars can come from uploaded public URLs. */
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
+import CitySearchModal from "@/components/client-area/CitySearchModal";
 import {
   Bell,
   ChevronRight,
@@ -105,31 +106,34 @@ const socialLinks = [
 ];
 
 /* ─── Search bar in header ─── */
-export function LocationSearchBar() {
+export function LocationSearchBar({ onOpen }: { onOpen: () => void }) {
   return (
-    <Link
-      href={ACCOUNT_ROUTES.mainClientFeed}
-      className="group flex min-h-[50px] items-center gap-3 rounded-[10px] border border-white/[0.10] bg-white/[0.07] px-4 text-[14px] no-underline backdrop-blur-sm transition-all duration-200 active:scale-[0.985] active:bg-white/[0.10]"
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group flex min-h-[50px] w-full items-center gap-3 rounded-[10px] border border-white/[0.10] bg-white/[0.07] px-4 text-[14px] backdrop-blur-sm transition-all duration-200 active:scale-[0.985] active:bg-white/[0.10]"
     >
       <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[7px] border border-[#d4a843]/22 bg-[#d4a843]/14 text-[#f5d78c] transition-transform duration-200 group-active:scale-105">
         <Search className="h-4 w-4" />
       </span>
-      <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-[#f5f0e4]/55">
+      <span className="min-w-0 flex-1 truncate text-left text-[14px] font-semibold text-[#f5f0e4]/55">
         Cidade, nome ou estilo
       </span>
       <span className="shrink-0 rounded-[7px] border border-[#d4a843]/28 bg-[#d4a843]/16 px-3 py-1.5 text-[11px] font-black uppercase text-[#f5d78c]">
         Buscar
       </span>
-    </Link>
+    </button>
   );
 }
 
 /* ─── Mobile sticky header ─── */
 export function MobileHeader({
   onMenu,
+  onCityModal,
   backHref,
 }: {
   onMenu: () => void;
+  onCityModal: () => void;
   backHref?: string;
 }) {
   const pathname = usePathname();
@@ -172,7 +176,7 @@ export function MobileHeader({
         </div>
         {showHeaderSearch && (
           <div className="mt-4">
-            <LocationSearchBar />
+            <LocationSearchBar onOpen={onCityModal} />
           </div>
         )}
       </div>
@@ -433,17 +437,32 @@ export default function ClientAreaShell({
   children: React.ReactNode;
   backHref?: string;
 }) {
+  const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [cityModalOpen, setCityModalOpen] = useState(false);
+
+  function handleCitySelect(city: string) {
+    router.push(`/dashboard/acompanhantes?city=${encodeURIComponent(city)}`);
+  }
 
   return (
     <div className="client-premium min-h-screen">
-      <MobileHeader onMenu={() => setDrawerOpen(true)} backHref={backHref} />
+      <MobileHeader
+        onMenu={() => setDrawerOpen(true)}
+        onCityModal={() => setCityModalOpen(true)}
+        backHref={backHref}
+      />
       <SideDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <CitySearchModal
+        open={cityModalOpen}
+        onClose={() => setCityModalOpen(false)}
+        onSelectCity={handleCitySelect}
+      />
       <main className="client-shell-content mx-auto w-full max-w-[760px] pb-[calc(280px+env(safe-area-inset-bottom))]">
         {children}
       </main>
       <ClientBottomNav />
-      <style>{`body { background: #d4a843; }`}</style>
+      <style>{`body { background: #f2f2f3; }`}</style>
     </div>
   );
 }
