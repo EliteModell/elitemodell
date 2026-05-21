@@ -100,7 +100,7 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
     >
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_76%_20%,rgba(220,158,38,0.10),transparent_28%),linear-gradient(180deg,#050607_0%,#020303_100%)]" />
 
-      <div className="relative mx-auto flex min-h-dvh max-w-[820px] flex-col px-[38px] pb-[calc(env(safe-area-inset-bottom)+34px)] pt-[calc(env(safe-area-inset-top)+30px)] sm:px-8">
+      <div className="relative mx-auto flex min-h-dvh max-w-[820px] flex-col px-5 pb-[calc(env(safe-area-inset-bottom)+34px)] pt-[calc(env(safe-area-inset-top)+20px)]">
         <header className="flex items-center justify-between">
           <span className="text-[20px] font-black leading-none tracking-tight">
             <span className="bg-[linear-gradient(135deg,#ffb326_0%,#f7d67d_48%,#fff5dc_100%)] bg-clip-text text-transparent">elite</span>
@@ -117,33 +117,33 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
           </button>
         </header>
 
-        <section className="relative mt-6 min-h-[260px] overflow-visible pb-3">
+        <section className="relative mt-7 overflow-visible pb-4">
           <div
-            className="pointer-events-none absolute -right-[38px] -top-[20px] h-[280px] w-[220px]"
+            className="pointer-events-none absolute -right-5 -top-16 h-[300px] w-[210px]"
             aria-hidden="true"
           >
             <Image
               src="/brand/elite-modell%20gps.png"
               alt=""
               fill
-              sizes="220px"
-              className="object-contain"
+              sizes="210px"
+              className="object-contain object-top"
             />
           </div>
 
-          <p className="relative text-[12px] font-black uppercase tracking-[0.18em] text-[#d8ad4a]">Explorar perfis</p>
-          <h1 className="relative mt-3 max-w-[260px] text-[42px] font-black leading-[1.0] tracking-tight text-[#fffaf0] [text-shadow:0_4px_20px_rgba(0,0,0,0.60)]">
+          <p className="relative text-[11px] font-black uppercase tracking-[0.20em] text-[#d8ad4a]">Explorar perfis</p>
+          <h1 className="relative mt-3 max-w-[220px] text-[44px] font-black leading-[1.02] tracking-tight text-[#fffaf0] [text-shadow:0_4px_20px_rgba(0,0,0,0.60)]">
             Selecionar<br />cidade <span className="text-[#f4b735]">✦</span>
           </h1>
-          <p className="relative mt-4 max-w-[260px] text-[16px] leading-[1.5] text-[#fffaf0]/70">
+          <p className="relative mt-4 max-w-[240px] text-[15px] leading-[1.5] text-[#fffaf0]/68">
             Escolha uma cidade para ver<br />os perfis disponíveis
           </p>
         </section>
 
-        <section className="relative mt-4">
-          <div className="flex h-[64px] items-center rounded-[12px] border border-[#d4a843]/70 bg-[#07090a]/90 shadow-[0_0_0_1px_rgba(245,215,140,0.06),0_12px_40px_rgba(0,0,0,0.40)]">
-            <div className="grid h-full w-[60px] shrink-0 place-items-center rounded-l-[11px] border-r border-[#d4a843]/25 bg-[#17130c]/80">
-              <MapPin className="h-6 w-6 text-[#f7b733]" strokeWidth={2.2} />
+        <section className="relative mt-6">
+          <div className="flex h-[60px] items-center rounded-[12px] border border-[#d4a843]/70 bg-[#07090a]/90 shadow-[0_0_0_1px_rgba(245,215,140,0.06),0_12px_40px_rgba(0,0,0,0.40)]">
+            <div className="grid h-full w-[56px] shrink-0 place-items-center rounded-l-[11px] border-r border-[#d4a843]/25 bg-[#17130c]/80">
+              <MapPin className="h-5 w-5 text-[#f7b733]" strokeWidth={2.2} />
             </div>
             <input
               ref={inputRef}
@@ -151,12 +151,12 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Digite 3 ou mais caracteres"
-              className="min-w-0 flex-1 bg-transparent px-4 text-[16px] font-semibold text-[#fffaf0] outline-none placeholder:font-normal placeholder:text-[#fffaf0]/36"
+              className="min-w-0 flex-1 bg-transparent px-4 text-[15px] font-semibold text-[#fffaf0] outline-none placeholder:font-normal placeholder:text-[#fffaf0]/36"
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
             />
-            <div className="grid w-[52px] shrink-0 place-items-center">
+            <div className="grid w-[48px] shrink-0 place-items-center">
               {busy ? (
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#f7b733] border-t-transparent" />
               ) : input ? (
