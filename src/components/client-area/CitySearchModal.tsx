@@ -117,7 +117,7 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
           </button>
         </header>
 
-        <section className="mt-7 flex items-start gap-2 pb-4">
+        <section className="mt-10 flex items-start gap-2 pb-4">
           <div className="flex-1">
             <p className="text-[11px] font-black uppercase tracking-[0.20em] text-[#d8ad4a]">Explorar perfis</p>
             <h1 className="mt-3 text-[40px] font-black leading-[1.02] tracking-tight text-[#fffaf0] [text-shadow:0_4px_20px_rgba(0,0,0,0.60)]">
@@ -138,8 +138,8 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
           </div>
         </section>
 
-        <section className="relative mt-6">
-          <div className="flex h-[60px] items-center rounded-[12px] border border-[#d4a843]/70 bg-[#07090a]/90 shadow-[0_0_0_1px_rgba(245,215,140,0.06),0_12px_40px_rgba(0,0,0,0.40)]">
+        <section className="relative mt-10">
+          <div className="flex h-[62px] items-center rounded-[12px] border border-[#d4a843]/70 bg-[#07090a]/90 shadow-[0_0_0_1px_rgba(245,215,140,0.06),0_12px_40px_rgba(0,0,0,0.40)]">
             <div className="grid h-full w-[56px] shrink-0 place-items-center rounded-l-[11px] border-r border-[#d4a843]/25 bg-[#17130c]/80">
               <MapPin className="h-5 w-5 text-[#f7b733]" strokeWidth={2.2} />
             </div>
@@ -173,7 +173,7 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
           </div>
         </section>
 
-        <main className="relative mt-8 flex-1">
+        <main className="relative mt-10 flex-1">
           {noResults && !checking && (
             <div className="flex flex-col items-center rounded-[18px] border border-[#d4a843]/20 bg-white/[0.035] px-6 py-12 text-center shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
               <div className="mb-6 grid h-[88px] w-[88px] place-items-center rounded-[24px] border border-[#d4a843]/35 bg-[#17130c]/82 shadow-[0_0_46px_rgba(212,168,67,0.16)]">
@@ -221,7 +221,7 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
           )}
 
           {!noResults && !busy && suggestions.length === 0 && (
-            <div className="space-y-6">
+            <div className="space-y-7">
               <PremiumInvite />
               <TrustLine
                 icon={<ShieldCheck className="h-6 w-6" />}
