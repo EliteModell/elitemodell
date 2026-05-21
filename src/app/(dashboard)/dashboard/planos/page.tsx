@@ -1,5 +1,6 @@
 "use client";
 import { Check, Star } from "lucide-react";
+import { ClientSensitiveAction } from "@/components/client-area/ClientSensitiveGate";
 
 const plans = [
   {
@@ -83,18 +84,22 @@ export default function PlanosPage() {
             ))}
           </ul>
 
-          <button
-            type="button"
-            className={`mt-7 h-[56px] w-full rounded-[8px] text-[16px] font-black transition-opacity active:opacity-80 ${
-              plan.current
-                ? "border border-white/10 bg-white/[0.045] text-[#f5f0e4]/46 cursor-default"
-                : plan.gold
-                ? "client-primary-button"
-                : "client-secondary-button"
-            }`}
-          >
-            {plan.current ? "Plano atual" : "Assinar agora"}
-          </button>
+          {plan.current ? (
+            <button
+              type="button"
+              className="mt-7 h-[56px] w-full cursor-default rounded-[8px] border border-white/10 bg-white/[0.045] text-[16px] font-black text-[#f5f0e4]/46"
+            >
+              Plano atual
+            </button>
+          ) : (
+            <ClientSensitiveAction
+              className={`mt-7 h-[56px] w-full rounded-[8px] text-[16px] font-black transition-opacity active:opacity-80 ${
+                plan.gold ? "client-primary-button" : "client-secondary-button"
+              }`}
+            >
+              Assinar agora
+            </ClientSensitiveAction>
+          )}
         </div>
       ))}
     </div>

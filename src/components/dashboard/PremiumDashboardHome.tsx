@@ -18,6 +18,9 @@ import HistorySection from "@/components/client-area/HistorySection";
 import ListsSection from "@/components/client-area/ListsSection";
 import UserWelcomeCard from "@/components/client-area/UserWelcomeCard";
 import VerificationSection, { type VerificationStep } from "@/components/client-area/VerificationSection";
+import AgeVerificationCard, { AgeVerifiedBadge } from "@/components/client-area/AgeVerificationCard";
+import { ClientSensitiveAction } from "@/components/client-area/ClientSensitiveGate";
+import type { ClientAgeVerificationStatus } from "@/lib/client-age-verification";
 
 export type DashboardHomeData = {
   user: {
@@ -34,6 +37,9 @@ export type DashboardHomeData = {
     birthDate: string | null;
     termsConsent: boolean;
     lgpdConsent: boolean;
+    clientStatus: string;
+    ageVerified: boolean;
+    ageVerificationStatus: ClientAgeVerificationStatus;
   };
   city: string | null;
   vip: {
@@ -103,9 +109,11 @@ function ActionCard({
 function QuickActionGrid({
   credits,
   verificationDone,
+  ageVerified,
 }: {
   credits: number;
   verificationDone: number;
+  ageVerified: boolean;
 }) {
   const walletText =
     credits > 0
@@ -130,13 +138,29 @@ function QuickActionGrid({
             description="Guarde curtidos, seguidos e colecoes privadas sem exposicao."
             cta="Abrir"
           />
-          <ActionCard
-            href="/dashboard/carteira"
-            icon={<CreditCard className="h-6 w-6" />}
-            title="Carteira"
-            description={walletText}
-            cta="Ver saldo"
-          />
+          {ageVerified ? (
+            <ActionCard
+              href="/dashboard/carteira"
+              icon={<CreditCard className="h-6 w-6" />}
+              title="Carteira"
+              description={walletText}
+              cta="Ver saldo"
+            />
+          ) : (
+            <ClientSensitiveAction className="client-action-card client-dashboard-action-card group text-left">
+              <span className="client-dashboard-icon">
+                <CreditCard className="h-6 w-6" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-start gap-3">
+                  <span className="min-w-0 flex-1 text-[24px] font-black leading-7 text-[#f5f0e4]">Carteira</span>
+                  <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[#f5d78c]" />
+                </span>
+                <span className="mt-2 block text-[15px] leading-7 text-[#f5f0e4]/58">{walletText}</span>
+                <span className="mt-4 block text-[12px] font-black uppercase text-[#f5d78c]">Verificar idade</span>
+              </span>
+            </ClientSensitiveAction>
+          )}
           <ActionCard
             href="/dashboard/perfil"
             icon={<ShieldCheck className="h-6 w-6" />}
@@ -315,8 +339,12 @@ export default function PremiumDashboardHome({
         city={selectedCity}
         onDefineCity={() => setShowCitySelector(true)}
       />
-      <QuickActionGrid credits={data.stats.credits} verificationDone={verificationDone} />
+      <div className="client-page-tight mt-4 flex justify-end">
+        {data.user.ageVerified ? <AgeVerifiedBadge /> : null}
+      </div>
+      <QuickActionGrid credits={data.stats.credits} verificationDone={verificationDone} ageVerified={data.user.ageVerified} />
       <div className="client-dashboard-stack">
+        <AgeVerificationCard status={data.user.ageVerificationStatus} />
         <QuickStatsSection stats={data.stats} vip={data.vip} />
         <VerificationSection steps={verificationSteps} />
         <ListsSection />

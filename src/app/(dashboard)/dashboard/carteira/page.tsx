@@ -1,5 +1,6 @@
 "use client";
 import { ArrowDownLeft, ArrowUpRight, CreditCard, Plus } from "lucide-react";
+import { ClientSensitiveAction, ClientSensitiveGate } from "@/components/client-area/ClientSensitiveGate";
 
 export default function CarteiraPage() {
   return (
@@ -16,22 +17,24 @@ export default function CarteiraPage() {
         <p className="text-[12px] font-bold uppercase text-white/50">Saldo disponível</p>
         <p className="relative mt-3 text-[42px] font-black leading-none text-white">R$ 0,00</p>
         <div className="mt-8 flex gap-3">
-          <button
-            type="button"
-            className="client-primary-button flex min-h-[54px] flex-1 items-center justify-center gap-2 py-3 text-[15px]"
-          >
+          <ClientSensitiveAction className="client-primary-button flex min-h-[54px] flex-1 items-center justify-center gap-2 py-3 text-[15px]">
             <Plus className="h-4 w-4" />
             Adicionar
-          </button>
-          <button
-            type="button"
-            className="client-secondary-button flex min-h-[54px] flex-1 items-center justify-center gap-2 py-3 text-[15px]"
-          >
+          </ClientSensitiveAction>
+          <ClientSensitiveAction className="client-secondary-button flex min-h-[54px] flex-1 items-center justify-center gap-2 py-3 text-[15px]">
             <ArrowUpRight className="h-4 w-4" />
             Transferir
-          </button>
+          </ClientSensitiveAction>
         </div>
       </div>
+
+      <ClientSensitiveGate fallbackTitle="Carteira privada">
+        <div className="client-card p-5">
+          <p className="text-[15px] leading-7 text-[#b8b8b8]">
+            Compra de creditos e movimentacoes privadas liberadas para clientes 18+ verificados.
+          </p>
+        </div>
+      </ClientSensitiveGate>
 
       {/* Transactions */}
       <div className="client-card p-6">

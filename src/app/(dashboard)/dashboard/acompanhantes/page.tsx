@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createPortal } from "react-dom";
+import { ClientSensitiveAction } from "@/components/client-area/ClientSensitiveGate";
 import {
   BadgeCheck,
   Camera,
@@ -160,13 +161,10 @@ function ProfessionalCard({ p }: { p: Professional }) {
           Ver perfil
           <ChevronRight className="h-4 w-4" />
         </Link>
-        <button
-          type="button"
-          className="client-primary-button flex min-h-0 items-center gap-1.5 px-4 py-2.5 text-[13px]"
-        >
+        <ClientSensitiveAction className="client-primary-button flex min-h-0 items-center gap-1.5 px-4 py-2.5 text-[13px]">
           <Phone className="h-4 w-4" />
           Contato
-        </button>
+        </ClientSensitiveAction>
       </div>
     </article>
   );
@@ -887,6 +885,7 @@ export default function AcompanhantesPage() {
                 onClick={() => {
                   setActiveCategory(c.value);
                 }}
+                aria-pressed={activeCategory === c.value}
                 className={`category-button ${activeCategory === c.value ? "active" : ""}`}
               >
                 <CategoryIcon value={c.value} />

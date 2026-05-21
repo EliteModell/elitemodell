@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { ChevronRight, Clapperboard, Grid2X2, MapPin, Search, Settings2, ShieldCheck, User, VenusAndMars } from "lucide-react";
+import { ClientSensitiveGate } from "@/components/client-area/ClientSensitiveGate";
 
 const categories = [
   { label: "Todas", icon: <Grid2X2 /> },
@@ -61,6 +62,7 @@ export default function ShotsPage() {
         </div>
       </section>
 
+      <ClientSensitiveGate fallbackTitle="Shots restritos">
       <section className="shots-empty-card">
         <div className="shots-empty-icon">
           <Clapperboard />
@@ -75,6 +77,7 @@ export default function ShotsPage() {
           <ChevronRight />
         </Link>
       </section>
+      </ClientSensitiveGate>
 
       <section className="shots-safety-card">
         <span>

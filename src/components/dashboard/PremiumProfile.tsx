@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { Save, X } from "lucide-react";
 import ProfileHeaderCard from "@/components/client-area/ProfileHeaderCard";
 import ProfileInfoSection from "@/components/client-area/ProfileInfoSection";
+import type { ClientAgeVerificationStatus } from "@/lib/client-age-verification";
 
 export type PremiumProfileData = {
   user: {
@@ -25,6 +26,9 @@ export type PremiumProfileData = {
     birthDate: string | null;
     termsConsent: boolean;
     lgpdConsent: boolean;
+    clientStatus: string;
+    ageVerified: boolean;
+    ageVerificationStatus: ClientAgeVerificationStatus;
   };
   city: string | null;
   vip: {
@@ -201,6 +205,8 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
         city={data.city}
         emailVerified={Boolean(profile.emailVerified)}
         phoneVerified={Boolean(profile.phoneVerified || profile.phoneVerifiedAt)}
+        ageVerificationStatus={profile.ageVerificationStatus}
+        ageVerified={profile.ageVerified}
         privacyOk={Boolean(profile.termsConsent && profile.lgpdConsent)}
       />
     </div>

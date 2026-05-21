@@ -1,5 +1,6 @@
 import type { DashboardHomeData } from "@/components/dashboard/PremiumDashboardHome";
 import type { PremiumProfileData } from "@/components/dashboard/PremiumProfile";
+import { normalizeClientAgeVerificationStatus } from "@/lib/client-age-verification";
 import { prisma } from "@/lib/prisma";
 
 type DashboardUser = {
@@ -19,6 +20,7 @@ type DashboardUser = {
   birthDate: Date | null;
   termsConsent: boolean;
   lgpdConsent: boolean;
+  clientStatus: string;
   _count: {
     clientAppointments: number;
     proReviews: number;
@@ -145,6 +147,7 @@ async function getCoreData(userId: string) {
       birthDate: true,
       termsConsent: true,
       lgpdConsent: true,
+      clientStatus: true,
       _count: {
         select: {
           clientAppointments: true,
@@ -256,6 +259,9 @@ export async function getDashboardHomeData(userId: string): Promise<DashboardHom
       birthDate: iso(user.birthDate),
       termsConsent: user.termsConsent,
       lgpdConsent: user.lgpdConsent,
+      clientStatus: user.clientStatus,
+      ageVerified: user.clientStatus === "VERIFIED",
+      ageVerificationStatus: normalizeClientAgeVerificationStatus(user.clientStatus),
     },
     city: data.city,
     vip: data.vip,
@@ -332,6 +338,9 @@ export async function getPremiumProfileData(userId: string): Promise<PremiumProf
       birthDate: iso(user.birthDate),
       termsConsent: user.termsConsent,
       lgpdConsent: user.lgpdConsent,
+      clientStatus: user.clientStatus,
+      ageVerified: user.clientStatus === "VERIFIED",
+      ageVerificationStatus: normalizeClientAgeVerificationStatus(user.clientStatus),
     },
     city: data.city,
     vip: data.vip,

@@ -8,18 +8,41 @@ import { AlertTriangle, ShieldCheck } from "lucide-react";
 const GOLD = "#d6a83a";
 const CONSENT_KEY = "elite_modell_adult_consent_session";
 const CONSENT_DATE_KEY = "elite_modell_adult_consent_at";
+const CONSENT_PERSIST_KEY = "elite_modell_ageConsentAccepted";
+const CONSENT_PERSIST_DATE_KEY = "elite_modell_ageConsentAcceptedAt";
 const DECLINED_KEY = "elite_modell_adult_consent_declined";
 const SAFE_EXIT_PATH = "/saida";
 
 function shouldSkipGate(pathname: string | null) {
-  return pathname === SAFE_EXIT_PATH;
+  if (!pathname) return true;
+  if (pathname === SAFE_EXIT_PATH) return true;
+
+  return [
+    "/profissional",
+    "/modelo",
+    "/cadastro-modelo",
+    "/anfitriao",
+    "/cadastro-anfitriao",
+    "/painel/acompanhante",
+    "/painel/anfitriao",
+    "/verificacao/acompanhante",
+    "/verificacao/anfitriao",
+  ].some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
+function hasAdultConsent() {
+  try {
+    return Boolean(sessionStorage.getItem(CONSENT_KEY) || localStorage.getItem(CONSENT_PERSIST_KEY));
+  } catch {
+    return false;
+  }
 }
 
 export default function AgeGate() {
   const pathname = usePathname();
   const acceptButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(() => !shouldSkipGate(pathname) && !hasAdultConsent());
 
   useEffect(() => {
     if (shouldSkipGate(pathname)) {
@@ -27,7 +50,7 @@ export default function AgeGate() {
       return;
     }
 
-    setVisible(!sessionStorage.getItem(CONSENT_KEY));
+    setVisible(!hasAdultConsent());
   }, [pathname]);
 
   useEffect(() => {
@@ -67,8 +90,11 @@ export default function AgeGate() {
   }
 
   function acceptConsent() {
+    const acceptedAt = new Date().toISOString();
     sessionStorage.setItem(CONSENT_KEY, "accepted");
-    sessionStorage.setItem(CONSENT_DATE_KEY, new Date().toISOString());
+    sessionStorage.setItem(CONSENT_DATE_KEY, acceptedAt);
+    localStorage.setItem(CONSENT_PERSIST_KEY, "true");
+    localStorage.setItem(CONSENT_PERSIST_DATE_KEY, acceptedAt);
     sessionStorage.removeItem(DECLINED_KEY);
     setVisible(false);
   }
