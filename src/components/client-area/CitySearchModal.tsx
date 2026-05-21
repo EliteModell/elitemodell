@@ -102,7 +102,7 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
 
       <div className="relative mx-auto flex min-h-dvh max-w-[820px] flex-col px-[38px] pb-[calc(env(safe-area-inset-bottom)+34px)] pt-[calc(env(safe-area-inset-top)+30px)] sm:px-8">
         <header className="flex items-center justify-between">
-          <span className="text-[22px] font-black leading-none tracking-tight sm:text-[24px]">
+          <span className="text-[20px] font-black leading-none tracking-tight">
             <span className="bg-[linear-gradient(135deg,#ffb326_0%,#f7d67d_48%,#fff5dc_100%)] bg-clip-text text-transparent">elite</span>
             <span className="text-[#fffaf0]">modell</span>
             <span className="ml-1 text-[#f6bb37]">✦</span>
@@ -110,41 +110,40 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
           <button
             type="button"
             onClick={onClose}
-            className="grid h-[66px] w-[66px] place-items-center rounded-[14px] border border-[#d4a843]/45 bg-[#181307]/58 text-[#f7b733] shadow-[0_0_28px_rgba(212,168,67,0.13)] transition active:scale-95 active:bg-[#241a08] sm:h-[58px] sm:w-[58px]"
+            className="grid h-11 w-11 place-items-center rounded-[10px] border border-[#d4a843]/45 bg-[#181307]/80 text-[#f7b733] transition active:scale-95 active:bg-[#241a08]"
             aria-label="Fechar"
           >
-            <X className="h-9 w-9 sm:h-8 sm:w-8" strokeWidth={2.4} />
+            <X className="h-5 w-5" strokeWidth={2.4} />
           </button>
         </header>
 
-        <section className="relative mt-[72px] min-h-[288px] overflow-visible pb-3 sm:mt-14 sm:min-h-[330px]">
+        <section className="relative mt-6 min-h-[260px] overflow-visible pb-3">
           <div
-            className="pointer-events-none absolute -right-[68px] -top-[208px] h-[570px] w-[285px] sm:-right-[90px] sm:-top-[300px] sm:h-[790px] sm:w-[395px]"
+            className="pointer-events-none absolute -right-[38px] -top-[20px] h-[280px] w-[220px]"
             aria-hidden="true"
           >
             <Image
               src="/brand/elite-modell%20gps.png"
               alt=""
               fill
-              sizes="(max-width: 640px) 285px, 395px"
+              sizes="220px"
               className="object-contain"
             />
           </div>
-          <div className="pointer-events-none absolute -right-10 top-[120px] h-44 w-[78%] bg-[linear-gradient(90deg,#030405_0%,rgba(3,4,5,0.76)_36%,rgba(3,4,5,0)_100%)] sm:hidden" />
 
-          <p className="relative text-[22px] font-black uppercase leading-none tracking-[0.32em] text-[#d8ad4a] sm:text-[15px]">Explorar perfis</p>
-          <h1 className="relative mt-6 max-w-[360px] text-[64px] font-black leading-[0.98] tracking-tight text-[#fffaf0] [text-shadow:0_8px_30px_rgba(0,0,0,0.70)] sm:text-[70px]">
+          <p className="relative text-[12px] font-black uppercase tracking-[0.18em] text-[#d8ad4a]">Explorar perfis</p>
+          <h1 className="relative mt-3 max-w-[260px] text-[42px] font-black leading-[1.0] tracking-tight text-[#fffaf0] [text-shadow:0_4px_20px_rgba(0,0,0,0.60)]">
             Selecionar<br />cidade <span className="text-[#f4b735]">✦</span>
           </h1>
-          <p className="relative mt-5 max-w-[360px] text-[29px] leading-[1.38] text-[#fffaf0]/72 sm:text-[24px]">
-            Escolha uma cidade para ver os perfis disponíveis
+          <p className="relative mt-4 max-w-[260px] text-[16px] leading-[1.5] text-[#fffaf0]/70">
+            Escolha uma cidade para ver<br />os perfis disponíveis
           </p>
         </section>
 
-        <section className="relative mt-[18px]">
-          <div className="flex h-[94px] items-center rounded-[14px] border border-[#d4a843]/80 bg-[#07090a]/90 shadow-[0_0_0_1px_rgba(245,215,140,0.08),0_22px_60px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.05)]">
-            <div className="grid h-full w-[86px] shrink-0 place-items-center rounded-l-[13px] border-r border-[#d4a843]/28 bg-[#17130c]/82">
-              <MapPin className="h-12 w-12 text-[#f7b733] drop-shadow-[0_0_16px_rgba(247,183,51,0.45)]" strokeWidth={2.2} />
+        <section className="relative mt-4">
+          <div className="flex h-[64px] items-center rounded-[12px] border border-[#d4a843]/70 bg-[#07090a]/90 shadow-[0_0_0_1px_rgba(245,215,140,0.06),0_12px_40px_rgba(0,0,0,0.40)]">
+            <div className="grid h-full w-[60px] shrink-0 place-items-center rounded-l-[11px] border-r border-[#d4a843]/25 bg-[#17130c]/80">
+              <MapPin className="h-6 w-6 text-[#f7b733]" strokeWidth={2.2} />
             </div>
             <input
               ref={inputRef}
@@ -152,31 +151,31 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Digite 3 ou mais caracteres"
-              className="min-w-0 flex-1 bg-transparent px-5 text-[29px] font-semibold text-[#fffaf0] outline-none placeholder:font-normal placeholder:text-[#fffaf0]/38 sm:text-[23px]"
+              className="min-w-0 flex-1 bg-transparent px-4 text-[16px] font-semibold text-[#fffaf0] outline-none placeholder:font-normal placeholder:text-[#fffaf0]/36"
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
             />
-            <div className="grid w-[74px] shrink-0 place-items-center">
+            <div className="grid w-[52px] shrink-0 place-items-center">
               {busy ? (
-                <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-[#f7b733] border-t-transparent" />
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#f7b733] border-t-transparent" />
               ) : input ? (
                 <button
                   type="button"
                   onClick={reset}
-                  className="grid h-10 w-10 place-items-center rounded-full bg-white/8 text-[#f7b733] active:bg-white/14"
+                  className="grid h-8 w-8 place-items-center rounded-full bg-white/8 text-[#f7b733] active:bg-white/14"
                   aria-label="Limpar busca"
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-4 w-4" />
                 </button>
               ) : (
-                <Search className="h-10 w-10 text-[#f7b733] sm:h-8 sm:w-8" strokeWidth={2.2} />
+                <Search className="h-5 w-5 text-[#f7b733]" strokeWidth={2.2} />
               )}
             </div>
           </div>
         </section>
 
-        <main className="relative mt-[74px] flex-1">
+        <main className="relative mt-8 flex-1">
           {noResults && !checking && (
             <div className="flex flex-col items-center rounded-[18px] border border-[#d4a843]/20 bg-white/[0.035] px-6 py-12 text-center shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
               <div className="mb-6 grid h-[88px] w-[88px] place-items-center rounded-[24px] border border-[#d4a843]/35 bg-[#17130c]/82 shadow-[0_0_46px_rgba(212,168,67,0.16)]">
@@ -224,16 +223,15 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
           )}
 
           {!noResults && !busy && suggestions.length === 0 && (
-            <div className="space-y-8">
+            <div className="space-y-6">
               <PremiumInvite />
               <TrustLine
-                icon={<ShieldCheck className="h-7 w-7" />}
+                icon={<ShieldCheck className="h-6 w-6" />}
                 title="Ambiente seguro e verificado"
                 description="Seus dados estão protegidos conosco."
               />
-              <div className="h-px bg-white/10" />
               <TrustLine
-                icon={<LockKeyhole className="h-7 w-7" />}
+                icon={<LockKeyhole className="h-6 w-6" />}
                 title="Privacidade garantida"
                 description="Informações 100% seguras."
               />
@@ -250,22 +248,22 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
 
 function PremiumInvite() {
   return (
-    <div className="flex items-center gap-5 rounded-[18px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.32)] sm:p-7">
-      <div className="grid h-[82px] w-[82px] shrink-0 place-items-center rounded-[17px] bg-[#17130c]/88">
-        <Diamond className="h-12 w-12 text-[#f7b733]" strokeWidth={1.7} />
+    <div className="flex items-center gap-4 rounded-[16px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-4 shadow-[0_12px_40px_rgba(0,0,0,0.32)]">
+      <div className="grid h-14 w-14 shrink-0 place-items-center rounded-[14px] bg-[#17130c]/88">
+        <Diamond className="h-8 w-8 text-[#f7b733]" strokeWidth={1.7} />
       </div>
       <div className="min-w-0 flex-1">
-        <h2 className="text-[21px] font-black leading-tight text-[#f7c75d] sm:text-[24px]">Encontre perfis exclusivos</h2>
-        <p className="mt-3 text-[15px] leading-[1.55] text-[#fffaf0]/60 sm:text-[18px]">
+        <h2 className="text-[15px] font-black leading-tight text-[#f7c75d]">Encontre perfis exclusivos</h2>
+        <p className="mt-1 text-[13px] leading-[1.4] text-[#fffaf0]/58">
           Explore modelos e talentos na sua cidade com recursos premium.
         </p>
       </div>
       <button
         type="button"
-        className="flex min-h-[58px] shrink-0 items-center gap-3 rounded-[12px] border border-[#d4a843]/55 bg-[linear-gradient(135deg,rgba(247,183,51,0.36),rgba(104,74,18,0.78))] px-5 text-[15px] font-black text-[#ffd36d] shadow-[0_0_34px_rgba(212,168,67,0.16)] active:scale-95 sm:px-7 sm:text-[16px]"
+        className="flex h-11 shrink-0 items-center gap-2 rounded-[10px] border border-[#d4a843]/55 bg-[linear-gradient(135deg,rgba(247,183,51,0.36),rgba(104,74,18,0.78))] px-4 text-[13px] font-black text-[#ffd36d] active:scale-95"
       >
         Seja Premium
-        <Crown className="h-5 w-5 fill-[#ffd36d]/30" />
+        <Crown className="h-4 w-4 fill-[#ffd36d]/30" />
       </button>
     </div>
   );
@@ -273,13 +271,13 @@ function PremiumInvite() {
 
 function TrustLine({ icon, title, description }: { icon: ReactNode; title: string; description: string }) {
   return (
-    <div className="flex items-center gap-5 px-4">
-      <div className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-[16px] bg-[#17130c]/88 text-[#f7b733]">
+    <div className="flex items-center gap-4 px-1">
+      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-[12px] bg-[#17130c]/88 text-[#f7b733]">
         {icon}
       </div>
       <div>
-        <h3 className="text-[18px] font-black text-[#fffaf0]">{title}</h3>
-        <p className="mt-2 text-[16px] leading-snug text-[#fffaf0]/58">{description}</p>
+        <h3 className="text-[15px] font-black text-[#fffaf0]">{title}</h3>
+        <p className="mt-0.5 text-[13px] leading-snug text-[#fffaf0]/55">{description}</p>
       </div>
     </div>
   );
