@@ -255,7 +255,7 @@ svg {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: -2;
+  z-index: 0;
   background:
     radial-gradient(circle at 20% 10%, rgba(214, 168, 58, 0.16), transparent 32%),
     radial-gradient(circle at 85% 35%, rgba(214, 168, 58, 0.10), transparent 34%),
@@ -269,7 +269,7 @@ svg {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   background: linear-gradient(180deg, rgba(5, 5, 5, 0), #050505 76%);
   pointer-events: none;
 }
@@ -573,15 +573,14 @@ svg {
 }
 
 body[data-client-filters-open="true"] .client-bottom-nav {
-  display: none !important;
-  pointer-events: none;
-  opacity: 0 !important;
-  visibility: hidden !important;
-  transform: translateY(110%) !important;
+  display: block !important;
+  pointer-events: auto;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 body[data-client-filters-open="true"] .client-shell-content {
-  z-index: 80;
+  z-index: 1;
 }
 
 .client-city-select,
@@ -1250,9 +1249,10 @@ body[data-client-explore="true"] .client-premium > header a[aria-label="Elite Mo
   overflow: hidden;
   padding: 142px 18px 28px;
   background:
-    linear-gradient(90deg, rgba(5, 5, 5, 0.96) 0%, rgba(5, 5, 5, 0.78) 46%, rgba(5, 5, 5, 0.24) 100%),
-    linear-gradient(180deg, rgba(5, 5, 5, 0.08) 0%, rgba(5, 5, 5, 0.20) 52%, #050505 100%),
-    url("/brand/elite%20modell%20explorar.png");
+    radial-gradient(circle at 20% 10%, rgba(214, 168, 58, 0.16), transparent 32%),
+    radial-gradient(circle at 85% 35%, rgba(214, 168, 58, 0.10), transparent 34%),
+    #050505;
+  background-repeat: no-repeat;
   background-position: center top;
   background-size: cover;
   color: #ffffff;
@@ -1561,9 +1561,10 @@ body[data-client-explore="true"] .client-explore-home {
   overflow-x: hidden;
   padding: 136px 16px 30px;
   background:
-    linear-gradient(90deg, rgba(5, 5, 5, 0.94) 0%, rgba(5, 5, 5, 0.78) 45%, rgba(5, 5, 5, 0.22) 100%),
-    linear-gradient(180deg, rgba(5, 5, 5, 0.02) 0%, rgba(5, 5, 5, 0.18) 52%, #050505 100%),
-    url("/brand/elite%20modell%20explorar.png");
+    radial-gradient(circle at 20% 10%, rgba(214, 168, 58, 0.16), transparent 32%),
+    radial-gradient(circle at 85% 35%, rgba(214, 168, 58, 0.10), transparent 34%),
+    #050505;
+  background-repeat: no-repeat;
   background-position: center top;
   background-size: cover;
 }
@@ -3322,7 +3323,24 @@ body[data-client-dashboard="true"] .client-premium,
 }
 
 .profile-edit-section {
-  margin-top: 32px;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  align-items: start;
+  justify-items: center;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(214, 168, 58, 0.16), transparent 32%),
+    radial-gradient(circle at 85% 35%, rgba(214, 168, 58, 0.10), transparent 34%),
+    rgba(5, 5, 5, 0.96);
+  background-repeat: no-repeat;
+  padding: 88px 16px calc(128px + env(safe-area-inset-bottom));
+  pointer-events: auto;
+}
+
+.profile-edit-section .profile-edit-card {
+  max-width: 430px;
 }
 
 .profile-edit-head {

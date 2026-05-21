@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Bell,
   ChevronRight,
@@ -423,18 +423,26 @@ export function ClientBottomNav() {
     <nav className="client-bottom-nav fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(8px+env(safe-area-inset-bottom))] transition-all duration-200 md:hidden">
       <div className="mx-auto grid h-[72px] max-w-[720px] grid-cols-4 rounded-[14px] border border-[#d4a843]/18 bg-[#090a0b]/94 p-1.5 shadow-[0_-12px_30px_rgba(0,0,0,0.30)] backdrop-blur-2xl">
         {items.map((item) => {
+          const isExplore = pathname === "/dashboard/explorar" || pathname?.startsWith("/dashboard/explorar/");
+          const isLists = pathname === "/dashboard/listas" || pathname?.startsWith("/dashboard/listas/");
           const active =
             pathname === item.href ||
+            (item.href === "/dashboard/acompanhantes" && isExplore) ||
+            (item.href === "/dashboard/favoritos" && isLists) ||
             (item.href !== "/dashboard" && pathname?.startsWith(item.href + "/")) ||
             (item.href === "/dashboard" &&
               Boolean(
                 pathname?.startsWith("/dashboard") &&
                   pathname !== "/dashboard/acompanhantes" &&
+                  pathname !== "/dashboard/explorar" &&
                   pathname !== "/dashboard/shots" &&
                   pathname !== "/dashboard/favoritos" &&
+                  pathname !== "/dashboard/listas" &&
                   !pathname?.startsWith("/dashboard/acompanhantes/") &&
+                  !pathname?.startsWith("/dashboard/explorar/") &&
                   !pathname?.startsWith("/dashboard/shots/") &&
-                  !pathname?.startsWith("/dashboard/favoritos/"),
+                  !pathname?.startsWith("/dashboard/favoritos/") &&
+                  !pathname?.startsWith("/dashboard/listas/"),
               ));
           return (
             <Link
@@ -475,6 +483,19 @@ export default function ClientAreaShell({
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  useEffect(() => {
+    setDrawerOpen(false);
+    delete document.body.dataset.clientFiltersOpen;
+
+    if (pathname !== "/dashboard") {
+      delete document.body.dataset.clientDashboard;
+    }
+
+    if (!pathname?.startsWith("/dashboard/acompanhantes")) {
+      delete document.body.dataset.clientExplore;
+    }
+  }, [pathname]);
+
   function handleHeaderSearch() {
     router.push(ACCOUNT_ROUTES.mainClientFeed);
   }
@@ -488,7 +509,9 @@ export default function ClientAreaShell({
       />
       <SideDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
       <main className="client-shell-content mx-auto w-full max-w-[760px] pb-[calc(280px+env(safe-area-inset-bottom))]">
-        {children}
+        <div key={pathname} className="page-content relative z-[1] w-full">
+          {children}
+        </div>
       </main>
       <ClientBottomNav />
       <style>{`body { background: #050505; }`}</style>

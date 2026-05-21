@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import toast from "react-hot-toast";
 import { Save, X } from "lucide-react";
 import ProfileHeaderCard from "@/components/client-area/ProfileHeaderCard";
@@ -60,6 +61,7 @@ function maskPhone(value: string) {
 }
 
 export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
+  const pathname = usePathname();
   const [profile, setProfile] = useState(data.user);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -73,10 +75,18 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
   useEffect(() => {
     delete document.body.dataset.clientExplore;
     delete document.body.dataset.clientFiltersOpen;
+    delete document.body.dataset.clientDashboard;
     return () => {
       delete document.body.dataset.clientFiltersOpen;
+      delete document.body.dataset.clientDashboard;
     };
   }, []);
+
+  useEffect(() => {
+    if (pathname !== "/dashboard/perfil") {
+      setEditing(false);
+    }
+  }, [pathname]);
 
   async function handlePhotoUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -159,7 +169,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
       />
 
       {editing ? (
-        <section className="profile-edit-section">
+        <section className="profile-edit-section" role="dialog" aria-modal="true" aria-label="Editar dados">
           <form onSubmit={saveProfile} className="profile-edit-card">
             <div className="profile-edit-head">
               <h2>Editar dados</h2>

@@ -75,7 +75,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#050506] text-white">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,168,67,0.10),transparent_34%)]" />
-      <div className="pointer-events-none fixed inset-0 opacity-[0.14] [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:44px_44px]" />
 
       <DashSidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
