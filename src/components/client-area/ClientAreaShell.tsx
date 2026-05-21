@@ -145,7 +145,8 @@ export function MobileHeader({
   const isShots = pathname === "/dashboard/shots";
   const isLists = pathname === "/dashboard/favoritos";
   const isProfile = pathname === "/dashboard/perfil";
-  const showHeaderSearch = !isExplore && !isShots && !isProfile;
+  const isCitySelector = pathname === "/dashboard/selecionar-cidade";
+  const showHeaderSearch = !isExplore && !isShots && !isProfile && !isCitySelector;
 
   return (
     <header className="sticky top-0 z-30 border-b border-[#d4a843]/14 bg-[#08090a]/92 shadow-[0_16px_46px_rgba(0,0,0,0.30)] backdrop-blur-2xl">
@@ -497,7 +498,18 @@ export default function ClientAreaShell({
   }, [pathname]);
 
   function handleHeaderSearch() {
-    router.push(ACCOUNT_ROUTES.mainClientFeed);
+    router.push("/dashboard/selecionar-cidade");
+  }
+
+  if (pathname === "/dashboard/selecionar-cidade") {
+    return (
+      <div className="client-premium client-city-route-shell min-h-screen">
+        <main className="page-content relative z-[1] w-full">
+          {children}
+        </main>
+        <style>{`body { background: #050505; }`}</style>
+      </div>
+    );
   }
 
   return (
