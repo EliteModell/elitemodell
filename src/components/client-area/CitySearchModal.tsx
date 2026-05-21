@@ -100,7 +100,7 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
     >
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_76%_20%,rgba(220,158,38,0.10),transparent_28%),linear-gradient(180deg,#050607_0%,#020303_100%)]" />
 
-      <div className="relative mx-auto flex min-h-dvh max-w-[820px] flex-col px-5 pb-[calc(env(safe-area-inset-bottom)+34px)] pt-[calc(env(safe-area-inset-top)+20px)]">
+      <div className="relative flex w-full flex-col px-5 pb-[calc(env(safe-area-inset-bottom)+34px)] pt-[calc(env(safe-area-inset-top)+20px)]" style={{ minHeight: "100dvh" }}>
         <header className="flex items-center justify-between">
           <span className="text-[20px] font-black leading-none tracking-tight">
             <span className="bg-[linear-gradient(135deg,#ffb326_0%,#f7d67d_48%,#fff5dc_100%)] bg-clip-text text-transparent">elite</span>
@@ -110,34 +110,32 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
           <button
             type="button"
             onClick={onClose}
-            className="grid h-11 w-11 place-items-center rounded-[10px] border border-[#d4a843]/45 bg-[#181307]/80 text-[#f7b733] transition active:scale-95 active:bg-[#241a08]"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-[10px] border border-[#d4a843]/45 bg-[#181307]/80 text-[#f7b733] transition active:scale-95 active:bg-[#241a08]"
             aria-label="Fechar"
           >
             <X className="h-5 w-5" strokeWidth={2.4} />
           </button>
         </header>
 
-        <section className="relative mt-7 overflow-visible pb-4">
-          <div
-            className="pointer-events-none absolute -right-5 -top-16 h-[300px] w-[210px]"
-            aria-hidden="true"
-          >
+        <section className="mt-7 flex items-start gap-2 pb-4">
+          <div className="flex-1">
+            <p className="text-[11px] font-black uppercase tracking-[0.20em] text-[#d8ad4a]">Explorar perfis</p>
+            <h1 className="mt-3 text-[40px] font-black leading-[1.02] tracking-tight text-[#fffaf0] [text-shadow:0_4px_20px_rgba(0,0,0,0.60)]">
+              Selecionar<br />cidade <span className="text-[#f4b735]">✦</span>
+            </h1>
+            <p className="mt-4 text-[14px] leading-[1.5] text-[#fffaf0]/68">
+              Escolha uma cidade para ver<br />os perfis disponíveis
+            </p>
+          </div>
+          <div className="relative h-[220px] w-[160px] shrink-0" aria-hidden="true">
             <Image
               src="/brand/elite-modell%20gps.png"
               alt=""
               fill
-              sizes="210px"
-              className="object-contain object-top"
+              sizes="160px"
+              className="object-contain object-center"
             />
           </div>
-
-          <p className="relative text-[11px] font-black uppercase tracking-[0.20em] text-[#d8ad4a]">Explorar perfis</p>
-          <h1 className="relative mt-3 max-w-[220px] text-[44px] font-black leading-[1.02] tracking-tight text-[#fffaf0] [text-shadow:0_4px_20px_rgba(0,0,0,0.60)]">
-            Selecionar<br />cidade <span className="text-[#f4b735]">✦</span>
-          </h1>
-          <p className="relative mt-4 max-w-[240px] text-[15px] leading-[1.5] text-[#fffaf0]/68">
-            Escolha uma cidade para ver<br />os perfis disponíveis
-          </p>
         </section>
 
         <section className="relative mt-6">
