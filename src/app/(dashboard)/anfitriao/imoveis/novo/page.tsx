@@ -705,7 +705,7 @@ export default function NovoImovelPage() {
   const canGoNext = validate();
 
   return (
-    <main className="onboarding-shell">
+    <main className="onboarding-shell host-flow-page">
       <header className="top-actions">
         <Link href="/" className="flow-brand" aria-label="Elite Modell">
           <span>elite</span><strong>modell</strong>
@@ -723,7 +723,7 @@ export default function NovoImovelPage() {
         </div>
       )}
 
-      <section className="step-panel">
+      <section className="step-panel host-flow-content">
         {step === 0 && (
           <div className="intro-screen">
             <div className="intro-mark"><Shield size={54} /></div>
@@ -1502,17 +1502,27 @@ export default function NovoImovelPage() {
           height: auto;
         }
         .onboarding-shell {
+          position: relative;
           width: 100%;
           max-width: 430px;
           min-height: 100dvh;
           margin: 0 auto;
           overflow-x: hidden;
+          isolation: isolate;
           background:
             radial-gradient(circle at 20% 10%, rgba(214,168,58,0.16), transparent 32%),
             radial-gradient(circle at 85% 35%, rgba(214,168,58,0.10), transparent 34%),
             #050505;
+          background-repeat: no-repeat;
+          background-size: cover;
+          background-position: center;
           color: #fff;
           padding: max(18px, env(safe-area-inset-top)) 16px calc(144px + env(safe-area-inset-bottom));
+        }
+        .host-flow-page::before,
+        .host-flow-page::after {
+          content: none !important;
+          display: none !important;
         }
         .top-actions {
           max-width: 430px;
@@ -1566,6 +1576,10 @@ export default function NovoImovelPage() {
         .step-panel {
           max-width: 430px;
           margin: 0 auto;
+        }
+        .host-flow-content {
+          position: relative;
+          z-index: 1;
         }
         .draft-banner {
           max-width: 430px;
@@ -1627,6 +1641,10 @@ export default function NovoImovelPage() {
         .card-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 14px;
+          width: 100%;
+          position: relative;
+          z-index: 1;
+          overflow: visible;
         }
         .select-card,
         .choice,
@@ -1641,23 +1659,50 @@ export default function NovoImovelPage() {
           box-shadow: 0 22px 60px rgba(0,0,0,0.28);
         }
         .select-card {
+          position: relative;
+          z-index: 2;
+          width: 100%;
           min-height: 126px;
           border-radius: 18px;
           padding: 17px;
           color: #fff;
+          overflow: hidden;
+          background-repeat: no-repeat !important;
+          background-size: cover !important;
+          background-position: center !important;
+          transform: translateZ(0);
+          transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+        }
+        .select-card::before,
+        .select-card::after,
+        .choice::before,
+        .choice::after {
+          content: none !important;
+          display: none !important;
         }
         .select-card svg,
         .choice svg,
         .upload-box svg {
+          position: relative;
+          z-index: 1;
           color: #d6a83a;
           stroke: #d6a83a;
+        }
+        .select-card span {
+          position: relative;
+          z-index: 1;
         }
         .select-card.active,
         .choice.active,
         .day.active {
           border-color: rgba(245,184,59,0.72);
-          background: linear-gradient(180deg, rgba(214,168,58,0.18), rgba(16,16,20,0.98));
-          box-shadow: inset 0 0 0 1px rgba(245,184,59,0.38), 0 24px 70px rgba(214,168,58,0.12);
+          background:
+            radial-gradient(circle at 20% 10%, rgba(245,184,59,0.20), transparent 38%),
+            linear-gradient(145deg, rgba(24,22,16,0.98), rgba(10,10,10,0.98)) !important;
+          background-repeat: no-repeat !important;
+          background-size: cover !important;
+          background-position: center !important;
+          box-shadow: inset 0 0 0 1px rgba(245,184,59,0.38), 0 18px 42px rgba(214,168,58,0.10);
         }
         .stack {
           gap: 16px;
@@ -1839,12 +1884,16 @@ export default function NovoImovelPage() {
           right: auto;
           bottom: 0;
           transform: translateX(-50%);
-          width: 100%;
+          width: calc(100% - 16px);
           max-width: 430px;
           z-index: 9999;
           padding: 0 16px calc(14px + env(safe-area-inset-bottom));
           background: rgba(5,5,5,0.96);
-          border-top: 1px solid rgba(214,168,58,0.25);
+          border: 1px solid rgba(214,168,58,0.25);
+          border-bottom: none;
+          border-radius: 22px 22px 0 0;
+          overflow: hidden;
+          backdrop-filter: blur(16px);
         }
         .progress {
           height: 4px;
