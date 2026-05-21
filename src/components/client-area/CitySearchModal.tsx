@@ -93,13 +93,13 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
       style={{ animation: "premiumFadeUp 200ms ease-out both" }}
     >
       {/* ── Top bar ── */}
-      <div className="relative shrink-0 border-b border-[#d4a843]/16 px-4 pb-5 pt-[calc(env(safe-area-inset-top)+18px)]">
+      <div className="relative shrink-0 border-b border-[#d4a843]/16 px-5 pb-7 pt-[calc(env(safe-area-inset-top)+20px)]">
         {/* Linha dourada topo */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-[linear-gradient(90deg,transparent_0%,#d4a843_30%,#f5d78c_50%,#d4a843_70%,transparent_100%)]" />
 
         {/* Logo + fechar */}
         <div className="flex items-center justify-between">
-          <span className="text-[20px] font-black leading-none tracking-tight">
+          <span className="text-[22px] font-black leading-none tracking-tight">
             <span className="bg-[linear-gradient(135deg,#ffe5a0_0%,#d4a843_42%,#f5d78c_100%)] bg-clip-text text-transparent">elite</span>
             <span className="text-[#f5f0e4]">modell</span>
             <span className="ml-1 text-[#f5d78c]">✦</span>
@@ -114,28 +114,30 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
           </button>
         </div>
 
+        {/* Divisor */}
+        <div className="mt-6 h-px w-8 bg-[#d4a843]/40" />
+
         {/* Título */}
-        <div className="mt-5">
-          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#d4a843]/80">Explorar</p>
-          <h1 className="mt-1 text-[26px] font-black leading-tight text-[#f5f0e4]">
-            Selecionar cidade
+        <div className="mt-4">
+          <p className="text-[11px] font-black uppercase tracking-[0.20em] text-[#d4a843]/80">Explorar perfis</p>
+          <h1 className="mt-2 text-[30px] font-black leading-[1.08] text-[#f5f0e4]">
+            Selecionar<br />cidade
           </h1>
-          <p className="mt-1.5 text-[13px] text-[#f5f0e4]/42">
-            Escolha uma cidade para ver os perfis disponíveis
+          <p className="mt-3 text-[14px] leading-[1.6] text-[#f5f0e4]/42">
+            Escolha uma cidade para ver<br />os perfis disponíveis
           </p>
         </div>
 
         {/* Campo de busca */}
-        <div className="mt-5">
+        <div className="mt-7">
           <div
-            className="flex items-center gap-3 rounded-[16px] px-4 py-4 transition-all"
+            className="flex items-center gap-3 rounded-[16px] px-4 py-[15px] transition-all"
             style={{
               border: "1.5px solid rgba(212,168,67,0.45)",
               background: "rgba(212,168,67,0.07)",
-              boxShadow: "0 0 0 0px rgba(212,168,67,0)",
             }}
           >
-            <MapPin className="h-[22px] w-[22px] shrink-0 text-[#d4a843]" />
+            <MapPin className="h-5 w-5 shrink-0 text-[#d4a843]" />
             <input
               ref={inputRef}
               type="text"
