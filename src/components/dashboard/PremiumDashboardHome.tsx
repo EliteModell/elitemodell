@@ -83,8 +83,8 @@ function ActionCard({
   cta: string;
 }) {
   return (
-    <Link href={href} className="client-action-card group no-underline">
-      <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/26 bg-[#d4a843]/10 text-[#f5d78c]">
+    <Link href={href} className="client-action-card client-dashboard-action-card group no-underline">
+      <span className="client-dashboard-icon">
         {icon}
       </span>
       <span className="min-w-0 flex-1">
@@ -113,11 +113,8 @@ function QuickActionGrid({
 
   return (
     <>
-      <section
-        className="px-5 pb-9 pt-6"
-        style={{ background: "linear-gradient(180deg, #0e0f11 0%, #111214 100%)" }}
-      >
-        <div className="grid grid-cols-1 gap-5">
+      <section className="client-dashboard-actions">
+        <div className="client-dashboard-action-grid">
           <ActionCard
             href="/dashboard/acompanhantes"
             icon={<Search className="h-6 w-6" />}
@@ -148,7 +145,6 @@ function QuickActionGrid({
           />
         </div>
       </section>
-      <div style={{ height: 28, background: "linear-gradient(180deg, #111214 0%, #d4a843 100%)" }} />
     </>
   );
 }
@@ -161,12 +157,12 @@ function QuickStatsSection({
   vip: DashboardHomeData["vip"];
 }) {
   return (
-    <section className="client-page-tight">
-      <div className="client-card overflow-hidden p-5">
+    <section className="client-page-tight client-dashboard-section">
+      <div className="client-card client-dashboard-level-card overflow-hidden p-5">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-black uppercase tracking-wide text-[#f5d78c]/70">Nivel atual</p>
-            <p className="mt-1 text-[24px] font-black leading-tight text-[#f5d78c]">{vip.label}</p>
+            <p className="text-[11px] font-black uppercase tracking-wide text-[#f5d78c]/70">NIVEL ATUAL</p>
+            <p className="mt-1 text-[24px] font-black leading-tight text-[#f5f0e4]">{vip.label}</p>
           </div>
           <span className="shrink-0 rounded-full border border-[#d4a843]/24 bg-[#d4a843]/10 px-2.5 py-1 text-[13px] font-black text-[#f5d78c]">
             {vip.progress}%
@@ -206,7 +202,7 @@ function QuickStatsSection({
 
 function ReviewsSection() {
   return (
-    <section className="client-page-tight">
+    <section className="client-page-tight client-dashboard-section">
       <div className="client-card p-5">
         <div className="flex items-start gap-4">
           <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-white/[0.07] bg-white/[0.04] text-[#f5d78c]">
@@ -232,7 +228,7 @@ function ReviewsSection() {
 
 function SafetyCard() {
   return (
-    <section className="client-page-tight" style={{ paddingBottom: "calc(240px + env(safe-area-inset-bottom))" }}>
+    <section className="client-page-tight client-dashboard-section" style={{ paddingBottom: "calc(120px + env(safe-area-inset-bottom))" }}>
       <div className="client-panel p-5">
         <div className="flex items-start gap-4">
           <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/20 bg-[#d4a843]/10 text-[#f5d78c]">
@@ -263,13 +259,19 @@ export default function PremiumDashboardHome({
   data: DashboardHomeData;
   clientStatus?: string;
 }) {
-  const [selectedCity, setSelectedCity] = useState(data.city);
+  const [selectedCity, setSelectedCity] = useState(() => {
+    if (typeof window === "undefined") return data.city;
+    return window.localStorage.getItem("elite-client-city") ?? data.city;
+  });
   const [showCitySelector, setShowCitySelector] = useState(false);
 
   useEffect(() => {
-    const storedCity = window.localStorage.getItem("elite-client-city");
-    if (storedCity) setSelectedCity(storedCity);
+    document.body.dataset.clientDashboard = "true";
+    return () => {
+      delete document.body.dataset.clientDashboard;
+    };
   }, []);
+
   const verificationSteps: VerificationStep[] = [
     {
       label: hasRealEmail(data.user.email) ? "E-mail validado" : "Informar e-mail",
@@ -287,7 +289,7 @@ export default function PremiumDashboardHome({
   const verificationDone = verificationSteps.filter((step) => step.done).length;
 
   return (
-    <div>
+    <div className="client-dashboard-home">
       {showCitySelector && (
         <CitySelectorScreen
           onClose={() => setShowCitySelector(false)}
@@ -305,7 +307,7 @@ export default function PremiumDashboardHome({
         onDefineCity={() => setShowCitySelector(true)}
       />
       <QuickActionGrid credits={data.stats.credits} verificationDone={verificationDone} />
-      <div style={{ display: "grid", gap: 0, paddingTop: 14, paddingBottom: 150 }}>
+      <div className="client-dashboard-stack">
         <QuickStatsSection stats={data.stats} vip={data.vip} />
         <VerificationSection steps={verificationSteps} />
         <ListsSection />

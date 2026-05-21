@@ -116,7 +116,7 @@ export function LocationSearchBar({ onOpen }: { onOpen: () => void }) {
         <Search className="h-4 w-4" />
       </span>
       <span className="min-w-0 flex-1 truncate text-left text-[14px] font-semibold text-[#f5f0e4]/55">
-        Cidade, nome ou estilo
+        Cidade, nome ou característica
       </span>
       <span className="shrink-0 rounded-[7px] border border-[#d4a843]/28 bg-[#d4a843]/16 px-3 py-1.5 text-[11px] font-black uppercase text-[#f5d78c]">
         Buscar
@@ -437,6 +437,7 @@ export default function ClientAreaShell({
   backHref?: string;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   function handleHeaderSearch() {
@@ -444,7 +445,7 @@ export default function ClientAreaShell({
   }
 
   return (
-    <div className="client-premium min-h-screen">
+    <div className={`client-premium min-h-screen ${pathname === "/dashboard" ? "client-dashboard-shell" : ""}`}>
       <MobileHeader
         onMenu={() => setDrawerOpen(true)}
         onCityModal={handleHeaderSearch}
@@ -455,7 +456,7 @@ export default function ClientAreaShell({
         {children}
       </main>
       <ClientBottomNav />
-      <style>{`body { background: #f2f2f3; }`}</style>
+      <style>{`body { background: #050505; }`}</style>
     </div>
   );
 }

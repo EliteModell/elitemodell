@@ -68,7 +68,7 @@ function AchievementCard({
 
 export default function AchievementsSection() {
   return (
-    <section className="client-page-tight text-white">
+    <section className="client-page-tight client-dashboard-section text-white">
       <div className="client-panel mb-7 flex items-start gap-5 p-5">
         <div className="min-w-0 flex-1">
           <p className="client-kicker">Status privado</p>

@@ -20,6 +20,7 @@ import {
   Search,
   ShieldCheck,
   Star,
+  UserRound,
   VenusAndMars,
   X,
 } from "lucide-react";
@@ -50,10 +51,16 @@ type Suggestion = {
 
 const CATEGORIES = [
   { value: "", label: "Todas", icon: <Grid2X2 className="h-4 w-4" /> },
-  { value: "MULHER", label: "Mulheres", icon: <span aria-hidden="true">👩</span> },
-  { value: "HOMEM", label: "Homens", icon: <span aria-hidden="true">👨</span> },
+  { value: "MULHER", label: "Mulheres", icon: <UserRound className="h-4 w-4" /> },
+  { value: "HOMEM", label: "Homens", icon: <UserRound className="h-4 w-4" /> },
   { value: "TRANS", label: "Trans", icon: <VenusAndMars className="h-4 w-4" /> },
 ];
+
+function CategoryIcon({ value }: { value: string }) {
+  if (value === "TRANS") return <VenusAndMars className="h-4 w-4" />;
+  if (value) return <UserRound className="h-4 w-4" />;
+  return <Grid2X2 className="h-4 w-4" />;
+}
 
 function ProfileCardSkeleton() {
   return (
@@ -813,12 +820,12 @@ export default function AcompanhantesPage() {
             </label>
 
             <label className="block">
-              <span className="client-explore-field-label">Nome, bairro ou estilo</span>
+              <span className="client-explore-field-label">O que você procura?</span>
               <div className="flex min-h-[54px] items-center gap-3 rounded-[18px] border border-white/[0.10] bg-[#111318] px-4 shadow-[0_0_26px_rgba(245,194,66,0.04)] transition focus-within:border-[#f5c242] focus-within:shadow-[0_0_0_3px_rgba(245,194,66,0.12)]">
                 <Search className="h-5 w-5 shrink-0 text-[#f5c242]" />
                 <input
                   type="text"
-                  placeholder="Ex.: Jardins, Loira, Universitária..."
+                  placeholder="Ex.: loira, morena, universitária..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="min-w-0 flex-1 bg-transparent text-[16px] font-semibold text-white outline-none placeholder:text-white/38"
@@ -853,7 +860,7 @@ export default function AcompanhantesPage() {
                   activeCategory === c.value ? "bg-[#f5c242] text-black" : "bg-[#1f2227] text-white"
                 }`}
               >
-                {c.icon}
+                <CategoryIcon value={c.value} />
                 {c.label}
               </button>
             ))}

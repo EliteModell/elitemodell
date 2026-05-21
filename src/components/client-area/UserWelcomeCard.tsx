@@ -30,13 +30,7 @@ export default function UserWelcomeCard({
   onDefineCity: () => void;
 }) {
   return (
-    <section
-      style={{
-        background: "linear-gradient(145deg, #1c1e22 0%, #111214 55%, #0c0d0f 100%)",
-        padding: "22px 18px 24px",
-        borderBottom: "1px solid rgba(212, 168, 67, 0.14)",
-      }}
-    >
+    <section className="client-dashboard-welcome">
       <div className="flex items-center gap-3.5">
         <div className="relative h-[56px] w-[56px] shrink-0">
           <div className="h-full w-full overflow-hidden rounded-full border-2 border-[#d4a843]/52 bg-[#1b1d1f] shadow-[0_0_28px_rgba(212,168,67,0.14)]">
@@ -57,7 +51,7 @@ export default function UserWelcomeCard({
           <p
             style={{ color: "#d4a843", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em" }}
           >
-            Area cliente
+            AREA CLIENTE
           </p>
           <h1 style={{ color: "#f5f0e4", fontSize: 22, fontWeight: 900, lineHeight: 1.15, marginTop: 2 }}>
             {firstName(name)}

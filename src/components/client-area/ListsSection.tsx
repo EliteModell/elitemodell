@@ -29,7 +29,7 @@ function ListCard({
 
 export default function ListsSection() {
   return (
-    <section className="client-page-tight">
+    <section className="client-page-tight client-dashboard-section">
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
           <p className="client-kicker">Colecoes privadas</p>

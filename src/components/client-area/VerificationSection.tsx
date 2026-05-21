@@ -13,7 +13,7 @@ export default function VerificationSection({ steps }: { steps: VerificationStep
   const progress = Math.max(6, Math.round((doneCount / steps.length) * 100));
 
   return (
-    <section className="client-page-tight">
+    <section className="client-page-tight client-dashboard-section">
       <Link href="/dashboard/perfil" className="client-card block p-5 no-underline">
         <div className="flex items-start gap-4">
           <span className="grid h-16 w-16 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
@@ -21,7 +21,7 @@ export default function VerificationSection({ steps }: { steps: VerificationStep
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h2 className="min-w-0 flex-1 text-[28px] font-black leading-8 text-[#f5f0e4]">Verificacao</h2>
+              <h2 className="min-w-0 flex-1 text-[28px] font-black leading-8 text-[#f5f0e4]">Verificação</h2>
               <span className="rounded-full border border-[#d4a843]/18 bg-[#d4a843]/10 px-2.5 py-1 text-[14px] font-black text-[#f5d78c]">
                 {doneCount}/{steps.length}
               </span>
