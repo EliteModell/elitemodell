@@ -174,39 +174,35 @@ function ProfessionalCard({ p }: { p: Professional }) {
 function FilterDrawer({
   open,
   onClose,
-  category,
-  onCategory,
   sortBy,
   onSortBy,
   onlyVerified,
   onOnlyVerified,
+  onClear,
 }: {
   open: boolean;
   onClose: () => void;
-  category: string;
-  onCategory: (v: string) => void;
   sortBy: string;
   onSortBy: (v: string) => void;
   onlyVerified: boolean;
   onOnlyVerified: (v: boolean) => void;
+  onClear: () => void;
 }) {
   if (!open) return null;
 
   return (
-    <section
-      data-client-filter-panel="true"
-      className="client-filter-panel scroll-mt-[110px] overflow-hidden rounded-[18px] border border-[#d4a843]/18 bg-white px-5 pb-7 pt-4 shadow-[0_16px_42px_rgba(23,18,10,0.12)]"
-    >
-        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-[rgba(23,18,10,0.16)]" />
+    <div className="client-filter-overlay" role="dialog" aria-modal="true" aria-label="Filtrar perfis">
+      <button type="button" className="client-filter-backdrop" onClick={onClose} aria-label="Fechar filtros" />
+      <section data-client-filter-panel="true" className="client-filter-panel">
+        <div className="mx-auto mb-5 h-1.5 w-14 rounded-full bg-[#f5b83b]/28" />
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <h2 style={{ color: "#17120a", fontSize: 24, fontWeight: 900, lineHeight: 1.1, marginTop: 0 }}>Filtrar perfis</h2>
+            <h2 className="client-filter-title">Filtrar perfis</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            style={{ background: "rgba(23,18,10,0.04)", border: "1px solid rgba(23,18,10,0.12)", color: "rgba(23,18,10,0.62)" }}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px]"
+            className="client-filter-close"
             aria-label="Fechar filtros"
           >
             <X className="h-5 w-5" />
@@ -215,39 +211,19 @@ function FilterDrawer({
 
         <div className="space-y-6">
           <div>
-            <p style={{ color: "rgba(23,18,10,0.54)", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Categoria</p>
-            <div className="grid grid-cols-2 gap-2">
-              {CATEGORIES.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  onClick={() => onCategory(c.value)}
-                  className={`min-h-[48px] rounded-[12px] px-4 text-[15px] font-bold transition-colors ${
-                    category === c.value ? "client-chip-active" : "client-chip"
-                  }`}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <p style={{ color: "rgba(23,18,10,0.54)", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Ordenar por</p>
-            <div className="grid grid-cols-2 gap-2">
+            <p className="client-filter-label">Ordenar por</p>
+            <div className="client-filter-options">
               {[
                 { value: "rating", label: "Mais avaliados" },
-                { value: "price_asc", label: "Menor preco" },
-                { value: "price_desc", label: "Maior preco" },
+                { value: "price_asc", label: "Menor preço" },
+                { value: "price_desc", label: "Maior preço" },
                 { value: "recent", label: "Mais recentes" },
               ].map((s) => (
                 <button
                   key={s.value}
                   type="button"
                   onClick={() => onSortBy(s.value)}
-                  className={`min-h-[48px] rounded-[12px] px-3 text-[13px] font-bold transition-colors ${
-                    sortBy === s.value ? "client-chip-active" : "client-chip"
-                  }`}
+                  className={`client-filter-option ${sortBy === s.value ? "active" : ""}`}
                 >
                   {s.label}
                 </button>
@@ -255,33 +231,34 @@ function FilterDrawer({
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-4 rounded-[10px] p-4" style={{ background: "rgba(23,18,10,0.04)", border: "1px solid rgba(23,18,10,0.09)" }}>
-            <div className="min-w-0">
-              <p style={{ color: "#17120a", fontSize: 15, fontWeight: 700 }}>Somente verificadas</p>
-              <p style={{ color: "rgba(23,18,10,0.56)", fontSize: 12, lineHeight: 1.4, marginTop: 4 }}>Perfis com identidade confirmada</p>
+          <div>
+            <p className="client-filter-label">Segurança</p>
+            <div className="client-filter-toggle-row">
+              <div className="min-w-0">
+                <p>Somente verificadas</p>
+                <span>Perfis com identidade confirmada</span>
+              </div>
+              <button
+                type="button"
+                className={`client-filter-toggle ${onlyVerified ? "active" : ""}`}
+                onClick={() => onOnlyVerified(!onlyVerified)}
+                aria-pressed={onlyVerified}
+                aria-label="Somente verificadas"
+              >
+                <span />
+              </button>
             </div>
-            <button
-              type="button"
-              className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
-                onlyVerified ? "bg-[#4d9b56]" : "bg-white/18"
-              }`}
-              onClick={() => onOnlyVerified(!onlyVerified)}
-              aria-pressed={onlyVerified}
-              aria-label="Somente verificadas"
-            >
-              <span
-                className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${
-                  onlyVerified ? "translate-x-5" : "translate-x-0.5"
-                }`}
-              />
-            </button>
           </div>
         </div>
 
         <button type="button" onClick={onClose} className="client-primary-button mt-7 w-full text-[16px]">
           Aplicar filtros
         </button>
-    </section>
+        <button type="button" onClick={onClear} className="client-filter-clear">
+          Limpar filtros
+        </button>
+      </section>
+    </div>
   );
 }
 
@@ -643,7 +620,6 @@ export default function AcompanhantesPage() {
 
   const [city, setCity] = useState(initialCity);
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
   const [sortBy, setSortBy] = useState("rating");
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -739,23 +715,11 @@ export default function AcompanhantesPage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!filterOpen) return;
-
-    window.setTimeout(() => {
-      document.querySelector<HTMLElement>('[data-client-filter-panel="true"]')?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }, 50);
-  }, [filterOpen]);
-
   const hasFilters = Boolean(search || activeCategory || city || onlyVerified || sortBy !== "rating");
 
   function clearFilters() {
     setSearch("");
     setActiveCategory("");
-    setCategory("");
     setCity("");
     setOnlyVerified(false);
     setSortBy("rating");
@@ -847,18 +811,15 @@ export default function AcompanhantesPage() {
 
         <div className="mt-6">
           <p className="mb-3 text-[15px] font-black uppercase text-[#f5c242]">CATEGORIA</p>
-          <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-2">
+          <div className="category-scroll">
             {CATEGORIES.map((c) => (
               <button
                 key={c.value}
                 type="button"
                 onClick={() => {
                   setActiveCategory(c.value);
-                  setCategory(c.value);
                 }}
-                className={`flex min-h-12 shrink-0 items-center gap-2 rounded-full px-6 text-[15px] font-bold transition hover:brightness-110 active:scale-[0.985] ${
-                  activeCategory === c.value ? "bg-[#f5c242] text-black" : "bg-[#1f2227] text-white"
-                }`}
+                className={`category-button ${activeCategory === c.value ? "active" : ""}`}
               >
                 <CategoryIcon value={c.value} />
                 {c.label}
@@ -900,15 +861,11 @@ export default function AcompanhantesPage() {
             <FilterDrawer
               open={filterOpen}
               onClose={() => setFilterOpen(false)}
-              category={category}
-              onCategory={(v) => {
-                setCategory(v);
-                setActiveCategory(v);
-              }}
               sortBy={sortBy}
               onSortBy={setSortBy}
               onlyVerified={onlyVerified}
               onOnlyVerified={setOnlyVerified}
+              onClear={clearFilters}
             />
           </>
         ) : (
@@ -916,15 +873,11 @@ export default function AcompanhantesPage() {
             <FilterDrawer
               open={filterOpen}
               onClose={() => setFilterOpen(false)}
-              category={category}
-              onCategory={(v) => {
-                setCategory(v);
-                setActiveCategory(v);
-              }}
               sortBy={sortBy}
               onSortBy={setSortBy}
               onlyVerified={onlyVerified}
               onOnlyVerified={setOnlyVerified}
+              onClear={clearFilters}
             />
             {professionals.map((p) => (
               <ProfessionalCard key={p.id} p={p} />
