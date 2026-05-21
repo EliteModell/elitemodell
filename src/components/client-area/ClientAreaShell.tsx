@@ -19,6 +19,8 @@ import {
   List,
   LogOut,
   Menu,
+  MoreVertical,
+  Plus,
   Search,
   Settings,
   Star,
@@ -106,6 +108,9 @@ const socialLinks = [
 
 /* ─── Search bar in header ─── */
 export function LocationSearchBar({ onOpen }: { onOpen: () => void }) {
+  const pathname = usePathname();
+  const isLists = pathname === "/dashboard/favoritos";
+
   return (
     <button
       type="button"
@@ -116,7 +121,7 @@ export function LocationSearchBar({ onOpen }: { onOpen: () => void }) {
         <Search className="h-4 w-4" />
       </span>
       <span className="min-w-0 flex-1 truncate text-left text-[14px] font-semibold text-[#f5f0e4]/55">
-        Cidade, nome ou característica
+        {isLists ? "Buscar perfis ou cidade" : "Cidade, nome ou característica"}
       </span>
       <span className="shrink-0 rounded-[7px] border border-[#d4a843]/28 bg-[#d4a843]/16 px-3 py-1.5 text-[11px] font-black uppercase text-[#f5d78c]">
         Buscar
@@ -138,12 +143,13 @@ export function MobileHeader({
   const pathname = usePathname();
   const isExplore = pathname === ACCOUNT_ROUTES.mainClientFeed;
   const isShots = pathname === "/dashboard/shots";
+  const isLists = pathname === "/dashboard/favoritos";
   const showHeaderSearch = !isExplore && !isShots;
 
   return (
     <header className="sticky top-0 z-30 border-b border-[#d4a843]/14 bg-[#08090a]/92 shadow-[0_16px_46px_rgba(0,0,0,0.30)] backdrop-blur-2xl">
       <div className={`mx-auto max-w-[760px] px-4 pt-4 ${isExplore ? "pb-3" : "pb-4"}`}>
-        <div className="grid h-11 grid-cols-[44px_1fr_44px] items-center">
+        <div className={`grid h-11 items-center ${isLists ? "grid-cols-[56px_1fr_116px]" : "grid-cols-[44px_1fr_44px]"}`}>
           {backHref ? (
             <Link
               href={backHref}
@@ -165,13 +171,31 @@ export function MobileHeader({
           <div className="flex justify-center">
             <BrandLogo />
           </div>
-          <Link
-            href="/notifications"
-            className="grid h-10 w-10 place-items-center justify-self-end rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/72"
-            aria-label="Notificações"
-          >
-            <Bell className="h-5 w-5" />
-          </Link>
+          {isLists ? (
+            <div className="flex items-center justify-end gap-2">
+              <button type="button" className="grid h-10 w-10 place-items-center rounded-[8px] text-[#f5f0e4]/72" aria-label="Criar lista">
+                <Plus className="h-6 w-6" />
+              </button>
+              <Link
+                href="/notifications"
+                className="grid h-10 w-10 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/72"
+                aria-label="Notificações"
+              >
+                <Bell className="h-5 w-5" />
+              </Link>
+              <button type="button" className="grid h-10 w-5 place-items-center text-[#f5f0e4]/72" aria-label="Mais opções">
+                <MoreVertical className="h-6 w-6" />
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/notifications"
+              className="grid h-10 w-10 place-items-center justify-self-end rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/72"
+              aria-label="Notificações"
+            >
+              <Bell className="h-5 w-5" />
+            </Link>
+          )}
         </div>
         {showHeaderSearch && (
           <div className="mt-4">
@@ -445,7 +469,7 @@ export default function ClientAreaShell({
   }
 
   return (
-    <div className={`client-premium min-h-screen ${pathname === "/dashboard" ? "client-dashboard-shell" : ""}`}>
+    <div className={`client-premium min-h-screen ${pathname === "/dashboard" ? "client-dashboard-shell" : ""} ${pathname === "/dashboard/favoritos" ? "client-lists-shell" : ""}`}>
       <MobileHeader
         onMenu={() => setDrawerOpen(true)}
         onCityModal={handleHeaderSearch}
