@@ -82,14 +82,16 @@ function ActionCard({
 }) {
   return (
     <Link href={href} className="client-action-card group no-underline">
-      <span className="grid h-12 w-12 place-items-center rounded-[8px] border border-[#d4a843]/26 bg-[#d4a843]/10 text-[#f5d78c]">
+      <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/26 bg-[#d4a843]/10 text-[#f5d78c]">
         {icon}
       </span>
-      <span className="mt-5 block text-[21px] font-black leading-6 text-[#f5f0e4]">{title}</span>
-      <span className="mt-3 block text-[14px] leading-6 text-[#f5f0e4]/56">{description}</span>
-      <span className="mt-5 flex items-center justify-between text-[12px] font-black uppercase text-[#f5d78c]">
-        {cta}
-        <ChevronRight className="h-4 w-4 transition-transform group-active:translate-x-0.5" />
+      <span className="min-w-0 flex-1">
+        <span className="flex items-start gap-3">
+          <span className="min-w-0 flex-1 text-[24px] font-black leading-7 text-[#f5f0e4]">{title}</span>
+          <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[#f5d78c] transition-transform group-active:translate-x-0.5" />
+        </span>
+        <span className="mt-2 block text-[15px] leading-7 text-[#f5f0e4]/58">{description}</span>
+        <span className="mt-4 block text-[12px] font-black uppercase text-[#f5d78c]">{cta}</span>
       </span>
     </Link>
   );
@@ -113,7 +115,7 @@ function QuickActionGrid({
         className="px-5 pb-9 pt-6"
         style={{ background: "linear-gradient(180deg, #0e0f11 0%, #111214 100%)" }}
       >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5">
           <ActionCard
             href="/dashboard/acompanhantes"
             icon={<Search className="h-6 w-6" />}
@@ -203,21 +205,21 @@ function QuickStatsSection({
 function ReviewsSection() {
   return (
     <section className="client-page-tight">
-      <div className="client-card p-4">
-        <div className="flex items-start gap-3">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[8px] border border-white/[0.07] bg-white/[0.04] text-[#f5d78c]">
-            <CircleAlert className="h-5 w-5" />
+      <div className="client-card p-5">
+        <div className="flex items-start gap-4">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-white/[0.07] bg-white/[0.04] text-[#f5d78c]">
+            <CircleAlert className="h-6 w-6" />
           </span>
           <div className="min-w-0">
-            <h2 className="text-[15px] font-bold text-[#f5f0e4]">Avaliacoes aparecerao depois</h2>
-            <p className="mt-1 text-[13px] leading-5 text-[#f5f0e4]/52">
-              Quando voce tiver experiencias concluídas, podera registrar avaliacoes de forma discreta.
+            <h2 className="text-[22px] font-black leading-7 text-[#f5f0e4]">Avaliacoes</h2>
+            <p className="mt-2 text-[15px] leading-7 text-[#f5f0e4]/56">
+              Quando voce tiver experiencias concluidas, podera registrar avaliacoes de forma discreta.
             </p>
           </div>
         </div>
         <Link
           href="/dashboard/acompanhantes"
-          className="client-secondary-button mt-4 flex min-h-0 items-center justify-center py-2.5 text-[13px] no-underline"
+          className="client-secondary-button mt-6 flex min-h-0 items-center justify-center py-3.5 text-[14px] font-black no-underline"
         >
           Explorar perfis
         </Link>
@@ -229,21 +231,21 @@ function ReviewsSection() {
 function SafetyCard() {
   return (
     <section className="client-page-tight" style={{ paddingBottom: "calc(240px + env(safe-area-inset-bottom))" }}>
-      <div className="client-panel p-4">
-        <div className="flex items-start gap-3">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/20 bg-[#d4a843]/10 text-[#f5d78c]">
-            <ShieldAlert className="h-5 w-5" />
+      <div className="client-panel p-5">
+        <div className="flex items-start gap-4">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/20 bg-[#d4a843]/10 text-[#f5d78c]">
+            <ShieldAlert className="h-6 w-6" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="text-[16px] font-bold text-[#f5f0e4]">Seguranca da conta</h2>
-            <p className="mt-1.5 text-[13px] leading-5 text-[#f5f0e4]/54">
+            <h2 className="text-[22px] font-black leading-7 text-[#f5f0e4]">Seguranca da conta</h2>
+            <p className="mt-2 text-[15px] leading-7 text-[#f5f0e4]/56">
               Nunca informe senhas, codigos ou documentos fora da plataforma.
             </p>
           </div>
         </div>
         <Link
           href="/dashboard/atendimento"
-          className="client-secondary-button mt-4 flex min-h-0 items-center justify-center gap-2 py-2.5 text-[13px] no-underline"
+          className="client-secondary-button mt-6 flex min-h-0 items-center justify-center gap-2 py-3.5 text-[14px] font-black no-underline"
         >
           <MessageCircle className="h-4 w-4" />
           Falar com atendimento

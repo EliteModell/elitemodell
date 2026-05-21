@@ -11,18 +11,18 @@ export default function HistorySection() {
         </span>
       </div>
 
-      <h2 className="text-[24px] font-black text-[#f5f0e4]">Historico de perfis</h2>
+      <h2 className="text-[30px] font-black leading-8 text-[#f5f0e4]">Historico de perfis</h2>
 
-      <div className="client-empty mt-6 px-6 py-11 text-center">
-        <div className="mx-auto grid h-[62px] w-[62px] place-items-center rounded-[8px] border border-white/10 bg-white/[0.045]">
-          <UserRound className="h-8 w-8 stroke-[1.5] text-[#f5d78c]" />
+      <div className="client-empty mt-6 px-6 py-12 text-center">
+        <div className="mx-auto grid h-[70px] w-[70px] place-items-center rounded-[8px] border border-white/10 bg-white/[0.045]">
+          <UserRound className="h-9 w-9 stroke-[1.5] text-[#f5d78c]" />
         </div>
-        <p className="mx-auto mt-6 max-w-[300px] text-[15px] leading-7 text-[#f5f0e4]/62">
+        <p className="mx-auto mt-6 max-w-[320px] text-[17px] leading-8 text-[#f5f0e4]/62">
           Voce ainda nao possui nenhum perfil acessado no seu historico.
         </p>
         <Link
           href="/dashboard/acompanhantes"
-          className="mt-6 inline-flex items-center gap-1.5 text-[14px] font-bold text-[#f5d78c] underline underline-offset-2"
+          className="mt-7 inline-flex items-center gap-2 text-[15px] font-black text-[#f5d78c] underline underline-offset-2"
         >
           <CirclePlus className="h-4 w-4" />
           Encontre acompanhantes

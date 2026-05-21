@@ -41,12 +41,12 @@ function AchievementCard({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
-            <h3 className="min-w-0 flex-1 text-[18px] font-black leading-6 text-[#f5f0e4]">{title}</h3>
-            <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-[#f5d78c]" />
+            <h3 className="min-w-0 flex-1 text-[21px] font-black leading-7 text-[#f5f0e4]">{title}</h3>
+            <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[#f5d78c]" />
           </div>
-          <p className="mt-2 text-[14px] leading-6 text-[#f5f0e4]/58">{text}</p>
-          <p className="mt-3 text-[14px] font-bold text-[#f5f0e4]">0 de {total} concluidos</p>
-          <button type="button" className="mt-1 text-[12px] font-medium underline underline-offset-2 text-[#f5d78c]">
+          <p className="mt-2 text-[15px] leading-7 text-[#f5f0e4]/58">{text}</p>
+          <p className="mt-3 text-[15px] font-black text-[#f5f0e4]">0 de {total} concluidos</p>
+          <button type="button" className="mt-2 text-[13px] font-bold underline underline-offset-2 text-[#f5d78c]">
             Mostrar progresso
           </button>
         </div>
@@ -72,8 +72,8 @@ export default function AchievementsSection() {
       <div className="client-panel mb-7 flex items-start gap-5 p-5">
         <div className="min-w-0 flex-1">
           <p className="client-kicker">Status privado</p>
-          <h2 className="mt-1 text-[24px] font-black text-white">Conquistas</h2>
-          <p className="mt-3 text-[14px] leading-6 text-white/60">
+          <h2 className="mt-1 text-[30px] font-black leading-8 text-white">Conquistas</h2>
+          <p className="mt-3 text-[16px] leading-7 text-white/60">
             Manter sua conta ativa adiciona conquistas ao seu perfil e aumentam o seu nivel.
           </p>
         </div>

@@ -316,12 +316,13 @@ body {
 
 .client-action-card {
   display: flex;
-  min-height: 172px;
-  flex-direction: column;
+  min-height: 142px;
+  align-items: flex-start;
+  gap: 16px;
   border: 1px solid var(--client-line);
   border-radius: 8px;
   background: var(--client-surface);
-  padding: 20px 18px 18px;
+  padding: 22px 20px;
   box-shadow: 0 18px 38px rgba(112, 78, 16, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.78);
   transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
 }
