@@ -469,7 +469,7 @@ export default function ClientAreaShell({
   }
 
   return (
-    <div className={`client-premium min-h-screen ${pathname === "/dashboard" ? "client-dashboard-shell" : ""} ${pathname === "/dashboard/favoritos" ? "client-lists-shell" : ""}`}>
+    <div className={`client-premium min-h-screen ${pathname === "/dashboard" ? "client-dashboard-shell" : ""} ${pathname === "/dashboard/favoritos" ? "client-lists-shell" : ""} ${pathname === "/dashboard/shots" ? "client-shots-shell" : ""}`}>
       <MobileHeader
         onMenu={() => setDrawerOpen(true)}
         onCityModal={handleHeaderSearch}
