@@ -488,6 +488,15 @@ function CitySelectionScreen({
     setTimeout(() => inputRef.current?.focus(), 80);
   }
 
+  function handleCityFocus() {
+    setTimeout(() => {
+      inputRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 250);
+  }
+
   const busy = loadingSuggestions || checking;
 
   return (
@@ -549,6 +558,7 @@ function CitySelectionScreen({
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
+              onFocus={handleCityFocus}
             />
             <div className="client-city-search-action">
               {busy ? (

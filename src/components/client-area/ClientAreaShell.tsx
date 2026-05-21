@@ -275,13 +275,13 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   return (
     <>
       <div
-        className={`fixed inset-0 z-40 bg-black/55 backdrop-blur-[2px] transition-opacity duration-300 ${
+        className={`fixed inset-0 z-[1000] bg-black/55 backdrop-blur-[2px] transition-opacity duration-300 ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         onClick={onClose}
       />
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-[84vw] max-w-[390px] overflow-y-auto border-r border-[#d4a843]/14 bg-[#090a0b] shadow-[26px_0_80px_rgba(0,0,0,0.52)] transition-transform duration-300 ease-out ${
+        className={`fixed inset-y-0 left-0 z-[1001] w-[84vw] max-w-[390px] overflow-y-auto border-r border-[#d4a843]/14 bg-[#090a0b] shadow-[26px_0_80px_rgba(0,0,0,0.52)] transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -487,6 +487,7 @@ export default function ClientAreaShell({
   useEffect(() => {
     setDrawerOpen(false);
     delete document.body.dataset.clientFiltersOpen;
+    delete document.body.dataset.cityKeyboardOpen;
 
     if (pathname !== "/dashboard") {
       delete document.body.dataset.clientDashboard;

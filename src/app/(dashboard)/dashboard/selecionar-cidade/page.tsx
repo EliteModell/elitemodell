@@ -26,10 +26,25 @@ export default function SelecionarCidadePage() {
     delete document.body.dataset.clientFiltersOpen;
     const focusTimer = setTimeout(() => inputRef.current?.focus(), 160);
 
+    function syncVisualViewport() {
+      const height = window.visualViewport?.height ?? window.innerHeight;
+      document.documentElement.style.setProperty("--elite-visual-viewport-height", `${height}px`);
+      document.body.dataset.cityKeyboardOpen =
+        window.visualViewport && window.innerHeight - window.visualViewport.height > 120 ? "true" : "false";
+    }
+
+    syncVisualViewport();
+    window.visualViewport?.addEventListener("resize", syncVisualViewport);
+    window.visualViewport?.addEventListener("scroll", syncVisualViewport);
+
     return () => {
       clearTimeout(focusTimer);
       clearTimeout(debounceRef.current);
       delete document.body.dataset.clientFiltersOpen;
+      delete document.body.dataset.cityKeyboardOpen;
+      document.documentElement.style.removeProperty("--elite-visual-viewport-height");
+      window.visualViewport?.removeEventListener("resize", syncVisualViewport);
+      window.visualViewport?.removeEventListener("scroll", syncVisualViewport);
     };
   }, []);
 
@@ -77,6 +92,15 @@ export default function SelecionarCidadePage() {
     setSelectedCity(null);
     setSuggestions([]);
     setTimeout(() => inputRef.current?.focus(), 80);
+  }
+
+  function handleCityFocus() {
+    setTimeout(() => {
+      inputRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 250);
   }
 
   return (
@@ -128,6 +152,7 @@ export default function SelecionarCidadePage() {
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
+            onFocus={handleCityFocus}
           />
           <span className="city-select-search-icon">
             <Search />

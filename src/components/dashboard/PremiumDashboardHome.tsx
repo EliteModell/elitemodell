@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   ChevronRight,
   CircleAlert,
@@ -259,6 +260,7 @@ export default function PremiumDashboardHome({
   data: DashboardHomeData;
   clientStatus?: string;
 }) {
+  const pathname = usePathname();
   const [selectedCity, setSelectedCity] = useState(() => {
     if (typeof window === "undefined") return data.city;
     return window.localStorage.getItem("elite-client-city") ?? data.city;
@@ -273,6 +275,11 @@ export default function PremiumDashboardHome({
       delete document.body.dataset.clientDashboard;
     };
   }, []);
+
+  useEffect(() => {
+    setShowCitySelector(false);
+    delete document.body.dataset.clientFiltersOpen;
+  }, [pathname]);
 
   const verificationSteps: VerificationStep[] = [
     {
