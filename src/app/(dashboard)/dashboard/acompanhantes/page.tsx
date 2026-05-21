@@ -3,18 +3,21 @@
 /* eslint-disable @next/next/no-img-element -- Profile photos come from uploaded URLs */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   BadgeCheck,
   Camera,
+  ChevronDown,
   ChevronRight,
+  Grid2X2,
   MapPin,
   Phone,
   Search,
   ShieldCheck,
-  SlidersHorizontal,
   Star,
+  VenusAndMars,
   X,
 } from "lucide-react";
 
@@ -37,10 +40,10 @@ type Professional = {
 };
 
 const CATEGORIES = [
-  { value: "", label: "Todas" },
-  { value: "MULHER", label: "Mulheres" },
-  { value: "HOMEM", label: "Homens" },
-  { value: "TRANS", label: "Trans" },
+  { value: "", label: "Todas", icon: <Grid2X2 className="h-4 w-4" /> },
+  { value: "MULHER", label: "Mulheres", icon: <span aria-hidden="true">👩</span> },
+  { value: "HOMEM", label: "Homens", icon: <span aria-hidden="true">👨</span> },
+  { value: "TRANS", label: "Trans", icon: <VenusAndMars className="h-4 w-4" /> },
 ];
 
 function ProfileCardSkeleton() {
@@ -465,74 +468,74 @@ export default function AcompanhantesPage() {
 
   return (
     <>
-      <section className="px-0 pb-5">
-        <div className="client-explore-hero">
-          <div className="relative z-10">
-            <p className="text-[12px] font-black uppercase tracking-widest text-[#f5d78c]/80">Explorar perfis</p>
-            <div className="mt-2.5 h-px w-9 bg-[#d4a843]/50" />
-            <h1 className="mt-3 max-w-[340px] bg-[linear-gradient(135deg,#fff8e8_0%,#f5f0e4_28%,#f5d78c_58%,#d4a843_100%)] bg-clip-text text-[38px] font-black leading-[1.05] text-transparent">
-              Perfis verificados perto de voce
-            </h1>
-            <p className="mt-3 max-w-[270px] text-[13px] leading-[1.6] text-[#f5f0e4]/52">
-              Escolha a cidade e encontre perfis verificados.
-            </p>
-          </div>
+      <section className="bg-[linear-gradient(180deg,#070707_0%,#101010_52%,#1a1a1a_100%)] px-4 pb-8 pt-4 text-white">
+        <div>
+          <p className="text-[14px] font-bold uppercase tracking-wide text-[#f5c242]">EXPLORAR PERFIS</p>
+          <h1 className="mt-2 text-[40px] font-black leading-[1.04] tracking-[-0.03em] text-white">
+            Perfis <span className="text-[#f5c242]">verificados</span><br />perto de você
+          </h1>
+          <p className="mt-2 max-w-[360px] text-[15px] leading-6 text-[#9ca3af]">
+            Encontre acompanhantes verificados na sua cidade com segurança e discrição.
+          </p>
         </div>
-      </section>
 
-      <section className="px-0 pb-0">
-        <div className="client-explore-search-panel">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="client-kicker">Busca</p>
-              <h2 className="mt-1 text-[24px] font-black leading-tight text-[#f5f0e4]">Escolha onde procurar</h2>
-            </div>
+        <div className="relative mx-[-8px] mt-6 h-80 overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#0f1012] shadow-[0_25px_80px_rgba(0,0,0,0.40)]">
+          <Image
+            src="/brand/elite%20modell%20explorar.png"
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 760px) 100vw, 760px"
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.08)_0%,rgba(0,0,0,0.18)_44%,rgba(0,0,0,0.82)_100%)]" />
+        </div>
+
+        <div className="relative z-10 -mt-6 rounded-[28px] border border-white/[0.10] bg-white/[0.055] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.38)] backdrop-blur-xl">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-[15px] font-black uppercase text-[#f5c242]">BUSCA</h2>
             <button
               type="button"
               onClick={() => setFilterOpen((current) => !current)}
-              className={`grid h-12 w-12 shrink-0 place-items-center rounded-[12px] border transition-colors ${
-                onlyVerified || sortBy !== "rating"
-                  ? "border-[#d4a843]/40 bg-[#d4a843]/14 text-[#f5d78c]"
-                  : "border-white/[0.09] bg-white/[0.06] text-[#f5f0e4]/64"
-              }`}
-              aria-label="Filtros"
+              className="flex min-h-9 shrink-0 items-center gap-2 rounded-full bg-[#1f2227] px-4 text-[13px] font-semibold text-white transition hover:bg-[#2a2d33] active:scale-[0.985]"
             >
-              <SlidersHorizontal className="h-5 w-5" />
+              Filtros avançados
+              <ChevronDown className={`h-4 w-4 transition-transform ${filterOpen ? "rotate-180" : ""}`} />
             </button>
           </div>
 
-          <div className="mt-6 space-y-4">
+          <div className="space-y-3">
             <label className="block">
-              <span className="mb-2 block text-[12px] font-black uppercase text-[#f5f0e4]/46">Cidade</span>
-              <div className="client-explore-field">
-                <MapPin className="h-5 w-5 shrink-0 text-[#f5d78c]" />
+              <span className="sr-only">Cidade</span>
+              <div className="flex min-h-[54px] items-center gap-3 rounded-[18px] border border-white/[0.10] bg-[#111318] px-4 shadow-[0_0_26px_rgba(245,194,66,0.04)] transition focus-within:border-[#f5c242] focus-within:shadow-[0_0_0_3px_rgba(245,194,66,0.12)]">
+                <MapPin className="h-5 w-5 shrink-0 text-[#f5c242]" />
                 <input
                   type="text"
                   placeholder="Digite a cidade"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="h-full min-w-0 flex-1 bg-transparent text-[17px] font-bold text-[#f5f0e4] outline-none placeholder:text-[#f5f0e4]/34"
+                  className="min-w-0 flex-1 bg-transparent text-[16px] font-semibold text-white outline-none placeholder:text-white/38"
                   data-client-city-filter="true"
                 />
               </div>
             </label>
 
             <label className="block">
-              <span className="mb-2 block text-[12px] font-black uppercase text-[#f5f0e4]/46">Nome ou estilo</span>
-              <div className="client-explore-field">
-                <Search className="h-5 w-5 shrink-0 text-[#f5d78c]" />
+              <span className="sr-only">Nome, bairro ou estilo</span>
+              <div className="flex min-h-[54px] items-center gap-3 rounded-[18px] border border-white/[0.10] bg-[#111318] px-4 shadow-[0_0_26px_rgba(245,194,66,0.04)] transition focus-within:border-[#f5c242] focus-within:shadow-[0_0_0_3px_rgba(245,194,66,0.12)]">
+                <Search className="h-5 w-5 shrink-0 text-[#f5c242]" />
                 <input
-                type="text"
-                  placeholder="nome, bairro ou estilo"
+                  type="text"
+                  placeholder="Nome, bairro ou estilo"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="h-full min-w-0 flex-1 bg-transparent text-[17px] font-bold text-[#f5f0e4] outline-none placeholder:text-[#f5f0e4]/34"
+                  className="min-w-0 flex-1 bg-transparent text-[16px] font-semibold text-white outline-none placeholder:text-white/38"
                 />
                 {search && (
                   <button
                     type="button"
                     onClick={() => setSearch("")}
-                    className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-[#f5f0e4]/58"
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-white/70 transition active:scale-95"
                     aria-label="Limpar busca"
                   >
                     <X className="h-4 w-4" />
@@ -541,39 +544,40 @@ export default function AcompanhantesPage() {
               </div>
             </label>
           </div>
+        </div>
 
-          <div className="mt-6 pb-3">
-            <p className="mb-3 text-[12px] font-black uppercase text-[#f5f0e4]/46">Categoria</p>
-            <div className="grid grid-cols-2 gap-3">
-              {CATEGORIES.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  onClick={() => {
-                    setActiveCategory(c.value);
-                    setCategory(c.value);
-                  }}
-                  className={`min-h-[54px] rounded-[12px] px-4 text-[15px] font-black transition-colors ${
-                    activeCategory === c.value ? "client-chip-active" : "client-chip"
-                  }`}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
+        <div className="mt-6">
+          <p className="mb-3 text-[15px] font-black uppercase text-[#f5c242]">CATEGORIA</p>
+          <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-2">
+            {CATEGORIES.map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => {
+                  setActiveCategory(c.value);
+                  setCategory(c.value);
+                }}
+                className={`flex min-h-12 shrink-0 items-center gap-2 rounded-full px-6 text-[15px] font-bold transition hover:brightness-110 active:scale-[0.985] ${
+                  activeCategory === c.value ? "bg-[#f5c242] text-black" : "bg-[#1f2227] text-white"
+                }`}
+              >
+                {c.icon}
+                {c.label}
+              </button>
+            ))}
           </div>
+        </div>
 
           {hasFilters && (
-            <div className="mt-4 flex items-center justify-between gap-3 rounded-[12px] border border-[#d4a843]/16 bg-[#d4a843]/8 px-3 py-3">
-              <span className="min-w-0 truncate text-[13px] font-semibold text-[#f5f0e4]/62">
+            <div className="mt-4 flex items-center justify-between gap-3 rounded-[18px] border border-[#f5c242]/18 bg-[#f5c242]/10 px-4 py-3">
+              <span className="min-w-0 truncate text-[13px] font-semibold text-white/62">
                 Busca personalizada ativa
               </span>
-              <button type="button" onClick={clearFilters} className="shrink-0 text-[13px] font-black text-[#f5d78c]">
+              <button type="button" onClick={clearFilters} className="shrink-0 text-[13px] font-black text-[#f5c242]">
                 Limpar
               </button>
             </div>
           )}
-        </div>
       </section>
 
       {!loading && professionals.length > 0 && (

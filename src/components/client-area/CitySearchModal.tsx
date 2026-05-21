@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect -- The modal intentionally resets transient search state every time it opens. */
+
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Image from "next/image";
@@ -27,17 +29,18 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
-    if (open) {
-      setInput("");
-      setSuggestions([]);
-      setNoResults(null);
-      setTimeout(() => inputRef.current?.focus(), 140);
-    }
+    if (!open) return;
+
+    setInput("");
+    setSuggestions([]);
+    setNoResults(null);
+    const focusTimer = setTimeout(() => inputRef.current?.focus(), 140);
+
+    return () => clearTimeout(focusTimer);
   }, [open]);
 
   useEffect(() => {
     clearTimeout(debounceRef.current);
-    setNoResults(null);
 
     if (input.length < 3) {
       setSuggestions([]);
@@ -57,6 +60,8 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
         setLoadingSuggestions(false);
       }
     }, 350);
+
+    return () => clearTimeout(debounceRef.current);
   }, [input]);
 
   async function handleSelect(suggestion: Suggestion) {
@@ -95,91 +100,95 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
 
   return (
     <div
-      className="fixed inset-0 z-[200] overflow-y-auto overscroll-contain bg-[#030405] text-[#f7f1e4]"
+      className="fixed inset-0 z-[200] overflow-y-auto overscroll-contain bg-[#030405] text-white"
       style={{ animation: "premiumFadeUp 200ms ease-out both" }}
     >
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_76%_20%,rgba(220,158,38,0.10),transparent_28%),linear-gradient(180deg,#050607_0%,#020303_100%)]" />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_75%_28%,rgba(250,204,21,0.10),transparent_32%),linear-gradient(180deg,#050505_0%,#030405_56%,#050505_100%)]" />
 
-      <div className="relative flex w-full flex-col px-5 pb-[calc(env(safe-area-inset-bottom)+34px)] pt-[calc(env(safe-area-inset-top)+20px)]" style={{ minHeight: "100dvh" }}>
+      <div className="relative mx-auto flex min-h-dvh max-w-[820px] flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+38px)] pt-[calc(env(safe-area-inset-top)+22px)] sm:px-8">
         <header className="flex items-center justify-between">
-          <span className="text-[20px] font-black leading-none tracking-tight">
-            <span className="bg-[linear-gradient(135deg,#ffb326_0%,#f7d67d_48%,#fff5dc_100%)] bg-clip-text text-transparent">elite</span>
+          <span className="text-[30px] font-black leading-none tracking-[-0.04em]">
+            <span className="bg-[linear-gradient(135deg,#ffb326_0%,#facc15_48%,#fff0b5_100%)] bg-clip-text text-transparent">elite</span>
             <span className="text-[#fffaf0]">modell</span>
-            <span className="ml-1 text-[#f6bb37]">✦</span>
+            <span className="ml-1 text-[#facc15]">✦</span>
           </span>
           <button
             type="button"
             onClick={onClose}
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-[10px] border border-[#d4a843]/45 bg-[#181307]/80 text-[#f7b733] transition active:scale-95 active:bg-[#241a08]"
+            className="grid h-[66px] w-[66px] place-items-center rounded-[14px] border border-[#facc15]/35 bg-[#181307]/65 text-[#facc15] shadow-[0_0_28px_rgba(250,204,21,0.12)] transition hover:bg-[#241a08] active:scale-95"
             aria-label="Fechar"
           >
-            <X className="h-5 w-5" strokeWidth={2.4} />
+            <X className="h-9 w-9" strokeWidth={2.35} />
           </button>
         </header>
 
-        <section className="mt-10 flex items-start gap-2 pb-4">
-          <div className="flex-1">
-            <p className="text-[11px] font-black uppercase tracking-[0.20em] text-[#d8ad4a]">Explorar perfis</p>
-            <h1 className="mt-3 text-[40px] font-black leading-[1.02] tracking-tight text-[#fffaf0] [text-shadow:0_4px_20px_rgba(0,0,0,0.60)]">
-              Selecionar<br />cidade <span className="text-[#f4b735]">✦</span>
-            </h1>
-            <p className="mt-4 text-[14px] leading-[1.5] text-[#fffaf0]/68">
-              Escolha uma cidade para ver<br />os perfis disponíveis
-            </p>
-          </div>
-          <div className="relative h-[220px] w-[160px] shrink-0" aria-hidden="true">
+        <section className="relative mt-[66px] min-h-[298px] overflow-visible">
+          <div className="pointer-events-none absolute -right-[72px] -top-[228px] h-[604px] w-[302px] sm:-right-[96px] sm:-top-[326px] sm:h-[820px] sm:w-[410px]" aria-hidden="true">
             <Image
               src="/brand/elite-modell%20gps.png"
               alt=""
               fill
-              sizes="160px"
-              className="object-contain object-center"
+              priority
+              sizes="(max-width: 640px) 302px, 410px"
+              className="object-contain"
             />
           </div>
+          <div className="pointer-events-none absolute -right-8 top-[116px] h-48 w-[78%] bg-[linear-gradient(90deg,#030405_0%,rgba(3,4,5,0.78)_38%,rgba(3,4,5,0)_100%)] sm:hidden" />
+
+          <p className="relative text-[21px] font-black uppercase leading-none tracking-[0.34em] text-[#cfa243] sm:text-[16px]">EXPLORAR PERFIS</p>
+          <h1 className="relative mt-6 text-[64px] font-black leading-[0.98] tracking-[-0.04em] text-[#fffaf0] [text-shadow:0_8px_34px_rgba(0,0,0,0.78)] sm:text-[72px]">
+            Selecionar<br />cidade <span className="text-[#facc15]">✦</span>
+          </h1>
+          <p className="relative mt-5 text-[28px] leading-[1.32] text-[#d8d8d8] sm:text-[24px]">
+            Escolha uma cidade para ver<br />os perfis disponíveis
+          </p>
         </section>
 
-        <section className="relative mt-10">
-          <div className="flex h-[62px] items-center rounded-[12px] border border-[#d4a843]/70 bg-[#07090a]/90 shadow-[0_0_0_1px_rgba(245,215,140,0.06),0_12px_40px_rgba(0,0,0,0.40)]">
-            <div className="grid h-full w-[56px] shrink-0 place-items-center rounded-l-[11px] border-r border-[#d4a843]/25 bg-[#17130c]/80">
-              <MapPin className="h-5 w-5 text-[#f7b733]" strokeWidth={2.2} />
+        <section className="relative mt-[28px]">
+          <div className="flex h-[94px] items-center rounded-[14px] border border-[#c89422]/85 bg-[#07090a]/92 shadow-[0_0_0_1px_rgba(250,204,21,0.08),0_22px_60px_rgba(0,0,0,0.46),inset_0_1px_0_rgba(255,255,255,0.045)] transition focus-within:border-[#facc15] focus-within:shadow-[0_0_0_1px_rgba(250,204,21,0.20),0_0_34px_rgba(250,204,21,0.11)]">
+            <div className="grid h-full w-[86px] shrink-0 place-items-center rounded-l-[13px] border-r border-[#c89422]/30 bg-[#17130c]/82">
+              <MapPin className="h-12 w-12 text-[#f5b936] drop-shadow-[0_0_16px_rgba(250,204,21,0.35)]" strokeWidth={2.2} />
             </div>
             <input
               ref={inputRef}
               type="text"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                setNoResults(null);
+              }}
               placeholder="Digite 3 ou mais caracteres"
-              className="min-w-0 flex-1 bg-transparent px-4 text-[15px] font-semibold text-[#fffaf0] outline-none placeholder:font-normal placeholder:text-[#fffaf0]/36"
+              className="min-w-0 flex-1 bg-transparent px-5 text-[29px] font-semibold text-[#fffaf0] outline-none placeholder:font-normal placeholder:text-[#8b8b8b] sm:text-[23px]"
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
             />
-            <div className="grid w-[48px] shrink-0 place-items-center">
+            <div className="grid w-[74px] shrink-0 place-items-center">
               {busy ? (
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#f7b733] border-t-transparent" />
+                <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-[#facc15] border-t-transparent" />
               ) : input ? (
                 <button
                   type="button"
                   onClick={reset}
-                  className="grid h-8 w-8 place-items-center rounded-full bg-white/8 text-[#f7b733] active:bg-white/14"
+                  className="grid h-10 w-10 place-items-center rounded-full bg-white/8 text-[#facc15] transition active:bg-white/14"
                   aria-label="Limpar busca"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-5 w-5" />
                 </button>
               ) : (
-                <Search className="h-5 w-5 text-[#f7b733]" strokeWidth={2.2} />
+                <Search className="h-10 w-10 text-[#f5b936]" strokeWidth={2.2} />
               )}
             </div>
           </div>
         </section>
 
-        <main className="relative mt-10 flex-1">
+        <main className="relative mt-[74px] flex-1">
           {noResults && !checking && (
-            <div className="flex flex-col items-center rounded-[18px] border border-[#d4a843]/20 bg-white/[0.035] px-6 py-12 text-center shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
-              <div className="mb-6 grid h-[88px] w-[88px] place-items-center rounded-[24px] border border-[#d4a843]/35 bg-[#17130c]/82 shadow-[0_0_46px_rgba(212,168,67,0.16)]">
-                <Clock className="h-9 w-9 text-[#f7b733]" />
+            <div className="flex flex-col items-center rounded-[18px] border border-[#facc15]/20 bg-white/[0.035] px-6 py-12 text-center shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
+              <div className="mb-6 grid h-[88px] w-[88px] place-items-center rounded-[24px] border border-[#facc15]/35 bg-[#17130c]/82 shadow-[0_0_46px_rgba(250,204,21,0.14)]">
+                <Clock className="h-9 w-9 text-[#facc15]" />
               </div>
-              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#d4a843]">Em breve</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#facc15]">Em breve</p>
               <h2 className="mt-3 text-[28px] font-black leading-[1.1] text-[#fffaf0]">
                 Terá acompanhantes<br />em {noResults}
               </h2>
@@ -189,7 +198,7 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
               <button
                 type="button"
                 onClick={reset}
-                className="mt-8 flex min-h-12 items-center gap-2 rounded-[14px] border border-[#d4a843]/45 bg-[#d4a843]/14 px-7 text-[14px] font-bold text-[#f7c75d] active:scale-95"
+                className="mt-8 flex min-h-12 items-center gap-2 rounded-[14px] border border-[#facc15]/45 bg-[#facc15]/14 px-7 text-[14px] font-bold text-[#facc15] transition active:scale-95"
               >
                 <Search className="h-4 w-4" />
                 Buscar outra cidade
@@ -198,17 +207,17 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
           )}
 
           {!noResults && !busy && suggestions.length > 0 && (
-            <ul className="overflow-hidden rounded-[18px] border border-[#d4a843]/18 bg-white/[0.035]" role="listbox">
+            <ul className="overflow-hidden rounded-[18px] border border-[#facc15]/18 bg-white/[0.035]" role="listbox">
               {suggestions.map((s, i) => (
                 <li key={s.placeId} role="option" aria-selected={false}>
                   <button
                     type="button"
                     onClick={() => handleSelect(s)}
-                    className="flex w-full items-center gap-4 px-5 py-5 text-left transition-colors active:bg-white/[0.06]"
+                    className="flex w-full items-center gap-4 px-5 py-5 text-left transition-colors hover:bg-white/[0.04] active:bg-white/[0.06]"
                     style={{ borderBottom: i < suggestions.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}
                   >
-                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-[13px] border border-[#d4a843]/26 bg-[#17130c]/88">
-                      <MapPin className="h-5 w-5 text-[#f7b733]" />
+                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-[13px] border border-[#facc15]/26 bg-[#17130c]/88">
+                      <MapPin className="h-5 w-5 text-[#facc15]" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[16px] font-black text-[#fffaf0]">{s.mainText}</p>
@@ -221,18 +230,21 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
           )}
 
           {!noResults && !busy && suggestions.length === 0 && (
-            <div className="space-y-7">
+            <div className="space-y-[44px]">
               <PremiumInvite />
-              <TrustLine
-                icon={<ShieldCheck className="h-6 w-6" />}
-                title="Ambiente seguro e verificado"
-                description="Seus dados estão protegidos conosco."
-              />
-              <TrustLine
-                icon={<LockKeyhole className="h-6 w-6" />}
-                title="Privacidade garantida"
-                description="Informações 100% seguras."
-              />
+              <div className="space-y-8 px-4">
+                <TrustLine
+                  icon={<ShieldCheck className="h-7 w-7" />}
+                  title="Ambiente seguro e verificado"
+                  description="Seus dados estão protegidos conosco."
+                />
+                <div className="h-px bg-white/10" />
+                <TrustLine
+                  icon={<LockKeyhole className="h-7 w-7" />}
+                  title="Privacidade garantida"
+                  description="Informações 100% seguras."
+                />
+              </div>
               {input.length > 0 && input.length < 3 && (
                 <p className="text-center text-[14px] font-semibold text-[#fffaf0]/38">Continue digitando...</p>
               )}
@@ -246,22 +258,22 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
 
 function PremiumInvite() {
   return (
-    <div className="flex items-center gap-4 rounded-[16px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-4 shadow-[0_12px_40px_rgba(0,0,0,0.32)]">
-      <div className="grid h-14 w-14 shrink-0 place-items-center rounded-[14px] bg-[#17130c]/88">
-        <Diamond className="h-8 w-8 text-[#f7b733]" strokeWidth={1.7} />
+    <div className="flex items-center gap-5 rounded-[18px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.32)] sm:p-7">
+      <div className="grid h-[82px] w-[82px] shrink-0 place-items-center rounded-[17px] bg-[#17130c]/88">
+        <Diamond className="h-12 w-12 text-[#facc15]" strokeWidth={1.7} />
       </div>
       <div className="min-w-0 flex-1">
-        <h2 className="text-[15px] font-black leading-tight text-[#f7c75d]">Encontre perfis exclusivos</h2>
-        <p className="mt-1 text-[13px] leading-[1.4] text-[#fffaf0]/58">
+        <h2 className="text-[21px] font-black leading-tight text-[#facc15] sm:text-[24px]">Encontre perfis exclusivos</h2>
+        <p className="mt-3 text-[15px] leading-[1.55] text-[#fffaf0]/60 sm:text-[18px]">
           Explore modelos e talentos na sua cidade com recursos premium.
         </p>
       </div>
       <button
         type="button"
-        className="flex h-11 shrink-0 items-center gap-2 rounded-[10px] border border-[#d4a843]/55 bg-[linear-gradient(135deg,rgba(247,183,51,0.36),rgba(104,74,18,0.78))] px-4 text-[13px] font-black text-[#ffd36d] active:scale-95"
+        className="hidden min-h-[58px] shrink-0 items-center gap-3 rounded-[12px] border border-[#facc15]/55 bg-[linear-gradient(135deg,rgba(250,204,21,0.34),rgba(104,74,18,0.78))] px-7 text-[16px] font-black text-[#facc15] shadow-[0_0_34px_rgba(250,204,21,0.14)] transition hover:brightness-110 active:scale-95 sm:flex"
       >
         Seja Premium
-        <Crown className="h-4 w-4 fill-[#ffd36d]/30" />
+        <Crown className="h-5 w-5 fill-[#facc15]/30" />
       </button>
     </div>
   );
@@ -269,13 +281,13 @@ function PremiumInvite() {
 
 function TrustLine({ icon, title, description }: { icon: ReactNode; title: string; description: string }) {
   return (
-    <div className="flex items-center gap-4 px-1">
-      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-[12px] bg-[#17130c]/88 text-[#f7b733]">
+    <div className="flex items-center gap-5">
+      <div className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-[16px] bg-[#17130c]/88 text-[#facc15]">
         {icon}
       </div>
       <div>
-        <h3 className="text-[15px] font-black text-[#fffaf0]">{title}</h3>
-        <p className="mt-0.5 text-[13px] leading-snug text-[#fffaf0]/55">{description}</p>
+        <h3 className="text-[18px] font-black text-[#fffaf0]">{title}</h3>
+        <p className="mt-2 text-[16px] leading-snug text-[#fffaf0]/58">{description}</p>
       </div>
     </div>
   );
