@@ -6,7 +6,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
-import CitySearchModal from "@/components/client-area/CitySearchModal";
 import {
   Bell,
   ChevronRight,
@@ -439,25 +438,19 @@ export default function ClientAreaShell({
 }) {
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [cityModalOpen, setCityModalOpen] = useState(false);
 
-  function handleCitySelect(city: string) {
-    router.push(`/dashboard/acompanhantes?city=${encodeURIComponent(city)}`);
+  function handleHeaderSearch() {
+    router.push(ACCOUNT_ROUTES.mainClientFeed);
   }
 
   return (
     <div className="client-premium min-h-screen">
       <MobileHeader
         onMenu={() => setDrawerOpen(true)}
-        onCityModal={() => setCityModalOpen(true)}
+        onCityModal={handleHeaderSearch}
         backHref={backHref}
       />
       <SideDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      <CitySearchModal
-        open={cityModalOpen}
-        onClose={() => setCityModalOpen(false)}
-        onSelectCity={handleCitySelect}
-      />
       <main className="client-shell-content mx-auto w-full max-w-[760px] pb-[calc(280px+env(safe-area-inset-bottom))]">
         {children}
       </main>

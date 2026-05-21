@@ -1,8 +1,8 @@
 /* eslint-disable @next/next/no-img-element -- User avatars can be remote or uploaded URLs. */
 
 "use client";
-import Link from "next/link";
 import { MapPin, ShieldCheck, UserRound } from "lucide-react";
+import Link from "next/link";
 
 function initials(name?: string | null) {
   if (!name) return "EM";
@@ -22,10 +22,12 @@ export default function UserWelcomeCard({
   name,
   image,
   city,
+  onDefineCity,
 }: {
   name: string | null;
   image: string | null;
   city: string | null;
+  onDefineCity: () => void;
 }) {
   return (
     <section
@@ -60,14 +62,15 @@ export default function UserWelcomeCard({
           <h1 style={{ color: "#f5f0e4", fontSize: 22, fontWeight: 900, lineHeight: 1.15, marginTop: 2 }}>
             {firstName(name)}
           </h1>
-          <Link
-            href="/dashboard/acompanhantes"
+          <button
+            type="button"
+            onClick={onDefineCity}
             className="mt-1.5 inline-flex items-center gap-1.5 no-underline"
-            style={{ color: "rgba(245,240,228,0.45)", fontSize: 12, fontWeight: 600 }}
+            style={{ color: "rgba(245,240,228,0.45)", fontSize: 12, fontWeight: 600, background: "transparent", border: 0, padding: 0 }}
           >
             <MapPin className="h-3.5 w-3.5" />
-            {city ? "Editar cidade" : "Definir cidade"}
-          </Link>
+            {city ?? "Definir cidade"}
+          </button>
         </div>
 
         <Link

@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   BadgeCheck,
@@ -625,7 +625,6 @@ function CitySelectionScreen({
 
 export default function AcompanhantesPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const initialCity = searchParams.get("city") ?? "";
   const appliedInitial = useRef(false);
 
@@ -642,7 +641,6 @@ export default function AcompanhantesPage() {
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState("");
-  const [showCitySelector, setShowCitySelector] = useState(false);
 
   useEffect(() => {
     if (appliedInitial.current) {
@@ -757,24 +755,11 @@ export default function AcompanhantesPage() {
   }
 
   function focusCity() {
-    setShowCitySelector(true);
-  }
-
-  function handleCitySelect(selectedCity: string) {
-    setCity(selectedCity);
-    setShowCitySelector(false);
-    router.push(`/dashboard/acompanhantes?city=${encodeURIComponent(selectedCity)}`);
+    document.querySelector<HTMLInputElement>('[data-client-city-filter="true"]')?.focus();
   }
 
   return (
     <>
-      {showCitySelector && (
-        <CitySelectionScreen
-          onClose={() => setShowCitySelector(false)}
-          onSelectCity={handleCitySelect}
-        />
-      )}
-
       <section className="client-explore-home">
         <div>
           <p className="text-[14px] font-bold uppercase tracking-wide text-[#f5c242]">EXPLORAR PERFIS</p>
@@ -820,8 +805,6 @@ export default function AcompanhantesPage() {
                   type="text"
                   placeholder="Digite a cidade"
                   value={city}
-                  onClick={() => setShowCitySelector(true)}
-                  onFocus={() => setShowCitySelector(true)}
                   onChange={(e) => setCity(e.target.value)}
                   className="min-w-0 flex-1 bg-transparent text-[16px] font-semibold text-white outline-none placeholder:text-white/38"
                   data-client-city-filter="true"

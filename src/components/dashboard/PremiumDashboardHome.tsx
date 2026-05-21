@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -11,6 +12,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import AchievementsSection from "@/components/client-area/AchievementsSection";
+import CitySelectorScreen from "@/components/client-area/CitySelectorScreen";
 import HistorySection from "@/components/client-area/HistorySection";
 import ListsSection from "@/components/client-area/ListsSection";
 import UserWelcomeCard from "@/components/client-area/UserWelcomeCard";
@@ -261,6 +263,13 @@ export default function PremiumDashboardHome({
   data: DashboardHomeData;
   clientStatus?: string;
 }) {
+  const [selectedCity, setSelectedCity] = useState(data.city);
+  const [showCitySelector, setShowCitySelector] = useState(false);
+
+  useEffect(() => {
+    const storedCity = window.localStorage.getItem("elite-client-city");
+    if (storedCity) setSelectedCity(storedCity);
+  }, []);
   const verificationSteps: VerificationStep[] = [
     {
       label: hasRealEmail(data.user.email) ? "E-mail validado" : "Informar e-mail",
@@ -279,7 +288,22 @@ export default function PremiumDashboardHome({
 
   return (
     <div>
-      <UserWelcomeCard name={data.user.name} image={data.user.image} city={data.city} />
+      {showCitySelector && (
+        <CitySelectorScreen
+          onClose={() => setShowCitySelector(false)}
+          onSelectCity={(city) => {
+            setSelectedCity(city);
+            window.localStorage.setItem("elite-client-city", city);
+            setShowCitySelector(false);
+          }}
+        />
+      )}
+      <UserWelcomeCard
+        name={data.user.name}
+        image={data.user.image}
+        city={selectedCity}
+        onDefineCity={() => setShowCitySelector(true)}
+      />
       <QuickActionGrid credits={data.stats.credits} verificationDone={verificationDone} />
       <div style={{ display: "grid", gap: 0, paddingTop: 14, paddingBottom: 150 }}>
         <QuickStatsSection stats={data.stats} vip={data.vip} />
