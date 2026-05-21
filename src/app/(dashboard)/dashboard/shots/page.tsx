@@ -45,7 +45,7 @@ function ShotCard({ item }: { item: ShotItem }) {
 
   return (
     <article className="client-card overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-3">
+      <div className="flex items-center gap-3 px-5 py-4">
         <Link href={`/profissionais/${item.slug}`} className="flex min-w-0 items-center gap-3 no-underline">
           <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border-2 border-[#d4a843]/36 bg-[#1b1d1f]">
             {item.image ? (
@@ -58,10 +58,10 @@ function ShotCard({ item }: { item: ShotItem }) {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1">
-              <p className="truncate text-[14px] font-semibold text-[#f5f0e4]">{item.displayName}</p>
+              <p className="truncate text-[15px] font-bold text-[#f5f0e4]">{item.displayName}</p>
               {item.verified && <BadgeCheck className="h-4 w-4 shrink-0 text-[#4d9b56]" />}
             </div>
-            <p className="flex items-center gap-1 text-[12px] text-[#f5f0e4]/48">
+            <p className="flex items-center gap-1 text-[13px] text-[#f5f0e4]/48">
               <MapPin className="h-3 w-3" />
               {item.city}, {item.state}
             </p>
@@ -88,7 +88,7 @@ function ShotCard({ item }: { item: ShotItem }) {
         )}
       </div>
 
-      <div className="px-4 py-3">
+      <div className="px-5 py-4">
         <div className="flex items-center gap-4">
           <button
             type="button"
@@ -148,23 +148,23 @@ function EmptyShotsState({
 }) {
   return (
     <div className="space-y-4">
-      <section className="client-empty overflow-hidden py-10">
+      <section className="client-empty overflow-hidden py-12">
         <div className="flex flex-col items-center px-6 text-center">
           <div className="grid h-[64px] w-[64px] place-items-center rounded-[14px] border border-[#d4a843]/22 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.12)]">
             {hasFilters ? <Search className="h-7 w-7" /> : <Users className="h-7 w-7" />}
           </div>
-          <h2 className="mt-5 max-w-[300px] text-[22px] font-black leading-tight text-[#f5f0e4]">
+          <h2 className="mt-6 max-w-[320px] text-[28px] font-black leading-tight text-[#f5f0e4]">
             {hasFilters ? "Nenhum Shot encontrado" : "Em breve, fotos reais por cidade"}
           </h2>
-          <p className="mt-3 max-w-[280px] text-[13px] leading-[1.65] text-[#f5f0e4]/56">
+          <p className="mt-4 max-w-[310px] text-[15px] leading-7 text-[#f5f0e4]/56">
             {hasFilters
               ? "Tente uma cidade diferente ou limpe os filtros para ver todos."
               : "Quando houver perfis ativos na sua cidade, as fotos aparecem aqui automaticamente."}
           </p>
-          <div className="mt-6 flex w-full max-w-[320px] flex-col gap-2">
+          <div className="mt-7 flex w-full max-w-[330px] flex-col gap-3">
             <Link
               href="/dashboard/acompanhantes"
-              className="client-primary-button flex min-h-0 items-center justify-center gap-2 py-3 text-[14px] font-bold no-underline"
+              className="client-primary-button flex min-h-0 items-center justify-center gap-2 py-3.5 text-[15px] font-black no-underline"
             >
               <Search className="h-4 w-4" />
               Explorar acompanhantes
@@ -182,13 +182,13 @@ function EmptyShotsState({
         </div>
       </section>
 
-      <section className="client-card flex items-start gap-3 p-4">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
+      <section className="client-card flex items-start gap-4 p-5">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/18 bg-[#d4a843]/10 text-[#f5d78c]">
           <Camera className="h-5 w-5" />
         </span>
         <div className="min-w-0">
-          <p className="text-[14px] font-bold text-[#f5f0e4]">Vitrine visual preparada</p>
-          <p className="mt-1 text-[12px] leading-5 text-[#f5f0e4]/52">
+          <p className="text-[17px] font-black text-[#f5f0e4]">Vitrine visual preparada</p>
+          <p className="mt-2 text-[14px] leading-6 text-[#f5f0e4]/52">
             Quando houver fotos, a grade ocupa toda a tela com toque facil no celular.
           </p>
         </div>
@@ -258,7 +258,7 @@ export default function ShotsPage() {
       </section>
 
       {/* ── Painel de filtros ── */}
-      <section className="px-0 pb-8">
+      <section className="px-0 pb-10">
         <div className="client-explore-search-panel">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
@@ -323,7 +323,7 @@ export default function ShotsPage() {
       </section>
 
       {/* ── Resultados ── */}
-      <div className="px-4 pb-[calc(190px+env(safe-area-inset-bottom))]">
+      <div className="px-5 pb-[calc(220px+env(safe-area-inset-bottom))]">
         {!loading && items.length > 0 && (
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="text-[13px] font-semibold text-[#f5f0e4]/56">
@@ -337,13 +337,13 @@ export default function ShotsPage() {
           </div>
         )}
         {loading ? (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {Array.from({ length: 2 }).map((_, i) => <ShotSkeleton key={i} />)}
           </div>
         ) : items.length === 0 ? (
           <EmptyShotsState hasFilters={hasFilters} onClear={clearFilters} />
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {items.map((item) => <ShotCard key={item.id} item={item} />)}
           </div>
         )}

@@ -85,8 +85,8 @@ function ActionCard({
       <span className="grid h-12 w-12 place-items-center rounded-[8px] border border-[#d4a843]/26 bg-[#d4a843]/10 text-[#f5d78c]">
         {icon}
       </span>
-      <span className="mt-6 block text-[20px] font-black leading-6 text-[#f5f0e4]">{title}</span>
-      <span className="mt-3 block min-h-[42px] text-[13px] leading-5 text-[#f5f0e4]/56">{description}</span>
+      <span className="mt-5 block text-[21px] font-black leading-6 text-[#f5f0e4]">{title}</span>
+      <span className="mt-3 block text-[14px] leading-6 text-[#f5f0e4]/56">{description}</span>
       <span className="mt-5 flex items-center justify-between text-[12px] font-black uppercase text-[#f5d78c]">
         {cta}
         <ChevronRight className="h-4 w-4 transition-transform group-active:translate-x-0.5" />
@@ -110,10 +110,10 @@ function QuickActionGrid({
   return (
     <>
       <section
-        className="px-4 pb-7 pt-4"
+        className="px-5 pb-9 pt-6"
         style={{ background: "linear-gradient(180deg, #0e0f11 0%, #111214 100%)" }}
       >
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <ActionCard
             href="/dashboard/acompanhantes"
             icon={<Search className="h-6 w-6" />}
@@ -144,7 +144,7 @@ function QuickActionGrid({
           />
         </div>
       </section>
-      <div style={{ height: 28, background: "linear-gradient(180deg, #111214 0%, #ffffff 100%)" }} />
+      <div style={{ height: 34, background: "linear-gradient(180deg, #111214 0%, #d4a843 100%)" }} />
     </>
   );
 }
@@ -279,7 +279,7 @@ export default function PremiumDashboardHome({
     <div>
       <UserWelcomeCard name={data.user.name} image={data.user.image} city={data.city} />
       <QuickActionGrid credits={data.stats.credits} verificationDone={verificationDone} />
-      <div style={{ display: "grid", gap: 36, paddingTop: 12, paddingBottom: 120 }}>
+      <div style={{ display: "grid", gap: 48, paddingTop: 18, paddingBottom: 150 }}>
         <QuickStatsSection stats={data.stats} vip={data.vip} />
         <VerificationSection steps={verificationSteps} />
         <ListsSection />

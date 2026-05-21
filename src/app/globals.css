@@ -260,15 +260,15 @@ body {
 }
 
 .client-page {
-  padding: 26px 18px 34px;
+  padding: 30px 20px 44px;
 }
 
 .client-page-tight {
-  padding: 20px 18px 34px;
+  padding: 24px 20px 44px;
 }
 
 .client-page-header {
-  padding: 26px 18px 14px;
+  padding: 30px 20px 18px;
 }
 
 .client-kicker {
@@ -297,32 +297,32 @@ body {
   border: 1px solid var(--client-line);
   border-radius: 8px;
   background: var(--client-surface);
-  box-shadow: 0 14px 34px rgba(112, 78, 16, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.76);
+  box-shadow: 0 16px 34px rgba(112, 78, 16, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.78);
 }
 
 .client-panel-soft {
   border: 1px solid var(--client-line-soft);
   border-radius: 8px;
   background: var(--client-surface-2);
-  box-shadow: 0 12px 28px rgba(112, 78, 16, 0.12);
+  box-shadow: 0 14px 28px rgba(112, 78, 16, 0.12);
 }
 
 .client-card {
   border: 1px solid var(--client-line);
   border-radius: 8px;
   background: var(--client-surface);
-  box-shadow: 0 14px 32px rgba(112, 78, 16, 0.13), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  box-shadow: 0 16px 34px rgba(112, 78, 16, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.76);
 }
 
 .client-action-card {
   display: flex;
-  min-height: 194px;
+  min-height: 172px;
   flex-direction: column;
   border: 1px solid var(--client-line);
-  border-radius: 14px;
+  border-radius: 8px;
   background: var(--client-surface);
-  padding: 18px 16px 16px;
-  box-shadow: 0 16px 36px rgba(112, 78, 16, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  padding: 20px 18px 18px;
+  box-shadow: 0 18px 38px rgba(112, 78, 16, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.78);
   transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
 }
 
@@ -420,7 +420,7 @@ body {
   border: 1px solid rgba(245, 215, 140, 0.16);
   border-radius: 8px;
   background: var(--client-surface);
-  box-shadow: 0 16px 34px rgba(112, 78, 16, 0.13);
+  box-shadow: 0 18px 38px rgba(112, 78, 16, 0.14);
 }
 
 /* Professional profile card — overlay-image layout with tap animation */
@@ -449,10 +449,11 @@ body {
 
 .client-explore-search-panel {
   border: 1px solid var(--client-line);
-  border-radius: 18px;
+  border-radius: 8px;
   background: var(--client-surface);
-  padding: 20px;
-  box-shadow: 0 16px 36px rgba(112, 78, 16, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.76);
+  margin: 0 20px;
+  padding: 22px;
+  box-shadow: 0 18px 38px rgba(112, 78, 16, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.76);
 }
 
 .client-explore-field {
@@ -491,21 +492,21 @@ body[data-client-filters-open="true"] .client-shell-content {
   .client-page-tight > .client-card,
   .client-page-tight > .client-panel,
   .client-page-header > .client-panel {
-    margin-left: -18px;
-    margin-right: -18px;
-    border-left: 0;
-    border-right: 0;
-    border-radius: 0;
-    box-shadow: none;
-    padding-left: 20px;
-    padding-right: 20px;
+    margin-left: 0;
+    margin-right: 0;
+    border-left: 1px solid var(--client-line);
+    border-right: 1px solid var(--client-line);
+    border-radius: 8px;
+    box-shadow: 0 16px 34px rgba(112, 78, 16, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.76);
   }
 
   .client-explore-search-panel {
-    border-left: 0;
-    border-right: 0;
-    border-radius: 0;
-    box-shadow: none;
+    margin-left: 20px;
+    margin-right: 20px;
+    border-left: 1px solid var(--client-line);
+    border-right: 1px solid var(--client-line);
+    border-radius: 8px;
+    box-shadow: 0 18px 38px rgba(112, 78, 16, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.76);
   }
 
   .client-explore-hero {

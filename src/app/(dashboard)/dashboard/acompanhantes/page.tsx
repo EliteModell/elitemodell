@@ -290,15 +290,15 @@ function EmptyState({
   ].filter(Boolean) as string[];
 
   return (
-    <section className="client-empty mb-12 mt-2 overflow-hidden pb-56 pt-8">
+    <section className="client-empty mb-14 mt-4 overflow-hidden pb-64 pt-12">
       <div className="flex flex-col items-center px-6 text-center">
         <div className="grid h-[68px] w-[68px] place-items-center rounded-[16px] border border-[#d4a843]/26 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.14)]">
           {hasFilters ? <Search className="h-8 w-8" /> : <ShieldCheck className="h-8 w-8" />}
         </div>
-        <p className="mt-5 text-[11px] font-black uppercase text-[#f5d78c]/82">
+        <p className="mt-6 text-[11px] font-black uppercase text-[#f5d78c]/82">
           {hasFilters ? "Sem resultado" : "Perfis verificados"}
         </p>
-        <h2 className="mt-2 max-w-[300px] text-[24px] font-black leading-tight text-[#f5f0e4]">
+        <h2 className="mt-2 max-w-[330px] text-[30px] font-black leading-tight text-[#f5f0e4]">
           {hasFilters ? "Nenhum perfil encontrado" : "Escolha uma cidade para ver os perfis"}
         </h2>
         {activeTags.length > 0 && (
@@ -313,16 +313,16 @@ function EmptyState({
             ))}
           </div>
         )}
-        <p className="mt-3 max-w-[290px] text-[13px] leading-[1.65] text-[#f5f0e4]/56">
+        <p className="mt-4 max-w-[320px] text-[15px] leading-7 text-[#f5f0e4]/56">
           {hasFilters
             ? "Tente uma categoria mais ampla ou busque por outra cidade."
             : "Quando houver perfis ativos e verificados, eles aparecem aqui com foto, cidade e contato."}
         </p>
-        <div className="mt-7 flex w-full max-w-[300px] flex-col gap-2.5">
+        <div className="mt-8 flex w-full max-w-[330px] flex-col gap-3">
           <button
             type="button"
             onClick={hasFilters ? onClear : onExploreCity}
-            className="client-primary-button flex min-h-0 items-center justify-center gap-2 py-3 text-[14px]"
+            className="client-primary-button flex min-h-0 items-center justify-center gap-2 py-3.5 text-[15px] font-black"
           >
             {hasFilters ? "Limpar filtros" : "Escolher cidade"}
             <ChevronRight className="h-4 w-4" />
@@ -331,7 +331,7 @@ function EmptyState({
             <button
               type="button"
               onClick={onExploreCity}
-              className="client-secondary-button flex min-h-0 items-center justify-center gap-2 py-3 text-[14px]"
+              className="client-secondary-button flex min-h-0 items-center justify-center gap-2 py-3.5 text-[15px] font-black"
             >
               <MapPin className="h-4 w-4" />
               Trocar cidade
@@ -468,7 +468,7 @@ export default function AcompanhantesPage() {
         </div>
       </section>
 
-      <section className="px-0 pb-20">
+      <section className="px-0 pb-24">
         <div className="client-explore-search-panel">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -575,7 +575,7 @@ export default function AcompanhantesPage() {
         </div>
       )}
 
-      <div className="space-y-10 px-4 pb-[calc(420px+env(safe-area-inset-bottom))]">
+      <div className="space-y-12 px-5 pb-[calc(440px+env(safe-area-inset-bottom))]">
         {loading && professionals.length === 0 ? (
           Array.from({ length: 3 }).map((_, i) => <ProfileCardSkeleton key={i} />)
         ) : professionals.length === 0 ? (
