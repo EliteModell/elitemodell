@@ -59,6 +59,16 @@ export const authOptions: NextAuthOptions = {
             where: {
               OR: [{ email }, ...(phone ? [{ phone }] : [])],
             },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+              phone: true,
+              emailVerified: true,
+              role: true,
+              blocked: true,
+            },
           });
 
           if (!user) {
@@ -117,6 +127,7 @@ export const authOptions: NextAuthOptions = {
               phone: user.phone ?? phone ?? null,
               emailVerified: emailVerified && !user.emailVerified ? emailVerified : user.emailVerified,
             },
+            select: { id: true },
           });
 
           // Validar se usuário está bloqueado

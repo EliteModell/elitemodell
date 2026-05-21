@@ -51,8 +51,18 @@ export default function ChatBox({ bookingId, title }: Props) {
     }
 
     fetchMessages(true);
-    const interval = setInterval(() => fetchMessages(false), 4000);
-    return () => { cancelled = true; clearInterval(interval); };
+    const interval = setInterval(() => {
+      if (!document.hidden) fetchMessages(false);
+    }, 4000);
+    function handleVisibility() {
+      if (!document.hidden) fetchMessages(false);
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [bookingId]);
 
   // Auto-scroll para baixo
