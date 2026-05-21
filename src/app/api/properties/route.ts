@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
     select: { role: true, accountType: true },
   });
   const canSubmitHostProperty =
-    currentUser?.role === "ADMIN" || currentUser?.role === "HOST" || currentUser?.accountType === "host";
+    Boolean(currentUser) && (currentUser?.role === "ADMIN" || currentUser?.role === "HOST" || currentUser?.accountType !== "model");
   if (!canSubmitHostProperty) {
     return NextResponse.json({ error: "Apenas anunciantes podem cadastrar espaços." }, { status: 403 });
   }

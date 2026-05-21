@@ -44,6 +44,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [notifOpen]);
   const isPublicPropertyDraft = pathname === ACCOUNT_ROUTES.onboardingAnfitriao;
   const isClientArea = pathname === ACCOUNT_ROUTES.dashboardCliente || pathname.startsWith(`${ACCOUNT_ROUTES.dashboardCliente}/`);
+  const isProfessionalArea = pathname === ACCOUNT_ROUTES.dashboardAcompanhante || pathname.startsWith(`${ACCOUNT_ROUTES.dashboardAcompanhante}/`);
+  const isHostArea = pathname === ACCOUNT_ROUTES.dashboardAnfitriao || pathname.startsWith(`${ACCOUNT_ROUTES.dashboardAnfitriao}/`);
+  const roleAreaClass = isProfessionalArea ? "professional" : isHostArea ? "host" : "";
 
   useEffect(() => {
     if (status === "unauthenticated" && !isPublicPropertyDraft) {
@@ -73,13 +76,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#050506] text-white">
+    <div className={roleAreaClass ? `${roleAreaClass}-shell min-h-screen overflow-x-hidden bg-[#050506] text-white` : "min-h-screen overflow-x-hidden bg-[#050506] text-white"}>
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,168,67,0.10),transparent_34%)]" />
 
       <DashSidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="relative flex min-h-screen flex-col md:ml-[280px]">
-        <header className="sticky top-0 z-30 border-b border-white/10 bg-[#050506]/72 px-4 py-3 backdrop-blur-2xl sm:px-6 md:px-8">
+      <div className={roleAreaClass ? `${roleAreaClass}-layout relative flex min-h-screen flex-col md:ml-[280px]` : "relative flex min-h-screen flex-col md:ml-[280px]"}>
+        <header className={roleAreaClass ? `${roleAreaClass}-header sticky top-0 z-30 border-b border-white/10 bg-[#050506]/72 px-4 py-3 backdrop-blur-2xl sm:px-6 md:px-8` : "sticky top-0 z-30 border-b border-white/10 bg-[#050506]/72 px-4 py-3 backdrop-blur-2xl sm:px-6 md:px-8"}>
           <div className="flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
               <button
@@ -130,8 +133,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        <main className="dashboard-content relative flex-1 px-4 py-5 pb-8 sm:px-6 sm:py-6 md:px-8 lg:px-10">
-          <div className="mx-auto w-full max-w-[1480px]">{children}</div>
+        <main className={roleAreaClass ? `dashboard-content ${roleAreaClass}-page relative flex-1 px-4 py-5 pb-8 sm:px-6 sm:py-6 md:px-8 lg:px-10` : "dashboard-content relative flex-1 px-4 py-5 pb-8 sm:px-6 sm:py-6 md:px-8 lg:px-10"}>
+          <div className={roleAreaClass ? `${roleAreaClass}-content mx-auto w-full max-w-[1480px]` : "mx-auto w-full max-w-[1480px]"}>{children}</div>
         </main>
 
       </div>
@@ -152,6 +155,352 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         @media (prefers-reduced-motion: reduce) {
           .dashboard-content {
             animation: none;
+          }
+        }
+        .professional-shell {
+          background:
+            radial-gradient(circle at 20% 10%, rgba(214,168,58,0.16), transparent 32%),
+            radial-gradient(circle at 85% 35%, rgba(214,168,58,0.10), transparent 34%),
+            #050505;
+        }
+        .host-shell {
+          background:
+            radial-gradient(circle at 20% 10%, rgba(214,168,58,0.16), transparent 32%),
+            radial-gradient(circle at 85% 35%, rgba(214,168,58,0.10), transparent 34%),
+            #050505;
+        }
+        .host-shell * {
+          box-sizing: border-box;
+        }
+        .host-shell img,
+        .host-shell video,
+        .host-shell svg {
+          max-width: 100%;
+          height: auto;
+        }
+        .host-header {
+          border-bottom-color: rgba(214,168,58,0.25) !important;
+          background: rgba(5,5,5,0.92) !important;
+          padding-top: max(12px, env(safe-area-inset-top)) !important;
+          box-shadow: 0 18px 50px rgba(0,0,0,0.34);
+        }
+        .host-page {
+          width: 100%;
+          max-width: 100%;
+          min-height: 100dvh;
+          overflow-x: hidden;
+          padding-left: 8px !important;
+          padding-right: 8px !important;
+          padding-bottom: calc(150px + env(safe-area-inset-bottom)) !important;
+        }
+        .host-content {
+          width: 100%;
+          max-width: 430px !important;
+          margin: 0 auto;
+        }
+        .host-content > div {
+          width: 100%;
+          max-width: 430px !important;
+          margin-left: auto;
+          margin-right: auto;
+        }
+        .host-content h1 {
+          color: #fff !important;
+          font-size: clamp(28px, 8vw, 38px) !important;
+          line-height: 1.04 !important;
+          font-weight: 950 !important;
+          letter-spacing: 0 !important;
+          margin-bottom: 8px !important;
+          text-wrap: balance;
+        }
+        .host-content h2,
+        .host-content h3,
+        .host-content strong {
+          color: #fff !important;
+        }
+        .host-content p,
+        .host-content li {
+          color: #b8b8b8 !important;
+          line-height: 1.6;
+        }
+        .host-content p,
+        .host-content span,
+        .host-content li,
+        .host-content div,
+        .host-content section,
+        .host-content article {
+          border-color: rgba(214,168,58,0.25);
+        }
+        .host-content a {
+          color: #d6a83a;
+        }
+        .host-content > div > div,
+        .host-content section,
+        .host-content article,
+        .host-content form,
+        .host-content [style*="background: #fff"],
+        .host-content [style*="background: white"],
+        .host-content [style*="background: #111"],
+        .host-content [style*="background: #0d0d0d"],
+        .host-content [style*="background: #101010"],
+        .host-content [style*="background: #0b1420"],
+        .host-content [style*="background: #060e1b"],
+        .host-content [style*="background: rgba(212,168,67"],
+        .host-content [style*="background: rgba(34,197,94"] {
+          background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98)) !important;
+          border-color: rgba(214,168,58,0.25) !important;
+          box-shadow: 0 22px 60px rgba(0,0,0,0.28);
+        }
+        .host-content [style*="borderRadius: 16"],
+        .host-content [style*="borderRadius: 14"],
+        .host-content [style*="borderRadius: 12"],
+        .host-content [style*="borderRadius: 10"],
+        .host-content [style*="borderRadius: 8"],
+        .host-content [style*="border-radius: 16"],
+        .host-content [style*="border-radius: 14"],
+        .host-content [style*="border-radius: 12"],
+        .host-content [style*="border-radius: 10"],
+        .host-content [style*="border-radius: 8"] {
+          border-radius: 18px !important;
+        }
+        .host-content input,
+        .host-content textarea,
+        .host-content select {
+          min-height: 58px !important;
+          width: 100%;
+          border: 1px solid rgba(214,168,58,0.28) !important;
+          border-radius: 18px !important;
+          background: rgba(11,11,13,0.94) !important;
+          color: #fff !important;
+          padding: 15px 16px !important;
+          outline: none !important;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.03) !important;
+          scroll-margin-bottom: 160px;
+        }
+        .host-content textarea {
+          min-height: 150px !important;
+        }
+        .host-content input::placeholder,
+        .host-content textarea::placeholder {
+          color: rgba(184,184,184,0.55) !important;
+        }
+        .host-content input:focus,
+        .host-content textarea:focus,
+        .host-content select:focus {
+          border-color: rgba(245,184,59,0.72) !important;
+          box-shadow: 0 0 0 4px rgba(214,168,58,0.12) !important;
+        }
+        .host-content label,
+        .host-content [style*="textTransform"],
+        .host-content [style*="uppercase"] {
+          color: #d6a83a !important;
+        }
+        .host-content button {
+          min-height: 44px;
+          border-radius: 18px !important;
+        }
+        .host-content button[style*="background: #d4a843"],
+        .host-content button[style*="background: rgb(212, 168, 67)"],
+        .host-content button[style*="background: #D6A83A"],
+        .host-content button[style*="background: #F5B83B"],
+        .host-content a[style*="background: #d4a843"],
+        .host-content a[style*="background: rgb(212, 168, 67)"] {
+          background: linear-gradient(135deg, #f5d77a, #d6a83a 45%, #a77818) !important;
+          color: #070707 !important;
+          box-shadow: 0 18px 46px rgba(214,168,58,0.22) !important;
+        }
+        .host-content [style*="gridTemplateColumns"] {
+          gap: 16px !important;
+        }
+        .host-content [style*="repeat(auto-fit"] {
+          grid-template-columns: 1fr !important;
+        }
+        .host-content [style*="1fr 1fr 1fr"],
+        .host-content [style*="1fr 1fr"],
+        .host-content [style*="2fr 1fr"] {
+          grid-template-columns: 1fr !important;
+        }
+        .host-content .premium-empty-state,
+        .host-content .premium-card {
+          border: 1px solid rgba(214,168,58,0.25) !important;
+          background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98)) !important;
+        }
+        @media (min-width: 480px) {
+          .host-page {
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+          }
+        }
+        @media (min-width: 768px) {
+          .host-content,
+          .host-content > div {
+            max-width: 760px !important;
+          }
+          .host-content [style*="repeat(auto-fit"] {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+          }
+        }
+        .professional-shell * {
+          box-sizing: border-box;
+        }
+        .professional-shell img,
+        .professional-shell video,
+        .professional-shell svg {
+          max-width: 100%;
+          height: auto;
+        }
+        .professional-header {
+          border-bottom-color: rgba(214,168,58,0.25) !important;
+          background: rgba(5,5,5,0.92) !important;
+          padding-top: max(12px, env(safe-area-inset-top)) !important;
+          box-shadow: 0 18px 50px rgba(0,0,0,0.34);
+        }
+        .professional-page {
+          width: 100%;
+          max-width: 100%;
+          min-height: 100dvh;
+          overflow-x: hidden;
+          padding-left: 8px !important;
+          padding-right: 8px !important;
+          padding-bottom: calc(150px + env(safe-area-inset-bottom)) !important;
+        }
+        .professional-content {
+          width: 100%;
+          max-width: 430px !important;
+          margin: 0 auto;
+        }
+        .professional-content > div {
+          width: 100%;
+          max-width: 430px !important;
+          margin-left: auto;
+          margin-right: auto;
+        }
+        .professional-content h1 {
+          color: #fff !important;
+          font-size: clamp(28px, 8vw, 38px) !important;
+          line-height: 1.04 !important;
+          font-weight: 950 !important;
+          letter-spacing: 0 !important;
+          margin-bottom: 8px !important;
+          text-wrap: balance;
+        }
+        .professional-content h2,
+        .professional-content h3,
+        .professional-content strong {
+          color: #fff !important;
+        }
+        .professional-content p,
+        .professional-content span,
+        .professional-content li,
+        .professional-content div {
+          border-color: rgba(214,168,58,0.25);
+        }
+        .professional-content p,
+        .professional-content li {
+          color: #b8b8b8 !important;
+          line-height: 1.6;
+        }
+        .professional-content a {
+          color: #d6a83a;
+        }
+        .professional-content > div > div,
+        .professional-content section,
+        .professional-content article,
+        .professional-content form,
+        .professional-content [style*="background: #111"],
+        .professional-content [style*="background: #0d0d0d"],
+        .professional-content [style*="background: #0b1420"],
+        .professional-content [style*="background: #060e1b"],
+        .professional-content [style*="background: rgba(212,168,67"],
+        .professional-content [style*="background: rgba(34,197,94"] {
+          background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98)) !important;
+          border-color: rgba(214,168,58,0.25) !important;
+          box-shadow: 0 22px 60px rgba(0,0,0,0.28);
+        }
+        .professional-content [style*="borderRadius: 12"],
+        .professional-content [style*="borderRadius: 10"],
+        .professional-content [style*="borderRadius: 8"],
+        .professional-content [style*="border-radius: 12"],
+        .professional-content [style*="border-radius: 10"],
+        .professional-content [style*="border-radius: 8"] {
+          border-radius: 18px !important;
+        }
+        .professional-content input,
+        .professional-content textarea,
+        .professional-content select {
+          min-height: 58px !important;
+          width: 100%;
+          border: 1px solid rgba(214,168,58,0.28) !important;
+          border-radius: 18px !important;
+          background: rgba(11,11,13,0.94) !important;
+          color: #fff !important;
+          padding: 15px 16px !important;
+          outline: none !important;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.03) !important;
+          scroll-margin-bottom: 160px;
+        }
+        .professional-content textarea {
+          min-height: 150px !important;
+        }
+        .professional-content input::placeholder,
+        .professional-content textarea::placeholder {
+          color: rgba(184,184,184,0.55) !important;
+        }
+        .professional-content input:focus,
+        .professional-content textarea:focus,
+        .professional-content select:focus {
+          border-color: rgba(245,184,59,0.72) !important;
+          box-shadow: 0 0 0 4px rgba(214,168,58,0.12) !important;
+        }
+        .professional-content label,
+        .professional-content [style*="textTransform"],
+        .professional-content [style*="uppercase"] {
+          color: #d6a83a !important;
+        }
+        .professional-content button {
+          min-height: 44px;
+          border-radius: 18px !important;
+        }
+        .professional-content button[style*="background: #cc0000"],
+        .professional-content button[style*="background: #d4a843"],
+        .professional-content button[style*="background: rgb(212, 168, 67)"],
+        .professional-content button[style*="background: GOLD"] {
+          background: linear-gradient(135deg, #f5d77a, #d6a83a 45%, #a77818) !important;
+          color: #070707 !important;
+          box-shadow: 0 18px 46px rgba(214,168,58,0.22) !important;
+        }
+        .professional-content [style*="gridTemplateColumns"] {
+          gap: 16px !important;
+        }
+        .professional-content [style*="repeat(auto-fit"] {
+          grid-template-columns: 1fr !important;
+        }
+        .professional-content [style*="1fr 1fr 1fr"],
+        .professional-content [style*="1fr 1fr"],
+        .professional-content [style*="2fr 1fr"] {
+          grid-template-columns: 1fr !important;
+        }
+        .professional-content [style*="overflow: hidden"] {
+          overflow: hidden;
+        }
+        .professional-content .premium-empty-state,
+        .professional-content .premium-card {
+          border: 1px solid rgba(214,168,58,0.25) !important;
+          background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98)) !important;
+        }
+        @media (min-width: 480px) {
+          .professional-page {
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+          }
+        }
+        @media (min-width: 768px) {
+          .professional-content,
+          .professional-content > div {
+            max-width: 760px !important;
+          }
+          .professional-content [style*="repeat(auto-fit"] {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
           }
         }
       `}</style>

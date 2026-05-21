@@ -532,7 +532,12 @@ export default function ProfissionalNovoPage() {
 
   /* ── render ───────────────────────────────────────────── */
   return (
-    <div style={{ maxWidth: 680, margin: "0 auto", paddingBottom: 80 }}>
+    <div className="model-flow-page" style={{ maxWidth: 680, margin: "0 auto", paddingBottom: 80 }}>
+      <header className="model-flow-header">
+        <button type="button" onClick={() => router.back()} aria-label="Voltar">←</button>
+        <span aria-label="Elite Modell"><b>elite</b>modell</span>
+        <button type="button" onClick={() => router.push(ACCOUNT_ROUTES.dashboardAcompanhante)}>Sair</button>
+      </header>
 
       {/* ── Header ── */}
       <div style={{ marginBottom: 28 }}>
@@ -1102,7 +1107,7 @@ export default function ProfissionalNovoPage() {
       )}
 
       {/* ── Navegação entre etapas ── */}
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 36, paddingTop: 20, borderTop: `1px solid ${GOLD_DIM}` }}>
+      <div className="model-step-actions" style={{ display: "flex", justifyContent: "space-between", marginTop: 36, paddingTop: 20, borderTop: `1px solid ${GOLD_DIM}` }}>
         <button onClick={back} disabled={step === 0}
           style={{ padding: "12px 24px", background: "transparent", border: `1px solid ${step === 0 ? "#1e293b" : GOLD_MID}`, borderRadius: 10, color: step === 0 ? "#334155" : GOLD, fontSize: 14, cursor: step === 0 ? "default" : "pointer", fontWeight: 600 }}>
           ← Voltar
@@ -1120,6 +1125,132 @@ export default function ProfissionalNovoPage() {
           </button>
         )}
       </div>
+      <style>{`
+        *, *::before, *::after { box-sizing: border-box; }
+        :global(html), :global(body) { margin: 0; padding: 0; width: 100%; overflow-x: hidden; background: #050505; }
+        .model-flow-page {
+          width: 100% !important;
+          max-width: 430px !important;
+          min-height: 100dvh;
+          margin: 0 auto !important;
+          padding: max(18px, env(safe-area-inset-top)) 16px calc(144px + env(safe-area-inset-bottom)) !important;
+          overflow-x: hidden;
+          background: radial-gradient(circle at 20% 10%, rgba(214,168,58,0.16), transparent 32%), radial-gradient(circle at 85% 35%, rgba(214,168,58,0.10), transparent 34%), #050505;
+          color: #fff;
+        }
+        .model-flow-header {
+          min-height: 54px;
+          margin: 0 0 30px;
+          display: grid;
+          grid-template-columns: 54px 1fr 54px;
+          align-items: center;
+          gap: 10px;
+        }
+        .model-flow-header button {
+          width: 44px;
+          height: 44px;
+          border: 1px solid rgba(214,168,58,0.25);
+          border-radius: 999px;
+          background: rgba(11,11,13,0.82);
+          color: #d6a83a;
+          font-size: 18px;
+          font-weight: 900;
+          cursor: pointer;
+          box-shadow: 0 14px 36px rgba(0,0,0,0.24);
+        }
+        .model-flow-header button:last-child { width: auto; padding: 0 12px; color: #fff; font-size: 12px; }
+        .model-flow-header span { justify-self: center; color: #fff; font-size: 18px; font-weight: 950; }
+        .model-flow-header b { color: #d6a83a; }
+        .model-flow-page p { color: #b8b8b8 !important; }
+        .model-flow-page h1 {
+          color: #fff !important;
+          font-family: inherit !important;
+          font-size: clamp(31px, 9vw, 44px) !important;
+          line-height: 1.02 !important;
+          font-weight: 950 !important;
+          letter-spacing: 0 !important;
+          text-wrap: balance;
+        }
+        .model-flow-page h3 { color: #fff !important; }
+        .model-flow-page label, .model-flow-page [style*="uppercase"] { color: #d6a83a !important; }
+        .model-flow-page input,
+        .model-flow-page textarea,
+        .model-flow-page select {
+          min-height: 58px !important;
+          border: 1px solid rgba(214,168,58,0.28) !important;
+          border-radius: 18px !important;
+          background: rgba(11,11,13,0.94) !important;
+          color: #fff !important;
+          padding: 15px 16px !important;
+          outline: none !important;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.03) !important;
+          scroll-margin-bottom: 160px;
+        }
+        .model-flow-page textarea { min-height: 154px !important; }
+        .model-flow-page input::placeholder, .model-flow-page textarea::placeholder { color: rgba(184,184,184,0.55) !important; }
+        .model-flow-page input:focus, .model-flow-page textarea:focus, .model-flow-page select:focus {
+          border-color: rgba(245,184,59,0.72) !important;
+          box-shadow: 0 0 0 4px rgba(214,168,58,0.12) !important;
+        }
+        .model-flow-page button { border-radius: 18px !important; }
+        .model-flow-page [style*="#060e1b"],
+        .model-flow-page [style*="#0b1420"],
+        .model-flow-page [style*="rgba(212,168,67"],
+        .model-flow-page [style*="rgba(34,197,94"] {
+          background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98)) !important;
+          border-color: rgba(214,168,58,0.25) !important;
+          color: #fff !important;
+        }
+        .model-flow-page [style*="#1e293b"] { border-color: rgba(214,168,58,0.25) !important; }
+        .model-flow-page > div:nth-of-type(2) {
+          margin-bottom: 30px !important;
+          border: 1px solid rgba(214,168,58,0.25);
+          border-radius: 20px;
+          background: rgba(16,16,20,0.74);
+          padding: 16px;
+          box-shadow: 0 22px 60px rgba(0,0,0,0.26);
+        }
+        .model-flow-page > div:nth-of-type(2) > div:nth-child(2) {
+          height: 5px !important;
+          background: rgba(255,255,255,0.10) !important;
+          overflow: hidden;
+        }
+        .model-flow-page > div:nth-of-type(2) > div:nth-child(2) > div { background: linear-gradient(90deg, #d6a83a, #f5d77a) !important; }
+        .model-flow-page img { max-width: 100%; height: auto; }
+        .model-step-actions {
+          position: fixed;
+          left: 50%;
+          right: auto;
+          bottom: 0;
+          transform: translateX(-50%);
+          width: 100%;
+          max-width: 430px;
+          z-index: 9999;
+          margin-top: 0 !important;
+          padding: 14px 16px calc(14px + env(safe-area-inset-bottom)) !important;
+          border-top: 1px solid rgba(214,168,58,0.25) !important;
+          background: rgba(5,5,5,0.96);
+          display: flex !important;
+          justify-content: space-between !important;
+          gap: 14px !important;
+          backdrop-filter: blur(16px);
+        }
+        .model-step-actions button { min-height: 56px !important; flex: 1; font-weight: 900 !important; }
+        .model-step-actions button:first-child {
+          border: 1px solid rgba(214,168,58,0.25) !important;
+          background: rgba(16,16,20,0.88) !important;
+          color: #fff !important;
+        }
+        .model-step-actions button:last-child {
+          border: 0 !important;
+          background: linear-gradient(135deg, #f5d77a, #d6a83a 45%, #a77818) !important;
+          color: #070707 !important;
+          box-shadow: 0 18px 46px rgba(214,168,58,0.22) !important;
+        }
+        @media (max-width: 430px) {
+          .model-flow-page [style*="gridTemplateColumns"] { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </div>
   );
 }

@@ -247,6 +247,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
   const returnUrl = safeInternalPath(params.get("returnUrl"));
   const isClient = mode === "client";
   const isHost = mode === "host";
+  const isPremium = !isClient;
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [terms, setTerms] = useState(false);
@@ -302,8 +303,8 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
     if (isClient) return terms;
     return terms && adult && ownProfile;
   }, [adult, isClient, loading, ownProfile, phone, terms]);
-  const themedCheckStyle = isHost ? { ...checkStyle, color: "#b8b8b8" } : checkStyle;
-  const themedLinkStyle = isHost ? { ...linkStyle, color: "#f5d77a" } : linkStyle;
+  const themedCheckStyle = isPremium ? { ...checkStyle, color: "#b8b8b8" } : checkStyle;
+  const themedLinkStyle = isPremium ? { ...linkStyle, color: "#f5d77a" } : linkStyle;
 
   async function sendCode(nextPhone = phone) {
     const normalized = digits(nextPhone);
@@ -403,10 +404,10 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
 
   if (screen === "verify") {
     return (
-      <AuthShell backHref={text.verifyBack} premium={isHost}>
-        <section style={{ width: "100%", maxWidth: isHost ? 430 : 680, margin: "0 auto", padding: "32px 24px 0" }}>
-          <h1 style={{ fontSize: 32, lineHeight: 1.14, margin: "0 0 12px", color: isHost ? "#fff" : INK }}>Digite o codigo enviado</h1>
-          <p style={{ fontSize: 17, lineHeight: 1.5, color: isHost ? "#b8b8b8" : "#5b656b", margin: "0 0 28px" }}>
+      <AuthShell backHref={text.verifyBack} premium={isPremium}>
+        <section style={{ width: "100%", maxWidth: isPremium ? 430 : 680, margin: "0 auto", padding: "32px 24px 0" }}>
+          <h1 style={{ fontSize: 32, lineHeight: 1.14, margin: "0 0 12px", color: isPremium ? "#fff" : INK }}>Digite o codigo enviado</h1>
+          <p style={{ fontSize: 17, lineHeight: 1.5, color: isPremium ? "#b8b8b8" : "#5b656b", margin: "0 0 28px" }}>
             Enviamos um codigo de verificacao para {phone || "o telefone informado"}.
           </p>
           <form onSubmit={handleVerify}>
@@ -419,10 +420,10 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
               style={{
                 width: "100%",
                 height: 64,
-                border: isHost ? "1px solid rgba(214,168,58,0.28)" : "1px solid #cdd5d5",
-                borderRadius: isHost ? 18 : 8,
-                background: isHost ? "rgba(11,11,13,0.94)" : "#fff",
-                color: isHost ? "#fff" : INK,
+                border: isPremium ? "1px solid rgba(214,168,58,0.28)" : "1px solid #cdd5d5",
+                borderRadius: isPremium ? 18 : 8,
+                background: isPremium ? "rgba(11,11,13,0.94)" : "#fff",
+                color: isPremium ? "#fff" : INK,
                 textAlign: "center",
                 fontSize: 28,
                 fontWeight: 800,
@@ -430,9 +431,9 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
                 outlineColor: GOLD,
               }}
             />
-            <StatusMessage status={otpStatus} message={statusMessage} premium={isHost} />
+            <StatusMessage status={otpStatus} message={statusMessage} premium={isPremium} />
             <div style={{ height: 22 }} />
-            <SubmitButton disabled={loading || otpStatus === "verified"} premium={isHost}>
+            <SubmitButton disabled={loading || otpStatus === "verified"} premium={isPremium}>
               {otpStatus === "verifying" ? "Verificando..." : otpStatus === "verified" ? "Validado" : "Verificar codigo"}
             </SubmitButton>
           </form>
@@ -440,14 +441,14 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
             type="button"
             onClick={() => sendCode()}
             disabled={loading || timer > 0 || otpStatus === "verified"}
-            style={{ marginTop: 22, width: "100%", border: "none", background: "transparent", color: isHost ? "#d6a83a" : INK, fontSize: 16, fontWeight: 800, cursor: timer > 0 ? "not-allowed" : "pointer" }}
+            style={{ marginTop: 22, width: "100%", border: "none", background: "transparent", color: isPremium ? "#d6a83a" : INK, fontSize: 16, fontWeight: 800, cursor: timer > 0 ? "not-allowed" : "pointer" }}
           >
             {timer > 0 ? `Reenviar codigo em ${timer}s` : "Reenviar codigo"}
           </button>
           <button
             type="button"
             onClick={() => router.push(REGISTER_ROUTE[mode])}
-            style={{ marginTop: 18, width: "100%", border: "none", background: "transparent", color: isHost ? "#b8b8b8" : "#526067", fontSize: 15, textDecoration: "underline", cursor: "pointer" }}
+            style={{ marginTop: 18, width: "100%", border: "none", background: "transparent", color: isPremium ? "#b8b8b8" : "#526067", fontSize: 15, textDecoration: "underline", cursor: "pointer" }}
           >
             Alterar telefone
           </button>
@@ -457,21 +458,21 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
   }
 
   return (
-    <AuthShell backHref={isClient ? undefined : "/"} menu={isClient} premium={isHost}>
-      <section style={{ width: "100%", maxWidth: isHost ? 430 : 680, margin: "0 auto", padding: "32px 24px 0" }}>
-        <h1 style={{ fontSize: 34, lineHeight: 1.16, margin: "0 0 20px", color: isHost ? "#fff" : INK }}>{text.title}</h1>
-        <p style={{ fontSize: 17, color: isHost ? "#b8b8b8" : "#3d4a51", margin: "0 0 36px", lineHeight: 1.5 }}>{text.hint}</p>
+    <AuthShell backHref={isClient ? undefined : "/"} menu={isClient} premium={isPremium}>
+      <section style={{ width: "100%", maxWidth: isPremium ? 430 : 680, margin: "0 auto", padding: "32px 24px 0" }}>
+        <h1 style={{ fontSize: 34, lineHeight: 1.16, margin: "0 0 20px", color: isPremium ? "#fff" : INK }}>{text.title}</h1>
+        <p style={{ fontSize: 17, color: isPremium ? "#b8b8b8" : "#3d4a51", margin: "0 0 36px", lineHeight: 1.5 }}>{text.hint}</p>
         <form onSubmit={handleRegister}>
-          <label style={{ display: "block", fontSize: isClient ? 17 : 22, fontWeight: 900, marginBottom: 12, color: isHost ? "#d6a83a" : undefined }}>{text.phoneLabel}</label>
+          <label style={{ display: "block", fontSize: isClient ? 17 : 22, fontWeight: 900, marginBottom: 12, color: isPremium ? "#d6a83a" : undefined }}>{text.phoneLabel}</label>
           <div style={{ position: "relative" }}>
-            <Phone size={22} style={{ position: "absolute", left: 20, top: 21, color: isHost ? "#d6a83a" : "#314047" }} />
+            <Phone size={22} style={{ position: "absolute", left: 20, top: 21, color: isPremium ? "#d6a83a" : "#314047" }} />
             <input
               value={phone}
               onChange={(e) => setPhone(maskPhone(e.target.value))}
               inputMode="tel"
               autoComplete="tel"
               placeholder={text.phonePlaceholder}
-              style={{ width: "100%", height: 70, border: isHost ? "1px solid rgba(214,168,58,0.28)" : "1px solid #cdd5d5", borderRadius: isHost ? 18 : 8, background: isHost ? "rgba(11,11,13,0.94)" : "#fff", color: isHost ? "#fff" : INK, padding: "0 18px 0 58px", fontSize: 17, outlineColor: GOLD }}
+              style={{ width: "100%", height: 70, border: isPremium ? "1px solid rgba(214,168,58,0.28)" : "1px solid #cdd5d5", borderRadius: isPremium ? 18 : 8, background: isPremium ? "rgba(11,11,13,0.94)" : "#fff", color: isPremium ? "#fff" : INK, padding: "0 18px 0 58px", fontSize: 17, outlineColor: GOLD }}
             />
           </div>
 
@@ -485,14 +486,14 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
           <button
             type="button"
             onClick={() => setPrivacyOpen(true)}
-            style={{ width: "100%", minHeight: 58, border: isHost ? "1px solid rgba(214,168,58,0.25)" : "none", borderRadius: isHost ? 18 : 8, background: isHost ? "rgba(16,16,20,0.88)" : "#eef7ef", display: "flex", alignItems: "center", gap: 14, padding: "0 16px", color: isHost ? "#fff" : "#233037", fontSize: 17, fontWeight: 800, cursor: "pointer", marginTop: 24 }}
+            style={{ width: "100%", minHeight: 58, border: isPremium ? "1px solid rgba(214,168,58,0.25)" : "none", borderRadius: isPremium ? 18 : 8, background: isPremium ? "rgba(16,16,20,0.88)" : "#eef7ef", display: "flex", alignItems: "center", gap: 14, padding: "0 16px", color: isPremium ? "#fff" : "#233037", fontSize: 17, fontWeight: 800, cursor: "pointer", marginTop: 24 }}
           >
-            <ShieldCheck size={23} color={isHost ? "#d6a83a" : "#4a9b5a"} />
+            <ShieldCheck size={23} color={isPremium ? "#d6a83a" : "#4a9b5a"} />
             <span style={{ flex: 1, textAlign: "left" }}>Privacidade e seguranca</span>
             <Info size={24} />
           </button>
 
-          <label style={{ ...themedCheckStyle, marginTop: 28, fontSize: isClient ? 18 : 16, fontWeight: isClient ? 900 : 500, color: isHost ? "#b8b8b8" : INK }}>
+          <label style={{ ...themedCheckStyle, marginTop: 28, fontSize: isClient ? 18 : 16, fontWeight: isClient ? 900 : 500, color: isPremium ? "#b8b8b8" : INK }}>
             <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} style={nativeCheckStyle} />
             <span>Li e aceito os <Link href="/terms" style={themedLinkStyle}>Termos de Uso</Link> e a <Link href="/privacy" style={themedLinkStyle}>Politica de Privacidade</Link>.</span>
           </label>
@@ -510,15 +511,15 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
             </>
           )}
 
-          <StatusMessage status={otpStatus} message={statusMessage} premium={isHost} />
+          <StatusMessage status={otpStatus} message={statusMessage} premium={isPremium} />
           <div style={{ height: 22 }} />
-          <SubmitButton disabled={!canSubmit || loading} premium={isHost}>
+          <SubmitButton disabled={!canSubmit || loading} premium={isPremium}>
             {otpStatus === "sending" ? "Enviando..." : otpStatus === "sent" ? "Codigo enviado" : text.submit}
           </SubmitButton>
         </form>
 
         <p style={{ textAlign: "center", margin: "34px 0 0", fontSize: 19, fontWeight: 900 }}>
-          <Link href={text.loginHref} style={{ color: isHost ? "#d6a83a" : INK, textDecoration: "none" }}>{text.loginLabel}</Link>
+          <Link href={text.loginHref} style={{ color: isPremium ? "#d6a83a" : INK, textDecoration: "none" }}>{text.loginLabel}</Link>
         </p>
         {isClient && (
           <p style={{ textAlign: "center", margin: "28px 0", fontSize: 17, color: "#39454c" }}>
@@ -526,7 +527,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
           </p>
         )}
       </section>
-      {!isHost && <LegalFooter />}
+      {!isPremium && <LegalFooter />}
       {privacyOpen && (
         <div role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.42)", display: "grid", placeItems: "center", padding: 20, zIndex: 40 }}>
           <div style={{ background: "#fff", borderRadius: 10, padding: 24, maxWidth: 420, color: INK, boxShadow: "0 18px 60px rgba(0,0,0,0.2)" }}>

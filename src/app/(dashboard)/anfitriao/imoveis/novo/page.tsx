@@ -299,6 +299,43 @@ async function compressImage(file: File): Promise<File> {
   return new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" });
 }
 
+async function compressLocalDraftImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) throw new Error("Envie apenas arquivos de imagem.");
+
+  const bitmap = await createImageBitmap(file);
+  const maxSide = 1200;
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return file;
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.72));
+  if (!blob) return file;
+  return new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" });
+}
+
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Nao foi possivel preparar a foto para rascunho."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function isLocalDataUrl(value: string | undefined) {
+  return Boolean(value?.startsWith("data:image/"));
+}
+
+async function dataUrlToFile(dataUrl: string, name: string) {
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  return new File([blob], name.replace(/\.\w+$/, ".jpg"), { type: blob.type || "image/jpeg" });
+}
+
 function OptionCard<T extends string>({
   option,
   active,
@@ -356,14 +393,32 @@ export default function NovoImovelPage() {
   const selectedType = locationTypes.find((item) => item.value === form.type);
 
   const canPublish =
-    session?.user?.role === "HOST" || session?.user?.role === "ADMIN" || session?.user?.accountType === "host";
+    status === "authenticated" && (session?.user?.role === "ADMIN" || session?.user?.accountType !== "model");
+
+  function persistDraft(nextForm = form, nextStep = step) {
+    try {
+      localStorage.setItem(
+        DRAFT_KEY,
+        JSON.stringify({
+          form: nextForm,
+          step: nextStep,
+          status: status === "authenticated" ? "draft" : "draft_local",
+          updatedAt: new Date().toISOString(),
+        })
+      );
+      return true;
+    } catch (err) {
+      console.warn("[property-draft] Nao foi possivel salvar rascunho local.", err);
+      return false;
+    }
+  }
 
   function currentReturnUrl() {
     return `${window.location.pathname}${window.location.search}`;
   }
 
   function goToLoginForThisStep() {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, step, updatedAt: new Date().toISOString() }));
+    persistDraft();
     router.push(`${ACCOUNT_ROUTES.login}?returnUrl=${encodeURIComponent(currentReturnUrl())}`);
   }
 
@@ -386,7 +441,8 @@ export default function NovoImovelPage() {
 
   useEffect(() => {
     if (!hydrated) return;
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, step, updatedAt: new Date().toISOString() }));
+    persistDraft(form, step);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, hydrated, step]);
 
   function setField<K extends keyof DraftForm>(key: K, value: DraftForm[K]) {
@@ -439,12 +495,6 @@ export default function NovoImovelPage() {
   }
 
   async function uploadFiles(files: FileList | File[]) {
-    if (status !== "authenticated") {
-      toast.error("Entre para enviar fotos e manter seu rascunho seguro.");
-      goToLoginForThisStep();
-      return;
-    }
-
     const incoming = Array.from(files);
     for (const original of incoming) {
       const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -465,6 +515,16 @@ export default function NovoImovelPage() {
       }));
 
       try {
+        if (status !== "authenticated") {
+          const file = await compressLocalDraftImage(original);
+          const dataUrl = await fileToDataUrl(file);
+          setForm((current) => ({
+            ...current,
+            photos: current.photos.map((photo) => photo.id === id ? { ...photo, preview: dataUrl, url: dataUrl, status: "uploaded" } : photo),
+          }));
+          continue;
+        }
+
         const file = await compressImage(original);
         const fd = new FormData();
         fd.append("file", file);
@@ -518,13 +578,13 @@ export default function NovoImovelPage() {
   }
 
   function saveAndExit() {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, step, updatedAt: new Date().toISOString() }));
-    toast.success("Rascunho salvo.");
+    const saved = persistDraft();
+    toast.success(saved ? "Rascunho salvo. Você poderá continuar depois." : "Rascunho mantido nesta sessão.");
     if (status !== "authenticated") {
-      router.push(ACCOUNT_ROUTES.mainClientFeed);
+      router.push("/");
       return;
     }
-    router.push(ACCOUNT_ROUTES.verificacaoAnfitriao);
+    router.push(ACCOUNT_ROUTES.dashboardCliente);
   }
 
   function discardDraft() {
@@ -567,6 +627,23 @@ export default function NovoImovelPage() {
     setSaving(true);
     try {
       const orderedPhotos = [...form.photos].sort((a, b) => Number(Boolean(b.cover)) - Number(Boolean(a.cover))).filter(isUploaded);
+      const submittedPhotos: string[] = [];
+      for (const [order, photo] of orderedPhotos.entries()) {
+        if (!photo.url) continue;
+        if (!isLocalDataUrl(photo.url)) {
+          submittedPhotos.push(photo.url);
+          continue;
+        }
+
+        const file = await dataUrlToFile(photo.url, photo.name || `foto-${order + 1}.jpg`);
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch(`/api/upload?folder=properties/${form.draftId}`, { method: "POST", body: fd });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.url) throw new Error(typeof data.error === "string" ? data.error : "Falha no upload da foto.");
+        submittedPhotos.push(data.url);
+      }
+
       const payload = {
         title: form.title.trim(),
         description: [
@@ -605,7 +682,7 @@ export default function NovoImovelPage() {
           form.days.length ? `Dias: ${form.days.join(", ")}` : "",
           `Pagamento: ${form.pricingMode === "platform" ? "pela plataforma" : form.pricingMode === "direct" ? "direto" : "sob aprovação"}`,
         ].filter(Boolean),
-        photos: orderedPhotos.map((photo) => photo.url),
+        photos: submittedPhotos,
       };
 
       const res = await fetch("/api/properties", {
