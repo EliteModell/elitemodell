@@ -1589,10 +1589,24 @@ body[data-client-filters-open="true"] .client-shell-content {
   font-size: 20px;
   font-weight: 650;
   outline: 0;
+  box-shadow: none;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .city-select-search input::placeholder {
   color: rgba(255, 255, 255, 0.44);
+}
+
+.city-select-search input:focus,
+.city-select-search input:focus-visible,
+.client-city-input:focus,
+.client-city-input:focus-visible,
+.client-explore-home input:focus,
+.client-explore-home input:focus-visible {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
 }
 
 .city-select-search-icon {
@@ -1641,6 +1655,19 @@ body[data-client-filters-open="true"] .client-shell-content {
   text-align: left;
 }
 
+.city-select-results button em {
+  margin-left: auto;
+  border: 1px solid rgba(214, 168, 58, 0.22);
+  border-radius: 999px;
+  background: rgba(214, 168, 58, 0.10);
+  padding: 6px 9px;
+  color: #f5b83b;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 .city-select-results button > svg {
   width: 22px;
   height: 22px;
@@ -1655,6 +1682,62 @@ body[data-client-filters-open="true"] .client-shell-content {
 .city-select-results small {
   margin-top: 4px;
   color: #9f9f9f;
+}
+
+.city-select-coming-soon {
+  display: grid;
+  justify-items: center;
+  border: 1px solid rgba(214, 168, 58, 0.24);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(245, 184, 59, 0.12), transparent 34%),
+    rgba(16, 16, 20, 0.78);
+  padding: 28px 20px;
+  text-align: center;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.32), 0 0 30px rgba(214, 168, 58, 0.08);
+}
+
+.city-select-coming-soon > span {
+  display: grid;
+  width: 62px;
+  height: 62px;
+  place-items: center;
+  border: 1px solid rgba(214, 168, 58, 0.28);
+  border-radius: 18px;
+  background: rgba(214, 168, 58, 0.10);
+  color: #f5b83b;
+}
+
+.city-select-coming-soon svg {
+  width: 30px;
+  height: 30px;
+}
+
+.city-select-coming-soon h2 {
+  margin-top: 18px;
+  color: #ffffff;
+  font-size: 23px;
+  font-weight: 950;
+  line-height: 1.18;
+}
+
+.city-select-coming-soon p {
+  margin-top: 12px;
+  color: #b8b8b8;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.city-select-coming-soon button {
+  min-height: 48px;
+  margin-top: 20px;
+  border: 1px solid rgba(245, 215, 140, 0.42);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f5d06a 0%, #d6a83a 56%, #9d7019 100%);
+  padding: 0 18px;
+  color: #080704;
+  font-size: 15px;
+  font-weight: 950;
 }
 
 .city-select-premium-card {

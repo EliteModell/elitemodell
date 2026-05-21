@@ -14,6 +14,7 @@ type Suggestion = {
 export default function SelecionarCidadePage() {
   const router = useRouter();
   const [input, setInput] = useState("");
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -57,13 +58,25 @@ export default function SelecionarCidadePage() {
     return () => clearTimeout(debounceRef.current);
   }, [input]);
 
-  function handleSelect(suggestion: Suggestion) {
-    const selectedCity = suggestion.secondaryText
+  function formatCity(suggestion: Suggestion) {
+    return suggestion.secondaryText
       ? `${suggestion.mainText}, ${suggestion.secondaryText.split(",")[0]}`
       : suggestion.mainText;
+  }
+
+  function handleSelect(suggestion: Suggestion) {
+    const selectedCity = formatCity(suggestion);
 
     window.localStorage.setItem("elite-client-city", selectedCity);
-    router.back();
+    setSelectedCity(selectedCity);
+    setSuggestions([]);
+  }
+
+  function resetSearch() {
+    setInput("");
+    setSelectedCity(null);
+    setSuggestions([]);
+    setTimeout(() => inputRef.current?.focus(), 80);
   }
 
   return (
@@ -107,7 +120,10 @@ export default function SelecionarCidadePage() {
           <input
             ref={inputRef}
             value={input}
-            onChange={(event) => setInput(event.target.value)}
+            onChange={(event) => {
+              setInput(event.target.value);
+              setSelectedCity(null);
+            }}
             placeholder="Digite 3 ou mais caracteres"
             autoComplete="off"
             autoCorrect="off"
@@ -119,7 +135,18 @@ export default function SelecionarCidadePage() {
         </label>
 
         <div className="city-select-results">
-          {input.trim().length < 3 ? (
+          {selectedCity ? (
+            <div className="city-select-coming-soon">
+              <span>
+                <MapPin />
+              </span>
+              <h2>Em breve teremos perfis em {selectedCity}</h2>
+              <p>Estamos atualizando a cobertura da EliteModell. Assim que houver perfis verificados nessa cidade, eles aparecerão aqui.</p>
+              <button type="button" onClick={resetSearch}>
+                Buscar outra cidade
+              </button>
+            </div>
+          ) : input.trim().length < 3 ? (
             <p>Digite pelo menos 3 caracteres para buscar uma cidade.</p>
           ) : loading ? (
             <p>Buscando cidades...</p>
@@ -133,6 +160,7 @@ export default function SelecionarCidadePage() {
                       <strong>{suggestion.mainText}</strong>
                       {suggestion.secondaryText ? <small>{suggestion.secondaryText}</small> : null}
                     </span>
+                    <em>Em breve</em>
                   </button>
                 </li>
               ))}
