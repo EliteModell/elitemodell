@@ -22,7 +22,7 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
   const [checking, setChecking] = useState(false);
   const [noResults, setNoResults] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (open) {
