@@ -4500,6 +4500,178 @@ body[data-client-explore="true"] .client-premium .client-bottom-nav > div {
   }
 }
 
+/* Client mobile width correction: keep one real 6px gutter instead of nested gutters. */
+.client-dashboard-shell .client-shell-content,
+.client-lists-shell .client-shell-content,
+.client-shots-shell .client-shell-content,
+body[data-client-explore="true"] .client-shell-content {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-bottom: calc(150px + env(safe-area-inset-bottom)) !important;
+  overflow-x: hidden !important;
+}
+
+.client-dashboard-shell > header > div,
+.client-lists-shell > header > div,
+.client-shots-shell > header > div,
+body[data-client-explore="true"] .client-premium > header > div {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+}
+
+.client-dashboard-home,
+.lists-page,
+.shots-page,
+body[data-client-explore="true"] .client-explore-home,
+.client-dashboard-shell .client-page,
+.client-dashboard-shell .client-page-tight,
+.client-dashboard-shell .client-page-header {
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+  overflow-x: hidden !important;
+}
+
+body[data-client-explore="true"] .client-explore-home {
+  padding: 136px 6px 30px !important;
+}
+
+body[data-client-explore="true"] .client-shell-content > .px-4,
+body[data-client-explore="true"] .client-shell-content > .px-5,
+body[data-client-explore="true"] .client-shell-content > .px-6,
+.client-lists-shell .client-shell-content > .px-4,
+.client-lists-shell .client-shell-content > .px-5,
+.client-lists-shell .client-shell-content > .px-6,
+.client-shots-shell .client-shell-content > .px-4,
+.client-shots-shell .client-shell-content > .px-5,
+.client-shots-shell .client-shell-content > .px-6 {
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+}
+
+.client-dashboard-shell .client-card,
+.client-dashboard-shell .client-panel,
+.client-dashboard-shell .client-action-card,
+.client-dashboard-shell .client-empty,
+.client-lists-shell .client-card,
+.client-lists-shell .client-panel,
+.client-lists-shell .lists-collection-card,
+.client-lists-shell .lists-empty-card,
+.client-shots-shell .client-card,
+.client-shots-shell .client-panel,
+.client-shots-shell .shots-search-bar,
+.client-shots-shell .shots-hero,
+.client-shots-shell .shots-filter-card,
+.client-shots-shell .shots-empty-card,
+.client-shots-shell .shots-safety-card,
+body[data-client-explore="true"] .client-card,
+body[data-client-explore="true"] .client-panel,
+body[data-client-explore="true"] .client-empty,
+body[data-client-explore="true"] .client-profile-card,
+body[data-client-explore="true"] .client-explore-home > div:nth-child(3),
+body[data-client-explore="true"] .client-explore-safety {
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.client-dashboard-action-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+.client-dashboard-action-card {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 132px !important;
+  padding: 15px !important;
+}
+
+.client-dashboard-shell .client-bottom-nav,
+.client-lists-shell .client-bottom-nav,
+.client-shots-shell .client-bottom-nav,
+body[data-client-explore="true"] .client-bottom-nav {
+  left: 6px !important;
+  right: 6px !important;
+  bottom: 0 !important;
+  width: auto !important;
+  max-width: none !important;
+  min-height: 86px !important;
+  transform: none !important;
+  padding: 0 0 env(safe-area-inset-bottom) !important;
+}
+
+.client-dashboard-shell .client-bottom-nav > div,
+.client-lists-shell .client-bottom-nav > div,
+.client-shots-shell .client-bottom-nav > div,
+body[data-client-explore="true"] .client-premium .client-bottom-nav > div {
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 86px !important;
+  border-radius: 22px 22px 0 0 !important;
+}
+
+@media (min-width: 480px) {
+  .client-dashboard-shell .client-shell-content,
+  .client-lists-shell .client-shell-content,
+  .client-shots-shell .client-shell-content,
+  body[data-client-explore="true"] .client-shell-content,
+  .client-dashboard-shell > header > div,
+  .client-lists-shell > header > div,
+  .client-shots-shell > header > div,
+  body[data-client-explore="true"] .client-premium > header > div,
+  .client-dashboard-home,
+  .lists-page,
+  .shots-page,
+  body[data-client-explore="true"] .client-explore-home {
+    max-width: 430px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .client-dashboard-home,
+  .lists-page,
+  .shots-page,
+  .client-dashboard-shell .client-page,
+  .client-dashboard-shell .client-page-tight,
+  .client-dashboard-shell .client-page-header {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  body[data-client-explore="true"] .client-explore-home {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .client-dashboard-shell .client-bottom-nav,
+  .client-lists-shell .client-bottom-nav,
+  .client-shots-shell .client-bottom-nav,
+  body[data-client-explore="true"] .client-bottom-nav {
+    left: 50% !important;
+    right: auto !important;
+    width: calc(100% - 20px) !important;
+    max-width: 430px !important;
+    transform: translateX(-50%) !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
