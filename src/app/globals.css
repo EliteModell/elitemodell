@@ -4682,3 +4682,160 @@ body[data-client-explore="true"] .client-premium .client-bottom-nav > div {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Final client dashboard mobile fixes: full-width cards, clear z-index layers, no stale overlays. */
+@media (max-width: 479px) {
+  .client-dashboard-shell.client-premium,
+  .client-dashboard-shell .client-shell-content,
+  .client-dashboard-home,
+  .client-dashboard-shell .client-page,
+  .client-dashboard-shell .client-page-tight,
+  .client-dashboard-shell .client-page-header {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  .client-dashboard-shell .client-shell-content {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-bottom: calc(160px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .client-dashboard-home,
+  .client-dashboard-shell .client-page,
+  .client-dashboard-shell .client-page-tight,
+  .client-dashboard-shell .client-page-header {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+
+  .client-dashboard-shell > header > div {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+
+  .client-dashboard-action-grid {
+    width: 100% !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .client-dashboard-action-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    min-height: 150px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 14px !important;
+  }
+
+  .client-dashboard-action-card .client-dashboard-icon {
+    width: 48px !important;
+    height: 48px !important;
+    flex-basis: 48px !important;
+  }
+
+  .client-dashboard-action-card [class*="text-[24px]"] {
+    font-size: 22px !important;
+    line-height: 1.14 !important;
+  }
+
+  .client-dashboard-action-card [class*="text-[15px]"] {
+    font-size: 14px !important;
+    line-height: 1.62 !important;
+  }
+
+  .client-dashboard-shell .client-bottom-nav {
+    left: 4px !important;
+    right: 4px !important;
+    width: auto !important;
+    max-width: none !important;
+    transform: none !important;
+    z-index: 9999 !important;
+  }
+}
+
+@media (min-width: 480px) {
+  .client-dashboard-shell .client-shell-content,
+  .client-dashboard-home,
+  .client-dashboard-shell > header > div {
+    max-width: 430px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .client-dashboard-home,
+  .client-dashboard-shell .client-page,
+  .client-dashboard-shell .client-page-tight,
+  .client-dashboard-shell .client-page-header {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .client-dashboard-shell .client-bottom-nav {
+    left: 50% !important;
+    right: auto !important;
+    width: calc(100% - 16px) !important;
+    max-width: 430px !important;
+    transform: translateX(-50%) !important;
+  }
+}
+
+.client-dashboard-shell::before,
+.client-dashboard-shell::after,
+.client-dashboard-shell .client-premium::before,
+.client-dashboard-shell .client-premium::after {
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+
+.client-dashboard-shell .client-shell-content,
+.client-dashboard-home,
+.client-dashboard-actions,
+.client-dashboard-stack,
+.client-dashboard-section {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.client-dashboard-welcome,
+.client-dashboard-action-card,
+.client-dashboard-shell .client-card,
+.client-dashboard-shell .client-panel,
+.client-dashboard-shell .premium-card,
+.client-dashboard-shell .verification-card,
+.client-dashboard-shell .level-card,
+.client-dashboard-level-card {
+  position: relative !important;
+  z-index: 2 !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.client-dashboard-actions::before,
+.client-dashboard-actions::after,
+.client-dashboard-action-grid::before,
+.client-dashboard-action-grid::after,
+.client-dashboard-home::before,
+.client-dashboard-home::after,
+.client-dashboard-stack::before,
+.client-dashboard-stack::after {
+  display: none !important;
+  content: none !important;
+}
+
+.client-dashboard-shell [class*="fixed"][class*="inset-0"].pointer-events-none {
+  pointer-events: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}

@@ -82,9 +82,9 @@ export default function SelecionarCidadePage() {
   function handleSelect(suggestion: Suggestion) {
     const selectedCity = formatCity(suggestion);
 
-    window.localStorage.setItem("elite-client-city", selectedCity);
     setSelectedCity(selectedCity);
     setSuggestions([]);
+    router.push(`/dashboard/acompanhantes?city=${encodeURIComponent(selectedCity)}`);
   }
 
   function resetSearch() {

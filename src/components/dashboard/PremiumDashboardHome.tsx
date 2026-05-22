@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ChevronRight,
   CircleAlert,
@@ -285,10 +285,7 @@ export default function PremiumDashboardHome({
   clientStatus?: string;
 }) {
   const pathname = usePathname();
-  const [selectedCity, setSelectedCity] = useState(() => {
-    if (typeof window === "undefined") return data.city;
-    return window.localStorage.getItem("elite-client-city") ?? data.city;
-  });
+  const router = useRouter();
   const [showCitySelector, setShowCitySelector] = useState(false);
 
   useEffect(() => {
@@ -327,16 +324,15 @@ export default function PremiumDashboardHome({
         <CitySelectorScreen
           onClose={() => setShowCitySelector(false)}
           onSelectCity={(city) => {
-            setSelectedCity(city);
-            window.localStorage.setItem("elite-client-city", city);
             setShowCitySelector(false);
+            router.push(`/dashboard/acompanhantes?city=${encodeURIComponent(city)}`);
           }}
         />
       )}
       <UserWelcomeCard
         name={data.user.name}
         image={data.user.image}
-        city={selectedCity}
+        city={data.city}
         onDefineCity={() => setShowCitySelector(true)}
       />
       <div className="client-page-tight mt-4 flex justify-end">
