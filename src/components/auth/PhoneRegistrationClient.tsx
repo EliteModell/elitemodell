@@ -2,14 +2,11 @@
 /* eslint-disable @next/next/no-img-element -- The logo is an SVG brand asset. */
 
 import { useEffect, useMemo, useState } from "react";
-import type { ConfirmationResult, RecaptchaVerifier } from "firebase/auth";
-import { signInWithPhoneNumber } from "firebase/auth";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { ArrowLeft, CheckCircle2, Info, Menu, Phone, ShieldCheck } from "lucide-react";
-import { getFirebaseClientAuth } from "@/lib/firebase/client";
 
 type FlowMode = "client" | "model" | "host";
 type ScreenMode = "register" | "verify";
@@ -21,9 +18,6 @@ type StoredConsent = {
   ageConfirmed?: boolean;
   ownershipConfirmed?: boolean;
 };
-
-let firebaseConfirmationResult: ConfirmationResult | null = null;
-let firebaseRecaptchaVerifier: RecaptchaVerifier | null = null;
 
 const GOLD = "#c9a84c";
 const INK = "#1f2a32";
@@ -367,13 +361,6 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
   const [statusMessage, setStatusMessage] = useState("");
   const [timer, setTimer] = useState(0);
 
-  useEffect(() => {
-    return () => {
-      if (screen !== "verify") return;
-      firebaseRecaptchaVerifier?.clear();
-      firebaseRecaptchaVerifier = null;
-    };
-  }, [screen]);
 
   useEffect(() => {
     const urlPhone = params.get("phone");
@@ -437,20 +424,18 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
     setStatusMessage("Enviando codigo de verificacao...");
 
     try {
-      const { RecaptchaVerifier: FirebaseRecaptchaVerifier } = await import("firebase/auth");
-      const auth = getFirebaseClientAuth();
-
-      firebaseRecaptchaVerifier?.clear();
-      firebaseRecaptchaVerifier = new FirebaseRecaptchaVerifier(auth, "firebase-phone-recaptcha", {
-        size: "invisible",
-        callback: () => undefined,
+      const res = await fetch("/api/auth/phone/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: normalized,
+          accountType: mode,
+          channel: "sms",
+          ...consent,
+        }),
       });
-
-      firebaseConfirmationResult = await signInWithPhoneNumber(
-        auth,
-        e164BrazilianPhone(normalized),
-        firebaseRecaptchaVerifier,
-      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Nao foi possivel enviar o codigo.");
 
       sessionStorage.setItem(storageKey, normalized);
       sessionStorage.setItem(consentKey, JSON.stringify(consent));
@@ -460,8 +445,6 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
       toast.success("Codigo enviado.");
       return true;
     } catch (err) {
-      firebaseRecaptchaVerifier?.clear();
-      firebaseRecaptchaVerifier = null;
       const message = err instanceof Error ? err.message : "Nao foi possivel enviar o codigo.";
       setOtpStatus("error");
       setStatusMessage(message);
@@ -494,14 +477,6 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
     setOtpStatus("verifying");
     setStatusMessage("Validando codigo...");
     try {
-      if (!firebaseConfirmationResult) {
-        throw new Error("Sessao de verificacao expirada. Solicite um novo codigo.");
-      }
-
-      const credential = await firebaseConfirmationResult.confirm(code);
-      const firebaseIdToken = await credential.user.getIdToken();
-      const consent = consentPayload();
-
       const res = await fetch("/api/auth/phone/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -509,18 +484,15 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
           phone: digits(phone),
           code,
           accountType: mode,
-          firebaseIdToken,
-          ...consent,
         }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Nao foi possivel verificar o codigo.");
 
-      const auth = await signIn("phone-otp-token", { token: data.authToken, redirect: false });
-      if (auth?.error) throw new Error("Codigo validado, mas nao foi possivel iniciar a sessao.");
+      const authResult = await signIn("phone-otp-token", { token: data.authToken, redirect: false });
+      if (authResult?.error) throw new Error("Codigo validado, mas nao foi possivel iniciar a sessao.");
 
       sessionStorage.removeItem(consentKey);
-      firebaseConfirmationResult = null;
       setOtpStatus("verified");
       setStatusMessage("Telefone validado com sucesso.");
       toast.success("Telefone verificado.");
@@ -587,7 +559,6 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
             Alterar telefone
           </button>
         </section>
-        <div id="firebase-phone-recaptcha" />
         <PremiumAuthFooter />
       </AuthShell>
     );
