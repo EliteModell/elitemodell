@@ -1,5 +1,5 @@
 "use client";
-import { Bell, ChevronRight, Globe, Lock, Shield, Smartphone } from "lucide-react";
+import { Bell, ChevronRight, Globe, Lock, Shield, Smartphone, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 function SettingRow({
@@ -78,6 +78,18 @@ export default function ConfiguracoesPage() {
           label="Privacidade"
           description="Controle quem vê seu perfil"
           href="/privacy"
+        />
+      </div>
+
+      <div className="client-card mt-6 overflow-hidden">
+        <p className="border-b border-white/10 px-5 py-4 text-[12px] font-black uppercase text-[#f5f0e4]/44">
+          Dados pessoais (LGPD)
+        </p>
+        <SettingRow
+          icon={<Trash2 className="h-5 w-5 text-red-400" />}
+          label="Excluir minha conta"
+          description="Remove seus dados pessoais conforme a LGPD"
+          href="/dashboard/configuracoes/excluir-conta"
         />
       </div>
     </div>

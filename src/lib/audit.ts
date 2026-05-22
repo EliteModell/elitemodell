@@ -1,9 +1,6 @@
-/**
- * Módulo de auditoria
- * Registra ações administrativas e de moderação
- */
+import { prisma } from "@/lib/prisma";
 
-export type AuditAction = 
+export type AuditAction =
   | "USER_CREATED"
   | "USER_VERIFIED"
   | "USER_BLOCKED"
@@ -45,33 +42,18 @@ export async function logAudit({
   userAgent,
 }: Omit<AuditLog, "id" | "timestamp">): Promise<void> {
   try {
-    // Aqui você integraria com o modelo AuditLog do Prisma
-    // Por enquanto, apenas log em console para desenvolvimento
-    console.log("[AUDIT]", {
-      timestamp: new Date().toISOString(),
-      adminId,
-      action,
-      targetType,
-      targetId,
-      changes,
-      reason,
-      ipAddress,
-      userAgent,
+    await prisma.auditLog.create({
+      data: {
+        adminId,
+        action,
+        targetType,
+        targetId,
+        changes: changes ? JSON.parse(JSON.stringify(changes)) : undefined,
+        reason,
+        ipAddress,
+        userAgent,
+      },
     });
-
-    // TODO: Descomentar quando adicionar AuditLog ao schema
-    // await prisma.auditLog.create({
-    //   data: {
-    //     adminId,
-    //     action,
-    //     targetType,
-    //     targetId,
-    //     changes,
-    //     reason,
-    //     ipAddress,
-    //     userAgent,
-    //   },
-    // });
   } catch (error) {
     console.error("[AUDIT ERROR]", error);
     // Não lance erro para não quebrar a operação principal
@@ -83,15 +65,11 @@ export async function logAudit({
  */
 export async function getAuditHistory(targetId: string, targetType: string) {
   try {
-    void targetId;
-    void targetType;
-    // TODO: Implementar quando adicionar AuditLog ao schema
-    // return await prisma.auditLog.findMany({
-    //   where: { targetId, targetType },
-    //   orderBy: { timestamp: "desc" },
-    //   take: 50,
-    // });
-    return [];
+    return await prisma.auditLog.findMany({
+      where: { targetId, targetType: targetType as "USER" | "PROFESSIONAL" | "PROPERTY" | "CONTENT" | "PAYMENT" | "SYSTEM" },
+      orderBy: { timestamp: "desc" },
+      take: 50,
+    });
   } catch (error) {
     console.error("[GET AUDIT ERROR]", error);
     return [];
