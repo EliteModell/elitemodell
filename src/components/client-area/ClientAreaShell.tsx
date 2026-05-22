@@ -280,7 +280,7 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
         onClick={onClose}
       />
       <aside
-        className={`fixed inset-y-0 left-0 z-[1001] w-[84vw] max-w-[390px] overflow-y-auto border-r border-[#d4a843]/14 bg-[#090a0b] shadow-[26px_0_80px_rgba(0,0,0,0.52)] transition-transform duration-300 ease-out ${
+        className={`client-side-drawer fixed inset-y-0 left-0 z-[1001] w-[84vw] max-w-[390px] overflow-y-auto border-r border-[#d4a843]/14 bg-[#090a0b] shadow-[26px_0_80px_rgba(0,0,0,0.52)] transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -369,7 +369,7 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
         </nav>
 
         {/* Drawer footer */}
-        <div className="px-5 pb-10 pt-5 text-center">
+        <div className="client-side-drawer-footer px-5 pb-10 pt-5 text-center">
           <div className="mx-3 mb-5 h-px bg-white/[0.07]" />
           <Link href="/" onClick={onClose} className="mx-auto inline-flex items-center rounded-[8px] border border-[#d4a843]/34 bg-[#d4a843]/10 px-4 py-2 no-underline shadow-[0_12px_30px_rgba(0,0,0,0.22)]">
             <span className="text-[17px] font-black leading-none">
@@ -484,7 +484,15 @@ export default function ClientAreaShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
+    document.body.dataset.clientDrawerOpen = drawerOpen ? "true" : "false";
+    return () => {
+      delete document.body.dataset.clientDrawerOpen;
+    };
+  }, [drawerOpen]);
+
+  useEffect(() => {
     setDrawerOpen(false);
+    delete document.body.dataset.clientDrawerOpen;
     delete document.body.dataset.clientFiltersOpen;
     delete document.body.dataset.cityKeyboardOpen;
 

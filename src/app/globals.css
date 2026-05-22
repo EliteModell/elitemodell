@@ -5106,6 +5106,45 @@ body[data-client-explore="true"] .client-premium .client-bottom-nav > div {
   }
 }
 
+/* Client drawer: keep footer reachable and hide bottom nav while open. */
+body[data-client-drawer-open="true"] .client-bottom-nav {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: translateY(18px) !important;
+}
+
+.client-side-drawer {
+  top: 0 !important;
+  bottom: auto !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.client-side-drawer nav {
+  padding-bottom: 10px !important;
+}
+
+.client-side-drawer-footer {
+  padding-top: 24px !important;
+  padding-bottom: calc(92px + env(safe-area-inset-bottom)) !important;
+}
+
+.client-side-drawer-footer > div:first-child {
+  margin-bottom: 24px !important;
+}
+
+.client-side-drawer-footer a,
+.client-side-drawer-footer .social-row,
+.client-side-drawer-footer p {
+  position: relative;
+  z-index: 1;
+}
+
 @media (min-width: 480px) {
   .client-premium .client-header-inner {
     max-width: 430px !important;
