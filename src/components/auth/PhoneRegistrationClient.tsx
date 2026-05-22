@@ -222,7 +222,7 @@ function PremiumAuthFooter() {
         </div>
         <div>
           <strong>Seguranca</strong>
-          <Link href="/verificacao">Verificacao de conta</Link>
+          <Link href="/dashboard/verificacao-idade">Verificacao de conta</Link>
           <Link href="/privacy">Como cuidamos dos seus dados</Link>
         </div>
       </div>

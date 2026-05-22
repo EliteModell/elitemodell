@@ -177,7 +177,7 @@ function AuthInfoFooter() {
         </div>
         <div>
           <h2>Segurança</h2>
-          <Link href="/verificacao">Verificação de conta</Link>
+          <Link href="/dashboard/verificacao-idade">Verificação de conta</Link>
           <Link href="/privacy">Como cuidamos dos seus dados</Link>
         </div>
       </section>

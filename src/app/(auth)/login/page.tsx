@@ -266,7 +266,7 @@ function LoginContent() {
         </div>
         <div>
           <h2>Seguranca</h2>
-          <Link href="/verificacao">Verificacao de conta</Link>
+          <Link href="/dashboard/verificacao-idade">Verificacao de conta</Link>
           <Link href="/privacy">Como cuidamos dos seus dados</Link>
         </div>
       </section>
