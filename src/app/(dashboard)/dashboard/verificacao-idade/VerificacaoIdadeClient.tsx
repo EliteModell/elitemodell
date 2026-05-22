@@ -37,17 +37,17 @@ export default function VerificacaoIdadeClient({
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? "Erro ao iniciar verificação. Tente novamente.");
+        setError(data.error ?? "Não foi possível iniciar a verificação. Tente novamente ou contate o suporte.");
         return;
       }
 
-      // Se Persona ou outro provedor retornou URL, redireciona
+      // Persona (ou outro provedor externo) retornou URL → redireciona
       if (data.url) {
         window.location.href = data.url;
         return;
       }
 
-      // Sem provedor externo: atualiza status localmente e recarrega
+      // Sem provedor externo (fallback manual): atualiza localmente e recarrega
       setStatus("pending");
       router.refresh();
     } catch {

@@ -32,6 +32,95 @@ export async function POST(req: Request) {
     );
   }
 
+  // Normaliza: aceita "persona", "PERSONA", "Persona " etc.
+  const kycProvider = process.env.KYC_PROVIDER?.trim().toUpperCase();
+
+  if (kycProvider === "PERSONA") {
+    const apiKey = process.env.PERSONA_API_KEY?.trim();
+    const templateId = process.env.PERSONA_TEMPLATE_ID?.trim();
+
+    // Validações de configuração antes de qualquer escrita no banco
+    if (!apiKey) {
+      console.error("[KYC] PERSONA_API_KEY nao configurada.");
+      return NextResponse.json(
+        { error: "Verificação indisponível: PERSONA_API_KEY ausente. Configure nas variáveis de ambiente." },
+        { status: 503 },
+      );
+    }
+
+    if (!templateId) {
+      console.error("[KYC] PERSONA_TEMPLATE_ID nao configurado.");
+      return NextResponse.json(
+        { error: "Verificação indisponível: PERSONA_TEMPLATE_ID ausente. Configure nas variáveis de ambiente." },
+        { status: 503 },
+      );
+    }
+
+    // Persona exige Inquiry Template (itmpl_), não Verification Template (vtmpl_)
+    if (!templateId.startsWith("itmpl_")) {
+      console.error(`[KYC] PERSONA_TEMPLATE_ID invalido: ${templateId.slice(0, 12)}... | Deve comecar com itmpl_`);
+      return NextResponse.json(
+        {
+          error:
+            "Configuração inválida: PERSONA_TEMPLATE_ID deve ser um Inquiry Template (itmpl_), não um Verification Template (vtmpl_). Crie um Inquiry Template no Persona Dashboard.",
+        },
+        { status: 503 },
+      );
+    }
+
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL ?? "").replace(/\/$/, "");
+    if (!appUrl) {
+      console.error("[KYC] NEXT_PUBLIC_APP_URL e NEXTAUTH_URL ambos ausentes.");
+      return NextResponse.json(
+        { error: "Verificação indisponível: URL da aplicação não configurada." },
+        { status: 503 },
+      );
+    }
+
+    const redirectUri = `${appUrl}/verificacao/callback`;
+
+    // Cria o inquiry NO PERSONA antes de escrever qualquer coisa no banco
+    let inquiryId: string;
+    let sessionToken: string | undefined;
+
+    try {
+      ({ inquiryId, sessionToken } = await createPersonaInquiry(session.user.id, redirectUri));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[KYC] Persona createInquiry falhou:", msg);
+      return NextResponse.json(
+        { error: `Não foi possível iniciar a verificação no Persona: ${msg}` },
+        { status: 502 },
+      );
+    }
+
+    // Só grava PENDING_REVIEW depois que o Persona confirmou criação
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        clientStatus: "PENDING_REVIEW",
+        kycSubmittedAt: new Date(),
+        kycSessionId: inquiryId,
+        kycRejectionReason: null,
+        termsVersion: "v1.0",
+      },
+      select: { id: true },
+    });
+
+    return NextResponse.json({
+      success: true,
+      status: "PENDING_REVIEW",
+      provider: "PERSONA",
+      url: buildPersonaUrl(inquiryId, sessionToken),
+    });
+  }
+
+  // Sem KYC_PROVIDER configurado: fallback manual (dev / sem integração)
+  // Em produção isso cria uma pendência para revisão manual da equipe.
+  if (kycProvider && kycProvider !== "LOCAL_MANUAL") {
+    console.warn(`[KYC] KYC_PROVIDER desconhecido: "${kycProvider}". Usando fallback manual.`);
+  }
+
   await prisma.user.update({
     where: { id: session.user.id },
     data: {
@@ -40,31 +129,8 @@ export async function POST(req: Request) {
       kycRejectionReason: null,
       termsVersion: "v1.0",
     },
+    select: { id: true },
   });
-
-  const kycProvider = process.env.KYC_PROVIDER?.trim();
-
-  if (kycProvider === "PERSONA") {
-    try {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-      const redirectUri = `${appUrl}/verificacao/callback`;
-      const { inquiryId, sessionToken } = await createPersonaInquiry(session.user.id, redirectUri);
-      await prisma.user.update({
-        where: { id: session.user.id },
-        data: { kycSessionId: inquiryId },
-      });
-      return NextResponse.json({
-        success: true,
-        status: "PENDING_REVIEW",
-        provider: "PERSONA",
-        url: buildPersonaUrl(inquiryId, sessionToken),
-      });
-    } catch (err) {
-      console.error("[KYC] Persona inquiry error:", err);
-      // Mantém PENDING_REVIEW para revisão manual se Persona falhar
-      return NextResponse.json({ success: true, status: "PENDING_REVIEW" });
-    }
-  }
 
   return NextResponse.json({ success: true, status: "PENDING_REVIEW" });
 }
