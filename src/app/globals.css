@@ -2745,6 +2745,9 @@ body[data-client-dashboard="true"] .client-premium,
   min-height: 150px !important;
   padding: 22px !important;
   gap: 18px !important;
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 .client-dashboard-icon,
