@@ -315,7 +315,10 @@ export default function CadastroPage() {
       }
 
       if (tipo === "cliente" && !legacyClientEmail) {
-        router.replace(ACCOUNT_ROUTES.cadastroCliente);
+        // Mostra o form de e-mail/senha diretamente para clientes
+        // (sem redirecionar para o fluxo de OTP por telefone)
+        setForm((current) => ({ ...current, accountType: "GUEST", category: "" }));
+        setAccountTypeSelected(true);
         return;
       }
 

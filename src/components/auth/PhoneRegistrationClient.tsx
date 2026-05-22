@@ -479,7 +479,8 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
       return;
     }
     if (await sendCode()) {
-      router.push(`${VERIFY_ROUTE[mode]}?phone=${digits(phone)}${returnUrl ? `&returnUrl=${encodeURIComponent(returnUrl)}` : ""}`);
+      // replace em vez de push: evita que "voltar" retorne à tela de telefone
+      router.replace(`${VERIFY_ROUTE[mode]}?phone=${digits(phone)}${returnUrl ? `&returnUrl=${encodeURIComponent(returnUrl)}` : ""}`);
     }
   }
 
@@ -524,7 +525,9 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
       setOtpStatus("verified");
       setStatusMessage("Telefone validado com sucesso.");
       toast.success("Telefone verificado.");
-      router.push(returnUrl ?? data.redirectTo ?? (mode === "host" ? "/anfitriao/imoveis/novo" : mode === "model" ? "/profissional/novo" : "/painel/cliente"));
+      // replace em vez de push: remove toda a pilha do fluxo OTP do histórico
+      // para que "voltar" não retorne à tela de código ou de telefone
+      router.replace(returnUrl ?? data.redirectTo ?? (mode === "host" ? "/anfitriao/imoveis/novo" : mode === "model" ? "/profissional/novo" : "/painel/cliente"));
       router.refresh();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Nao foi possivel verificar o codigo.";
