@@ -4963,6 +4963,149 @@ body[data-client-explore="true"] .client-premium .client-bottom-nav > div {
   margin-bottom: 32px !important;
 }
 
+/* Final dashboard spacing pass: wide cards with breathing room, no clipped text. */
+.client-dashboard-shell .client-shell-content {
+  padding-bottom: calc(190px + env(safe-area-inset-bottom)) !important;
+}
+
+.client-dashboard-home {
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+  padding-bottom: calc(190px + env(safe-area-inset-bottom)) !important;
+}
+
+.client-dashboard-shell .client-page,
+.client-dashboard-shell .client-page-tight,
+.client-dashboard-shell .client-page-header {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.client-dashboard-welcome {
+  padding: 20px !important;
+  margin-top: 24px !important;
+  margin-bottom: 36px !important;
+  overflow: visible !important;
+}
+
+.client-dashboard-actions {
+  margin-top: 0 !important;
+  margin-bottom: 34px !important;
+}
+
+.client-dashboard-action-grid {
+  display: grid !important;
+  width: 100% !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  column-gap: 14px !important;
+  row-gap: 20px !important;
+}
+
+.client-dashboard-action-card {
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 168px !important;
+  overflow: visible !important;
+}
+
+.client-dashboard-stack {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 22px !important;
+  padding-bottom: calc(70px + env(safe-area-inset-bottom)) !important;
+}
+
+.client-dashboard-section {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.client-dashboard-shell .client-card,
+.client-dashboard-shell .client-panel,
+.client-dashboard-shell .premium-card,
+.client-dashboard-level-card {
+  overflow: visible !important;
+}
+
+.client-dashboard-level-card {
+  min-height: auto !important;
+  padding: 20px 18px !important;
+  border-radius: 24px !important;
+}
+
+.client-dashboard-level-card p {
+  overflow: visible !important;
+}
+
+.client-dashboard-level-card p:first-child {
+  display: block !important;
+  line-height: 1.25 !important;
+  margin-bottom: 6px !important;
+  padding-top: 1px !important;
+}
+
+.client-dashboard-level-card p:nth-child(2) {
+  display: block !important;
+  line-height: 1.16 !important;
+  margin-top: 0 !important;
+  margin-bottom: 8px !important;
+}
+
+.client-dashboard-level-card .my-5 {
+  margin-top: 20px !important;
+  margin-bottom: 20px !important;
+}
+
+.client-dashboard-shell .client-bottom-nav {
+  left: 6px !important;
+  right: 6px !important;
+  width: auto !important;
+  max-width: none !important;
+  z-index: 9999 !important;
+}
+
+.client-dashboard-shell .client-bottom-nav + *,
+.client-dashboard-stack > :last-child {
+  margin-bottom: 40px !important;
+}
+
+@media (max-width: 379px) {
+  .client-dashboard-home {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+
+  .client-dashboard-action-grid {
+    column-gap: 12px !important;
+    row-gap: 18px !important;
+  }
+
+  .client-dashboard-action-card {
+    padding: 14px !important;
+  }
+}
+
+@media (min-width: 480px) {
+  .client-dashboard-home {
+    max-width: 430px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .client-dashboard-shell .client-bottom-nav {
+    left: 50% !important;
+    right: auto !important;
+    width: calc(100% - 16px) !important;
+    max-width: 430px !important;
+    transform: translateX(-50%) !important;
+  }
+}
+
 @media (min-width: 480px) {
   .client-premium .client-header-inner {
     max-width: 430px !important;

@@ -183,7 +183,7 @@ function QuickStatsSection({
 }) {
   return (
     <section className="client-page-tight client-dashboard-section">
-      <div className="client-card client-dashboard-level-card overflow-hidden p-5">
+      <div className="client-card client-dashboard-level-card p-5">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[11px] font-black uppercase tracking-wide text-[#f5d78c]/70">NIVEL ATUAL</p>
