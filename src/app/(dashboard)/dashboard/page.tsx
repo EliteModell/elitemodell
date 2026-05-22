@@ -15,6 +15,11 @@ export default async function DashboardPage() {
     redirect(ACCOUNT_ROUTES.login);
   }
 
+  // Usuário sem consentimento/maioridade → completar cadastro obrigatório
+  if (session.user.needsConsent) {
+    redirect("/completar-cadastro");
+  }
+
   // Proteção de rota: profissional aprovado não deve ver dashboard de cliente
   const userType = await prisma.user.findUnique({
     where: { id: session.user.id },

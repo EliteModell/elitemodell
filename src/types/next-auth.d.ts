@@ -19,6 +19,7 @@ declare module "next-auth" {
       accountType?: string;
       clientStatus?: string;
       isProfessional?: boolean;
+      needsConsent?: boolean;
     };
   }
 }
@@ -30,6 +31,7 @@ declare module "next-auth/jwt" {
     accountType?: string;
     clientStatus?: string;
     isProfessional?: boolean;
+    needsConsent?: boolean;
     name?: string | null;
     email?: string | null;
     picture?: string | null;

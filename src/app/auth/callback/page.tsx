@@ -38,6 +38,12 @@ async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRol
   if (!res.ok) return ACCOUNT_ROUTES.dashboardCliente;
 
   const user = await res.json();
+
+  // Usuário sem consentimento ou sem data de nascimento → completar cadastro obrigatório
+  if (!user.lgpdConsent || !user.termsConsent || !user.birthDate) {
+    return "/completar-cadastro";
+  }
+
   const isProfessional = PROFESSIONAL_CATEGORIES.includes(user.category);
 
   if (user.role === "HOST" && isProfessional) {

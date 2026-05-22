@@ -24,6 +24,7 @@ export async function GET() {
     select: {
       id: true, name: true, email: true, image: true, phone: true, phoneVerified: true, phoneVerifiedAt: true,
       city: true, state: true, document: true, role: true, accountType: true, category: true, birthDate: true, verified: true, credits: true,
+      lgpdConsent: true, termsConsent: true,
       createdAt: true, hostProfile: true, professional: {
         select: {
           id: true,

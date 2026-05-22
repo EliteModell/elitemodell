@@ -210,6 +210,9 @@ export const authOptions: NextAuthOptions = {
             role: true,
             accountType: true,
             clientStatus: true,
+            lgpdConsent: true,
+            termsConsent: true,
+            birthDate: true,
             professional: { select: { id: true } },
             blocked: true,
           },
@@ -227,6 +230,7 @@ export const authOptions: NextAuthOptions = {
           token.accountType = dbUser.accountType;
           token.clientStatus = dbUser.clientStatus;
           token.isProfessional = !!dbUser.professional;
+          token.needsConsent = !dbUser.lgpdConsent || !dbUser.termsConsent || !dbUser.birthDate;
         }
       }
       return token;
@@ -241,6 +245,7 @@ export const authOptions: NextAuthOptions = {
         session.user.accountType = token.accountType as string;
         session.user.clientStatus = token.clientStatus as string;
         session.user.isProfessional = token.isProfessional ?? false;
+      session.user.needsConsent = token.needsConsent ?? false;
       }
       return session;
     },
