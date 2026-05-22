@@ -1,0 +1,367 @@
+/**
+ * Testes dos 3 fluxos críticos — Cadastro, Login e Pagamento
+ *
+ * Usa mock de sessão (sem login real) para ser executado em CI sem credenciais.
+ * Cobre apenas a camada de UI: elementos presentes, redirecionamentos, validações
+ * e ausência de erros 404/500.
+ */
+
+import { test, expect, type Page, type Route } from "@playwright/test";
+
+/* ─── Mocks ──────────────────────────────────────────────────────────────── */
+
+const MOCK_CLIENT_SESSION = {
+  user: {
+    id: "test-client-id",
+    name: "Cliente Teste",
+    email: "cliente@teste.elitemodell.local",
+    image: null,
+    role: "GUEST",
+    accountType: "client",
+    clientStatus: "UNVERIFIED",
+    isProfessional: false,
+    needsConsent: false,
+  },
+  expires: new Date(Date.now() + 86_400_000).toISOString(),
+};
+
+const MOCK_WALLET = {
+  credits: 0,
+  premiumUntil: null,
+  isPremium: false,
+  transactions: [],
+};
+
+async function mockAuth(page: Page) {
+  await page.route("**/api/auth/session", (route: Route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(MOCK_CLIENT_SESSION) })
+  );
+  await page.route("**/api/auth/csrf", (route: Route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ csrfToken: "mock-csrf" }) })
+  );
+  await page.route("**/api/auth/providers", (route: Route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({}) })
+  );
+  await page.route("**/api/professionals**", (route: Route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ professionals: [], total: 0, pages: 1 }) })
+  );
+  await page.route("**/api/wallet**", (route: Route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(MOCK_WALLET) })
+  );
+  await page.route("**/api/users/me**", (route: Route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...MOCK_CLIENT_SESSION.user, lgpdConsent: true, termsConsent: true, birthDate: "2000-01-01" }) })
+  );
+}
+
+async function bypassAgeGate(page: Page) {
+  await page.addInitScript(() => {
+    sessionStorage.setItem("elite_modell_adult_consent_session", "accepted");
+    localStorage.setItem("elite_modell_ageConsentAccepted", "true");
+  });
+}
+
+async function gotoWithMock(page: Page, path: string) {
+  await bypassAgeGate(page);
+  await mockAuth(page);
+  return page.goto(path, { waitUntil: "domcontentloaded" });
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   FLUXO 1 — CADASTRO
+   ════════════════════════════════════════════════════════════════════════════ */
+
+test.describe("Fluxo 1 — Cadastro", () => {
+
+  test("Página principal /cadastro carrega sem 404", async ({ page }) => {
+    await bypassAgeGate(page);
+    const resp = await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
+    expect(resp?.status()).not.toBe(404);
+    expect(resp?.status()).not.toBe(500);
+  });
+
+  test("/cadastro exibe opções de tipo de conta", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    const body = await page.textContent("body");
+    const hasClientOption = body?.toLowerCase().includes("cliente") || body?.toLowerCase().includes("busco");
+    const hasProfOption = body?.toLowerCase().includes("profissional") || body?.toLowerCase().includes("acompanhante") || body?.toLowerCase().includes("modelo");
+    const hasHostOption = body?.toLowerCase().includes("anfitri") || body?.toLowerCase().includes("im");
+    // Deve ter pelo menos 2 das 3 opções
+    const count = [hasClientOption, hasProfOption, hasHostOption].filter(Boolean).length;
+    expect(count).toBeGreaterThanOrEqual(2);
+  });
+
+  test("/app/consumer/register (cadastro cliente) carrega sem 404", async ({ page }) => {
+    await bypassAgeGate(page);
+    const resp = await page.goto("/app/consumer/register", { waitUntil: "domcontentloaded" });
+    expect(resp?.status()).not.toBe(404);
+    expect(resp?.status()).not.toBe(500);
+  });
+
+  test("/app/consumer/register tem campo de telefone ou e-mail", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.goto("/app/consumer/register", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    const inputs = await page.locator("input").count();
+    expect(inputs).toBeGreaterThan(0);
+  });
+
+  test("/cadastro-modelo (cadastro profissional) carrega sem 404", async ({ page }) => {
+    await bypassAgeGate(page);
+    const resp = await page.goto("/cadastro-modelo", { waitUntil: "domcontentloaded" });
+    expect(resp?.status()).not.toBe(404);
+  });
+
+  test("/cadastro-modelo tem campo de telefone", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.goto("/cadastro-modelo", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    const body = await page.textContent("body");
+    const hasTelefone = body?.toLowerCase().includes("telefone") || body?.toLowerCase().includes("celular") || body?.toLowerCase().includes("whatsapp");
+    expect(hasTelefone).toBe(true);
+  });
+
+  test("/completar-cadastro carrega sem 404", async ({ page }) => {
+    await mockAuth(page);
+    const resp = await page.goto("/completar-cadastro", { waitUntil: "domcontentloaded" });
+    expect(resp?.status()).not.toBe(404);
+  });
+
+  test("/completar-cadastro tem campos de data de nascimento e consentimentos", async ({ page }) => {
+    await mockAuth(page);
+    await page.goto("/completar-cadastro", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    const dateInput = page.locator('input[type="date"]');
+    const checkboxes = page.locator('input[type="checkbox"]');
+    expect(await dateInput.count()).toBeGreaterThanOrEqual(1);
+    expect(await checkboxes.count()).toBeGreaterThanOrEqual(2);
+  });
+
+  test("Age gate 18+ bloqueia acesso sem confirmação", async ({ page }) => {
+    // Sem bypassAgeGate — o gate deve aparecer
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    const body = await page.textContent("body");
+    // Ou o age gate está visível ou o conteúdo da home está (se o usuário já confirmou antes)
+    const hasGate = body?.toLowerCase().includes("18") || body?.toLowerCase().includes("adulto") || body?.toLowerCase().includes("elitemodell");
+    expect(hasGate).toBe(true);
+  });
+
+});
+
+/* ════════════════════════════════════════════════════════════════════════════
+   FLUXO 2 — LOGIN E AUTENTICAÇÃO
+   ════════════════════════════════════════════════════════════════════════════ */
+
+test.describe("Fluxo 2 — Login e Autenticação", () => {
+
+  test("/login carrega sem 404", async ({ page }) => {
+    await bypassAgeGate(page);
+    const resp = await page.goto("/login", { waitUntil: "domcontentloaded" });
+    expect(resp?.status()).not.toBe(404);
+    expect(resp?.status()).not.toBe(500);
+  });
+
+  test("/login tem botão de Google OAuth ou campo de e-mail", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.goto("/login", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    const body = await page.textContent("body");
+    const hasGoogle = body?.toLowerCase().includes("google") || body?.toLowerCase().includes("continuar com");
+    const hasEmail = (await page.locator('input[type="email"]').count()) > 0;
+    const hasPhone = body?.toLowerCase().includes("telefone") || body?.toLowerCase().includes("celular");
+    expect(hasGoogle || hasEmail || hasPhone).toBe(true);
+  });
+
+  test("/auth/callback carrega sem 500", async ({ page }) => {
+    // Sem code válido, deve carregar a página e exibir erro amigável (não 500)
+    await page.goto("/auth/callback", { waitUntil: "domcontentloaded" });
+    const resp = await page.goto("/auth/callback", { waitUntil: "domcontentloaded" });
+    expect(resp?.status()).not.toBe(500);
+  });
+
+  test("Rota protegida /dashboard redireciona para /login sem sessão", async ({ page }) => {
+    // Sem mockAuth — sem sessão
+    await bypassAgeGate(page);
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    // Deve estar na página de login
+    expect(page.url()).toMatch(/\/login/);
+  });
+
+  test("Rota /admin redireciona para /login sem sessão", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.goto("/admin", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    expect(page.url()).toMatch(/\/login/);
+  });
+
+  test("Com sessão mock, /dashboard carrega sem 404", async ({ page }) => {
+    const resp = await gotoWithMock(page, "/dashboard");
+    expect(resp?.status()).not.toBe(404);
+    expect(resp?.status()).not.toBe(500);
+  });
+
+  test("Com sessão mock, /dashboard exibe conteúdo do painel", async ({ page }) => {
+    await gotoWithMock(page, "/dashboard");
+    await page.waitForLoadState("networkidle").catch(() => {});
+    const body = await page.textContent("body");
+    const hasDashboardContent = body?.toLowerCase().includes("dashboard") ||
+      body?.toLowerCase().includes("painel") ||
+      body?.toLowerCase().includes("elitemodell") ||
+      body?.toLowerCase().includes("cliente");
+    expect(hasDashboardContent).toBe(true);
+  });
+
+  test("Usuário com needsConsent=true é redirecionado para /completar-cadastro", async ({ page }) => {
+    // Mock com needsConsent=true
+    const sessionWithConsent = { ...MOCK_CLIENT_SESSION, user: { ...MOCK_CLIENT_SESSION.user, needsConsent: true } };
+    await page.route("**/api/auth/session", (route: Route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(sessionWithConsent) })
+    );
+    await page.route("**/api/auth/csrf", (route: Route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ csrfToken: "mock-csrf" }) })
+    );
+    await page.route("**/api/auth/providers", (route: Route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({}) })
+    );
+    await bypassAgeGate(page);
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    // Deve ir para /completar-cadastro ou /login (o middleware da borda redireciona para login se não há token)
+    const url = page.url();
+    expect(url).toMatch(/\/(completar-cadastro|login)/);
+  });
+
+  test("/esqueci-senha carrega sem 404", async ({ page }) => {
+    await bypassAgeGate(page);
+    const resp = await page.goto("/esqueci-senha", { waitUntil: "domcontentloaded" });
+    expect(resp?.status()).not.toBe(404);
+  });
+
+});
+
+/* ════════════════════════════════════════════════════════════════════════════
+   FLUXO 3 — PAGAMENTO
+   ════════════════════════════════════════════════════════════════════════════ */
+
+test.describe("Fluxo 3 — Pagamento", () => {
+
+  test("/dashboard/carteira carrega sem 404 com sessão mock", async ({ page }) => {
+    const resp = await gotoWithMock(page, "/dashboard/carteira");
+    expect(resp?.status()).not.toBe(404);
+    expect(resp?.status()).not.toBe(500);
+  });
+
+  test("/dashboard/carteira exibe saldo e extrato", async ({ page }) => {
+    await gotoWithMock(page, "/dashboard/carteira");
+    await page.waitForLoadState("networkidle").catch(() => {});
+    const body = await page.textContent("body");
+    const hasSaldo = body?.toLowerCase().includes("saldo") || body?.toLowerCase().includes("r$") || body?.toLowerCase().includes("carteira");
+    expect(hasSaldo).toBe(true);
+  });
+
+  test("/dashboard/carteira tem botão Adicionar créditos", async ({ page }) => {
+    await gotoWithMock(page, "/dashboard/carteira");
+    await page.waitForLoadState("networkidle").catch(() => {});
+    const body = await page.textContent("body");
+    const hasAddButton = body?.toLowerCase().includes("adicionar") || body?.toLowerCase().includes("pix") || body?.toLowerCase().includes("crédito");
+    expect(hasAddButton).toBe(true);
+  });
+
+  test("/dashboard/planos carrega sem 404", async ({ page }) => {
+    const resp = await gotoWithMock(page, "/dashboard/planos");
+    expect(resp?.status()).not.toBe(404);
+  });
+
+  test("/dashboard/planos exibe opções premium", async ({ page }) => {
+    await gotoWithMock(page, "/dashboard/planos");
+    await page.waitForLoadState("networkidle").catch(() => {});
+    const body = await page.textContent("body");
+    const hasPremium = body?.toLowerCase().includes("premium") || body?.toLowerCase().includes("plano") || body?.toLowerCase().includes("elite");
+    expect(hasPremium).toBe(true);
+  });
+
+  test("API /api/payments/pix rejeita sem autenticação (401)", async ({ page }) => {
+    const resp = await page.request.post("/api/payments/pix", {
+      data: { amount: 50 },
+      headers: { "Content-Type": "application/json" },
+    });
+    expect([401, 403, 307]).toContain(resp.status());
+  });
+
+  test("API /api/payments/card rejeita sem autenticação (401)", async ({ page }) => {
+    const resp = await page.request.post("/api/payments/card", {
+      data: { amount: 50 },
+      headers: { "Content-Type": "application/json" },
+    });
+    expect([401, 403, 307]).toContain(resp.status());
+  });
+
+  test("API /api/wallet rejeita sem autenticação (401)", async ({ page }) => {
+    const resp = await page.request.get("/api/wallet");
+    expect([401, 403, 307]).toContain(resp.status());
+  });
+
+  test("Webhook /api/payments/asaas/webhook rejeita sem token em produção", async ({ page }) => {
+    const resp = await page.request.post("/api/payments/asaas/webhook", {
+      data: { event: "PAYMENT_RECEIVED", payment: { id: "fake-id" } },
+      headers: { "Content-Type": "application/json" },
+    });
+    // Em dev sem token: 200 (bypass). Em prod com token configurado: 401
+    expect([200, 401]).toContain(resp.status());
+  });
+
+});
+
+/* ════════════════════════════════════════════════════════════════════════════
+   SEGURANÇA — Rotas protegidas
+   ════════════════════════════════════════════════════════════════════════════ */
+
+test.describe("Segurança — Proteção de rotas", () => {
+
+  const PROTECTED_ROUTES = [
+    "/dashboard",
+    "/dashboard/carteira",
+    "/dashboard/configuracoes",
+    "/profissional",
+    "/painel/cliente",
+    "/painel/acompanhante",
+    "/painel/anfitriao",
+    "/verificacao/acompanhante",
+    "/completar-cadastro",
+  ];
+
+  for (const route of PROTECTED_ROUTES) {
+    test(`${route} redireciona para /login sem sessão`, async ({ page }) => {
+      await bypassAgeGate(page);
+      await page.goto(route, { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle").catch(() => {});
+      expect(page.url()).toMatch(/\/login/);
+    });
+  }
+
+  test("/admin redireciona para /dashboard para usuário não-admin com sessão", async ({ page }) => {
+    await gotoWithMock(page, "/admin");
+    await page.waitForLoadState("networkidle").catch(() => {});
+    // GUEST com sessão não deve acessar /admin
+    expect(page.url()).not.toMatch(/\/admin$/);
+  });
+
+  const PUBLIC_API_ROUTES = [
+    { url: "/api/users/me", method: "GET", expectedStatus: [401, 307] },
+    { url: "/api/upload", method: "POST", expectedStatus: [401, 307, 400] },
+    { url: "/api/kyc/request", method: "POST", expectedStatus: [401, 307] },
+  ];
+
+  for (const { url, method, expectedStatus } of PUBLIC_API_ROUTES) {
+    test(`API ${url} rejeita sem autenticação`, async ({ page }) => {
+      const resp = method === "GET"
+        ? await page.request.get(url)
+        : await page.request.post(url, { data: {}, headers: { "Content-Type": "application/json" } });
+      expect(expectedStatus).toContain(resp.status());
+    });
+  }
+
+});

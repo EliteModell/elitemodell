@@ -39,6 +39,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "critical-flows",
+      testMatch: "**/critical-flows.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "authenticated",
       testMatch: "**/client-area-authenticated.spec.ts",
       use: {
