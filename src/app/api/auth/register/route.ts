@@ -61,15 +61,31 @@ export async function POST(req: NextRequest) {
     }
 
     if (existing) {
+      // Segurança: nunca alterar role/accountType/category de conta existente.
+      // Evita que um cliente se autopromova a modelo/anfitrião via parâmetro.
+      // Upgrades legítimos devem usar endpoints dedicados com verificação adicional.
+      const isProtectedAccount = existing.role === "ADMIN" ||
+        existing.accountType === "model" ||
+        existing.accountType === "host";
+
+      if (isProtectedAccount && existing.accountType !== publicAccountType) {
+        // Conta já tem tipo definido — retorna sucesso sem alterar tipo
+        return NextResponse.json(
+          { id: existing.id, name: existing.name, email: existing.email, role: existing.role },
+          { status: 200 }
+        );
+      }
+
       const user = await prisma.user.update({
         where: { id: existing.id },
         data: {
           name: existing.name ?? (authUser.user_metadata?.name as string | undefined) ?? null,
           image: existing.image ?? (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
           phone: existing.phone ?? phone ?? null,
-          role: existing.role === "ADMIN" ? "ADMIN" : savedRole,
-          accountType: existing.accountType === "admin" ? "admin" : publicAccountType,
-          category: category ?? existing.category,
+          // Preserva role e accountType originais — não permite mudança via request
+          role: existing.role,
+          accountType: existing.accountType,
+          category: existing.category ?? category,
           birthDate: birthDate ? new Date(birthDate) : existing.birthDate,
           lgpdConsent: existing.lgpdConsent || lgpdConsent,
           termsConsent: existing.termsConsent || termsConsent,
@@ -78,7 +94,7 @@ export async function POST(req: NextRequest) {
         select: { id: true, name: true, email: true, role: true },
       });
 
-      if (savedRole === "HOST") {
+      if (existing.role === "HOST" && existing.accountType === "model") {
         await prisma.hostProfile.upsert({
           where: { userId: existing.id },
           create: { userId: existing.id },

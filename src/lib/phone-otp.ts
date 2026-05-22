@@ -84,7 +84,13 @@ export function emailForPhone(phone: string, accountType: PhoneAccountType) {
   return `phone_${accountType}_${normalizeBrazilianPhone(phone)}@sms.elitemodell.local`;
 }
 
-export function roleForPhoneAccount(accountType: PhoneAccountType) {
+// Nota de design: o banco usa role "HOST" para profissionais/modelos
+// e role "GUEST" para clientes e anfitriões. A separação real é via accountType.
+// "HOST" aqui significa "conta não-client" no esquema legado do banco.
+export function roleForPhoneAccount(accountType: PhoneAccountType): "HOST" | "GUEST" {
+  // model → HOST (necessário para requireCompanionPanel reconhecer)
+  // host → GUEST (anfitrião é distinguido via accountType="host", não via role)
+  // client → GUEST
   return accountType === "model" ? "HOST" : "GUEST";
 }
 

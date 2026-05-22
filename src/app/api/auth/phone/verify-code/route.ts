@@ -91,6 +91,14 @@ async function persistVerifiedPhone({
       },
     });
 
+    // Proteção contra mistura de tipos: nunca alterar accountType/role de conta existente.
+    // Usuário existente pode ter sido criado via outro fluxo — preservar tipo original.
+    const preserveExistingType = existing && (
+      existing.role === "ADMIN" ||
+      existing.accountType === "model" ||
+      existing.accountType === "host"
+    );
+
     const savedUser = existing
       ? await tx.user.update({
           where: { id: existing.id },
@@ -98,8 +106,9 @@ async function persistVerifiedPhone({
             phone,
             phoneVerified: true,
             phoneVerifiedAt: existing.phoneVerifiedAt ?? now,
-            accountType: existing.role === "ADMIN" ? existing.accountType : accountType,
-            role: existing.role === "ADMIN" ? "ADMIN" : role,
+            // Preservar tipo original se conta já tem tipo definido
+            accountType: preserveExistingType ? existing.accountType : accountType,
+            role: preserveExistingType ? existing.role : role,
             termsConsent: existing.termsConsent || consent.termsConsent,
             lgpdConsent: existing.lgpdConsent || consent.lgpdConsent,
             consentDate: existing.consentDate ?? now,

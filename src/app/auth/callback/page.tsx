@@ -243,18 +243,38 @@ function AuthCallbackContent() {
       const pendingRaw = sessionStorage.getItem("elitemodell_pending_registration");
       let pendingRegistration: PendingRegistration | null = null;
       if (pendingRaw) {
-        const pending = JSON.parse(pendingRaw) as PendingRegistration;
-        pendingRegistration = pending;
-        const regRes = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ accessToken, ...pending }),
-        });
-        if (!regRes.ok) {
-          const payload = await regRes.json().catch(() => ({}));
-          throw new Error(typeof payload.error === "string" ? payload.error : "Erro ao criar conta.");
+        let pending: PendingRegistration | null = null;
+        try {
+          const parsed = JSON.parse(pendingRaw) as unknown;
+          // Validação mínima: garantir que accountType é um valor aceito
+          const validTypes = ["GUEST", "PROFESSIONAL", "PROPERTY_HOST"];
+          if (
+            parsed &&
+            typeof parsed === "object" &&
+            (!("accountType" in parsed) || validTypes.includes((parsed as PendingRegistration).accountType ?? ""))
+          ) {
+            pending = parsed as PendingRegistration;
+          }
+        } catch {
+          // sessionStorage corrompido — ignora silenciosamente
         }
-        sessionStorage.removeItem("elitemodell_pending_registration");
+
+        if (pending) {
+          pendingRegistration = pending;
+          const regRes = await fetch("/api/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ accessToken, ...pending }),
+          });
+          if (!regRes.ok) {
+            const payload = await regRes.json().catch(() => ({}));
+            // Conta já existente com tipo diferente — não é erro fatal, apenas segue o fluxo
+            if (regRes.status !== 200) {
+              throw new Error(typeof payload.error === "string" ? payload.error : "Erro ao criar conta.");
+            }
+          }
+          sessionStorage.removeItem("elitemodell_pending_registration");
+        }
       }
 
       const res = await signIn("supabase", { accessToken, redirect: false });
