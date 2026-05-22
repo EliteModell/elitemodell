@@ -24,7 +24,122 @@ const schema = z.object({
   phone: z.string().min(10),
   code: z.string().regex(/^\d{4,6}$/),
   accountType: z.enum(PHONE_ACCOUNT_TYPES).default("client"),
+  firebaseIdToken: z.string().min(20).optional(),
+  termsConsent: z.boolean().optional(),
+  lgpdConsent: z.boolean().optional(),
+  ageConfirmed: z.boolean().optional(),
+  ownershipConfirmed: z.boolean().optional(),
 });
+
+type VerifiedConsent = {
+  termsConsent: boolean;
+  lgpdConsent: boolean;
+  ageConfirmed: boolean;
+  ownershipConfirmed: boolean;
+};
+
+async function verifyFirebasePhoneIdToken(idToken: string, expectedPhone: string) {
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  if (!apiKey) {
+    console.error("[firebase] NEXT_PUBLIC_FIREBASE_API_KEY ausente no servidor para validar Phone Auth.");
+    throw new Error("Firebase nao esta configurado no servidor.");
+  }
+
+  const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ idToken }),
+  });
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    console.error("[firebase] Falha ao validar idToken de telefone.", data);
+    throw new Error("Nao foi possivel validar o codigo no Firebase.");
+  }
+
+  const user = Array.isArray(data.users) ? data.users[0] : null;
+  const firebasePhone = typeof user?.phoneNumber === "string" ? user.phoneNumber.replace(/\D/g, "") : "";
+  if (firebasePhone !== `55${expectedPhone}`) {
+    throw new Error("Telefone validado no Firebase nao corresponde ao telefone informado.");
+  }
+}
+
+async function persistVerifiedPhone({
+  phone,
+  accountType,
+  consent,
+  verificationId,
+}: {
+  phone: string;
+  accountType: (typeof PHONE_ACCOUNT_TYPES)[number];
+  consent: VerifiedConsent;
+  verificationId?: string;
+}) {
+  const now = new Date();
+  const role = roleForPhoneAccount(accountType);
+  const localEmail = emailForPhone(phone, accountType);
+  const legacyEmail = `phone_${phone}@sms.elitemodell.local`;
+
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.user.findFirst({
+      where: {
+        OR: [
+          { phone },
+          { email: localEmail },
+          { email: legacyEmail },
+        ],
+      },
+    });
+
+    const savedUser = existing
+      ? await tx.user.update({
+          where: { id: existing.id },
+          data: {
+            phone,
+            phoneVerified: true,
+            phoneVerifiedAt: existing.phoneVerifiedAt ?? now,
+            accountType: existing.role === "ADMIN" ? existing.accountType : accountType,
+            role: existing.role === "ADMIN" ? "ADMIN" : role,
+            termsConsent: existing.termsConsent || consent.termsConsent,
+            lgpdConsent: existing.lgpdConsent || consent.lgpdConsent,
+            consentDate: existing.consentDate ?? now,
+          },
+        })
+      : await tx.user.create({
+          data: {
+            email: localEmail,
+            name: nameForPhoneAccount(accountType),
+            phone,
+            phoneVerified: true,
+            phoneVerifiedAt: now,
+            accountType,
+            role,
+            termsConsent: consent.termsConsent,
+            lgpdConsent: consent.lgpdConsent,
+            consentDate: now,
+          },
+        });
+
+    if (verificationId) {
+      await tx.phoneVerificationCode.updateMany({
+        where: {
+          phone,
+          accountType,
+          usedAt: null,
+          id: { not: verificationId },
+        },
+        data: { usedAt: now },
+      });
+
+      await tx.phoneVerificationCode.update({
+        where: { id: verificationId },
+        data: { usedAt: now, attempts: { increment: 1 }, userId: savedUser.id },
+      });
+    }
+
+    return savedUser;
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,6 +149,46 @@ export async function POST(req: NextRequest) {
 
     if (!isValidBrazilianMobilePhone(phone)) {
       return NextResponse.json({ error: "Informe um celular brasileiro valido." }, { status: 400 });
+    }
+
+    if (body.firebaseIdToken) {
+      const consent = {
+        termsConsent: Boolean(body.termsConsent),
+        lgpdConsent: Boolean(body.lgpdConsent),
+        ageConfirmed: Boolean(body.ageConfirmed),
+        ownershipConfirmed: Boolean(body.ownershipConfirmed),
+      };
+
+      if (!consent.termsConsent || !consent.lgpdConsent) {
+        return NextResponse.json(
+          { error: "Consentimentos obrigatorios ausentes. Solicite um novo codigo." },
+          { status: 400 }
+        );
+      }
+
+      if (body.accountType !== "client" && (!consent.ageConfirmed || !consent.ownershipConfirmed)) {
+        return NextResponse.json(
+          { error: "Confirmacoes obrigatorias ausentes. Solicite um novo codigo." },
+          { status: 400 }
+        );
+      }
+
+      await verifyFirebasePhoneIdToken(body.firebaseIdToken, phone);
+      const user = await persistVerifiedPhone({
+        phone,
+        accountType: body.accountType,
+        consent,
+      });
+
+      return NextResponse.json({
+        ok: true,
+        phone: formatBrazilianPhone(phone),
+        phoneVerified: true,
+        phoneVerifiedAt: user.phoneVerifiedAt,
+        accountType: body.accountType,
+        authToken: createPhoneAuthToken(user.id, phone),
+        redirectTo: redirectForPhoneAccount(body.accountType),
+      });
     }
 
     const phoneLimit = checkRateLimit(
@@ -100,67 +255,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const now = new Date();
-    const role = roleForPhoneAccount(body.accountType);
-    const localEmail = emailForPhone(phone, body.accountType);
-    const legacyEmail = `phone_${phone}@sms.elitemodell.local`;
-
-    const user = await prisma.$transaction(async (tx) => {
-      const existing = await tx.user.findFirst({
-        where: {
-          OR: [
-            { phone },
-            { email: localEmail },
-            { email: legacyEmail },
-          ],
-        },
-      });
-
-      const savedUser = existing
-        ? await tx.user.update({
-            where: { id: existing.id },
-            data: {
-              phone,
-              phoneVerified: true,
-              phoneVerifiedAt: existing.phoneVerifiedAt ?? now,
-              accountType: existing.role === "ADMIN" ? existing.accountType : body.accountType,
-              role: existing.role === "ADMIN" ? "ADMIN" : role,
-              termsConsent: existing.termsConsent || verification.termsConsent,
-              lgpdConsent: existing.lgpdConsent || verification.lgpdConsent,
-              consentDate: existing.consentDate ?? now,
-            },
-          })
-        : await tx.user.create({
-            data: {
-              email: localEmail,
-              name: nameForPhoneAccount(body.accountType),
-              phone,
-              phoneVerified: true,
-              phoneVerifiedAt: now,
-              accountType: body.accountType,
-              role,
-              termsConsent: verification.termsConsent,
-              lgpdConsent: verification.lgpdConsent,
-              consentDate: now,
-            },
-          });
-
-      await tx.phoneVerificationCode.updateMany({
-        where: {
-          phone,
-          accountType: body.accountType,
-          usedAt: null,
-          id: { not: verification.id },
-        },
-        data: { usedAt: now },
-      });
-
-      await tx.phoneVerificationCode.update({
-        where: { id: verification.id },
-        data: { usedAt: now, attempts: { increment: 1 }, userId: savedUser.id },
-      });
-
-      return savedUser;
+    const user = await persistVerifiedPhone({
+      phone,
+      accountType: body.accountType,
+      consent: {
+        termsConsent: verification.termsConsent,
+        lgpdConsent: verification.lgpdConsent,
+        ageConfirmed: verification.ageConfirmed,
+        ownershipConfirmed: verification.ownershipConfirmed,
+      },
+      verificationId: verification.id,
     });
 
     return NextResponse.json({
