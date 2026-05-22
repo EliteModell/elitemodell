@@ -115,15 +115,15 @@ export function LocationSearchBar({ onOpen }: { onOpen: () => void }) {
     <button
       type="button"
       onClick={onOpen}
-      className="group flex min-h-[50px] w-full items-center gap-3 rounded-[10px] border border-white/[0.10] bg-white/[0.07] px-4 text-[14px] backdrop-blur-sm transition-all duration-200 active:scale-[0.985] active:bg-white/[0.10]"
+      className="client-global-search group flex min-h-[50px] w-full items-center gap-3 rounded-[10px] border border-white/[0.10] bg-white/[0.07] px-4 text-[14px] backdrop-blur-sm transition-all duration-200 active:scale-[0.985] active:bg-white/[0.10]"
     >
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[7px] border border-[#d4a843]/22 bg-[#d4a843]/14 text-[#f5d78c] transition-transform duration-200 group-active:scale-105">
+      <span className="client-global-search-icon grid h-8 w-8 shrink-0 place-items-center rounded-[7px] border border-[#d4a843]/22 bg-[#d4a843]/14 text-[#f5d78c] transition-transform duration-200 group-active:scale-105">
         <Search className="h-4 w-4" />
       </span>
-      <span className="min-w-0 flex-1 truncate text-left text-[14px] font-semibold text-[#f5f0e4]/55">
+      <span className="client-global-search-label min-w-0 flex-1 truncate text-left text-[14px] font-semibold text-[#f5f0e4]/55">
         {isLists ? "Buscar perfis ou cidade" : "Cidade, nome ou característica"}
       </span>
-      <span className="shrink-0 rounded-[7px] border border-[#d4a843]/28 bg-[#d4a843]/16 px-3 py-1.5 text-[11px] font-black uppercase text-[#f5d78c]">
+      <span className="client-global-search-button shrink-0 rounded-[7px] border border-[#d4a843]/28 bg-[#d4a843]/16 px-3 py-1.5 text-[11px] font-black uppercase text-[#f5d78c]">
         Buscar
       </span>
     </button>
@@ -142,20 +142,19 @@ export function MobileHeader({
 }) {
   const pathname = usePathname();
   const isExplore = pathname === ACCOUNT_ROUTES.mainClientFeed;
-  const isShots = pathname === "/dashboard/shots";
   const isLists = pathname === "/dashboard/favoritos";
   const isProfile = pathname === "/dashboard/perfil";
   const isCitySelector = pathname === "/dashboard/selecionar-cidade";
-  const showHeaderSearch = !isExplore && !isShots && !isProfile && !isCitySelector;
+  const showHeaderSearch = !isExplore && !isProfile && !isCitySelector;
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[#d4a843]/14 bg-[#08090a]/92 shadow-[0_16px_46px_rgba(0,0,0,0.30)] backdrop-blur-2xl">
-      <div className={`mx-auto max-w-[760px] px-4 pt-4 ${isExplore ? "pb-3" : "pb-4"}`}>
-        <div className={`grid h-11 items-center ${isLists ? "grid-cols-[56px_1fr_116px]" : "grid-cols-[44px_1fr_44px]"}`}>
+    <header className="client-header sticky top-0 z-30 border-b border-[#d4a843]/14 bg-[#08090a]/92 shadow-[0_16px_46px_rgba(0,0,0,0.30)] backdrop-blur-2xl">
+      <div className={`client-header-inner mx-auto max-w-[760px] px-4 pt-4 ${isExplore ? "pb-3" : "pb-4"}`}>
+        <div className="client-header-top grid h-11 items-center grid-cols-[48px_1fr_48px]">
           {backHref ? (
             <Link
               href={backHref}
-              className="grid h-10 w-10 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/72"
+              className="client-header-icon-button grid h-10 w-10 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/72"
               aria-label="Voltar"
             >
               <ChevronRight className="h-6 w-6 rotate-180" />
@@ -164,23 +163,23 @@ export function MobileHeader({
             <button
               type="button"
               onClick={onMenu}
-              className="grid h-10 w-10 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/72 transition-colors active:bg-white/10"
+              className="client-header-icon-button grid h-10 w-10 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/72 transition-colors active:bg-white/10"
               aria-label="Abrir menu"
             >
               <Menu className="h-6 w-6" />
             </button>
           )}
-          <div className="flex justify-center">
+          <div className="client-header-logo flex justify-center">
             <BrandLogo />
           </div>
           {isLists ? (
-            <div className="flex items-center justify-end gap-2">
-              <button type="button" className="grid h-10 w-10 place-items-center rounded-[8px] text-[#f5f0e4]/72" aria-label="Criar lista">
+            <div className="client-header-actions flex items-center justify-end gap-2">
+              <button type="button" className="client-header-extra-button grid h-10 w-10 place-items-center rounded-[8px] text-[#f5f0e4]/72" aria-label="Criar lista">
                 <Plus className="h-6 w-6" />
               </button>
               <Link
                 href="/notifications"
-                className="grid h-10 w-10 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/72"
+                className="client-header-icon-button grid h-10 w-10 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/72"
                 aria-label="Notificações"
               >
                 <Bell className="h-5 w-5" />
@@ -192,7 +191,7 @@ export function MobileHeader({
           ) : (
             <Link
               href="/notifications"
-              className="grid h-10 w-10 place-items-center justify-self-end rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/72"
+              className="client-header-icon-button grid h-10 w-10 place-items-center justify-self-end rounded-[8px] border border-white/10 bg-white/[0.045] text-[#f5f0e4]/72"
               aria-label="Notificações"
             >
               <Bell className="h-5 w-5" />
@@ -200,7 +199,7 @@ export function MobileHeader({
           )}
         </div>
         {showHeaderSearch && (
-          <div className="mt-4">
+          <div className="client-header-search-wrap mt-4">
             <LocationSearchBar onOpen={onCityModal} />
           </div>
         )}
