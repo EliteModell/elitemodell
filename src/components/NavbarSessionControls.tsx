@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
-import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import { accountHomePathFromSession } from "@/lib/account-routes";
 import { supabaseAuth } from "@/lib/supabase-client";
 
 type Variant = "desktopLinks" | "authActions" | "mobileMenu";
@@ -29,12 +29,19 @@ function canSeeLocations(session: ReturnType<typeof useSession>["data"]) {
 export default function NavbarSessionControls({
   variant,
   onNavigate,
+  onLoginChoice,
+  onRegisterChoice,
+  showGuestActions = true,
 }: {
   variant: Variant;
   onNavigate?: () => void;
+  onLoginChoice?: () => void;
+  onRegisterChoice?: () => void;
+  showGuestActions?: boolean;
 }) {
   const { data: session, status } = useSession();
   const showLocations = canSeeLocations(session);
+  const accountHref = accountHomePathFromSession(session?.user);
 
   async function handleSignOut() {
     await supabaseAuth.auth.signOut();
@@ -71,23 +78,23 @@ export default function NavbarSessionControls({
         ) : null}
         {status === "loading" ? null : session ? (
           <>
-            <Link href={ACCOUNT_ROUTES.mainClientFeed} onClick={onNavigate} style={{ padding: "10px 14px", borderRadius: 8, color: "#d4a843", textDecoration: "none", fontSize: 14, border: "1px solid rgba(212,168,67,0.2)" }}>
-              Explorar
+            <Link href={accountHref} onClick={onNavigate} style={{ padding: "10px 14px", borderRadius: 8, color: "#d4a843", textDecoration: "none", fontSize: 14, border: "1px solid rgba(212,168,67,0.2)" }}>
+              Minha área
             </Link>
             <button type="button" onClick={handleSignOut} style={{ padding: "10px 14px", borderRadius: 8, color: "#d4a843", background: "transparent", fontSize: 14, border: "1px solid rgba(212,168,67,0.2)", textAlign: "left" }}>
               Sair
             </button>
           </>
-        ) : (
+        ) : showGuestActions ? (
           <>
-            <Link href={ACCOUNT_ROUTES.login} onClick={onNavigate} style={{ padding: "10px 14px", borderRadius: 8, color: "#d4a843", textDecoration: "none", fontSize: 14, border: "1px solid rgba(212,168,67,0.2)" }}>
+            <button type="button" onClick={onLoginChoice} style={{ padding: "10px 14px", borderRadius: 8, color: "#d4a843", background: "transparent", textDecoration: "none", fontSize: 14, border: "1px solid rgba(212,168,67,0.2)", textAlign: "left" }}>
               Entrar
-            </Link>
-            <Link href={ACCOUNT_ROUTES.cadastro} onClick={onNavigate} style={{ padding: "10px 14px", borderRadius: 8, background: "#d4a843", color: "#080704", textDecoration: "none", fontSize: 14, fontWeight: 800, textAlign: "center" }}>
+            </button>
+            <button type="button" onClick={onRegisterChoice} style={{ padding: "10px 14px", borderRadius: 8, background: "#d4a843", color: "#080704", textDecoration: "none", fontSize: 14, fontWeight: 800, textAlign: "center", border: 0 }}>
               Cadastrar
-            </Link>
+            </button>
           </>
-        )}
+        ) : null}
       </>
     );
   }
@@ -99,7 +106,7 @@ export default function NavbarSessionControls({
   if (session) {
     return (
       <>
-        <Link className="nav-auth-link" href={ACCOUNT_ROUTES.mainClientFeed} style={{ padding: "8px 18px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14, fontWeight: 500, border: "1px solid rgba(212,168,67,0.2)" }}>
+        <Link className="nav-auth-link" href={accountHref} style={{ padding: "8px 18px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14, fontWeight: 500, border: "1px solid rgba(212,168,67,0.2)" }}>
           {session.user?.name?.split(" ")[0] ?? "Explorar"}
         </Link>
         <button className="nav-auth-link" onClick={handleSignOut} style={{ padding: "8px 18px", borderRadius: 8, background: "transparent", border: "1px solid rgba(212,168,67,0.3)", color: "#d4a843", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
@@ -111,9 +118,10 @@ export default function NavbarSessionControls({
 
   return (
     <>
-      <Link
+      <button
+        type="button"
         className="nav-auth-link login-link"
-        href={ACCOUNT_ROUTES.login}
+        onClick={onLoginChoice}
         style={{ padding: "8px 22px", borderRadius: 8, color: "#d4a843", textDecoration: "none", fontSize: 14, fontWeight: 600, border: "1px solid rgba(212,168,67,0.3)", transition: "all 0.2s", background: "transparent" }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = "rgba(212,168,67,0.07)";
@@ -123,10 +131,11 @@ export default function NavbarSessionControls({
         }}
       >
         Entrar
-      </Link>
-      <Link
+      </button>
+      <button
+        type="button"
         className="nav-auth-link signup-link"
-        href={ACCOUNT_ROUTES.cadastro}
+        onClick={onRegisterChoice}
         style={{ padding: "8px 22px", borderRadius: 8, background: "linear-gradient(135deg, #f5d78c, #d4a843)", color: "#080704", textDecoration: "none", fontSize: 14, fontWeight: 800, transition: "background 0.2s" }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = "#e8bb47";
@@ -136,7 +145,7 @@ export default function NavbarSessionControls({
         }}
       >
         Cadastrar
-      </Link>
+      </button>
     </>
   );
 }

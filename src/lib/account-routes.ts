@@ -1,5 +1,6 @@
 export type CadastroTipo = "cliente" | "acompanhante" | "anfitriao";
 export type InternalAccountType = "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
+export type EntryAccountRole = "cliente" | "profissional" | "anfitriao";
 
 export const ACCOUNT_ROUTES = {
   login: "/login",
@@ -53,7 +54,7 @@ export function internalAccountTypeFromTipo(tipo: CadastroTipo): InternalAccount
 
 export function cadastroHref(tipo: CadastroTipo) {
   if (tipo === "acompanhante") return ACCOUNT_ROUTES.cadastroAcompanhante;
-  if (tipo === "anfitriao") return ACCOUNT_ROUTES.cadastroAnfitriao;
+  if (tipo === "anfitriao") return ACCOUNT_ROUTES.onboardingAnfitriao;
   return ACCOUNT_ROUTES.cadastroCliente;
 }
 
@@ -66,23 +67,71 @@ type PostLoginUser = {
   redirectTo?: string | null;
 };
 
-export function postLoginPathFromUser(user: PostLoginUser | null | undefined) {
-  if (!user) return ACCOUNT_ROUTES.mainClientFeed;
-  if (user.redirectTo) return user.redirectTo;
+export function loginHrefForRole(role: EntryAccountRole) {
+  return `${ACCOUNT_ROUTES.login}?role=${role}`;
+}
+
+export function cadastroHrefForRole(role: EntryAccountRole) {
+  if (role === "profissional") return ACCOUNT_ROUTES.cadastroAcompanhante;
+  if (role === "anfitriao") return ACCOUNT_ROUTES.onboardingAnfitriao;
+  return ACCOUNT_ROUTES.cadastroCliente;
+}
+
+export function normalizeEntryRole(value: string | null): EntryAccountRole | null {
+  if (!value) return null;
+  const normalized = value.toLowerCase();
+  if (["cliente", "client", "guest"].includes(normalized)) return "cliente";
+  if (["profissional", "acompanhante", "professional", "model", "modelo"].includes(normalized)) return "profissional";
+  if (["anfitriao", "anfitrião", "host", "imovel", "imóvel"].includes(normalized)) return "anfitriao";
+  return null;
+}
+
+export function postLoginPathFromUser(user: PostLoginUser | null | undefined, intent?: EntryAccountRole | null) {
+  if (!user) return ACCOUNT_ROUTES.dashboardCliente;
+  if (user.redirectTo && !intent) return user.redirectTo;
   if (user.role === "ADMIN") return ACCOUNT_ROUTES.admin;
 
   const professionalStatus = user.professional?.status;
   const isModelAccount = user.accountType === "model";
   const isHostAccount = user.accountType === "host";
   const isProfessionalIntent = isProfessionalCategory(user.category);
-  if (professionalStatus === "ACTIVE") return ACCOUNT_ROUTES.painelAcompanhante;
+  const properties = user.properties ?? [];
+
+  if (intent === "cliente") return ACCOUNT_ROUTES.dashboardCliente;
+
+  if (intent === "profissional") {
+    if (professionalStatus === "ACTIVE") return ACCOUNT_ROUTES.dashboardAcompanhante;
+    if (!professionalStatus) return ACCOUNT_ROUTES.onboardingAcompanhante;
+    return ACCOUNT_ROUTES.verificacaoAcompanhante;
+  }
+
+  if (intent === "anfitriao") {
+    if (properties.some((property) => property.status === "ACTIVE")) return ACCOUNT_ROUTES.dashboardAnfitriao;
+    if (properties.some((property) => property.status && property.status !== "DRAFT")) return ACCOUNT_ROUTES.verificacaoAnfitriao;
+    return ACCOUNT_ROUTES.onboardingAnfitriao;
+  }
+
+  if (professionalStatus === "ACTIVE") return ACCOUNT_ROUTES.dashboardAcompanhante;
   if (!professionalStatus && (isProfessionalIntent || isModelAccount)) return ACCOUNT_ROUTES.onboardingAcompanhante;
   if (professionalStatus || isProfessionalIntent || isModelAccount) return ACCOUNT_ROUTES.verificacaoAcompanhante;
 
-  const properties = user.properties ?? [];
-  if (properties.some((property) => property.status === "ACTIVE")) return ACCOUNT_ROUTES.painelAnfitriao;
+  if (properties.some((property) => property.status === "ACTIVE")) return ACCOUNT_ROUTES.dashboardAnfitriao;
   if (properties.some((property) => property.status && property.status !== "DRAFT")) return ACCOUNT_ROUTES.verificacaoAnfitriao;
   if (user.role === "HOST" || isHostAccount) return ACCOUNT_ROUTES.onboardingAnfitriao;
 
-  return ACCOUNT_ROUTES.mainClientFeed;
+  return ACCOUNT_ROUTES.dashboardCliente;
+}
+
+export function accountHomePathFromSession(sessionUser: {
+  role?: string | null;
+  accountType?: string | null;
+  isProfessional?: boolean | null;
+} | null | undefined) {
+  if (!sessionUser) return ACCOUNT_ROUTES.dashboardCliente;
+  if (sessionUser.role === "ADMIN") return ACCOUNT_ROUTES.admin;
+  if (sessionUser.isProfessional || sessionUser.accountType === "model" || sessionUser.accountType === "professional") {
+    return ACCOUNT_ROUTES.dashboardAcompanhante;
+  }
+  if (sessionUser.role === "HOST" || sessionUser.accountType === "host") return ACCOUNT_ROUTES.dashboardAnfitriao;
+  return ACCOUNT_ROUTES.dashboardCliente;
 }

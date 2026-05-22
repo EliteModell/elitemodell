@@ -305,7 +305,7 @@ export default function CadastroPage() {
       }
 
       if (tipo === "anfitriao") {
-        router.replace(ACCOUNT_ROUTES.cadastroAnfitriao);
+        router.replace(ACCOUNT_ROUTES.onboardingAnfitriao);
         return;
       }
 
@@ -572,7 +572,7 @@ export default function CadastroPage() {
         title: "Cadastrar meu imóvel",
         desc: "Cadastre um ambiente discreto primeiro. A conta entra no final e a publicação passa por aprovação.",
         action: "Começar cadastro do imóvel",
-        directHref: ACCOUNT_ROUTES.cadastroAnfitriao,
+        directHref: ACCOUNT_ROUTES.onboardingAnfitriao,
       },
     ];
 
@@ -583,7 +583,7 @@ export default function CadastroPage() {
         <Logo />
         <div style={{ textAlign: "center", margin: "-12px 0 24px" }}>
           <p style={{ color: GOLD, fontSize: 11, fontWeight: 900, letterSpacing: 2.4, textTransform: "uppercase", margin: "0 0 8px" }}>Cadastro Elite Modell</p>
-          <h1 style={{ color: "#f4f1ea", fontSize: 24, lineHeight: 1.15, margin: 0 }}>Escolha o tipo de conta</h1>
+          <h1 style={{ color: "#f4f1ea", fontSize: 24, lineHeight: 1.15, margin: 0 }}>Como você quer se cadastrar?</h1>
           <p style={{ color: "#8d8578", fontSize: 13, lineHeight: 1.55, margin: "10px auto 0", maxWidth: 460 }}>
             Uma conta única pode acessar a área cliente e solicitar ativação como acompanhante ou anfitrião, sempre com aprovação.
           </p>

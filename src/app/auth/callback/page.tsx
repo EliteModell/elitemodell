@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseAuth } from "@/lib/supabase-client";
-import { ACCOUNT_ROUTES, postLoginPathFromUser } from "@/lib/account-routes";
+import { ACCOUNT_ROUTES, normalizeEntryRole, postLoginPathFromUser } from "@/lib/account-routes";
 
 type PendingRegistration = {
   accountType?: "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
@@ -33,9 +33,9 @@ function safeInternalPath(value: string | null) {
 
 const PROFESSIONAL_CATEGORIES = ["MULHER", "HOMEM", "TRANS"];
 
-async function getPostLoginPath() {
+async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRole>) {
   const res = await fetch("/api/users/me", { cache: "no-store" });
-  if (!res.ok) return ACCOUNT_ROUTES.mainClientFeed;
+  if (!res.ok) return ACCOUNT_ROUTES.dashboardCliente;
 
   const user = await res.json();
   const isProfessional = PROFESSIONAL_CATEGORIES.includes(user.category);
@@ -43,12 +43,12 @@ async function getPostLoginPath() {
   if (user.role === "HOST" && isProfessional) {
     if (!user.professional) return ACCOUNT_ROUTES.onboardingAcompanhante;
     if (user.professional.status === "DRAFT") return ACCOUNT_ROUTES.onboardingAcompanhante;
-    return postLoginPathFromUser(user);
+    return postLoginPathFromUser(user, roleIntent);
   }
 
   if (user.role === "HOST" && hasPropertyDraft()) return PROPERTY_DRAFT_FINAL_PATH;
 
-  return postLoginPathFromUser(user);
+  return postLoginPathFromUser(user, roleIntent);
 }
 
 function resolveWithTimeout<T>(promise: Promise<T>, fallback: T, ms = CALLBACK_TIMEOUT_MS) {
@@ -81,7 +81,7 @@ function getRegistrationPath(pending: PendingRegistration | null) {
   if (pending?.accountType === "PROPERTY_HOST") {
     return hasPropertyDraft() ? PROPERTY_DRAFT_FINAL_PATH : ACCOUNT_ROUTES.onboardingAnfitriao;
   }
-  return ACCOUNT_ROUTES.mainClientFeed;
+  return ACCOUNT_ROUTES.dashboardCliente;
 }
 
 function CallbackCard({ message, success }: { message: string; success?: boolean }) {
@@ -226,6 +226,7 @@ function AuthCallbackContent() {
   useEffect(() => {
     let active = true;
     const returnUrl = safeInternalPath(searchParams.get("returnUrl") ?? searchParams.get("redirectTo"));
+    const roleIntent = normalizeEntryRole(searchParams.get("role"));
 
     async function finishAuth() {
       const code = searchParams.get("code");
@@ -261,7 +262,7 @@ function AuthCallbackContent() {
 
       const targetPath = returnUrl ?? (pendingRegistration
         ? getRegistrationPath(pendingRegistration)
-        : await resolveWithTimeout(getPostLoginPath(), ACCOUNT_ROUTES.mainClientFeed));
+        : await resolveWithTimeout(getPostLoginPath(roleIntent), ACCOUNT_ROUTES.dashboardCliente));
 
       if (!active) return;
       setSuccess(true);
@@ -275,7 +276,11 @@ function AuthCallbackContent() {
     finishAuth().catch((err) => {
       if (!active) return;
       setMessage(err?.message ?? "Não foi possível finalizar o acesso.");
-      setTimeout(() => router.replace(`${ACCOUNT_ROUTES.login}${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ""}`), 1800);
+      const params = [
+        returnUrl ? `returnUrl=${encodeURIComponent(returnUrl)}` : "",
+        roleIntent ? `role=${roleIntent}` : "",
+      ].filter(Boolean).join("&");
+      setTimeout(() => router.replace(`${ACCOUNT_ROUTES.login}${params ? `?${params}` : ""}`), 1800);
     });
 
     return () => {

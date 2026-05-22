@@ -1,7 +1,9 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { EntryChoiceCards, EntryChoiceSheet, EntryChoiceStyles } from "@/components/EntryChoiceSheet";
 
 const NavbarSessionControls = dynamic(() => import("@/components/NavbarSessionControls"), {
   ssr: false,
@@ -9,6 +11,18 @@ const NavbarSessionControls = dynamic(() => import("@/components/NavbarSessionCo
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [entryChoice, setEntryChoice] = useState<"login" | "register" | null>(null);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setMenuOpen(false);
+    setEntryChoice(null);
+  }, [pathname]);
+
+  function openEntryChoice(mode: "login" | "register") {
+    setMenuOpen(false);
+    setEntryChoice(mode);
+  }
 
   return (
     <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: "rgba(5,5,5,0.94)", backdropFilter: "blur(18px)", borderBottom: "1px solid rgba(212,168,67,0.16)", height: 64 }}>
@@ -41,7 +55,11 @@ export default function Navbar() {
 
         {/* Auth */}
         <div className="auth-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <NavbarSessionControls variant="authActions" />
+          <NavbarSessionControls
+            variant="authActions"
+            onLoginChoice={() => openEntryChoice("login")}
+            onRegisterChoice={() => openEntryChoice("register")}
+          />
 
           <button
             onClick={() => setMenuOpen(!menuOpen)}
@@ -60,13 +78,83 @@ export default function Navbar() {
       </div>
 
       {menuOpen && (
-        <div style={{ background: "#0a0a0a", borderBottom: "1px solid rgba(212,168,67,0.12)", padding: "16px 24px", display: "flex", flexDirection: "column", gap: 8 }}>
-          <Link href="/buscar?tab=acompanhantes" onClick={() => setMenuOpen(false)} style={{ padding: "10px 14px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14 }}>Acompanhantes</Link>
-          <NavbarSessionControls variant="mobileMenu" onNavigate={() => setMenuOpen(false)} />
+        <div className="mobile-entry-menu">
+          <div className="mobile-entry-brand">
+            <span>elite</span><strong>modell</strong>
+          </div>
+          <Link href="/buscar?tab=acompanhantes" onClick={() => setMenuOpen(false)} className="mobile-entry-link">Acompanhantes</Link>
+          <NavbarSessionControls
+            variant="mobileMenu"
+            onNavigate={() => setMenuOpen(false)}
+            onLoginChoice={() => openEntryChoice("login")}
+            onRegisterChoice={() => openEntryChoice("register")}
+            showGuestActions={false}
+          />
+          <div className="mobile-entry-section">
+            <p>Cadastre-se grátis</p>
+            <EntryChoiceCards mode="register" onNavigate={() => setMenuOpen(false)} />
+          </div>
+          <div className="mobile-entry-section">
+            <p>Login</p>
+            <EntryChoiceCards mode="login" onNavigate={() => setMenuOpen(false)} />
+          </div>
         </div>
       )}
 
+      <EntryChoiceSheet mode={entryChoice} open={entryChoice !== null} onClose={() => setEntryChoice(null)} />
+      <EntryChoiceStyles />
+
       <style>{`
+        .mobile-entry-menu {
+          background: #050505;
+          border-bottom: 1px solid rgba(212,168,67,0.22);
+          padding: 16px 8px calc(18px + env(safe-area-inset-bottom));
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+        }
+        .mobile-entry-brand {
+          display: inline-flex;
+          align-items: baseline;
+          gap: 1px;
+          padding: 0 8px 2px;
+          font-size: 20px;
+          font-weight: 950;
+        }
+        .mobile-entry-brand span {
+          background: linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 50%, #9e7b2a 75%, #d4a843 100%);
+          background-clip: text;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        .mobile-entry-brand strong {
+          color: #fff;
+          font: inherit;
+        }
+        .mobile-entry-link {
+          padding: 12px 14px;
+          border-radius: 16px;
+          color: #b8b8b8;
+          text-decoration: none;
+          font-size: 14px;
+          border: 1px solid rgba(214,168,58,0.14);
+          background: rgba(16,16,20,0.72);
+        }
+        .mobile-entry-section {
+          display: grid;
+          gap: 10px;
+          padding-top: 4px;
+        }
+        .mobile-entry-section p {
+          margin: 0;
+          padding: 0 8px;
+          color: #f5b83b;
+          font-size: 11px;
+          font-weight: 950;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+        }
         @media (max-width: 768px) {
           .navbar-inner {
             padding: 0 10px !important;

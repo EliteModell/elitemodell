@@ -7,9 +7,9 @@ export async function proxy(request: NextRequest) {
   const unauthorized = () => isApiRoute
     ? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     : NextResponse.redirect(new URL("/login", request.url));
-  const forbidden = () => isApiRoute
+  const forbidden = (target = "/dashboard") => isApiRoute
     ? NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    : NextResponse.redirect(new URL("/dashboard", request.url));
+    : NextResponse.redirect(new URL(target, request.url));
 
   if (/\.(?:avif|gif|ico|jpg|jpeg|png|svg|webp|txt|xml|json)$/i.test(pathname)) {
     return NextResponse.next();
@@ -60,23 +60,52 @@ export async function proxy(request: NextRequest) {
   const tokenWithRole = token as typeof token & {
     role?: string;
     isProfessional?: boolean;
+    accountType?: string;
+  };
+
+  const homeForToken = () => {
+    if (tokenWithRole.role === "ADMIN") return "/admin";
+    if (tokenWithRole.isProfessional || tokenWithRole.accountType === "model" || tokenWithRole.accountType === "professional") {
+      return tokenWithRole.isProfessional ? "/profissional" : "/profissional/novo";
+    }
+    if (tokenWithRole.role === "HOST" || tokenWithRole.accountType === "host") return "/anfitriao";
+    return "/dashboard";
   };
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
-    if (tokenWithRole.role !== "ADMIN") return forbidden();
+    if (tokenWithRole.role !== "ADMIN") return forbidden(homeForToken());
+  }
+
+  if (pathname.startsWith("/dashboard") || pathname.startsWith("/cliente") || pathname.startsWith("/painel/cliente")) {
+    const isOnlyClientArea =
+      tokenWithRole.role !== "ADMIN" &&
+      !tokenWithRole.isProfessional &&
+      tokenWithRole.accountType !== "model" &&
+      tokenWithRole.accountType !== "professional" &&
+      tokenWithRole.role !== "HOST" &&
+      tokenWithRole.accountType !== "host";
+    if (!isOnlyClientArea) return forbidden(homeForToken());
+  }
+
+  if (pathname.startsWith("/painel/acompanhante")) {
+    if (!tokenWithRole.isProfessional && tokenWithRole.role !== "ADMIN") return forbidden(homeForToken());
+  }
+
+  if (pathname.startsWith("/painel/anfitriao")) {
+    if (tokenWithRole.role !== "HOST" && tokenWithRole.role !== "ADMIN") return forbidden(homeForToken());
   }
 
   if (pathname.startsWith("/anfitriao") || pathname.startsWith("/api/anfitriao")) {
-    if (tokenWithRole.role !== "HOST" && tokenWithRole.role !== "ADMIN") return forbidden();
+    if (tokenWithRole.role !== "HOST" && tokenWithRole.role !== "ADMIN") return forbidden(homeForToken());
   }
 
   if (pathname === "/profissional/novo") {
-    if (tokenWithRole.role !== "HOST" && tokenWithRole.role !== "ADMIN") return forbidden();
+    if (tokenWithRole.role !== "HOST" && tokenWithRole.role !== "ADMIN") return forbidden(homeForToken());
     return NextResponse.next();
   }
 
   if (pathname.startsWith("/profissional") || pathname.startsWith("/api/profissional")) {
-    if (!tokenWithRole.isProfessional && tokenWithRole.role !== "ADMIN") return forbidden();
+    if (!tokenWithRole.isProfessional && tokenWithRole.role !== "ADMIN") return forbidden(homeForToken());
   }
 
   return NextResponse.next();

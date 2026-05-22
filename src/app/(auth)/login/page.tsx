@@ -8,8 +8,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { ArrowLeft, BadgeCheck, Eye, EyeOff, Globe2, LockKeyhole, Sparkles } from "lucide-react";
+import { EntryChoiceCards, EntryChoiceStyles } from "@/components/EntryChoiceSheet";
 import { supabaseAuth } from "@/lib/supabase-client";
-import { ACCOUNT_ROUTES, postLoginPathFromUser } from "@/lib/account-routes";
+import { ACCOUNT_ROUTES, normalizeEntryRole, postLoginPathFromUser } from "@/lib/account-routes";
 
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
@@ -64,21 +65,22 @@ function safeInternalPath(value: string | null) {
   }
 }
 
-async function getPostLoginPath(returnUrl: string | null) {
+async function getPostLoginPath(returnUrl: string | null, roleIntent: ReturnType<typeof normalizeEntryRole>) {
   const safeReturnUrl = safeInternalPath(returnUrl);
   if (safeReturnUrl) return safeReturnUrl;
   if (localStorage.getItem(PROPERTY_DRAFT_KEY)) return PROPERTY_DRAFT_FINAL_PATH;
 
   const res = await fetch("/api/users/me");
-  if (!res.ok) return ACCOUNT_ROUTES.mainClientFeed;
+  if (!res.ok) return ACCOUNT_ROUTES.dashboardCliente;
   const user = await res.json();
-  return postLoginPathFromUser(user);
+  return postLoginPathFromUser(user, roleIntent);
 }
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get("returnUrl") ?? searchParams.get("redirectTo");
+  const roleIntent = normalizeEntryRole(searchParams.get("role"));
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
@@ -107,7 +109,7 @@ function LoginContent() {
         toast.error("Erro ao entrar. Tente novamente.");
       } else {
         toast.success("Bem-vindo de volta!");
-        router.push(await getPostLoginPath(returnUrl));
+        router.push(await getPostLoginPath(returnUrl, roleIntent));
         router.refresh();
       }
     } catch (err: any) {
@@ -120,12 +122,14 @@ function LoginContent() {
   async function handleGoogle() {
     setLoading(true);
     try {
+      const callbackParams = [
+        returnUrl ? `returnUrl=${encodeURIComponent(returnUrl)}` : "",
+        roleIntent ? `role=${roleIntent}` : "",
+      ].filter(Boolean).join("&");
       const { error } = await supabaseAuth.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback${
-            returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ""
-          }`,
+          redirectTo: `${window.location.origin}/auth/callback${callbackParams ? `?${callbackParams}` : ""}`,
         },
       });
       if (error) throw error;
@@ -134,6 +138,42 @@ function LoginContent() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!roleIntent && !returnUrl) {
+    return (
+      <main className="auth-login-page">
+        <header className="auth-topbar">
+          <button type="button" onClick={handleBack} aria-label="Voltar">
+            <ArrowLeft size={18} />
+          </button>
+          <Link href="/" className="auth-brand" aria-label="Elite Modell">
+            <span>elite</span>
+            <strong>modell</strong>
+          </Link>
+          <span className="country-pill"><Globe2 size={14} /> Brasil</span>
+        </header>
+
+        <section className="login-hero" aria-labelledby="login-choice-title">
+          <div className="login-mark"><Sparkles size={24} /></div>
+          <p className="eyebrow">Acesso por tipo de conta</p>
+          <h1 id="login-choice-title">Entrar como</h1>
+          <p>Escolha a área correta para acessar o painel certo sem misturar cliente, profissional e anfitrião.</p>
+        </section>
+
+        <section className="auth-card" aria-label="Escolha de login">
+          <div className="gold-line" />
+          <EntryChoiceCards mode="login" />
+          <div className="signup-block">
+            <p>Ainda nao tem conta?</p>
+            <Link href={ACCOUNT_ROUTES.cadastro}>Cadastre-se</Link>
+          </div>
+        </section>
+
+        <EntryChoiceStyles />
+        {loginPageStyles}
+      </main>
+    );
   }
 
   return (
@@ -152,8 +192,8 @@ function LoginContent() {
       <section className="login-hero" aria-labelledby="login-title">
         <div className="login-mark"><Sparkles size={24} /></div>
         <p className="eyebrow">Acesse a Elite Modell</p>
-        <h1 id="login-title">Entre com discricao e seguranca</h1>
-        <p>Descubra novidades, gerencie sua conta e continue seus cadastros em um ambiente premium.</p>
+        <h1 id="login-title">Entre como {roleIntent === "profissional" ? "profissional" : roleIntent === "anfitriao" ? "anfitrião" : "cliente"}</h1>
+        <p>Descubra novidades, gerencie sua conta e continue no painel correto em um ambiente premium.</p>
       </section>
 
       <section className="auth-card" aria-label="Login">
@@ -247,7 +287,13 @@ function LoginContent() {
         <p>Direitos autorais 2026 © Elite Modell</p>
       </footer>
 
-      <style>{`
+      {loginPageStyles}
+    </main>
+  );
+}
+
+const loginPageStyles = (
+  <style>{`
         .auth-login-page {
           width: 100%;
           max-width: 430px;
@@ -601,10 +647,8 @@ function LoginContent() {
             padding-top: 28px;
           }
         }
-      `}</style>
-    </main>
-  );
-}
+  `}</style>
+);
 
 export default function LoginPage() {
   return (
