@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { useEffect, useState } from "react";
-import { LockKeyhole, ShieldCheck, X } from "lucide-react";
+import { useState } from "react";
+import { LockKeyhole, ShieldCheck } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { isClientAgeVerified } from "@/lib/client-age-verification";
 
@@ -51,11 +51,8 @@ export function ClientSensitiveAction({
   type?: "button" | "submit";
 }) {
   const { data: session } = useSession();
-  const [mounted, setMounted] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const verified = isClientAgeVerified(session?.user?.clientStatus);
-
-  useEffect(() => setMounted(true), []);
 
   return (
     <>
@@ -73,7 +70,7 @@ export function ClientSensitiveAction({
       >
         {children}
       </button>
-      {mounted && blocked ? createPortal(<VerificationRequiredModal onClose={() => setBlocked(false)} />, document.body) : null}
+      {blocked && typeof document !== "undefined" ? createPortal(<VerificationRequiredModal onClose={() => setBlocked(false)} />, document.body) : null}
     </>
   );
 }

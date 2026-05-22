@@ -139,6 +139,8 @@ model User {
   phone           String?
   phoneVerified   Boolean      @default(false)
   phoneVerifiedAt DateTime?
+  city            String?
+  state           String?
   accountType     String       @default("client")
   document        String?
   birthDate       DateTime?
@@ -146,6 +148,7 @@ model User {
   category        UserCategory?
   verified        Boolean      @default(false)
   credits         Float        @default(0)
+  premiumUntil    DateTime?
   blocked         Boolean      @default(false)
   blockReason     String?
   blockedAt       DateTime?
@@ -179,6 +182,7 @@ model User {
   reportsCreated     Report[]       @relation("ReportAuthor")
   auditLogsCreated   AuditLog[]     @relation("AuditAdmin")
   phoneVerificationCodes PhoneVerificationCode[]
+  payments           Payment[]
 
   @@index([phone])
   @@index([accountType])
@@ -415,13 +419,21 @@ model Booking {
 
 model Payment {
   id              String        @id @default(cuid())
-  bookingId       String        @unique
+  bookingId       String?       @unique
+  userId          String?
   amount          Float
   currency        String        @default("BRL")
   method          String
   status          PaymentStatus @default(PENDING)
+  provider        String        @default("asaas")
+  providerPaymentId String?     @unique
+  externalReference String?     @unique
   stripePaymentId String?
   pixCode         String?
+  pixQrCodeBase64 String?
+  invoiceUrl      String?
+  creditAmount    Float?
+  premiumUntil    DateTime?
   boletoUrl       String?
   paidAt          DateTime?
   refundedAt      DateTime?
@@ -429,7 +441,11 @@ model Payment {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  booking         Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking         Booking?      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user            User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([provider, providerPaymentId])
 }
 
 // ─── Review ──────────────────────────────────────────────────────────────────
@@ -475,13 +491,17 @@ model Message {
 model Favorite {
   id         String   @id @default(cuid())
   userId     String
-  propertyId String
+  propertyId String?
+  professionalId String?
   createdAt  DateTime @default(now())
 
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  professional Professional? @relation(fields: [professionalId], references: [id], onDelete: Cascade)
 
   @@unique([userId, propertyId])
+  @@unique([userId, professionalId])
+  @@index([professionalId])
 }
 
 // ─── Coupon ──────────────────────────────────────────────────────────────────
@@ -617,6 +637,7 @@ model Professional {
   schedule     Schedule[]
   appointments Appointment[]
   reviews      ProfessionalReview[]
+  favorites    Favorite[]
 
   @@index([status, featured, rating, totalReviews, createdAt])
   @@index([status, city])

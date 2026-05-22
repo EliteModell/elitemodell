@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
 import { enforceRateLimit, getClientIP } from "@/lib/security";
+import { prisma } from "@/lib/prisma";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -83,6 +84,16 @@ export async function POST(req: NextRequest) {
 
   const url    = new URL(req.url);
   const folder = normalizeFolder(url.searchParams.get("folder") ?? "stories");
+
+  if (folder.startsWith("stories")) {
+    const professional = await prisma.professional.findUnique({
+      where: { userId: session.user.id },
+      select: { status: true, verified: true },
+    });
+    if (!professional || professional.status !== "ACTIVE" || !professional.verified) {
+      return NextResponse.json({ error: "Upload de stories exclusivo para profissionais aprovadas." }, { status: 403 });
+    }
+  }
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;

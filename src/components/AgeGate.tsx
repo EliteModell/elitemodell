@@ -42,16 +42,8 @@ export default function AgeGate() {
   const pathname = usePathname();
   const acceptButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(() => !shouldSkipGate(pathname) && !hasAdultConsent());
-
-  useEffect(() => {
-    if (shouldSkipGate(pathname)) {
-      setVisible(false);
-      return;
-    }
-
-    setVisible(!hasAdultConsent());
-  }, [pathname]);
+  const [accepted, setAccepted] = useState(() => hasAdultConsent());
+  const visible = !shouldSkipGate(pathname) && !accepted;
 
   useEffect(() => {
     if (!visible) return;
@@ -96,7 +88,7 @@ export default function AgeGate() {
     localStorage.setItem(CONSENT_PERSIST_KEY, "true");
     localStorage.setItem(CONSENT_PERSIST_DATE_KEY, acceptedAt);
     sessionStorage.removeItem(DECLINED_KEY);
-    setVisible(false);
+    setAccepted(true);
   }
 
   function declineConsent() {

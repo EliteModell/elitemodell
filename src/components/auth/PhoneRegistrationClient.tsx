@@ -196,6 +196,8 @@ function LegalFooter() {
   );
 }
 
+void LegalFooter;
+
 function PremiumAuthFooter() {
   return (
     <footer className="phone-premium-footer">
@@ -350,6 +352,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
   const returnUrl = safeInternalPath(params.get("returnUrl"));
   const isClient = mode === "client";
   const isHost = mode === "host";
+  void isHost;
   const isPremium = true;
   const sessionEmail = session?.user?.email;
   const [phone, setPhone] = useState("");

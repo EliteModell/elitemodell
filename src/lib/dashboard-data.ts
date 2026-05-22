@@ -11,6 +11,8 @@ type DashboardUser = {
   phone: string | null;
   phoneVerified?: boolean;
   phoneVerifiedAt?: Date | null;
+  city?: string | null;
+  state?: string | null;
   document?: string | null;
   role: string;
   verified: boolean;
@@ -138,6 +140,8 @@ async function getCoreData(userId: string) {
       phone: true,
       phoneVerified: true,
       phoneVerifiedAt: true,
+      city: true,
+      state: true,
       document: true,
       role: true,
       verified: true,
@@ -159,7 +163,9 @@ async function getCoreData(userId: string) {
 
   if (!user) return null;
 
-  const savedProfiles = 0;
+  const savedProfiles = await prisma.favorite.count({
+    where: { userId, professionalId: { not: null } },
+  });
 
   const [activeAppointments, completedAppointments, recentAppointments, recommendedProfessionals] =
     await Promise.all([
@@ -215,7 +221,7 @@ async function getCoreData(userId: string) {
       }),
     ]);
 
-  const city = recentAppointments[0]?.professional.city ?? recommendedProfessionals[0]?.city ?? null;
+  const city = user.city ? [user.city, user.state].filter(Boolean).join(", ") : null;
   const vip = getVipLevel({
     completedAppointments,
     savedProfiles,

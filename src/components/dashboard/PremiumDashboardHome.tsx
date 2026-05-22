@@ -287,6 +287,8 @@ export default function PremiumDashboardHome({
   const pathname = usePathname();
   const router = useRouter();
   const [showCitySelector, setShowCitySelector] = useState(false);
+  const [citySelectorPathname, setCitySelectorPathname] = useState<string | null>(null);
+  const citySelectorOpen = showCitySelector && citySelectorPathname === pathname;
 
   useEffect(() => {
     delete document.body.dataset.clientExplore;
@@ -298,7 +300,6 @@ export default function PremiumDashboardHome({
   }, []);
 
   useEffect(() => {
-    setShowCitySelector(false);
     delete document.body.dataset.clientFiltersOpen;
   }, [pathname]);
 
@@ -320,7 +321,7 @@ export default function PremiumDashboardHome({
 
   return (
     <div className="client-dashboard-home">
-      {showCitySelector && (
+      {citySelectorOpen && (
         <CitySelectorScreen
           onClose={() => setShowCitySelector(false)}
           onSelectCity={(city) => {
@@ -333,7 +334,10 @@ export default function PremiumDashboardHome({
         name={data.user.name}
         image={data.user.image}
         city={data.city}
-        onDefineCity={() => setShowCitySelector(true)}
+        onDefineCity={() => {
+          setCitySelectorPathname(pathname);
+          setShowCitySelector(true);
+        }}
       />
       <div className="client-page-tight mt-4 flex justify-end">
         {data.user.ageVerified ? <AgeVerifiedBadge /> : null}

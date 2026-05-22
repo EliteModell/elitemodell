@@ -482,16 +482,17 @@ export default function ClientAreaShell({
   const router = useRouter();
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerPathname, setDrawerPathname] = useState<string | null>(null);
+  const drawerVisible = drawerOpen && drawerPathname === pathname;
 
   useEffect(() => {
-    document.body.dataset.clientDrawerOpen = drawerOpen ? "true" : "false";
+    document.body.dataset.clientDrawerOpen = drawerVisible ? "true" : "false";
     return () => {
       delete document.body.dataset.clientDrawerOpen;
     };
-  }, [drawerOpen]);
+  }, [drawerVisible]);
 
   useEffect(() => {
-    setDrawerOpen(false);
     delete document.body.dataset.clientDrawerOpen;
     delete document.body.dataset.clientFiltersOpen;
     delete document.body.dataset.cityKeyboardOpen;
@@ -523,11 +524,14 @@ export default function ClientAreaShell({
   return (
     <div className={`client-premium min-h-screen ${pathname === "/dashboard" ? "client-dashboard-shell" : ""} ${pathname === "/dashboard/perfil" ? "client-profile-shell" : ""} ${pathname === "/dashboard/favoritos" ? "client-lists-shell" : ""} ${pathname === "/dashboard/shots" ? "client-shots-shell" : ""}`}>
       <MobileHeader
-        onMenu={() => setDrawerOpen(true)}
+        onMenu={() => {
+          setDrawerPathname(pathname);
+          setDrawerOpen(true);
+        }}
         onCityModal={handleHeaderSearch}
         backHref={backHref}
       />
-      <SideDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <SideDrawer open={drawerVisible} onClose={() => setDrawerOpen(false)} />
       <main className="client-shell-content mx-auto w-full max-w-[760px] pb-[calc(280px+env(safe-area-inset-bottom))]">
         <div key={pathname} className="page-content relative z-[1] w-full">
           {children}

@@ -26,6 +26,10 @@ export async function POST(req: NextRequest) {
   const sig = req.headers.get("persona-signature") ?? "";
   const secret = process.env.PERSONA_WEBHOOK_SECRET ?? "";
 
+  if (!secret && process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "PERSONA_WEBHOOK_SECRET obrigatorio em producao." }, { status: 500 });
+  }
+
   if (secret) {
     const valid = await verifyPersonaWebhook(rawBody, sig, secret);
     if (!valid) {

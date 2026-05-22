@@ -1,6 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { EntryChoiceCards, EntryChoiceSheet, EntryChoiceStyles } from "@/components/EntryChoiceSheet";
@@ -12,15 +12,15 @@ const NavbarSessionControls = dynamic(() => import("@/components/NavbarSessionCo
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [entryChoice, setEntryChoice] = useState<"login" | "register" | null>(null);
+  const [openPathname, setOpenPathname] = useState<string | null>(null);
   const pathname = usePathname();
-
-  useEffect(() => {
-    setMenuOpen(false);
-    setEntryChoice(null);
-  }, [pathname]);
+  const routeChanged = openPathname !== null && openPathname !== pathname;
+  const menuVisible = menuOpen && !routeChanged;
+  const activeEntryChoice = routeChanged ? null : entryChoice;
 
   function openEntryChoice(mode: "login" | "register") {
     setMenuOpen(false);
+    setOpenPathname(pathname);
     setEntryChoice(mode);
   }
 
@@ -62,7 +62,10 @@ export default function Navbar() {
           />
 
           <button
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={() => {
+              setOpenPathname(pathname);
+              setMenuOpen(!menuVisible);
+            }}
             style={{ display: "none", padding: "8px", background: "transparent", border: "1px solid rgba(212,168,67,0.2)", borderRadius: 8, color: "#b8b1a6", cursor: "pointer", marginLeft: 4 }}
             className="mobile-menu-btn"
             aria-label="Menu"
@@ -77,7 +80,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {menuOpen && (
+      {menuVisible && (
         <div className="mobile-entry-menu">
           <div className="mobile-entry-brand">
             <span>elite</span><strong>modell</strong>
@@ -101,7 +104,7 @@ export default function Navbar() {
         </div>
       )}
 
-      <EntryChoiceSheet mode={entryChoice} open={entryChoice !== null} onClose={() => setEntryChoice(null)} />
+      <EntryChoiceSheet mode={activeEntryChoice} open={activeEntryChoice !== null} onClose={() => setEntryChoice(null)} />
       <EntryChoiceStyles />
 
       <style>{`

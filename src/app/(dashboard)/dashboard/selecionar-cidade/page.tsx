@@ -52,13 +52,11 @@ export default function SelecionarCidadePage() {
     clearTimeout(debounceRef.current);
 
     if (input.trim().length < 3) {
-      setSuggestions([]);
-      setLoading(false);
       return;
     }
 
-    setLoading(true);
     debounceRef.current = setTimeout(async () => {
+      setLoading(true);
       try {
         const response = await fetch(`/api/address/search?input=${encodeURIComponent(input.trim())}`);
         const data = (await response.json()) as { suggestions?: Suggestion[] };
@@ -102,6 +100,8 @@ export default function SelecionarCidadePage() {
       });
     }, 250);
   }
+
+  const visibleSuggestions = input.trim().length >= 3 ? suggestions : [];
 
   return (
     <main className="city-select-page">
@@ -175,9 +175,9 @@ export default function SelecionarCidadePage() {
             <p>Digite pelo menos 3 caracteres para buscar uma cidade.</p>
           ) : loading ? (
             <p>Buscando cidades...</p>
-          ) : suggestions.length > 0 ? (
+          ) : visibleSuggestions.length > 0 ? (
             <ul>
-              {suggestions.map((suggestion) => (
+              {visibleSuggestions.map((suggestion) => (
                 <li key={suggestion.placeId}>
                   <button type="button" onClick={() => handleSelect(suggestion)}>
                     <MapPin />

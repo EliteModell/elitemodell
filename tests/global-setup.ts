@@ -9,7 +9,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 const STORAGE_PATH = path.join(__dirname, ".auth", "user.json");
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
 
 function writeEmptyStorageState() {
   fs.mkdirSync(path.dirname(STORAGE_PATH), { recursive: true });
@@ -62,8 +62,10 @@ export default async function globalSetup(config: FullConfig) {
   try {
     // 0. Injeta sessionStorage para bypassar o Age Gate em TODOS os requests
     await context.addInitScript(() => {
-      sessionStorage.setItem("age_verified_session", "1");
-      sessionStorage.setItem("age_verified_date", new Date().toISOString());
+      sessionStorage.setItem("elite_modell_adult_consent_session", "accepted");
+      sessionStorage.setItem("elite_modell_adult_consent_at", new Date().toISOString());
+      localStorage.setItem("elite_modell_ageConsentAccepted", "true");
+      localStorage.setItem("elite_modell_ageConsentAcceptedAt", new Date().toISOString());
     });
 
     // 1. Abre página de login

@@ -35,7 +35,10 @@ function isTrustedStorageUrl(url: string) {
 export async function GET() {
   const now = new Date();
   const stories = await prisma.story.findMany({
-    where: { expiresAt: { gt: now } },
+    where: {
+      expiresAt: { gt: now },
+      user: { professional: { status: "ACTIVE", verified: true } },
+    },
     include: {
       user: {
         select: {
@@ -77,6 +80,15 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
+
+  const professional = await prisma.professional.findUnique({
+    where: { userId: session.user.id },
+    select: { status: true, verified: true },
+  });
+
+  if (!professional || professional.status !== "ACTIVE" || !professional.verified) {
+    return NextResponse.json({ error: "Stories sao exclusivos para profissionais aprovadas." }, { status: 403 });
+  }
 
   const limited = enforceRateLimit(`stories:${session.user.id}`, 20, 60 * 60 * 1000, "Muitos stories em pouco tempo.");
   if (limited) return limited;

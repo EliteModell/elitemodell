@@ -45,8 +45,10 @@ function requireAuth() {
 /** Injeta sessionStorage para bypassar Age Gate em todos os requests */
 async function bypassAgeGate(context: BrowserContext) {
   await context.addInitScript(() => {
-    sessionStorage.setItem("age_verified_session", "1");
-    sessionStorage.setItem("age_verified_date", new Date().toISOString());
+    sessionStorage.setItem("elite_modell_adult_consent_session", "accepted");
+    sessionStorage.setItem("elite_modell_adult_consent_at", new Date().toISOString());
+    localStorage.setItem("elite_modell_ageConsentAccepted", "true");
+    localStorage.setItem("elite_modell_ageConsentAcceptedAt", new Date().toISOString());
   });
 }
 

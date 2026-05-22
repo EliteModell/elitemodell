@@ -1,16 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import AgeGateLoader from "@/components/AgeGateLoader";
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["700"],
-  variable: "--font-playfair",
-  display: "swap",
-});
 
 const siteUrl = "https://elitemodell.com.br";
 const brandDescription =
@@ -127,7 +118,16 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="pt-BR" data-scroll-behavior="smooth" className={`${inter.variable} ${playfair.variable}`}>
+    <html
+      lang="pt-BR"
+      data-scroll-behavior="smooth"
+      style={
+        {
+          "--font-inter": '"Inter", "Segoe UI", Arial, Helvetica, sans-serif',
+          "--font-playfair": '"Playfair Display", Georgia, serif',
+        } as React.CSSProperties
+      }
+    >
       <body className="min-h-screen">
         <script
           type="application/ld+json"

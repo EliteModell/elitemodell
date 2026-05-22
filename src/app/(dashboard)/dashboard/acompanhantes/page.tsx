@@ -16,6 +16,7 @@ import {
   Crown,
   Diamond,
   Grid2X2,
+  Heart,
   LockKeyhole,
   MapPin,
   Phone,
@@ -84,6 +85,28 @@ function ProfessionalCard({ p }: { p: Professional }) {
   const cover = p.photos?.find((ph) => ph.cover)?.url ?? p.image ?? null;
   const price = p.pricePerHour ?? p.priceMin;
   const isOnline = p.featured || p.rating >= 4.7;
+  const [saved, setSaved] = useState(false);
+  const [savingFavorite, setSavingFavorite] = useState(false);
+
+  async function toggleFavorite() {
+    if (savingFavorite) return;
+    setSavingFavorite(true);
+    const nextSaved = !saved;
+    setSaved(nextSaved);
+
+    try {
+      const response = await fetch("/api/favorites/professionals", {
+        method: nextSaved ? "POST" : "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ professionalId: p.id }),
+      });
+      if (!response.ok) throw new Error("favorite_failed");
+    } catch {
+      setSaved(!nextSaved);
+    } finally {
+      setSavingFavorite(false);
+    }
+  }
 
   return (
     <article className="client-profile-card">
@@ -161,6 +184,16 @@ function ProfessionalCard({ p }: { p: Professional }) {
           Ver perfil
           <ChevronRight className="h-4 w-4" />
         </Link>
+        <button
+          type="button"
+          onClick={() => void toggleFavorite()}
+          className={`client-secondary-button grid min-h-0 w-11 place-items-center px-0 py-2.5 ${saved ? "text-[#f5d78c]" : ""}`}
+          aria-pressed={saved}
+          aria-label={saved ? "Remover dos favoritos" : "Salvar perfil"}
+          disabled={savingFavorite}
+        >
+          <Heart className={`h-4 w-4 ${saved ? "fill-current" : ""}`} />
+        </button>
         <ClientSensitiveAction className="client-primary-button flex min-h-0 items-center gap-1.5 px-4 py-2.5 text-[13px]">
           <Phone className="h-4 w-4" />
           Contato
@@ -187,14 +220,7 @@ function FilterDrawer({
   onOnlyVerified: (v: boolean) => void;
   onClear: () => void;
 }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   if (!open) return null;
-  if (!mounted) return null;
 
   return createPortal(
     <div className="client-filter-overlay" role="dialog" aria-modal="true" aria-label="Filtrar perfis">
@@ -437,13 +463,11 @@ function CitySelectionScreen({
     clearTimeout(debounceRef.current);
 
     if (input.length < 3) {
-      setSuggestions([]);
-      setLoadingSuggestions(false);
       return;
     }
 
-    setLoadingSuggestions(true);
     debounceRef.current = setTimeout(async () => {
+      setLoadingSuggestions(true);
       try {
         const res = await fetch(`/api/address/search?input=${encodeURIComponent(input)}`);
         const data = (await res.json()) as { suggestions?: Suggestion[] };
@@ -496,6 +520,7 @@ function CitySelectionScreen({
   }
 
   const busy = loadingSuggestions || checking;
+  const visibleSuggestions = input.length >= 3 ? suggestions : [];
 
   return (
     <div className="client-city-select">
@@ -594,14 +619,14 @@ function CitySelectionScreen({
             </div>
           )}
 
-          {!noResults && !busy && suggestions.length > 0 && (
+          {!noResults && !busy && visibleSuggestions.length > 0 && (
             <ul className="client-city-suggestions" role="listbox">
-              {suggestions.map((s, i) => (
+              {visibleSuggestions.map((s, i) => (
                 <li key={s.placeId} role="option" aria-selected={false}>
                   <button
                     type="button"
                     onClick={() => void handleSelect(s)}
-                    style={{ borderBottom: i < suggestions.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}
+                    style={{ borderBottom: i < visibleSuggestions.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}
                   >
                     <span className="client-city-suggestion-icon">
                       <MapPin />
@@ -616,7 +641,7 @@ function CitySelectionScreen({
             </ul>
           )}
 
-          {!noResults && !busy && suggestions.length === 0 && (
+          {!noResults && !busy && visibleSuggestions.length === 0 && (
             <div className="space-y-[44px]">
               <div className="flex items-center gap-5 rounded-[18px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.32)] sm:p-7">
                 <div className="grid h-[82px] w-[82px] shrink-0 place-items-center rounded-[17px] bg-[#17130c]/88">
@@ -664,6 +689,8 @@ function CitySelectionScreen({
     </div>
   );
 }
+
+void CitySelectionScreen;
 
 export default function AcompanhantesPage() {
   const searchParams = useSearchParams();

@@ -9,6 +9,8 @@ import { postLoginPathFromUser } from "@/lib/account-routes";
 const updateSchema = z.object({
   name: z.string().min(2).optional(),
   phone: z.string().optional(),
+  city: z.string().min(2).max(80).optional(),
+  state: z.string().min(2).max(40).optional(),
   document: z.string().optional(),
   image: z.string().url().optional(),
 });
@@ -21,7 +23,7 @@ export async function GET() {
     where: { id: session.user.id },
     select: {
       id: true, name: true, email: true, image: true, phone: true, phoneVerified: true, phoneVerifiedAt: true,
-      document: true, role: true, accountType: true, category: true, birthDate: true, verified: true, credits: true,
+      city: true, state: true, document: true, role: true, accountType: true, category: true, birthDate: true, verified: true, credits: true,
       createdAt: true, hostProfile: true, professional: {
         select: {
           id: true,

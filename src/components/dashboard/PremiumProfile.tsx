@@ -68,6 +68,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
   const pathname = usePathname();
   const [profile, setProfile] = useState(data.user);
   const [editing, setEditing] = useState(false);
+  const [editingPathname, setEditingPathname] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({
@@ -86,11 +87,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
     };
   }, []);
 
-  useEffect(() => {
-    if (pathname !== "/dashboard/perfil") {
-      setEditing(false);
-    }
-  }, [pathname]);
+  const editingVisible = editing && editingPathname === pathname;
 
   async function handlePhotoUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -169,10 +166,13 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
         verified={profile.verified}
         uploading={uploading}
         onChoosePhoto={() => fileInputRef.current?.click()}
-        onEdit={() => setEditing(true)}
+        onEdit={() => {
+          setEditingPathname(pathname);
+          setEditing(true);
+        }}
       />
 
-      {editing ? (
+      {editingVisible ? (
         <section className="profile-edit-section" role="dialog" aria-modal="true" aria-label="Editar dados">
           <form onSubmit={saveProfile} className="profile-edit-card">
             <div className="profile-edit-head">
