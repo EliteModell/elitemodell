@@ -14,7 +14,13 @@ export default async function DashboardPage() {
     redirect(ACCOUNT_ROUTES.login);
   }
 
-  const data = await getDashboardHomeData(session.user.id);
+  let data;
+  try {
+    data = await getDashboardHomeData(session.user.id);
+  } catch (err) {
+    console.error("[dashboard] getDashboardHomeData failed:", err instanceof Error ? err.message : err);
+    throw err;
+  }
 
   if (!data) {
     redirect(ACCOUNT_ROUTES.login);
