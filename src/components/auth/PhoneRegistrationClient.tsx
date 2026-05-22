@@ -62,7 +62,7 @@ const copy: Record<FlowMode, {
   client: {
     title: "Vamos verificar o seu telefone",
     phoneLabel: "Numero de telefone",
-    phonePlaceholder: "+55 11 96123 4567",
+    phonePlaceholder: "(11) 96123-4567",
     hint: "Esta etapa e obrigatoria para manter sua conta segura. Este numero nao sera exibido publicamente.",
     submit: "Enviar codigo via SMS",
     loginHref: "/app/consumer/login",
@@ -72,7 +72,7 @@ const copy: Record<FlowMode, {
   model: {
     title: "Vamos verificar o seu telefone",
     phoneLabel: "Numero de telefone",
-    phonePlaceholder: "+55 11 96123 4567",
+    phonePlaceholder: "(11) 96123-4567",
     hint: "Esta etapa e obrigatoria para manter seu perfil seguro. Este numero nao sera exibido publicamente. Depois, voce podera escolher outro para mostrar nos seus anuncios.",
     submit: "Enviar codigo via SMS",
     loginHref: "/modelo/login",
@@ -83,7 +83,7 @@ const copy: Record<FlowMode, {
   host: {
     title: "Vamos verificar o seu telefone",
     phoneLabel: "Numero de telefone",
-    phonePlaceholder: "+55 11 96123 4567",
+    phonePlaceholder: "(11) 96123-4567",
     hint: "Esta etapa e obrigatoria para manter seu cadastro seguro. Este numero nao sera exibido publicamente no local anunciado.",
     submit: "Enviar codigo via SMS",
     loginHref: "/login?returnUrl=/anfitriao/imoveis/novo",
@@ -620,8 +620,8 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
         <form onSubmit={handleRegister}>
           <label style={{ display: "block", fontSize: 15, fontWeight: 950, marginBottom: 12, color: "#d6a83a", letterSpacing: "0.08em", textTransform: "uppercase" }}>*{text.phoneLabel}</label>
           <div style={{ position: "relative" }}>
-            <span style={{ position: "absolute", left: 16, top: 17, height: 36, minWidth: 54, borderRadius: 12, background: "rgba(214,168,58,0.10)", border: "1px solid rgba(214,168,58,0.24)", color: "#f5d77a", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900 }}>
-              +55
+            <span style={{ position: "absolute", left: 16, top: 17, height: 36, minWidth: 54, borderRadius: 12, background: "rgba(214,168,58,0.10)", border: "1px solid rgba(214,168,58,0.24)", color: "#f5d77a", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 900, gap: 4 }}>
+              🇧🇷
             </span>
             <input
               value={phone}
