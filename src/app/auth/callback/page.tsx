@@ -90,7 +90,7 @@ function getRegistrationPath(pending: PendingRegistration | null) {
   return ACCOUNT_ROUTES.dashboardCliente;
 }
 
-function CallbackCard({ message, success }: { message: string; success?: boolean }) {
+function CallbackCard({ message, success, error }: { message: string; success?: boolean; error?: string }) {
   return (
     <main style={{
       minHeight: "100vh",
@@ -116,23 +116,27 @@ function CallbackCard({ message, success }: { message: string; success?: boolean
 
       <div style={{
         width: "100%",
-        maxWidth: 380,
+        maxWidth: 420,
         background: "rgba(10,10,10,0.96)",
-        border: "1px solid rgba(212,168,67,0.28)",
+        border: error ? "1px solid rgba(248,113,113,0.4)" : "1px solid rgba(212,168,67,0.28)",
         borderRadius: 16,
         padding: "40px 32px 36px",
         textAlign: "center",
         position: "relative",
         animation: "em-fadein 0.4s ease",
-        boxShadow: "0 0 60px rgba(212,168,67,0.06), 0 20px 60px rgba(0,0,0,0.6)",
+        boxShadow: error
+          ? "0 0 60px rgba(248,113,113,0.08), 0 20px 60px rgba(0,0,0,0.6)"
+          : "0 0 60px rgba(212,168,67,0.06), 0 20px 60px rgba(0,0,0,0.6)",
       }}>
-        {/* Gold line */}
+        {/* Top line */}
         <div style={{
           position: "absolute",
           top: 0, left: 0, right: 0,
           height: 2,
           borderRadius: "16px 16px 0 0",
-          background: "linear-gradient(90deg, transparent 0%, #d4a843 30%, #f5d78c 50%, #d4a843 70%, transparent 100%)",
+          background: error
+            ? "linear-gradient(90deg, transparent 0%, #f87171 30%, #fca5a5 50%, #f87171 70%, transparent 100%)"
+            : "linear-gradient(90deg, transparent 0%, #d4a843 30%, #f5d78c 50%, #d4a843 70%, transparent 100%)",
         }} />
 
         {/* Logo */}
@@ -143,8 +147,26 @@ function CallbackCard({ message, success }: { message: string; success?: boolean
           </span>
         </div>
 
+        {/* Error icon */}
+        {error && (
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+            <div style={{
+              width: 56, height: 56,
+              borderRadius: "50%",
+              background: "rgba(248,113,113,0.12)",
+              border: "1.5px solid #f87171",
+              display: "grid",
+              placeItems: "center",
+            }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+          </div>
+        )}
+
         {/* Spinner */}
-        {!success && (
+        {!success && !error && (
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
             <div style={{
               width: 48,
@@ -177,15 +199,56 @@ function CallbackCard({ message, success }: { message: string; success?: boolean
 
         {/* Message */}
         <p style={{
-          color: "#cbd5e1",
-          fontSize: 15,
-          fontWeight: 500,
+          color: error ? "#fca5a5" : "#cbd5e1",
+          fontSize: error ? 16 : 15,
+          fontWeight: error ? 700 : 500,
           margin: 0,
           lineHeight: 1.5,
-          animation: "em-pulse 2s ease-in-out infinite",
+          animation: error ? undefined : "em-pulse 2s ease-in-out infinite",
         }}>
           {message}
         </p>
+
+        {/* Error detail box */}
+        {error && (
+          <div style={{
+            marginTop: 16,
+            padding: "12px 16px",
+            background: "rgba(248,113,113,0.08)",
+            border: "1px solid rgba(248,113,113,0.25)",
+            borderRadius: 8,
+            textAlign: "left",
+          }}>
+            <p style={{ color: "#94a3b8", fontSize: 11, margin: "0 0 4px", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600 }}>
+              Código do erro
+            </p>
+            <p style={{ color: "#f87171", fontSize: 13, margin: 0, wordBreak: "break-all", fontFamily: "monospace" }}>
+              {error}
+            </p>
+          </div>
+        )}
+
+        {/* Retry link when error */}
+        {error && (
+          <a
+            href="/login"
+            style={{
+              display: "inline-block",
+              marginTop: 20,
+              padding: "10px 24px",
+              background: "rgba(212,168,67,0.12)",
+              border: `1px solid ${GOLD}`,
+              borderRadius: 8,
+              color: GOLD,
+              fontSize: 13,
+              fontWeight: 600,
+              textDecoration: "none",
+              letterSpacing: 0.3,
+            }}
+          >
+            Tentar novamente
+          </a>
+        )}
 
         {/* Subtle bottom label */}
         <p style={{ color: "#334155", fontSize: 11, margin: "20px 0 0", letterSpacing: 1.5, textTransform: "uppercase" }}>
@@ -228,6 +291,7 @@ function AuthCallbackContent() {
   const searchParams = useSearchParams();
   const [message, setMessage] = useState("Verificando suas credenciais...");
   const [success, setSuccess] = useState(false);
+  const [errorDetail, setErrorDetail] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     let active = true;
@@ -241,17 +305,15 @@ function AuthCallbackContent() {
       if (code) {
         const { data, error } = await supabaseAuth.auth.exchangeCodeForSession(code);
         if (error) {
-          // Código já foi usado (StrictMode chama o effect duas vezes em dev,
-          // ou usuário atualizou a página). Tenta usar sessão já existente.
           const { data: existing } = await supabaseAuth.auth.getSession();
           if (existing.session?.access_token) {
             accessToken = existing.session.access_token;
           } else {
             console.error("[CALLBACK] exchangeCodeForSession falhou:", error.message);
-            throw new Error("Não foi possível validar o acesso Google. Tente novamente.");
+            throw new Error(`Supabase: ${error.message}`);
           }
         } else {
-          if (!data.session?.access_token) throw new Error("Sessão não encontrada. Tente novamente.");
+          if (!data.session?.access_token) throw new Error("Sessão não encontrada após troca de código.");
           accessToken = data.session.access_token;
         }
       } else {
@@ -267,7 +329,6 @@ function AuthCallbackContent() {
         let pending: PendingRegistration | null = null;
         try {
           const parsed = JSON.parse(pendingRaw) as unknown;
-          // Validação mínima: garantir que accountType é um valor aceito
           const validTypes = ["GUEST", "PROFESSIONAL", "PROPERTY_HOST"];
           if (
             parsed &&
@@ -289,7 +350,6 @@ function AuthCallbackContent() {
           });
           if (!regRes.ok) {
             const payload = await regRes.json().catch(() => ({}));
-            // Conta já existente com tipo diferente — não é erro fatal, apenas segue o fluxo
             if (regRes.status !== 200) {
               throw new Error(typeof payload.error === "string" ? payload.error : "Erro ao criar conta.");
             }
@@ -299,7 +359,9 @@ function AuthCallbackContent() {
       }
 
       const res = await signIn("supabase", { accessToken, redirect: false });
-      if (res?.error) throw new Error("Conta não encontrada. Cadastre-se antes de entrar.");
+      if (res?.error) {
+        throw new Error(`NextAuth: ${res.error}`);
+      }
 
       const targetPath = returnUrl ?? (pendingRegistration
         ? getRegistrationPath(pendingRegistration)
@@ -316,13 +378,10 @@ function AuthCallbackContent() {
 
     finishAuth().catch((err) => {
       if (!active) return;
-      console.error("[CALLBACK] Erro no login Google:", err);
-      setMessage(err?.message ?? "Não foi possível finalizar o acesso.");
-      const params = [
-        returnUrl ? `returnUrl=${encodeURIComponent(returnUrl)}` : "",
-        roleIntent ? `role=${roleIntent}` : "",
-      ].filter(Boolean).join("&");
-      setTimeout(() => router.replace(`${ACCOUNT_ROUTES.login}${params ? `?${params}` : ""}`), 4000);
+      const msg: string = err?.message ?? "Não foi possível finalizar o acesso.";
+      console.error("[CALLBACK] Erro no login Google:", msg);
+      setMessage("Erro ao finalizar o acesso");
+      setErrorDetail(msg);
     });
 
     return () => {
@@ -330,7 +389,7 @@ function AuthCallbackContent() {
     };
   }, [router, searchParams]);
 
-  return <CallbackCard message={message} success={success} />;
+  return <CallbackCard message={message} success={success} error={errorDetail} />;
 }
 
 export default function AuthCallbackPage() {
