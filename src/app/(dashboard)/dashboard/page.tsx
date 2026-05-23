@@ -15,21 +15,24 @@ export default async function DashboardPage() {
     redirect(ACCOUNT_ROUTES.login);
   }
 
-  // Usuário sem consentimento/maioridade → completar cadastro obrigatório
-  if (session.user.needsConsent) {
-    redirect("/completar-cadastro");
-  }
-
   // Proteção de rota: profissional aprovado não deve ver dashboard de cliente
+  // Inclui verificação de consentimento direto do banco (evita loop por JWT em cache)
   const userType = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
       accountType: true,
       role: true,
+      lgpdConsent: true,
+      termsConsent: true,
+      birthDate: true,
       professional: { select: { status: true } },
       properties: { where: { status: "ACTIVE" }, select: { id: true }, take: 1 },
     },
   });
+
+  if (!userType?.lgpdConsent || !userType?.termsConsent || !userType?.birthDate) {
+    redirect("/completar-cadastro");
+  }
 
   if (userType) {
     const isApprovedProfessional = userType.professional?.status === "ACTIVE";

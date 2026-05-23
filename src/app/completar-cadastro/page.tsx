@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { getMaxBirthDate } from "@/lib/age-validation";
 
 const GOLD = "#d4a843";
@@ -10,8 +8,6 @@ const GOLD_GRADIENT =
   "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
 
 export default function CompletarCadastroPage() {
-  const router = useRouter();
-  const { update: updateSession } = useSession();
   const [birthDate, setBirthDate] = useState("");
   const [lgpdConsent, setLgpdConsent] = useState(false);
   const [termsConsent, setTermsConsent] = useState(false);
@@ -46,10 +42,8 @@ export default function CompletarCadastroPage() {
         return;
       }
 
-      // Atualiza o token JWT para refletir needsConsent = false
-      await updateSession();
-      router.replace("/dashboard");
-      setTimeout(() => router.refresh(), 150);
+      // Reload completo para garantir que o JWT seja refrescado com needsConsent = false
+      window.location.replace("/dashboard");
     } catch {
       setError("Erro de conexão. Tente novamente.");
     } finally {

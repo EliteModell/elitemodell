@@ -143,7 +143,8 @@ export const authOptions: NextAuthOptions = {
             image: user.image ?? metadataImage,
             role: user.role,
           };
-        } catch {
+        } catch (err) {
+          console.error("[AUTH] Erro no authorize supabase:", err);
           return null;
         }
       },
@@ -201,36 +202,39 @@ export const authOptions: NextAuthOptions = {
         token.picture = user.image;
       }
       if (token.id) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: {
-            name: true,
-            email: true,
-            image: true,
-            role: true,
-            accountType: true,
-            clientStatus: true,
-            lgpdConsent: true,
-            termsConsent: true,
-            birthDate: true,
-            professional: { select: { id: true } },
-            blocked: true,
-          },
-        });
-        if (dbUser) {
-          // Validar bloqueio
-          if (dbUser.blocked) {
-            console.warn(`[JWT] Usuário bloqueado: ${token.id}`);
-            return null as unknown as typeof token;
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: {
+              name: true,
+              email: true,
+              image: true,
+              role: true,
+              accountType: true,
+              clientStatus: true,
+              lgpdConsent: true,
+              termsConsent: true,
+              birthDate: true,
+              professional: { select: { id: true } },
+              blocked: true,
+            },
+          });
+          if (dbUser) {
+            if (dbUser.blocked) {
+              console.warn(`[JWT] Usuário bloqueado: ${token.id}`);
+              return null as unknown as typeof token;
+            }
+            token.name = dbUser.name;
+            token.email = dbUser.email;
+            token.picture = dbUser.image;
+            token.role = dbUser.role;
+            token.accountType = dbUser.accountType;
+            token.clientStatus = dbUser.clientStatus;
+            token.isProfessional = !!dbUser.professional;
+            token.needsConsent = !dbUser.lgpdConsent || !dbUser.termsConsent || !dbUser.birthDate;
           }
-          token.name = dbUser.name;
-          token.email = dbUser.email;
-          token.picture = dbUser.image;
-          token.role = dbUser.role;
-          token.accountType = dbUser.accountType;
-          token.clientStatus = dbUser.clientStatus;
-          token.isProfessional = !!dbUser.professional;
-          token.needsConsent = !dbUser.lgpdConsent || !dbUser.termsConsent || !dbUser.birthDate;
+        } catch (err) {
+          console.error("[JWT] Erro ao buscar usuário no banco:", err);
         }
       }
       return token;

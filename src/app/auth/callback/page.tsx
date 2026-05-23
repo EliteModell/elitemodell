@@ -12,7 +12,7 @@ type PendingRegistration = {
 
 const PROPERTY_DRAFT_KEY = "elitemodell_location_onboarding_v2";
 const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
-const CALLBACK_TIMEOUT_MS = 1800;
+const CALLBACK_TIMEOUT_MS = 4000;
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
 
@@ -236,13 +236,20 @@ function AuthCallbackContent() {
 
     async function finishAuth() {
       const code = searchParams.get("code");
-      if (code) {
-        const { error } = await supabaseAuth.auth.exchangeCodeForSession(code);
-        if (error) throw error;
-      }
+      let accessToken: string;
 
-      const accessToken = await waitForSession();
-      if (!accessToken) throw new Error("Sessão não encontrada. Tente novamente.");
+      if (code) {
+        const { data, error } = await supabaseAuth.auth.exchangeCodeForSession(code);
+        if (error) {
+          console.error("[CALLBACK] exchangeCodeForSession falhou:", error.message);
+          throw error;
+        }
+        if (!data.session?.access_token) throw new Error("Sessão não encontrada. Tente novamente.");
+        accessToken = data.session.access_token;
+      } else {
+        accessToken = await waitForSession();
+        if (!accessToken) throw new Error("Sessão não encontrada. Tente novamente.");
+      }
 
       if (active) setMessage("Configurando sua conta...");
 
@@ -301,12 +308,13 @@ function AuthCallbackContent() {
 
     finishAuth().catch((err) => {
       if (!active) return;
+      console.error("[CALLBACK] Erro no login Google:", err);
       setMessage(err?.message ?? "Não foi possível finalizar o acesso.");
       const params = [
         returnUrl ? `returnUrl=${encodeURIComponent(returnUrl)}` : "",
         roleIntent ? `role=${roleIntent}` : "",
       ].filter(Boolean).join("&");
-      setTimeout(() => router.replace(`${ACCOUNT_ROUTES.login}${params ? `?${params}` : ""}`), 1800);
+      setTimeout(() => router.replace(`${ACCOUNT_ROUTES.login}${params ? `?${params}` : ""}`), 4000);
     });
 
     return () => {
