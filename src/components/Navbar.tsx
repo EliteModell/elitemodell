@@ -2,8 +2,9 @@
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { EntryChoiceCards, EntryChoiceSheet, EntryChoiceStyles } from "@/components/EntryChoiceSheet";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 const NavbarSessionControls = dynamic(() => import("@/components/NavbarSessionControls"), {
   ssr: false,
@@ -11,17 +12,23 @@ const NavbarSessionControls = dynamic(() => import("@/components/NavbarSessionCo
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [entryChoice, setEntryChoice] = useState<"login" | "register" | null>(null);
+  const [entryChoice, setEntryChoice] = useState<"login" | null>(null);
   const [openPathname, setOpenPathname] = useState<string | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
   const routeChanged = openPathname !== null && openPathname !== pathname;
   const menuVisible = menuOpen && !routeChanged;
   const activeEntryChoice = routeChanged ? null : entryChoice;
 
-  function openEntryChoice(mode: "login" | "register") {
+  function openLogin() {
     setMenuOpen(false);
     setOpenPathname(pathname);
-    setEntryChoice(mode);
+    setEntryChoice("login");
+  }
+
+  function goToCadastro() {
+    setMenuOpen(false);
+    router.push(ACCOUNT_ROUTES.cadastro);
   }
 
   return (
@@ -57,8 +64,8 @@ export default function Navbar() {
         <div className="auth-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <NavbarSessionControls
             variant="authActions"
-            onLoginChoice={() => openEntryChoice("login")}
-            onRegisterChoice={() => openEntryChoice("register")}
+            onLoginChoice={() => openLogin()}
+            onRegisterChoice={() => goToCadastro()}
           />
 
           <button
@@ -89,13 +96,20 @@ export default function Navbar() {
           <NavbarSessionControls
             variant="mobileMenu"
             onNavigate={() => setMenuOpen(false)}
-            onLoginChoice={() => openEntryChoice("login")}
-            onRegisterChoice={() => openEntryChoice("register")}
+            onLoginChoice={() => openLogin()}
+            onRegisterChoice={() => goToCadastro()}
             showGuestActions={false}
           />
           <div className="mobile-entry-section">
             <p>Cadastre-se grátis</p>
-            <EntryChoiceCards mode="register" onNavigate={() => setMenuOpen(false)} />
+            <Link
+              href={ACCOUNT_ROUTES.cadastro}
+              onClick={() => setMenuOpen(false)}
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderRadius: 16, color: "#f4f1ea", textDecoration: "none", fontSize: 14, fontWeight: 700, border: "1px solid rgba(212,168,67,0.28)", background: "rgba(212,168,67,0.07)" }}
+            >
+              Criar minha conta
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4a843" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
+            </Link>
           </div>
           <div className="mobile-entry-section">
             <p>Login</p>
@@ -104,7 +118,7 @@ export default function Navbar() {
         </div>
       )}
 
-      <EntryChoiceSheet mode={activeEntryChoice} open={activeEntryChoice !== null} onClose={() => setEntryChoice(null)} />
+      <EntryChoiceSheet mode={activeEntryChoice} open={activeEntryChoice !== null} onClose={() => setEntryChoice(null) as unknown as void} />
       <EntryChoiceStyles />
 
       <style>{`
