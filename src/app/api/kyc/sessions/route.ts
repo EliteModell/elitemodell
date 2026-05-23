@@ -65,11 +65,25 @@ export async function POST() {
     );
   }
 
-  try {
-    const redirectUri = `${appBaseUrl()}/verificacao/callback`;
-    const { inquiryId, sessionToken, oneTimeLink } = await createPersonaInquiry(session.user.id, redirectUri);
-    const url = oneTimeLink ?? buildPersonaUrl(inquiryId, sessionToken, redirectUri);
+  const redirectUri = `${appBaseUrl()}/verificacao/callback`;
+  let inquiryId: string;
+  let sessionToken: string | undefined;
+  let oneTimeLink: string | undefined;
 
+  try {
+    ({ inquiryId, sessionToken, oneTimeLink } = await createPersonaInquiry(session.user.id, redirectUri));
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[KYC] Persona createInquiry falhou:", message);
+    return NextResponse.json(
+      { error: `Nao foi possivel iniciar a verificacao facial com Persona: ${message}` },
+      { status: 502 },
+    );
+  }
+
+  const url = oneTimeLink ?? buildPersonaUrl(inquiryId, sessionToken, redirectUri);
+
+  try {
     await prisma.user.update({
       where: { id: session.user.id },
       data: {
@@ -79,21 +93,17 @@ export async function POST() {
       },
       select: { id: true },
     });
-
-    return NextResponse.json({
-      provider: "PERSONA",
-      sessionId: inquiryId,
-      inquiryId,
-      status: PERSONA_PENDING_STATUS,
-      url,
-      captureMode: "PERSONA",
-      message: "Verificacao facial com Persona iniciada.",
-    });
   } catch (err) {
-    console.error("[KYC] Persona createInquiry falhou:", err);
-    return NextResponse.json(
-      { error: "Nao foi possivel iniciar a verificacao facial com Persona. Tente novamente ou contate o suporte." },
-      { status: 502 },
-    );
+    console.error("[KYC] Inquiry Persona criado, mas falhou ao salvar no usuario:", err);
   }
+
+  return NextResponse.json({
+    provider: "PERSONA",
+    sessionId: inquiryId,
+    inquiryId,
+    status: PERSONA_PENDING_STATUS,
+    url,
+    captureMode: "PERSONA",
+    message: "Verificacao facial com Persona iniciada.",
+  });
 }
