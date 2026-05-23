@@ -134,6 +134,7 @@ export function accountHomePathFromSession(sessionUser: {
   if (sessionUser.isProfessional || sessionUser.accountType === "model" || sessionUser.accountType === "professional") {
     return ACCOUNT_ROUTES.dashboardAcompanhante;
   }
-  if (sessionUser.role === "HOST" || sessionUser.accountType === "host") return ACCOUNT_ROUTES.dashboardAnfitriao;
+  if (sessionUser.role === "HOST") return ACCOUNT_ROUTES.dashboardAnfitriao;
+  if (sessionUser.accountType === "host") return ACCOUNT_ROUTES.verificacaoAnfitriao;
   return ACCOUNT_ROUTES.dashboardCliente;
 }

@@ -9,7 +9,6 @@ import { enforceRateLimit, getClientIP } from "@/lib/security";
 
 const schema = z.object({
   accessToken: z.string(),
-  role: z.enum(["GUEST", "HOST"]).default("GUEST"),
   accountType: z.enum(["GUEST", "PROFESSIONAL", "PROPERTY_HOST"]).optional(),
   category: z.enum(["TRANS", "MULHER", "HOMEM"]).optional(),
   birthDate: z.string().optional(),
@@ -23,8 +22,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { accessToken, role, accountType, category, birthDate, lgpdConsent, termsConsent } = schema.parse(body);
-    const savedRole = accountType === "PROPERTY_HOST" ? "GUEST" : role;
+    const { accessToken, accountType, category, birthDate, lgpdConsent, termsConsent } = schema.parse(body);
     const publicAccountType =
       accountType === "PROFESSIONAL" ? "model" : accountType === "PROPERTY_HOST" ? "host" : "client";
 
@@ -118,7 +116,7 @@ export async function POST(req: NextRequest) {
         name: (authUser.user_metadata?.name as string | undefined) ?? authUser.email ?? phone ?? null,
         image: (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
         phone: phone ?? null,
-        role: savedRole,
+        role: "GUEST",
         accountType: publicAccountType,
         category: category ?? null,
         birthDate: new Date(birthDate),
@@ -128,10 +126,6 @@ export async function POST(req: NextRequest) {
       },
       select: { id: true, name: true, email: true, role: true },
     });
-
-    if (savedRole === "HOST") {
-      await prisma.hostProfile.create({ data: { userId: user.id } });
-    }
 
     return NextResponse.json(user, { status: 201 });
   } catch (err) {

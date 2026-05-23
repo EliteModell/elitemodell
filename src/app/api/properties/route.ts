@@ -124,13 +124,8 @@ export async function POST(req: NextRequest) {
       if (currentUser?.role !== "ADMIN") {
         await tx.user.update({
           where: { id: session.user.id },
-          data: { role: "HOST", accountType: "host" },
+          data: { accountType: "host" },
           select: { id: true },
-        });
-        await tx.hostProfile.upsert({
-          where: { userId: session.user.id },
-          create: { userId: session.user.id },
-          update: {},
         });
       }
 

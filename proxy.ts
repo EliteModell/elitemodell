@@ -92,11 +92,11 @@ export async function proxy(request: NextRequest) {
   }
 
   if (pathname.startsWith("/painel/anfitriao")) {
-    if (tokenWithRole.role !== "HOST" && tokenWithRole.role !== "ADMIN") return forbidden(homeForToken());
+    if (tokenWithRole.role !== "HOST" && tokenWithRole.role !== "ADMIN" && tokenWithRole.accountType !== "host") return forbidden(homeForToken());
   }
 
   if (pathname.startsWith("/anfitriao") || pathname.startsWith("/api/anfitriao")) {
-    if (tokenWithRole.role !== "HOST" && tokenWithRole.role !== "ADMIN") return forbidden(homeForToken());
+    if (tokenWithRole.role !== "HOST" && tokenWithRole.role !== "ADMIN" && tokenWithRole.accountType !== "host") return forbidden(homeForToken());
   }
 
   if (pathname === "/profissional/novo") {
