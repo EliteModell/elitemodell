@@ -46,7 +46,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isClientArea = pathname === ACCOUNT_ROUTES.dashboardCliente || pathname.startsWith(`${ACCOUNT_ROUTES.dashboardCliente}/`);
   const isProfessionalArea = pathname === ACCOUNT_ROUTES.dashboardAcompanhante || pathname.startsWith(`${ACCOUNT_ROUTES.dashboardAcompanhante}/`);
   const isHostArea = pathname === ACCOUNT_ROUTES.dashboardAnfitriao || pathname.startsWith(`${ACCOUNT_ROUTES.dashboardAnfitriao}/`);
-  const roleAreaClass = isProfessionalArea ? "professional" : isHostArea ? "host" : "";
+  const isAdminArea = pathname === "/admin" || pathname.startsWith("/admin/");
+  const roleAreaClass = isProfessionalArea ? "professional" : isHostArea ? "host" : isAdminArea ? "admin" : "";
 
   useEffect(() => {
     if (status === "unauthenticated" && !isPublicPropertyDraft) {
@@ -501,6 +502,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           }
           .professional-content [style*="repeat(auto-fit"] {
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+          }
+        }
+        .admin-shell * {
+          box-sizing: border-box;
+        }
+        .admin-shell img,
+        .admin-shell video,
+        .admin-shell svg {
+          max-width: 100%;
+          height: auto;
+        }
+        .admin-page {
+          overflow-x: hidden !important;
+        }
+        @media (max-width: 900px) {
+          .admin-content [style*="1.25fr"] {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .admin-content h1 {
+            font-size: clamp(18px, 5.5vw, 24px) !important;
+            line-height: 1.2 !important;
+          }
+          .admin-content [style*="minmax(190px"] {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+        @media (max-width: 400px) {
+          .admin-content [style*="minmax(190px"] {
+            grid-template-columns: 1fr !important;
           }
         }
       `}</style>
