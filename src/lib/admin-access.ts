@@ -74,7 +74,10 @@ function adminMasterEmails() {
 }
 
 export function resolveAdminRole(email?: string | null): AdminRole {
-  if (email && adminMasterEmails().includes(email.toLowerCase())) return "ADMIN_MASTER";
+  const masterEmails = adminMasterEmails();
+  // Sem lista configurada, todos os ADMINs têm acesso ADMIN_MASTER
+  if (masterEmails.length === 0) return "ADMIN_MASTER";
+  if (email && masterEmails.includes(email.toLowerCase())) return "ADMIN_MASTER";
   return "ADMIN_GERAL";
 }
 
