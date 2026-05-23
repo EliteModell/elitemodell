@@ -26,6 +26,8 @@ export const ACCOUNT_ROUTES = {
 } as const;
 
 export const PROFESSIONAL_CATEGORIES = ["MULHER", "HOMEM", "TRANS"] as const;
+const APPROVED_HOST_STATUSES = ["ACTIVE"] as const;
+const SUBMITTED_HOST_STATUSES = ["PENDING_REVIEW", "ACTIVE", "INACTIVE", "REJECTED"] as const;
 
 export function isProfessionalCategory(value: string | null | undefined) {
   return (PROFESSIONAL_CATEGORIES as readonly string[]).includes(value ?? "");
@@ -67,6 +69,37 @@ type PostLoginUser = {
   redirectTo?: string | null;
 };
 
+export type HostRegistrationStatus =
+  | "NO_REQUEST"
+  | "CADASTRO_INCOMPLETO"
+  | "PENDENTE_APROVACAO"
+  | "APROVADO"
+  | "REPROVADO";
+
+export function getHostRegistrationStatus(user: Pick<PostLoginUser, "role" | "accountType" | "properties"> | null | undefined): HostRegistrationStatus {
+  if (!user) return "NO_REQUEST";
+  const properties = user.properties ?? [];
+  const statuses = properties.map((property) => property.status).filter(Boolean);
+  const isApprovedHostIdentity = user.role === "HOST" || user.accountType === "host";
+
+  if (isApprovedHostIdentity && statuses.some((status) => APPROVED_HOST_STATUSES.includes(status as typeof APPROVED_HOST_STATUSES[number]))) {
+    return "APROVADO";
+  }
+
+  if (statuses.includes("REJECTED")) return "REPROVADO";
+  if (statuses.some((status) => status && SUBMITTED_HOST_STATUSES.includes(status as typeof SUBMITTED_HOST_STATUSES[number]))) {
+    return "PENDENTE_APROVACAO";
+  }
+  if (properties.length > 0) return "CADASTRO_INCOMPLETO";
+  return "NO_REQUEST";
+}
+
+export function hostPathForStatus(status: HostRegistrationStatus) {
+  if (status === "APROVADO") return ACCOUNT_ROUTES.dashboardAnfitriao;
+  if (status === "PENDENTE_APROVACAO" || status === "REPROVADO") return ACCOUNT_ROUTES.verificacaoAnfitriao;
+  return ACCOUNT_ROUTES.onboardingAnfitriao;
+}
+
 export function loginHrefForRole(role: EntryAccountRole) {
   return `${ACCOUNT_ROUTES.login}?role=${role}`;
 }
@@ -95,9 +128,9 @@ export function postLoginPathFromUser(user: PostLoginUser | null | undefined, in
 
   const professionalStatus = user.professional?.status;
   const isModelAccount = user.accountType === "model";
-  const isHostAccount = user.accountType === "host";
   const isProfessionalIntent = isProfessionalCategory(user.category);
   const properties = user.properties ?? [];
+  const hostStatus = getHostRegistrationStatus(user);
 
   if (intent === "cliente") return ACCOUNT_ROUTES.dashboardCliente;
 
@@ -108,18 +141,14 @@ export function postLoginPathFromUser(user: PostLoginUser | null | undefined, in
   }
 
   if (intent === "anfitriao") {
-    if (properties.some((property) => property.status === "ACTIVE")) return ACCOUNT_ROUTES.dashboardAnfitriao;
-    if (properties.some((property) => property.status && property.status !== "DRAFT")) return ACCOUNT_ROUTES.verificacaoAnfitriao;
-    return ACCOUNT_ROUTES.onboardingAnfitriao;
+    return hostPathForStatus(hostStatus);
   }
 
   if (professionalStatus === "ACTIVE") return ACCOUNT_ROUTES.dashboardAcompanhante;
   if (!professionalStatus && (isProfessionalIntent || isModelAccount)) return ACCOUNT_ROUTES.onboardingAcompanhante;
   if (professionalStatus || isProfessionalIntent || isModelAccount) return ACCOUNT_ROUTES.verificacaoAcompanhante;
 
-  if (properties.some((property) => property.status === "ACTIVE")) return ACCOUNT_ROUTES.dashboardAnfitriao;
-  if (properties.some((property) => property.status && property.status !== "DRAFT")) return ACCOUNT_ROUTES.verificacaoAnfitriao;
-  if (user.role === "HOST" || isHostAccount) return ACCOUNT_ROUTES.onboardingAnfitriao;
+  if (hostStatus !== "NO_REQUEST") return hostPathForStatus(hostStatus);
 
   return ACCOUNT_ROUTES.dashboardCliente;
 }
@@ -128,13 +157,15 @@ export function accountHomePathFromSession(sessionUser: {
   role?: string | null;
   accountType?: string | null;
   isProfessional?: boolean | null;
+  hostStatus?: string | null;
 } | null | undefined) {
   if (!sessionUser) return ACCOUNT_ROUTES.dashboardCliente;
   if (sessionUser.role === "ADMIN") return ACCOUNT_ROUTES.admin;
   if (sessionUser.isProfessional || sessionUser.accountType === "model" || sessionUser.accountType === "professional") {
     return ACCOUNT_ROUTES.dashboardAcompanhante;
   }
-  if (sessionUser.role === "HOST") return ACCOUNT_ROUTES.dashboardAnfitriao;
-  if (sessionUser.accountType === "host") return ACCOUNT_ROUTES.verificacaoAnfitriao;
+  if (sessionUser.hostStatus && sessionUser.hostStatus !== "NO_REQUEST") {
+    return hostPathForStatus(sessionUser.hostStatus as HostRegistrationStatus);
+  }
   return ACCOUNT_ROUTES.dashboardCliente;
 }

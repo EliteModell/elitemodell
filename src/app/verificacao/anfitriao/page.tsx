@@ -12,20 +12,27 @@ export default async function VerificacaoAnfitriaoPage() {
 
   if (access.hostApproved) redirect(ACCOUNT_ROUTES.painelAnfitriao);
 
-  const hasProperty = access.user.properties.some((property) => property.status !== "DRAFT");
-  const title = hasProperty ? "Imóvel aguardando aprovação" : "Cadastro de imóvel em andamento";
-  const description = hasProperty
-    ? "Seu ambiente reservado foi enviado para curadoria. O painel de anfitrião será liberado apenas depois da aprovação."
-    : "Cadastre os dados do imóvel, fotos, regras e disponibilidade para iniciar a análise.";
+  const rejectedProperty = access.user.properties.find((property) => property.status === "REJECTED");
+  const title = access.hostRejected
+    ? "Cadastro de anfitriao reprovado"
+    : access.hostInReview
+      ? "Cadastro de anfitriao em analise"
+      : "Complete seu cadastro de anfitriao";
+  const description = access.hostRejected
+    ? `Seu imovel${rejectedProperty?.title ? ` "${rejectedProperty.title}"` : ""} foi reprovado pela administracao. Revise as informacoes e envie novamente, se aplicavel.`
+    : access.hostInReview
+      ? "Seu cadastro de anfitriao esta em analise. Aguarde aprovacao da administracao para acessar o painel completo."
+      : "Cadastre os dados do imovel, fotos, regras e disponibilidade para iniciar a analise.";
+  const actionLabel = access.hostRejected ? "Corrigir cadastro" : access.hostInReview ? "Ver cadastro enviado" : "Completar cadastro";
 
   return (
     <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#050505", color: "#f4f1ea", padding: 24 }}>
       <section style={{ width: "100%", maxWidth: 520, border: "1px solid rgba(212,168,67,0.24)", borderRadius: 16, background: "#101010", padding: 28, textAlign: "center" }}>
-        <p style={{ margin: "0 0 10px", color: GOLD, fontSize: 11, fontWeight: 900, letterSpacing: 2.4, textTransform: "uppercase" }}>Verificação de anfitrião</p>
+        <p style={{ margin: "0 0 10px", color: GOLD, fontSize: 11, fontWeight: 900, letterSpacing: 2.4, textTransform: "uppercase" }}>Solicitacao de anfitriao</p>
         <h1 style={{ margin: 0, fontSize: 28, lineHeight: 1.1 }}>{title}</h1>
         <p style={{ margin: "14px 0 24px", color: "#9f978b", lineHeight: 1.6 }}>{description}</p>
         <Link href={ACCOUNT_ROUTES.onboardingAnfitriao} style={{ display: "inline-flex", minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: 999, background: GOLD, color: "#050505", padding: "0 20px", textDecoration: "none", fontWeight: 900 }}>
-          Cadastrar meu imóvel
+          {actionLabel}
         </Link>
       </section>
     </main>

@@ -43,6 +43,12 @@ const hostNav: NavItem[] = [
   { label: "Meu Perfil", href: "/dashboard/perfil", icon: <UserRound className="h-4 w-4" /> },
 ];
 
+const hostOnboardingNav: NavItem[] = [
+  { label: "Completar cadastro", href: ACCOUNT_ROUTES.onboardingAnfitriao, icon: <Home className="h-4 w-4" />, accent: "Etapas" },
+  { label: "Status da analise", href: ACCOUNT_ROUTES.verificacaoAnfitriao, icon: <Building2 className="h-4 w-4" /> },
+  { label: "Perfil", href: "/dashboard/perfil", icon: <UserRound className="h-4 w-4" /> },
+];
+
 const adminNav: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: <LayoutDashboard className="h-4 w-4" />, accent: "Admin" },
   { label: "Usuários", href: "/admin/usuarios", icon: <UsersRound className="h-4 w-4" /> },
@@ -95,8 +101,17 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
   const role = session?.user?.role;
   const path = pathname ?? "";
   const isProfessionalArea = path.startsWith("/profissional");
+  const isHostFlow = path.startsWith("/anfitriao") || path.startsWith("/verificacao/anfitriao");
+  const isApprovedHostArea = isHostFlow && session?.user?.hostStatus === "APROVADO";
   const nav =
-    role === "ADMIN" ? adminNav : isProfessionalArea ? professionalNav : role === "HOST" ? hostNav : guestNav;
+    role === "ADMIN" ? adminNav : isProfessionalArea ? professionalNav : isApprovedHostArea ? hostNav : isHostFlow ? hostOnboardingNav : guestNav;
+  const sectionLabel = isProfessionalArea
+    ? "Area profissional"
+    : isApprovedHostArea
+      ? "AREA ANFITRIAO"
+      : isHostFlow
+        ? "CADASTRO DE ANFITRIAO"
+        : "Area cliente";
 
   return (
     <>
@@ -166,7 +181,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
 
         <nav className="relative flex-1 overflow-y-auto px-3 py-4">
           <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.26em] text-white/28">
-            {isProfessionalArea ? "Área profissional" : role === "HOST" ? "Área anunciante" : "Área cliente"}
+            {sectionLabel}
           </p>
           <div className="space-y-1.5">
             {nav.map((navItem) => {
@@ -229,7 +244,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                 Atualizar perfil
               </Link>
             </div>
-          ) : role === "GUEST" ? (
+          ) : role === "GUEST" && !isHostFlow ? (
             <div className="mt-5 rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(204,31,47,0.06))] p-3">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f5d78c]">
                 Encontre profissionais

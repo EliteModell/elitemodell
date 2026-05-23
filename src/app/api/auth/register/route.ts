@@ -23,8 +23,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { accessToken, accountType, category, birthDate, lgpdConsent, termsConsent } = schema.parse(body);
-    const publicAccountType =
-      accountType === "PROFESSIONAL" ? "model" : accountType === "PROPERTY_HOST" ? "host" : "client";
+    const publicAccountType = accountType === "PROFESSIONAL" ? "model" : "client";
 
     const supabase = createSupabaseServerClient();
     const { data, error } = await supabase.auth.getUser(accessToken);

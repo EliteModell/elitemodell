@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseAuth } from "@/lib/supabase-client";
-import { ACCOUNT_ROUTES, normalizeEntryRole, postLoginPathFromUser } from "@/lib/account-routes";
+import { ACCOUNT_ROUTES, hostPathForStatus, normalizeEntryRole, postLoginPathFromUser } from "@/lib/account-routes";
 
 type PendingRegistration = {
   accountType?: "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
@@ -52,7 +52,8 @@ async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRol
     return postLoginPathFromUser(user, roleIntent);
   }
 
-  if (user.role === "HOST" && hasPropertyDraft()) return PROPERTY_DRAFT_FINAL_PATH;
+  if (roleIntent === "anfitriao" && hasPropertyDraft()) return PROPERTY_DRAFT_FINAL_PATH;
+  if (roleIntent === "anfitriao") return hostPathForStatus(user.hostStatus ?? "NO_REQUEST");
 
   return postLoginPathFromUser(user, roleIntent);
 }

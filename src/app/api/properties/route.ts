@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
     select: { role: true, accountType: true },
   });
   const canSubmitHostProperty =
-    Boolean(currentUser) && (currentUser?.role === "ADMIN" || currentUser?.role === "HOST" || currentUser?.accountType !== "model");
+    Boolean(currentUser) && (currentUser?.role === "ADMIN" || currentUser?.accountType !== "model");
   if (!canSubmitHostProperty) {
     return NextResponse.json({ error: "Apenas anunciantes podem cadastrar espaços." }, { status: 403 });
   }
@@ -120,25 +120,15 @@ export async function POST(req: NextRequest) {
     const data = createSchema.parse(body);
     const { amenities, photos, ...propertyData } = data;
 
-    const property = await prisma.$transaction(async (tx) => {
-      if (currentUser?.role !== "ADMIN") {
-        await tx.user.update({
-          where: { id: session.user.id },
-          data: { accountType: "host" },
-          select: { id: true },
-        });
-      }
-
-      return tx.property.create({
-        data: {
-          ...propertyData,
-          hostId: session.user.id,
-          status: "PENDING_REVIEW",
-          amenities: { create: amenities.map((name) => ({ name })) },
-          photos: { create: photos.map((url, order) => ({ url, order })) },
-        },
-        include: { amenities: true, photos: true },
-      });
+    const property = await prisma.property.create({
+      data: {
+        ...propertyData,
+        hostId: session.user.id,
+        status: "PENDING_REVIEW",
+        amenities: { create: amenities.map((name) => ({ name })) },
+        photos: { create: photos.map((url, order) => ({ url, order })) },
+      },
+      include: { amenities: true, photos: true },
     });
 
     return NextResponse.json(property, { status: 201 });

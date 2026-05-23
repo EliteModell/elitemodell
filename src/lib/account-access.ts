@@ -4,7 +4,13 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ACCOUNT_ROUTES, isProfessionalCategory, postLoginPathFromUser } from "@/lib/account-routes";
+import {
+  ACCOUNT_ROUTES,
+  getHostRegistrationStatus,
+  hostPathForStatus,
+  isProfessionalCategory,
+  postLoginPathFromUser,
+} from "@/lib/account-routes";
 
 export async function getCurrentAccountAccess() {
   const session = await getServerSession(authOptions);
@@ -30,8 +36,7 @@ export async function getCurrentAccountAccess() {
   const isAdmin = user.role === "ADMIN";
   const isCompanionIntent = user.accountType === "model" || isProfessionalCategory(user.category);
   const companionStatus = user.professional?.status ?? null;
-  const submittedHostProperties = user.properties.filter((property) => property.status !== "DRAFT");
-  const hostStatuses = submittedHostProperties.map((property) => property.status);
+  const hostStatus = getHostRegistrationStatus(user);
 
   return {
     user,
@@ -41,10 +46,13 @@ export async function getCurrentAccountAccess() {
     hasCompanionRequest: Boolean(user.professional || isCompanionIntent),
     companionApproved: companionStatus === "ACTIVE",
     companionInReview: Boolean(companionStatus && companionStatus !== "ACTIVE"),
-    hasHostRequest: submittedHostProperties.length > 0,
+    hostStatus,
+    hasHostRequest: user.properties.length > 0,
     hasHostIntent: (user.role === "HOST" || user.accountType === "host") && !isCompanionIntent,
-    hostApproved: hostStatuses.includes("ACTIVE"),
-    hostInReview: hostStatuses.some((status) => status !== "ACTIVE"),
+    hostApproved: hostStatus === "APROVADO",
+    hostInReview: hostStatus === "PENDENTE_APROVACAO",
+    hostRejected: hostStatus === "REPROVADO",
+    hostIncomplete: hostStatus === "CADASTRO_INCOMPLETO",
     postLoginPath: postLoginPathFromUser(user),
   };
 }
@@ -73,8 +81,7 @@ export async function requireHostPanel() {
   const access = await requireAuthenticatedAccount();
   if (access.isAdmin) return access;
   if (!access.hostApproved) {
-    if (access.hasHostRequest) redirect(ACCOUNT_ROUTES.verificacaoAnfitriao);
-    redirect(ACCOUNT_ROUTES.onboardingAnfitriao);
+    redirect(hostPathForStatus(access.hostStatus));
   }
   return access;
 }

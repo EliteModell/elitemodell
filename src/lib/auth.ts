@@ -4,6 +4,7 @@ import { prisma } from "./prisma";
 import { verifyPhoneAuthToken } from "./phone-otp";
 import { createSupabaseServerClient } from "./supabase-server";
 import { checkRateLimit } from "./security";
+import { getHostRegistrationStatus } from "./account-routes";
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
@@ -79,9 +80,7 @@ export const authOptions: NextAuthOptions = {
             const metadataAccountType =
               metadata.accountType === "PROFESSIONAL"
                 ? "model"
-                : metadata.accountType === "PROPERTY_HOST"
-                  ? "host"
-                  : metadata.accountType === "model" || metadata.accountType === "host"
+                : metadata.accountType === "model" || metadata.accountType === "host"
                     ? metadata.accountType
                     : "client";
             const role = metadataAccountType === "model" && metadata.role === "HOST" ? "HOST" : "GUEST";
@@ -216,6 +215,7 @@ export const authOptions: NextAuthOptions = {
               termsConsent: true,
               birthDate: true,
               professional: { select: { id: true } },
+              properties: { select: { status: true } },
               blocked: true,
             },
           });
@@ -232,6 +232,7 @@ export const authOptions: NextAuthOptions = {
             token.clientStatus = dbUser.clientStatus;
             token.isProfessional = !!dbUser.professional;
             token.needsConsent = !dbUser.lgpdConsent || !dbUser.termsConsent || !dbUser.birthDate;
+            token.hostStatus = getHostRegistrationStatus(dbUser);
           }
         } catch (err) {
           console.error("[JWT] Erro ao buscar usuário no banco:", err);
@@ -249,7 +250,8 @@ export const authOptions: NextAuthOptions = {
         session.user.accountType = token.accountType as string;
         session.user.clientStatus = token.clientStatus as string;
         session.user.isProfessional = token.isProfessional ?? false;
-      session.user.needsConsent = token.needsConsent ?? false;
+        session.user.needsConsent = token.needsConsent ?? false;
+        session.user.hostStatus = token.hostStatus as string | undefined;
       }
       return session;
     },

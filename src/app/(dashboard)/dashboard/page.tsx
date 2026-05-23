@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import PremiumDashboardHome from "@/components/dashboard/PremiumDashboardHome";
 import { authOptions } from "@/lib/auth";
 import { getDashboardHomeData } from "@/lib/dashboard-data";
-import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import { ACCOUNT_ROUTES, getHostRegistrationStatus, hostPathForStatus } from "@/lib/account-routes";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +26,7 @@ export default async function DashboardPage() {
       termsConsent: true,
       birthDate: true,
       professional: { select: { status: true } },
-      properties: { where: { status: "ACTIVE" }, select: { id: true }, take: 1 },
+      properties: { select: { status: true } },
     },
   });
 
@@ -36,15 +36,14 @@ export default async function DashboardPage() {
 
   if (userType) {
     const isApprovedProfessional = userType.professional?.status === "ACTIVE";
-    const isApprovedHost = userType.properties.length > 0;
+    const hostStatus = getHostRegistrationStatus(userType);
     const isModel = userType.accountType === "model";
-    const isHost = userType.accountType === "host";
 
     if (isApprovedProfessional && isModel) {
       redirect(ACCOUNT_ROUTES.dashboardAcompanhante);
     }
-    if (isApprovedHost && isHost) {
-      redirect(ACCOUNT_ROUTES.dashboardAnfitriao);
+    if (hostStatus !== "NO_REQUEST") {
+      redirect(hostPathForStatus(hostStatus));
     }
   }
 

@@ -1,4 +1,10 @@
-export default function GanhosAnfitriaoPage() {
+import { requireHostPanel } from "@/lib/account-access";
+
+export const dynamic = "force-dynamic";
+
+export default async function GanhosAnfitriaoPage() {
+  await requireHostPanel();
+
   return (
     <div>
       <h1 style={{ color: "#fff", fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Ganhos</h1>

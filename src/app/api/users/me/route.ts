@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import { postLoginPathFromUser } from "@/lib/account-routes";
+import { getHostRegistrationStatus, postLoginPathFromUser } from "@/lib/account-routes";
 
 const updateSchema = z.object({
   name: z.string().min(2).optional(),
@@ -49,7 +49,8 @@ export async function GET() {
     },
   });
 
-  return NextResponse.json(user ? { ...user, redirectTo: postLoginPathFromUser(user) } : null);
+  const hostStatus = getHostRegistrationStatus(user);
+  return NextResponse.json(user ? { ...user, hostStatus, redirectTo: postLoginPathFromUser(user) } : null);
 }
 
 export async function PATCH(req: NextRequest) {
