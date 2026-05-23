@@ -44,6 +44,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "professional-flow",
+      testMatch: "**/professional-flow.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "authenticated",
       testMatch: "**/client-area-authenticated.spec.ts",
       use: {
