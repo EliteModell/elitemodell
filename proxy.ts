@@ -18,6 +18,7 @@ export async function proxy(request: NextRequest) {
   const publicRoutes = [
     "/",
     "/login",
+    "/admin/login",
     "/cadastro",
     "/cadastro-modelo",
     "/cadastro-anfitriao",

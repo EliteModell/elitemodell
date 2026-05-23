@@ -1,158 +1,124 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
-import { authOptions } from "@/lib/auth";
-import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import { requireAdmin } from "@/lib/admin-access";
+import { logAudit } from "@/lib/audit";
+import { AdminHeader, AdminPanel, AdminTable, StatusPill, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
 
 const statusLabel: Record<string, string> = {
   DRAFT: "Rascunho",
-  PENDING_REVIEW: "Pendente",
-  ACTIVE: "Ativo",
-  INACTIVE: "Inativo",
-  REJECTED: "Rejeitado",
+  PENDING_REVIEW: "Pendente aprovacao",
+  ACTIVE: "Aprovado",
+  INACTIVE: "Oculto/Suspenso",
+  REJECTED: "Reprovado",
 };
 
-async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  if (session?.user?.role !== "ADMIN") redirect(ACCOUNT_ROUTES.painelCliente);
-  return session;
-}
-
-async function approveProperty(formData: FormData) {
+async function reviewProperty(formData: FormData) {
   "use server";
-  await requireAdmin();
-
+  const { session } = await requireAdmin("properties:review");
   const id = String(formData.get("id") ?? "");
-  if (!id) return;
+  const action = String(formData.get("action") ?? "");
+  const reason = String(formData.get("reason") ?? "");
+  if (!id || !["approve", "reject", "hide", "suspend"].includes(action)) return;
 
-  const property = await prisma.property.findUnique({
-    where: { id },
-    select: { id: true, hostId: true },
-  });
-
+  const property = await prisma.property.findUnique({ where: { id }, select: { id: true, hostId: true } });
   if (!property) return;
 
   await prisma.$transaction(async (tx) => {
     await tx.property.update({
-      where: { id: property.id },
-      data: { status: "ACTIVE" },
-      select: { id: true },
+      where: { id },
+      data: {
+        status: action === "approve" ? "ACTIVE" : action === "reject" ? "REJECTED" : "INACTIVE",
+      },
     });
-
-    await tx.user.update({
-      where: { id: property.hostId },
-      data: { role: "HOST", accountType: "host" },
-      select: { id: true },
-    });
-
-    await tx.hostProfile.upsert({
-      where: { userId: property.hostId },
-      create: { userId: property.hostId },
-      update: {},
-    });
+    if (action === "approve") {
+      await tx.user.update({ where: { id: property.hostId }, data: { role: "HOST", accountType: "host" } });
+      await tx.hostProfile.upsert({ where: { userId: property.hostId }, create: { userId: property.hostId }, update: {} });
+    }
   });
 
+  await logAudit({
+    adminId: session.user.id,
+    action: action === "approve" ? "PROPERTY_APPROVED" : "PROPERTY_REJECTED",
+    targetType: "PROPERTY",
+    targetId: id,
+    reason: reason || `property:${action}`,
+  });
   revalidatePath("/admin/imoveis");
 }
 
-async function rejectProperty(formData: FormData) {
-  "use server";
-  await requireAdmin();
-
-  const id = String(formData.get("id") ?? "");
-  if (!id) return;
-
-  await prisma.property.update({
-    where: { id },
-    data: { status: "REJECTED" },
-    select: { id: true },
-  });
-
-  revalidatePath("/admin/imoveis");
-}
-
-export default async function AdminImoveisPage() {
-  await requireAdmin();
+export default async function AdminImoveisPage({ searchParams }: { searchParams?: Promise<{ status?: string }> }) {
+  await requireAdmin("properties:review");
+  const params = await searchParams;
+  const status = params?.status;
+  const where = status && status !== "ALL" ? { status: status as "DRAFT" | "PENDING_REVIEW" | "ACTIVE" | "INACTIVE" | "REJECTED" } : {};
 
   const properties = await prisma.property.findMany({
+    where,
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
-    take: 50,
+    take: 100,
     include: {
-      host: { select: { name: true, email: true } },
-      photos: { take: 1, orderBy: { order: "asc" } },
+      host: { select: { id: true, name: true, email: true, phone: true, blocked: true } },
+      photos: { take: 3, orderBy: { order: "asc" } },
+      amenities: true,
     },
   });
 
   return (
     <div>
-      <h1 style={{ color: "#fff", fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Espaços</h1>
-      <p style={{ color: "#777", marginBottom: 24 }}>Últimos locais cadastrados para auditoria e moderação.</p>
-
-      {properties.length === 0 ? (
-        <div style={{ background: "#111", border: "1px solid #222", borderRadius: 10, padding: 24, color: "#777" }}>
-          Nenhum espaço cadastrado.
-        </div>
-      ) : (
-        <div style={{ display: "grid", gap: 12 }}>
-          {properties.map((property) => {
-            const pending = property.status === "PENDING_REVIEW";
-            const active = property.status === "ACTIVE";
-
-            return (
-              <div
-                key={property.id}
-                style={{ background: "#111", border: "1px solid #222", borderRadius: 10, padding: 16 }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-                  <div>
-                    <Link href={`/imoveis/${property.id}`} style={{ color: "#fff", textDecoration: "none" }}>
-                      <strong>{property.title}</strong>
-                    </Link>
-                    <p style={{ color: "#777", margin: "6px 0" }}>{property.city}, {property.state}</p>
-                    <p style={{ color: "#777", margin: 0, fontSize: 13 }}>
-                      Anunciante: {property.host.name ?? property.host.email ?? "Sem nome"}
-                    </p>
-                  </div>
-                  <div style={{ minWidth: 220, textAlign: "right" }}>
-                    <span style={{ color: pending ? "#d4a843" : "#aaa", fontSize: 13, fontWeight: 800 }}>
-                      {statusLabel[property.status] ?? property.status}
-                    </span>
-                    <p style={{ color: "#aaa", margin: "8px 0 12px", fontSize: 13 }}>
-                      R$ {property.pricePerNight.toLocaleString("pt-BR")}/periodo
-                    </p>
-                    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
-                      <form action={approveProperty}>
-                        <input type="hidden" name="id" value={property.id} />
-                        <button
-                          type="submit"
-                          disabled={active}
-                          style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #22c55e", background: active ? "#151515" : "rgba(34,197,94,0.1)", color: active ? "#555" : "#22c55e", cursor: active ? "not-allowed" : "pointer" }}
-                        >
-                          Aprovar
-                        </button>
-                      </form>
-                      <form action={rejectProperty}>
-                        <input type="hidden" name="id" value={property.id} />
-                        <button
-                          type="submit"
-                          disabled={property.status === "REJECTED"}
-                          style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #ef4444", background: "rgba(239,68,68,0.1)", color: "#ef4444", cursor: property.status === "REJECTED" ? "not-allowed" : "pointer" }}
-                        >
-                          Rejeitar
-                        </button>
-                      </form>
+      <AdminHeader title="Imoveis e quartos" subtitle="Aprovacao de locais, fotos, endereco, regras, comodidades, precos e anfitriao responsavel." />
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+        {["ALL", "DRAFT", "PENDING_REVIEW", "ACTIVE", "REJECTED", "INACTIVE"].map((item) => (
+          <Link key={item} href={item === "ALL" ? "/admin/imoveis" : `/admin/imoveis?status=${item}`} style={{ ...buttonStyle, textDecoration: "none", background: item === (status ?? "ALL") ? "rgba(212,168,67,.22)" : "rgba(255,255,255,.03)" }}>
+            {item === "ALL" ? "Todos" : statusLabel[item] ?? item}
+          </Link>
+        ))}
+      </div>
+      <AdminPanel>
+        <AdminTable>
+          <thead>
+            <tr>
+              <th style={thStyle}>Local</th>
+              <th style={thStyle}>Anfitriao</th>
+              <th style={thStyle}>Status</th>
+              <th style={thStyle}>Dados</th>
+              <th style={thStyle}>Acao</th>
+            </tr>
+          </thead>
+          <tbody>
+            {properties.map((property) => (
+              <tr key={property.id}>
+                <td style={tdStyle}>
+                  <Link href={`/imoveis/${property.id}`} style={{ color: "#fff", fontWeight: 900 }}>{property.title}</Link><br />
+                  {property.type} - {property.city}, {property.bairro ?? property.state}<br />
+                  <span style={{ color: "#94a3b8" }}>{property.photos.length} foto(s) cadastrada(s)</span>
+                </td>
+                <td style={tdStyle}>{property.host.name ?? "Sem nome"}<br />{property.host.email}<br />{property.host.phone ?? "-"}</td>
+                <td style={tdStyle}><StatusPill tone={property.status === "ACTIVE" ? "success" : property.status === "REJECTED" ? "danger" : "warning"}>{statusLabel[property.status] ?? property.status}</StatusPill></td>
+                <td style={tdStyle}>
+                  R$ {property.pricePerNight.toLocaleString("pt-BR")}/periodo<br />
+                  {property.bedrooms} quarto(s), {property.bathrooms} banheiro(s)<br />
+                  {property.amenities.length} comodidade(s)
+                </td>
+                <td style={tdStyle}>
+                  <form action={reviewProperty} style={{ display: "grid", gap: 8 }}>
+                    <input type="hidden" name="id" value={property.id} />
+                    <input name="reason" placeholder="Motivo/observacao" style={{ background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 8 }} />
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <button name="action" value="approve" style={buttonStyle}>Aprovar</button>
+                      <button name="action" value="reject" style={{ ...buttonStyle, color: "#ef4444" }}>Reprovar</button>
+                      <button name="action" value="hide" style={{ ...buttonStyle, color: "#f97316" }}>Ocultar</button>
                     </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+                  </form>
+                </td>
+              </tr>
+            ))}
+            {!properties.length ? <tr><td style={tdStyle} colSpan={5}>Nenhum imovel encontrado.</td></tr> : null}
+          </tbody>
+        </AdminTable>
+      </AdminPanel>
     </div>
   );
 }

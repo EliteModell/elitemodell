@@ -1,109 +1,127 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
-import { authOptions } from "@/lib/auth";
-import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import { requireAdmin } from "@/lib/admin-access";
+import { AdminHeader, AdminPanel, StatCard, StatusPill, adminColors, tdStyle, thStyle, AdminTable } from "./_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
 
-const cardStyle: React.CSSProperties = {
-  background: "#111",
-  border: "1px solid #1e1e1e",
-  borderRadius: 12,
-  padding: "20px",
-};
-
 export default async function AdminPage() {
-  const session = await getServerSession(authOptions);
-  if (session?.user?.role !== "ADMIN") redirect(ACCOUNT_ROUTES.painelCliente);
+  const { adminRole } = await requireAdmin("dashboard:view");
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const [
     totalUsers,
-    activeProperties,
+    activeUsers,
     pendingProperties,
-    activeProfessionals,
+    activeProperties,
     pendingProfessionals,
+    activeProfessionals,
+    rejectedProfessionals,
+    manualKyc,
     pendingReports,
-    bookingsThisMonth,
     paidThisMonth,
+    recentAudits,
   ] = await Promise.all([
     prisma.user.count(),
-    prisma.property.count({ where: { status: "ACTIVE" } }),
+    prisma.user.count({ where: { blocked: false } }),
     prisma.property.count({ where: { status: "PENDING_REVIEW" } }),
-    prisma.professional.count({ where: { status: "ACTIVE" } }),
+    prisma.property.count({ where: { status: "ACTIVE" } }),
     prisma.professional.count({ where: { status: "PENDING_REVIEW" } }),
+    prisma.professional.count({ where: { status: "ACTIVE" } }),
+    prisma.professional.count({ where: { status: "REJECTED" } }),
+    prisma.professional.count({ where: { kycStatus: { in: ["KYC_MANUAL_PENDENTE", "MANUAL_REVIEW"] } } }),
     prisma.report.count({ where: { status: "PENDING" } }),
-    prisma.booking.count({ where: { createdAt: { gte: monthStart } } }),
-    prisma.payment.aggregate({
-      where: { status: "PAID", paidAt: { gte: monthStart } },
-      _sum: { amount: true },
+    prisma.payment.aggregate({ where: { status: "PAID", paidAt: { gte: monthStart } }, _sum: { amount: true } }),
+    prisma.auditLog.findMany({
+      orderBy: { timestamp: "desc" },
+      take: 8,
+      include: { admin: { select: { name: true, email: true } } },
     }),
   ]);
-
-  const stats = [
-    { label: "Usuários totais", value: totalUsers.toLocaleString("pt-BR") },
-    { label: "Espaços ativos", value: activeProperties.toLocaleString("pt-BR") },
-    { label: "Profissionais ativos", value: activeProfessionals.toLocaleString("pt-BR") },
-    { label: "Reservas no mês", value: bookingsThisMonth.toLocaleString("pt-BR") },
-  ];
-
-  const alerts = [
-    { label: "Espaços pendentes", value: pendingProperties, href: "/admin/imoveis" },
-    { label: "Profissionais pendentes", value: pendingProfessionals, href: "/admin/profissionais" },
-    { label: "Denúncias pendentes", value: pendingReports, href: "/admin/reservas" },
-  ];
 
   const revenue = paidThisMonth._sum.amount ?? 0;
 
   return (
     <div>
-      <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Painel Administrativo</h1>
-        <p style={{ color: "#777", fontSize: 14 }}>Visão operacional baseada em dados reais do banco.</p>
+      <AdminHeader
+        title="Painel administrativo"
+        subtitle={`Operacao central da Elite Model. Cargo atual: ${adminRole}. Acesso protegido por servidor e proxy para usuarios ADMIN.`}
+      />
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14, marginBottom: 20 }}>
+        <StatCard label="Cadastros pendentes" value={pendingProfessionals + pendingProperties + manualKyc} tone="warning" />
+        <StatCard label="Profissionais pendentes" value={pendingProfessionals} href="/admin/profissionais" tone="warning" />
+        <StatCard label="Anfitrioes pendentes" value={pendingProperties} href="/admin/anfitrioes" tone="warning" />
+        <StatCard label="Imoveis pendentes" value={pendingProperties} href="/admin/imoveis" tone="warning" />
+        <StatCard label="KYC manual pendente" value={manualKyc} href="/admin/kyc" tone="warning" />
+        <StatCard label="Denuncias abertas" value={pendingReports} href="/admin/denuncias" tone={pendingReports ? "danger" : "neutral"} />
+        <StatCard label="Usuarios ativos" value={activeUsers} href="/admin/clientes" />
+        <StatCard label="Perfis aprovados" value={activeProfessionals + activeProperties} tone="success" />
+        <StatCard label="Perfis reprovados" value={rejectedProfessionals} tone="danger" />
+        <StatCard label="Receita estimada no mes" value={`R$ ${revenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} href="/admin/financeiro" />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 24 }}>
-        {stats.map((stat) => (
-          <div key={stat.label} style={cardStyle}>
-            <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>{stat.value}</div>
-            <div style={{ fontSize: 12, color: "#777" }}>{stat.label}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.25fr) minmax(300px, 0.75fr)", gap: 16 }}>
+        <AdminPanel>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 14 }}>
+            <h2 style={{ color: "#fff", fontSize: 16, margin: 0 }}>Centros de trabalho</h2>
+            <StatusPill tone={pendingReports || manualKyc ? "warning" : "success"}>{pendingReports || manualKyc ? "Atencao" : "Estavel"}</StatusPill>
           </div>
-        ))}
-        <div style={cardStyle}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>
-            R$ {revenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+            {[
+              ["Profissionais", "/admin/profissionais", "Documentos, selfie, videos e perfil publico"],
+              ["Anfitrioes", "/admin/anfitrioes", "Solicitacoes de anfitriao e imoveis vinculados"],
+              ["Imoveis", "/admin/imoveis", "Quartos, apartamentos, fotos, regras e precos"],
+              ["KYC", "/admin/kyc", "Persona, manual, documentos e aprovacao sensivel"],
+              ["Denuncias", "/admin/denuncias", "Moderacao de risco e conteudo"],
+              ["Auditoria", "/admin/auditoria", "Trilha das acoes administrativas"],
+            ].map(([label, href, desc]) => (
+              <Link key={href} href={href} style={{ textDecoration: "none", border: `1px solid ${adminColors.border}`, borderRadius: 8, padding: 14, background: "rgba(255,255,255,0.025)" }}>
+                <strong style={{ color: "#fff", display: "block", marginBottom: 6 }}>{label}</strong>
+                <span style={{ color: adminColors.muted, fontSize: 12, lineHeight: 1.5 }}>{desc}</span>
+              </Link>
+            ))}
           </div>
-          <div style={{ fontSize: 12, color: "#777" }}>Receita paga no mês</div>
-        </div>
+        </AdminPanel>
+
+        <AdminPanel>
+          <h2 style={{ color: "#fff", fontSize: 16, margin: "0 0 14px" }}>Alertas criticos</h2>
+          <div style={{ display: "grid", gap: 10 }}>
+            <StatusPill tone={manualKyc ? "warning" : "success"}>{manualKyc} KYC manual pendente</StatusPill>
+            <StatusPill tone={pendingReports ? "danger" : "success"}>{pendingReports} denuncias abertas</StatusPill>
+            <StatusPill tone={pendingProperties ? "warning" : "success"}>{pendingProperties} imoveis aguardando</StatusPill>
+          </div>
+        </AdminPanel>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginBottom: 24 }}>
-        {alerts.map((alert) => (
-          <Link key={alert.label} href={alert.href} style={{ ...cardStyle, textDecoration: "none", display: "block" }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: alert.value > 0 ? "#d4a843" : "#777", marginBottom: 4 }}>
-              {alert.value.toLocaleString("pt-BR")}
-            </div>
-            <div style={{ fontSize: 13, color: "#ccc" }}>{alert.label}</div>
-          </Link>
-        ))}
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-        {[
-          { href: "/admin/usuarios", label: "Usuários", desc: "Auditar contas e permissões" },
-          { href: "/admin/imoveis", label: "Espaços", desc: "Revisar anúncios pendentes" },
-          { href: "/admin/profissionais", label: "Profissionais", desc: "Validar documentos e perfis" },
-          { href: "/admin/cupons", label: "Cupons", desc: "Consultar cupons cadastrados" },
-        ].map((link) => (
-          <Link key={link.href} href={link.href} style={{ ...cardStyle, textDecoration: "none", display: "block" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{link.label}</div>
-            <div style={{ fontSize: 12, color: "#777" }}>{link.desc}</div>
-          </Link>
-        ))}
+      <div style={{ marginTop: 16 }}>
+        <AdminPanel>
+          <h2 style={{ color: "#fff", fontSize: 16, margin: "0 0 14px" }}>Ultimas acoes administrativas</h2>
+          <AdminTable>
+            <thead>
+              <tr>
+                <th style={thStyle}>Acao</th>
+                <th style={thStyle}>Admin</th>
+                <th style={thStyle}>Entidade</th>
+                <th style={thStyle}>Quando</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentAudits.length ? recentAudits.map((audit) => (
+                <tr key={audit.id}>
+                  <td style={tdStyle}>{audit.action}</td>
+                  <td style={tdStyle}>{audit.admin.name ?? audit.admin.email ?? "Admin"}</td>
+                  <td style={tdStyle}>{audit.targetType} / {audit.targetId}</td>
+                  <td style={tdStyle}>{audit.timestamp.toLocaleString("pt-BR")}</td>
+                </tr>
+              )) : (
+                <tr><td style={tdStyle} colSpan={4}>Ainda nao ha acoes registradas.</td></tr>
+              )}
+            </tbody>
+          </AdminTable>
+        </AdminPanel>
       </div>
     </div>
   );
