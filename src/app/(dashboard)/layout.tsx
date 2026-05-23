@@ -516,6 +516,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .admin-page {
           overflow-x: hidden !important;
         }
+        /* Sidebar sempre visivel no painel admin a partir de 640px */
+        @media (min-width: 640px) {
+          .admin-shell .dash-sidebar {
+            transform: translateX(0) !important;
+            width: 280px !important;
+          }
+          .admin-shell .admin-layout {
+            margin-left: 280px !important;
+          }
+        }
         @media (max-width: 900px) {
           .admin-content [style*="1.25fr"] {
             grid-template-columns: 1fr !important;
