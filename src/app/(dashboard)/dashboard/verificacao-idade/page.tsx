@@ -19,6 +19,8 @@ export default async function ClientAgeVerificationPage() {
     where: { id: session.user.id },
     select: {
       clientStatus: true,
+      kycSessionId: true,
+      kycSubmittedAt: true,
       kycRejectionReason: true,
     },
   });
@@ -30,6 +32,8 @@ export default async function ClientAgeVerificationPage() {
   return (
     <VerificacaoIdadeClient
       status={normalizeClientAgeVerificationStatus(user.clientStatus)}
+      kycSessionId={user.kycSessionId}
+      submittedAt={user.kycSubmittedAt?.toISOString() ?? null}
       rejectionReason={user.kycRejectionReason}
     />
   );

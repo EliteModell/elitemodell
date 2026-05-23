@@ -1,7 +1,11 @@
 const PERSONA_API_BASE = "https://api.withpersona.com/api/v1";
+const PERSONA_HOSTED_FLOW_BASE = "https://inquiry.withpersona.com/verify";
 
 export const PERSONA_FALLBACK_MESSAGE =
-  "Biometria facial ainda nao configurada. Envie sua selfie ou video de verificacao abaixo para analise manual.";
+  "Verificacao manual pendente. Envie sua selfie ou video de verificacao abaixo para analise manual.";
+
+export const PERSONA_PENDING_STATUS = "PERSONA_PENDING";
+export const MANUAL_PENDING_STATUS = "KYC_MANUAL_PENDENTE";
 
 type PersonaInquiryResponse = {
   data: {
@@ -21,17 +25,28 @@ export function getPersonaConfig() {
     process.env.PERSONA_TEMPLATE_ID?.trim() ||
     process.env.PERSONA_INQUIRY_TEMPLATE_ID?.trim();
   const environment = process.env.PERSONA_ENVIRONMENT?.trim() || "sandbox";
+  const publicEnvironment = process.env.NEXT_PUBLIC_PERSONA_ENVIRONMENT?.trim();
 
   return {
     apiKey,
     templateId,
     environment,
+    publicEnvironment,
     configured: Boolean(apiKey && templateId),
     missing: [
       !apiKey ? "PERSONA_API_KEY" : null,
       !templateId ? "PERSONA_TEMPLATE_ID ou PERSONA_INQUIRY_TEMPLATE_ID" : null,
     ].filter(Boolean) as string[],
   };
+}
+
+export function shouldUsePersonaProvider() {
+  return getPersonaConfig().configured;
+}
+
+export function personaProviderLabel(provider?: string | null, sessionId?: string | null) {
+  if (provider?.toUpperCase() === "PERSONA" || sessionId?.startsWith("inq_")) return "PERSONA";
+  return "MANUAL";
 }
 
 export async function createPersonaInquiry(userId: string, redirectUri: string) {
@@ -72,10 +87,11 @@ export async function createPersonaInquiry(userId: string, redirectUri: string) 
   };
 }
 
-export function buildPersonaUrl(inquiryId: string, sessionToken?: string) {
-  const url = new URL("https://withpersona.com/verify");
+export function buildPersonaUrl(inquiryId: string, sessionToken?: string, redirectUri?: string) {
+  const url = new URL(PERSONA_HOSTED_FLOW_BASE);
   url.searchParams.set("inquiry-id", inquiryId);
   if (sessionToken) url.searchParams.set("session-token", sessionToken);
+  if (redirectUri) url.searchParams.set("redirect-uri", redirectUri);
   return url.toString();
 }
 
@@ -84,15 +100,18 @@ export async function verifyPersonaWebhook(
   signatureHeader: string,
   secret: string,
 ): Promise<boolean> {
-  const parts: Record<string, string> = {};
-  for (const part of signatureHeader.split(",")) {
-    const idx = part.indexOf("=");
-    if (idx !== -1) parts[part.slice(0, idx)] = part.slice(idx + 1);
-  }
+  const signatureSets = signatureHeader.trim().split(/\s+/).filter(Boolean);
+  const parsedSets = signatureSets.map((set) => {
+    const parts: Record<string, string> = {};
+    for (const part of set.split(",")) {
+      const idx = part.indexOf("=");
+      if (idx !== -1) parts[part.slice(0, idx)] = part.slice(idx + 1);
+    }
+    return parts;
+  });
 
-  const t = parts["t"];
-  const v1 = parts["v1"];
-  if (!t || !v1) return false;
+  const timestamp = parsedSets.find((parts) => parts.t)?.t;
+  if (!timestamp) return false;
 
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -103,10 +122,19 @@ export async function verifyPersonaWebhook(
     ["sign"],
   );
 
-  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(`${t}.${rawBody}`));
+  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(`${timestamp}.${rawBody}`));
   const expected = Array.from(new Uint8Array(sig))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 
-  return expected === v1;
+  return parsedSets.some((parts) => Boolean(parts.v1) && timingSafeEqualHex(expected, parts.v1));
+}
+
+function timingSafeEqualHex(a: string, b: string) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
 }

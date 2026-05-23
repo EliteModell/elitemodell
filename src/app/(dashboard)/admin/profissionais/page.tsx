@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
+import { personaProviderLabel } from "@/lib/persona";
 import { AdminHeader, AdminPanel, AdminTable, StatusPill, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
@@ -97,7 +98,8 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                   {pro.rejectReason ? <p style={{ color: "#ef4444", margin: "8px 0 0" }}>{pro.rejectReason}</p> : null}
                 </td>
                 <td style={tdStyle}>
-                  KYC: {pro.kycProvider ?? "MANUAL"} / {pro.kycStatus}<br />
+                  KYC: {personaProviderLabel(pro.kycProvider, pro.kycSessionId)} / {pro.kycStatus}<br />
+                  Inquiry: {pro.kycSessionId ?? "-"}<br />
                   Doc: {pro.docStatus} | Face: {pro.verifStatus}<br />
                   Codigo: {pro.verificationCode ?? "-"}<br />
                   Verificacao: {pro.verificationUrl ? pro.verificationType ?? "arquivo" : "nao enviada"}

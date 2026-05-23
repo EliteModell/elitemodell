@@ -11,9 +11,13 @@ import {
 
 export default function VerificacaoIdadeClient({
   status: initialStatus,
+  kycSessionId,
+  submittedAt,
   rejectionReason,
 }: {
   status: ClientAgeVerificationStatus;
+  kycSessionId?: string | null;
+  submittedAt?: string | null;
   rejectionReason?: string | null;
 }) {
   const router = useRouter();
@@ -22,6 +26,7 @@ export default function VerificacaoIdadeClient({
   const [error, setError] = useState<string | null>(null);
 
   const canStart = status === "not_started" || status === "rejected";
+  const providerLabel = kycSessionId?.startsWith("inq_") ? "Verificacao facial com Persona" : "Verificacao manual";
 
   async function handleStart() {
     if (!canStart || loading) return;
@@ -90,6 +95,19 @@ export default function VerificacaoIdadeClient({
             <p className="mt-3 text-[15px] leading-7 text-[#b8b8b8]">
               O aviso inicial 18+ apenas registra seu consentimento para navegar. Esta verificacao e separada e libera contatos, conteudos restritos e recursos privados do cliente.
             </p>
+            <p className="mt-2 text-[12px] font-black text-[#f5b83b]">
+              {providerLabel}
+            </p>
+            {kycSessionId ? (
+              <p className="mt-2 break-all text-[11px] leading-5 text-[#b8b8b8]/60">
+                Inquiry/sessao: {kycSessionId}
+              </p>
+            ) : null}
+            {submittedAt ? (
+              <p className="mt-1 text-[11px] leading-5 text-[#b8b8b8]/60">
+                Enviado em {new Date(submittedAt).toLocaleString("pt-BR")}
+              </p>
+            ) : null}
           </div>
         </div>
 

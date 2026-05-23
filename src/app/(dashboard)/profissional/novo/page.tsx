@@ -398,7 +398,7 @@ export default function ProfissionalNovoPage() {
       const res = await fetch("/api/kyc/sessions", { method: "POST" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error ?? "Biometria facial ainda nao configurada. Envie sua selfie ou video de verificacao abaixo para analise manual.");
+        toast.error(data.error ?? "Nao foi possivel iniciar a verificacao facial com Persona. Tente novamente ou use a verificacao manual.");
         return;
       }
 
@@ -411,15 +411,15 @@ export default function ProfissionalNovoPage() {
       if (!data.fallback) set("verificationType", "biometria");
 
       if (data.fallback || data.provider === "MANUAL" || data.provider === "LOCAL_MANUAL") {
-        toast.error(data.message ?? "Biometria facial ainda nao configurada. Envie sua selfie ou video de verificacao abaixo para analise manual.");
+        toast.error(data.message ?? "Verificacao manual pendente. Envie sua selfie ou video de verificacao abaixo para analise manual.");
         return;
       } else if (data.url?.startsWith("http")) {
         window.location.href = data.url;
       } else {
-        toast.success("Sessão de biometria facial criada.");
+        toast.success("Verificacao facial com Persona iniciada.");
       }
     } catch {
-      toast.error("Biometria facial ainda nao configurada. Envie sua selfie ou video de verificacao abaixo para analise manual.");
+      toast.error("Nao foi possivel iniciar a verificacao facial com Persona. Tente novamente ou use a verificacao manual.");
     } finally {
       setUploadingIdx(null);
     }
@@ -986,7 +986,7 @@ export default function ProfissionalNovoPage() {
       ══════════════════════════════════════════════ */}
       {step === 8 && (
         <div>
-          <Section title="Biometria facial" desc="Esta etapa confirma pessoa real, maioridade e autenticidade do anúncio. Com provedor KYC configurado, a validação facial pode ser automática; sem provedor, cai para análise manual.">
+          <Section title="Verificacao facial" desc="Esta etapa confirma pessoa real, maioridade e autenticidade do anuncio. Quando a Persona estiver configurada, o fluxo abre a verificacao facial com liveness; sem Persona configurada, a etapa fica como verificacao manual.">
 
             {/* Código único */}
             <div style={{ background: "#060e1b", border: `2px solid ${GOLD_MID}`, borderRadius: 14, padding: "20px", marginBottom: 24, textAlign: "center" }}>
@@ -1016,9 +1016,9 @@ export default function ProfissionalNovoPage() {
 
             {/* Upload da mídia */}
             <div style={{ background: "#060e1b", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "16px", marginBottom: 20 }}>
-              <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#f1f5f9" }}>Biometria facial</p>
+              <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#f1f5f9" }}>Verificacao facial com Persona</p>
               <p style={{ margin: "0 0 14px", fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
-                Inicie a validacao facial para confirmar pessoa real e maioridade. Quando um provedor KYC estiver configurado, esta etapa abre a captura com liveness automaticamente.
+                Inicie a validacao facial para confirmar pessoa real e maioridade. Se a Persona nao estiver configurada, use a verificacao manual abaixo.
               </p>
               <button
                 type="button"
@@ -1026,11 +1026,11 @@ export default function ProfissionalNovoPage() {
                 disabled={uploadingIdx === 100}
                 style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "none", background: GOLD, color: "#060e1b", fontSize: 14, fontWeight: 800, cursor: uploadingIdx === 100 ? "not-allowed" : "pointer" }}
               >
-                {uploadingIdx === 100 ? "Iniciando..." : "Iniciar biometria facial"}
+                {uploadingIdx === 100 ? "Iniciando..." : "Iniciar verificacao facial"}
               </button>
               {form.kycSessionId && (
                 <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, fontSize: 12, fontWeight: 700 }}>
-                  Sessão {form.kycProvider}: {form.kycStatus}
+                  {form.kycProvider === "PERSONA" ? "Verificacao facial com Persona" : "Verificacao manual"}: {form.kycStatus}
                   {form.kycExpiresAt && (
                     <span style={{ display: "block", color: "#94a3b8", fontWeight: 500, marginTop: 4 }}>
                       Expira em {new Date(form.kycExpiresAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
@@ -1049,7 +1049,7 @@ export default function ProfissionalNovoPage() {
             )}
 
             <UploadZone
-              label="Fallback: selfie ou vídeo de verificação *"
+              label="Verificacao manual: selfie ou video *"
               accept="image/*,video/mp4,video/webm"
               preview={form.verificationUrl && form.verificationType === "foto" ? form.verificationUrl : null}
               loading={uploadingIdx === 99}
@@ -1057,7 +1057,7 @@ export default function ProfissionalNovoPage() {
             />
             {form.verificationUrl && form.verificationType === "biometria" && (
               <div style={{ marginTop: 8, padding: "10px 14px", background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 8, fontSize: 12, color: GOLD }}>
-                Biometria facial iniciada
+                Verificacao facial com Persona iniciada
               </div>
             )}
             {form.verificationUrl && form.verificationType === "video" && (
@@ -1091,7 +1091,7 @@ export default function ProfissionalNovoPage() {
                 ["Foto principal", form.mainPhotoUrl ? "✓ Enviada" : "Não enviada"],
                 ["Fotos na galeria", `${form.galleryUrls.length} foto(s)`],
                 ["Documento", form.docFrenteUrl ? "✓ Enviado" : "Não enviado"],
-                ["Biometria facial", form.verificationUrl ? "✓ Iniciada" : "Não iniciada"],
+                ["Verificacao facial", form.verificationUrl ? "✓ Iniciada" : "Não iniciada"],
                 ["WhatsApp", form.whatsapp || "—"],
               ].map(([label, value]) => (
                 <div key={label} style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 8, padding: "10px 12px" }}>

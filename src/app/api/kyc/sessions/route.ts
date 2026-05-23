@@ -7,8 +7,12 @@ import {
   buildPersonaUrl,
   createPersonaInquiry,
   getPersonaConfig,
+  MANUAL_PENDING_STATUS,
+  PERSONA_PENDING_STATUS,
   PERSONA_FALLBACK_MESSAGE,
+  shouldUsePersonaProvider,
 } from "@/lib/persona";
+import { prisma } from "@/lib/prisma";
 
 function createManualSession(userId: string, reason?: string) {
   const id = `manual_kyc_${userId}_${Date.now()}`;
@@ -23,7 +27,7 @@ function createManualSession(userId: string, reason?: string) {
   return {
     provider: "MANUAL",
     sessionId: id,
-    status: "KYC_MANUAL_PENDENTE",
+    status: MANUAL_PENDING_STATUS,
     url: "",
     challenge,
     expiresAt: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
@@ -49,36 +53,47 @@ export async function POST() {
     return NextResponse.json({ error: "Apenas anunciantes podem iniciar biometria." }, { status: 403 });
   }
 
-  const provider = process.env.KYC_PROVIDER?.trim().toUpperCase();
-  if (!provider || provider === "LOCAL_MANUAL" || provider === "MANUAL") {
-    return NextResponse.json(createManualSession(session.user.id));
-  }
-
-  if (provider !== "PERSONA") {
-    return NextResponse.json(createManualSession(session.user.id, `KYC_PROVIDER=${provider}`));
-  }
-
   const personaConfig = getPersonaConfig();
-  if (!personaConfig.configured) {
+  if (!shouldUsePersonaProvider()) {
     return NextResponse.json(createManualSession(session.user.id, personaConfig.missing.join(", ")));
+  }
+
+  if (!personaConfig.templateId?.startsWith("itmpl_")) {
+    return NextResponse.json(
+      { error: "PERSONA_TEMPLATE_ID deve ser um Inquiry Template da Persona e comecar com itmpl_." },
+      { status: 503 },
+    );
   }
 
   try {
     const redirectUri = `${appBaseUrl()}/verificacao/callback`;
     const { inquiryId, sessionToken, oneTimeLink } = await createPersonaInquiry(session.user.id, redirectUri);
-    const url = oneTimeLink ?? buildPersonaUrl(inquiryId, sessionToken);
+    const url = oneTimeLink ?? buildPersonaUrl(inquiryId, sessionToken, redirectUri);
+
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        kycSessionId: inquiryId,
+        kycSubmittedAt: new Date(),
+        kycRejectionReason: null,
+      },
+      select: { id: true },
+    });
 
     return NextResponse.json({
       provider: "PERSONA",
       sessionId: inquiryId,
       inquiryId,
-      status: "PENDING",
+      status: PERSONA_PENDING_STATUS,
       url,
       captureMode: "PERSONA",
-      message: "Sessao de biometria facial criada.",
+      message: "Verificacao facial com Persona iniciada.",
     });
   } catch (err) {
     console.error("[KYC] Persona createInquiry falhou:", err);
-    return NextResponse.json(createManualSession(session.user.id, "PERSONA_CREATE_INQUIRY_FAILED"));
+    return NextResponse.json(
+      { error: "Nao foi possivel iniciar a verificacao facial com Persona. Tente novamente ou contate o suporte." },
+      { status: 502 },
+    );
   }
 }

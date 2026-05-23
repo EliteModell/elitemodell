@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyPersonaWebhook } from "@/lib/persona";
+import { PERSONA_PENDING_STATUS, verifyPersonaWebhook } from "@/lib/persona";
 
 type PersonaEventPayload = {
   data?: {
@@ -13,6 +13,7 @@ type PersonaEventPayload = {
             status?: string;
             "reference-id"?: string;
             "reviewer-comment"?: string;
+            "decline-reason"?: string;
           };
         };
       };
@@ -21,6 +22,13 @@ type PersonaEventPayload = {
 };
 
 const REJECTED_MESSAGE = "Verificacao nao aprovada pelo sistema de identidade.";
+const PENDING_EVENTS = new Set([
+  "inquiry.created",
+  "inquiry.started",
+  "inquiry.completed",
+  "inquiry.marked-for-review",
+  "inquiry.transitioned",
+]);
 
 export async function handlePersonaWebhook(req: NextRequest) {
   const rawBody = await req.text();
@@ -49,7 +57,8 @@ export async function handlePersonaWebhook(req: NextRequest) {
   const inquiryData = payload.data?.attributes?.payload?.data;
   const inquiryId = inquiryData?.id;
   const referenceId = inquiryData?.attributes?.["reference-id"];
-  const reviewerComment = inquiryData?.attributes?.["reviewer-comment"];
+  const inquiryStatus = inquiryData?.attributes?.status;
+  const reviewerComment = inquiryData?.attributes?.["reviewer-comment"] || inquiryData?.attributes?.["decline-reason"];
 
   if (!inquiryId) {
     return NextResponse.json({ received: true });
@@ -66,6 +75,7 @@ export async function handlePersonaWebhook(req: NextRequest) {
         },
         data: {
           clientStatus: "VERIFIED",
+          kycSessionId: inquiryId,
           kycReviewedAt: new Date(),
           kycRejectionReason: null,
         },
@@ -78,6 +88,7 @@ export async function handlePersonaWebhook(req: NextRequest) {
           ],
         },
         data: {
+          kycProvider: "PERSONA",
           kycStatus: "APPROVED",
           verifStatus: "APPROVED",
           rejectReason: null,
@@ -96,6 +107,7 @@ export async function handlePersonaWebhook(req: NextRequest) {
         },
         data: {
           clientStatus: "REJECTED",
+          kycSessionId: inquiryId,
           kycReviewedAt: new Date(),
           kycRejectionReason: reason,
         },
@@ -108,25 +120,44 @@ export async function handlePersonaWebhook(req: NextRequest) {
           ],
         },
         data: {
+          kycProvider: "PERSONA",
           kycStatus: "REJECTED",
           verifStatus: "REJECTED",
           rejectReason: reason,
         },
       }),
     ]);
-  } else if (eventName === "inquiry.completed" || eventName === "inquiry.started") {
-    await prisma.professional.updateMany({
-      where: {
-        OR: [
-          ...(referenceId ? [{ userId: referenceId }] : []),
-          { kycSessionId: inquiryId },
-        ],
-      },
-      data: {
-        kycStatus: "PENDING",
-        verifStatus: "PENDING",
-      },
-    });
+  } else if (eventName && PENDING_EVENTS.has(eventName)) {
+    await Promise.all([
+      prisma.user.updateMany({
+        where: {
+          OR: [
+            ...(referenceId ? [{ id: referenceId }] : []),
+            { kycSessionId: inquiryId },
+          ],
+        },
+        data: {
+          clientStatus: "PENDING_REVIEW",
+          kycSessionId: inquiryId,
+          kycSubmittedAt: new Date(),
+          kycRejectionReason: null,
+        },
+      }),
+      prisma.professional.updateMany({
+        where: {
+          OR: [
+            ...(referenceId ? [{ userId: referenceId }] : []),
+            { kycSessionId: inquiryId },
+          ],
+        },
+        data: {
+          kycProvider: "PERSONA",
+          kycStatus: PERSONA_PENDING_STATUS,
+          verifStatus: "PENDING",
+          rejectReason: inquiryStatus ? `Persona status: ${inquiryStatus}` : null,
+        },
+      }),
+    ]);
   }
 
   return NextResponse.json({ received: true });

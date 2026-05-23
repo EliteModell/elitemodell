@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
+import { MANUAL_PENDING_STATUS, PERSONA_PENDING_STATUS, personaProviderLabel } from "@/lib/persona";
 import { AdminHeader, AdminPanel, AdminTable, StatusPill, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
@@ -67,7 +68,7 @@ async function reviewClientKyc(formData: FormData) {
 function toneFor(status?: string | null) {
   if (status === "APPROVED" || status === "VERIFIED") return "success" as const;
   if (status === "REJECTED") return "danger" as const;
-  if (status === "KYC_MANUAL_PENDENTE" || status === "PENDING" || status === "PENDING_REVIEW") return "warning" as const;
+  if (status === MANUAL_PENDING_STATUS || status === PERSONA_PENDING_STATUS || status === "PENDING" || status === "PENDING_REVIEW") return "warning" as const;
   return "neutral" as const;
 }
 
@@ -91,7 +92,7 @@ export default async function AdminKycPage() {
 
   return (
     <div>
-      <AdminHeader title="KYC e verificacao facial/manual" subtitle="Analise Persona, selfie, video, documentos e codigo unico. Toda acao manual registra auditoria." />
+      <AdminHeader title="KYC e verificacao facial/manual" subtitle="Origem da verificacao, Inquiry Persona, status retornado e revisao manual quando necessaria." />
 
       <AdminPanel>
         <h2 style={{ margin: "0 0 14px", color: "#fff", fontSize: 16 }}>Profissionais</h2>
@@ -99,7 +100,7 @@ export default async function AdminKycPage() {
           <thead>
             <tr>
               <th style={thStyle}>Pessoa</th>
-              <th style={thStyle}>Provider</th>
+              <th style={thStyle}>Origem / Inquiry</th>
               <th style={thStyle}>Status</th>
               <th style={thStyle}>Arquivos</th>
               <th style={thStyle}>Acao</th>
@@ -109,7 +110,10 @@ export default async function AdminKycPage() {
             {professionals.map((pro) => (
               <tr key={pro.id}>
                 <td style={tdStyle}><strong>{pro.displayName}</strong><br />{pro.user.email}</td>
-                <td style={tdStyle}>{pro.kycProvider ?? "MANUAL"}<br /><span style={{ color: "#94a3b8" }}>{pro.kycSessionId ?? "sem sessao"}</span></td>
+                <td style={tdStyle}>
+                  {personaProviderLabel(pro.kycProvider, pro.kycSessionId)}<br />
+                  <span style={{ color: "#94a3b8" }}>{pro.kycSessionId ?? "sem inquiry/sessao"}</span>
+                </td>
                 <td style={tdStyle}><StatusPill tone={toneFor(pro.kycStatus)}>{pro.kycStatus}</StatusPill></td>
                 <td style={tdStyle}>
                   Doc: {pro.docFrenteUrl ? "frente" : "-"} / {pro.docVersoUrl ? "verso" : "-"}<br />
@@ -120,6 +124,9 @@ export default async function AdminKycPage() {
                   <form action={reviewProfessionalKyc} style={{ display: "grid", gap: 8 }}>
                     <input type="hidden" name="id" value={pro.id} />
                     <input name="reason" placeholder="Motivo/observacao" style={{ background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 8 }} />
+                    <span style={{ color: "#94a3b8", fontSize: 11 }}>
+                      {personaProviderLabel(pro.kycProvider, pro.kycSessionId) === "PERSONA" ? "Use revisao manual apenas em excecao ou falha do webhook." : "Verificacao manual pendente."}
+                    </span>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button name="action" value="approve" style={buttonStyle}>Aprovar</button>
                       <button name="action" value="reject" style={{ ...buttonStyle, color: "#ef4444", borderColor: "#ef444455", background: "#ef444416" }}>Reprovar</button>
@@ -142,7 +149,7 @@ export default async function AdminKycPage() {
             <tr>
               <th style={thStyle}>Cliente</th>
               <th style={thStyle}>Status</th>
-              <th style={thStyle}>Sessao</th>
+              <th style={thStyle}>Origem / Inquiry</th>
               <th style={thStyle}>Acao</th>
             </tr>
           </thead>
@@ -151,11 +158,18 @@ export default async function AdminKycPage() {
               <tr key={client.id}>
                 <td style={tdStyle}>{client.name ?? "Sem nome"}<br />{client.email}</td>
                 <td style={tdStyle}><StatusPill tone={toneFor(client.clientStatus)}>{client.clientStatus}</StatusPill></td>
-                <td style={tdStyle}>{client.kycSessionId ?? "-"}<br />{client.kycSubmittedAt?.toLocaleString("pt-BR") ?? "-"}</td>
+                <td style={tdStyle}>
+                  {personaProviderLabel(null, client.kycSessionId)}<br />
+                  <span style={{ color: "#94a3b8" }}>{client.kycSessionId ?? "sem inquiry/sessao"}</span><br />
+                  {client.kycSubmittedAt?.toLocaleString("pt-BR") ?? "-"}
+                </td>
                 <td style={tdStyle}>
                   <form action={reviewClientKyc} style={{ display: "grid", gap: 8 }}>
                     <input type="hidden" name="id" value={client.id} />
                     <input name="reason" placeholder="Motivo/observacao" style={{ background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 8 }} />
+                    <span style={{ color: "#94a3b8", fontSize: 11 }}>
+                      {personaProviderLabel(null, client.kycSessionId) === "PERSONA" ? "Use revisao manual apenas em excecao ou falha do webhook." : "Verificacao manual pendente."}
+                    </span>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button name="action" value="approve" style={buttonStyle}>Aprovar</button>
                       <button name="action" value="reject" style={{ ...buttonStyle, color: "#ef4444", borderColor: "#ef444455", background: "#ef444416" }}>Reprovar</button>

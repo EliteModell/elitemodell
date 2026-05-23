@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { createPersonaInquiry, buildPersonaUrl } from "@/lib/persona";
+import { createPersonaInquiry, buildPersonaUrl, shouldUsePersonaProvider } from "@/lib/persona";
 
 export const dynamic = "force-dynamic";
 
@@ -32,12 +32,9 @@ export async function POST(req: Request) {
     );
   }
 
-  // Normaliza: aceita "persona", "PERSONA", "Persona " etc.
-  const kycProvider = process.env.KYC_PROVIDER?.trim().toUpperCase();
-
-  if (kycProvider === "PERSONA") {
+  if (shouldUsePersonaProvider()) {
     const apiKey = process.env.PERSONA_API_KEY?.trim();
-    const templateId = process.env.PERSONA_TEMPLATE_ID?.trim();
+    const templateId = process.env.PERSONA_TEMPLATE_ID?.trim() || process.env.PERSONA_INQUIRY_TEMPLATE_ID?.trim();
 
     // Validações de configuração antes de qualquer escrita no banco
     if (!apiKey) {
@@ -111,12 +108,14 @@ export async function POST(req: Request) {
       success: true,
       status: "PENDING_REVIEW",
       provider: "PERSONA",
-      url: buildPersonaUrl(inquiryId, sessionToken),
+      inquiryId,
+      url: buildPersonaUrl(inquiryId, sessionToken, redirectUri),
     });
   }
 
-  // Sem KYC_PROVIDER configurado: fallback manual (dev / sem integração)
+  // Sem Persona configurada: fallback manual (dev / sem integração).
   // Em produção isso cria uma pendência para revisão manual da equipe.
+  const kycProvider = process.env.KYC_PROVIDER?.trim().toUpperCase();
   if (kycProvider && kycProvider !== "LOCAL_MANUAL") {
     console.warn(`[KYC] KYC_PROVIDER desconhecido: "${kycProvider}". Usando fallback manual.`);
   }
@@ -132,5 +131,5 @@ export async function POST(req: Request) {
     select: { id: true },
   });
 
-  return NextResponse.json({ success: true, status: "PENDING_REVIEW" });
+  return NextResponse.json({ success: true, status: "PENDING_REVIEW", provider: "MANUAL" });
 }

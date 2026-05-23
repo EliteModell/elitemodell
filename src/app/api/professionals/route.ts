@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { MANUAL_PENDING_STATUS, PERSONA_PENDING_STATUS } from "@/lib/persona";
 
 const createSchema = z.object({
   displayName:     z.string().min(2),
@@ -195,8 +196,8 @@ export async function POST(req: NextRequest) {
       profileData.kycProvider !== "PERSONA";
     const normalizedKycProvider = hasManualMedia ? "MANUAL" : profileData.kycProvider;
     const normalizedKycStatus = hasManualMedia
-      ? "KYC_MANUAL_PENDENTE"
-      : profileData.kycStatus ?? (profileData.kycSessionId ? "PENDING" : "NOT_STARTED");
+      ? MANUAL_PENDING_STATUS
+      : profileData.kycStatus ?? (profileData.kycSessionId ? PERSONA_PENDING_STATUS : "NOT_STARTED");
     const escortCategory = profileData.escortCategory
       || (user?.category && ["MULHER", "TRANS", "HOMEM"].includes(user.category) ? user.category : undefined);
 
