@@ -241,11 +241,19 @@ function AuthCallbackContent() {
       if (code) {
         const { data, error } = await supabaseAuth.auth.exchangeCodeForSession(code);
         if (error) {
-          console.error("[CALLBACK] exchangeCodeForSession falhou:", error.message);
-          throw error;
+          // Código já foi usado (StrictMode chama o effect duas vezes em dev,
+          // ou usuário atualizou a página). Tenta usar sessão já existente.
+          const { data: existing } = await supabaseAuth.auth.getSession();
+          if (existing.session?.access_token) {
+            accessToken = existing.session.access_token;
+          } else {
+            console.error("[CALLBACK] exchangeCodeForSession falhou:", error.message);
+            throw new Error("Não foi possível validar o acesso Google. Tente novamente.");
+          }
+        } else {
+          if (!data.session?.access_token) throw new Error("Sessão não encontrada. Tente novamente.");
+          accessToken = data.session.access_token;
         }
-        if (!data.session?.access_token) throw new Error("Sessão não encontrada. Tente novamente.");
-        accessToken = data.session.access_token;
       } else {
         accessToken = await waitForSession();
         if (!accessToken) throw new Error("Sessão não encontrada. Tente novamente.");
