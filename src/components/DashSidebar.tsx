@@ -14,6 +14,7 @@ import {
   Compass,
   Crown,
   FileCheck,
+  ExternalLink,
   Headphones,
   Heart,
   Home,
@@ -116,18 +117,23 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
 
   const role = session?.user?.role;
   const path = pathname ?? "";
+  const isAdminArea = path === "/admin" || path.startsWith("/admin/");
   const isProfessionalArea = path.startsWith("/profissional");
   const isHostFlow = path.startsWith("/anfitriao") || path.startsWith("/verificacao/anfitriao");
   const isApprovedHostArea = isHostFlow && session?.user?.hostStatus === "APROVADO";
+  const isAdmin = role === "ADMIN";
   const nav =
-    role === "ADMIN" ? adminNav : isProfessionalArea ? professionalNav : isApprovedHostArea ? hostNav : isHostFlow ? hostOnboardingNav : guestNav;
-  const sectionLabel = isProfessionalArea
+    isAdmin ? adminNav : isProfessionalArea ? professionalNav : isApprovedHostArea ? hostNav : isHostFlow ? hostOnboardingNav : guestNav;
+  const sectionLabel = isAdmin
+    ? "Area admin"
+    : isProfessionalArea
     ? "Area profissional"
     : isApprovedHostArea
       ? "AREA ANFITRIAO"
       : isHostFlow
         ? "CADASTRO DE ANFITRIAO"
         : "Area cliente";
+  const logoHref = isAdminArea || isAdmin ? ACCOUNT_ROUTES.admin : "/";
 
   return (
     <>
@@ -145,7 +151,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
 
         <div className="relative border-b border-white/10 p-4">
           <div className="flex items-center justify-between">
-          <Link href="/" onClick={onClose} className="inline-flex items-center gap-2 no-underline">
+          <Link href={logoHref} onClick={onClose} className="inline-flex items-center gap-2 no-underline">
             <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-[8px] bg-black">
               <img src="/brand/elite-modell-source.png" alt="Elite Modell" className="h-full w-full object-contain" />
             </span>
@@ -244,7 +250,24 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
             })}
           </div>
 
-          {isProfessionalArea ? (
+          {isAdmin ? (
+            <div className="mt-5 rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(255,255,255,0.03))] p-3">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f5d78c]">
+                Navegacao segura
+              </p>
+              <p className="mt-2 text-xs leading-5 text-white/48">
+                O logo permanece no painel administrativo.
+              </p>
+              <Link
+                href="/"
+                onClick={onClose}
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-[8px] border border-[#d4a843]/28 px-3 py-2 text-xs font-black text-[#f5d78c] transition hover:bg-[#d4a843]/10"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Ver site publico
+              </Link>
+            </div>
+          ) : isProfessionalArea ? (
             <div className="mt-5 rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(204,31,47,0.06))] p-3">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f5d78c]">
                 Perfil profissional
