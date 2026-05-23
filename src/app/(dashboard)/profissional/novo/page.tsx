@@ -383,6 +383,9 @@ export default function ProfissionalNovoPage() {
       set("verificationUrl", url);
       set("verificationFile", file);
       set("verificationType", file.type.startsWith("video/") ? "video" : "foto");
+      set("kycProvider", "MANUAL");
+      set("kycStatus", "KYC_MANUAL_PENDENTE");
+      if (!form.kycSessionId) set("kycSessionId", `manual_upload_${Date.now()}`);
       toast.success("Mídia de verificação enviada!");
     } catch { toast.error("Erro ao enviar mídia."); }
     finally { setUploadingIdx(null); }
@@ -393,9 +396,9 @@ export default function ProfissionalNovoPage() {
     setUploadingIdx(100);
     try {
       const res = await fetch("/api/kyc/sessions", { method: "POST" });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error ?? "Erro ao iniciar biometria facial.");
+        toast.error(data.error ?? "Biometria facial ainda nao configurada. Envie sua selfie ou video de verificacao abaixo para analise manual.");
         return;
       }
 
@@ -405,17 +408,18 @@ export default function ProfissionalNovoPage() {
       set("kycChallenge", data.challenge ?? "");
       set("kycExpiresAt", data.expiresAt ?? "");
       if (data.url) set("verificationUrl", data.url);
-      set("verificationType", "biometria");
+      if (!data.fallback) set("verificationType", "biometria");
 
-      if (data.provider === "LOCAL_MANUAL") {
-        toast.success("Sessão criada. Capture a selfie ou vídeo com o desafio.");
+      if (data.fallback || data.provider === "MANUAL" || data.provider === "LOCAL_MANUAL") {
+        toast.error(data.message ?? "Biometria facial ainda nao configurada. Envie sua selfie ou video de verificacao abaixo para analise manual.");
+        return;
       } else if (data.url?.startsWith("http")) {
         window.location.href = data.url;
       } else {
         toast.success("Sessão de biometria facial criada.");
       }
     } catch {
-      toast.error("Erro ao iniciar biometria facial.");
+      toast.error("Biometria facial ainda nao configurada. Envie sua selfie ou video de verificacao abaixo para analise manual.");
     } finally {
       setUploadingIdx(null);
     }

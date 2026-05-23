@@ -618,7 +618,7 @@ model Professional {
   verificationCode String?
   kycProvider      String?
   kycSessionId     String?
-  kycStatus        String   @default("NOT_STARTED") // NOT_STARTED | PENDING | APPROVED | REJECTED | MANUAL_REVIEW
+  kycStatus        String   @default("NOT_STARTED") // NOT_STARTED | PENDING | APPROVED | REJECTED | KYC_MANUAL_PENDENTE
   rejectReason     String?
 
   // Status e métricas

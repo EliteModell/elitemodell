@@ -1,18 +1,44 @@
-const PERSONA_API_BASE = "https://withpersona.com/api/v1";
+const PERSONA_API_BASE = "https://api.withpersona.com/api/v1";
+
+export const PERSONA_FALLBACK_MESSAGE =
+  "Biometria facial ainda nao configurada. Envie sua selfie ou video de verificacao abaixo para analise manual.";
 
 type PersonaInquiryResponse = {
   data: {
     id: string;
     meta?: { "session-token"?: string };
   };
+  meta?: {
+    "session-token"?: string;
+    "one-time-link"?: string;
+    "one-time-link-short"?: string;
+  };
 };
 
+export function getPersonaConfig() {
+  const apiKey = process.env.PERSONA_API_KEY?.trim();
+  const templateId =
+    process.env.PERSONA_TEMPLATE_ID?.trim() ||
+    process.env.PERSONA_INQUIRY_TEMPLATE_ID?.trim();
+  const environment = process.env.PERSONA_ENVIRONMENT?.trim() || "sandbox";
+
+  return {
+    apiKey,
+    templateId,
+    environment,
+    configured: Boolean(apiKey && templateId),
+    missing: [
+      !apiKey ? "PERSONA_API_KEY" : null,
+      !templateId ? "PERSONA_TEMPLATE_ID ou PERSONA_INQUIRY_TEMPLATE_ID" : null,
+    ].filter(Boolean) as string[],
+  };
+}
+
 export async function createPersonaInquiry(userId: string, redirectUri: string) {
-  const apiKey = process.env.PERSONA_API_KEY;
-  const templateId = process.env.PERSONA_TEMPLATE_ID;
+  const { apiKey, templateId } = getPersonaConfig();
 
   if (!apiKey || !templateId) {
-    throw new Error("PERSONA_API_KEY ou PERSONA_TEMPLATE_ID não configurados.");
+    throw new Error("PERSONA_API_KEY ou PERSONA_TEMPLATE_ID nao configurados.");
   }
 
   const res = await fetch(`${PERSONA_API_BASE}/inquiries`, {
@@ -35,13 +61,14 @@ export async function createPersonaInquiry(userId: string, redirectUri: string) 
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as { errors?: { detail?: string }[] };
-    throw new Error(err?.errors?.[0]?.detail ?? "Erro ao criar sessão no Persona.");
+    throw new Error(err?.errors?.[0]?.detail ?? "Erro ao criar sessao no Persona.");
   }
 
   const json = await res.json() as PersonaInquiryResponse;
   return {
     inquiryId: json.data.id,
-    sessionToken: json.data.meta?.["session-token"],
+    sessionToken: json.meta?.["session-token"] ?? json.data.meta?.["session-token"],
+    oneTimeLink: json.meta?.["one-time-link"] ?? json.meta?.["one-time-link-short"],
   };
 }
 

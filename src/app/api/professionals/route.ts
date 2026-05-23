@@ -190,6 +190,13 @@ export async function POST(req: NextRequest) {
     });
 
     const { specialties, services, ...profileData } = data;
+    const hasManualMedia =
+      Boolean(profileData.verificationUrl) &&
+      profileData.kycProvider !== "PERSONA";
+    const normalizedKycProvider = hasManualMedia ? "MANUAL" : profileData.kycProvider;
+    const normalizedKycStatus = hasManualMedia
+      ? "KYC_MANUAL_PENDENTE"
+      : profileData.kycStatus ?? (profileData.kycSessionId ? "PENDING" : "NOT_STARTED");
     const escortCategory = profileData.escortCategory
       || (user?.category && ["MULHER", "TRANS", "HOMEM"].includes(user.category) ? user.category : undefined);
 
@@ -203,6 +210,8 @@ export async function POST(req: NextRequest) {
     const professional = await prisma.professional.create({
       data: {
         ...profileData,
+        kycProvider: normalizedKycProvider,
+        kycStatus: normalizedKycStatus,
         escortCategory,
         slug,
         userId:    session.user.id,
@@ -211,7 +220,6 @@ export async function POST(req: NextRequest) {
         status:    "PENDING_REVIEW",
         docStatus:  profileData.docFrenteUrl ? "PENDING" : "NOT_SENT",
         verifStatus: profileData.verificationUrl || profileData.kycSessionId ? "PENDING" : "NOT_SENT",
-        kycStatus: profileData.kycStatus ?? (profileData.kycSessionId ? "PENDING" : "NOT_STARTED"),
         specialties: {
           create: allSpecialties.map((name) => ({ name })),
         },
