@@ -894,10 +894,10 @@ export default function NovoImovelPage() {
           <>
             <StepTitle title="Defina o valor de uso do local" helper="Se o financeiro ainda não estiver ativo para este local, deixe os valores em branco e use aprovação manual." />
             <div className="form-grid">
-              <Input label="Preço por hora" value={form.priceHour} onChange={(value) => setField("priceHour", value)} type="number" />
-              <Input label="Preço por período" value={form.pricePeriod} onChange={(value) => setField("pricePeriod", value)} type="number" />
-              <Input label="Preço por diária" value={form.priceDay} onChange={(value) => setField("priceDay", value)} type="number" />
-              <Input label="Taxa de limpeza" value={form.cleaningFee} onChange={(value) => setField("cleaningFee", value)} type="number" />
+              <Input label="Preço por hora" value={form.priceHour} onChange={(value) => setField("priceHour", value)} type="number" prefix="R$" />
+              <Input label="Preço por período" value={form.pricePeriod} onChange={(value) => setField("pricePeriod", value)} type="number" prefix="R$" />
+              <Input label="Preço por diária" value={form.priceDay} onChange={(value) => setField("priceDay", value)} type="number" prefix="R$" />
+              <Input label="Taxa de limpeza" value={form.cleaningFee} onChange={(value) => setField("cleaningFee", value)} type="number" prefix="R$" />
             </div>
             <div className="stack compact">
               {[
@@ -1148,6 +1148,25 @@ export default function NovoImovelPage() {
           padding: 14px;
           font: inherit;
           outline: none;
+        }
+        .input-prefix-wrap {
+          position: relative;
+        }
+        .input-prefix {
+          position: absolute;
+          left: 16px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: ${GOLD};
+          font-size: 14px;
+          font-weight: 900;
+          line-height: 1;
+          pointer-events: none;
+          user-select: none;
+          z-index: 1;
+        }
+        .field input.has-prefix {
+          padding-left: 56px;
         }
         .field textarea {
           min-height: 150px;
@@ -1744,6 +1763,10 @@ export default function NovoImovelPage() {
         .field textarea::placeholder {
           color: rgba(184,184,184,0.55);
         }
+        .field input.has-prefix {
+          padding-left: 58px;
+          color: #fff;
+        }
         .field input:focus,
         .field textarea:focus {
           border-color: rgba(245,184,59,0.72);
@@ -1966,17 +1989,29 @@ function Input({
   onChange,
   placeholder,
   type = "text",
+  prefix,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   type?: string;
+  prefix?: string;
 }) {
   return (
     <div className="field">
       <label>{label}</label>
-      <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} type={type} />
+      <div className={prefix ? "input-prefix-wrap" : undefined}>
+        {prefix && <span className="input-prefix">{prefix}</span>}
+        <input
+          className={prefix ? "has-prefix" : undefined}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          type={type}
+          inputMode={prefix ? "decimal" : undefined}
+        />
+      </div>
     </div>
   );
 }

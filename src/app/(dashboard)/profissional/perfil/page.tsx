@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
+const GOLD = "#d4a843";
+
 const specialtyOptions = [
   "Modelo Fotografico", "Modelo Publicitario", "Modelo Fitness", "Modelo Plus Size",
   "Modelo Editorial", "Atriz/Ator", "Influencer", "Promoter",
@@ -163,6 +165,16 @@ export default function EditarPerfilPage() {
       e.currentTarget.style.borderColor = "#2a2a2a";
     },
   };
+  const moneyFocus = {
+    onFocus: (e: React.FocusEvent<HTMLInputElement>) => {
+      e.currentTarget.style.borderColor = GOLD;
+      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(212,168,67,0.14)";
+    },
+    onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
+      e.currentTarget.style.borderColor = "#2a2a2a";
+      e.currentTarget.style.boxShadow = "none";
+    },
+  };
   const allSpecialtyOptions = Array.from(new Set([...specialtyOptions, ...form.specialties]));
 
   if (initialLoading) {
@@ -245,14 +257,20 @@ export default function EditarPerfilPage() {
 
         <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, padding: "22px" }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 18 }}>Faixa de preco</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
             <div>
               <label style={label}>Preco minimo (R$)</label>
-              <input type="number" style={input} value={form.priceMin} onChange={(e) => setForm({ ...form, priceMin: e.target.value })} placeholder="500" {...focus} />
+              <div style={{ position: "relative" }}>
+                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: GOLD, fontSize: 14, fontWeight: 800, pointerEvents: "none", userSelect: "none" }}>R$</span>
+                <input type="number" inputMode="decimal" style={{ ...input, paddingLeft: 54, color: "#fff" }} value={form.priceMin} onChange={(e) => setForm({ ...form, priceMin: e.target.value })} placeholder="500" {...moneyFocus} />
+              </div>
             </div>
             <div>
               <label style={label}>Preco maximo (R$)</label>
-              <input type="number" style={input} value={form.priceMax} onChange={(e) => setForm({ ...form, priceMax: e.target.value })} placeholder="2000" {...focus} />
+              <div style={{ position: "relative" }}>
+                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: GOLD, fontSize: 14, fontWeight: 800, pointerEvents: "none", userSelect: "none" }}>R$</span>
+                <input type="number" inputMode="decimal" style={{ ...input, paddingLeft: 54, color: "#fff" }} value={form.priceMax} onChange={(e) => setForm({ ...form, priceMax: e.target.value })} placeholder="2000" {...moneyFocus} />
+              </div>
             </div>
           </div>
           <p style={{ fontSize: 12, color: "#555", marginTop: 10 }}>Os valores sao uma referencia. O preco final e negociado com cada cliente.</p>

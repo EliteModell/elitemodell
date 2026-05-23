@@ -115,6 +115,42 @@ function UploadZone({ label, accept, preview, onFile, loading }: {
   );
 }
 
+function MoneyInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <div style={{ position: "relative" }}>
+      <span style={{
+        position: "absolute",
+        left: 14,
+        top: "50%",
+        transform: "translateY(-50%)",
+        color: GOLD,
+        fontSize: 14,
+        fontWeight: 800,
+        pointerEvents: "none",
+        userSelect: "none",
+        zIndex: 1,
+      }}>R$</span>
+      <input
+        type="number"
+        inputMode="decimal"
+        min={0}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = GOLD;
+          e.currentTarget.style.boxShadow = "0 0 0 3px rgba(212,168,67,0.14)";
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = "#1e293b";
+          e.currentTarget.style.boxShadow = "none";
+        }}
+        style={{ ...inputStyle, paddingLeft: 54, color: "#f8fafc" }}
+        placeholder="0,00"
+      />
+    </div>
+  );
+}
+
 function FaceCapture({
   challenge,
   loading,
@@ -809,7 +845,7 @@ export default function ProfissionalNovoPage() {
       {step === 4 && (
         <div>
           <Section title="Tabela de preços" desc="Esses valores aparecerão no seu perfil. Você pode alterá-los a qualquer momento.">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
               {[
                 { field: "price30min", label: "30 minutos" },
                 { field: "pricePerHour", label: "1 hora" },
@@ -819,11 +855,7 @@ export default function ProfissionalNovoPage() {
               ].map(({ field, label }) => (
                 <div key={field}>
                   <label style={labelStyle}>{label}</label>
-                  <div style={{ position: "relative" }}>
-                    <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#475569", fontSize: 14, fontWeight: 700 }}>R$</span>
-                    <input type="number" min={0} value={form[field as PriceFormField]} onChange={(e) => set(field as PriceFormField, e.target.value)}
-                      style={{ ...inputStyle, paddingLeft: 40 }} placeholder="0,00" />
-                  </div>
+                  <MoneyInput value={form[field as PriceFormField]} onChange={(value) => set(field as PriceFormField, value)} />
                 </div>
               ))}
             </div>
@@ -911,9 +943,10 @@ export default function ProfissionalNovoPage() {
             </div>
             <div style={{ marginTop: 12, padding: "10px 14px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 8 }}>
               <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
-                ✦ Fotos explícitas <strong>não</strong> são permitidas na galeria pública.<br />
-                ✦ Você pode usar fotos com o rosto visível ou não — é sua escolha.<br />
-                ✦ Fotos de outras pessoas serão reprovadas na moderação.
+                Você pode publicar fotos e vídeos sensuais/adultos, desde que sejam seus e estejam dentro das regras da plataforma.<br />
+                Fotos de terceiros, conteúdo ilegal, material sem consentimento ou envolvendo menores de idade serão reprovados.<br />
+                Documentos pessoais não devem ser enviados na galeria pública.<br />
+                Todo conteúdo pode passar por moderação. A foto principal/capa deve ser adequada para exibição inicial do perfil.
               </p>
             </div>
           </Section>
