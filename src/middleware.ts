@@ -18,9 +18,17 @@ function isProtectedAnfitriaoRoute(pathname: string): boolean {
   return pathname === "/anfitriao" || pathname.startsWith("/anfitriao/");
 }
 
+// /admin/login é público — qualquer um pode acessar para se autenticar
+function isProtectedAdminRoute(pathname: string): boolean {
+  if (pathname === "/admin/login") return false;
+  return pathname === "/admin" || pathname.startsWith("/admin/");
+}
+
 function requiresAuth(pathname: string): boolean {
   if (isProtectedAnfitriaoRoute(pathname)) return true;
-  return PROTECTED_PREFIXES.some(
+  if (isProtectedAdminRoute(pathname) === false) return false;
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) return true;
+  return PROTECTED_PREFIXES.filter(p => p !== "/admin").some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
