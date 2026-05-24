@@ -23,6 +23,7 @@ type Category = "MULHER" | "TRANS" | "HOMEM";
 type Step = "form" | "verify";
 type BirthPart = "day" | "month" | "year";
 type PendingAuthMethod = "google" | null;
+const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
 type AuthError = { code?: string; name?: string; message?: string };
 
 const GOLD = "#d4a843";
@@ -466,6 +467,16 @@ export default function CadastroPage() {
     return ACCOUNT_ROUTES.mainClientFeed;
   }
 
+  function roleIntent() {
+    if (form.accountType === "PROFESSIONAL") return "profissional";
+    if (form.accountType === "PROPERTY_HOST") return "anfitriao";
+    return "cliente";
+  }
+
+  function callbackParams() {
+    return `returnUrl=${encodeURIComponent(nextPath())}&role=${roleIntent()}`;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setPendingAuthMethod(null);
@@ -478,14 +489,14 @@ export default function CadastroPage() {
         email: form.email.trim().toLowerCase(),
         password: form.password,
         options: {
-          emailRedirectTo: buildAuthCallbackUrl(`returnUrl=${encodeURIComponent(nextPath())}`),
+          emailRedirectTo: buildAuthCallbackUrl(callbackParams()),
           data: registrationPayload(),
         },
       });
       if (error) throw error;
       if (data.session?.access_token) {
         await registerUser(data.session.access_token, captchaToken);
-        const res = await signIn("supabase", { accessToken: data.session.access_token, redirect: false });
+        const res = await signIn("supabase", { accessToken: data.session.access_token, roleIntent: roleIntent(), redirect: false });
         if (res?.ok) {
           router.push(nextPath());
           router.refresh();
@@ -516,9 +527,10 @@ export default function CadastroPage() {
     try {
       const captchaToken = await getCaptchaToken();
       sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload(captchaToken)));
+      sessionStorage.setItem(ROLE_INTENT_KEY, roleIntent());
       const { error } = await supabaseAuth.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: buildAuthCallbackUrl(`returnUrl=${encodeURIComponent(nextPath())}`) },
+        options: { redirectTo: buildAuthCallbackUrl(callbackParams()) },
       });
       if (error) throw error;
     } catch (err: unknown) {
@@ -547,12 +559,12 @@ export default function CadastroPage() {
       if (!accessToken) {
         sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload(captchaToken)));
         toast.error("Entre novamente para continuar seu cadastro.");
-        router.push(`${ACCOUNT_ROUTES.login}?returnUrl=${encodeURIComponent(nextPath())}`);
+        router.push(`${ACCOUNT_ROUTES.login}?returnUrl=${encodeURIComponent(nextPath())}&role=${roleIntent()}`);
         return;
       }
 
       await registerUser(accessToken, captchaToken);
-      const res = await signIn("supabase", { accessToken, redirect: false });
+      const res = await signIn("supabase", { accessToken, roleIntent: roleIntent(), redirect: false });
       if (res?.error) throw new Error("Não foi possível atualizar sua sessão.");
 
       router.push(nextPath());

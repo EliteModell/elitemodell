@@ -33,6 +33,19 @@ function requiresAuth(pathname: string): boolean {
   );
 }
 
+function roleIntentForProtectedPath(pathname: string) {
+  if (pathname.startsWith("/profissional") || pathname.startsWith("/verificacao/acompanhante") || pathname.startsWith("/painel/acompanhante")) {
+    return "profissional";
+  }
+  if (pathname.startsWith("/anfitriao") || pathname.startsWith("/verificacao/anfitriao") || pathname.startsWith("/painel/anfitriao")) {
+    return "anfitriao";
+  }
+  if (pathname.startsWith("/dashboard") || pathname.startsWith("/painel/cliente") || pathname === "/completar-cadastro") {
+    return "cliente";
+  }
+  return null;
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
@@ -45,6 +58,8 @@ export async function middleware(req: NextRequest) {
     // Preserva returnUrl para redirecionar de volta após login
     if (!pathname.startsWith("/api")) {
       loginUrl.searchParams.set("returnUrl", pathname);
+      const roleIntent = roleIntentForProtectedPath(pathname);
+      if (roleIntent) loginUrl.searchParams.set("role", roleIntent);
     }
     return NextResponse.redirect(loginUrl);
   }

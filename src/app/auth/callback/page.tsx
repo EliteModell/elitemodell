@@ -12,6 +12,7 @@ type PendingRegistration = {
 
 const PROPERTY_DRAFT_KEY = "elitemodell_location_onboarding_v2";
 const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
+const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
 const CALLBACK_TIMEOUT_MS = 15000;
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
@@ -39,6 +40,17 @@ async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRol
 
   const user = await res.json();
 
+  if (user.role === "ADMIN") return ACCOUNT_ROUTES.admin;
+
+  if (roleIntent === "profissional") {
+    return postLoginPathFromUser(user, roleIntent);
+  }
+
+  if (roleIntent === "anfitriao") {
+    if (hasPropertyDraft()) return PROPERTY_DRAFT_FINAL_PATH;
+    return hostPathForStatus(user.hostStatus ?? "NO_REQUEST");
+  }
+
   // Usuário sem consentimento ou sem data de nascimento → completar cadastro obrigatório
   if (!user.lgpdConsent || !user.termsConsent || !user.birthDate) {
     return "/completar-cadastro";
@@ -51,9 +63,6 @@ async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRol
     if (user.professional.status === "DRAFT") return ACCOUNT_ROUTES.onboardingAcompanhante;
     return postLoginPathFromUser(user, roleIntent);
   }
-
-  if (roleIntent === "anfitriao" && hasPropertyDraft()) return PROPERTY_DRAFT_FINAL_PATH;
-  if (roleIntent === "anfitriao") return hostPathForStatus(user.hostStatus ?? "NO_REQUEST");
 
   return postLoginPathFromUser(user, roleIntent);
 }
@@ -343,7 +352,8 @@ function AuthCallbackContent() {
   useEffect(() => {
     let active = true;
     const returnUrl = safeInternalPath(searchParams.get("returnUrl") ?? searchParams.get("redirectTo"));
-    const roleIntent = normalizeEntryRole(searchParams.get("role"));
+    const roleIntent = normalizeEntryRole(searchParams.get("role"))
+      ?? normalizeEntryRole(sessionStorage.getItem(ROLE_INTENT_KEY));
 
     async function finishAuth() {
       const code = searchParams.get("code");
@@ -405,14 +415,17 @@ function AuthCallbackContent() {
         }
       }
 
-      const res = await signIn("supabase", { accessToken, redirect: false });
+      const res = await signIn("supabase", { accessToken, roleIntent: roleIntent ?? "", redirect: false });
       if (res?.error) {
         throw new Error(`NextAuth: ${res.error}`);
       }
+      sessionStorage.removeItem(ROLE_INTENT_KEY);
 
-      const targetPath = returnUrl ?? (pendingRegistration
+      const targetPath = pendingRegistration
         ? getRegistrationPath(pendingRegistration)
-        : await resolveWithTimeout(getPostLoginPath(roleIntent), ACCOUNT_ROUTES.dashboardCliente));
+        : roleIntent
+          ? await resolveWithTimeout(getPostLoginPath(roleIntent), ACCOUNT_ROUTES.dashboardCliente)
+          : returnUrl ?? await resolveWithTimeout(getPostLoginPath(roleIntent), ACCOUNT_ROUTES.dashboardCliente);
 
       if (!active) return;
       setSuccess(true);

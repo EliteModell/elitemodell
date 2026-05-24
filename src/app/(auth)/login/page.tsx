@@ -17,6 +17,7 @@ const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
 const PROPERTY_DRAFT_KEY = "elitemodell_location_onboarding_v2";
 const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
+const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -51,10 +52,6 @@ const GoogleIcon = (
   </svg>
 );
 
-async function appSignIn(accessToken: string) {
-  return signIn("supabase", { accessToken, redirect: false });
-}
-
 function safeInternalPath(value: string | null) {
   if (!value) return null;
   try {
@@ -68,20 +65,37 @@ function safeInternalPath(value: string | null) {
 
 async function getPostLoginPath(returnUrl: string | null, roleIntent: ReturnType<typeof normalizeEntryRole>) {
   const safeReturnUrl = safeInternalPath(returnUrl);
-  if (safeReturnUrl) return safeReturnUrl;
-  if (localStorage.getItem(PROPERTY_DRAFT_KEY)) return PROPERTY_DRAFT_FINAL_PATH;
+  if (safeReturnUrl && !roleIntent) return safeReturnUrl;
+  if (roleIntent === "anfitriao" && localStorage.getItem(PROPERTY_DRAFT_KEY)) return PROPERTY_DRAFT_FINAL_PATH;
 
   const res = await fetch("/api/users/me");
   if (!res.ok) return ACCOUNT_ROUTES.dashboardCliente;
   const user = await res.json();
+  if (roleIntent && user?.role !== "ADMIN") return postLoginPathFromUser(user, roleIntent);
+  if (!user?.lgpdConsent || !user?.termsConsent || !user?.birthDate) return "/completar-cadastro";
   return postLoginPathFromUser(user, roleIntent);
+}
+
+function inferRoleIntentFromReturnUrl(returnUrl: string | null) {
+  const safeReturnUrl = safeInternalPath(returnUrl);
+  if (!safeReturnUrl) return null;
+  if (safeReturnUrl.startsWith("/profissional") || safeReturnUrl.startsWith("/verificacao/acompanhante") || safeReturnUrl.startsWith("/painel/acompanhante")) {
+    return "profissional" as const;
+  }
+  if (safeReturnUrl.startsWith("/anfitriao") || safeReturnUrl.startsWith("/verificacao/anfitriao") || safeReturnUrl.startsWith("/painel/anfitriao")) {
+    return "anfitriao" as const;
+  }
+  if (safeReturnUrl.startsWith("/dashboard") || safeReturnUrl.startsWith("/painel/cliente")) {
+    return "cliente" as const;
+  }
+  return null;
 }
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get("returnUrl") ?? searchParams.get("redirectTo");
-  const roleIntent = normalizeEntryRole(searchParams.get("role"));
+  const roleIntent = normalizeEntryRole(searchParams.get("role")) ?? inferRoleIntentFromReturnUrl(returnUrl);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
@@ -104,7 +118,7 @@ function LoginContent() {
         password: form.password,
       });
       if (error || !data.session?.access_token) throw error ?? new Error("Email ou senha invalidos.");
-      const res = await appSignIn(data.session.access_token);
+      const res = await signIn("supabase", { accessToken: data.session.access_token, roleIntent: roleIntent ?? "", redirect: false });
 
       if (res?.error) {
         toast.error("Erro ao entrar. Tente novamente.");
@@ -127,6 +141,7 @@ function LoginContent() {
         returnUrl ? `returnUrl=${encodeURIComponent(returnUrl)}` : "",
         roleIntent ? `role=${roleIntent}` : "",
       ].filter(Boolean).join("&");
+      if (roleIntent) sessionStorage.setItem(ROLE_INTENT_KEY, roleIntent);
       const { error } = await supabaseAuth.auth.signInWithOAuth({
         provider: "google",
         options: {

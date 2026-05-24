@@ -4,7 +4,13 @@ import { prisma } from "./prisma";
 import { verifyPhoneAuthToken } from "./phone-otp";
 import { createSupabaseServerClient } from "./supabase-server";
 import { checkRateLimitAsync } from "./rate-limit";
-import { getHostRegistrationStatus } from "./account-routes";
+import { getHostRegistrationStatus, normalizeEntryRole } from "./account-routes";
+
+function accountTypeFromRoleIntent(roleIntent: ReturnType<typeof normalizeEntryRole>) {
+  if (roleIntent === "profissional") return "model";
+  if (roleIntent === "anfitriao") return "host";
+  return null;
+}
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
@@ -18,6 +24,7 @@ export const authOptions: NextAuthOptions = {
       name: "Supabase",
       credentials: {
         accessToken: { label: "Supabase Access Token", type: "text" },
+        roleIntent: { label: "Role Intent", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.accessToken) return null;
@@ -34,6 +41,9 @@ export const authOptions: NextAuthOptions = {
 
           if (!email) return null;
           const metadata = authUser.user_metadata ?? {};
+          const credentialMap = credentials as Record<string, string | undefined>;
+          const roleIntent = normalizeEntryRole(credentialMap.roleIntent ?? null);
+          const intentAccountType = accountTypeFromRoleIntent(roleIntent);
           const emailVerified = authUser.email_confirmed_at
             ? new Date(authUser.email_confirmed_at)
             : null;
@@ -78,11 +88,12 @@ export const authOptions: NextAuthOptions = {
             }
 
             const metadataAccountType =
-              metadata.accountType === "PROFESSIONAL"
+              intentAccountType ??
+              (metadata.accountType === "PROFESSIONAL"
                 ? "model"
                 : metadata.accountType === "model" || metadata.accountType === "host"
                     ? metadata.accountType
-                    : "client";
+                    : "client");
             const role = metadataAccountType === "model" && metadata.role === "HOST" ? "HOST" : "GUEST";
             const metadataCategory =
               typeof metadata.category === "string" ? metadata.category : undefined;
