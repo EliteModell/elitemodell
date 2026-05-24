@@ -17,7 +17,11 @@ export default async function AnfitriaoPage() {
   const userId = access.user.id;
   const isAdmin = access.isAdmin;
 
-  const [properties, bookings, paid] = await Promise.all([
+  const [propertyStatuses, properties, bookings, paid] = await Promise.all([
+    prisma.property.findMany({
+      where: isAdmin ? {} : { hostId: userId },
+      select: { status: true },
+    }),
     prisma.property.findMany({
       where: isAdmin ? {} : { hostId: userId },
       orderBy: { createdAt: "desc" },
@@ -42,8 +46,9 @@ export default async function AnfitriaoPage() {
     }),
   ]);
 
-  const activeProperties = properties.filter((property) => property.status === "ACTIVE").length;
-  const pendingProperties = properties.filter((property) => property.status === "PENDING_REVIEW").length;
+  const activeProperties = propertyStatuses.filter((property) => property.status === "ACTIVE").length;
+  const pendingProperties = propertyStatuses.filter((property) => property.status === "PENDING_REVIEW").length;
+  const rejectedProperties = propertyStatuses.filter((property) => property.status === "REJECTED" || property.status === "INACTIVE").length;
   const pendingBookings = bookings.filter((booking) => booking.status === "PENDING").length;
 
   return (
@@ -62,6 +67,7 @@ export default async function AnfitriaoPage() {
         {[
           { label: "Espaços ativos", value: activeProperties },
           { label: "Em análise", value: pendingProperties },
+          { label: "Reprovados/suspensos", value: rejectedProperties },
           { label: "Reservas pendentes", value: pendingBookings },
           { label: "Repasses pagos", value: `R$ ${(paid._sum.hostPayout ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` },
         ].map((stat) => (
@@ -104,7 +110,7 @@ export default async function AnfitriaoPage() {
         ) : (
           <div style={{ display: "grid", gap: 12 }}>
             {properties.map((property) => (
-              <Link key={property.id} href={`/imoveis/${property.id}`} style={{ ...cardStyle, display: "block", textDecoration: "none" }}>
+              <Link key={property.id} href={`/anfitriao/imoveis/${property.id}`} style={{ ...cardStyle, display: "block", textDecoration: "none" }}>
                 <strong style={{ color: "#fff" }}>{property.title}</strong>
                 <p style={{ color: "#777", margin: "6px 0 0" }}>{property.city}, {property.state} - {property.status}</p>
               </Link>

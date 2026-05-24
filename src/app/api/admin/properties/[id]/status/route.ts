@@ -5,9 +5,11 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logAudit } from "@/lib/audit";
 
 const schema = z.object({
-  action: z.enum(["approve", "reject"]),
+  action: z.enum(["approve", "reject", "suspend"]),
+  reason: z.string().optional(),
 });
 
 export async function PATCH(
@@ -24,42 +26,49 @@ export async function PATCH(
 
   const property = await prisma.property.findUnique({
     where: { id },
-    select: { id: true, hostId: true, status: true },
+    select: {
+      id: true,
+      hostId: true,
+      status: true,
+      host: { select: { blocked: true, hostProfile: { select: { id: true } } } },
+    },
   });
 
   if (!property) {
     return NextResponse.json({ error: "Imovel nao encontrado." }, { status: 404 });
   }
 
-  if (body.action === "approve") {
-    await prisma.$transaction(async (tx) => {
-      await tx.property.update({
-        where: { id: property.id },
-        data: { status: "ACTIVE" },
-        select: { id: true },
-      });
-
-      await tx.user.update({
-        where: { id: property.hostId },
-        data: { role: "HOST", accountType: "host" },
-        select: { id: true },
-      });
-
-      await tx.hostProfile.upsert({
-        where: { userId: property.hostId },
-        create: { userId: property.hostId },
-        update: {},
-      });
-    });
-
-    return NextResponse.json({ ok: true, status: "ACTIVE" });
+  if (body.action === "approve" && (property.host.blocked || !property.host.hostProfile)) {
+    return NextResponse.json(
+      { error: "Aprove o anfitriao antes de aprovar o imovel." },
+      { status: 409 },
+    );
   }
+
+  const nextStatus =
+    body.action === "approve" ? "ACTIVE" :
+    body.action === "suspend" ? "INACTIVE" :
+    "REJECTED";
 
   await prisma.property.update({
     where: { id: property.id },
-    data: { status: "REJECTED" },
+    data: { status: nextStatus },
     select: { id: true },
   });
 
-  return NextResponse.json({ ok: true, status: "REJECTED" });
+  await logAudit({
+    adminId: session.user.id,
+    action: body.action === "approve" ? "PROPERTY_APPROVED" : "PROPERTY_REJECTED",
+    targetType: "PROPERTY",
+    targetId: property.id,
+    reason: body.reason || `property:${body.action}`,
+    changes: {
+      previousStatus: property.status,
+      newStatus: nextStatus,
+      hostId: property.hostId,
+      hostApprovedAtReview: Boolean(property.host.hostProfile && !property.host.blocked),
+    },
+  });
+
+  return NextResponse.json({ ok: true, status: nextStatus });
 }

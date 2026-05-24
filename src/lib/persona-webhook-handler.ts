@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { PERSONA_PENDING_STATUS, verifyPersonaWebhook } from "@/lib/persona";
+import {
+  PERSONA_PENDING_STATUS,
+  verifyPersonaWebhook,
+  fetchPersonaInquiryDetails,
+  evaluatePersonaInquiry,
+} from "@/lib/persona";
 import { claimWebhookEvent, markWebhookEventDone, markWebhookEventFailed } from "@/lib/webhook-idempotency";
 
 type PersonaEventPayload = {
@@ -81,6 +86,44 @@ export async function handlePersonaWebhook(req: NextRequest) {
 
   try {
     if (eventName === "inquiry.approved") {
+      // Fetch full inquiry details and evaluate every individual check.
+      // Never trust the "approved" event alone — sandbox and simulated data must not auto-approve.
+      let decision: Awaited<ReturnType<typeof evaluatePersonaInquiry>>;
+      try {
+        const details = await fetchPersonaInquiryDetails(inquiryId);
+        decision = evaluatePersonaInquiry(details);
+      } catch (fetchErr) {
+        // Conservative fallback: if we can't validate checks, never approve
+        console.error("[persona-webhook] falha ao buscar detalhes da inquiry, marcando NEEDS_REVIEW", fetchErr);
+        decision = {
+          decision: "NEEDS_REVIEW",
+          isSandbox: false,
+          reason: "Nao foi possivel buscar detalhes dos checks da Persona. Revisao manual obrigatoria.",
+          checksJson: {},
+        };
+      }
+
+      const userClientStatus =
+        decision.decision === "VERIFIED"
+          ? "VERIFIED"
+          : decision.decision === "REJECTED"
+          ? "REJECTED"
+          : "PENDING_REVIEW";
+
+      const professionalKycStatus =
+        decision.decision === "VERIFIED"
+          ? PERSONA_PENDING_STATUS
+          : decision.decision === "REJECTED"
+          ? "REJECTED"
+          : PERSONA_PENDING_STATUS;
+
+      const professionalVerifStatus =
+        decision.decision === "VERIFIED"
+          ? "PENDING"
+          : decision.decision === "REJECTED"
+          ? "REJECTED"
+          : "PENDING";
+
       await Promise.all([
         prisma.user.updateMany({
           where: {
@@ -90,10 +133,12 @@ export async function handlePersonaWebhook(req: NextRequest) {
             ],
           },
           data: {
-            clientStatus: "VERIFIED",
+            clientStatus: userClientStatus,
             kycSessionId: inquiryId,
             kycReviewedAt: new Date(),
-            kycRejectionReason: null,
+            kycRejectionReason: decision.decision !== "VERIFIED" ? decision.reason : null,
+            kycIsSandbox: decision.isSandbox,
+            kycChecksJson: decision.checksJson as Prisma.InputJsonObject,
           },
         }),
         prisma.professional.updateMany({
@@ -105,9 +150,12 @@ export async function handlePersonaWebhook(req: NextRequest) {
           },
           data: {
             kycProvider: "PERSONA",
-            kycStatus: PERSONA_PENDING_STATUS,
-            verifStatus: "PENDING",
-            rejectReason: "Persona aprovada; aguardando revisao manual/admin.",
+            kycStatus: professionalKycStatus,
+            verifStatus: professionalVerifStatus,
+            rejectReason:
+              decision.decision === "VERIFIED"
+                ? "Persona aprovada; aguardando revisao manual/admin."
+                : decision.reason,
           },
         }),
       ]);

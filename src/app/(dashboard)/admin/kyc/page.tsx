@@ -65,6 +65,66 @@ async function reviewClientKyc(formData: FormData) {
   revalidatePath("/admin/kyc");
 }
 
+type VerificationCheck = { name: string; status: string; reasons?: string[] };
+type VerificationEntry = { status: string; checks?: VerificationCheck[] };
+type KycChecksJson = {
+  isSandbox?: boolean;
+  inquiryId?: string;
+  inquiryStatus?: string;
+  verifications?: Record<string, VerificationEntry>;
+  ageFromDocument?: number;
+  birthdateMissing?: boolean;
+  missingGovernmentId?: boolean;
+  missingSelfie?: boolean;
+};
+
+function parseChecksJson(raw: unknown): KycChecksJson | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  return raw as KycChecksJson;
+}
+
+function CheckStatusIcon({ status }: { status: string }) {
+  if (status === "passed") return <span style={{ color: "#22c55e" }}>✓</span>;
+  if (status === "failed") return <span style={{ color: "#ef4444" }}>✗</span>;
+  if (status === "not_applicable") return <span style={{ color: "#64748b" }}>–</span>;
+  return <span style={{ color: "#f59e0b" }}>?</span>;
+}
+
+function KycChecksDisplay({ raw }: { raw: unknown }) {
+  const checks = parseChecksJson(raw);
+  if (!checks) return null;
+  const { verifications, ageFromDocument, birthdateMissing, missingGovernmentId, missingSelfie } = checks;
+  if (!verifications && !missingGovernmentId && !missingSelfie) return null;
+
+  return (
+    <div style={{ marginTop: 6, fontSize: 11, color: "#94a3b8" }}>
+      {missingGovernmentId && <div style={{ color: "#f59e0b" }}>⚠ Documento de identidade ausente</div>}
+      {missingSelfie && <div style={{ color: "#f59e0b" }}>⚠ Selfie ausente</div>}
+      {verifications && Object.entries(verifications).map(([verType, ver]) => (
+        <div key={verType} style={{ marginBottom: 4 }}>
+          <span style={{ fontWeight: 600, color: "#cbd5e1" }}>{verType}</span>{" "}
+          <CheckStatusIcon status={ver.status} />{" "}
+          <span>{ver.status}</span>
+          {ver.checks?.filter(c => c.status !== "not_applicable").map(c => (
+            <div key={c.name} style={{ paddingLeft: 10 }}>
+              <CheckStatusIcon status={c.status} /> {c.name}
+              {c.status === "failed" && c.reasons?.length ? (
+                <span style={{ color: "#ef4444" }}> ({c.reasons.join(", ")})</span>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ))}
+      {ageFromDocument !== undefined && (
+        <div style={{ color: ageFromDocument < 18 ? "#ef4444" : "#22c55e" }}>
+          Idade (doc): {ageFromDocument} anos
+        </div>
+      )}
+      {birthdateMissing && <div style={{ color: "#f59e0b" }}>⚠ Data de nascimento não disponível no documento</div>}
+    </div>
+  );
+}
+
 function toneFor(status?: string | null) {
   if (status === "APPROVED" || status === "VERIFIED") return "success" as const;
   if (status === "REJECTED") return "danger" as const;
@@ -80,13 +140,30 @@ export default async function AdminKycPage() {
       where: { OR: [{ kycStatus: { not: "APPROVED" } }, { verifStatus: { not: "APPROVED" } }] },
       orderBy: { createdAt: "desc" },
       take: 80,
-      include: { user: { select: { name: true, email: true, phone: true } } },
+      select: {
+        id: true,
+        displayName: true,
+        kycProvider: true,
+        kycSessionId: true,
+        kycStatus: true,
+        verifStatus: true,
+        docFrenteUrl: true,
+        docVersoUrl: true,
+        verificationUrl: true,
+        verificationType: true,
+        verificationCode: true,
+        user: { select: { name: true, email: true, phone: true } },
+      },
     }),
     prisma.user.findMany({
       where: { clientStatus: { in: ["PENDING_REVIEW", "UNVERIFIED", "REJECTED"] } },
       orderBy: { kycSubmittedAt: "desc" },
       take: 80,
-      select: { id: true, name: true, email: true, phone: true, clientStatus: true, kycSessionId: true, kycSubmittedAt: true, kycRejectionReason: true },
+      select: {
+        id: true, name: true, email: true, phone: true,
+        clientStatus: true, kycSessionId: true, kycSubmittedAt: true,
+        kycRejectionReason: true, kycIsSandbox: true, kycChecksJson: true,
+      },
     }),
   ]);
 
@@ -156,17 +233,39 @@ export default async function AdminKycPage() {
           <tbody>
             {clients.map((client) => (
               <tr key={client.id}>
-                <td style={tdStyle}>{client.name ?? "Sem nome"}<br />{client.email}</td>
-                <td style={tdStyle}><StatusPill tone={toneFor(client.clientStatus)}>{client.clientStatus}</StatusPill></td>
+                <td style={tdStyle}>
+                  {client.name ?? "Sem nome"}<br />
+                  {client.email}<br />
+                  {client.kycIsSandbox && (
+                    <span style={{
+                      display: "inline-block", marginTop: 4, padding: "2px 8px",
+                      background: "#854d0e", color: "#fef08a", borderRadius: 6, fontSize: 11, fontWeight: 700,
+                    }}>
+                      SANDBOX — DADO SIMULADO
+                    </span>
+                  )}
+                </td>
+                <td style={tdStyle}>
+                  <StatusPill tone={toneFor(client.clientStatus)}>{client.clientStatus}</StatusPill>
+                  {client.kycRejectionReason && (
+                    <div style={{ color: "#ef4444", fontSize: 11, marginTop: 4 }}>{client.kycRejectionReason}</div>
+                  )}
+                </td>
                 <td style={tdStyle}>
                   {personaProviderLabel(null, client.kycSessionId)}<br />
                   <span style={{ color: "#94a3b8" }}>{client.kycSessionId ?? "sem inquiry/sessao"}</span><br />
                   {client.kycSubmittedAt?.toLocaleString("pt-BR") ?? "-"}
+                  <KycChecksDisplay raw={client.kycChecksJson} />
                 </td>
                 <td style={tdStyle}>
                   <form action={reviewClientKyc} style={{ display: "grid", gap: 8 }}>
                     <input type="hidden" name="id" value={client.id} />
                     <input name="reason" placeholder="Motivo/observacao" style={{ background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 8 }} />
+                    {client.kycIsSandbox && (
+                      <span style={{ color: "#fef08a", fontSize: 11, fontWeight: 600, background: "#78350f", padding: "4px 8px", borderRadius: 6 }}>
+                        ATENCAO: Este e um dado SANDBOX (simulado). Aprovacao manual nao valida identidade real.
+                      </span>
+                    )}
                     <span style={{ color: "#94a3b8", fontSize: 11 }}>
                       {personaProviderLabel(null, client.kycSessionId) === "PERSONA" ? "Use revisao manual apenas em excecao ou falha do webhook." : "Verificacao manual pendente."}
                     </span>

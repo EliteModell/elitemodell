@@ -156,11 +156,13 @@ model User {
   termsConsent    Boolean      @default(false)
   consentDate     DateTime?
   clientStatus    ClientStatus @default(UNVERIFIED)
-  kycSessionId    String?
-  kycSubmittedAt  DateTime?
-  kycReviewedAt   DateTime?
+  kycSessionId       String?
+  kycSubmittedAt     DateTime?
+  kycReviewedAt      DateTime?
   kycRejectionReason String?
-  termsVersion    String?
+  kycIsSandbox       Boolean?
+  kycChecksJson      Json?
+  termsVersion       String?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 

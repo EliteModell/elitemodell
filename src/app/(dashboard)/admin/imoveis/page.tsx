@@ -13,6 +13,14 @@ const statusLabel: Record<string, string> = {
   REJECTED: "Reprovado",
 };
 
+const statusFilterLabel: Record<string, string> = {
+  DRAFT: "Rascunho do imovel",
+  PENDING_REVIEW: "Pendente aprovacao",
+  ACTIVE: "Aprovado (imovel)",
+  INACTIVE: "Oculto/Suspenso",
+  REJECTED: "Reprovado",
+};
+
 function hostStatus(host: { blocked: boolean; hostProfile: { id: string } | null }) {
   if (host.blocked) return "SUSPENSO";
   if (host.hostProfile) return "APROVADO";
@@ -48,7 +56,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams?
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
         {["ALL", "DRAFT", "PENDING_REVIEW", "ACTIVE", "REJECTED", "INACTIVE"].map((item) => (
           <Link key={item} href={item === "ALL" ? "/admin/imoveis" : `/admin/imoveis?status=${item}`} style={{ ...buttonStyle, textDecoration: "none", background: item === (status ?? "ALL") ? "rgba(212,168,67,.22)" : "rgba(255,255,255,.03)" }}>
-            {item === "ALL" ? "Todos" : statusLabel[item] ?? item}
+            {item === "ALL" ? "Todos" : statusFilterLabel[item] ?? item}
           </Link>
         ))}
       </div>

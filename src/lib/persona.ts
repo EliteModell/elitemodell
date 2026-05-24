@@ -1,6 +1,66 @@
 const PERSONA_API_BASE = "https://api.withpersona.com/api/v1";
 const PERSONA_HOSTED_FLOW_BASE = "https://inquiry.withpersona.com/verify";
 
+// ─── Types for inquiry details + check evaluation ────────────────────────────
+
+export type PersonaCheck = {
+  name: string;
+  status: "passed" | "failed" | "not_applicable";
+  reasons?: string[];
+};
+
+export type PersonaVerification = {
+  id: string;
+  type: string;
+  attributes: {
+    status:
+      | "passed"
+      | "failed"
+      | "requires_retry"
+      | "initiated"
+      | "submitted"
+      | "confirmed"
+      | "invalidated"
+      | "not_applicable"
+      | "canceled"
+      | "created";
+    checks?: PersonaCheck[];
+    birthdate?: string | null;
+    "expiration-date"?: string | null;
+    "country-code"?: string | null;
+  };
+};
+
+export type PersonaInquiryDetails = {
+  data: {
+    id: string;
+    type: "inquiry";
+    attributes: {
+      status: string;
+      "reference-id"?: string | null;
+      "is-sandbox": boolean;
+      "created-at"?: string | null;
+      "completed-at"?: string | null;
+      "approved-at"?: string | null;
+      "declined-at"?: string | null;
+      "failed-at"?: string | null;
+      "reviewer-comment"?: string | null;
+      "decline-reason-code"?: string | null;
+    };
+    relationships?: {
+      verifications?: { data: Array<{ id: string; type: string }> };
+    };
+  };
+  included?: PersonaVerification[];
+};
+
+export type PersonaKycDecision = {
+  decision: "VERIFIED" | "NEEDS_REVIEW" | "REJECTED";
+  isSandbox: boolean;
+  reason: string;
+  checksJson: Record<string, unknown>;
+};
+
 export const PERSONA_FALLBACK_MESSAGE =
   "Verificacao manual pendente. Envie sua selfie ou video de verificacao abaixo para analise manual.";
 
@@ -231,4 +291,244 @@ function timingSafeEqualHex(a: string, b: string) {
     diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   }
   return diff === 0;
+}
+
+// ─── Fetch full inquiry details (includes verifications + checks) ─────────────
+
+export async function fetchPersonaInquiryDetails(
+  inquiryId: string,
+): Promise<PersonaInquiryDetails> {
+  const { apiKey, apiVersion } = getPersonaConfig();
+  if (!apiKey) {
+    throw new PersonaIntegrationError(
+      "PERSONA_API_KEY ausente ao buscar detalhes da inquiry.",
+      "PERSONA_ENV_MISSING",
+    );
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(
+      `${PERSONA_API_BASE}/inquiries/${encodeURIComponent(inquiryId)}?include=verifications`,
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Persona-Version": apiVersion,
+        },
+        signal: AbortSignal.timeout(15_000),
+      },
+    );
+  } catch (err) {
+    throw new PersonaIntegrationError(
+      "Erro de rede ao buscar detalhes da inquiry.",
+      "PERSONA_NETWORK_ERROR",
+      undefined,
+      err instanceof Error ? { name: err.name, message: err.message } : String(err),
+    );
+  }
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new PersonaIntegrationError(
+      `Persona respondeu HTTP ${res.status} ao buscar detalhes da inquiry.`,
+      "PERSONA_API_ERROR",
+      res.status,
+      text,
+    );
+  }
+
+  return res.json() as Promise<PersonaInquiryDetails>;
+}
+
+// ─── Checks críticos de fraude que causam REJECTED imediato ──────────────────
+
+const CRITICAL_FRAUD_CHECKS = new Set([
+  "selfie_liveness_check",
+  "id_tamper_check",
+  "id_repeat_detection_check",
+  "selfie_suspicious_entity_check",
+  "id_blocklist_check",
+  "database_repeat_count_check",
+]);
+
+// ─── Avalia checks individuais da inquiry e retorna decisão ──────────────────
+//
+// Regras (em ordem de prioridade):
+// 1. is-sandbox === true → NEEDS_REVIEW (nunca aprovação automática)
+// 2. government-id ausente ou não "passed" → NEEDS_REVIEW / REJECTED
+// 3. selfie ausente ou não "passed" → NEEDS_REVIEW / REJECTED
+// 4. Check crítico de fraude falhou → REJECTED
+// 5. Documento expirado → REJECTED
+// 6. Inconsistência de idade → REJECTED
+// 7. liveness falhou → REJECTED
+// 8. Idade < 18 conforme documento → REJECTED
+// 9. Todos os checks obrigatórios passaram → VERIFIED
+
+export function evaluatePersonaInquiry(details: PersonaInquiryDetails): PersonaKycDecision {
+  const attrs = details.data.attributes;
+  const isSandbox = attrs["is-sandbox"] === true;
+
+  const checksJson: Record<string, unknown> = {
+    isSandbox,
+    inquiryId: details.data.id,
+    inquiryStatus: attrs.status,
+    verifications: {} as Record<string, unknown>,
+  };
+
+  // Regra 1: Nunca aprovar dados simulados
+  if (isSandbox) {
+    return {
+      decision: "NEEDS_REVIEW",
+      isSandbox: true,
+      reason:
+        "[SANDBOX] Dado simulado detectado. Aprovação automática bloqueada. Requer revisão manual.",
+      checksJson,
+    };
+  }
+
+  // Indexa verifications por tipo
+  const verByType: Record<string, PersonaVerification> = {};
+  for (const v of details.included ?? []) {
+    if (v.type?.startsWith("verification/")) {
+      verByType[v.type] = v;
+    }
+  }
+
+  const verChecks = checksJson.verifications as Record<string, unknown>;
+
+  // Regra 2: Government ID obrigatório e deve estar "passed"
+  const govId = verByType["verification/government-id"];
+  if (!govId) {
+    return {
+      decision: "NEEDS_REVIEW",
+      isSandbox: false,
+      reason: "Verificação de documento de identidade não encontrada na inquiry.",
+      checksJson: { ...checksJson, missingGovernmentId: true },
+    };
+  }
+
+  verChecks["government-id"] = {
+    status: govId.attributes.status,
+    checks: govId.attributes.checks ?? [],
+  };
+
+  if (govId.attributes.status !== "passed") {
+    return {
+      decision: govId.attributes.status === "failed" ? "REJECTED" : "NEEDS_REVIEW",
+      isSandbox: false,
+      reason: `Documento de identidade não aprovado (status: ${govId.attributes.status}).`,
+      checksJson,
+    };
+  }
+
+  // Verifica checks individuais do government-id
+  for (const check of govId.attributes.checks ?? []) {
+    if (check.status === "failed") {
+      if (check.name === "id_expired_check") {
+        return {
+          decision: "REJECTED",
+          isSandbox: false,
+          reason: "Documento de identidade expirado.",
+          checksJson,
+        };
+      }
+      if (check.name === "id_age_inconsistency_check") {
+        return {
+          decision: "REJECTED",
+          isSandbox: false,
+          reason: "Inconsistência de idade no documento. Possível menor de idade.",
+          checksJson,
+        };
+      }
+      if (CRITICAL_FRAUD_CHECKS.has(check.name)) {
+        return {
+          decision: "REJECTED",
+          isSandbox: false,
+          reason: `Sinal crítico de fraude no documento: ${check.name}.`,
+          checksJson,
+        };
+      }
+    }
+  }
+
+  // Regra 3: Selfie obrigatória e deve estar "passed"
+  const selfie = verByType["verification/selfie"];
+  if (!selfie) {
+    return {
+      decision: "NEEDS_REVIEW",
+      isSandbox: false,
+      reason: "Verificação de selfie não encontrada na inquiry.",
+      checksJson: { ...checksJson, missingSelfie: true },
+    };
+  }
+
+  verChecks["selfie"] = {
+    status: selfie.attributes.status,
+    checks: selfie.attributes.checks ?? [],
+  };
+
+  if (selfie.attributes.status !== "passed") {
+    return {
+      decision: selfie.attributes.status === "failed" ? "REJECTED" : "NEEDS_REVIEW",
+      isSandbox: false,
+      reason: `Selfie não aprovada (status: ${selfie.attributes.status}).`,
+      checksJson,
+    };
+  }
+
+  // Verifica checks críticos da selfie
+  for (const check of selfie.attributes.checks ?? []) {
+    if (check.status === "failed") {
+      if (check.name === "selfie_liveness_check") {
+        return {
+          decision: "REJECTED",
+          isSandbox: false,
+          reason: "Liveness da selfie falhou. Possível foto de foto ou deepfake.",
+          checksJson,
+        };
+      }
+      if (CRITICAL_FRAUD_CHECKS.has(check.name)) {
+        return {
+          decision: "REJECTED",
+          isSandbox: false,
+          reason: `Sinal crítico de fraude na selfie: ${check.name}.`,
+          checksJson,
+        };
+      }
+    }
+  }
+
+  // Regra 8: Idade mínima 18 anos conforme documento
+  const birthdate = govId.attributes.birthdate;
+  if (birthdate) {
+    try {
+      const birth = new Date(birthdate);
+      const today = new Date();
+      let age = today.getUTCFullYear() - birth.getUTCFullYear();
+      const m = today.getUTCMonth() - birth.getUTCMonth();
+      if (m < 0 || (m === 0 && today.getUTCDate() < birth.getUTCDate())) age--;
+      checksJson.ageFromDocument = age;
+      if (age < 18) {
+        return {
+          decision: "REJECTED",
+          isSandbox: false,
+          reason: `Usuário é menor de idade (${age} anos conforme documento).`,
+          checksJson,
+        };
+      }
+    } catch {
+      checksJson.birthdateParseError = birthdate;
+    }
+  } else {
+    checksJson.birthdateMissing = true;
+  }
+
+  // Todos os checks obrigatórios passaram
+  return {
+    decision: "VERIFIED",
+    isSandbox: false,
+    reason:
+      "Todos os checks obrigatórios aprovados: documento válido, selfie aprovada, face match e maioridade confirmados.",
+    checksJson,
+  };
 }
