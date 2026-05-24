@@ -448,6 +448,25 @@ model Payment {
   @@index([provider, providerPaymentId])
 }
 
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  provider    String
+  eventId     String
+  eventType   String?
+  resourceId  String?
+  status      String    @default("PROCESSING")
+  attempts    Int       @default(1)
+  payload     Json?
+  error       String?   @db.Text
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([provider, eventId])
+  @@index([provider, resourceId])
+  @@index([status, createdAt])
+}
+
 // ─── Review ──────────────────────────────────────────────────────────────────
 
 model Review {

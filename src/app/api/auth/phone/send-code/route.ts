@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { getClientIP } from "@/lib/security";
+import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import {
   OtpDeliveryConfigurationError,
   OtpDeliveryProviderError,
@@ -39,6 +39,13 @@ export async function POST(req: NextRequest) {
     const body = schema.parse(await req.json());
     const phone = normalizeBrazilianPhone(body.phone);
     const requestIp = getClientIP(req);
+    const limited = await enforceRateLimitAsync(
+      `otp-send-ip:${requestIp}`,
+      OTP_MAX_SENDS_PER_IP_PER_HOUR,
+      60 * 60 * 1000,
+      "Muitas solicitacoes a partir deste acesso. Tente novamente mais tarde."
+    );
+    if (limited) return limited;
 
     if (!isValidBrazilianMobilePhone(phone)) {
       return NextResponse.json({ error: "Informe um celular brasileiro valido." }, { status: 400 });

@@ -7,6 +7,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { createAsaasCardPayment, createAsaasCustomer, getAsaasConfig } from "@/lib/asaas";
+import { applyPaidPaymentEffects } from "@/lib/payment-effects";
 import { prisma } from "@/lib/prisma";
 
 const schema = z
@@ -47,6 +48,12 @@ export async function POST(req: NextRequest) {
   const asaas = getAsaasConfig();
   if (!asaas.configured) {
     return NextResponse.json({ error: "Asaas nao configurado. Defina ASAAS_API_KEY." }, { status: 503 });
+  }
+  if (!asaas.productionReady) {
+    return NextResponse.json(
+      { error: "Asaas esta em sandbox no ambiente de producao. Ative ASAAS_ENVIRONMENT=production para cobrar valores reais." },
+      { status: 503 }
+    );
   }
 
   let data: z.infer<typeof schema>;
@@ -174,40 +181,7 @@ export async function POST(req: NextRequest) {
 
     // Cartão aprovado imediatamente — aplica efeitos sem esperar webhook
     if (asaasPayment.status === "CONFIRMED" || asaasPayment.status === "RECEIVED") {
-      await prisma.$transaction(async (tx) => {
-        await tx.payment.update({
-          where: { id: localPayment.id },
-          data: { status: "PAID", paidAt: new Date() },
-          select: { id: true },
-        });
-
-        if (bookingId) {
-          await tx.booking.update({
-            where: { id: bookingId },
-            data: { paymentStatus: "PAID", status: "CONFIRMED" },
-          });
-        }
-
-        if (user.id && creditAmount && creditAmount > 0) {
-          await tx.user.update({
-            where: { id: user.id },
-            data: { credits: { increment: creditAmount } },
-          });
-        }
-
-        if (user.id && premiumUntil) {
-          const currentUser = await tx.user.findUnique({
-            where: { id: user.id },
-            select: { premiumUntil: true },
-          });
-          const current = currentUser?.premiumUntil?.getTime() ?? 0;
-          await tx.user.update({
-            where: { id: user.id },
-            data: { premiumUntil: new Date(Math.max(current, premiumUntil.getTime())) },
-            select: { id: true },
-          });
-        }
-      });
+      await applyPaidPaymentEffects(localPayment.id);
     }
 
     return NextResponse.json({

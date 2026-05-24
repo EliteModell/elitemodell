@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PERSONA_PENDING_STATUS, verifyPersonaWebhook } from "@/lib/persona";
+import { claimWebhookEvent, markWebhookEventDone, markWebhookEventFailed } from "@/lib/webhook-idempotency";
 
 type PersonaEventPayload = {
   data?: {
+    id?: string;
     attributes?: {
       name?: string;
       payload?: {
@@ -64,101 +67,123 @@ export async function handlePersonaWebhook(req: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
-  if (eventName === "inquiry.approved") {
-    await Promise.all([
-      prisma.user.updateMany({
-        where: {
-          OR: [
-            ...(referenceId ? [{ id: referenceId }] : []),
-            { kycSessionId: inquiryId },
-          ],
-        },
-        data: {
-          clientStatus: "VERIFIED",
-          kycSessionId: inquiryId,
-          kycReviewedAt: new Date(),
-          kycRejectionReason: null,
-        },
-      }),
-      prisma.professional.updateMany({
-        where: {
-          OR: [
-            ...(referenceId ? [{ userId: referenceId }] : []),
-            { kycSessionId: inquiryId },
-          ],
-        },
-        data: {
-          kycProvider: "PERSONA",
-          kycStatus: PERSONA_PENDING_STATUS,
-          verifStatus: "PENDING",
-          rejectReason: "Persona aprovada; aguardando revisao manual/admin.",
-        },
-      }),
-    ]);
-  } else if (eventName === "inquiry.declined" || eventName === "inquiry.failed") {
-    const reason = reviewerComment || REJECTED_MESSAGE;
-    await Promise.all([
-      prisma.user.updateMany({
-        where: {
-          OR: [
-            ...(referenceId ? [{ id: referenceId }] : []),
-            { kycSessionId: inquiryId },
-          ],
-        },
-        data: {
-          clientStatus: "REJECTED",
-          kycSessionId: inquiryId,
-          kycReviewedAt: new Date(),
-          kycRejectionReason: reason,
-        },
-      }),
-      prisma.professional.updateMany({
-        where: {
-          OR: [
-            ...(referenceId ? [{ userId: referenceId }] : []),
-            { kycSessionId: inquiryId },
-          ],
-        },
-        data: {
-          kycProvider: "PERSONA",
-          kycStatus: "REJECTED",
-          verifStatus: "REJECTED",
-          rejectReason: reason,
-        },
-      }),
-    ]);
-  } else if (eventName && PENDING_EVENTS.has(eventName)) {
-    await Promise.all([
-      prisma.user.updateMany({
-        where: {
-          OR: [
-            ...(referenceId ? [{ id: referenceId }] : []),
-            { kycSessionId: inquiryId },
-          ],
-        },
-        data: {
-          clientStatus: "PENDING_REVIEW",
-          kycSessionId: inquiryId,
-          kycSubmittedAt: new Date(),
-          kycRejectionReason: null,
-        },
-      }),
-      prisma.professional.updateMany({
-        where: {
-          OR: [
-            ...(referenceId ? [{ userId: referenceId }] : []),
-            { kycSessionId: inquiryId },
-          ],
-        },
-        data: {
-          kycProvider: "PERSONA",
-          kycStatus: PERSONA_PENDING_STATUS,
-          verifStatus: "PENDING",
-          rejectReason: inquiryStatus ? `Persona status: ${inquiryStatus}` : null,
-        },
-      }),
-    ]);
+  const eventId = payload.data?.id || `${eventName ?? "persona.event"}:${inquiryId}`;
+  const claim = await claimWebhookEvent({
+    provider: "persona",
+    eventId,
+    eventType: eventName ?? null,
+    resourceId: inquiryId,
+    payload: payload as Prisma.InputJsonObject,
+  });
+  if (!claim.claimed) {
+    return NextResponse.json({ received: true, duplicate: true });
   }
 
-  return NextResponse.json({ received: true });
+  try {
+    if (eventName === "inquiry.approved") {
+      await Promise.all([
+        prisma.user.updateMany({
+          where: {
+            OR: [
+              ...(referenceId ? [{ id: referenceId }] : []),
+              { kycSessionId: inquiryId },
+            ],
+          },
+          data: {
+            clientStatus: "VERIFIED",
+            kycSessionId: inquiryId,
+            kycReviewedAt: new Date(),
+            kycRejectionReason: null,
+          },
+        }),
+        prisma.professional.updateMany({
+          where: {
+            OR: [
+              ...(referenceId ? [{ userId: referenceId }] : []),
+              { kycSessionId: inquiryId },
+            ],
+          },
+          data: {
+            kycProvider: "PERSONA",
+            kycStatus: PERSONA_PENDING_STATUS,
+            verifStatus: "PENDING",
+            rejectReason: "Persona aprovada; aguardando revisao manual/admin.",
+          },
+        }),
+      ]);
+    } else if (eventName === "inquiry.declined" || eventName === "inquiry.failed") {
+      const reason = reviewerComment || REJECTED_MESSAGE;
+      await Promise.all([
+        prisma.user.updateMany({
+          where: {
+            OR: [
+              ...(referenceId ? [{ id: referenceId }] : []),
+              { kycSessionId: inquiryId },
+            ],
+          },
+          data: {
+            clientStatus: "REJECTED",
+            kycSessionId: inquiryId,
+            kycReviewedAt: new Date(),
+            kycRejectionReason: reason,
+          },
+        }),
+        prisma.professional.updateMany({
+          where: {
+            OR: [
+              ...(referenceId ? [{ userId: referenceId }] : []),
+              { kycSessionId: inquiryId },
+            ],
+          },
+          data: {
+            kycProvider: "PERSONA",
+            kycStatus: "REJECTED",
+            verifStatus: "REJECTED",
+            rejectReason: reason,
+          },
+        }),
+      ]);
+    } else if (eventName && PENDING_EVENTS.has(eventName)) {
+      await Promise.all([
+        prisma.user.updateMany({
+          where: {
+            OR: [
+              ...(referenceId ? [{ id: referenceId }] : []),
+              { kycSessionId: inquiryId },
+            ],
+          },
+          data: {
+            clientStatus: "PENDING_REVIEW",
+            kycSessionId: inquiryId,
+            kycSubmittedAt: new Date(),
+            kycRejectionReason: null,
+          },
+        }),
+        prisma.professional.updateMany({
+          where: {
+            OR: [
+              ...(referenceId ? [{ userId: referenceId }] : []),
+              { kycSessionId: inquiryId },
+            ],
+          },
+          data: {
+            kycProvider: "PERSONA",
+            kycStatus: PERSONA_PENDING_STATUS,
+            verifStatus: "PENDING",
+            rejectReason: inquiryStatus ? `Persona status: ${inquiryStatus}` : null,
+          },
+        }),
+      ]);
+    } else {
+      await markWebhookEventDone("persona", eventId, "IGNORED");
+      return NextResponse.json({ received: true });
+    }
+
+    await markWebhookEventDone("persona", eventId);
+    return NextResponse.json({ received: true });
+  } catch (err) {
+    await markWebhookEventFailed("persona", eventId, err).catch(() => undefined);
+    console.error("[persona-webhook] falha ao processar evento", err);
+    return NextResponse.json({ error: "Erro ao processar webhook." }, { status: 500 });
+  }
 }

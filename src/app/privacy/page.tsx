@@ -40,9 +40,10 @@ export default function PrivacyPage() {
         {
           heading: "5. Retenção de Dados",
           content: `Mantemos seus dados pessoais enquanto sua conta estiver ativa. Após cancelamento:
-- Dados pessoais: deletados em até 30 dias
+- Dados pessoais não sujeitos a obrigação legal: deletados ou anonimizados em até 30 dias
 - Fotos/vídeos: deletados em até 7 dias
 - Registros de transação: mantidos por 5 anos (obrigação fiscal)
+- Dados necessários para cumprimento legal, prevenção a fraude e defesa de direitos: retidos pelo prazo legal aplicável
 - Logs de segurança: mantidos por 90 dias`
         },
         {
@@ -104,9 +105,10 @@ export default function PrivacyPage() {
         {
           heading: "5. Data Retention",
           content: `We maintain your personal data while your account is active. After cancellation:
-- Personal data: deleted within 30 days
+- Personal data not subject to legal obligations: deleted or anonymized within 30 days
 - Photos/videos: deleted within 7 days
 - Transaction records: maintained for 5 years (tax obligation)
+- Data required for legal compliance, fraud prevention, and legal claims: retained for the applicable legal period
 - Security logs: maintained for 90 days`
         },
         {

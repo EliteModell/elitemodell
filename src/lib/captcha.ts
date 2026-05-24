@@ -18,9 +18,18 @@
 
 export type CaptchaResult = { success: boolean; error?: string };
 
+function isProductionRuntime() {
+  return process.env.NODE_ENV === "production";
+}
+
 async function verifyTurnstile(token: string, ip: string): Promise<CaptchaResult> {
   const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) return { success: true };
+  if (!secret) {
+    return isProductionRuntime()
+      ? { success: false, error: "TURNSTILE_SECRET_KEY ausente em producao." }
+      : { success: true };
+  }
+  if (!token) return { success: false, error: "Token CAPTCHA ausente." };
 
   const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
     method: "POST",
@@ -33,7 +42,12 @@ async function verifyTurnstile(token: string, ip: string): Promise<CaptchaResult
 
 async function verifyRecaptcha(token: string): Promise<CaptchaResult> {
   const secret = process.env.RECAPTCHA_SECRET_KEY;
-  if (!secret) return { success: true };
+  if (!secret) {
+    return isProductionRuntime()
+      ? { success: false, error: "RECAPTCHA_SECRET_KEY ausente em producao." }
+      : { success: true };
+  }
+  if (!token) return { success: false, error: "Token CAPTCHA ausente." };
 
   const url = `https://www.google.com/recaptcha/api/siteverify?secret=${secret}&response=${encodeURIComponent(token)}`;
   const res = await fetch(url, { method: "POST" });
@@ -52,5 +66,8 @@ export async function verifyCaptcha(token: string, ip = ""): Promise<CaptchaResu
   const provider = process.env.CAPTCHA_PROVIDER ?? "none";
   if (provider === "turnstile") return verifyTurnstile(token, ip);
   if (provider === "recaptcha") return verifyRecaptcha(token);
+  if (isProductionRuntime()) {
+    return { success: false, error: "CAPTCHA_PROVIDER deve ser turnstile ou recaptcha em producao." };
+  }
   return { success: true }; // bypass em dev
 }

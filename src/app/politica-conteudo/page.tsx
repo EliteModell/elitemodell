@@ -106,7 +106,7 @@ export default function PoliticaConteudoPage() {
             </h2>
             <p style={{ color: "#cbd5e1", lineHeight: 1.8, margin: "0 0 16px" }}>
               A Elite Modell mantém uma equipe de moderação que revisa conteúdos denunciados. Para reportar
-              conteúdo que viole esta política, utilize o botão "Denunciar" em qualquer perfil ou entre em
+              conteúdo que viole esta política, utilize o botão &quot;Denunciar&quot; em qualquer perfil ou entre em
               contato pelo e-mail{" "}
               <a href="mailto:suporte@elitemodell.com.br" style={{ color: GOLD, textDecoration: "none" }}>
                 suporte@elitemodell.com.br

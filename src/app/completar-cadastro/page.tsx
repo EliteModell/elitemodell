@@ -1,11 +1,44 @@
 "use client";
 
 import { useState } from "react";
-import { getMaxBirthDate } from "@/lib/age-validation";
+import { validateBirthDate } from "@/lib/age-validation";
 
 const GOLD = "#d4a843";
 const GOLD_GRADIENT =
   "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
+
+function maskBirthDate(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+function birthDateToIso(value: string): { iso: string | null; error: string | null } {
+  if (!value) return { iso: null, error: "Informe sua data de nascimento." };
+  if (value.length < 10) return { iso: null, error: "Informe a data completa no formato DD/MM/AAAA." };
+
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+  if (!match) return { iso: null, error: "Data de nascimento inválida." };
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  const isRealDate =
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day;
+
+  if (!isRealDate) return { iso: null, error: "Data de nascimento inválida." };
+
+  const iso = `${year.toString().padStart(4, "0")}-${month.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
+  const validation = validateBirthDate(iso);
+  if (!validation.isValid) return { iso: null, error: validation.errors[0] ?? "Data de nascimento inválida." };
+  if (!validation.isOfAge) return { iso: null, error: "Você deve ter 18 anos ou mais para acessar a plataforma." };
+
+  return { iso, error: null };
+}
 
 export default function CompletarCadastroPage() {
   const [birthDate, setBirthDate] = useState("");
@@ -13,26 +46,34 @@ export default function CompletarCadastroPage() {
   const [termsConsent, setTermsConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const parsedBirthDate = birthDateToIso(birthDate);
+  const canSubmit = Boolean(parsedBirthDate.iso && lgpdConsent && termsConsent && !loading);
+
+  function handleBirthDateChange(value: string) {
+    setBirthDate(maskBirthDate(value));
+    if (error) setError(null);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
+    const parsed = birthDateToIso(birthDate);
+    if (parsed.error || !parsed.iso) {
+      setError(parsed.error ?? "Data de nascimento inválida.");
+      return;
+    }
+
     if (!lgpdConsent || !termsConsent) {
       setError("Você deve aceitar os Termos de Uso e a Política de Privacidade para continuar.");
       return;
     }
-    if (!birthDate) {
-      setError("Informe sua data de nascimento.");
-      return;
-    }
-
     setLoading(true);
     try {
       const res = await fetch("/api/auth/complete-profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ birthDate, lgpdConsent, termsConsent }),
+        body: JSON.stringify({ birthDate: parsed.iso, lgpdConsent, termsConsent }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -132,10 +173,16 @@ export default function CompletarCadastroPage() {
               DATA DE NASCIMENTO
             </label>
             <input
-              type="date"
+              type="tel"
+              inputMode="numeric"
               value={birthDate}
-              onChange={(e) => setBirthDate(e.target.value)}
-              max={getMaxBirthDate()}
+              onChange={(e) => handleBirthDateChange(e.target.value)}
+              onBlur={() => {
+                const parsed = birthDateToIso(birthDate);
+                if (birthDate && parsed.error) setError(parsed.error);
+              }}
+              placeholder="DD/MM/AAAA"
+              maxLength={10}
               required
               style={{
                 background: "rgba(255,255,255,0.04)",
@@ -145,7 +192,6 @@ export default function CompletarCadastroPage() {
                 color: "#f1f5f9",
                 fontSize: 14,
                 outline: "none",
-                colorScheme: "dark",
               }}
             />
           </div>
@@ -218,9 +264,9 @@ export default function CompletarCadastroPage() {
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={!canSubmit}
             style={{
-              background: loading
+              background: !canSubmit
                 ? "rgba(212,168,67,0.4)"
                 : "linear-gradient(135deg, #d4a843 0%, #f5d78c 50%, #d4a843 100%)",
               border: "none",
@@ -229,7 +275,7 @@ export default function CompletarCadastroPage() {
               color: "#0a0a0a",
               fontSize: 14,
               fontWeight: 700,
-              cursor: loading ? "not-allowed" : "pointer",
+              cursor: !canSubmit ? "not-allowed" : "pointer",
               letterSpacing: 0.3,
               marginTop: 4,
             }}

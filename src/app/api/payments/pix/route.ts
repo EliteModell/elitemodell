@@ -46,6 +46,12 @@ export async function POST(req: NextRequest) {
   if (!asaas.configured) {
     return NextResponse.json({ error: "Asaas nao configurado. Defina ASAAS_API_KEY no ambiente." }, { status: 503 });
   }
+  if (!asaas.productionReady) {
+    return NextResponse.json(
+      { error: "Asaas esta em sandbox no ambiente de producao. Ative ASAAS_ENVIRONMENT=production para cobrar valores reais." },
+      { status: 503 }
+    );
+  }
 
   try {
     const body = await req.json();

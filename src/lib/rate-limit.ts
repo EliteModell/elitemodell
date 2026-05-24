@@ -43,6 +43,14 @@ function checkInMemory(key: string, max: number, windowMs: number): RateLimitRes
   return { allowed: true, remaining: max - rec.count, resetIn: rec.resetAt - now };
 }
 
+function isProductionRuntime() {
+  return process.env.NODE_ENV === "production";
+}
+
+function failClosed(windowMs: number): RateLimitResult {
+  return { allowed: false, remaining: 0, resetIn: windowMs };
+}
+
 // ─── Upstash Redis via REST API (produção) ────────────────────────────────────
 // Pipeline atômico: INCR → EXPIRE (apenas se nova chave) → TTL
 
@@ -66,11 +74,10 @@ async function checkRedis(key: string, max: number, windowMs: number): Promise<R
       ]),
     });
   } catch {
-    // Redis inacessível → fallback in-memory
-    return checkInMemory(key, max, windowMs);
+    return isProductionRuntime() ? failClosed(windowMs) : checkInMemory(key, max, windowMs);
   }
 
-  if (!res.ok) return checkInMemory(key, max, windowMs);
+  if (!res.ok) return isProductionRuntime() ? failClosed(windowMs) : checkInMemory(key, max, windowMs);
 
   const data = (await res.json()) as Array<{ result: number }>;
   const count = data[0].result;
@@ -100,5 +107,6 @@ export function checkRateLimitAsync(
 ): Promise<RateLimitResult> {
   const key = `rl:${identifier}`;
   if (HAS_REDIS) return checkRedis(key, maxRequests, windowMs);
+  if (isProductionRuntime()) return Promise.resolve(failClosed(windowMs));
   return Promise.resolve(checkInMemory(key, maxRequests, windowMs));
 }

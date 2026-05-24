@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import { isAgeOfMajority } from "@/lib/age-validation";
+import { validateBirthDate } from "@/lib/age-validation";
 
 const schema = z.object({
   birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -29,7 +29,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!isAgeOfMajority(body.birthDate)) {
+    const birthDateValidation = validateBirthDate(body.birthDate);
+    if (!birthDateValidation.isValid) {
+      return NextResponse.json(
+        { error: birthDateValidation.errors[0] ?? "Data de nascimento inválida." },
+        { status: 400 }
+      );
+    }
+
+    if (!birthDateValidation.isOfAge) {
       return NextResponse.json(
         { error: "Você deve ter 18 anos ou mais para acessar a plataforma." },
         { status: 400 }
@@ -39,7 +47,7 @@ export async function POST(req: NextRequest) {
     await prisma.user.update({
       where: { id: session.user.id },
       data: {
-        birthDate: new Date(body.birthDate),
+        birthDate: new Date(`${body.birthDate}T00:00:00.000Z`),
         lgpdConsent: true,
         termsConsent: true,
         consentDate: new Date(),

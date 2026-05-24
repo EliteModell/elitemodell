@@ -110,20 +110,27 @@ function slugify(text: string) {
     .replace(/^-|-$/g, "");
 }
 
+function removeDiacritics(text: string) {
+  return text.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const search    = searchParams.get("search");
   const specialty = searchParams.get("specialty");
   const city      = searchParams.get("city");
+  const state     = searchParams.get("state");
   const category  = searchParams.get("category");
   const priceMax  = searchParams.get("priceMax");
+  const virtual   = searchParams.get("virtual") === "1";
   const sortBy    = searchParams.get("sortBy") ?? "rating";
   const pageParam = Number(searchParams.get("page") ?? 1);
   const page      = Number.isFinite(pageParam) ? Math.max(1, Math.floor(pageParam)) : 1;
   const limitParam = Number(searchParams.get("limit") ?? 12);
   const limit     = Number.isFinite(limitParam) ? Math.min(24, Math.max(1, Math.floor(limitParam))) : 12;
 
-  const where: Prisma.ProfessionalWhereInput = { status: "ACTIVE" };
+  const where: Prisma.ProfessionalWhereInput = { status: "ACTIVE", verified: true };
+  const andFilters: Prisma.ProfessionalWhereInput[] = [];
 
   if (search) {
     where.OR = [
@@ -132,15 +139,30 @@ export async function GET(req: NextRequest) {
       { bio:         { contains: search, mode: "insensitive" } },
     ];
   }
-  if (city)     where.city = { contains: city, mode: "insensitive" };
+  if (city) {
+    const cityOptions = Array.from(new Set([city, removeDiacritics(city)]));
+    andFilters.push({
+      OR: cityOptions.map((name) => ({ city: { contains: name, mode: "insensitive" } })),
+    });
+  }
+  if (state) andFilters.push({ state: { equals: state.toUpperCase(), mode: "insensitive" } });
+  if (virtual) {
+    andFilters.push({
+      attendanceTypes: {
+        hasSome: ["Atendimento virtual/online", "Atendimento virtual", "Online", "Video chamada", "Vídeo chamada"],
+      },
+    });
+  }
   if (category) where.escortCategory = category.toUpperCase();
   if (priceMax) where.priceMin = { lte: Number(priceMax) };
   if (specialty) where.specialties = { some: { name: { contains: specialty, mode: "insensitive" } } };
+  if (andFilters.length > 0) where.AND = andFilters;
 
   const orderBy: Prisma.ProfessionalOrderByWithRelationInput =
     sortBy === "price_asc"  ? { priceMin: "asc" } :
     sortBy === "price_desc" ? { priceMin: "desc" } :
     sortBy === "reviews"    ? { totalReviews: "desc" } :
+    sortBy === "recent"     ? { createdAt: "desc" } :
     { rating: "desc" };
 
   const [professionals, total] = await Promise.all([

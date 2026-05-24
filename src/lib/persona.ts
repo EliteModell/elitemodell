@@ -66,20 +66,36 @@ export function getPersonaConfig() {
 }
 
 export function shouldUsePersonaProvider() {
-  return getPersonaConfig().configured;
+  const config = getPersonaConfig();
+  if (!config.configured) return false;
+  if (process.env.NODE_ENV === "production" && process.env.KYC_PROVIDER?.trim().toUpperCase() !== "PERSONA") {
+    return false;
+  }
+  if (process.env.NODE_ENV === "production" && !process.env.PERSONA_WEBHOOK_SECRET?.trim()) {
+    return false;
+  }
+  return true;
 }
 
 export function getPersonaAvailability() {
   const config = getPersonaConfig();
   const templateInvalid = Boolean(config.templateId && !config.templateId.startsWith("itmpl_"));
+  const providerEnabled =
+    process.env.NODE_ENV !== "production" ||
+    process.env.KYC_PROVIDER?.trim().toUpperCase() === "PERSONA";
+  const webhookConfigured = Boolean(process.env.PERSONA_WEBHOOK_SECRET?.trim());
 
   return {
-    configured: config.configured && !templateInvalid,
+    configured: config.configured && !templateInvalid && providerEnabled && (process.env.NODE_ENV !== "production" || webhookConfigured),
     environment: config.environment,
     publicEnvironment: config.publicEnvironment,
-    missing: config.missing,
+    missing: [
+      ...config.missing,
+      !providerEnabled ? "KYC_PROVIDER=PERSONA" : null,
+      process.env.NODE_ENV === "production" && !webhookConfigured ? "PERSONA_WEBHOOK_SECRET" : null,
+    ].filter(Boolean) as string[],
     templateInvalid,
-    webhookConfigured: Boolean(process.env.PERSONA_WEBHOOK_SECRET?.trim()),
+    webhookConfigured,
   };
 }
 

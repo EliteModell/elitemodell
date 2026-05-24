@@ -115,6 +115,14 @@ export async function POST(req: Request) {
 
   // Sem Persona configurada: fallback manual (dev / sem integração).
   // Em produção isso cria uma pendência para revisão manual da equipe.
+  if (process.env.NODE_ENV === "production") {
+    console.error("[KYC] Persona obrigatoria em producao, mas nao esta configurada/ativa.");
+    return NextResponse.json(
+      { error: "Verificacao automatica indisponivel no momento. Tente novamente mais tarde." },
+      { status: 503 },
+    );
+  }
+
   const kycProvider = process.env.KYC_PROVIDER?.trim().toUpperCase();
   if (kycProvider && kycProvider !== "LOCAL_MANUAL") {
     console.warn(`[KYC] KYC_PROVIDER desconhecido: "${kycProvider}". Usando fallback manual.`);

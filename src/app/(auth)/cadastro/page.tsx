@@ -7,6 +7,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { CaptchaField, type CaptchaFieldHandle } from "@/components/auth/CaptchaField";
 import { validateBirthDate } from "@/lib/age-validation";
 import { supabaseAuth } from "@/lib/supabase-client";
 import {
@@ -285,6 +286,7 @@ export default function CadastroPage() {
   const [pendingAuthMethod, setPendingAuthMethod] = useState<PendingAuthMethod>(null);
   const monthRef = useRef<HTMLInputElement>(null);
   const yearRef = useRef<HTMLInputElement>(null);
+  const captchaRef = useRef<CaptchaFieldHandle>(null);
   const isAuthenticated = status === "authenticated";
   const isLoggedUpgradeFlow = isAuthenticated && form.accountType !== "GUEST";
 
@@ -417,8 +419,8 @@ export default function CadastroPage() {
     return isValid;
   }
 
-  function registrationPayload() {
-    return {
+  function registrationPayload(captchaToken?: string) {
+    const payload = {
       role: form.accountType === "PROFESSIONAL" ? "HOST" : "GUEST",
       accountType: form.accountType,
       category: form.accountType === "PROFESSIONAL" ? form.category : undefined,
@@ -427,15 +429,25 @@ export default function CadastroPage() {
       termsConsent: form.termsConsent,
       name: form.name,
     };
+    return captchaToken ? { ...payload, captchaToken } : payload;
   }
 
-  async function registerUser(accessToken: string) {
+  async function getCaptchaToken() {
+    try {
+      return await captchaRef.current?.getToken();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Confirme a verificacao anti-spam.");
+      throw err;
+    }
+  }
+
+  async function registerUser(accessToken: string, captchaToken?: string) {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         accessToken,
-        ...registrationPayload(),
+        ...registrationPayload(captchaToken),
       }),
     });
 
@@ -460,6 +472,7 @@ export default function CadastroPage() {
 
     setLoading(true);
     try {
+      const captchaToken = await getCaptchaToken();
       const { data, error } = await supabaseAuth.auth.signUp({
         email: form.email.trim().toLowerCase(),
         password: form.password,
@@ -470,7 +483,7 @@ export default function CadastroPage() {
       });
       if (error) throw error;
       if (data.session?.access_token) {
-        await registerUser(data.session.access_token);
+        await registerUser(data.session.access_token, captchaToken);
         const res = await signIn("supabase", { accessToken: data.session.access_token, redirect: false });
         if (res?.ok) {
           router.push(nextPath());
@@ -478,9 +491,10 @@ export default function CadastroPage() {
           return;
         }
       }
-      sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload()));
+      sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload(captchaToken)));
       setStep("verify");
     } catch (err: unknown) {
+      captchaRef.current?.reset();
       const authError = asAuthError(err);
       const msg: Record<string, string> = {
         user_already_exists: "Este email já está cadastrado.",
@@ -499,13 +513,15 @@ export default function CadastroPage() {
 
     setLoading(true);
     try {
-      sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload()));
+      const captchaToken = await getCaptchaToken();
+      sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload(captchaToken)));
       const { error } = await supabaseAuth.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo: `${window.location.origin}/auth/callback?returnUrl=${encodeURIComponent(nextPath())}` },
       });
       if (error) throw error;
     } catch (err: unknown) {
+      captchaRef.current?.reset();
       toast.error(asAuthError(err).message ?? "Erro ao entrar com Google.");
     } finally {
       setLoading(false);
@@ -523,23 +539,25 @@ export default function CadastroPage() {
 
     setLoading(true);
     try {
+      const captchaToken = await getCaptchaToken();
       const { data } = await supabaseAuth.auth.getSession();
       const accessToken = data.session?.access_token;
 
       if (!accessToken) {
-        sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload()));
+        sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload(captchaToken)));
         toast.error("Entre novamente para continuar seu cadastro.");
         router.push(`${ACCOUNT_ROUTES.login}?returnUrl=${encodeURIComponent(nextPath())}`);
         return;
       }
 
-      await registerUser(accessToken);
+      await registerUser(accessToken, captchaToken);
       const res = await signIn("supabase", { accessToken, redirect: false });
       if (res?.error) throw new Error("Não foi possível atualizar sua sessão.");
 
       router.push(nextPath());
       router.refresh();
     } catch (err: unknown) {
+      captchaRef.current?.reset();
       toast.error(asAuthError(err).message ?? "Não foi possível continuar o cadastro.");
     } finally {
       setLoading(false);
@@ -780,6 +798,7 @@ export default function CadastroPage() {
                 {errors.lgpdConsent && <span data-auth-required-error="true" style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.lgpdConsent}</span>}
               </span>
             </label>
+            <CaptchaField ref={captchaRef} />
           </div>
           <button
             type="button"
@@ -792,6 +811,7 @@ export default function CadastroPage() {
         </div>
       ) : (
         <>
+          <CaptchaField ref={captchaRef} />
           <AuthMethodButton
             disabled={loading}
             icon={GoogleIcon}

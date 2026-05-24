@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
-import { enforceRateLimit, getClientIP } from "@/lib/security";
+import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
+import { moderateImage, scanFileForVirus } from "@/lib/moderation";
 import { prisma } from "@/lib/prisma";
 
 const supabase = createClient(
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
   }
 
   const requestIp = getClientIP(req);
-  const limited = enforceRateLimit(
+  const limited = await enforceRateLimitAsync(
     `upload:${session.user.id}:${requestIp}`,
     40,
     15 * 60 * 1000,
@@ -135,6 +136,20 @@ export async function POST(req: NextRequest) {
     : `${folder}/${session.user.id}/${filename}`;
   const buffer = Buffer.from(await file.arrayBuffer());
 
+  const virusScan = await scanFileForVirus(buffer, file.name || filename);
+  if (!virusScan.safe) {
+    console.warn("[upload] arquivo bloqueado pela varredura", {
+      bucket,
+      folder,
+      type: file.type,
+      reason: virusScan.reason,
+    });
+    return NextResponse.json(
+      { error: "Arquivo bloqueado pela verificacao de seguranca." },
+      { status: 422 }
+    );
+  }
+
   const { error } = await supabase.storage
     .from(bucket)
     .upload(path, buffer, { contentType: file.type, upsert: false });
@@ -150,6 +165,23 @@ export async function POST(req: NextRequest) {
   }
 
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  if (file.type.startsWith("image/")) {
+    const moderation = await moderateImage(data.publicUrl);
+    if (!moderation.safe) {
+      await supabase.storage.from(bucket).remove([path]).catch(() => undefined);
+      console.warn("[upload] imagem bloqueada pela moderacao", {
+        bucket,
+        folder,
+        type: file.type,
+        reason: moderation.reason,
+      });
+      return NextResponse.json(
+        { error: "Imagem bloqueada pela verificacao de seguranca." },
+        { status: 422 }
+      );
+    }
+  }
+
   return NextResponse.json({
     url:  data.publicUrl,
     path,

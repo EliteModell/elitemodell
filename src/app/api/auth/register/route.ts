@@ -4,8 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { isAgeOfMajority } from "@/lib/age-validation";
+import { verifyCaptcha } from "@/lib/captcha";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { enforceRateLimit, getClientIP } from "@/lib/security";
+import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 
 const schema = z.object({
   accessToken: z.string(),
@@ -14,16 +15,24 @@ const schema = z.object({
   birthDate: z.string().optional(),
   lgpdConsent: z.boolean().default(false),
   termsConsent: z.boolean().default(false),
+  captchaToken: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
-  const limited = enforceRateLimit(`register:${getClientIP(req)}`, 20, 60 * 60 * 1000, "Muitas tentativas de cadastro. Tente novamente mais tarde.");
+  const requestIp = getClientIP(req);
+  const limited = await enforceRateLimitAsync(`register:${requestIp}`, 20, 60 * 60 * 1000, "Muitas tentativas de cadastro. Tente novamente mais tarde.");
   if (limited) return limited;
 
   try {
     const body = await req.json();
-    const { accessToken, accountType, category, birthDate, lgpdConsent, termsConsent } = schema.parse(body);
+    const { accessToken, accountType, category, birthDate, lgpdConsent, termsConsent, captchaToken } = schema.parse(body);
     const publicAccountType = accountType === "PROFESSIONAL" ? "model" : "client";
+
+    const captcha = await verifyCaptcha(captchaToken ?? req.headers.get("x-captcha-token") ?? "", requestIp);
+    if (!captcha.success) {
+      console.warn("[register] CAPTCHA bloqueou cadastro", { providerError: captcha.error, ip: requestIp });
+      return NextResponse.json({ error: "Nao foi possivel validar a protecao anti-spam. Tente novamente." }, { status: 403 });
+    }
 
     const supabase = createSupabaseServerClient();
     const { data, error } = await supabase.auth.getUser(accessToken);

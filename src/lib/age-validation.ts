@@ -8,6 +8,26 @@
 
 const MIN_AGE = 18;
 
+function parseIsoBirthDate(birthDate: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birthDate);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const birth = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    birth.getUTCFullYear() !== year ||
+    birth.getUTCMonth() !== month - 1 ||
+    birth.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return birth;
+}
+
 /**
  * Valida se o usuário é maior de idade baseado na data de nascimento
  * @param birthDate - Data de nascimento em formato ISO (YYYY-MM-DD)
@@ -15,19 +35,19 @@ const MIN_AGE = 18;
  */
 export function isAgeOfMajority(birthDate: string): boolean {
   try {
-    const birth = new Date(birthDate);
+    const birth = parseIsoBirthDate(birthDate);
     const today = new Date();
     
     // Validar se é uma data válida
-    if (isNaN(birth.getTime())) {
+    if (!birth) {
       return false;
     }
 
     // Calcular idade
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
+    let age = today.getFullYear() - birth.getUTCFullYear();
+    const monthDiff = today.getMonth() - birth.getUTCMonth();
     
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getUTCDate())) {
       age--;
     }
 
@@ -45,8 +65,12 @@ export function isAgeOfMajority(birthDate: string): boolean {
  */
 export function isValidBirthDate(birthDate: string): boolean {
   try {
-    const birth = new Date(birthDate);
+    const birth = parseIsoBirthDate(birthDate);
     const today = new Date();
+
+    if (!birth) {
+      return false;
+    }
     
     // Não permite data no futuro
     if (birth > today) {
@@ -55,12 +79,7 @@ export function isValidBirthDate(birthDate: string): boolean {
 
     // Não permite datas anteriores a 1900 (pessoa teria mais de 120 anos)
     const minYear = 1900;
-    if (birth.getFullYear() < minYear) {
-      return false;
-    }
-
-    // Valida a data
-    if (isNaN(birth.getTime())) {
+    if (birth.getUTCFullYear() < minYear) {
       return false;
     }
 

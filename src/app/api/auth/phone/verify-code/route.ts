@@ -3,7 +3,8 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { checkRateLimit, getClientIP } from "@/lib/security";
+import { checkRateLimitAsync } from "@/lib/rate-limit";
+import { getClientIP } from "@/lib/security";
 import {
   OTP_MAX_ATTEMPTS,
   OTP_MAX_VERIFY_ATTEMPTS_PER_IP_WINDOW,
@@ -200,12 +201,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const phoneLimit = checkRateLimit(
+    const phoneLimit = await checkRateLimitAsync(
       `otp-verify-phone:${body.accountType}:${phone}`,
       OTP_MAX_VERIFY_ATTEMPTS_PER_PHONE_WINDOW,
       15 * 60 * 1000
     );
-    const ipLimit = checkRateLimit(
+    const ipLimit = await checkRateLimitAsync(
       `otp-verify-ip:${requestIp}`,
       OTP_MAX_VERIFY_ATTEMPTS_PER_IP_WINDOW,
       15 * 60 * 1000

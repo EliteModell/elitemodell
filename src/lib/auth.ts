@@ -3,7 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./prisma";
 import { verifyPhoneAuthToken } from "./phone-otp";
 import { createSupabaseServerClient } from "./supabase-server";
-import { checkRateLimit } from "./security";
+import { checkRateLimitAsync } from "./rate-limit";
 import { getHostRegistrationStatus } from "./account-routes";
 
 export const authOptions: NextAuthOptions = {
@@ -21,7 +21,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.accessToken) return null;
-        const limit = checkRateLimit(`auth:supabase:${credentials.accessToken.slice(0, 32)}`, 20, 15 * 60 * 1000);
+        const limit = await checkRateLimitAsync(`auth:supabase:${credentials.accessToken.slice(0, 32)}`, 20, 15 * 60 * 1000);
         if (!limit.allowed) return null;
         try {
           const supabase = createSupabaseServerClient();
@@ -156,7 +156,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (credentials?.token) {
-          const limit = checkRateLimit(`auth:phone-token:${credentials.token.slice(0, 32)}`, 20, 15 * 60 * 1000);
+          const limit = await checkRateLimitAsync(`auth:phone-token:${credentials.token.slice(0, 32)}`, 20, 15 * 60 * 1000);
           if (!limit.allowed) return null;
         }
         const token = credentials?.token ? verifyPhoneAuthToken(credentials.token) : null;

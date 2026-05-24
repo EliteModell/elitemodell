@@ -33,12 +33,17 @@ export function getAsaasConfig() {
   const environment = getAsaasEnvironment();
   const apiKey = process.env.ASAAS_API_KEY?.trim();
   const baseUrl = process.env.ASAAS_API_URL?.trim() || DEFAULT_API_URLS[environment];
+  const productionReady =
+    process.env.NODE_ENV !== "production" ||
+    environment === "production" ||
+    process.env.ALLOW_ASAAS_SANDBOX_IN_PRODUCTION === "true";
 
   return {
     apiKey,
     baseUrl,
     environment,
     configured: Boolean(apiKey),
+    productionReady,
   };
 }
 
