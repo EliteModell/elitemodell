@@ -40,8 +40,11 @@ const createSchema = z.object({
   ethnicity:       z.string().optional(),
   signo:           z.string().optional(),
   hasTattoos:      z.boolean().optional().default(false),
+  hasPiercing:     z.boolean().optional().default(false),
   hasSilicone:     z.boolean().optional().default(false),
   isDepilada:      z.boolean().optional().default(true),
+  depilationStyle: z.string().optional(),
+  bodyType:        z.string().optional(),
 
   // Atendimento
   attendanceTypes: z.array(z.string()).optional().default([]),

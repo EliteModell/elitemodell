@@ -1,0 +1,3 @@
+ALTER TABLE "Professional" ADD COLUMN IF NOT EXISTS "hasPiercing" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Professional" ADD COLUMN IF NOT EXISTS "depilationStyle" TEXT;
+ALTER TABLE "Professional" ADD COLUMN IF NOT EXISTS "bodyType" TEXT;

@@ -55,6 +55,35 @@ const emptyForm: ProfileForm = {
   specialties: [],
 };
 
+function parseMoneyValue(value: string) {
+  const normalized = value.replace(/\./g, "").replace(",", ".");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function MoneyField({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <div className="profile-money-field">
+      <span aria-hidden="true">R$</span>
+      <input
+        type="text"
+        inputMode="decimal"
+        value={value}
+        onChange={(event) => onChange(event.target.value.replace(/[^\d,.]/g, ""))}
+        placeholder={placeholder}
+      />
+    </div>
+  );
+}
+
 export default function EditarPerfilPage() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -117,8 +146,8 @@ export default function EditarPerfilPage() {
 
     setLoading(true);
     try {
-      const priceMin = Number(form.priceMin);
-      const priceMax = Number(form.priceMax);
+      const priceMin = parseMoneyValue(form.priceMin);
+      const priceMax = parseMoneyValue(form.priceMax);
       const res = await fetch(`/api/professionals/${profileSlug}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -131,8 +160,8 @@ export default function EditarPerfilPage() {
           whatsapp: form.whatsapp || undefined,
           instagram: form.instagram || undefined,
           website: form.website || undefined,
-          priceMin: Number.isFinite(priceMin) && priceMin > 0 ? priceMin : undefined,
-          priceMax: Number.isFinite(priceMax) && priceMax > 0 ? priceMax : undefined,
+          priceMin,
+          priceMax,
           specialties: form.specialties,
         }),
       });
@@ -163,16 +192,6 @@ export default function EditarPerfilPage() {
     },
     onBlur: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       e.currentTarget.style.borderColor = "#2a2a2a";
-    },
-  };
-  const moneyFocus = {
-    onFocus: (e: React.FocusEvent<HTMLInputElement>) => {
-      e.currentTarget.style.borderColor = GOLD;
-      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(212,168,67,0.14)";
-    },
-    onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
-      e.currentTarget.style.borderColor = "#2a2a2a";
-      e.currentTarget.style.boxShadow = "none";
     },
   };
   const allSpecialtyOptions = Array.from(new Set([...specialtyOptions, ...form.specialties]));
@@ -260,17 +279,11 @@ export default function EditarPerfilPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
             <div>
               <label style={label}>Preco minimo (R$)</label>
-              <div style={{ position: "relative" }}>
-                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: GOLD, fontSize: 14, fontWeight: 800, pointerEvents: "none", userSelect: "none" }}>R$</span>
-                <input type="number" inputMode="decimal" style={{ ...input, paddingLeft: 54, color: "#fff" }} value={form.priceMin} onChange={(e) => setForm({ ...form, priceMin: e.target.value })} placeholder="500" {...moneyFocus} />
-              </div>
+              <MoneyField value={form.priceMin} onChange={(value) => setForm({ ...form, priceMin: value })} placeholder="500" />
             </div>
             <div>
               <label style={label}>Preco maximo (R$)</label>
-              <div style={{ position: "relative" }}>
-                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: GOLD, fontSize: 14, fontWeight: 800, pointerEvents: "none", userSelect: "none" }}>R$</span>
-                <input type="number" inputMode="decimal" style={{ ...input, paddingLeft: 54, color: "#fff" }} value={form.priceMax} onChange={(e) => setForm({ ...form, priceMax: e.target.value })} placeholder="2000" {...moneyFocus} />
-              </div>
+              <MoneyField value={form.priceMax} onChange={(value) => setForm({ ...form, priceMax: value })} placeholder="2000" />
             </div>
           </div>
           <p style={{ fontSize: 12, color: "#555", marginTop: 10 }}>Os valores sao uma referencia. O preco final e negociado com cada cliente.</p>
@@ -313,6 +326,43 @@ export default function EditarPerfilPage() {
           {loading ? "Salvando..." : "Salvar alteracoes"}
         </button>
       </div>
+      <style>{`
+        .profile-money-field {
+          display: grid;
+          grid-template-columns: 58px minmax(0, 1fr);
+          min-height: 46px;
+          border: 1px solid #2a2a2a;
+          border-radius: 8px;
+          background: #0d0d0d;
+          overflow: hidden;
+        }
+        .profile-money-field > span {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-right: 1px solid rgba(212,168,67,0.25);
+          color: ${GOLD};
+          font-size: 14px;
+          font-weight: 900;
+          user-select: none;
+        }
+        .profile-money-field input {
+          width: 100%;
+          min-width: 0;
+          border: 0;
+          border-radius: 0;
+          background: transparent;
+          color: #fff;
+          padding: 11px 14px;
+          font-size: 14px;
+          outline: none;
+          box-shadow: none;
+        }
+        .profile-money-field:focus-within {
+          border-color: ${GOLD};
+          box-shadow: 0 0 0 3px rgba(212,168,67,0.14);
+        }
+      `}</style>
     </div>
   );
 }

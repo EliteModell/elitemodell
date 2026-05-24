@@ -588,8 +588,11 @@ model Professional {
   ethnicity        String?
   signo            String?
   hasTattoos       Boolean  @default(false)
+  hasPiercing      Boolean  @default(false)
   hasSilicone      Boolean  @default(false)
   isDepilada       Boolean  @default(true)
+  depilationStyle  String?
+  bodyType         String?
 
   // Atendimento
   attendanceTypes  String[]

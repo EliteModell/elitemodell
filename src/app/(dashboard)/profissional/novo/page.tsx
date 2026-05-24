@@ -22,8 +22,7 @@ const labelStyle: React.CSSProperties = {
 };
 
 type ArrayFormField = "attendanceTypes" | "servesGenders" | "idiomas" | "diasDisponiveis" | "services" | "fetishes" | "paymentMethods";
-type SingleFormField = "escortCategory" | "hairColor" | "eyeColor" | "ethnicity" | "signo";
-type BooleanFormField = "hasTattoos" | "hasSilicone" | "isDepilada";
+type SingleFormField = "escortCategory" | "hairColor" | "eyeColor" | "ethnicity" | "signo" | "depilationStyle" | "bodyType";
 type PriceFormField = "price30min" | "pricePerHour" | "price2h" | "priceOvernight" | "priceWebcam";
 type PersonaAvailability = {
   checked: boolean;
@@ -38,9 +37,24 @@ const CABELOS   = ["Loira", "Morena", "Ruiva", "Castanho", "Colorido", "Preto", 
 const OLHOS     = ["Azul", "Castanho", "Verde", "Mel", "Cinza", "Preto"];
 const ETNIAS    = ["Branca", "Negra", "Parda", "Oriental", "Indígena", "Latina", "Outra"];
 const SIGNOS    = ["Áries","Touro","Gêmeos","Câncer","Leão","Virgem","Libra","Escorpião","Sagitário","Capricórnio","Aquário","Peixes"];
-const ATENDIMENTO = ["A domicílio", "Local próprio", "Hotéis", "Motéis", "Aceita viajar", "Festas e eventos"];
+const ATENDIMENTO_GRUPOS = [
+  {
+    title: "Local de atendimento",
+    options: ["A domicílio", "Somente local do cliente", "Local próprio", "Não atendo em residência própria", "Hotéis", "Motéis", "Somente hotéis/motéis"],
+  },
+  {
+    title: "Deslocamento",
+    options: ["Aceita viajar", "Viagens nacionais", "Viagens internacionais"],
+  },
+  {
+    title: "Eventos e online",
+    options: ["Festas e eventos", "Jantares/eventos sociais", "Atendimento virtual/online"],
+  },
+];
 const ATENDE    = ["Homens", "Mulheres", "Casais", "Homens trans", "Mulheres trans", "Não binário"];
-const IDIOMAS   = ["Português", "Inglês", "Espanhol", "Francês", "Italiano", "Alemão"];
+const IDIOMAS   = ["Português", "Inglês", "Espanhol", "Francês", "Italiano", "Alemão", "Libras", "Outro"];
+const BODY_TYPES = ["Corpo atlético", "Corpo magro", "Corpo médio", "Corpo curvy", "Corpo plus size"];
+const DEPILATION_STYLES = ["Depilada", "Depilação parcial", "Não depilada"];
 const SERVICOS  = ["Acompanhamento", "Jantar a dois", "Viagens", "Festas e eventos", "Massagem", "Massagem tântrica", "Vídeo chamada", "Pernoite", "Final de semana", "Hotéis", "Local próprio"];
 const FETICHES  = ["Striptease", "Dominação", "Roleplay", "Bondage", "Fantasias/uniformes", "Acessórios eróticos", "Ativo", "Passivo", "Versátil", "Permite filmagem", "Faz sexo virtual"];
 const PAGAMENTO = ["Pix", "Dinheiro", "Cartão de crédito", "Cartão de débito", "Transferência"];
@@ -59,11 +73,13 @@ const STEPS = ["Dados", "Aparência", "Atendimento", "Serviços", "Valores", "Co
 function Tag({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} style={{
-      padding: "7px 15px", borderRadius: 20, cursor: "pointer", fontSize: 13,
+      padding: "10px 15px", borderRadius: 20, cursor: "pointer", fontSize: 13,
       fontWeight: active ? 700 : 400,
       border: `1.5px solid ${active ? GOLD : "#1e293b"}`,
       background: active ? GOLD_DIM : "transparent",
-      color: active ? "#f1f5f9" : "#475569", transition: "all 0.15s",
+      color: active ? "#f8fafc" : "#94a3b8", transition: "all 0.15s",
+      minHeight: 42,
+      lineHeight: 1.2,
     }}>
       {label}
     </button>
@@ -81,6 +97,10 @@ function Section({ title, desc, children }: { title: string; desc?: string; chil
       {children}
     </div>
   );
+}
+
+function ChipGroup({ children }: { children: React.ReactNode }) {
+  return <div className="model-chip-group">{children}</div>;
 }
 
 function UploadZone({ label, accept, preview, onFile, loading }: {
@@ -122,37 +142,65 @@ function UploadZone({ label, accept, preview, onFile, loading }: {
   );
 }
 
+function formatBrazilPhone(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
+function parseMoneyValue(value: string) {
+  const normalized = value.replace(/\./g, "").replace(",", ".");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function WhatsAppInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <div className="whatsapp-field">
+      <div className="whatsapp-prefix" aria-hidden="true">
+        <span>BR</span>
+        <strong>+55</strong>
+      </div>
+      <input
+        type="tel"
+        inputMode="numeric"
+        autoComplete="tel-national"
+        value={formatBrazilPhone(value)}
+        onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 11))}
+        placeholder="(11) 91234-5678"
+      />
+    </div>
+  );
+}
+
+function InstagramInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <div className="instagram-field">
+      <span aria-hidden="true">@</span>
+      <input
+        type="text"
+        inputMode="text"
+        autoComplete="off"
+        value={value.replace("@", "")}
+        onChange={(e) => onChange(e.target.value.replace("@", ""))}
+        placeholder="seuperfil"
+      />
+    </div>
+  );
+}
+
 function MoneyInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   return (
-    <div style={{ position: "relative" }}>
-      <span style={{
-        position: "absolute",
-        left: 14,
-        top: "50%",
-        transform: "translateY(-50%)",
-        color: GOLD,
-        fontSize: 14,
-        fontWeight: 800,
-        pointerEvents: "none",
-        userSelect: "none",
-        zIndex: 1,
-      }}>R$</span>
+    <div className="money-field">
+      <span aria-hidden="true">R$</span>
       <input
-        type="number"
+        type="text"
         inputMode="decimal"
-        min={0}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={(e) => {
-          e.currentTarget.style.borderColor = GOLD;
-          e.currentTarget.style.boxShadow = "0 0 0 3px rgba(212,168,67,0.14)";
-        }}
-        onBlur={(e) => {
-          e.currentTarget.style.borderColor = "#1e293b";
-          e.currentTarget.style.boxShadow = "none";
-        }}
-        style={{ ...inputStyle, paddingLeft: 54, color: "#f8fafc" }}
-        placeholder="0,00"
+        onChange={(e) => onChange(e.target.value.replace(/[^\d,.]/g, ""))}
+        placeholder="100"
       />
     </div>
   );
@@ -300,7 +348,8 @@ export default function ProfissionalNovoPage() {
     displayName: "", bio: "", city: "", state: "", bairro: "", escortCategory: "", birthDate: "", signo: "",
     /* etapa 2 */
     height: "", weight: "", hairColor: "", eyeColor: "", ethnicity: "",
-    hasTattoos: false, hasSilicone: false, isDepilada: true,
+    hasTattoos: false, hasPiercing: false, hasSilicone: false, isDepilada: true,
+    depilationStyle: "Depilada", bodyType: "",
     /* etapa 3 */
     attendanceTypes: [] as string[], servesGenders: [] as string[], idiomas: [] as string[],
     diasDisponiveis: [] as string[], horarioInicio: "08:00", horarioFim: "22:00",
@@ -540,17 +589,18 @@ export default function ProfissionalNovoPage() {
         weight: form.weight ? Number(form.weight) : undefined,
         hairColor: form.hairColor, eyeColor: form.eyeColor, ethnicity: form.ethnicity,
         signo: form.signo,
-        hasTattoos: form.hasTattoos, hasSilicone: form.hasSilicone, isDepilada: form.isDepilada,
+        hasTattoos: form.hasTattoos, hasPiercing: form.hasPiercing, hasSilicone: form.hasSilicone, isDepilada: form.isDepilada,
+        depilationStyle: form.depilationStyle, bodyType: form.bodyType,
         attendanceTypes: form.attendanceTypes, servesGenders: form.servesGenders, idiomas: form.idiomas,
         diasDisponiveis: form.diasDisponiveis, horarioInicio: form.horarioInicio, horarioFim: form.horarioFim,
         services: form.services, fetishes: form.fetishes,
         specialties: form.services,
-        pricePerHour: form.pricePerHour ? Number(form.pricePerHour) : undefined,
-        price30min: form.price30min ? Number(form.price30min) : undefined,
-        price2h: form.price2h ? Number(form.price2h) : undefined,
-        priceOvernight: form.priceOvernight ? Number(form.priceOvernight) : undefined,
-        priceWebcam: form.priceWebcam ? Number(form.priceWebcam) : undefined,
-        priceMin: form.pricePerHour ? Number(form.pricePerHour) : undefined,
+        pricePerHour: parseMoneyValue(form.pricePerHour),
+        price30min: parseMoneyValue(form.price30min),
+        price2h: parseMoneyValue(form.price2h),
+        priceOvernight: parseMoneyValue(form.priceOvernight),
+        priceWebcam: parseMoneyValue(form.priceWebcam),
+        priceMin: parseMoneyValue(form.pricePerHour),
         paymentMethods: form.paymentMethods,
         phone: form.phone, whatsapp: form.whatsapp, instagram: form.instagram, website: form.website,
         image: form.mainPhotoUrl || undefined,
@@ -613,7 +663,7 @@ export default function ProfissionalNovoPage() {
       if (!form.docType) return "Selecione o tipo de documento.";
       if (!form.docFrenteUrl || !form.docVersoUrl) return "Envie frente e verso do documento.";
     }
-    if (targetStep === 8 && !form.verificationUrl) return "Inicie a biometria ou envie a selfie/video de verificacao.";
+    if (targetStep === 8 && !form.kycSessionId) return "Inicie a validacao facial para continuar.";
     return null;
   }
 
@@ -802,42 +852,64 @@ export default function ProfissionalNovoPage() {
           </Section>
 
           <Section title="Cabelo">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <ChipGroup>
               {CABELOS.map((c) => <Tag key={c} label={c} active={form.hairColor === c} onClick={() => toggleSingle("hairColor", c)} />)}
-            </div>
+            </ChipGroup>
           </Section>
 
           <Section title="Cor dos olhos">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <ChipGroup>
               {OLHOS.map((c) => <Tag key={c} label={c} active={form.eyeColor === c} onClick={() => toggleSingle("eyeColor", c)} />)}
-            </div>
+            </ChipGroup>
           </Section>
 
           <Section title="Etnia">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <ChipGroup>
               {ETNIAS.map((c) => <Tag key={c} label={c} active={form.ethnicity === c} onClick={() => toggleSingle("ethnicity", c)} />)}
-            </div>
+            </ChipGroup>
           </Section>
 
           <Section title="Signo">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <ChipGroup>
               {SIGNOS.map((c) => <Tag key={c} label={c} active={form.signo === c} onClick={() => toggleSingle("signo", c)} />)}
-            </div>
+            </ChipGroup>
           </Section>
 
-          <Section title="Corpo">
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              {[["hasTattoos", form.hasTattoos ? "🖋️ Com tatuagens" : "Sem tatuagens"],
-                ["hasSilicone", form.hasSilicone ? "✨ Com silicone" : "Sem silicone"],
-                ["isDepilada", form.isDepilada ? "✨ Depilada" : "Não depilada"]].map(([field, label]) => (
-                <button key={String(field)} type="button" onClick={() => {
-                  const key = field as BooleanFormField;
-                  set(key, !form[key]);
-                }}
-                  style={{ padding: "10px 18px", borderRadius: 20, cursor: "pointer", fontSize: 13, fontWeight: 600, border: `1.5px solid ${form[field as BooleanFormField] ? GOLD : "#1e293b"}`, background: form[field as BooleanFormField] ? GOLD_DIM : "transparent", color: form[field as BooleanFormField] ? "#f1f5f9" : "#475569" }}>
-                  {String(label)}
-                </button>
-              ))}
+          <Section title="Corpo" desc="Opcional. Escolha apenas o que fizer sentido para o seu perfil.">
+            <div style={{ display: "grid", gap: 18 }}>
+              <div>
+                <p className="model-subsection-label">Tipo de corpo</p>
+                <ChipGroup>
+                  {BODY_TYPES.map((c) => <Tag key={c} label={c} active={form.bodyType === c} onClick={() => toggleSingle("bodyType", form.bodyType === c ? "" : c)} />)}
+                </ChipGroup>
+              </div>
+              <div>
+                <p className="model-subsection-label">Características</p>
+                <ChipGroup>
+                  <Tag label="Com tatuagens" active={form.hasTattoos} onClick={() => set("hasTattoos", true)} />
+                  <Tag label="Sem tatuagens" active={!form.hasTattoos} onClick={() => set("hasTattoos", false)} />
+                  <Tag label="Com piercing" active={form.hasPiercing} onClick={() => set("hasPiercing", true)} />
+                  <Tag label="Sem piercing" active={!form.hasPiercing} onClick={() => set("hasPiercing", false)} />
+                  <Tag label="Com silicone" active={form.hasSilicone} onClick={() => set("hasSilicone", true)} />
+                  <Tag label="Natural" active={!form.hasSilicone} onClick={() => set("hasSilicone", false)} />
+                </ChipGroup>
+              </div>
+              <div>
+                <p className="model-subsection-label">Depilação</p>
+                <ChipGroup>
+                  {DEPILATION_STYLES.map((d) => (
+                    <Tag
+                      key={d}
+                      label={d}
+                      active={form.depilationStyle === d}
+                      onClick={() => {
+                        set("depilationStyle", d);
+                        set("isDepilada", d !== "Não depilada");
+                      }}
+                    />
+                  ))}
+                </ChipGroup>
+              </div>
             </div>
           </Section>
         </div>
@@ -849,25 +921,32 @@ export default function ProfissionalNovoPage() {
       {step === 2 && (
         <div>
           <Section title="Tipo de atendimento" desc="Onde você realiza seus atendimentos?">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {ATENDIMENTO.map((a) => <Tag key={a} label={a} active={form.attendanceTypes.includes(a)} onClick={() => toggleArr("attendanceTypes", a)} />)}
+            <div style={{ display: "grid", gap: 18 }}>
+              {ATENDIMENTO_GRUPOS.map((group) => (
+                <div key={group.title}>
+                  <p className="model-subsection-label">{group.title}</p>
+                  <ChipGroup>
+                    {group.options.map((a) => <Tag key={a} label={a} active={form.attendanceTypes.includes(a)} onClick={() => toggleArr("attendanceTypes", a)} />)}
+                  </ChipGroup>
+                </div>
+              ))}
             </div>
           </Section>
 
           <Section title="Atendo" desc="Quem você atende?">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <ChipGroup>
               {ATENDE.map((a) => <Tag key={a} label={a} active={form.servesGenders.includes(a)} onClick={() => toggleArr("servesGenders", a)} />)}
-            </div>
+            </ChipGroup>
           </Section>
 
           <Section title="Idiomas">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <ChipGroup>
               {IDIOMAS.map((l) => <Tag key={l} label={l} active={form.idiomas.includes(l)} onClick={() => toggleArr("idiomas", l)} />)}
-            </div>
+            </ChipGroup>
           </Section>
 
           <Section title="Disponibilidade — dias">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+            <div className="model-chip-group" style={{ marginBottom: 14 }}>
               {DIAS_SEMANA.map((d) => <Tag key={d} label={d} active={form.diasDisponiveis.includes(d)} onClick={() => toggleArr("diasDisponiveis", d)} />)}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -941,11 +1020,7 @@ export default function ProfissionalNovoPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
                 <label style={labelStyle}>WhatsApp *</label>
-                <div style={{ position: "relative" }}>
-                  <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#475569", fontSize: 14, userSelect: "none" }}>🇧🇷 +55</span>
-                  <input value={form.whatsapp} onChange={(e) => set("whatsapp", e.target.value.replace(/\D/g, "").slice(0, 11))}
-                    style={{ ...inputStyle, paddingLeft: 72 }} placeholder="11 9 0000-0000" />
-                </div>
+                <WhatsAppInput value={form.whatsapp} onChange={(value) => set("whatsapp", value)} />
                 <p style={{ fontSize: 11, color: "#334155", margin: "4px 0 0" }}>Formato: DDD + número (ex: 11912345678)</p>
               </div>
               <div>
@@ -954,11 +1029,7 @@ export default function ProfissionalNovoPage() {
               </div>
               <div>
                 <label style={labelStyle}>Instagram</label>
-                <div style={{ position: "relative" }}>
-                  <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#475569", fontSize: 14 }}>@</span>
-                  <input value={form.instagram.replace("@", "")} onChange={(e) => set("instagram", e.target.value)}
-                    style={{ ...inputStyle, paddingLeft: 32 }} placeholder="seuperfil" />
-                </div>
+                <InstagramInput value={form.instagram} onChange={(value) => set("instagram", value)} />
               </div>
               <div>
                 <label style={labelStyle}>Site pessoal (opcional)</label>
@@ -1082,39 +1153,12 @@ export default function ProfissionalNovoPage() {
       ══════════════════════════════════════════════ */}
       {step === 8 && (
         <div>
-          <Section title="Verificacao facial" desc="Esta etapa confirma pessoa real, maioridade e autenticidade do anuncio. Quando a Persona estiver configurada, o fluxo abre a verificacao facial com liveness; sem Persona configurada, a etapa fica como verificacao manual.">
+          <Section title="Verificacao facial" desc="Para proteger a segurança da plataforma, realizamos uma validação facial para confirmar autenticidade, maioridade e evitar perfis falsos.">
 
-            {/* Código único */}
-            <div style={{ background: "#060e1b", border: `2px solid ${GOLD_MID}`, borderRadius: 14, padding: "20px", marginBottom: 24, textAlign: "center" }}>
-              <p style={{ fontSize: 11, color: "#475569", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: 2, fontWeight: 700 }}>Seu código de verificação único</p>
-              <div style={{ fontSize: 32, fontWeight: 900, color: GOLD, letterSpacing: 4, fontFamily: "monospace", margin: "0 0 8px" }}>
-                {verificationCode}
-              </div>
-              <p style={{ fontSize: 12, color: "#475569", margin: 0 }}>Copie este código em um papel e segure-o na foto/vídeo abaixo</p>
-            </div>
-
-            {/* Instruções passo a passo */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-              {[
-                ["1", "Escreva o código acima em um papel legível (pode ser qualquer papel)"],
-                ["2", "Segure o papel próximo ao seu rosto — mas você pode cobrir o rosto se quiser"],
-                ["3", "Tire uma selfie clara ou grave um vídeo curto (até 30 segundos)"],
-                ["4", "Envie abaixo. Nossa equipe analisa em até 3 dias úteis"],
-              ].map(([num, text]) => (
-                <div key={num} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontWeight: 800, fontSize: 12, color: GOLD }}>
-                    {num}
-                  </div>
-                  <p style={{ fontSize: 13, color: "#94a3b8", margin: "4px 0 0", lineHeight: 1.5 }}>{text}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Upload da mídia */}
             <div style={{ background: "#060e1b", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "16px", marginBottom: 20 }}>
-              <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#f1f5f9" }}>Verificacao facial com Persona</p>
+              <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#f1f5f9" }}>Validação facial segura</p>
               <p style={{ margin: "0 0 14px", fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
-                Inicie a validacao facial para confirmar pessoa real e maioridade. Se a Persona nao estiver configurada, use a verificacao manual abaixo.
+                O processo é feito em ambiente protegido e leva poucos minutos. Após o envio, seu cadastro permanece em análise até a revisão final da equipe.
               </p>
               <button
                 type="button"
@@ -1141,43 +1185,17 @@ export default function ProfissionalNovoPage() {
               )}
             </div>
 
-            {form.kycSessionId && form.kycChallenge && (
-              <FaceCapture
-                challenge={form.kycChallenge}
-                loading={uploadingIdx === 99}
-                onCapture={handleVerifMedia}
-              />
-            )}
-
-            <UploadZone
-              label="Verificacao manual: selfie ou video *"
-              accept="image/*,video/mp4,video/webm"
-              preview={form.verificationUrl && form.verificationType === "foto" ? form.verificationUrl : null}
-              loading={uploadingIdx === 99}
-              onFile={handleVerifMedia}
-            />
             {form.verificationUrl && form.verificationType === "biometria" && (
               <div style={{ marginTop: 8, padding: "10px 14px", background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 8, fontSize: 12, color: GOLD }}>
                 Verificacao facial com Persona iniciada
               </div>
             )}
-            {form.verificationUrl && form.verificationType === "video" && (
-              <div style={{ marginTop: 8, padding: "10px 14px", background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 8, fontSize: 12, color: GOLD }}>
-                ✓ Vídeo enviado com sucesso
-              </div>
-            )}
-            {form.verificationUrl && (
-              <button onClick={() => { set("verificationUrl", ""); set("verificationFile", null); }}
-                style={{ marginTop: 8, background: "none", border: "none", color: "#475569", fontSize: 12, cursor: "pointer" }}>
-                ✕ Remover e enviar novamente
-              </button>
-            )}
 
             {/* Zona segura explicação */}
             <div style={{ marginTop: 20, background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 10, padding: "14px 16px" }}>
-              <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "#22c55e" }}>🛡️ Zona Segura — Seu rosto é opcional</p>
+              <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "#22c55e" }}>Ambiente seguro</p>
               <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
-                Você <strong>não precisa mostrar o rosto</strong> na mídia pública. Após nossa aprovação, você escolhe se a mídia aparece no perfil com rosto visível, sem rosto, ou fica apenas com nossa equipe para fins de verificação interna.
+                A validação facial é usada apenas para análise de autenticidade e segurança. A aprovação do perfil continua dependendo da revisão da equipe.
               </p>
             </div>
           </Section>
@@ -1307,6 +1325,149 @@ export default function ProfissionalNovoPage() {
           color: #fff !important;
         }
         .model-flow-page [style*="#1e293b"] { border-color: rgba(214,168,58,0.25) !important; }
+        .model-chip-group {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 9px;
+          align-items: flex-start;
+        }
+        .model-chip-group button {
+          flex: 0 1 auto;
+          max-width: 100%;
+          white-space: normal;
+          overflow-wrap: anywhere;
+          color: #d4d8df !important;
+          border-color: rgba(214,168,58,0.28) !important;
+          background: rgba(11,11,13,0.74) !important;
+        }
+        .model-chip-group button[style*="rgba(212,168,67"] {
+          color: #fff !important;
+          border-color: rgba(245,184,59,0.74) !important;
+          background: rgba(214,168,67,0.16) !important;
+        }
+        .model-subsection-label {
+          margin: 0 0 8px !important;
+          color: #d6a83a !important;
+          font-size: 11px !important;
+          font-weight: 800 !important;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+        .whatsapp-field {
+          display: grid;
+          grid-template-columns: 86px minmax(0, 1fr);
+          min-height: 58px;
+          border: 1px solid rgba(214,168,58,0.28);
+          border-radius: 18px;
+          background: rgba(11,11,13,0.94);
+          overflow: hidden;
+        }
+        .whatsapp-prefix {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          min-width: 0;
+          border-right: 1px solid rgba(214,168,58,0.20);
+          color: #f5d77a;
+          font-size: 13px;
+          font-weight: 900;
+          user-select: none;
+        }
+        .whatsapp-prefix span {
+          display: inline-grid;
+          place-items: center;
+          width: 27px;
+          height: 20px;
+          border-radius: 4px;
+          background: linear-gradient(135deg, #16a34a, #facc15);
+          color: #082f49;
+          font-size: 10px;
+          font-weight: 950;
+        }
+        .whatsapp-prefix strong { color: #f5d77a; font-size: 13px; }
+        .whatsapp-field input {
+          width: 100%;
+          min-width: 0;
+          min-height: 58px !important;
+          border: 0 !important;
+          border-radius: 0 !important;
+          background: transparent !important;
+          padding: 15px 14px !important;
+          box-shadow: none !important;
+        }
+        .whatsapp-field:focus-within {
+          border-color: rgba(245,184,59,0.72);
+          box-shadow: 0 0 0 4px rgba(214,168,58,0.12);
+        }
+        .instagram-field {
+          display: grid;
+          grid-template-columns: 48px minmax(0, 1fr);
+          min-height: 58px;
+          border: 1px solid rgba(214,168,58,0.28);
+          border-radius: 18px;
+          background: rgba(11,11,13,0.94);
+          overflow: hidden;
+        }
+        .instagram-field > span {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-right: 1px solid rgba(214,168,58,0.20);
+          color: #f5d77a;
+          font-size: 16px;
+          font-weight: 950;
+          user-select: none;
+        }
+        .instagram-field input {
+          width: 100%;
+          min-width: 0;
+          min-height: 58px !important;
+          border: 0 !important;
+          border-radius: 0 !important;
+          background: transparent !important;
+          padding: 15px 14px !important;
+          box-shadow: none !important;
+        }
+        .instagram-field:focus-within {
+          border-color: rgba(245,184,59,0.72);
+          box-shadow: 0 0 0 4px rgba(214,168,58,0.12);
+        }
+        .money-field {
+          display: grid;
+          grid-template-columns: 64px minmax(0, 1fr);
+          min-height: 58px;
+          border: 1px solid rgba(214,168,58,0.28);
+          border-radius: 18px;
+          background: rgba(11,11,13,0.94);
+          overflow: hidden;
+        }
+        .money-field > span {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-right: 1px solid rgba(214,168,58,0.20);
+          color: #f5d77a;
+          font-size: 14px;
+          font-weight: 950;
+          user-select: none;
+        }
+        .money-field input {
+          width: 100%;
+          min-width: 0;
+          min-height: 58px !important;
+          border: 0 !important;
+          border-radius: 0 !important;
+          background: transparent !important;
+          padding: 15px 16px !important;
+          color: #fff !important;
+          box-shadow: none !important;
+        }
+        .money-field input::placeholder { color: rgba(184,184,184,0.55) !important; }
+        .money-field:focus-within {
+          border-color: rgba(245,184,59,0.72);
+          box-shadow: 0 0 0 4px rgba(214,168,58,0.12);
+        }
         .model-flow-page > div:nth-of-type(2) {
           margin-bottom: 30px !important;
           border: 1px solid rgba(214,168,58,0.25);
@@ -1321,6 +1482,22 @@ export default function ProfissionalNovoPage() {
           overflow: hidden;
         }
         .model-flow-page > div:nth-of-type(2) > div:nth-child(2) > div { background: linear-gradient(90deg, #d6a83a, #f5d77a) !important; }
+        .model-flow-page > div:nth-of-type(2) > div:nth-child(3) {
+          gap: 8px !important;
+          padding-bottom: 4px;
+          scrollbar-width: none;
+        }
+        .model-flow-page > div:nth-of-type(2) > div:nth-child(3)::-webkit-scrollbar { display: none; }
+        .model-flow-page > div:nth-of-type(2) > div:nth-child(3) > div {
+          flex: 0 0 58px !important;
+          min-width: 58px !important;
+        }
+        .model-flow-page > div:nth-of-type(2) > div:nth-child(3) span {
+          color: #aeb6c2 !important;
+          line-height: 1.15 !important;
+          white-space: normal !important;
+          word-break: keep-all;
+        }
         .model-flow-page img { max-width: 100%; height: auto; }
         .model-step-actions {
           position: fixed;
