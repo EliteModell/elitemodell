@@ -11,6 +11,7 @@ import { ArrowLeft, BadgeCheck, Eye, EyeOff, Globe2, LockKeyhole, Sparkles } fro
 import { EntryChoiceCards, EntryChoiceStyles } from "@/components/EntryChoiceSheet";
 import { supabaseAuth } from "@/lib/supabase-client";
 import { ACCOUNT_ROUTES, normalizeEntryRole, postLoginPathFromUser } from "@/lib/account-routes";
+import { buildAuthCallbackUrl } from "@/lib/auth-redirect";
 
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
@@ -129,7 +130,7 @@ function LoginContent() {
       const { error } = await supabaseAuth.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback${callbackParams ? `?${callbackParams}` : ""}`,
+          redirectTo: buildAuthCallbackUrl(callbackParams),
         },
       });
       if (error) throw error;

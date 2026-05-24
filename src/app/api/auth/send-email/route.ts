@@ -32,7 +32,7 @@ function confirmationUrl(tokenHash: string, type: string, redirectTo: string) {
 function buildEmail(payload: HookPayload): { subject: string; html: string } | null {
   const { email_action_type, token_hash, token_hash_new, redirect_to, site_url } = payload.email_data;
   const userEmail = payload.user.email;
-  const siteUrl = site_url || "https://elitemodell.com.br";
+  const siteUrl = site_url || "https://www.elitemodell.com.br";
   const redirectTo = redirect_to || siteUrl;
 
   const base = `

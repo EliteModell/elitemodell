@@ -9,6 +9,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { CaptchaField, type CaptchaFieldHandle } from "@/components/auth/CaptchaField";
 import { validateBirthDate } from "@/lib/age-validation";
+import { buildAuthCallbackUrl } from "@/lib/auth-redirect";
 import { supabaseAuth } from "@/lib/supabase-client";
 import {
   ACCOUNT_ROUTES,
@@ -477,7 +478,7 @@ export default function CadastroPage() {
         email: form.email.trim().toLowerCase(),
         password: form.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?returnUrl=${encodeURIComponent(nextPath())}`,
+          emailRedirectTo: buildAuthCallbackUrl(`returnUrl=${encodeURIComponent(nextPath())}`),
           data: registrationPayload(),
         },
       });
@@ -517,7 +518,7 @@ export default function CadastroPage() {
       sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload(captchaToken)));
       const { error } = await supabaseAuth.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback?returnUrl=${encodeURIComponent(nextPath())}` },
+        options: { redirectTo: buildAuthCallbackUrl(`returnUrl=${encodeURIComponent(nextPath())}`) },
       });
       if (error) throw error;
     } catch (err: unknown) {

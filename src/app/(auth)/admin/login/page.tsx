@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { buildAuthCallbackUrl } from "@/lib/auth-redirect";
 import { supabaseAuth } from "@/lib/supabase-client";
 
 export default function AdminLoginPage() {
@@ -16,7 +17,7 @@ export default function AdminLoginPage() {
       const { error } = await supabaseAuth.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?returnUrl=/admin`,
+          redirectTo: buildAuthCallbackUrl("returnUrl=/admin"),
         },
       });
       if (error) throw error;

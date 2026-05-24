@@ -12,7 +12,7 @@ type PendingRegistration = {
 
 const PROPERTY_DRAFT_KEY = "elitemodell_location_onboarding_v2";
 const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
-const CALLBACK_TIMEOUT_MS = 4000;
+const CALLBACK_TIMEOUT_MS = 15000;
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
 
@@ -81,6 +81,52 @@ function resolveWithTimeout<T>(promise: Promise<T>, fallback: T, ms = CALLBACK_T
         resolve(fallback);
       });
   });
+}
+
+function parseCallbackHash() {
+  if (typeof window === "undefined" || !window.location.hash) return null;
+  const rawHash = window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1)
+    : window.location.hash;
+  if (!rawHash) return null;
+  return new URLSearchParams(rawHash);
+}
+
+function clearCallbackHash() {
+  const cleanUrl = `${window.location.pathname}${window.location.search}`;
+  window.history.replaceState(null, document.title, cleanUrl);
+}
+
+async function consumeHashSession() {
+  const hashParams = parseCallbackHash();
+  if (!hashParams) return null;
+
+  const oauthError = hashParams.get("error_description") || hashParams.get("error");
+  if (oauthError) {
+    clearCallbackHash();
+    throw new Error(`Supabase OAuth: ${oauthError}`);
+  }
+
+  const accessToken = hashParams.get("access_token");
+  const refreshToken = hashParams.get("refresh_token");
+  if (!accessToken || !refreshToken) return null;
+
+  const { data, error } = await supabaseAuth.auth.setSession({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  });
+  clearCallbackHash();
+
+  if (error) {
+    console.error("[CALLBACK] setSession pelo hash falhou:", error.message);
+    throw new Error("Nao foi possivel confirmar a sessao recebida do provedor.");
+  }
+
+  if (!data.session?.access_token) {
+    throw new Error("Sessao criada pelo provedor nao retornou token de acesso.");
+  }
+
+  return data.session.access_token;
 }
 
 function getRegistrationPath(pending: PendingRegistration | null) {
@@ -270,7 +316,7 @@ function waitForSession(timeoutMs = 8000): Promise<string> {
       sub?.data.subscription.unsubscribe();
       clearTimeout(timer);
       if (token) resolve(token);
-      else reject(new Error("Sessão não encontrada. Tente novamente."));
+      else reject(new Error("Sessao nao encontrada no navegador apos o retorno do provedor."));
     };
 
     const timer = setTimeout(() => done(null), timeoutMs);
@@ -314,12 +360,12 @@ function AuthCallbackContent() {
             throw new Error(`Supabase: ${error.message}`);
           }
         } else {
-          if (!data.session?.access_token) throw new Error("Sessão não encontrada após troca de código.");
+          if (!data.session?.access_token) throw new Error("Sessao nao encontrada apos troca de codigo.");
           accessToken = data.session.access_token;
         }
       } else {
-        accessToken = await waitForSession();
-        if (!accessToken) throw new Error("Sessão não encontrada. Tente novamente.");
+        accessToken = await consumeHashSession() ?? await waitForSession();
+        if (!accessToken) throw new Error("Sessao nao encontrada. Tente novamente.");
       }
 
       if (active) setMessage("Configurando sua conta...");
@@ -379,8 +425,11 @@ function AuthCallbackContent() {
 
     finishAuth().catch((err) => {
       if (!active) return;
-      const msg: string = err?.message ?? "Não foi possível finalizar o acesso.";
-      console.error("[CALLBACK] Erro no login Google:", msg);
+      const rawMsg: string = err?.message ?? "Nao foi possivel finalizar o acesso.";
+      const msg = rawMsg.includes("Sessao nao encontrada")
+        ? "Nao foi possivel criar a sessao neste navegador. Abra o link novamente ou tente pelo botao de login."
+        : rawMsg;
+      console.error("[CALLBACK] Erro no login Google:", rawMsg);
       setMessage("Erro ao finalizar o acesso");
       setErrorDetail(msg);
     });
