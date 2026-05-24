@@ -89,9 +89,9 @@ export async function handlePersonaWebhook(req: NextRequest) {
         },
         data: {
           kycProvider: "PERSONA",
-          kycStatus: "APPROVED",
-          verifStatus: "APPROVED",
-          rejectReason: null,
+          kycStatus: PERSONA_PENDING_STATUS,
+          verifStatus: "PENDING",
+          rejectReason: "Persona aprovada; aguardando revisao manual/admin.",
         },
       }),
     ]);

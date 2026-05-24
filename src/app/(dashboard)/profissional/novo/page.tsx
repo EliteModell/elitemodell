@@ -25,6 +25,13 @@ type ArrayFormField = "attendanceTypes" | "servesGenders" | "idiomas" | "diasDis
 type SingleFormField = "escortCategory" | "hairColor" | "eyeColor" | "ethnicity" | "signo";
 type BooleanFormField = "hasTattoos" | "hasSilicone" | "isDepilada";
 type PriceFormField = "price30min" | "pricePerHour" | "price2h" | "priceOvernight" | "priceWebcam";
+type PersonaAvailability = {
+  checked: boolean;
+  available: boolean;
+  message?: string;
+  missing?: string[];
+  templateInvalid?: boolean;
+};
 
 /* ── listas de opções ───────────────────────────────────── */
 const CABELOS   = ["Loira", "Morena", "Ruiva", "Castanho", "Colorido", "Preto", "Sem cabelo"];
@@ -273,6 +280,10 @@ export default function ProfissionalNovoPage() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const [personaAvailability, setPersonaAvailability] = useState<PersonaAvailability>({
+    checked: false,
+    available: false,
+  });
   const [birthParts, setBirthParts] = useState({ day: "", month: "", year: "" });
   const birthMonthRef = useRef<HTMLInputElement>(null);
   const birthYearRef = useRef<HTMLInputElement>(null);
@@ -331,7 +342,44 @@ export default function ProfissionalNovoPage() {
       }
     }
 
+    async function loadPersonaAvailability() {
+      const res = await fetch("/api/kyc/sessions", { method: "GET" });
+      const data = await res.json().catch(() => ({}));
+      if (!active) return;
+
+      if (!res.ok) {
+        console.warn("[KYC] Nao foi possivel consultar disponibilidade da Persona.", {
+          status: res.status,
+          data,
+        });
+        setPersonaAvailability({
+          checked: true,
+          available: false,
+          message: "Verificacao automatica indisponivel no momento. Use a verificacao manual.",
+        });
+        return;
+      }
+
+      setPersonaAvailability({
+        checked: true,
+        available: Boolean(data.available),
+        message: data.message,
+        missing: data.missing,
+        templateInvalid: data.templateInvalid,
+      });
+    }
+
     loadUserDefaults().catch(() => {});
+    loadPersonaAvailability().catch((err) => {
+      console.warn("[KYC] Erro ao consultar disponibilidade da Persona.", err);
+      if (active) {
+        setPersonaAvailability({
+          checked: true,
+          available: false,
+          message: "Verificacao automatica indisponivel no momento. Use a verificacao manual.",
+        });
+      }
+    });
     return () => {
       active = false;
     };
@@ -429,11 +477,20 @@ export default function ProfissionalNovoPage() {
 
   /* ── submit final ─────────────────────────────────────── */
   async function startFaceBiometry() {
+    if (personaAvailability.checked && !personaAvailability.available) {
+      toast.error("Verificacao automatica indisponivel no momento. Use a verificacao manual.");
+      return;
+    }
+
     setUploadingIdx(100);
     try {
       const res = await fetch("/api/kyc/sessions", { method: "POST" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        console.error("[KYC] Falha ao iniciar verificacao facial com Persona.", {
+          status: res.status,
+          data,
+        });
         toast.error(data.error ?? "Nao foi possivel iniciar a verificacao facial com Persona. Tente novamente ou use a verificacao manual.");
         return;
       }
@@ -454,7 +511,8 @@ export default function ProfissionalNovoPage() {
       } else {
         toast.success("Verificacao facial com Persona iniciada.");
       }
-    } catch {
+    } catch (err) {
+      console.error("[KYC] Erro de rede ao iniciar verificacao facial com Persona.", err);
       toast.error("Nao foi possivel iniciar a verificacao facial com Persona. Tente novamente ou use a verificacao manual.");
     } finally {
       setUploadingIdx(null);
@@ -569,6 +627,11 @@ export default function ProfissionalNovoPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   function back() { setStep((s) => Math.max(s - 1, 0)); window.scrollTo({ top: 0, behavior: "smooth" }); }
+
+  const personaButtonDisabled =
+    uploadingIdx === 100 || (personaAvailability.checked && !personaAvailability.available);
+  const personaUnavailable =
+    personaAvailability.checked && !personaAvailability.available;
 
   /* ── render ───────────────────────────────────────────── */
   return (
@@ -1056,11 +1119,16 @@ export default function ProfissionalNovoPage() {
               <button
                 type="button"
                 onClick={startFaceBiometry}
-                disabled={uploadingIdx === 100}
-                style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "none", background: GOLD, color: "#060e1b", fontSize: 14, fontWeight: 800, cursor: uploadingIdx === 100 ? "not-allowed" : "pointer" }}
+                disabled={personaButtonDisabled}
+                style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "none", background: personaUnavailable ? "#334155" : GOLD, color: personaUnavailable ? "#94a3b8" : "#060e1b", fontSize: 14, fontWeight: 800, cursor: personaButtonDisabled ? "not-allowed" : "pointer" }}
               >
-                {uploadingIdx === 100 ? "Iniciando..." : "Iniciar verificacao facial"}
+                {uploadingIdx === 100 ? "Iniciando..." : personaUnavailable ? "Verificacao automatica indisponivel" : "Iniciar verificacao facial"}
               </button>
+              {personaUnavailable && (
+                <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: "rgba(234,179,8,0.10)", border: "1px solid rgba(234,179,8,0.25)", color: "#facc15", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>
+                  {personaAvailability.message ?? "Verificacao automatica indisponivel no momento. Use a verificacao manual."}
+                </div>
+              )}
               {form.kycSessionId && (
                 <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, fontSize: 12, fontWeight: 700 }}>
                   {form.kycProvider === "PERSONA" ? "Verificacao facial com Persona" : "Verificacao manual"}: {form.kycStatus}

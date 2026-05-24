@@ -6,37 +6,15 @@ import { authOptions } from "@/lib/auth";
 import {
   buildPersonaUrl,
   createPersonaInquiry,
+  getPersonaAvailability,
   getPersonaConfig,
   MANUAL_PENDING_STATUS,
+  PersonaIntegrationError,
   PERSONA_PENDING_STATUS,
   PERSONA_FALLBACK_MESSAGE,
   shouldUsePersonaProvider,
 } from "@/lib/persona";
 import { prisma } from "@/lib/prisma";
-
-function createManualSession(userId: string, reason?: string) {
-  const id = `manual_kyc_${userId}_${Date.now()}`;
-  const challenges = [
-    "Vire o rosto para a esquerda e pisque duas vezes",
-    "Vire o rosto para a direita e sorria",
-    "Aproxime o documento do rosto por tres segundos",
-    "Leia o codigo em voz alta e pisque uma vez",
-  ];
-  const challenge = challenges[Math.floor(Math.random() * challenges.length)];
-
-  return {
-    provider: "MANUAL",
-    sessionId: id,
-    status: MANUAL_PENDING_STATUS,
-    url: "",
-    challenge,
-    expiresAt: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
-    captureMode: "CAMERA_OR_UPLOAD",
-    fallback: true,
-    reason,
-    message: PERSONA_FALLBACK_MESSAGE,
-  };
-}
 
 function appBaseUrl() {
   return (
@@ -44,6 +22,42 @@ function appBaseUrl() {
     process.env.NEXTAUTH_URL?.trim() ||
     "http://localhost:3000"
   ).replace(/\/$/, "");
+}
+
+function friendlyUnavailableResponse(reason: string, status = 503) {
+  return NextResponse.json(
+    {
+      error: "Verificacao automatica indisponivel no momento. Use a verificacao manual.",
+      code: "PERSONA_UNAVAILABLE",
+      fallback: true,
+      provider: "MANUAL",
+      status: MANUAL_PENDING_STATUS,
+      reason,
+      message: PERSONA_FALLBACK_MESSAGE,
+    },
+    { status },
+  );
+}
+
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
+  if (session.user.role !== "HOST" && session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Apenas anunciantes podem iniciar biometria." }, { status: 403 });
+  }
+
+  const availability = getPersonaAvailability();
+  return NextResponse.json({
+    provider: availability.configured ? "PERSONA" : "MANUAL",
+    available: availability.configured,
+    environment: availability.publicEnvironment ?? availability.environment,
+    missing: availability.missing,
+    templateInvalid: availability.templateInvalid,
+    webhookConfigured: availability.webhookConfigured,
+    message: availability.configured
+      ? "Verificacao facial com Persona disponivel."
+      : "Verificacao automatica indisponivel no momento. Use a verificacao manual.",
+  });
 }
 
 export async function POST() {
@@ -55,14 +69,19 @@ export async function POST() {
 
   const personaConfig = getPersonaConfig();
   if (!shouldUsePersonaProvider()) {
-    return NextResponse.json(createManualSession(session.user.id, personaConfig.missing.join(", ")));
+    console.warn("[KYC] Persona indisponivel: variaveis ausentes.", {
+      missing: personaConfig.missing,
+      environment: personaConfig.environment,
+    });
+    return friendlyUnavailableResponse(personaConfig.missing.join(", "));
   }
 
   if (!personaConfig.templateId?.startsWith("itmpl_")) {
-    return NextResponse.json(
-      { error: "PERSONA_TEMPLATE_ID deve ser um Inquiry Template da Persona e comecar com itmpl_." },
-      { status: 503 },
-    );
+    console.error("[KYC] Persona template invalido.", {
+      templatePrefix: personaConfig.templateId?.slice(0, 8),
+      expectedPrefix: "itmpl_",
+    });
+    return friendlyUnavailableResponse("PERSONA_TEMPLATE_ID invalido.");
   }
 
   const redirectUri = `${appBaseUrl()}/verificacao/callback`;
@@ -73,12 +92,18 @@ export async function POST() {
   try {
     ({ inquiryId, sessionToken, oneTimeLink } = await createPersonaInquiry(session.user.id, redirectUri));
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[KYC] Persona createInquiry falhou:", message);
-    return NextResponse.json(
-      { error: `Nao foi possivel iniciar a verificacao facial com Persona: ${message}` },
-      { status: 502 },
-    );
+    if (err instanceof PersonaIntegrationError) {
+      console.error("[KYC] Persona createInquiry falhou.", {
+        code: err.code,
+        status: err.status,
+        message: err.message,
+        details: err.details,
+      });
+      return friendlyUnavailableResponse(err.code, err.status && err.status >= 400 && err.status < 500 ? 503 : 502);
+    }
+
+    console.error("[KYC] Persona createInquiry falhou com erro inesperado:", err);
+    return friendlyUnavailableResponse("PERSONA_UNKNOWN_ERROR", 502);
   }
 
   const url = oneTimeLink ?? buildPersonaUrl(inquiryId, sessionToken, redirectUri);

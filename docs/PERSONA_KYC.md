@@ -24,7 +24,8 @@ esteja ausente. O modo manual fica reservado para ambiente sem Persona configura
 - Se a Persona estiver configurada, o backend cria uma Inquiry real na Persona, salva o `inquiryId` em `User.kycSessionId`
   e devolve apenas o link publico de verificacao.
 - `PERSONA_API_KEY` nunca e enviada para o navegador.
-- Se a Persona nao estiver configurada, o endpoint cria uma sessao manual e retorna a mensagem amigavel:
+- Se a Persona nao estiver configurada, a tela desabilita o botao automatico via `GET /api/kyc/sessions`
+  e orienta a verificacao manual:
   "Verificacao manual pendente. Envie sua selfie ou video de verificacao abaixo para analise manual."
 - Se a Persona estiver configurada e a API falhar, o endpoint retorna erro e nao cria sessao manual falsa.
 - O envio manual de selfie/video continua ativo e salva o cadastro com `kycProvider=MANUAL` e `kycStatus=KYC_MANUAL_PENDENTE`.
@@ -40,7 +41,8 @@ https://www.elitemodell.com.br/api/webhooks/persona
 
 Eventos importantes:
 
-- `inquiry.approved`: atualiza cliente para `VERIFIED` e profissional para `kycStatus=APPROVED` e `verifStatus=APPROVED`.
+- `inquiry.approved`: atualiza cliente para `VERIFIED`; profissional permanece `kycStatus=PERSONA_PENDING` e
+  `verifStatus=PENDING` ate revisao manual/admin.
 - `inquiry.declined` ou `inquiry.failed`: atualiza para `kycStatus=REJECTED`, `verifStatus=REJECTED` e salva o motivo quando enviado.
 - `inquiry.completed`, `inquiry.started` e `inquiry.marked-for-review`: mantem `kycStatus=PERSONA_PENDING`.
 

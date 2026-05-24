@@ -19,6 +19,29 @@ type PersonaInquiryResponse = {
   };
 };
 
+type PersonaErrorCode =
+  | "PERSONA_ENV_MISSING"
+  | "PERSONA_TEMPLATE_INVALID"
+  | "PERSONA_API_UNAUTHORIZED"
+  | "PERSONA_API_FORBIDDEN"
+  | "PERSONA_API_TEMPLATE_INVALID"
+  | "PERSONA_API_ERROR"
+  | "PERSONA_NETWORK_ERROR";
+
+export class PersonaIntegrationError extends Error {
+  code: PersonaErrorCode;
+  status?: number;
+  details?: unknown;
+
+  constructor(message: string, code: PersonaErrorCode, status?: number, details?: unknown) {
+    super(message);
+    this.name = "PersonaIntegrationError";
+    this.code = code;
+    this.status = status;
+    this.details = details;
+  }
+}
+
 export function getPersonaConfig() {
   const apiKey = process.env.PERSONA_API_KEY?.trim();
   const templateId =
@@ -26,12 +49,14 @@ export function getPersonaConfig() {
     process.env.PERSONA_INQUIRY_TEMPLATE_ID?.trim();
   const environment = process.env.PERSONA_ENVIRONMENT?.trim() || "sandbox";
   const publicEnvironment = process.env.NEXT_PUBLIC_PERSONA_ENVIRONMENT?.trim();
+  const apiVersion = process.env.PERSONA_API_VERSION?.trim() || "2025-12-08";
 
   return {
     apiKey,
     templateId,
     environment,
     publicEnvironment,
+    apiVersion,
     configured: Boolean(apiKey && templateId),
     missing: [
       !apiKey ? "PERSONA_API_KEY" : null,
@@ -44,39 +69,92 @@ export function shouldUsePersonaProvider() {
   return getPersonaConfig().configured;
 }
 
+export function getPersonaAvailability() {
+  const config = getPersonaConfig();
+  const templateInvalid = Boolean(config.templateId && !config.templateId.startsWith("itmpl_"));
+
+  return {
+    configured: config.configured && !templateInvalid,
+    environment: config.environment,
+    publicEnvironment: config.publicEnvironment,
+    missing: config.missing,
+    templateInvalid,
+    webhookConfigured: Boolean(process.env.PERSONA_WEBHOOK_SECRET?.trim()),
+  };
+}
+
 export function personaProviderLabel(provider?: string | null, sessionId?: string | null) {
   if (provider?.toUpperCase() === "PERSONA" || sessionId?.startsWith("inq_")) return "PERSONA";
   return "MANUAL";
 }
 
 export async function createPersonaInquiry(userId: string, redirectUri: string) {
-  const { apiKey, templateId } = getPersonaConfig();
+  const { apiKey, templateId, apiVersion } = getPersonaConfig();
 
   if (!apiKey || !templateId) {
-    throw new Error("PERSONA_API_KEY ou PERSONA_TEMPLATE_ID nao configurados.");
+    throw new PersonaIntegrationError(
+      "PERSONA_API_KEY ou PERSONA_TEMPLATE_ID nao configurados.",
+      "PERSONA_ENV_MISSING",
+    );
   }
 
-  const res = await fetch(`${PERSONA_API_BASE}/inquiries`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "Persona-Version": "2023-01-05",
-    },
-    body: JSON.stringify({
-      data: {
-        attributes: {
-          "inquiry-template-id": templateId,
-          "reference-id": userId,
-          "redirect-uri": redirectUri,
-        },
+  if (!templateId.startsWith("itmpl_")) {
+    throw new PersonaIntegrationError(
+      "PERSONA_TEMPLATE_ID deve ser um Inquiry Template da Persona e comecar com itmpl_.",
+      "PERSONA_TEMPLATE_INVALID",
+    );
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${PERSONA_API_BASE}/inquiries`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "Persona-Version": apiVersion,
       },
-    }),
-  });
+      body: JSON.stringify({
+        data: {
+          attributes: {
+            "inquiry-template-id": templateId,
+            "reference-id": userId,
+            "redirect-uri": redirectUri,
+          },
+        },
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (err) {
+    throw new PersonaIntegrationError(
+      "Erro de rede ao chamar a API da Persona.",
+      "PERSONA_NETWORK_ERROR",
+      undefined,
+      err instanceof Error ? { name: err.name, message: err.message } : String(err),
+    );
+  }
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { errors?: { detail?: string }[] };
-    throw new Error(err?.errors?.[0]?.detail ?? "Erro ao criar sessao no Persona.");
+    const text = await res.text().catch(() => "");
+    let details: unknown = text;
+    try {
+      details = text ? JSON.parse(text) : {};
+    } catch {}
+
+    const err = details as { errors?: { detail?: string; title?: string; code?: string }[] };
+    const detail = err?.errors?.[0]?.detail ?? err?.errors?.[0]?.title;
+    const code =
+      res.status === 401 ? "PERSONA_API_UNAUTHORIZED"
+      : res.status === 403 ? "PERSONA_API_FORBIDDEN"
+      : detail?.toLowerCase().includes("template") ? "PERSONA_API_TEMPLATE_INVALID"
+      : "PERSONA_API_ERROR";
+
+    throw new PersonaIntegrationError(
+      detail ?? `Persona respondeu HTTP ${res.status}.`,
+      code,
+      res.status,
+      details,
+    );
   }
 
   const json = await res.json() as PersonaInquiryResponse;
