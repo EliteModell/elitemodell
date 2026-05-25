@@ -379,6 +379,11 @@ export default function ProfissionalNovoPage() {
       const user = await res.json();
       if (!active) return;
 
+      if (user.professional?.status === "ACTIVE") {
+        router.replace(ACCOUNT_ROUTES.dashboardAcompanhante);
+        return;
+      }
+
       const loadedDate = user.birthDate ? String(user.birthDate).slice(0, 10) : "";
       setForm((current) => ({
         ...current,
@@ -432,7 +437,7 @@ export default function ProfissionalNovoPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [router]);
 
   function set<K extends keyof typeof form>(field: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [field]: value }));
