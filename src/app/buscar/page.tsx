@@ -266,6 +266,9 @@ function BuscarContent() {
           rating?: number;
           totalReviews?: number;
           birthDate?: string | null;
+          hideAge?: boolean;
+          boostActive?: boolean;
+          boostUntil?: string | null;
           attendanceTypes?: string[];
           specialties?: Array<{ name: string }>;
           bio?: string;
@@ -280,7 +283,7 @@ function BuscarContent() {
           online: false,
           avaliacao: p.rating ?? 0,
           total: p.totalReviews ?? 0,
-          idade: calcAge(p.birthDate),
+          idade: p.hideAge ? null : calcAge(p.birthDate),
           local: p.attendanceTypes?.[0] ?? null,
           attendanceTypes: p.attendanceTypes ?? [],
           servicos: (p.specialties ?? []).map((s) => s.name),

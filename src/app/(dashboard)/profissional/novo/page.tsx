@@ -379,7 +379,7 @@ export default function ProfissionalNovoPage() {
       const user = await res.json();
       if (!active) return;
 
-      if (user.professional?.status === "ACTIVE") {
+      if (user.professional?.status === "ACTIVE" || user.professional?.status === "PAUSED") {
         router.replace(ACCOUNT_ROUTES.dashboardAcompanhante);
         return;
       }

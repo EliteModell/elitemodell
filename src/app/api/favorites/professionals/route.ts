@@ -13,6 +13,7 @@ const schema = z.object({
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
+  const now = new Date();
 
   const favorites = await prisma.favorite.findMany({
     where: { userId: session.user.id, professionalId: { not: null } },
@@ -28,6 +29,7 @@ export async function GET() {
           image: true,
           verified: true,
           status: true,
+          pauseUntil: true,
           rating: true,
           totalReviews: true,
           photos: { where: { cover: true }, take: 1, select: { url: true } },
@@ -38,7 +40,11 @@ export async function GET() {
 
   return NextResponse.json({
     favorites: favorites
-      .filter((favorite) => favorite.professional?.status === "ACTIVE")
+      .filter((favorite) =>
+        favorite.professional?.status === "ACTIVE" &&
+        favorite.professional.verified &&
+        (!favorite.professional.pauseUntil || favorite.professional.pauseUntil < now)
+      )
       .map((favorite) => ({
         id: favorite.id,
         createdAt: favorite.createdAt,
@@ -52,25 +58,41 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.id) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
 
   const data = schema.parse(await req.json());
+  const now = new Date();
   const professional = await prisma.professional.findFirst({
-    where: { id: data.professionalId, status: "ACTIVE" },
+    where: {
+      id: data.professionalId,
+      status: "ACTIVE",
+      verified: true,
+      OR: [{ pauseUntil: null }, { pauseUntil: { lt: now } }],
+    },
     select: { id: true },
   });
 
   if (!professional) return NextResponse.json({ error: "Perfil nao encontrado." }, { status: 404 });
 
-  const favorite = await prisma.favorite.upsert({
-    where: {
-      userId_professionalId: {
+  const favorite = await prisma.$transaction(async (tx) => {
+    const item = await tx.favorite.upsert({
+      where: {
+        userId_professionalId: {
+          userId: session.user.id,
+          professionalId: professional.id,
+        },
+      },
+      create: {
         userId: session.user.id,
         professionalId: professional.id,
       },
-    },
-    create: {
-      userId: session.user.id,
-      professionalId: professional.id,
-    },
-    update: {},
+      update: {},
+    });
+    await tx.professionalProfileEvent.create({
+      data: {
+        professionalId: professional.id,
+        eventType: "favorite",
+        metadata: { source: "favorites_api" },
+      },
+    });
+    return item;
   });
 
   return NextResponse.json({ favorite });

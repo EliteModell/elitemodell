@@ -14,6 +14,7 @@ enum ProfessionalStatus {
   DRAFT
   PENDING_REVIEW
   ACTIVE
+  PAUSED
   SUSPENDED
   REJECTED
 }
@@ -180,6 +181,7 @@ model User {
   professional       Professional?
   clientAppointments Appointment[]  @relation("ClientAppointments")
   proReviews         ProfessionalReview[] @relation("ProReviewAuthor")
+  proReviewDisputes  ProfessionalReviewDispute[] @relation("ProReviewDisputeAuthor")
   stories            Story[]
   reportsCreated     Report[]       @relation("ReportAuthor")
   auditLogsCreated   AuditLog[]     @relation("AuditAdmin")
@@ -588,6 +590,7 @@ model Professional {
   whatsapp     String?
   instagram    String?
   website      String?
+  hidePhone    Boolean @default(false)
 
   // Preços
   priceMin         Float?
@@ -602,6 +605,7 @@ model Professional {
   // Perfil físico
   escortCategory   String?
   birthDate        DateTime?
+  hideAge          Boolean  @default(false)
   height           Int?
   weight           Int?
   hairColor        String?
@@ -630,6 +634,9 @@ model Professional {
   // Fotos
   image            String?
   galleryUrls      String[]
+  presentationVideoUrl          String?
+  presentationVideoStatus       String   @default("NONE") // NONE | PENDING | APPROVED | REJECTED
+  presentationVideoRejectReason String?
 
   // Verificação de documentos (privado — nunca exposto ao cliente)
   docType          String?
@@ -649,6 +656,15 @@ model Professional {
   status            ProfessionalStatus @default(PENDING_REVIEW)
   verified          Boolean            @default(false)
   featured          Boolean            @default(false)
+  pauseStartedAt    DateTime?
+  pauseUntil        DateTime?
+  pauseReason       String?
+  boostActive       Boolean            @default(false)
+  boostStartedAt    DateTime?
+  boostUntil        DateTime?
+  boostSource       String?
+  profileViews      Int                @default(0)
+  contactClicks     Int                @default(0)
   rating            Float              @default(0)
   totalReviews      Int                @default(0)
   totalAppointments Int                @default(0)
@@ -661,12 +677,28 @@ model Professional {
   schedule     Schedule[]
   appointments Appointment[]
   reviews      ProfessionalReview[]
+  reviewDisputes ProfessionalReviewDispute[]
+  profileEvents ProfessionalProfileEvent[]
   favorites    Favorite[]
 
   @@index([status, featured, rating, totalReviews, createdAt])
+  @@index([status, boostActive, boostUntil])
   @@index([status, city])
   @@index([status, escortCategory])
   @@index([status, priceMin])
+}
+
+model ProfessionalProfileEvent {
+  id             String       @id @default(cuid())
+  professionalId String
+  eventType      String
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+
+  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@index([professionalId, eventType, createdAt])
+  @@index([createdAt])
 }
 
 model ProfessionalPhoto {
@@ -732,12 +764,34 @@ model ProfessionalReview {
   rating         Int
   comment        String       @db.Text
   response       String?      @db.Text
+  hidden         Boolean      @default(false)
+  moderationStatus String     @default("VISIBLE") // VISIBLE | DISPUTED | REMOVED
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
   professional   Professional @relation(fields: [professionalId], references: [id])
   appointment    Appointment  @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   author         User         @relation("ProReviewAuthor", fields: [authorId], references: [id])
+  dispute        ProfessionalReviewDispute?
+}
+
+model ProfessionalReviewDispute {
+  id             String             @id @default(cuid())
+  reviewId       String             @unique
+  professionalId String
+  authorId       String
+  status         String             @default("PENDING") // PENDING | ACCEPTED | REJECTED
+  reason         String             @db.Text
+  adminNote      String?            @db.Text
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  review         ProfessionalReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  professional   Professional       @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  author         User               @relation("ProReviewDisputeAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([professionalId, status, createdAt])
+  @@index([status, createdAt])
 }
 
 // ─── Moderação: Denúncias ────────────────────────────────────────────────────

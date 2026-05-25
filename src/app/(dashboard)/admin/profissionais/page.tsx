@@ -12,6 +12,7 @@ const statusLabel: Record<string, string> = {
   DRAFT: "Cadastro incompleto",
   PENDING_REVIEW: "Pendente aprovacao",
   ACTIVE: "Aprovada",
+  PAUSED: "Pausada",
   SUSPENDED: "Suspensa",
   REJECTED: "Reprovada",
 };
@@ -22,12 +23,49 @@ async function reviewProfessional(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const action = String(formData.get("action") ?? "");
   const reason = String(formData.get("reason") ?? "");
-  if (!id || !["approve", "reject", "correction", "suspend", "block"].includes(action)) return;
-  if (["reject", "correction", "suspend", "block"].includes(action) && reason.trim().length < 4) return;
+  const supportedActions = ["approve", "reject", "correction", "suspend", "block", "resume", "approveVideo", "rejectVideo", "disableBoost"];
+  if (!id || !supportedActions.includes(action)) return;
+  if (["reject", "correction", "suspend", "block", "rejectVideo"].includes(action) && reason.trim().length < 4) return;
+
+  if (action === "approveVideo" || action === "rejectVideo") {
+    await prisma.professional.update({
+      where: { id },
+      data: action === "approveVideo"
+        ? { presentationVideoStatus: "APPROVED", presentationVideoRejectReason: null }
+        : { presentationVideoStatus: "REJECTED", presentationVideoRejectReason: reason },
+    });
+    await logAudit({
+      adminId: session.user.id,
+      action: "SETTINGS_CHANGED",
+      targetType: "CONTENT",
+      targetId: id,
+      reason: reason || `presentation-video:${action}`,
+    });
+    revalidatePath("/admin/profissionais");
+    return;
+  }
+
+  if (action === "disableBoost") {
+    await prisma.professional.update({
+      where: { id },
+      data: { boostActive: false, boostStartedAt: null, boostUntil: null, boostSource: null },
+    });
+    await logAudit({
+      adminId: session.user.id,
+      action: "SETTINGS_CHANGED",
+      targetType: "PROFESSIONAL",
+      targetId: id,
+      reason: "boost:disabled-by-admin",
+    });
+    revalidatePath("/admin/profissionais");
+    return;
+  }
 
   const data =
     action === "approve"
       ? { status: "ACTIVE" as const, verified: true, docStatus: "APPROVED", verifStatus: "APPROVED", kycStatus: "APPROVED", rejectReason: null }
+      : action === "resume"
+        ? { status: "ACTIVE" as const, pauseStartedAt: null, pauseUntil: null, pauseReason: null }
       : action === "suspend"
         ? { status: "SUSPENDED" as const, verified: false, rejectReason: reason }
         : { status: "REJECTED" as const, verified: false, docStatus: "REJECTED", verifStatus: "REJECTED", kycStatus: "REJECTED", rejectReason: reason };
@@ -39,7 +77,7 @@ async function reviewProfessional(formData: FormData) {
 
   await logAudit({
     adminId: session.user.id,
-    action: action === "approve" ? "PROFESSIONAL_APPROVED" : "PROFESSIONAL_REJECTED",
+    action: action === "approve" ? "PROFESSIONAL_APPROVED" : action === "resume" ? "SETTINGS_CHANGED" : "PROFESSIONAL_REJECTED",
     targetType: "PROFESSIONAL",
     targetId: id,
     reason: reason || `professional:${action}`,
@@ -51,7 +89,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
   await requireAdmin("professionals:review");
   const params = await searchParams;
   const status = params?.status;
-  const where = status && status !== "ALL" ? { status: status as "DRAFT" | "PENDING_REVIEW" | "ACTIVE" | "SUSPENDED" | "REJECTED" } : {};
+  const where = status && status !== "ALL" ? { status: status as "DRAFT" | "PENDING_REVIEW" | "ACTIVE" | "PAUSED" | "SUSPENDED" | "REJECTED" } : {};
 
   const professionals = await prisma.professional.findMany({
     where,
@@ -65,6 +103,8 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
       state: true,
       escortCategory: true,
       whatsapp: true,
+      hidePhone: true,
+      hideAge: true,
       status: true,
       verified: true,
       docStatus: true,
@@ -76,6 +116,18 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
       kycSessionId: true,
       kycStatus: true,
       rejectReason: true,
+      pauseUntil: true,
+      pauseReason: true,
+      boostActive: true,
+      boostUntil: true,
+      boostSource: true,
+      presentationVideoUrl: true,
+      presentationVideoStatus: true,
+      presentationVideoRejectReason: true,
+      profileViews: true,
+      contactClicks: true,
+      rating: true,
+      totalReviews: true,
       bio: true,
       createdAt: true,
       user: { select: { name: true, email: true, phone: true, blocked: true } },
@@ -88,7 +140,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
     <div>
       <AdminHeader title="Acompanhantes e profissionais" subtitle="Analise cadastro, documentos, selfie/video, KYC, fotos publicas, descricao, servicos, cidade e historico de moderacao." />
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-        {["ALL", "DRAFT", "PENDING_REVIEW", "ACTIVE", "REJECTED", "SUSPENDED"].map((item) => (
+        {["ALL", "DRAFT", "PENDING_REVIEW", "ACTIVE", "PAUSED", "REJECTED", "SUSPENDED"].map((item) => (
           <Link key={item} href={item === "ALL" ? "/admin/profissionais" : `/admin/profissionais?status=${item}`} style={{ ...buttonStyle, textDecoration: "none", background: item === (status ?? "ALL") ? "rgba(212,168,67,.22)" : "rgba(255,255,255,.03)" }}>
             {item === "ALL" ? "Todos" : statusLabel[item] ?? item}
           </Link>
@@ -115,6 +167,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                 </td>
                 <td style={tdStyle}>
                   <StatusPill tone={pro.status === "ACTIVE" ? "success" : pro.status === "REJECTED" || pro.status === "SUSPENDED" ? "danger" : "warning"}>{statusLabel[pro.status] ?? pro.status}</StatusPill>
+                  {pro.pauseUntil ? <p style={{ color: "#f5d78c", margin: "8px 0 0" }}>Pausada ate {pro.pauseUntil.toLocaleDateString("pt-BR")}</p> : null}
                   {pro.rejectReason ? <p style={{ color: "#ef4444", margin: "8px 0 0" }}>{pro.rejectReason}</p> : null}
                 </td>
                 <td style={tdStyle}>
@@ -122,11 +175,16 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                   Inquiry: {pro.kycSessionId ?? "-"}<br />
                   Doc: {pro.docStatus} | Face: {pro.verifStatus}<br />
                   Codigo: {pro.verificationCode ?? "-"}<br />
-                  Verificacao: {pro.verificationUrl ? pro.verificationType ?? "arquivo" : "nao enviada"}
+                  Verificacao: {pro.verificationUrl ? pro.verificationType ?? "arquivo" : "nao enviada"}<br />
+                  Video perfil: {pro.presentationVideoUrl ? pro.presentationVideoStatus : "nao enviado"}
+                  {pro.presentationVideoRejectReason ? <p style={{ color: "#ef4444", margin: "8px 0 0" }}>{pro.presentationVideoRejectReason}</p> : null}
                 </td>
                 <td style={tdStyle}>
                   {pro.photos.length} midia(s), {pro.specialties.length} servico(s)<br />
                   Bio: {pro.bio.length} caracteres<br />
+                  Privacidade: {pro.hidePhone ? "telefone oculto" : "telefone publico"} / {pro.hideAge ? "idade oculta" : "idade publica"}<br />
+                  Metricas: {pro.profileViews} views, {pro.contactClicks} contatos, nota {pro.rating.toFixed(1)} ({pro.totalReviews})<br />
+                  Boost: {pro.boostActive ? `ativo ate ${pro.boostUntil ? pro.boostUntil.toLocaleDateString("pt-BR") : "data nao informada"}` : "inativo"}<br />
                   Enviado em {pro.createdAt.toLocaleDateString("pt-BR")}
                 </td>
                 <td style={tdStyle}>
@@ -135,10 +193,18 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                     <textarea name="reason" placeholder="Motivo obrigatorio para reprovar/corrigir/suspender" style={{ background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 8, minHeight: 58 }} />
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       <button name="action" value="approve" style={buttonStyle}>Aprovar</button>
+                      {pro.status === "PAUSED" ? <button name="action" value="resume" style={buttonStyle}>Reativar</button> : null}
                       <button name="action" value="reject" style={{ ...buttonStyle, color: "#ef4444" }}>Reprovar</button>
                       <button name="action" value="correction" style={{ ...buttonStyle, color: "#f97316" }}>Solicitar correcao</button>
                       <button name="action" value="suspend" style={{ ...buttonStyle, color: "#f97316" }}>Suspender</button>
                       <button name="action" value="block" style={{ ...buttonStyle, color: "#ef4444" }}>Bloquear</button>
+                      {pro.presentationVideoUrl ? (
+                        <>
+                          <button name="action" value="approveVideo" style={buttonStyle}>Aprovar video</button>
+                          <button name="action" value="rejectVideo" style={{ ...buttonStyle, color: "#ef4444" }}>Reprovar video</button>
+                        </>
+                      ) : null}
+                      {pro.boostActive ? <button name="action" value="disableBoost" style={{ ...buttonStyle, color: "#f97316" }}>Desativar boost</button> : null}
                     </div>
                   </form>
                 </td>

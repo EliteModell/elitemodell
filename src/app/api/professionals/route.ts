@@ -6,6 +6,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { MANUAL_PENDING_STATUS, PERSONA_PENDING_STATUS } from "@/lib/persona";
+import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
 
 const createSchema = z.object({
   displayName:     z.string().min(2),
@@ -128,9 +129,13 @@ export async function GET(req: NextRequest) {
   const page      = Number.isFinite(pageParam) ? Math.max(1, Math.floor(pageParam)) : 1;
   const limitParam = Number(searchParams.get("limit") ?? 12);
   const limit     = Number.isFinite(limitParam) ? Math.min(24, Math.max(1, Math.floor(limitParam))) : 12;
+  const now       = new Date();
+  await refreshExpiredProfessionalTimers(now);
 
   const where: Prisma.ProfessionalWhereInput = { status: "ACTIVE", verified: true };
-  const andFilters: Prisma.ProfessionalWhereInput[] = [];
+  const andFilters: Prisma.ProfessionalWhereInput[] = [
+    { OR: [{ pauseUntil: null }, { pauseUntil: { lt: now } }] },
+  ];
 
   if (search) {
     where.OR = [
@@ -158,12 +163,12 @@ export async function GET(req: NextRequest) {
   if (specialty) where.specialties = { some: { name: { contains: specialty, mode: "insensitive" } } };
   if (andFilters.length > 0) where.AND = andFilters;
 
-  const orderBy: Prisma.ProfessionalOrderByWithRelationInput =
-    sortBy === "price_asc"  ? { priceMin: "asc" } :
-    sortBy === "price_desc" ? { priceMin: "desc" } :
-    sortBy === "reviews"    ? { totalReviews: "desc" } :
-    sortBy === "recent"     ? { createdAt: "desc" } :
-    { rating: "desc" };
+  const orderBy: Prisma.ProfessionalOrderByWithRelationInput[] =
+    sortBy === "price_asc"  ? [{ boostActive: "desc" }, { priceMin: "asc" }] :
+    sortBy === "price_desc" ? [{ boostActive: "desc" }, { priceMin: "desc" }] :
+    sortBy === "reviews"    ? [{ boostActive: "desc" }, { totalReviews: "desc" }] :
+    sortBy === "recent"     ? [{ boostActive: "desc" }, { createdAt: "desc" }] :
+    [{ boostActive: "desc" }, { featured: "desc" }, { rating: "desc" }];
 
   const [professionals, total] = await Promise.all([
     prisma.professional.findMany({
@@ -178,10 +183,13 @@ export async function GET(req: NextRequest) {
         escortCategory: true, birthDate: true,
         height: true, weight: true, hairColor: true, eyeColor: true, ethnicity: true,
         hasTattoos: true, hasSilicone: true,
+        hideAge: true,
         priceMin: true, pricePerHour: true, price30min: true,
         attendanceTypes: true, servesGenders: true,
         rating: true, totalReviews: true, totalAppointments: true,
         verified: true, featured: true,
+        boostActive: true, boostUntil: true,
+        profileViews: true, contactClicks: true,
         photos:     { where: { cover: true }, take: 1 },
         specialties: true,
       },

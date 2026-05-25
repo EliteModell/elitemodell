@@ -16,7 +16,7 @@ const supabase = createClient(
 const ALLOWED_IMAGE = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const ALLOWED_DOC   = [...ALLOWED_IMAGE, "application/pdf"];
 const ALLOWED_VIDEO = [...ALLOWED_IMAGE, "video/mp4", "video/webm", "video/quicktime"];
-const ALLOWED_ROOT_FOLDERS = new Set(["verificacao", "documentos", "properties", "profiles", "stories"]);
+const ALLOWED_ROOT_FOLDERS = new Set(["verificacao", "documentos", "properties", "profiles", "profile-videos", "stories"]);
 
 function normalizeFolder(folder: string) {
   const segments = folder
@@ -64,6 +64,9 @@ function resolveBucket(folder: string): {
   if (folder.startsWith("profiles")) {
     return { bucket: "profiles",   isPrivate: false, maxBytes: 10 * 1024 * 1024, allowedTypes: ALLOWED_IMAGE };
   }
+  if (folder.startsWith("profile-videos")) {
+    return { bucket: "profiles",   isPrivate: false, maxBytes: 50 * 1024 * 1024, allowedTypes: ALLOWED_VIDEO };
+  }
   // stories (legado + novos)
   return   { bucket: "stories",    isPrivate: false, maxBytes: 50 * 1024 * 1024, allowedTypes: ALLOWED_VIDEO };
 }
@@ -93,6 +96,17 @@ export async function POST(req: NextRequest) {
     });
     if (!professional || professional.status !== "ACTIVE" || !professional.verified) {
       return NextResponse.json({ error: "Upload de stories exclusivo para profissionais aprovadas." }, { status: 403 });
+    }
+  }
+
+  if (folder.startsWith("profile-videos")) {
+    const requestedProfessionalId = folder.split("/").filter(Boolean)[1];
+    const professional = await prisma.professional.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true },
+    });
+    if (!professional || professional.id !== requestedProfessionalId) {
+      return NextResponse.json({ error: "Upload de video permitido apenas para o proprio perfil profissional." }, { status: 403 });
     }
   }
 

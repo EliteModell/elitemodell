@@ -2,12 +2,15 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const session = await getServerSession(authOptions);
+  await refreshExpiredProfessionalTimers();
   const professional = await prisma.professional.findUnique({
     where: { slug },
     select: {
@@ -19,9 +22,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       city: true,
       state: true,
       bairro: true,
+      phone: true,
       whatsapp: true,
       instagram: true,
       website: true,
+      hidePhone: true,
       priceMin: true,
       priceMax: true,
       pricePerHour: true,
@@ -32,6 +37,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       paymentMethods: true,
       escortCategory: true,
       birthDate: true,
+      hideAge: true,
       height: true,
       weight: true,
       hairColor: true,
@@ -51,9 +57,18 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       fetishes: true,
       image: true,
       galleryUrls: true,
+      presentationVideoUrl: true,
+      presentationVideoStatus: true,
+      presentationVideoRejectReason: true,
       status: true,
       verified: true,
       featured: true,
+      pauseUntil: true,
+      pauseReason: true,
+      boostActive: true,
+      boostUntil: true,
+      profileViews: true,
+      contactClicks: true,
       rating: true,
       totalReviews: true,
       totalAppointments: true,
@@ -63,6 +78,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       specialties: true,
       schedule: { orderBy: { dayOfWeek: "asc" } },
       reviews: {
+        where: { hidden: false },
         include: { author: { select: { name: true, image: true } } },
         orderBy: { createdAt: "desc" },
         take: 20,
@@ -73,15 +89,23 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
   if (!professional) return NextResponse.json({ error: "Profissional não encontrado." }, { status: 404 });
   const canViewDraft =
     session?.user?.role === "ADMIN" || professional.userId === session?.user?.id;
-  if (professional.status !== "ACTIVE" && !canViewDraft) {
+  const isPausedByDate = Boolean(professional.pauseUntil && professional.pauseUntil.getTime() > Date.now());
+  if ((professional.status !== "ACTIVE" || isPausedByDate) && !canViewDraft) {
     return NextResponse.json({ error: "Profissional não encontrado." }, { status: 404 });
   }
 
   const publicProfessional: Omit<typeof professional, "userId"> & { userId?: string } = {
     ...professional,
+    phone: professional.hidePhone && !canViewDraft ? null : professional.phone,
+    whatsapp: professional.hidePhone && !canViewDraft ? null : professional.whatsapp,
+    birthDate: professional.hideAge && !canViewDraft ? null : professional.birthDate,
+    presentationVideoUrl:
+      professional.presentationVideoStatus === "APPROVED" || canViewDraft
+        ? professional.presentationVideoUrl
+        : null,
   };
   delete publicProfessional.userId;
-  const cacheControl = professional.status === "ACTIVE"
+  const cacheControl = professional.status === "ACTIVE" && !isPausedByDate
     ? session
       ? "private, max-age=30"
       : "public, s-maxage=60, stale-while-revalidate=180"
@@ -106,6 +130,9 @@ const updateSchema = z.object({
   image: z.string().url().nullable().optional(),
   galleryUrls: z.array(z.string().url()).max(12).optional(),
   specialties: z.array(z.string()).optional(),
+  hidePhone: z.boolean().optional(),
+  hideAge: z.boolean().optional(),
+  presentationVideoUrl: z.string().url().nullable().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
@@ -122,12 +149,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
   try {
     const body = await req.json();
     const data = updateSchema.parse(body);
-    const { specialties, ...profileData } = data;
+    const { specialties, presentationVideoUrl, ...profileData } = data;
+    const updateData: Prisma.ProfessionalUpdateInput = { ...profileData };
+
+    if (presentationVideoUrl !== undefined) {
+      updateData.presentationVideoUrl = presentationVideoUrl;
+      updateData.presentationVideoStatus = presentationVideoUrl ? "PENDING" : "NONE";
+      updateData.presentationVideoRejectReason = null;
+    }
 
     const updated = await prisma.professional.update({
       where: { slug },
       data: {
-        ...profileData,
+        ...updateData,
         ...(specialties !== undefined && {
           specialties: {
             deleteMany: {},

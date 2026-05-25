@@ -37,7 +37,7 @@ export async function GET() {
   const stories = await prisma.story.findMany({
     where: {
       expiresAt: { gt: now },
-      user: { professional: { status: "ACTIVE", verified: true } },
+      user: { professional: { status: "ACTIVE", verified: true, OR: [{ pauseUntil: null }, { pauseUntil: { lt: now } }] } },
     },
     include: {
       user: {

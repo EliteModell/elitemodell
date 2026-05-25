@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   }
 
   const reviews = await prisma.professionalReview.findMany({
-    where: { professionalId },
+    where: { professionalId, hidden: false },
     include: {
       author: { select: { name: true, image: true } },
     },
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     });
 
     const stats = await prisma.professionalReview.aggregate({
-      where: { professionalId: data.professionalId },
+      where: { professionalId: data.professionalId, hidden: false },
       _avg: { rating: true },
       _count: { rating: true },
     });

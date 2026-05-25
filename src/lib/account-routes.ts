@@ -133,7 +133,7 @@ export function postLoginPathFromUser(user: PostLoginUser | null | undefined, in
   if (intent === "cliente") return ACCOUNT_ROUTES.dashboardCliente;
 
   if (intent === "profissional") {
-    if (professionalStatus === "ACTIVE") return ACCOUNT_ROUTES.dashboardAcompanhante;
+    if (professionalStatus === "ACTIVE" || professionalStatus === "PAUSED") return ACCOUNT_ROUTES.dashboardAcompanhante;
     if (!professionalStatus) return ACCOUNT_ROUTES.onboardingAcompanhante;
     return ACCOUNT_ROUTES.verificacaoAcompanhante;
   }
@@ -144,7 +144,7 @@ export function postLoginPathFromUser(user: PostLoginUser | null | undefined, in
 
   if (user.role === "ADMIN") return ACCOUNT_ROUTES.admin;
 
-  if (professionalStatus === "ACTIVE") return ACCOUNT_ROUTES.dashboardAcompanhante;
+  if (professionalStatus === "ACTIVE" || professionalStatus === "PAUSED") return ACCOUNT_ROUTES.dashboardAcompanhante;
   if (!professionalStatus && (isProfessionalIntent || isModelAccount)) return ACCOUNT_ROUTES.onboardingAcompanhante;
   if (professionalStatus || isProfessionalIntent || isModelAccount) return ACCOUNT_ROUTES.verificacaoAcompanhante;
 

@@ -73,7 +73,8 @@ export async function POST(req: NextRequest) {
     const professional = await prisma.professional.findUnique({
       where: { slug: data.professionalSlug },
     });
-    if (!professional || professional.status !== "ACTIVE") {
+    const isPausedByDate = Boolean(professional?.pauseUntil && professional.pauseUntil.getTime() > Date.now());
+    if (!professional || professional.status !== "ACTIVE" || !professional.verified || isPausedByDate) {
       return NextResponse.json({ error: "Profissional não disponível." }, { status: 404 });
     }
 

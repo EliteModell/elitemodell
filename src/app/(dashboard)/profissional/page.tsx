@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireCompanionPanel } from "@/lib/account-access";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
 
 export const dynamic = "force-dynamic";
 
@@ -17,12 +18,14 @@ const statusLabel: Record<string, string> = {
   DRAFT: "Rascunho",
   PENDING_REVIEW: "Em análise",
   ACTIVE: "Ativo",
+  PAUSED: "Pausado",
   SUSPENDED: "Suspenso",
   REJECTED: "Rejeitado",
 };
 
 export default async function ProfissionalDashPage() {
   const access = await requireCompanionPanel();
+  await refreshExpiredProfessionalTimers();
 
   const professional = await prisma.professional.findUnique({
     where: { userId: access.user.id },
@@ -86,6 +89,8 @@ export default async function ProfissionalDashPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 28 }}>
         {[
           { label: "Status", value: statusLabel[professional.status] ?? professional.status },
+          { label: "Visualizacoes", value: professional.profileViews.toLocaleString("pt-BR") },
+          { label: "Cliques contato", value: professional.contactClicks.toLocaleString("pt-BR") },
           { label: "Fotos", value: String(professional.photos.length || professional.galleryUrls.length) },
           { label: "Agendamentos", value: professional.totalAppointments.toLocaleString("pt-BR") },
           { label: "Avaliações", value: professional.totalReviews.toLocaleString("pt-BR") },
@@ -124,6 +129,9 @@ export default async function ProfissionalDashPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
         {[
           { href: "/profissional/perfil", label: "Editar perfil", desc: "Atualizar bio, contato e valores" },
+          { href: "/profissional/estatisticas", label: "Estatisticas", desc: "Visualizacoes, contatos e favoritos" },
+          { href: "/profissional/avaliacoes", label: "Avaliacoes", desc: "Ver e contestar comentarios" },
+          { href: "/profissional/configuracoes", label: "Privacidade e boost", desc: "Pausar perfil, ocultar idade e telefone" },
           { href: "/profissional/fotos", label: "Fotos", desc: "Gerenciar galeria" },
           { href: "/profissional/agenda", label: "Agenda", desc: "Disponibilidade semanal" },
           { href: "/profissional/planos", label: "Planos", desc: "Assinatura e destaque" },

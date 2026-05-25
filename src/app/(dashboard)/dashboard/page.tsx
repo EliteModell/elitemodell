@@ -35,7 +35,7 @@ export default async function DashboardPage() {
   }
 
   if (userType) {
-    const isApprovedProfessional = userType.professional?.status === "ACTIVE";
+    const isApprovedProfessional = userType.professional?.status === "ACTIVE" || userType.professional?.status === "PAUSED";
     const hostStatus = getHostRegistrationStatus(userType);
     const isModel = userType.accountType === "model";
 
