@@ -18,6 +18,7 @@ const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 
 const PROPERTY_DRAFT_KEY = "elitemodell_location_onboarding_v2";
 const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
 const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
+const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -74,6 +75,16 @@ async function getPostLoginPath(returnUrl: string | null, roleIntent: ReturnType
   if (roleIntent) return postLoginPathFromUser(user, roleIntent);
   if (!user?.lgpdConsent || !user?.termsConsent || !user?.birthDate) return "/completar-cadastro";
   return postLoginPathFromUser(user, roleIntent);
+}
+
+function rememberRoleIntent(roleIntent: ReturnType<typeof normalizeEntryRole>) {
+  if (!roleIntent) return;
+  sessionStorage.setItem(ROLE_INTENT_KEY, roleIntent);
+  localStorage.setItem(ROLE_INTENT_KEY, roleIntent);
+  const domain = window.location.hostname.endsWith("elitemodell.com.br")
+    ? "; Domain=.elitemodell.com.br"
+    : "";
+  document.cookie = `${ROLE_INTENT_COOKIE}=${encodeURIComponent(roleIntent)}; Max-Age=900; Path=/${domain}; SameSite=Lax; Secure`;
 }
 
 function inferRoleIntentFromReturnUrl(returnUrl: string | null) {
@@ -136,7 +147,7 @@ function LoginContent() {
         returnUrl ? `returnUrl=${encodeURIComponent(returnUrl)}` : "",
         roleIntent ? `role=${roleIntent}` : "",
       ].filter(Boolean).join("&");
-      if (roleIntent) sessionStorage.setItem(ROLE_INTENT_KEY, roleIntent);
+      rememberRoleIntent(roleIntent);
       const { error } = await supabaseAuth.auth.signInWithOAuth({
         provider: "google",
         options: {

@@ -13,6 +13,7 @@ type PendingRegistration = {
 const PROPERTY_DRAFT_KEY = "elitemodell_location_onboarding_v2";
 const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
 const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
+const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
 const CALLBACK_TIMEOUT_MS = 15000;
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
@@ -36,7 +37,7 @@ const PROFESSIONAL_CATEGORIES = ["MULHER", "HOMEM", "TRANS"];
 
 async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRole>) {
   const res = await fetch("/api/users/me", { cache: "no-store" });
-  if (!res.ok) return ACCOUNT_ROUTES.dashboardCliente;
+  if (!res.ok) return fallbackPathForRoleIntent(roleIntent);
 
   const user = await res.json();
 
@@ -65,6 +66,29 @@ async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRol
   }
 
   return postLoginPathFromUser(user, roleIntent);
+}
+
+function fallbackPathForRoleIntent(roleIntent?: ReturnType<typeof normalizeEntryRole>) {
+  if (roleIntent === "profissional") return ACCOUNT_ROUTES.onboardingAcompanhante;
+  if (roleIntent === "anfitriao") return ACCOUNT_ROUTES.onboardingAnfitriao;
+  return ACCOUNT_ROUTES.dashboardCliente;
+}
+
+function readCookie(name: string) {
+  if (typeof document === "undefined") return null;
+  const cookie = document.cookie
+    .split("; ")
+    .find((item) => item.startsWith(`${name}=`));
+  return cookie ? decodeURIComponent(cookie.split("=").slice(1).join("=")) : null;
+}
+
+function clearRoleIntentStorage() {
+  sessionStorage.removeItem(ROLE_INTENT_KEY);
+  localStorage.removeItem(ROLE_INTENT_KEY);
+  document.cookie = `${ROLE_INTENT_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax; Secure`;
+  if (window.location.hostname.endsWith("elitemodell.com.br")) {
+    document.cookie = `${ROLE_INTENT_COOKIE}=; Max-Age=0; Path=/; Domain=.elitemodell.com.br; SameSite=Lax; Secure`;
+  }
 }
 
 function resolveWithTimeout<T>(promise: Promise<T>, fallback: T, ms = CALLBACK_TIMEOUT_MS) {
@@ -353,7 +377,9 @@ function AuthCallbackContent() {
     let active = true;
     const returnUrl = safeInternalPath(searchParams.get("returnUrl") ?? searchParams.get("redirectTo"));
     const roleIntent = normalizeEntryRole(searchParams.get("role"))
-      ?? normalizeEntryRole(sessionStorage.getItem(ROLE_INTENT_KEY));
+      ?? normalizeEntryRole(sessionStorage.getItem(ROLE_INTENT_KEY))
+      ?? normalizeEntryRole(localStorage.getItem(ROLE_INTENT_KEY))
+      ?? normalizeEntryRole(readCookie(ROLE_INTENT_COOKIE));
 
     async function finishAuth() {
       const code = searchParams.get("code");
@@ -419,12 +445,12 @@ function AuthCallbackContent() {
       if (res?.error) {
         throw new Error(`NextAuth: ${res.error}`);
       }
-      sessionStorage.removeItem(ROLE_INTENT_KEY);
+      clearRoleIntentStorage();
 
       const targetPath = pendingRegistration
         ? getRegistrationPath(pendingRegistration)
         : roleIntent
-          ? await resolveWithTimeout(getPostLoginPath(roleIntent), ACCOUNT_ROUTES.dashboardCliente)
+          ? await resolveWithTimeout(getPostLoginPath(roleIntent), fallbackPathForRoleIntent(roleIntent))
           : returnUrl ?? await resolveWithTimeout(getPostLoginPath(roleIntent), ACCOUNT_ROUTES.dashboardCliente);
 
       if (!active) return;
