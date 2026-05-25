@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   publisher: "Elite Modell",
   category: "premium marketplace",
   alternates: {
-    canonical: "/",
+    canonical: siteUrl,
   },
   icons: {
     icon: [

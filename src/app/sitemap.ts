@@ -1,11 +1,13 @@
 import type { MetadataRoute } from "next";
+import { prisma } from "@/lib/prisma";
 
-const siteUrl = "https://elitemodell.com.br";
+const siteUrl = "https://www.elitemodell.com.br";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
-  return [
+  // Páginas estáticas públicas
+  const staticPages: MetadataRoute.Sitemap = [
     {
       url: siteUrl,
       lastModified: now,
@@ -50,4 +52,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.3,
     },
   ];
+
+  // Perfis públicos de profissionais aprovadas
+  let professionalPages: MetadataRoute.Sitemap = [];
+  try {
+    const professionals = await prisma.professional.findMany({
+      where: { status: "ACTIVE", verified: true },
+      select: { slug: true, updatedAt: true, image: true },
+      orderBy: { updatedAt: "desc" },
+      take: 5000,
+    });
+
+    professionalPages = professionals.map((pro) => ({
+      url: `${siteUrl}/profissionais/${pro.slug}`,
+      lastModified: pro.updatedAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+      ...(pro.image ? { images: [pro.image] } : {}),
+    }));
+  } catch {
+    // Falha silenciosa — não quebra o build se o banco estiver indisponível
+  }
+
+  return [...staticPages, ...professionalPages];
 }

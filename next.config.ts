@@ -4,6 +4,16 @@ import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["mercadopago"],
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "elitemodell.com.br" }],
+        destination: "https://www.elitemodell.com.br/:path*",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

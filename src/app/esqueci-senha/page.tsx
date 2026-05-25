@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+
+export const metadata: Metadata = {
+  title: "Recuperar senha | Elite Modell",
+  robots: { index: false, follow: false },
+};
 
 export default function EsqueciSenhaPage() {
   return (

@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 import { redirect } from "next/navigation";
 import ClientAreaShell from "@/components/client-area/ClientAreaShell";
 import NotificationsEmptyState from "@/components/client-area/NotificationsEmptyState";
