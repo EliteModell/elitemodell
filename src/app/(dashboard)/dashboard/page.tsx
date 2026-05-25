@@ -39,7 +39,7 @@ export default async function DashboardPage() {
     const hostStatus = getHostRegistrationStatus(userType);
     const isModel = userType.accountType === "model";
 
-    if (isApprovedProfessional && isModel) {
+    if (isApprovedProfessional || isModel) {
       redirect(ACCOUNT_ROUTES.dashboardAcompanhante);
     }
     if (hostStatus !== "NO_REQUEST") {

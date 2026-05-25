@@ -71,6 +71,7 @@ export async function requireCompanionPanel() {
   const access = await requireAuthenticatedAccount();
   if (access.isAdmin) return access;
   if (!access.companionApproved) {
+    if (!access.user.professional) redirect(ACCOUNT_ROUTES.onboardingAcompanhante);
     if (access.hasCompanionRequest) redirect(ACCOUNT_ROUTES.verificacaoAcompanhante);
     redirect(ACCOUNT_ROUTES.cadastroAcompanhante);
   }

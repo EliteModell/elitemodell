@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { supabaseAuth } from "@/lib/supabase-client";
 import { ACCOUNT_ROUTES, hostPathForStatus, normalizeEntryRole, postLoginPathFromUser } from "@/lib/account-routes";
 
@@ -36,14 +36,12 @@ function safeInternalPath(value: string | null) {
 const PROFESSIONAL_CATEGORIES = ["MULHER", "HOMEM", "TRANS"];
 
 async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRole>) {
+  if (roleIntent === "profissional") return ACCOUNT_ROUTES.dashboardAcompanhante;
+
   const res = await fetch("/api/users/me", { cache: "no-store" });
   if (!res.ok) return fallbackPathForRoleIntent(roleIntent);
 
   const user = await res.json();
-
-  if (roleIntent === "profissional") {
-    return postLoginPathFromUser(user, roleIntent);
-  }
 
   if (roleIntent === "anfitriao") {
     if (hasPropertyDraft()) return PROPERTY_DRAFT_FINAL_PATH;
@@ -367,7 +365,6 @@ function waitForSession(timeoutMs = 8000): Promise<string> {
 }
 
 function AuthCallbackContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [message, setMessage] = useState("Verificando suas credenciais...");
   const [success, setSuccess] = useState(false);
@@ -457,8 +454,7 @@ function AuthCallbackContent() {
       setSuccess(true);
       setMessage("Acesso confirmado!");
       window.setTimeout(() => {
-        router.replace(targetPath);
-        window.setTimeout(() => router.refresh(), 120);
+        window.location.replace(targetPath);
       }, 600);
     }
 
@@ -476,7 +472,7 @@ function AuthCallbackContent() {
     return () => {
       active = false;
     };
-  }, [router, searchParams]);
+  }, [searchParams]);
 
   return <CallbackCard message={message} success={success} error={errorDetail} />;
 }

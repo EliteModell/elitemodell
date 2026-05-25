@@ -67,6 +67,7 @@ function safeInternalPath(value: string | null) {
 async function getPostLoginPath(returnUrl: string | null, roleIntent: ReturnType<typeof normalizeEntryRole>) {
   const safeReturnUrl = safeInternalPath(returnUrl);
   if (safeReturnUrl && !roleIntent) return safeReturnUrl;
+  if (roleIntent === "profissional") return ACCOUNT_ROUTES.dashboardAcompanhante;
   if (roleIntent === "anfitriao" && localStorage.getItem(PROPERTY_DRAFT_KEY)) return PROPERTY_DRAFT_FINAL_PATH;
 
   const res = await fetch("/api/users/me");
@@ -149,8 +150,14 @@ function LoginContent() {
   async function handleGoogle() {
     setLoading(true);
     try {
+      const effectiveReturnUrl = returnUrl
+        ?? (roleIntent === "profissional"
+          ? ACCOUNT_ROUTES.dashboardAcompanhante
+          : roleIntent === "anfitriao"
+            ? ACCOUNT_ROUTES.dashboardAnfitriao
+            : null);
       const callbackParams = [
-        returnUrl ? `returnUrl=${encodeURIComponent(returnUrl)}` : "",
+        effectiveReturnUrl ? `returnUrl=${encodeURIComponent(effectiveReturnUrl)}` : "",
         roleIntent ? `role=${roleIntent}` : "",
       ].filter(Boolean).join("&");
       rememberRoleIntent(roleIntent);
