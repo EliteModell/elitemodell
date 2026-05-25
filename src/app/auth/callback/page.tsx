@@ -40,8 +40,6 @@ async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRol
 
   const user = await res.json();
 
-  if (user.role === "ADMIN") return ACCOUNT_ROUTES.admin;
-
   if (roleIntent === "profissional") {
     return postLoginPathFromUser(user, roleIntent);
   }
@@ -50,6 +48,8 @@ async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRol
     if (hasPropertyDraft()) return PROPERTY_DRAFT_FINAL_PATH;
     return hostPathForStatus(user.hostStatus ?? "NO_REQUEST");
   }
+
+  if (user.role === "ADMIN") return ACCOUNT_ROUTES.admin;
 
   // Usuário sem consentimento ou sem data de nascimento → completar cadastro obrigatório
   if (!user.lgpdConsent || !user.termsConsent || !user.birthDate) {

@@ -71,7 +71,7 @@ async function getPostLoginPath(returnUrl: string | null, roleIntent: ReturnType
   const res = await fetch("/api/users/me");
   if (!res.ok) return ACCOUNT_ROUTES.dashboardCliente;
   const user = await res.json();
-  if (roleIntent && user?.role !== "ADMIN") return postLoginPathFromUser(user, roleIntent);
+  if (roleIntent) return postLoginPathFromUser(user, roleIntent);
   if (!user?.lgpdConsent || !user?.termsConsent || !user?.birthDate) return "/completar-cadastro";
   return postLoginPathFromUser(user, roleIntent);
 }

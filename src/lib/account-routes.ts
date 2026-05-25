@@ -124,12 +124,10 @@ export function normalizeEntryRole(value: string | null): EntryAccountRole | nul
 export function postLoginPathFromUser(user: PostLoginUser | null | undefined, intent?: EntryAccountRole | null) {
   if (!user) return ACCOUNT_ROUTES.dashboardCliente;
   if (user.redirectTo && !intent) return user.redirectTo;
-  if (user.role === "ADMIN") return ACCOUNT_ROUTES.admin;
 
   const professionalStatus = user.professional?.status;
   const isModelAccount = user.accountType === "model";
   const isProfessionalIntent = isProfessionalCategory(user.category);
-  const properties = user.properties ?? [];
   const hostStatus = getHostRegistrationStatus(user);
 
   if (intent === "cliente") return ACCOUNT_ROUTES.dashboardCliente;
@@ -143,6 +141,8 @@ export function postLoginPathFromUser(user: PostLoginUser | null | undefined, in
   if (intent === "anfitriao") {
     return hostPathForStatus(hostStatus);
   }
+
+  if (user.role === "ADMIN") return ACCOUNT_ROUTES.admin;
 
   if (professionalStatus === "ACTIVE") return ACCOUNT_ROUTES.dashboardAcompanhante;
   if (!professionalStatus && (isProfessionalIntent || isModelAccount)) return ACCOUNT_ROUTES.onboardingAcompanhante;
