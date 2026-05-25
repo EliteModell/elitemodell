@@ -70,11 +70,17 @@ async function getPostLoginPath(returnUrl: string | null, roleIntent: ReturnType
   if (roleIntent === "anfitriao" && localStorage.getItem(PROPERTY_DRAFT_KEY)) return PROPERTY_DRAFT_FINAL_PATH;
 
   const res = await fetch("/api/users/me");
-  if (!res.ok) return ACCOUNT_ROUTES.dashboardCliente;
+  if (!res.ok) return fallbackPathForRoleIntent(roleIntent);
   const user = await res.json();
   if (roleIntent) return postLoginPathFromUser(user, roleIntent);
   if (!user?.lgpdConsent || !user?.termsConsent || !user?.birthDate) return "/completar-cadastro";
   return postLoginPathFromUser(user, roleIntent);
+}
+
+function fallbackPathForRoleIntent(roleIntent: ReturnType<typeof normalizeEntryRole>) {
+  if (roleIntent === "profissional") return ACCOUNT_ROUTES.onboardingAcompanhante;
+  if (roleIntent === "anfitriao") return ACCOUNT_ROUTES.onboardingAnfitriao;
+  return ACCOUNT_ROUTES.dashboardCliente;
 }
 
 function rememberRoleIntent(roleIntent: ReturnType<typeof normalizeEntryRole>) {
