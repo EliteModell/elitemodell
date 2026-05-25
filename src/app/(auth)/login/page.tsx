@@ -101,11 +101,6 @@ function LoginContent() {
   const [form, setForm] = useState({ email: "", password: "" });
 
   function handleBack() {
-    const safeReturnUrl = safeInternalPath(returnUrl);
-    if (safeReturnUrl) {
-      router.push(safeReturnUrl);
-      return;
-    }
     router.back();
   }
 
@@ -208,7 +203,7 @@ function LoginContent() {
       <section className="login-hero" aria-labelledby="login-title">
         <div className="login-mark"><Sparkles size={24} /></div>
         <p className="eyebrow">Acesse a Elite Modell</p>
-        <h1 id="login-title">Entre como {roleIntent === "profissional" ? "profissional" : roleIntent === "anfitriao" ? "anfitrião" : "cliente"}</h1>
+        <h1 id="login-title">Entre como {roleIntent === "profissional" ? "profissional" : roleIntent === "anfitriao" ? "anfitrião" : roleIntent === "cliente" ? "cliente" : "sua conta"}</h1>
         <p>Descubra novidades, gerencie sua conta e continue no painel correto em um ambiente premium.</p>
       </section>
 
