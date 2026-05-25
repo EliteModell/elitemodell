@@ -3,7 +3,7 @@ import "./globals.css";
 import Providers from "@/components/Providers";
 import AgeGateLoader from "@/components/AgeGateLoader";
 
-const siteUrl = "https://elitemodell.com.br";
+const siteUrl = "https://www.elitemodell.com.br";
 const brandDescription =
   "Elite Modell é uma plataforma premium para conectar pessoas, profissionais, locais reservados e oportunidades com discrição, segurança e elegância.";
 
@@ -37,12 +37,13 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/brand/elite-modell-icon.svg", type: "image/svg+xml" },
-      { url: "/brand/elite-modell-icon-192.png", type: "image/png", sizes: "192x192" },
-      { url: "/brand/elite-modell-icon-512.png", type: "image/png", sizes: "512x512" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
     ],
-    apple: [{ url: "/brand/elite-modell-apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
-    shortcut: ["/brand/elite-modell-icon-192.png"],
+    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
+    shortcut: ["/favicon.ico"],
   },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -89,7 +90,7 @@ export const metadata: Metadata = {
   other: {
     "theme-color": "#050505",
     "msapplication-TileColor": "#050505",
-    "msapplication-TileImage": "/android-chrome-192x192.png",
+    "msapplication-TileImage": "/icon.png",
   },
 };
 
@@ -108,7 +109,7 @@ export default function RootLayout({
     "@type": "Organization",
     name: "Elite Modell",
     url: siteUrl,
-    logo: `${siteUrl}/android-chrome-512x512.png`,
+    logo: `${siteUrl}/icon.png`,
     image: `${siteUrl}/og-image.png`,
     description: brandDescription,
     brand: {
