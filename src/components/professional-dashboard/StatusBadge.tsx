@@ -15,7 +15,7 @@ const statusConfig: Record<string, { label: string; className: string; icon: Rea
     icon: <PauseCircle className="h-3.5 w-3.5" />,
   },
   PENDING_REVIEW: {
-    label: "Pendente",
+    label: "Em analise",
     className: "border-[#d4a843]/30 bg-[#d4a843]/10 text-[#f5d78c]",
     icon: <Clock className="h-3.5 w-3.5" />,
   },
@@ -25,12 +25,12 @@ const statusConfig: Record<string, { label: string; className: string; icon: Rea
     icon: <EyeOff className="h-3.5 w-3.5" />,
   },
   SUSPENDED: {
-    label: "Bloqueado",
+    label: "Suspenso",
     className: "border-red-400/30 bg-red-400/10 text-red-200",
     icon: <ShieldAlert className="h-3.5 w-3.5" />,
   },
   REJECTED: {
-    label: "Revisar",
+    label: "Reprovado",
     className: "border-red-400/30 bg-red-400/10 text-red-200",
     icon: <ShieldAlert className="h-3.5 w-3.5" />,
   },

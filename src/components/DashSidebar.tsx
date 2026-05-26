@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
 import {
   BadgePlus,
   Banknote,
@@ -87,7 +88,31 @@ const professionalNav: NavItem[] = [
   { label: "Agenda", href: "/profissional/agenda", icon: <CalendarCheck className="h-4 w-4" /> },
   { label: "Agendamentos", href: "/profissional/agendamentos", icon: <UsersRound className="h-4 w-4" /> },
   { label: "Perfil de anunciante", href: "/profissional/perfil", icon: <BadgePlus className="h-4 w-4" /> },
+  { label: "Suporte", href: "/notifications", icon: <Headphones className="h-4 w-4" /> },
 ];
+
+type ProfessionalMenuProfile = {
+  displayName: string;
+  email: string;
+  image: string | null;
+  status: string;
+  planLabel: string;
+};
+
+type MeResponse = {
+  email?: string | null;
+  premiumUntil?: string | null;
+  professional?: {
+    displayName?: string | null;
+    image?: string | null;
+    status?: string | null;
+  } | null;
+};
+
+function professionalPlanLabel(premiumUntil?: string | null) {
+  if (!premiumUntil) return "Anunciante";
+  return new Date(premiumUntil) > new Date() ? "Premium" : "Anunciante";
+}
 
 interface Props {
   mobileOpen: boolean;
@@ -113,6 +138,7 @@ function roleLabel(role?: string) {
 export default function DashSidebar({ mobileOpen, onClose }: Props) {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const [professionalProfile, setProfessionalProfile] = useState<ProfessionalMenuProfile | null>(null);
 
   async function handleSignOut() {
     await supabaseAuth.auth.signOut();
@@ -138,6 +164,38 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
         ? "CADASTRO DE ANFITRIAO"
         : "Area cliente";
   const logoHref = isAdminArea || isAdmin ? ACCOUNT_ROUTES.admin : "/";
+
+  useEffect(() => {
+    if (!isProfessionalArea) {
+      setProfessionalProfile(null);
+      return;
+    }
+    const controller = new AbortController();
+    async function loadProfessionalProfile() {
+      try {
+        const res = await fetch("/api/users/me", { signal: controller.signal });
+        if (!res.ok) return;
+        const data = (await res.json()) as MeResponse | null;
+        if (!data?.professional) return;
+        setProfessionalProfile({
+          displayName: data.professional.displayName ?? session?.user?.name ?? "Perfil Elite",
+          email: data.email ?? session?.user?.email ?? "Conta profissional",
+          image: data.professional.image ?? null,
+          status: data.professional.status ?? "PENDING_REVIEW",
+          planLabel: professionalPlanLabel(data.premiumUntil),
+        });
+      } catch {
+        if (!controller.signal.aborted) setProfessionalProfile(null);
+      }
+    }
+    void loadProfessionalProfile();
+    return () => controller.abort();
+  }, [isProfessionalArea, session?.user?.email, session?.user?.name]);
+
+  const sidebarName = professionalProfile?.displayName ?? session?.user?.name ?? "Perfil Elite";
+  const sidebarEmail = professionalProfile?.email ?? session?.user?.email ?? roleLabel(role);
+  const sidebarImage = professionalProfile?.image ?? session?.user?.image ?? null;
+  const sidebarPlan = professionalProfile?.planLabel ?? roleLabel(role);
 
   return (
     <>
@@ -181,26 +239,41 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
         <div className="relative border-b border-white/10 p-4">
           <div className="flex items-center gap-3">
             <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[8px] border border-[#d4a843]/28 bg-[#d4a843]/12">
-              {session?.user?.image ? (
+              {sidebarImage ? (
                 <img
-                  src={session.user.image}
-                  alt={session.user.name ?? "Avatar"}
+                  src={sidebarImage}
+                  alt={sidebarName}
                   className="h-full w-full object-cover"
                 />
               ) : (
                 <div className="grid h-full w-full place-items-center text-sm font-black text-[#f5d78c]">
-                  {initials(session?.user?.name)}
+                  {initials(sidebarName)}
                 </div>
               )}
               <span className="absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full border border-[#070708] bg-[#d4a843]" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-black text-white">{session?.user?.name ?? "Perfil Elite"}</p>
-              <p className="mt-0.5 truncate text-xs text-white/42">{session?.user?.email ?? roleLabel(role)}</p>
-              <p className="mt-2 inline-flex items-center gap-1 rounded-full border border-[#d4a843]/20 bg-[#d4a843]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#f5d78c]">
-                <Crown className="h-3 w-3" />
-                {roleLabel(role)}
-              </p>
+              <p className="truncate text-sm font-black text-white">{sidebarName}</p>
+              <p className="mt-0.5 truncate text-xs text-white/42">{sidebarEmail}</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <p className="inline-flex items-center gap-1 rounded-full border border-[#d4a843]/20 bg-[#d4a843]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#f5d78c]">
+                  <Crown className="h-3 w-3" />
+                  {sidebarPlan}
+                </p>
+                {professionalProfile ? (
+                  <p className="inline-flex rounded-full border border-white/10 bg-white/[0.045] px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-white/48">
+                    {professionalProfile.status === "ACTIVE"
+                      ? "Ativo"
+                      : professionalProfile.status === "PAUSED"
+                        ? "Pausado"
+                        : professionalProfile.status === "SUSPENDED"
+                          ? "Suspenso"
+                          : professionalProfile.status === "REJECTED"
+                            ? "Reprovado"
+                            : "Em analise"}
+                  </p>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
@@ -280,11 +353,11 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                 Gerencie agenda, fotos, disponibilidade e presença premium.
               </p>
               <Link
-                href="/profissional/perfil"
+                href="/profissional/planos"
                 onClick={onClose}
                 className="mt-3 inline-flex w-full items-center justify-center rounded-[8px] bg-[#d4a843] px-3 py-2 text-xs font-black text-[#100d09] transition hover:bg-[#f5d78c]"
               >
-                Atualizar perfil
+                Atualizar plano
               </Link>
             </div>
           ) : role === "GUEST" && !isHostFlow ? (

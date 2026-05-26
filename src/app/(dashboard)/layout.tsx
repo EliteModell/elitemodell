@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import DashSidebar from "@/components/DashSidebar";
 import ClientAreaShell from "@/components/client-area/ClientAreaShell";
 import { ProfessionalBottomNav } from "@/components/professional-dashboard/ProfessionalBottomNav";
+import { ProfessionalTopHeader } from "@/components/professional-dashboard/ProfessionalTopHeader";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 function LoadingScreen() {
@@ -84,6 +85,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <DashSidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className={roleAreaClass ? `${roleAreaClass}-layout relative flex min-h-screen flex-col md:ml-[280px]` : "relative flex min-h-screen flex-col md:ml-[280px]"}>
+        {isProfessionalArea ? (
+          <ProfessionalTopHeader onMenuClick={() => setSidebarOpen(true)} />
+        ) : (
         <header className={roleAreaClass ? `${roleAreaClass}-header sticky top-0 z-30 border-b border-white/10 bg-[#050506]/72 px-4 py-3 backdrop-blur-2xl sm:px-6 md:px-8` : "sticky top-0 z-30 border-b border-white/10 bg-[#050506]/72 px-4 py-3 backdrop-blur-2xl sm:px-6 md:px-8"}>
           <div className="flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
@@ -134,6 +138,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
         </header>
+        )}
 
         <main className={roleAreaClass ? `dashboard-content ${roleAreaClass}-page relative flex-1 px-4 py-5 pb-8 sm:px-6 sm:py-6 md:px-8 lg:px-10` : "dashboard-content relative flex-1 px-4 py-5 pb-8 sm:px-6 sm:py-6 md:px-8 lg:px-10"}>
           <div className={roleAreaClass ? `${roleAreaClass}-content mx-auto w-full max-w-[1480px]` : "mx-auto w-full max-w-[1480px]"}>{children}</div>

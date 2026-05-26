@@ -63,23 +63,28 @@ function buildCompleteness(professional: {
   docVersoUrl: string | null;
   verificationUrl: string | null;
   kycSessionId: string | null;
+  user: { premiumUntil: Date | null; phoneVerified: boolean };
 }) {
   const checks = [
-    professional.displayName,
-    professional.bio,
-    professional.city && professional.state,
-    professional.whatsapp || professional.phone,
-    professional.image,
-    professional.galleryUrls.length > 2,
-    professional.priceMin || professional.pricePerHour,
-    professional.attendanceTypes.length > 0,
-    professional.services.length > 0,
-    professional.horarioInicio && professional.horarioFim,
-    professional.docFrenteUrl && professional.docVersoUrl,
-    professional.verificationUrl || professional.kycSessionId,
+    { ok: professional.displayName, label: "nome artistico" },
+    { ok: professional.bio, label: "bio" },
+    { ok: professional.city && professional.state, label: "cidade/local" },
+    { ok: professional.whatsapp || professional.phone || professional.user.phoneVerified, label: "telefone/contato" },
+    { ok: professional.image, label: "foto de perfil" },
+    { ok: professional.galleryUrls.length > 2, label: "fotos" },
+    { ok: professional.priceMin || professional.pricePerHour, label: "valores" },
+    { ok: professional.attendanceTypes.length > 0, label: "tipo de atendimento" },
+    { ok: professional.services.length > 0, label: "servicos" },
+    { ok: professional.horarioInicio && professional.horarioFim, label: "agenda" },
+    { ok: professional.docFrenteUrl && professional.docVersoUrl, label: "documentos" },
+    { ok: professional.verificationUrl || professional.kycSessionId, label: "verificacao" },
+    { ok: professional.user.premiumUntil && professional.user.premiumUntil > new Date(), label: "plano ativo" },
   ];
 
-  return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+  return {
+    score: Math.round((checks.filter((check) => Boolean(check.ok)).length / checks.length) * 100),
+    missing: checks.filter((check) => !check.ok).map((check) => check.label),
+  };
 }
 
 function appointmentLabel(client: { name: string | null; email: string | null }) {
@@ -148,6 +153,13 @@ export default async function ProfissionalDashPage() {
   const eventCount = (eventType: string, start: Date) =>
     professional.profileEvents.filter((event) => event.eventType === eventType && event.createdAt >= start).length;
 
+  const highlightPoints =
+    (hasActivePlan ? 2000 : 0) +
+    (professional.featured ? 1000 : 0) +
+    (isBoostActive ? 1200 : 0) +
+    Math.min(allPhotosCount * 80, 640) +
+    Math.round(professional.rating * 100);
+
   const snapshotFor = (period: PerformancePeriod): PerformanceSnapshot => {
     if (period === "all") {
       return {
@@ -159,7 +171,7 @@ export default async function ProfissionalDashPage() {
         reviews: professional.totalReviews,
         rating: professional.rating,
         rankingPosition,
-        highlightPoints: null,
+        highlightPoints,
       };
     }
 
@@ -177,7 +189,7 @@ export default async function ProfissionalDashPage() {
       reviews: periodReviews.length,
       rating: average,
       rankingPosition,
-      highlightPoints: null,
+      highlightPoints,
     };
   };
 
@@ -200,11 +212,11 @@ export default async function ProfissionalDashPage() {
       icon: "shield",
     });
   }
-  if (completeness < 85) {
+  if (completeness.score < 85) {
     alerts.push({
       id: "profile-completeness",
       title: "Seu perfil pode receber mais contatos",
-      description: "Complete suas informacoes, atualize sua agenda e mantenha fotos recentes para ganhar mais destaque.",
+      description: `Complete: ${completeness.missing.slice(0, 4).join(", ")}.`,
       href: "/profissional/perfil",
       actionLabel: "Melhorar perfil",
       tone: "gold",
@@ -387,11 +399,13 @@ export default async function ProfissionalDashPage() {
         state={professional.state}
         planName={hasActivePlan ? "Premium Elite" : "Basico"}
         planExpiresAt={professional.user.premiumUntil}
-        completeness={completeness}
+        completeness={completeness.score}
         rankingPosition={rankingPosition}
         securityCode={professional.verificationCode ?? securityCode(professional.id)}
         slug={professional.slug}
         online={professional.updatedAt.getTime() > now.getTime() - 15 * 60 * 1000}
+        verified={professional.verified || professional.kycStatus === "APPROVED" || professional.docStatus === "APPROVED"}
+        missingItems={completeness.missing}
       />
 
       <PerformanceStats snapshots={snapshots} />
@@ -412,7 +426,7 @@ export default async function ProfissionalDashPage() {
         boostActive={isBoostActive}
       />
       <PendingAppointmentsCard appointments={pendingAppointments} />
-      <QuickManagementGrid />
+      <QuickManagementGrid slug={professional.slug} />
     </div>
   );
 }

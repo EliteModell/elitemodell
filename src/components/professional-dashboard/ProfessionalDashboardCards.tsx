@@ -65,6 +65,8 @@ export function ProfessionalMainCard({
   securityCode,
   slug,
   online,
+  verified,
+  missingItems,
 }: {
   image: string | null;
   displayName: string;
@@ -78,7 +80,11 @@ export function ProfessionalMainCard({
   securityCode: string | null;
   slug: string;
   online: boolean;
+  verified: boolean;
+  missingItems: string[];
 }) {
+  const greeting = new Date().getHours() >= 18 ? "Boa noite" : new Date().getHours() >= 12 ? "Boa tarde" : "Bom dia";
+
   return (
     <section className="overflow-hidden rounded-[8px] border border-[#d4a843]/22 bg-[linear-gradient(150deg,rgba(22,22,24,0.98),rgba(7,7,8,0.98))] shadow-[0_28px_90px_rgba(0,0,0,0.34)]">
       <div className="border-b border-white/10 bg-[#d4a843]/[0.055] px-4 py-3 sm:px-5">
@@ -103,10 +109,19 @@ export function ProfessionalMainCard({
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="break-words text-2xl font-black leading-tight text-white sm:text-3xl">{displayName}</h1>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-white/52">{greeting},</p>
+                <h1 className="break-words text-2xl font-black leading-tight text-white sm:text-3xl">{displayName}</h1>
+              </div>
               <span className={`rounded-full px-2.5 py-1 text-xs font-black ${online ? "bg-emerald-400/10 text-emerald-200" : "bg-white/[0.06] text-white/45"}`}>
                 {online ? "Online" : "Offline"}
               </span>
+              {verified ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#d4a843]/10 px-2.5 py-1 text-xs font-black text-[#f5d78c]">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Verificada
+                </span>
+              ) : null}
             </div>
             <div className="mt-3 grid gap-2 text-sm text-white/58">
               <span className="inline-flex items-center gap-2">
@@ -138,7 +153,11 @@ export function ProfessionalMainCard({
             <div className="h-2 overflow-hidden rounded-full bg-white/10">
               <div className="h-full rounded-full bg-[linear-gradient(90deg,#d4a843,#f5d78c)]" style={{ width: `${completeness}%` }} />
             </div>
-            <p className="mt-2 text-xs leading-5 text-white/42">Perfis completos tendem a converter melhor em contatos e agendamentos.</p>
+            <p className="mt-2 text-xs leading-5 text-white/42">
+              {missingItems.length > 0
+                ? `Falta ${missingItems.slice(0, 3).join(", ")}${missingItems.length > 3 ? " e outros ajustes" : ""}.`
+                : "Perfil completo e pronto para performar melhor na listagem."}
+            </p>
           </div>
 
           <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
@@ -152,7 +171,7 @@ export function ProfessionalMainCard({
             </Link>
             <Link href="/profissional/planos" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#d4a843] px-3 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">
               <Sparkles className="h-4 w-4" />
-              Impulsionar
+              {planExpiresAt ? "Renovar" : "Comprar plano"}
             </Link>
           </div>
         </div>
@@ -367,14 +386,15 @@ export function PendingAppointmentsCard({ appointments }: { appointments: Dashbo
   );
 }
 
-export function QuickManagementGrid() {
+export function QuickManagementGrid({ slug }: { slug: string }) {
   const links = [
+    { href: `/profissionais/${slug}`, label: "Ver perfil", desc: "Abrir a pagina publica", icon: Eye },
     { href: "/profissional/perfil", label: "Editar perfil", desc: "Bio, valores, atendimento e contatos", icon: ListChecks },
+    { href: "/profissional/fotos", label: "Adicionar fotos", desc: "Capa, galeria e portfolio", icon: ImagePlus },
+    { href: "/profissional/agenda", label: "Configurar agenda", desc: "Dias e horarios disponiveis", icon: CalendarDays },
+    { href: "/profissional/planos", label: "Comprar plano", desc: "Premium, destaque e pontos", icon: Crown },
     { href: "/profissional/estatisticas", label: "Estatisticas", desc: "Relatorios e sinais de procura", icon: Gauge },
     { href: "/profissional/avaliacoes", label: "Avaliacoes", desc: "Respostas, nota media e disputas", icon: ShieldCheck },
-    { href: "/profissional/fotos", label: "Galeria", desc: "Fotos de capa e portfolio", icon: ImagePlus },
-    { href: "/profissional/agenda", label: "Agenda", desc: "Dias e horarios disponiveis", icon: CalendarDays },
-    { href: "/profissional/planos", label: "Planos", desc: "Renovacao, destaque e pontos", icon: Crown },
   ];
 
   return (

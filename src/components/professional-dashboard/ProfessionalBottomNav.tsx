@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Crown, LayoutDashboard, List, PlusCircle } from "lucide-react";
+import { Crown, LayoutDashboard, List, PlusCircle, UserRound } from "lucide-react";
 
 const items = [
   { label: "Painel", href: "/profissional", icon: LayoutDashboard },
   { label: "Postar", href: "/profissional/fotos", icon: PlusCircle },
-  { label: "Agenda", href: "/profissional/agenda", icon: CalendarDays },
   { label: "Listagem", href: "/profissionais", icon: List },
   { label: "Planos", href: "/profissional/planos", icon: Crown },
+  { label: "Perfil", href: "/profissional/perfil", icon: UserRound },
 ];
 
 export function ProfessionalBottomNav() {

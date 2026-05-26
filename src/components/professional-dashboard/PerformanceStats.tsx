@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarCheck, Eye, Heart, MessageCircle, MousePointerClick, Phone, Star, Trophy } from "lucide-react";
+import { CalendarCheck, Eye, Gem, Heart, MessageCircle, MousePointerClick, Phone, Star, Trophy } from "lucide-react";
 
 export type PerformancePeriod = "today" | "7d" | "30d" | "all";
 
@@ -41,6 +41,7 @@ export function PerformanceStats({ snapshots }: { snapshots: Record<PerformanceP
     { label: "Avaliacoes", value: valueLabel(current.reviews), icon: MessageCircle },
     { label: "Nota media", value: current.rating > 0 ? current.rating.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) : "Sem dados ainda", icon: Star },
     { label: "Posicao", value: current.rankingPosition ? `${current.rankingPosition}a` : "Indisp.", icon: Trophy },
+    { label: "Pontos destaque", value: current.highlightPoints === null ? "Em preparo" : valueLabel(current.highlightPoints), icon: Gem },
   ];
 
   return (
@@ -66,7 +67,7 @@ export function PerformanceStats({ snapshots }: { snapshots: Record<PerformanceP
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -80,9 +81,7 @@ export function PerformanceStats({ snapshots }: { snapshots: Record<PerformanceP
           );
         })}
       </div>
-      {current.highlightPoints === null ? (
-        <p className="mt-4 text-xs leading-5 text-white/38">Pontos de destaque ainda nao possuem fonte dedicada no banco. O painel usa plano ativo, boost e destaque como sinais reais.</p>
-      ) : null}
+      <p className="mt-4 text-xs leading-5 text-white/38">Os pontos de destaque combinam sinais reais do perfil, como plano ativo, boost, destaque e galeria recente.</p>
     </section>
   );
 }
