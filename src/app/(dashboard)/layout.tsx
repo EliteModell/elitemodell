@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import DashSidebar from "@/components/DashSidebar";
 import ClientAreaShell from "@/components/client-area/ClientAreaShell";
+import { ProfessionalBottomNav } from "@/components/professional-dashboard/ProfessionalBottomNav";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 function LoadingScreen() {
@@ -139,6 +140,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
 
       </div>
+      {isProfessionalArea ? <ProfessionalBottomNav /> : null}
       <style>{`
         .dashboard-content {
           animation: dashboard-fade-in 180ms ease-out both;

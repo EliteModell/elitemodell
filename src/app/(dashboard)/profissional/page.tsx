@@ -1,41 +1,114 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireCompanionPanel } from "@/lib/account-access";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
+import {
+  PendingAppointmentsCard,
+  PlanResourcesCard,
+  PrivacyBoostCard,
+  ProfessionalMainCard,
+  QuickManagementGrid,
+  QuickPostCard,
+  RankingCard,
+  type DashboardAppointment,
+} from "@/components/professional-dashboard/ProfessionalDashboardCards";
+import { ProfessionalAlertStack, type ProfessionalAlert } from "@/components/professional-dashboard/ProfessionalAlertCard";
+import { PerformanceStats, type PerformancePeriod, type PerformanceSnapshot } from "@/components/professional-dashboard/PerformanceStats";
 
 export const dynamic = "force-dynamic";
 
-const cardStyle: React.CSSProperties = {
-  background: "#111",
-  border: "1px solid #1e1e1e",
-  borderRadius: 12,
-  padding: 18,
-};
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-const statusLabel: Record<string, string> = {
-  DRAFT: "Rascunho",
-  PENDING_REVIEW: "Em análise",
-  ACTIVE: "Ativo",
-  PAUSED: "Pausado",
-  SUSPENDED: "Suspenso",
-  REJECTED: "Rejeitado",
-};
+function daysUntil(date: Date | null | undefined, baseDate: Date) {
+  if (!date) return null;
+  return Math.ceil((date.getTime() - baseDate.getTime()) / DAY_MS);
+}
+
+function periodStart(period: Exclude<PerformancePeriod, "all">, baseDate: Date) {
+  const now = new Date(baseDate);
+  if (period === "today") {
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    return start;
+  }
+  return new Date(now.getTime() - (period === "7d" ? 7 : 30) * DAY_MS);
+}
+
+function countSince<T extends { createdAt: Date }>(items: T[], start: Date) {
+  return items.filter((item) => item.createdAt >= start).length;
+}
+
+function securityCode(id: string) {
+  const digits = id.replace(/\D/g, "");
+  return (digits || id.split("").map((char) => char.charCodeAt(0)).join("")).slice(-6).padStart(6, "0");
+}
+
+function buildCompleteness(professional: {
+  displayName: string | null;
+  bio: string | null;
+  city: string | null;
+  state: string | null;
+  whatsapp: string | null;
+  phone: string | null;
+  image: string | null;
+  galleryUrls: string[];
+  priceMin: number | null;
+  pricePerHour: number | null;
+  attendanceTypes: string[];
+  services: string[];
+  horarioInicio: string | null;
+  horarioFim: string | null;
+  docFrenteUrl: string | null;
+  docVersoUrl: string | null;
+  verificationUrl: string | null;
+  kycSessionId: string | null;
+}) {
+  const checks = [
+    professional.displayName,
+    professional.bio,
+    professional.city && professional.state,
+    professional.whatsapp || professional.phone,
+    professional.image,
+    professional.galleryUrls.length > 2,
+    professional.priceMin || professional.pricePerHour,
+    professional.attendanceTypes.length > 0,
+    professional.services.length > 0,
+    professional.horarioInicio && professional.horarioFim,
+    professional.docFrenteUrl && professional.docVersoUrl,
+    professional.verificationUrl || professional.kycSessionId,
+  ];
+
+  return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+}
+
+function appointmentLabel(client: { name: string | null; email: string | null }) {
+  return client.name ?? client.email ?? "Cliente";
+}
 
 export default async function ProfissionalDashPage() {
   const access = await requireCompanionPanel();
   await refreshExpiredProfessionalTimers();
+  const now = new Date();
+  const eventsSince = new Date(now.getTime() - 31 * DAY_MS);
 
   const professional = await prisma.professional.findUnique({
     where: { userId: access.user.id },
     include: {
+      user: { select: { premiumUntil: true, phoneVerified: true } },
       appointments: {
         orderBy: { date: "desc" },
-        take: 5,
+        take: 12,
         include: { client: { select: { name: true, email: true } } },
       },
-      photos: true,
+      photos: { orderBy: { order: "asc" } },
+      schedule: true,
+      favorites: { select: { id: true, createdAt: true } },
+      reviews: { select: { id: true, rating: true, hidden: true, createdAt: true } },
+      profileEvents: {
+        where: { createdAt: { gte: eventsSince } },
+        select: { eventType: true, createdAt: true },
+      },
     },
   });
 
@@ -43,105 +116,303 @@ export default async function ProfissionalDashPage() {
     redirect(ACCOUNT_ROUTES.onboardingAcompanhante);
   }
 
-  const pendingAppointments = professional.appointments.filter((item) => item.status === "PENDING");
-  const profileChecks = [
-    professional.displayName,
-    professional.bio,
-    professional.city,
-    professional.whatsapp,
-    professional.image,
-    professional.docFrenteUrl,
-    professional.docVersoUrl,
-    professional.verificationUrl || professional.kycSessionId,
+  const allPhotosCount = professional.photos.length || professional.galleryUrls.length + (professional.image ? 1 : 0);
+  const completeness = buildCompleteness(professional);
+  const hasActivePlan = Boolean(professional.user.premiumUntil && professional.user.premiumUntil > now);
+  const premiumDaysLeft = daysUntil(professional.user.premiumUntil, now);
+  const isBoostActive = Boolean(professional.boostActive && (!professional.boostUntil || professional.boostUntil > now));
+  const isVisible = professional.status === "ACTIVE" && (!professional.pauseUntil || professional.pauseUntil <= now);
+
+  const cityRanking = professional.city
+    ? await prisma.professional.findMany({
+        where: { city: professional.city, status: "ACTIVE" },
+        select: { id: true },
+        orderBy: [{ boostActive: "desc" }, { featured: "desc" }, { rating: "desc" }, { totalReviews: "desc" }, { createdAt: "asc" }],
+      })
+    : [];
+  const rankingIndex = cityRanking.findIndex((item) => item.id === professional.id);
+  const rankingPosition = rankingIndex >= 0 ? rankingIndex + 1 : null;
+
+  const pendingAppointments: DashboardAppointment[] = professional.appointments
+    .filter((appointment) => appointment.status === "PENDING")
+    .slice(0, 4)
+    .map((appointment) => ({
+      id: appointment.id,
+      clientLabel: appointmentLabel(appointment.client),
+      date: appointment.date,
+      duration: appointment.duration,
+      status: appointment.status,
+      price: appointment.price,
+    }));
+
+  const eventCount = (eventType: string, start: Date) =>
+    professional.profileEvents.filter((event) => event.eventType === eventType && event.createdAt >= start).length;
+
+  const snapshotFor = (period: PerformancePeriod): PerformanceSnapshot => {
+    if (period === "all") {
+      return {
+        views: professional.profileViews,
+        contactClicks: professional.contactClicks,
+        phoneClicks: null,
+        favorites: professional.favorites.length,
+        appointments: professional.totalAppointments,
+        reviews: professional.totalReviews,
+        rating: professional.rating,
+        rankingPosition,
+        highlightPoints: null,
+      };
+    }
+
+    const start = periodStart(period, now);
+    const visibleReviews = professional.reviews.filter((review) => !review.hidden);
+    const periodReviews = visibleReviews.filter((review) => review.createdAt >= start);
+    const average = periodReviews.length ? periodReviews.reduce((sum, review) => sum + review.rating, 0) / periodReviews.length : 0;
+
+    return {
+      views: eventCount("profile_view", start),
+      contactClicks: eventCount("contact_click", start),
+      phoneClicks: null,
+      favorites: countSince(professional.favorites, start),
+      appointments: professional.appointments.filter((appointment) => appointment.createdAt >= start).length,
+      reviews: periodReviews.length,
+      rating: average,
+      rankingPosition,
+      highlightPoints: null,
+    };
+  };
+
+  const snapshots: Record<PerformancePeriod, PerformanceSnapshot> = {
+    today: snapshotFor("today"),
+    "7d": snapshotFor("7d"),
+    "30d": snapshotFor("30d"),
+    all: snapshotFor("all"),
+  };
+
+  const alerts: ProfessionalAlert[] = [];
+  if (professional.status === "SUSPENDED" || professional.status === "REJECTED") {
+    alerts.push({
+      id: "status-blocked",
+      title: "Seu perfil precisa de atencao",
+      description: professional.rejectReason ?? "Existe uma restricao ou pendencia de revisao antes do perfil voltar a performar.",
+      href: "/verificacao/acompanhante",
+      actionLabel: "Verificar status",
+      tone: "danger",
+      icon: "shield",
+    });
+  }
+  if (completeness < 85) {
+    alerts.push({
+      id: "profile-completeness",
+      title: "Seu perfil pode receber mais contatos",
+      description: "Complete suas informacoes, atualize sua agenda e mantenha fotos recentes para ganhar mais destaque.",
+      href: "/profissional/perfil",
+      actionLabel: "Melhorar perfil",
+      tone: "gold",
+      icon: "user",
+    });
+  }
+  if (!hasActivePlan) {
+    alerts.push({
+      id: "basic-plan",
+      title: "Seu perfil esta no modo basico",
+      description: "Planos e destaques aumentam a visibilidade na cidade e ajudam clientes a encontrarem seu anuncio.",
+      href: "/profissional/planos",
+      actionLabel: "Conhecer planos",
+      tone: "gold",
+      icon: "sparkles",
+    });
+  } else if (premiumDaysLeft !== null && premiumDaysLeft <= 3) {
+    alerts.push({
+      id: "plan-expiring",
+      title: premiumDaysLeft <= 0 ? "Seu plano venceu" : `Seu plano vence em ${premiumDaysLeft} dia(s)`,
+      description: "Renove para manter os recursos premium e evitar perda de destaque na listagem.",
+      href: "/profissional/planos",
+      actionLabel: "Renovar plano",
+      tone: premiumDaysLeft <= 0 ? "danger" : "gold",
+      icon: "clock",
+    });
+  }
+  if (professional.kycStatus === "PENDING" || professional.docStatus === "PENDING" || professional.verifStatus === "PENDING") {
+    alerts.push({
+      id: "kyc-pending",
+      title: "Documento em analise",
+      description: "Nossa equipe esta conferindo sua verificacao. Voce sera avisada quando a analise terminar.",
+      href: "/verificacao/acompanhante",
+      actionLabel: "Acompanhar KYC",
+      tone: "neutral",
+      dismissible: true,
+      icon: "file",
+    });
+  }
+  if (professional.kycStatus === "APPROVED" || professional.docStatus === "APPROVED" || professional.verifStatus === "APPROVED") {
+    alerts.push({
+      id: "kyc-approved",
+      title: "Verificacao aprovada",
+      description: "Seu perfil tem um sinal importante de confianca. Mantenha suas informacoes atualizadas.",
+      href: "/profissional/perfil",
+      actionLabel: "Revisar perfil",
+      tone: "success",
+      dismissible: true,
+      icon: "check",
+    });
+  }
+  if (professional.presentationVideoStatus === "APPROVED") {
+    alerts.push({
+      id: "video-approved",
+      title: "Video aprovado",
+      description: "Seu conteudo foi liberado. Continue renovando sua midia para manter o perfil competitivo.",
+      href: "/profissional/configuracoes",
+      actionLabel: "Ver video",
+      tone: "success",
+      dismissible: true,
+      icon: "check",
+    });
+  } else if (professional.presentationVideoStatus === "REJECTED") {
+    alerts.push({
+      id: "video-rejected",
+      title: "Video recusado",
+      description: professional.presentationVideoRejectReason ?? "Envie um novo video seguindo as regras de conteudo da plataforma.",
+      href: "/profissional/configuracoes",
+      actionLabel: "Enviar novamente",
+      tone: "danger",
+      icon: "alert",
+    });
+  }
+  if (professional.schedule.length === 0 && professional.diasDisponiveis.length === 0) {
+    alerts.push({
+      id: "empty-schedule",
+      title: "Agenda sem horarios cadastrados",
+      description: "Horarios claros reduzem atrito e ajudam clientes a solicitarem atendimento com mais seguranca.",
+      href: "/profissional/agenda",
+      actionLabel: "Atualizar agenda",
+      tone: "gold",
+      icon: "calendar",
+    });
+  }
+  if (!professional.city || !professional.state) {
+    alerts.push({
+      id: "location",
+      title: "Localizacao desatualizada",
+      description: "A cidade correta ajuda seu perfil a aparecer para clientes da regiao certa.",
+      href: "/profissional/perfil",
+      actionLabel: "Atualizar localizacao",
+      tone: "gold",
+      icon: "map",
+    });
+  }
+  if (professional.status === "PAUSED") {
+    alerts.push({
+      id: "paused",
+      title: "Perfil pausado",
+      description: "Enquanto pausado, seu perfil nao aparece normalmente na busca publica.",
+      href: "/profissional/configuracoes",
+      actionLabel: "Controlar visibilidade",
+      tone: "neutral",
+      icon: "alert",
+    });
+  }
+  if (allPhotosCount < 3) {
+    alerts.push({
+      id: "few-photos",
+      title: "Poucas fotos cadastradas",
+      description: "Adicione uma capa forte e uma galeria recente para aumentar confianca e conversao.",
+      href: "/profissional/fotos",
+      actionLabel: "Postar fotos",
+      tone: "gold",
+      icon: "image",
+    });
+  }
+  if (!professional.bio) {
+    alerts.push({
+      id: "missing-bio",
+      title: "Sua bio ainda esta vazia",
+      description: "Uma descricao objetiva ajuda o cliente a entender seu estilo de atendimento antes do contato.",
+      href: "/profissional/perfil",
+      actionLabel: "Escrever bio",
+      tone: "gold",
+      icon: "user",
+    });
+  }
+  if (!professional.priceMin && !professional.pricePerHour && !professional.price30min) {
+    alerts.push({
+      id: "missing-prices",
+      title: "Valores nao cadastrados",
+      description: "Precos claros qualificam melhor os contatos e reduzem conversas improdutivas.",
+      href: "/profissional/perfil",
+      actionLabel: "Cadastrar valores",
+      tone: "gold",
+      icon: "sparkles",
+    });
+  }
+  if (!professional.user.phoneVerified && !professional.whatsapp && !professional.phone) {
+    alerts.push({
+      id: "phone",
+      title: "Telefone/WhatsApp nao confirmado",
+      description: "Confirme um canal de contato para nao perder clientes prontos para conversar.",
+      href: "/profissional/perfil",
+      actionLabel: "Confirmar contato",
+      tone: "gold",
+      icon: "phone",
+    });
+  }
+
+  const resources = [
+    { label: "Perfil premium", active: hasActivePlan, description: "Sinal comercial baseado em premiumUntil da conta." },
+    { label: "Destaque na cidade", active: professional.featured, description: "Aparece acima de perfis comuns quando o destaque esta ativo." },
+    { label: "Ocultar idade", active: professional.hideAge, description: "Controle de privacidade salvo no perfil." },
+    { label: "Ocultar telefone", active: professional.hidePhone, description: "Telefone fica oculto publicamente." },
+    { label: "Impulsionamento", active: isBoostActive, description: "Boost ativo enquanto nao estiver vencido." },
+    { label: "Telefone na listagem", active: Boolean(!professional.hidePhone && (professional.phone || professional.whatsapp)), description: "Disponivel quando ha contato e ele nao esta oculto." },
+    { label: "Galeria premium", active: hasActivePlan && allPhotosCount >= 6, description: "Preparado a partir de plano ativo e galeria robusta." },
+    { label: "Stories/videos", active: Boolean(professional.presentationVideoUrl), description: "Video de apresentacao existe no perfil." },
   ];
-  const completeness = Math.round((profileChecks.filter(Boolean).length / profileChecks.length) * 100);
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
+    <div className="grid gap-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Painel profissional</h1>
-          <p style={{ color: "#777", fontSize: 14 }}>
-            {professional.displayName} - {statusLabel[professional.status] ?? professional.status}
-          </p>
+          <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#d4a843]">Painel profissional Elite Modell</p>
+          <h1 className="mt-1 text-3xl font-black leading-tight text-white sm:text-4xl">Visibilidade, conteudo e conversao</h1>
         </div>
-        <Link
-          href={`/profissionais/${professional.slug}`}
-          style={{ padding: "10px 20px", background: "#111", border: "1px solid #333", borderRadius: 8, color: "#ccc", textDecoration: "none", fontSize: 14 }}
-        >
-          Ver perfil público
-        </Link>
+        <p className="max-w-xl text-sm leading-6 text-white/50">Um painel para acompanhar status, melhorar posicionamento e agir rapido nos pontos que geram mais contatos.</p>
       </div>
 
-      <div style={{ background: "rgba(212,168,67,0.06)", border: "1px solid rgba(212,168,67,0.18)", borderRadius: 12, padding: "16px 20px", marginBottom: 24 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-          <span style={{ fontSize: 13, color: "#ccc", fontWeight: 700 }}>Completude do perfil</span>
-          <span style={{ fontSize: 13, color: "#d4a843", fontWeight: 800 }}>{completeness}%</span>
-        </div>
-        <div style={{ height: 6, background: "#222", borderRadius: 3 }}>
-          <div style={{ width: `${completeness}%`, height: "100%", background: "#d4a843", borderRadius: 3 }} />
-        </div>
-        {professional.rejectReason ? (
-          <p style={{ color: "#ef4444", fontSize: 13, marginTop: 12 }}>{professional.rejectReason}</p>
-        ) : null}
-      </div>
+      <ProfessionalAlertStack alerts={alerts.slice(0, 8)} />
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 28 }}>
-        {[
-          { label: "Status", value: statusLabel[professional.status] ?? professional.status },
-          { label: "Visualizacoes", value: professional.profileViews.toLocaleString("pt-BR") },
-          { label: "Cliques contato", value: professional.contactClicks.toLocaleString("pt-BR") },
-          { label: "Fotos", value: String(professional.photos.length || professional.galleryUrls.length) },
-          { label: "Agendamentos", value: professional.totalAppointments.toLocaleString("pt-BR") },
-          { label: "Avaliações", value: professional.totalReviews.toLocaleString("pt-BR") },
-        ].map((stat) => (
-          <div key={stat.label} style={cardStyle}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 3 }}>{stat.value}</div>
-            <div style={{ fontSize: 12, color: "#777" }}>{stat.label}</div>
-          </div>
-        ))}
-      </div>
+      <ProfessionalMainCard
+        image={professional.image}
+        displayName={professional.displayName}
+        status={professional.status}
+        city={professional.city}
+        state={professional.state}
+        planName={hasActivePlan ? "Premium Elite" : "Basico"}
+        planExpiresAt={professional.user.premiumUntil}
+        completeness={completeness}
+        rankingPosition={rankingPosition}
+        securityCode={professional.verificationCode ?? securityCode(professional.id)}
+        slug={professional.slug}
+        online={professional.updatedAt.getTime() > now.getTime() - 15 * 60 * 1000}
+      />
 
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>Agendamentos pendentes</h2>
-          <Link href="/profissional/agendamentos" style={{ fontSize: 13, color: "#d4a843", textDecoration: "none" }}>Ver todos</Link>
-        </div>
-
-        {pendingAppointments.length === 0 ? (
-          <div style={cardStyle}>
-            <p style={{ color: "#777", fontSize: 14, margin: 0 }}>Nenhum agendamento pendente.</p>
-          </div>
-        ) : (
-          <div style={{ display: "grid", gap: 12 }}>
-            {pendingAppointments.map((appointment) => (
-              <div key={appointment.id} style={cardStyle}>
-                <strong style={{ color: "#fff" }}>{appointment.client.name ?? appointment.client.email ?? "Cliente"}</strong>
-                <p style={{ color: "#777", margin: "6px 0 0" }}>
-                  {new Date(appointment.date).toLocaleString("pt-BR")} - {appointment.duration} min
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-        {[
-          { href: "/profissional/perfil", label: "Editar perfil", desc: "Atualizar bio, contato e valores" },
-          { href: "/profissional/estatisticas", label: "Estatisticas", desc: "Visualizacoes, contatos e favoritos" },
-          { href: "/profissional/avaliacoes", label: "Avaliacoes", desc: "Ver e contestar comentarios" },
-          { href: "/profissional/configuracoes", label: "Privacidade e boost", desc: "Pausar perfil, ocultar idade e telefone" },
-          { href: "/profissional/fotos", label: "Fotos", desc: "Gerenciar galeria" },
-          { href: "/profissional/agenda", label: "Agenda", desc: "Disponibilidade semanal" },
-          { href: "/profissional/planos", label: "Planos", desc: "Assinatura e destaque" },
-        ].map((link) => (
-          <Link key={link.href} href={link.href} style={{ ...cardStyle, display: "block", textDecoration: "none" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 3 }}>{link.label}</div>
-            <div style={{ fontSize: 12, color: "#777" }}>{link.desc}</div>
-          </Link>
-        ))}
-      </div>
+      <PerformanceStats snapshots={snapshots} />
+      <RankingCard city={professional.city} position={rankingPosition} />
+      <QuickPostCard />
+      <PlanResourcesCard
+        planName="Premium Elite"
+        statusLabel={hasActivePlan ? "ativo" : "basico"}
+        expiresAt={professional.user.premiumUntil}
+        resources={resources}
+        hasActivePlan={hasActivePlan}
+      />
+      <PrivacyBoostCard
+        hideAge={professional.hideAge}
+        hidePhone={professional.hidePhone}
+        isPaused={professional.status === "PAUSED"}
+        isVisible={isVisible}
+        boostActive={isBoostActive}
+      />
+      <PendingAppointmentsCard appointments={pendingAppointments} />
+      <QuickManagementGrid />
     </div>
   );
 }
