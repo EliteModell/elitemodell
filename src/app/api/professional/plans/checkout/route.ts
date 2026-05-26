@@ -34,12 +34,12 @@ function nextDueDate() {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
 
   try {
     const data = schema.parse(await req.json());
     const resolved = getProfessionalPlanPrice(data.planId, data.priceKey);
-    if (!resolved) return NextResponse.json({ error: "Plano ou duracao invalida." }, { status: 400 });
+    if (!resolved) return NextResponse.json({ error: "Plano ou duração inválida." }, { status: 400 });
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    if (!user) return NextResponse.json({ error: "Usuario nao encontrado." }, { status: 404 });
+    if (!user) return NextResponse.json({ error: "Usuário não encontrado." }, { status: 404 });
     if (!user.professional) {
       return NextResponse.json({ error: "Apenas perfis profissionais podem comprar estes planos." }, { status: 403 });
     }
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
         amount: price.value,
         planName: plan.name,
         priceLabel: price.label,
-        message: "Nao foi possivel gerar o Pix agora. Tente novamente ou fale com o suporte.",
+        message: "Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte.",
       });
     }
 
@@ -155,7 +155,7 @@ export async function POST(req: NextRequest) {
       });
       console.error("[professional-plans-checkout]", err instanceof Error ? err.message : err);
       return NextResponse.json(
-        { error: "Nao foi possivel gerar o Pix agora. Tente novamente ou fale com o suporte." },
+        { error: "Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte." },
         { status: 502 }
       );
     }

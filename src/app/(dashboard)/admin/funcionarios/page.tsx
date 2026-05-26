@@ -45,7 +45,7 @@ export default async function AdminFuncionariosPage() {
       <AdminPanel>
         <h2 style={{ margin: "0 0 12px", color: "#fff", fontSize: 16 }}>Criar novo funcionario</h2>
         <form action={promoteStaff} style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <input name="email" type="email" placeholder="email do usuario cadastrado" disabled={!canManage} style={{ minWidth: 260, flex: 1, background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 10 }} />
+          <input name="email" type="email" placeholder="e-mail do usuário cadastrado" disabled={!canManage} style={{ minWidth: 260, flex: 1, background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 10 }} />
           <button disabled={!canManage} style={{ ...buttonStyle, opacity: canManage ? 1 : 0.45 }}>Promover a ADMIN</button>
         </form>
         {!canManage ? <p style={{ color: "#f97316", margin: "10px 0 0", fontSize: 13 }}>Somente ADMIN_MASTER pode criar/remover administradores. Configure ADMIN_MASTER_EMAILS com seu email.</p> : null}

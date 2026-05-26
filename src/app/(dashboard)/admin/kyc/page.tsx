@@ -169,7 +169,7 @@ export default async function AdminKycPage() {
 
   return (
     <div>
-      <AdminHeader title="KYC e verificacao facial/manual" subtitle="Origem da verificacao, Inquiry Persona, status retornado e revisao manual quando necessaria." />
+      <AdminHeader title="KYC e verificação facial/manual" subtitle="Origem da verificação, Inquiry Persona, status retornado e revisão manual quando necessária." />
 
       <AdminPanel>
         <h2 style={{ margin: "0 0 14px", color: "#fff", fontSize: 16 }}>Profissionais</h2>
@@ -180,7 +180,7 @@ export default async function AdminKycPage() {
               <th style={thStyle}>Origem / Inquiry</th>
               <th style={thStyle}>Status</th>
               <th style={thStyle}>Arquivos</th>
-              <th style={thStyle}>Acao</th>
+              <th style={thStyle}>Ação</th>
             </tr>
           </thead>
           <tbody>
@@ -189,20 +189,20 @@ export default async function AdminKycPage() {
                 <td style={tdStyle}><strong>{pro.displayName}</strong><br />{pro.user.email}</td>
                 <td style={tdStyle}>
                   {personaProviderLabel(pro.kycProvider, pro.kycSessionId)}<br />
-                  <span style={{ color: "#94a3b8" }}>{pro.kycSessionId ?? "sem inquiry/sessao"}</span>
+                  <span style={{ color: "#94a3b8" }}>{pro.kycSessionId ?? "sem inquiry/sessão"}</span>
                 </td>
                 <td style={tdStyle}><StatusPill tone={toneFor(pro.kycStatus)}>{pro.kycStatus}</StatusPill></td>
                 <td style={tdStyle}>
                   Doc: {pro.docFrenteUrl ? "frente" : "-"} / {pro.docVersoUrl ? "verso" : "-"}<br />
-                  Verificacao: {pro.verificationUrl ? pro.verificationType ?? "arquivo" : "nao enviada"}<br />
-                  Codigo: {pro.verificationCode ?? "-"}
+                  Verificação: {pro.verificationUrl ? pro.verificationType ?? "arquivo" : "não enviada"}<br />
+                  Código: {pro.verificationCode ?? "-"}
                 </td>
                 <td style={tdStyle}>
                   <form action={reviewProfessionalKyc} style={{ display: "grid", gap: 8 }}>
                     <input type="hidden" name="id" value={pro.id} />
-                    <input name="reason" placeholder="Motivo/observacao" style={{ background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 8 }} />
+                    <input name="reason" placeholder="Motivo/observação" style={{ background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 8 }} />
                     <span style={{ color: "#94a3b8", fontSize: 11 }}>
-                      {personaProviderLabel(pro.kycProvider, pro.kycSessionId) === "PERSONA" ? "Use revisao manual apenas em excecao ou falha do webhook." : "Verificacao manual pendente."}
+                      {personaProviderLabel(pro.kycProvider, pro.kycSessionId) === "PERSONA" ? "Use revisão manual apenas em exceção ou falha do webhook." : "Verificação manual pendente."}
                     </span>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button name="action" value="approve" style={buttonStyle}>Aprovar</button>
@@ -212,7 +212,7 @@ export default async function AdminKycPage() {
                 </td>
               </tr>
             ))}
-            {!professionals.length ? <tr><td style={tdStyle} colSpan={5}>Nenhuma verificacao profissional pendente.</td></tr> : null}
+            {!professionals.length ? <tr><td style={tdStyle} colSpan={5}>Nenhuma verificação profissional pendente.</td></tr> : null}
           </tbody>
         </AdminTable>
       </AdminPanel>
@@ -227,7 +227,7 @@ export default async function AdminKycPage() {
               <th style={thStyle}>Cliente</th>
               <th style={thStyle}>Status</th>
               <th style={thStyle}>Origem / Inquiry</th>
-              <th style={thStyle}>Acao</th>
+              <th style={thStyle}>Ação</th>
             </tr>
           </thead>
           <tbody>
@@ -253,21 +253,21 @@ export default async function AdminKycPage() {
                 </td>
                 <td style={tdStyle}>
                   {personaProviderLabel(null, client.kycSessionId)}<br />
-                  <span style={{ color: "#94a3b8" }}>{client.kycSessionId ?? "sem inquiry/sessao"}</span><br />
+                  <span style={{ color: "#94a3b8" }}>{client.kycSessionId ?? "sem inquiry/sessão"}</span><br />
                   {client.kycSubmittedAt?.toLocaleString("pt-BR") ?? "-"}
                   <KycChecksDisplay raw={client.kycChecksJson} />
                 </td>
                 <td style={tdStyle}>
                   <form action={reviewClientKyc} style={{ display: "grid", gap: 8 }}>
                     <input type="hidden" name="id" value={client.id} />
-                    <input name="reason" placeholder="Motivo/observacao" style={{ background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 8 }} />
+                    <input name="reason" placeholder="Motivo/observação" style={{ background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 8 }} />
                     {client.kycIsSandbox && (
                       <span style={{ color: "#fef08a", fontSize: 11, fontWeight: 600, background: "#78350f", padding: "4px 8px", borderRadius: 6 }}>
-                        ATENCAO: Este e um dado SANDBOX (simulado). Aprovacao manual nao valida identidade real.
+                        ATENÇÃO: Este é um dado SANDBOX (simulado). Aprovação manual não valida identidade real.
                       </span>
                     )}
                     <span style={{ color: "#94a3b8", fontSize: 11 }}>
-                      {personaProviderLabel(null, client.kycSessionId) === "PERSONA" ? "Use revisao manual apenas em excecao ou falha do webhook." : "Verificacao manual pendente."}
+                      {personaProviderLabel(null, client.kycSessionId) === "PERSONA" ? "Use revisão manual apenas em exceção ou falha do webhook." : "Verificação manual pendente."}
                     </span>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button name="action" value="approve" style={buttonStyle}>Aprovar</button>

@@ -94,7 +94,7 @@ export default function PixPaymentModal({ planId, creditAmount, bookingId, amoun
         } else if (data.status === "FAILED" || data.status === "REFUNDED") {
           if (pollRef.current) clearInterval(pollRef.current);
           setStage("failed");
-          setError("Pagamento nao confirmado. Tente novamente.");
+          setError("Pagamento não confirmado. Tente novamente.");
         }
       } catch {}
     }

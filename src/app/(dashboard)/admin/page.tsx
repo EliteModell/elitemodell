@@ -47,36 +47,36 @@ export default async function AdminPage() {
     <div>
       <AdminHeader
         title="Painel administrativo"
-        subtitle={`Operacao central da Elite Model. Cargo atual: ${adminRole}. Acesso protegido por servidor e proxy para usuarios ADMIN.`}
+        subtitle={`Operação central da Elite Modell. Cargo atual: ${adminRole}. Acesso protegido por servidor e proxy para usuários ADMIN.`}
       />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14, marginBottom: 20 }}>
         <StatCard label="Cadastros pendentes" value={pendingProfessionals + pendingProperties + manualKyc} tone="warning" />
         <StatCard label="Profissionais pendentes" value={pendingProfessionals} href="/admin/profissionais" tone="warning" />
-        <StatCard label="Anfitrioes pendentes" value={pendingProperties} href="/admin/anfitrioes" tone="warning" />
-        <StatCard label="Imoveis pendentes" value={pendingProperties} href="/admin/imoveis" tone="warning" />
+        <StatCard label="Anfitriões pendentes" value={pendingProperties} href="/admin/anfitrioes" tone="warning" />
+        <StatCard label="Imóveis pendentes" value={pendingProperties} href="/admin/imoveis" tone="warning" />
         <StatCard label="KYC manual pendente" value={manualKyc} href="/admin/kyc" tone="warning" />
-        <StatCard label="Denuncias abertas" value={pendingReports} href="/admin/denuncias" tone={pendingReports ? "danger" : "neutral"} />
-        <StatCard label="Usuarios ativos" value={activeUsers} href="/admin/clientes" />
+        <StatCard label="Denúncias abertas" value={pendingReports} href="/admin/denuncias" tone={pendingReports ? "danger" : "neutral"} />
+        <StatCard label="Usuários ativos" value={activeUsers} href="/admin/clientes" />
         <StatCard label="Perfis aprovados" value={activeProfessionals + activeProperties} tone="success" />
         <StatCard label="Perfis reprovados" value={rejectedProfessionals} tone="danger" />
-        <StatCard label="Receita estimada no mes" value={`R$ ${revenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} href="/admin/financeiro" />
+        <StatCard label="Receita estimada no mês" value={`R$ ${revenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} href="/admin/financeiro" />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.25fr) minmax(300px, 0.75fr)", gap: 16 }}>
         <AdminPanel>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 14 }}>
             <h2 style={{ color: "#fff", fontSize: 16, margin: 0 }}>Centros de trabalho</h2>
-            <StatusPill tone={pendingReports || manualKyc ? "warning" : "success"}>{pendingReports || manualKyc ? "Atencao" : "Estavel"}</StatusPill>
+            <StatusPill tone={pendingReports || manualKyc ? "warning" : "success"}>{pendingReports || manualKyc ? "Atenção" : "Estável"}</StatusPill>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
             {[
-              ["Profissionais", "/admin/profissionais", "Documentos, selfie, videos e perfil publico"],
-              ["Anfitrioes", "/admin/anfitrioes", "Solicitacoes de anfitriao e imoveis vinculados"],
-              ["Imoveis", "/admin/imoveis", "Quartos, apartamentos, fotos, regras e precos"],
-              ["KYC", "/admin/kyc", "Persona, manual, documentos e aprovacao sensivel"],
-              ["Denuncias", "/admin/denuncias", "Moderacao de risco e conteudo"],
-              ["Auditoria", "/admin/auditoria", "Trilha das acoes administrativas"],
+              ["Profissionais", "/admin/profissionais", "Documentos, selfie, vídeos e perfil público"],
+              ["Anfitriões", "/admin/anfitrioes", "Solicitações de anfitrião e imóveis vinculados"],
+              ["Imóveis", "/admin/imoveis", "Quartos, apartamentos, fotos, regras e preços"],
+              ["KYC", "/admin/kyc", "Persona, manual, documentos e aprovação sensível"],
+              ["Denúncias", "/admin/denuncias", "Moderação de risco e conteúdo"],
+              ["Auditoria", "/admin/auditoria", "Trilha das ações administrativas"],
             ].map(([label, href, desc]) => (
               <Link key={href} href={href} style={{ textDecoration: "none", border: `1px solid ${adminColors.border}`, borderRadius: 8, padding: 14, background: "rgba(255,255,255,0.025)" }}>
                 <strong style={{ color: "#fff", display: "block", marginBottom: 6 }}>{label}</strong>
@@ -117,7 +117,7 @@ export default async function AdminPage() {
                   <td style={tdStyle}>{audit.timestamp.toLocaleString("pt-BR")}</td>
                 </tr>
               )) : (
-                <tr><td style={tdStyle} colSpan={4}>Ainda nao ha acoes registradas.</td></tr>
+                <tr><td style={tdStyle} colSpan={4}>Ainda não há ações registradas.</td></tr>
               )}
             </tbody>
           </AdminTable>

@@ -75,14 +75,14 @@ export default async function AdminAnfitrioesPage() {
 
   return (
     <div>
-      <AdminHeader title="Anfitrioes" subtitle="Aprovacao da identidade de anfitriao e revisao dos imoveis vinculados." />
+      <AdminHeader title="Anfitriões" subtitle="Aprovação da identidade de anfitrião e revisão dos imóveis vinculados." />
       <AdminPanel>
         <AdminTable>
           <thead>
             <tr>
               <th style={thStyle}>Anfitriao</th>
               <th style={thStyle}>Status</th>
-              <th style={thStyle}>Imoveis</th>
+              <th style={thStyle}>Imóveis</th>
               <th style={thStyle}>Envio</th>
               <th style={thStyle}>Acao</th>
             </tr>

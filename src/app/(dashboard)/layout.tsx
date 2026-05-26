@@ -392,6 +392,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           margin-bottom: 8px !important;
           text-wrap: balance;
         }
+        .professional-content .professional-compact-title {
+          font-size: clamp(26px, 7vw, 34px) !important;
+          line-height: 1.08 !important;
+          margin-bottom: 0 !important;
+        }
         .professional-content h2,
         .professional-content h3,
         .professional-content strong {
@@ -475,6 +480,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .professional-content button {
           min-height: 44px;
           border-radius: 18px !important;
+          letter-spacing: 0 !important;
         }
         .professional-content button[style*="background: #cc0000"],
         .professional-content button[style*="background: #d4a843"],

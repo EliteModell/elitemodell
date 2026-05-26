@@ -71,17 +71,17 @@ export default function ProfileInfoSection({
   return (
     <div className="profile-sections">
       <section className="profile-section-card">
-        <SectionHeader icon={<UserRound />} title="Informacoes pessoais" />
+        <SectionHeader icon={<UserRound />} title="Informações pessoais" />
         <div className="profile-row-list">
-          <InfoRow icon={<UserRound />} label="NOME" value={name ?? "Nao informado"} />
-          <InfoRow icon={<Mail />} label="E-MAIL" value={email ?? "Nao informado"} />
-          <InfoRow icon={<Phone />} label="TELEFONE" value={phone ?? "Nao informado"} />
+          <InfoRow icon={<UserRound />} label="NOME" value={name ?? "Não informado"} />
+          <InfoRow icon={<Mail />} label="E-MAIL" value={email ?? "Não informado"} />
+          <InfoRow icon={<Phone />} label="TELEFONE" value={phone ?? "Não informado"} />
           <InfoRow icon={<MapPin />} label="CIDADE" value={city ?? "Definir pela busca"} />
         </div>
       </section>
 
       <section className="profile-section-card">
-        <SectionHeader icon={<ShieldCheck />} title="Seguranca e verificacao" />
+        <SectionHeader icon={<ShieldCheck />} title="Segurança e verificação" />
         <div className="profile-row-list">
           <InfoRow icon={<ShieldCheck />} label="E-MAIL" value={emailVerified ? "Validado" : "Pendente"} status={emailVerified ? "success" : "warning"} />
           <InfoRow icon={<Phone />} label="TELEFONE" value={phoneVerified ? "Validado" : "Pendente"} status={phoneVerified ? "success" : "warning"} />

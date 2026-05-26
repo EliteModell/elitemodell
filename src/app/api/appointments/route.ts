@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "NÃ£o autorizado." }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   const limited = enforceRateLimit(`appointments-update:${session.user.id}`, 60, 60 * 1000, "Muitas atualizacoes em pouco tempo.");
   if (limited) return limited;
 
@@ -123,7 +123,7 @@ export async function PATCH(req: NextRequest) {
       where: { id: data.id },
       include: { professional: { select: { userId: true } } },
     });
-    if (!appointment) return NextResponse.json({ error: "Agendamento nÃ£o encontrado." }, { status: 404 });
+    if (!appointment) return NextResponse.json({ error: "Agendamento não encontrado." }, { status: 404 });
 
     const isAdmin = session.user.role === "ADMIN";
     const isProfessionalOwner = appointment.professional.userId === session.user.id;

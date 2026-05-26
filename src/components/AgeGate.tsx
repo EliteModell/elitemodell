@@ -126,14 +126,14 @@ export default function AgeGate() {
           <p className="eyebrow">Acesso restrito</p>
           <h2 id="age-gate-title">Aviso importante antes de continuar</h2>
           <p id="age-gate-description" className="age-intro">
-            Este ambiente e destinado exclusivamente a maiores de 18 anos. Ao continuar, voce confirma que possui 18 anos ou
-            mais e que esta ciente de que podera visualizar conteudo e anuncios voltados ao publico adulto, sempre de acordo
-            com os <Link href="/terms">Termos de Uso</Link> e a <Link href="/privacy">Politica de Privacidade</Link> da plataforma.
+            Este ambiente é destinado exclusivamente a maiores de 18 anos. Ao continuar, você confirma que possui 18 anos ou
+            mais e que está ciente de que poderá visualizar conteúdo e anúncios voltados ao público adulto, sempre de acordo
+            com os <Link href="/terms">Termos de Uso</Link> e a <Link href="/privacy">Política de Privacidade</Link> da plataforma.
           </p>
 
           <div className="privacy-note">
             <ShieldCheck size={18} aria-hidden="true" />
-            <span>A Elite Modell prioriza discricao, seguranca e respeito a privacidade.</span>
+            <span>A Elite Modell prioriza discrição, segurança e respeito à privacidade.</span>
           </div>
 
           <div className="actions">

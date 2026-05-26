@@ -24,26 +24,26 @@ export type ProfessionalListingViewData = {
 
 export function ProfessionalListingClient({ data }: { data: ProfessionalListingViewData }) {
   return (
-    <div className="grid gap-5" data-dashboard-version="professional-listing-v1">
-      <section className="rounded-[8px] border border-[#d4a843]/20 bg-[linear-gradient(145deg,rgba(18,18,20,0.98),rgba(8,8,9,0.98))] p-4 shadow-[0_26px_80px_rgba(0,0,0,0.34)] sm:p-5">
+    <div className="grid gap-6" data-dashboard-version="professional-listing-v1">
+      <section className="rounded-[18px] border border-[#d4a843]/20 bg-[radial-gradient(circle_at_top_left,rgba(212,168,67,0.14),transparent_35%),linear-gradient(145deg,rgba(18,18,20,0.98),rgba(8,8,9,0.98))] p-5 shadow-[0_26px_80px_rgba(0,0,0,0.34)] sm:p-6">
         <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#d4a843]">Listagem profissional</p>
-        <h1 className="mt-1 text-3xl font-black leading-tight text-white sm:text-4xl">Minha posicao na listagem</h1>
+        <h1 className="mt-2 text-3xl font-black leading-tight text-white sm:text-4xl">Minha posição na listagem</h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55">
-          Seu perfil esta aparecendo em {data.cityLabel}. Acompanhe sua posicao, veja como seu card publico aparece e use os atalhos para ganhar mais visibilidade.
+          Seu perfil está aparecendo em {data.cityLabel}. Acompanhe sua posição, veja como seu card público aparece e use os atalhos para ganhar mais visibilidade.
         </p>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { label: "Posicao atual", value: data.rankingLabel, icon: Trophy },
+          { label: "Posição atual", value: data.rankingLabel, icon: Trophy },
           { label: "Cidade exibida", value: data.cityLabel, icon: MapPin },
           { label: "Plano ativo", value: data.planStatus, icon: Crown },
           { label: "Status na listagem", value: data.listingStatus, icon: Gauge },
         ].map((item) => {
           const Icon = item.icon;
           return (
-            <article key={item.label} className="min-h-28 rounded-[8px] border border-[#d4a843]/18 bg-white/[0.035] p-4">
-              <div className="mb-3 grid h-9 w-9 place-items-center rounded-[8px] bg-[#d4a843]/10 text-[#f5d78c]">
+            <article key={item.label} className="min-h-32 rounded-[18px] border border-[#d4a843]/18 bg-white/[0.035] p-4 shadow-[0_16px_44px_rgba(0,0,0,0.20)]">
+              <div className="mb-3 grid h-10 w-10 place-items-center rounded-[14px] bg-[#d4a843]/10 text-[#f5d78c]">
                 <Icon className="h-4 w-4" />
               </div>
               <p className="text-xs font-black uppercase tracking-[0.16em] text-white/36">{item.label}</p>
@@ -56,7 +56,7 @@ export function ProfessionalListingClient({ data }: { data: ProfessionalListingV
       <section className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
         <article className="overflow-hidden rounded-[8px] border border-[#d4a843]/22 bg-[linear-gradient(180deg,rgba(17,18,21,0.98),rgba(8,8,9,0.98))] shadow-[0_22px_70px_rgba(0,0,0,0.30)]">
           <div className="border-b border-white/10 px-4 py-3">
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#d4a843]">Previa do card publico</p>
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#d4a843]">Prévia do card público</p>
           </div>
           <div className="p-4">
             <div className="relative min-h-[320px] overflow-hidden rounded-[8px] border border-white/12 bg-[linear-gradient(145deg,#10131a,#080809)] p-4">
@@ -105,7 +105,7 @@ export function ProfessionalListingClient({ data }: { data: ProfessionalListingV
           <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d4a843]">Como aparecer melhor</p>
           <h2 className="mt-1 text-2xl font-black text-white">Dicas de visibilidade</h2>
           <p className="mt-2 text-sm leading-6 text-white/55">
-            Perfis com mais fotos, agenda ativa, contatos claros e plano de destaque aparecem com mais forca e convertem melhor.
+            Perfis com mais fotos, agenda ativa, contatos claros e plano de destaque aparecem com mais força e convertem melhor.
           </p>
           <div className="mt-5 grid gap-3">
             {data.tips.map((tip) => (
@@ -120,7 +120,7 @@ export function ProfessionalListingClient({ data }: { data: ProfessionalListingV
           <div className="mt-5 grid gap-2 sm:grid-cols-2">
             <Link href={data.publicProfileHref} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] border border-white/12 px-4 text-sm font-black text-white/72 no-underline transition hover:border-[#d4a843]/35 hover:text-[#f5d78c]">
               <Eye className="h-4 w-4" />
-              Ver perfil publico
+              Ver perfil público
             </Link>
             <Link href="/profissional/perfil" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] border border-white/12 px-4 text-sm font-black text-white/72 no-underline transition hover:border-[#d4a843]/35 hover:text-[#f5d78c]">
               <Gauge className="h-4 w-4" />

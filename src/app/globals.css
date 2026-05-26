@@ -2022,7 +2022,7 @@ body[data-client-explore="true"] .client-premium > header {
 }
 
 body[data-client-explore="true"] .client-premium > header button,
-body[data-client-explore="true"] .client-premium > header a[aria-label="NotificaÃ§Ãµes"] {
+body[data-client-explore="true"] .client-premium > header a[aria-label="Notificações"] {
   border-color: rgba(214, 168, 58, 0.28) !important;
   background: rgba(16, 17, 20, 0.88) !important;
   color: #f5b83b !important;

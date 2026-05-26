@@ -61,34 +61,34 @@ const copy: Record<FlowMode, {
 }> = {
   client: {
     title: "Vamos verificar o seu telefone",
-    phoneLabel: "Numero de telefone",
+    phoneLabel: "Número de telefone",
     phonePlaceholder: "(11) 96123-4567",
-    hint: "Esta etapa e obrigatoria para manter sua conta segura. Este numero nao sera exibido publicamente.",
-    submit: "Enviar codigo via SMS",
+    hint: "Esta etapa é obrigatória para manter sua conta segura. Este número não será exibido publicamente.",
+    submit: "Enviar código via SMS",
     loginHref: "/app/consumer/login",
-    loginLabel: "Ja tenho uma conta",
+    loginLabel: "Já tenho uma conta",
     verifyBack: "/app/consumer/register",
   },
   model: {
     title: "Vamos verificar o seu telefone",
-    phoneLabel: "Numero de telefone",
+    phoneLabel: "Número de telefone",
     phonePlaceholder: "(11) 96123-4567",
-    hint: "Esta etapa e obrigatoria para manter seu perfil seguro. Este numero nao sera exibido publicamente. Depois, voce podera escolher outro para mostrar nos seus anuncios.",
-    submit: "Enviar codigo via SMS",
+    hint: "Esta etapa é obrigatória para manter seu perfil seguro. Este número não será exibido publicamente. Depois, você poderá escolher outro para mostrar nos seus anúncios.",
+    submit: "Enviar código via SMS",
     loginHref: "/modelo/login",
-    loginLabel: "Ja tenho conta",
-    ownershipLabel: "Confirmo que estou criando meu proprio perfil.",
+    loginLabel: "Já tenho conta",
+    ownershipLabel: "Confirmo que estou criando meu próprio perfil.",
     verifyBack: "/cadastro-modelo",
   },
   host: {
     title: "Vamos verificar o seu telefone",
-    phoneLabel: "Numero de telefone",
+    phoneLabel: "Número de telefone",
     phonePlaceholder: "(11) 96123-4567",
-    hint: "Esta etapa e obrigatoria para manter seu cadastro seguro. Este numero nao sera exibido publicamente no local anunciado.",
-    submit: "Enviar codigo via SMS",
+    hint: "Esta etapa é obrigatória para manter seu cadastro seguro. Este número não será exibido publicamente no local anunciado.",
+    submit: "Enviar código via SMS",
     loginHref: "/login?returnUrl=/anfitriao/imoveis/novo",
-    loginLabel: "Ja tenho conta",
-    ownershipLabel: "Confirmo que sou responsavel pelo local que vou cadastrar.",
+    loginLabel: "Já tenho conta",
+    ownershipLabel: "Confirmo que sou responsável pelo local que vou cadastrar.",
     verifyBack: "/cadastro-anfitriao",
   },
 };
@@ -205,15 +205,15 @@ function PremiumAuthFooter() {
         <Logo />
         <div className="restricted">Ambiente restrito a maiores de 18 anos</div>
         <p>
-          A Elite Modell conecta clientes, profissionais e locais reservados com discricao, seguranca e uma experiencia
-          premium. O telefone e usado para verificacao da conta e prevencao de abuso.
+          A Elite Modell conecta clientes, profissionais e locais reservados com discrição, segurança e uma experiência
+          premium. O telefone é usado para verificação da conta e prevenção de abuso.
         </p>
       </section>
       <div className="groups">
         <div>
           <strong>Legal</strong>
           <Link href="/terms">Termos de Uso</Link>
-          <Link href="/privacy">Politica de Privacidade</Link>
+          <Link href="/privacy">Política de Privacidade</Link>
         </div>
         <div>
           <strong>Suporte</strong>
@@ -221,8 +221,8 @@ function PremiumAuthFooter() {
           <Link href="/esqueci-senha">Recuperar senha</Link>
         </div>
         <div>
-          <strong>Seguranca</strong>
-          <Link href="/dashboard/verificacao-idade">Verificacao de conta</Link>
+          <strong>Segurança</strong>
+          <Link href="/dashboard/verificacao-idade">Verificação de conta</Link>
           <Link href="/privacy">Como cuidamos dos seus dados</Link>
         </div>
       </div>
@@ -424,7 +424,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
   async function sendCode(nextPhone = phone) {
     const normalized = digits(nextPhone);
     if (!isValidPhone(normalized)) {
-      const message = "Informe um celular brasileiro valido.";
+      const message = "Informe um celular brasileiro válido.";
       setOtpStatus("error");
       setStatusMessage(message);
       toast.error(message);
@@ -434,7 +434,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
     const consent = consentPayload();
     setLoading(true);
     setOtpStatus("sending");
-    setStatusMessage("Enviando codigo de verificacao...");
+    setStatusMessage("Enviando código de verificação...");
 
     try {
       const { RecaptchaVerifier: FirebaseRecaptchaVerifier } = await import("firebase/auth");
@@ -456,13 +456,13 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
       sessionStorage.setItem(consentKey, JSON.stringify(consent));
       setTimer(60);
       setOtpStatus("sent");
-      setStatusMessage("Codigo enviado. Verifique seu SMS.");
-      toast.success("Codigo enviado.");
+      setStatusMessage("Código enviado. Verifique seu SMS.");
+      toast.success("Código enviado.");
       return true;
     } catch (err) {
       firebaseRecaptchaVerifier?.clear();
       firebaseRecaptchaVerifier = null;
-      const message = err instanceof Error ? err.message : "Nao foi possivel enviar o codigo.";
+      const message = err instanceof Error ? err.message : "Não foi possível enviar o código.";
       setOtpStatus("error");
       setStatusMessage(message);
       toast.error(message);
@@ -487,16 +487,16 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
     if (!/^\d{4,6}$/.test(code)) {
-      toast.error("Digite o codigo recebido.");
+      toast.error("Digite o código recebido.");
       return;
     }
 
     setLoading(true);
     setOtpStatus("verifying");
-    setStatusMessage("Validando codigo...");
+    setStatusMessage("Validando código...");
     try {
       if (!firebaseConfirmationResult) {
-        throw new Error("Sessao de verificacao expirada. Solicite um novo codigo.");
+        throw new Error("Sessão de verificação expirada. Solicite um novo código.");
       }
 
       const credential = await firebaseConfirmationResult.confirm(code);
@@ -515,10 +515,10 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? "Nao foi possivel verificar o codigo.");
+      if (!res.ok) throw new Error(data.error ?? "Não foi possível verificar o código.");
 
       const auth = await signIn("phone-otp-token", { token: data.authToken, redirect: false });
-      if (auth?.error) throw new Error("Codigo validado, mas nao foi possivel iniciar a sessao.");
+      if (auth?.error) throw new Error("Código validado, mas não foi possível iniciar a sessão.");
 
       sessionStorage.removeItem(consentKey);
       firebaseConfirmationResult = null;
@@ -530,7 +530,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
       router.replace(returnUrl ?? data.redirectTo ?? (mode === "host" ? "/anfitriao/imoveis/novo" : mode === "model" ? "/profissional/novo" : "/painel/cliente"));
       router.refresh();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Nao foi possivel verificar o codigo.";
+      const message = err instanceof Error ? err.message : "Não foi possível verificar o código.";
       setOtpStatus("error");
       setStatusMessage(message);
       toast.error(message);
@@ -543,9 +543,9 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
     return (
       <AuthShell backHref={text.verifyBack} premium={isPremium}>
         <section style={{ width: "100%", maxWidth: isPremium ? 430 : 680, margin: "0 auto", padding: "32px 24px 0" }}>
-          <h1 style={{ fontSize: 32, lineHeight: 1.14, margin: "0 0 12px", color: isPremium ? "#fff" : INK }}>Digite o codigo enviado</h1>
+          <h1 style={{ fontSize: 32, lineHeight: 1.14, margin: "0 0 12px", color: isPremium ? "#fff" : INK }}>Digite o código enviado</h1>
           <p style={{ fontSize: 17, lineHeight: 1.5, color: isPremium ? "#b8b8b8" : "#5b656b", margin: "0 0 28px" }}>
-            Enviamos um codigo de verificacao para {phone || "o telefone informado"}.
+            Enviamos um código de verificação para {phone || "o telefone informado"}.
           </p>
           <form onSubmit={handleVerify}>
             <input
@@ -571,7 +571,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
             <StatusMessage status={otpStatus} message={statusMessage} premium={isPremium} />
             <div style={{ height: 22 }} />
             <SubmitButton disabled={loading || otpStatus === "verified"} premium={isPremium}>
-              {otpStatus === "verifying" ? "Verificando..." : otpStatus === "verified" ? "Validado" : "Verificar codigo"}
+              {otpStatus === "verifying" ? "Verificando..." : otpStatus === "verified" ? "Validado" : "Verificar código"}
             </SubmitButton>
           </form>
           <button
@@ -580,7 +580,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
             disabled={loading || timer > 0 || otpStatus === "verified"}
             style={{ marginTop: 22, width: "100%", border: "none", background: "transparent", color: isPremium ? "#d6a83a" : INK, fontSize: 16, fontWeight: 800, cursor: timer > 0 ? "not-allowed" : "pointer" }}
           >
-            {timer > 0 ? `Reenviar codigo em ${timer}s` : "Reenviar codigo"}
+            {timer > 0 ? `Reenviar código em ${timer}s` : "Reenviar código"}
           </button>
           <button
             type="button"
@@ -601,8 +601,8 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
       <section style={{ width: "100%", maxWidth: 430, margin: "0 auto", padding: "32px 24px 0" }}>
         <div style={{ textAlign: "center", marginBottom: 42 }}>
           <p style={{ margin: "0 0 10px", color: "#d6a83a", fontSize: 11, fontWeight: 950, letterSpacing: "0.18em", textTransform: "uppercase" }}>Acesse Elite Modell</p>
-          <h1 style={{ fontSize: 34, lineHeight: 1.08, margin: 0, color: "#fff", fontWeight: 950, letterSpacing: 0 }}>Verificacao obrigatoria</h1>
-          <p style={{ fontSize: 16, color: "#b8b8b8", margin: "12px auto 0", lineHeight: 1.55, maxWidth: 340 }}>Ative sua conta com uma camada extra de seguranca.</p>
+          <h1 style={{ fontSize: 34, lineHeight: 1.08, margin: 0, color: "#fff", fontWeight: 950, letterSpacing: 0 }}>Verificação obrigatória</h1>
+          <p style={{ fontSize: 16, color: "#b8b8b8", margin: "12px auto 0", lineHeight: 1.55, maxWidth: 340 }}>Ative sua conta com uma camada extra de segurança.</p>
         </div>
 
         {sessionEmail && (
@@ -639,7 +639,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
           {!isClient && (
             <label style={{ ...themedCheckStyle, marginTop: 24 }}>
               <input type="checkbox" checked={promo} onChange={(e) => setPromo(e.target.checked)} style={nativeCheckStyle} />
-              Aceito receber informacoes sobre meu cadastro.
+              Aceito receber informações sobre meu cadastro.
             </label>
           )}
 
@@ -649,13 +649,13 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
             style={{ width: "100%", minHeight: 58, border: isPremium ? "1px solid rgba(214,168,58,0.25)" : "none", borderRadius: isPremium ? 18 : 8, background: isPremium ? "rgba(16,16,20,0.88)" : "#eef7ef", display: "flex", alignItems: "center", gap: 14, padding: "0 16px", color: isPremium ? "#fff" : "#233037", fontSize: 17, fontWeight: 800, cursor: "pointer", marginTop: 24 }}
           >
             <ShieldCheck size={23} color={isPremium ? "#d6a83a" : "#4a9b5a"} />
-            <span style={{ flex: 1, textAlign: "left" }}>Privacidade e seguranca</span>
+            <span style={{ flex: 1, textAlign: "left" }}>Privacidade e segurança</span>
             <Info size={24} />
           </button>
 
           <label style={{ ...themedCheckStyle, marginTop: 28, fontSize: isClient ? 18 : 16, fontWeight: isClient ? 900 : 500, color: isPremium ? "#b8b8b8" : INK }}>
             <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} style={nativeCheckStyle} />
-            <span>Li e aceito os <Link href="/terms" style={themedLinkStyle}>Termos de Uso</Link> e a <Link href="/privacy" style={themedLinkStyle}>Politica de Privacidade</Link>.</span>
+            <span>Li e aceito os <Link href="/terms" style={themedLinkStyle}>Termos de Uso</Link> e a <Link href="/privacy" style={themedLinkStyle}>Política de Privacidade</Link>.</span>
           </label>
 
           {!isClient && (
@@ -674,7 +674,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
           <StatusMessage status={otpStatus} message={statusMessage} premium={isPremium} />
           <div style={{ height: 22 }} />
           <SubmitButton disabled={!canSubmit || loading} premium={isPremium}>
-            {otpStatus === "sending" ? "Enviando..." : otpStatus === "sent" ? "Codigo enviado" : text.submit}
+            {otpStatus === "sending" ? "Enviando..." : otpStatus === "sent" ? "Código enviado" : text.submit}
           </SubmitButton>
         </form>
 
@@ -683,7 +683,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
         </p>
         {isClient && (
           <p style={{ textAlign: "center", margin: "28px 0", fontSize: 17, color: "#39454c" }}>
-            Quer anunciar? <Link href="/cadastro-modelo" style={linkStyle}>Cadastre-se como acompanhante</Link> ou <Link href="/cadastro-anfitriao" style={linkStyle}>anfitriao</Link>.
+            Quer anunciar? <Link href="/cadastro-modelo" style={linkStyle}>Cadastre-se como acompanhante</Link> ou <Link href="/cadastro-anfitriao" style={linkStyle}>anfitrião</Link>.
           </p>
         )}
       </section>
@@ -693,9 +693,9 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
         <div role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.42)", display: "grid", placeItems: "center", padding: 20, zIndex: 40 }}>
           <div style={{ background: "#fff", borderRadius: 10, padding: 24, maxWidth: 420, color: INK, boxShadow: "0 18px 60px rgba(0,0,0,0.2)" }}>
             <ShieldCheck size={28} color={GOLD} />
-            <h2 style={{ margin: "12px 0 10px", fontSize: 22 }}>Privacidade e seguranca</h2>
+            <h2 style={{ margin: "12px 0 10px", fontSize: 22 }}>Privacidade e segurança</h2>
             <p style={{ margin: 0, color: "#4f5b61", lineHeight: 1.55 }}>
-              O telefone e usado para verificacao da conta, prevencao de abuso e comunicacoes do cadastro. O tratamento segue a LGPD, os Termos de Uso e a Politica de Privacidade.
+              O telefone é usado para verificação da conta, prevenção de abuso e comunicações do cadastro. O tratamento segue a LGPD, os Termos de Uso e a Política de Privacidade.
             </p>
             <button onClick={() => setPrivacyOpen(false)} style={{ marginTop: 20, height: 46, width: "100%", border: "none", borderRadius: 8, background: GOLD, color: "#111", fontWeight: 900, cursor: "pointer" }}>Entendi</button>
           </div>

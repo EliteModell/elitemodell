@@ -315,7 +315,7 @@ function FaceCapture({
         </button>
         <button type="button" onClick={recording ? stopRecording : startRecording} disabled={!cameraOn || loading}
           style={{ padding: "11px", borderRadius: 8, border: `1px solid ${recording ? "rgba(239,68,68,0.5)" : GOLD_MID}`, background: recording ? "rgba(239,68,68,0.12)" : "#0b1420", color: recording ? "#ef4444" : GOLD, fontWeight: 800, cursor: !cameraOn || loading ? "not-allowed" : "pointer" }}>
-          {recording ? "Parar video" : "Gravar video"}
+          {recording ? "Parar vídeo" : "Gravar vídeo"}
         </button>
       </div>
     </div>
@@ -402,14 +402,14 @@ export default function ProfissionalNovoPage() {
       if (!active) return;
 
       if (!res.ok) {
-        console.warn("[KYC] Nao foi possivel consultar disponibilidade da Persona.", {
+        console.warn("[KYC] Não foi possível consultar disponibilidade da Persona.", {
           status: res.status,
           data,
         });
         setPersonaAvailability({
           checked: true,
           available: false,
-          message: "Verificacao automatica indisponivel no momento. Use a verificacao manual.",
+          message: "Verificação automática indisponível no momento. Use a verificação manual.",
         });
         return;
       }
@@ -430,7 +430,7 @@ export default function ProfissionalNovoPage() {
         setPersonaAvailability({
           checked: true,
           available: false,
-          message: "Verificacao automatica indisponivel no momento. Use a verificacao manual.",
+          message: "Verificação automática indisponível no momento. Use a verificação manual.",
         });
       }
     });
@@ -532,7 +532,7 @@ export default function ProfissionalNovoPage() {
   /* ── submit final ─────────────────────────────────────── */
   async function startFaceBiometry() {
     if (personaAvailability.checked && !personaAvailability.available) {
-      toast.error("Verificacao automatica indisponivel no momento. Use a verificacao manual.");
+      toast.error("Verificação automática indisponível no momento. Use a verificação manual.");
       return;
     }
 
@@ -541,11 +541,11 @@ export default function ProfissionalNovoPage() {
       const res = await fetch("/api/kyc/sessions", { method: "POST" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        console.error("[KYC] Falha ao iniciar verificacao facial com Persona.", {
+        console.error("[KYC] Falha ao iniciar verificação facial com Persona.", {
           status: res.status,
           data,
         });
-        toast.error(data.error ?? "Nao foi possivel iniciar a verificacao facial com Persona. Tente novamente ou use a verificacao manual.");
+        toast.error(data.error ?? "Não foi possível iniciar a verificação facial com Persona. Tente novamente ou use a verificação manual.");
         return;
       }
 
@@ -558,16 +558,16 @@ export default function ProfissionalNovoPage() {
       if (!data.fallback) set("verificationType", "biometria");
 
       if (data.fallback || data.provider === "MANUAL" || data.provider === "LOCAL_MANUAL") {
-        toast.error(data.message ?? "Verificacao manual pendente. Envie sua selfie ou video de verificacao abaixo para analise manual.");
+        toast.error(data.message ?? "Verificação manual pendente. Envie sua selfie ou vídeo de verificação abaixo para análise manual.");
         return;
       } else if (data.url?.startsWith("http")) {
         window.location.href = data.url;
       } else {
-        toast.success("Verificacao facial com Persona iniciada.");
+        toast.success("Verificação facial com Persona iniciada.");
       }
     } catch (err) {
-      console.error("[KYC] Erro de rede ao iniciar verificacao facial com Persona.", err);
-      toast.error("Nao foi possivel iniciar a verificacao facial com Persona. Tente novamente ou use a verificacao manual.");
+      console.error("[KYC] Erro de rede ao iniciar verificação facial com Persona.", err);
+      toast.error("Não foi possível iniciar a verificação facial com Persona. Tente novamente ou use a verificação manual.");
     } finally {
       setUploadingIdx(null);
     }
@@ -662,13 +662,13 @@ export default function ProfissionalNovoPage() {
       if (!form.pricePerHour && !form.price30min && !form.price2h && !form.priceOvernight && !form.priceWebcam) return "Informe pelo menos um valor.";
       if (form.paymentMethods.length === 0) return "Selecione pelo menos uma forma de pagamento.";
     }
-    if (targetStep === 5 && form.whatsapp.replace(/\D/g, "").length < 10) return "Informe um WhatsApp valido com DDD.";
+    if (targetStep === 5 && form.whatsapp.replace(/\D/g, "").length < 10) return "Informe um WhatsApp válido com DDD.";
     if (targetStep === 6 && !form.mainPhotoUrl) return "Envie a foto principal do perfil.";
     if (targetStep === 7) {
       if (!form.docType) return "Selecione o tipo de documento.";
       if (!form.docFrenteUrl || !form.docVersoUrl) return "Envie frente e verso do documento.";
     }
-    if (targetStep === 8 && !form.kycSessionId) return "Inicie a validacao facial para continuar.";
+    if (targetStep === 8 && !form.kycSessionId) return "Inicie a validação facial para continuar.";
     return null;
   }
 
@@ -1158,7 +1158,7 @@ export default function ProfissionalNovoPage() {
       ══════════════════════════════════════════════ */}
       {step === 8 && (
         <div>
-          <Section title="Verificacao facial" desc="Para proteger a segurança da plataforma, realizamos uma validação facial para confirmar autenticidade, maioridade e evitar perfis falsos.">
+          <Section title="Verificação facial" desc="Para proteger a segurança da plataforma, realizamos uma validação facial para confirmar autenticidade, maioridade e evitar perfis falsos.">
 
             <div style={{ background: "#060e1b", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "16px", marginBottom: 20 }}>
               <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#f1f5f9" }}>Validação facial segura</p>
@@ -1171,16 +1171,16 @@ export default function ProfissionalNovoPage() {
                 disabled={personaButtonDisabled}
                 style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "none", background: personaUnavailable ? "#334155" : GOLD, color: personaUnavailable ? "#94a3b8" : "#060e1b", fontSize: 14, fontWeight: 800, cursor: personaButtonDisabled ? "not-allowed" : "pointer" }}
               >
-                {uploadingIdx === 100 ? "Iniciando..." : personaUnavailable ? "Verificacao automatica indisponivel" : "Iniciar verificacao facial"}
+                {uploadingIdx === 100 ? "Iniciando..." : personaUnavailable ? "Verificação automática indisponível" : "Iniciar verificação facial"}
               </button>
               {personaUnavailable && (
                 <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: "rgba(234,179,8,0.10)", border: "1px solid rgba(234,179,8,0.25)", color: "#facc15", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>
-                  {personaAvailability.message ?? "Verificacao automatica indisponivel no momento. Use a verificacao manual."}
+                  {personaAvailability.message ?? "Verificação automática indisponível no momento. Use a verificação manual."}
                 </div>
               )}
               {form.kycSessionId && (
                 <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, fontSize: 12, fontWeight: 700 }}>
-                  {form.kycProvider === "PERSONA" ? "Verificacao facial com Persona" : "Verificacao manual"}: {form.kycStatus}
+                  {form.kycProvider === "PERSONA" ? "Verificação facial com Persona" : "Verificação manual"}: {form.kycStatus}
                   {form.kycExpiresAt && (
                     <span style={{ display: "block", color: "#94a3b8", fontWeight: 500, marginTop: 4 }}>
                       Expira em {new Date(form.kycExpiresAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
@@ -1192,7 +1192,7 @@ export default function ProfissionalNovoPage() {
 
             {form.verificationUrl && form.verificationType === "biometria" && (
               <div style={{ marginTop: 8, padding: "10px 14px", background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 8, fontSize: 12, color: GOLD }}>
-                Verificacao facial com Persona iniciada
+                Verificação facial com Persona iniciada
               </div>
             )}
 
@@ -1215,7 +1215,7 @@ export default function ProfissionalNovoPage() {
                 ["Foto principal", form.mainPhotoUrl ? "✓ Enviada" : "Não enviada"],
                 ["Fotos na galeria", `${form.galleryUrls.length} foto(s)`],
                 ["Documento", form.docFrenteUrl ? "✓ Enviado" : "Não enviado"],
-                ["Verificacao facial", form.verificationUrl ? "✓ Iniciada" : "Não iniciada"],
+                ["Verificação facial", form.verificationUrl ? "✓ Iniciada" : "Não iniciada"],
                 ["WhatsApp", form.whatsapp || "—"],
               ].map(([label, value]) => (
                 <div key={label} style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 8, padding: "10px 12px" }}>

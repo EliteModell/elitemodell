@@ -15,7 +15,7 @@ export default async function AdminConfiguracoesPage() {
 
   return (
     <div>
-      <AdminHeader title="Configuracoes" subtitle="Resumo seguro das configuracoes criticas. Valores secretos nunca sao exibidos." />
+      <AdminHeader title="Configurações" subtitle="Resumo seguro das configurações críticas. Valores secretos nunca são exibidos." />
       <AdminPanel>
         <h2 style={{ color: "#fff", margin: "0 0 14px", fontSize: 16 }}>Ambiente operacional</h2>
         <div style={{ display: "grid", gap: 10 }}>

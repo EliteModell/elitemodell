@@ -73,7 +73,7 @@ export default function AgeVerificationCard({
               </span>
             </div>
             <p className="mt-3 text-[15px] leading-7 text-[#b8b8b8]">
-              Para acessar recursos privados, contatos e conteudos restritos, confirme que voce e maior de 18 anos.
+              Para acessar recursos privados, contatos e conteúdos restritos, confirme que você é maior de 18 anos.
             </p>
           </div>
         </div>
@@ -82,7 +82,7 @@ export default function AgeVerificationCard({
         </Link>
         {!compact ? (
           <p className="mt-3 text-center text-[12px] leading-5 text-[#b8b8b8]/70">
-            O aceite do aviso inicial 18+ nao substitui esta verificacao.
+            O aceite do aviso inicial 18+ não substitui esta verificação.
           </p>
         ) : null}
       </div>

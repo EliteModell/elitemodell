@@ -26,7 +26,7 @@ export default function VerificacaoIdadeClient({
   const [error, setError] = useState<string | null>(null);
 
   const canStart = status === "not_started" || status === "rejected";
-  const providerLabel = kycSessionId?.startsWith("inq_") ? "Verificacao facial com Persona" : "Verificacao manual";
+  const providerLabel = kycSessionId?.startsWith("inq_") ? "Verificação facial com Persona" : "Verificação manual";
 
   async function handleStart() {
     if (!canStart || loading) return;
@@ -90,17 +90,17 @@ export default function VerificacaoIdadeClient({
               {clientAgeVerificationLabel(status)}
             </span>
             <h2 className="mt-4 text-[25px] font-black leading-8 text-white">
-              Confirmacao real de maioridade
+              Confirmação real de maioridade
             </h2>
             <p className="mt-3 text-[15px] leading-7 text-[#b8b8b8]">
-              O aviso inicial 18+ apenas registra seu consentimento para navegar. Esta verificacao e separada e libera contatos, conteudos restritos e recursos privados do cliente.
+              O aviso inicial 18+ apenas registra seu consentimento para navegar. Esta verificação é separada e libera contatos, conteúdos restritos e recursos privados do cliente.
             </p>
             <p className="mt-2 text-[12px] font-black text-[#f5b83b]">
               {providerLabel}
             </p>
             {kycSessionId ? (
               <p className="mt-2 break-all text-[11px] leading-5 text-[#b8b8b8]/60">
-                Inquiry/sessao: {kycSessionId}
+                Inquiry/sessão: {kycSessionId}
               </p>
             ) : null}
             {submittedAt ? (
@@ -166,7 +166,7 @@ export default function VerificacaoIdadeClient({
           <div className="min-w-0">
             <h2 className="text-[21px] font-black text-white">Como funciona</h2>
             <p className="mt-3 text-[15px] leading-7 text-[#b8b8b8]">
-              A analise confirma que sua conta pertence a uma pessoa maior de 18 anos. Enquanto estiver pendente, a navegacao publica continua disponivel e os recursos sensiveis permanecem bloqueados.
+              A análise confirma que sua conta pertence a uma pessoa maior de 18 anos. Enquanto estiver pendente, a navegação pública continua disponível e os recursos sensíveis permanecem bloqueados.
             </p>
           </div>
         </div>

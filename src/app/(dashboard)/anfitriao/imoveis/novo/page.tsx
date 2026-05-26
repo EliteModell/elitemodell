@@ -321,7 +321,7 @@ function fileToDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error("Nao foi possivel preparar a foto para rascunho."));
+    reader.onerror = () => reject(new Error("Não foi possível preparar a foto para rascunho."));
     reader.readAsDataURL(file);
   });
 }
@@ -408,7 +408,7 @@ export default function NovoImovelPage() {
       );
       return true;
     } catch (err) {
-      console.warn("[property-draft] Nao foi possivel salvar rascunho local.", err);
+      console.warn("[property-draft] Não foi possível salvar rascunho local.", err);
       return false;
     }
   }

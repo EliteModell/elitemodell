@@ -25,7 +25,7 @@ export default async function ProfissionalEstatisticasPage() {
   });
 
   if (!professional) {
-    return <div className="premium-empty-state" style={{ padding: 28 }}>Perfil profissional nao encontrado.</div>;
+    return <div className="premium-empty-state" style={{ padding: 28 }}>Perfil profissional não encontrado.</div>;
   }
 
   const referenceDate = new Date();
@@ -50,22 +50,22 @@ export default async function ProfissionalEstatisticasPage() {
   });
   const max = Math.max(1, ...days.map((day) => Math.max(day.views, day.contacts)));
 
-  const card = { background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, padding: 18 } as const;
+  const card = { background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: 20 } as const;
 
   return (
     <div style={{ maxWidth: 980 }}>
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", marginBottom: 4 }}>Estatisticas do perfil</h1>
-        <p style={{ color: "#777", fontSize: 14 }}>Acompanhe visualizacoes, cliques de contato, favoritos e desempenho recente.</p>
+        <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", marginBottom: 4 }}>Estatísticas do perfil</h1>
+        <p style={{ color: "#777", fontSize: 14 }}>Acompanhe visualizações, cliques de contato, favoritos e desempenho recente.</p>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 14, marginBottom: 22 }}>
         {[
-          ["Visualizacoes", professional.profileViews],
+          ["Visualizações", professional.profileViews],
           ["Cliques em contato", professional.contactClicks],
           ["Favoritos", professional.favorites.length],
-          ["Avaliacoes", professional.totalReviews],
-          ["Nota media", professional.rating.toFixed(1)],
+          ["Avaliações", professional.totalReviews],
+          ["Nota média", professional.rating.toFixed(1)],
         ].map(([label, value]) => (
           <div key={label} style={card}>
             <p style={{ margin: "0 0 8px", color: "#777", fontSize: 12, textTransform: "uppercase", letterSpacing: 1.4 }}>{label}</p>
@@ -77,20 +77,20 @@ export default async function ProfissionalEstatisticasPage() {
       <div style={card}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 18 }}>
           <div>
-            <h2 style={{ color: "#fff", fontSize: 17, margin: 0 }}>Ultimos 30 dias</h2>
+            <h2 style={{ color: "#fff", fontSize: 17, margin: 0 }}>Últimos 30 dias</h2>
             <p style={{ color: "#777", fontSize: 13, margin: "4px 0 0" }}>
-              {last30.profile_view ?? 0} visualizacoes, {last30.contact_click ?? 0} contatos e {last30.favorite ?? 0} favoritos.
+              {last30.profile_view ?? 0} visualizações, {last30.contact_click ?? 0} contatos e {last30.favorite ?? 0} favoritos.
             </p>
           </div>
           <span style={{ color: "#f5d78c", fontSize: 12, border: "1px solid rgba(212,168,67,.25)", borderRadius: 999, padding: "8px 12px", alignSelf: "flex-start" }}>
-            Dados reais do perfil publico
+            Dados reais do perfil público
           </span>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: `repeat(${days.length}, minmax(28px, 1fr))`, gap: 8, alignItems: "end", minHeight: 180 }}>
           {days.map((day) => (
             <div key={day.key} style={{ display: "grid", gap: 5, alignItems: "end" }}>
-              <div title={`${day.views} visualizacoes`} style={{ height: Math.max(6, (day.views / max) * 120), background: "linear-gradient(180deg,#f5d78c,#d4a843)", borderRadius: 6 }} />
+              <div title={`${day.views} visualizações`} style={{ height: Math.max(6, (day.views / max) * 120), background: "linear-gradient(180deg,#f5d78c,#d4a843)", borderRadius: 6 }} />
               <div title={`${day.contacts} contatos`} style={{ height: Math.max(4, (day.contacts / max) * 80), background: "rgba(255,255,255,.18)", borderRadius: 6 }} />
               <span style={{ color: "#666", fontSize: 10, textAlign: "center" }}>{day.label}</span>
             </div>

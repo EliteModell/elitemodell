@@ -16,13 +16,13 @@ export default async function VerificacaoAnfitriaoPage() {
   const title = access.hostRejected
     ? "Cadastro de anfitriao reprovado"
     : access.hostInReview
-      ? "Cadastro de anfitriao em analise"
+      ? "Cadastro de anfitrião em análise"
       : "Complete seu cadastro de anfitriao";
   const description = access.hostRejected
-    ? `Seu imovel${rejectedProperty?.title ? ` "${rejectedProperty.title}"` : ""} foi reprovado pela administracao. Revise as informacoes e envie novamente, se aplicavel.`
+    ? `Seu imóvel${rejectedProperty?.title ? ` "${rejectedProperty.title}"` : ""} foi reprovado pela administração. Revise as informações e envie novamente, se aplicável.`
     : access.hostInReview
-      ? "Seu cadastro de anfitriao esta em analise. Aguarde aprovacao da administracao para acessar o painel completo."
-      : "Cadastre os dados do imovel, fotos, regras e disponibilidade para iniciar a analise.";
+      ? "Seu cadastro de anfitrião está em análise. Aguarde aprovação da administração para acessar o painel completo."
+      : "Cadastre os dados do imóvel, fotos, regras e disponibilidade para iniciar a análise.";
   const actionLabel = access.hostRejected ? "Corrigir cadastro" : access.hostInReview ? "Ver cadastro enviado" : "Completar cadastro";
 
   return (

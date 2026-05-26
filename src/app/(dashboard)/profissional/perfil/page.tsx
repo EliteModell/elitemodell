@@ -5,9 +5,9 @@ import toast from "react-hot-toast";
 const GOLD = "#d4a843";
 
 const specialtyOptions = [
-  "Modelo Fotografico", "Modelo Publicitario", "Modelo Fitness", "Modelo Plus Size",
+  "Modelo Fotográfico", "Modelo Publicitário", "Modelo Fitness", "Modelo Plus Size",
   "Modelo Editorial", "Atriz/Ator", "Influencer", "Promoter",
-  "Make Artist", "Stylist", "Fotografo", "Videomaker",
+  "Make Artist", "Stylist", "Fotógrafo", "Videomaker",
 ];
 
 type ProfileForm = {
@@ -121,7 +121,7 @@ export default function EditarPerfilPage() {
           specialties: professional.specialties?.map((s) => s.name) ?? [],
         });
       } catch {
-        if (!controller.signal.aborted) setError("Nao foi possivel carregar seu perfil agora.");
+        if (!controller.signal.aborted) setError("Não foi possível carregar seu perfil agora.");
       } finally {
         if (!controller.signal.aborted) setInitialLoading(false);
       }
@@ -140,7 +140,7 @@ export default function EditarPerfilPage() {
 
   async function handleSave() {
     if (!profileSlug) {
-      toast.error("Perfil profissional nao encontrado.");
+      toast.error("Perfil profissional não encontrado.");
       return;
     }
 
@@ -168,7 +168,7 @@ export default function EditarPerfilPage() {
       if (!res.ok) throw new Error("Failed to update profile");
       toast.success("Perfil atualizado com sucesso!");
     } catch {
-      toast.error("Nao foi possivel salvar o perfil.");
+      toast.error("Não foi possível salvar o perfil.");
     } finally {
       setLoading(false);
     }
@@ -179,7 +179,7 @@ export default function EditarPerfilPage() {
     padding: "11px 14px",
     background: "#0d0d0d",
     border: "1px solid #2a2a2a",
-    borderRadius: 8,
+    borderRadius: 12,
     color: "#fff" as const,
     fontSize: 14,
     outline: "none",
@@ -188,7 +188,7 @@ export default function EditarPerfilPage() {
   const label = { fontSize: 13, color: "#aaa", display: "block", marginBottom: 6, fontWeight: 500 } as const;
   const focus = {
     onFocus: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      e.currentTarget.style.borderColor = "#cc0000";
+      e.currentTarget.style.borderColor = GOLD;
     },
     onBlur: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       e.currentTarget.style.borderColor = "#2a2a2a";
@@ -217,28 +217,28 @@ export default function EditarPerfilPage() {
     <div style={{ maxWidth: 700 }}>
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Editar perfil</h1>
-        <p style={{ color: "#666", fontSize: 14 }}>Mantenha suas informacoes sempre atualizadas com dados salvos no banco.</p>
+        <p style={{ color: "#666", fontSize: 14 }}>Mantenha suas informações sempre atualizadas com dados salvos no banco.</p>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, padding: "22px" }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 18 }}>Informacoes basicas</h2>
+        <div style={{ background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: "22px" }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 18 }}>Informações básicas</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div>
-              <label style={label}>Nome artistico / Nome publico</label>
+              <label style={label}>Nome artístico / nome público</label>
               <input style={input} value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} {...focus} />
             </div>
             <div>
               <label style={label}>Biografia profissional</label>
               <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={5}
-                placeholder="Descreva sua experiencia, especialidades e diferenciais..."
+                placeholder="Descreva sua experiência, especialidades e diferenciais..."
                 style={{ ...input, resize: "vertical" }} {...focus} />
               <p style={{ fontSize: 12, color: "#555", marginTop: 4 }}>{form.bio.length}/1000 caracteres</p>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
               <div>
                 <label style={label}>Cidade</label>
-                <input style={input} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Sao Paulo" {...focus} />
+                <input style={input} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="São Paulo" {...focus} />
               </div>
               <div>
                 <label style={label}>Estado</label>
@@ -248,7 +248,7 @@ export default function EditarPerfilPage() {
           </div>
         </div>
 
-        <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, padding: "22px" }}>
+        <div style={{ background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: "22px" }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 6 }}>Especialidades</h2>
           <p style={{ fontSize: 13, color: "#666", marginBottom: 16 }}>Selecione todas que se aplicam ao seu trabalho.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -260,7 +260,7 @@ export default function EditarPerfilPage() {
                   padding: "7px 14px",
                   background: form.specialties.includes(s) ? "rgba(204,0,0,0.12)" : "#0d0d0d",
                   border: `1.5px solid ${form.specialties.includes(s) ? "#cc0000" : "#222"}`,
-                  borderRadius: 20,
+                  borderRadius: 999,
                   color: form.specialties.includes(s) ? "#fff" : "#888",
                   fontSize: 13,
                   cursor: "pointer",
@@ -274,29 +274,29 @@ export default function EditarPerfilPage() {
           </div>
         </div>
 
-        <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, padding: "22px" }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 18 }}>Faixa de preco</h2>
+        <div style={{ background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: "22px" }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 18 }}>Faixa de preço</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
             <div>
-              <label style={label}>Preco minimo (R$)</label>
+              <label style={label}>Preço mínimo (R$)</label>
               <MoneyField value={form.priceMin} onChange={(value) => setForm({ ...form, priceMin: value })} placeholder="500" />
             </div>
             <div>
-              <label style={label}>Preco maximo (R$)</label>
+              <label style={label}>Preço máximo (R$)</label>
               <MoneyField value={form.priceMax} onChange={(value) => setForm({ ...form, priceMax: value })} placeholder="2000" />
             </div>
           </div>
-          <p style={{ fontSize: 12, color: "#555", marginTop: 10 }}>Os valores sao uma referencia. O preco final e negociado com cada cliente.</p>
+          <p style={{ fontSize: 12, color: "#555", marginTop: 10 }}>Os valores são uma referência. O preço final é negociado com cada cliente.</p>
         </div>
 
-        <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, padding: "22px" }}>
+        <div style={{ background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: "22px" }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 18 }}>Contato e redes</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {[
               { key: "phone", label: "Telefone", placeholder: "11 99999-9999" },
               { key: "whatsapp", label: "WhatsApp (para contato direto)", placeholder: "11 99999-9999" },
               { key: "instagram", label: "Instagram", placeholder: "@seuperfil" },
-              { key: "website", label: "Site / Portfolio", placeholder: "www.seuperfil.com" },
+              { key: "website", label: "Site / portfólio", placeholder: "www.seuperfil.com" },
             ].map((f) => (
               <div key={f.key}>
                 <label style={label}>{f.label}</label>
@@ -311,19 +311,19 @@ export default function EditarPerfilPage() {
           disabled={loading}
           style={{
             padding: "14px",
-            background: loading ? "#8a0000" : "#cc0000",
-            color: "#fff",
+            background: loading ? "#8f7128" : "#d4a843",
+            color: "#080704",
             border: "none",
-            borderRadius: 10,
+            borderRadius: 12,
             fontSize: 15,
             fontWeight: 700,
             cursor: loading ? "not-allowed" : "pointer",
             transition: "background 0.2s",
           }}
-          onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = "#e00000"; }}
-          onMouseLeave={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = "#cc0000"; }}
+          onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = "#f5d78c"; }}
+          onMouseLeave={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = "#d4a843"; }}
         >
-          {loading ? "Salvando..." : "Salvar alteracoes"}
+          {loading ? "Salvando..." : "Salvar alterações"}
         </button>
       </div>
       <style>{`

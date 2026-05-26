@@ -138,7 +138,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
 
   return (
     <div>
-      <AdminHeader title="Acompanhantes e profissionais" subtitle="Analise cadastro, documentos, selfie/video, KYC, fotos publicas, descricao, servicos, cidade e historico de moderacao." />
+      <AdminHeader title="Acompanhantes e profissionais" subtitle="Analise cadastro, documentos, selfie/vídeo, KYC, fotos públicas, descrição, serviços, cidade e histórico de moderação." />
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
         {["ALL", "DRAFT", "PENDING_REVIEW", "ACTIVE", "PAUSED", "REJECTED", "SUSPENDED"].map((item) => (
           <Link key={item} href={item === "ALL" ? "/admin/profissionais" : `/admin/profissionais?status=${item}`} style={{ ...buttonStyle, textDecoration: "none", background: item === (status ?? "ALL") ? "rgba(212,168,67,.22)" : "rgba(255,255,255,.03)" }}>
@@ -154,7 +154,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
               <th style={thStyle}>Status</th>
               <th style={thStyle}>KYC e arquivos</th>
               <th style={thStyle}>Perfil</th>
-              <th style={thStyle}>Acao</th>
+              <th style={thStyle}>Ação</th>
             </tr>
           </thead>
           <tbody>
@@ -167,41 +167,41 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                 </td>
                 <td style={tdStyle}>
                   <StatusPill tone={pro.status === "ACTIVE" ? "success" : pro.status === "REJECTED" || pro.status === "SUSPENDED" ? "danger" : "warning"}>{statusLabel[pro.status] ?? pro.status}</StatusPill>
-                  {pro.pauseUntil ? <p style={{ color: "#f5d78c", margin: "8px 0 0" }}>Pausada ate {pro.pauseUntil.toLocaleDateString("pt-BR")}</p> : null}
+                  {pro.pauseUntil ? <p style={{ color: "#f5d78c", margin: "8px 0 0" }}>Pausada até {pro.pauseUntil.toLocaleDateString("pt-BR")}</p> : null}
                   {pro.rejectReason ? <p style={{ color: "#ef4444", margin: "8px 0 0" }}>{pro.rejectReason}</p> : null}
                 </td>
                 <td style={tdStyle}>
                   KYC: {personaProviderLabel(pro.kycProvider, pro.kycSessionId)} / {pro.kycStatus}<br />
                   Inquiry: {pro.kycSessionId ?? "-"}<br />
                   Doc: {pro.docStatus} | Face: {pro.verifStatus}<br />
-                  Codigo: {pro.verificationCode ?? "-"}<br />
-                  Verificacao: {pro.verificationUrl ? pro.verificationType ?? "arquivo" : "nao enviada"}<br />
-                  Video perfil: {pro.presentationVideoUrl ? pro.presentationVideoStatus : "nao enviado"}
+                  Código: {pro.verificationCode ?? "-"}<br />
+                  Verificação: {pro.verificationUrl ? pro.verificationType ?? "arquivo" : "não enviada"}<br />
+                  Vídeo do perfil: {pro.presentationVideoUrl ? pro.presentationVideoStatus : "não enviado"}
                   {pro.presentationVideoRejectReason ? <p style={{ color: "#ef4444", margin: "8px 0 0" }}>{pro.presentationVideoRejectReason}</p> : null}
                 </td>
                 <td style={tdStyle}>
-                  {pro.photos.length} midia(s), {pro.specialties.length} servico(s)<br />
+                  {pro.photos.length} mídia(s), {pro.specialties.length} serviço(s)<br />
                   Bio: {pro.bio.length} caracteres<br />
-                  Privacidade: {pro.hidePhone ? "telefone oculto" : "telefone publico"} / {pro.hideAge ? "idade oculta" : "idade publica"}<br />
-                  Metricas: {pro.profileViews} views, {pro.contactClicks} contatos, nota {pro.rating.toFixed(1)} ({pro.totalReviews})<br />
-                  Boost: {pro.boostActive ? `ativo ate ${pro.boostUntil ? pro.boostUntil.toLocaleDateString("pt-BR") : "data nao informada"}` : "inativo"}<br />
+                  Privacidade: {pro.hidePhone ? "telefone oculto" : "telefone público"} / {pro.hideAge ? "idade oculta" : "idade pública"}<br />
+                  Métricas: {pro.profileViews} views, {pro.contactClicks} contatos, nota {pro.rating.toFixed(1)} ({pro.totalReviews})<br />
+                  Boost: {pro.boostActive ? `ativo até ${pro.boostUntil ? pro.boostUntil.toLocaleDateString("pt-BR") : "data não informada"}` : "inativo"}<br />
                   Enviado em {pro.createdAt.toLocaleDateString("pt-BR")}
                 </td>
                 <td style={tdStyle}>
                   <form action={reviewProfessional} style={{ display: "grid", gap: 8 }}>
                     <input type="hidden" name="id" value={pro.id} />
-                    <textarea name="reason" placeholder="Motivo obrigatorio para reprovar/corrigir/suspender" style={{ background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 8, minHeight: 58 }} />
+                    <textarea name="reason" placeholder="Motivo obrigatório para reprovar/corrigir/suspender" style={{ background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 8, minHeight: 58 }} />
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       <button name="action" value="approve" style={buttonStyle}>Aprovar</button>
                       {pro.status === "PAUSED" ? <button name="action" value="resume" style={buttonStyle}>Reativar</button> : null}
                       <button name="action" value="reject" style={{ ...buttonStyle, color: "#ef4444" }}>Reprovar</button>
-                      <button name="action" value="correction" style={{ ...buttonStyle, color: "#f97316" }}>Solicitar correcao</button>
+                      <button name="action" value="correction" style={{ ...buttonStyle, color: "#f97316" }}>Solicitar correção</button>
                       <button name="action" value="suspend" style={{ ...buttonStyle, color: "#f97316" }}>Suspender</button>
                       <button name="action" value="block" style={{ ...buttonStyle, color: "#ef4444" }}>Bloquear</button>
                       {pro.presentationVideoUrl ? (
                         <>
-                          <button name="action" value="approveVideo" style={buttonStyle}>Aprovar video</button>
-                          <button name="action" value="rejectVideo" style={{ ...buttonStyle, color: "#ef4444" }}>Reprovar video</button>
+                          <button name="action" value="approveVideo" style={buttonStyle}>Aprovar vídeo</button>
+                          <button name="action" value="rejectVideo" style={{ ...buttonStyle, color: "#ef4444" }}>Reprovar vídeo</button>
                         </>
                       ) : null}
                       {pro.boostActive ? <button name="action" value="disableBoost" style={{ ...buttonStyle, color: "#f97316" }}>Desativar boost</button> : null}

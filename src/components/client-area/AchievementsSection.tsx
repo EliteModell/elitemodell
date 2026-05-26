@@ -37,7 +37,7 @@ function AchievementCard({
       <div className="flex gap-4">
         <div className="w-[76px] shrink-0 text-center">
           <HexBadge>{icon}</HexBadge>
-          <p className="mt-2 text-[12px] font-semibold text-[#f5f0e4]/52">Nivel 0</p>
+          <p className="mt-2 text-[12px] font-semibold text-[#f5f0e4]/52">Nível 0</p>
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
@@ -45,7 +45,7 @@ function AchievementCard({
             <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[#f5d78c]" />
           </div>
           <p className="mt-2 text-[15px] leading-7 text-[#f5f0e4]/58">{text}</p>
-          <p className="mt-3 text-[15px] font-black text-[#f5f0e4]">0 de {total} concluidos</p>
+          <p className="mt-3 text-[15px] font-black text-[#f5f0e4]">0 de {total} concluídos</p>
           <button type="button" className="mt-2 text-[13px] font-bold underline underline-offset-2 text-[#f5d78c]">
             Mostrar progresso
           </button>
@@ -59,7 +59,7 @@ function AchievementCard({
           <div className="grid h-8 w-8 place-items-center rounded-full bg-[#d4a843]/14">
             {rewardIcon}
           </div>
-          <p className="mt-1 text-[10px] font-semibold text-[#f5f0e4]/50">Nivel 1</p>
+          <p className="mt-1 text-[10px] font-semibold text-[#f5f0e4]/50">Nível 1</p>
         </div>
       </div>
     </article>
@@ -74,7 +74,7 @@ export default function AchievementsSection() {
           <p className="client-kicker">Status privado</p>
           <h2 className="mt-1 text-[30px] font-black leading-8 text-white">Conquistas</h2>
           <p className="mt-3 text-[16px] leading-7 text-white/60">
-            Manter sua conta ativa adiciona conquistas ao seu perfil e aumentam o seu nivel.
+            Manter sua conta ativa adiciona conquistas ao seu perfil e aumenta o seu nível.
           </p>
         </div>
         <div className="grid h-[68px] w-[68px] shrink-0 place-items-center rounded-[8px] bg-[#c9a84c]/10 shadow-[0_0_40px_rgba(201,168,76,0.18)]">
@@ -85,15 +85,15 @@ export default function AchievementsSection() {
       <div className="space-y-5">
         <AchievementCard
           icon={<Star className="h-6 w-6 text-[#7a8e95]" />}
-          title="Escreva avaliacoes"
-          text="Avalie 5 perfis de acompanhantes para chegar ao Nivel 1"
+          title="Escreva avaliações"
+          text="Avalie 5 perfis de acompanhantes para chegar ao Nível 1"
           total={5}
           rewardIcon={<Star className="h-4 w-4 fill-[#c9a84c] text-[#c9a84c]" />}
         />
         <AchievementCard
           icon={<ThumbsUp className="h-6 w-6 text-[#7a8e95]" />}
-          title="Curta avaliacoes"
-          text="Curta 10 avaliacoes para chegar ao Nivel 1"
+          title="Curta avaliações"
+          text="Curta 10 avaliações para chegar ao Nível 1"
           total={10}
           rewardIcon={<ThumbsUp className="h-4 w-4 fill-[#c9a84c] text-[#c9a84c]" />}
         />

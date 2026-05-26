@@ -19,10 +19,10 @@ function VerificationRequiredModal({ onClose }: { onClose: () => void }) {
             <LockKeyhole className="h-7 w-7" />
           </div>
           <h2 id="client-age-lock-title" className="mt-5 text-[26px] font-black leading-tight text-white">
-            Verificacao necessaria
+            Verificação necessária
           </h2>
           <p className="mt-3 text-[15px] leading-7 text-[#b8b8b8]">
-            Para continuar, voce precisa confirmar sua idade. Essa etapa ajuda a manter a plataforma segura e adequada para maiores de 18 anos.
+            Para continuar, você precisa confirmar sua idade. Essa etapa ajuda a manter a plataforma segura e adequada para maiores de 18 anos.
           </p>
           <div className="mt-6 grid gap-3">
             <Link href={VERIFY_HREF} className="client-primary-button flex min-h-[56px] items-center justify-center gap-2 text-[15px] font-black no-underline">
@@ -30,7 +30,7 @@ function VerificationRequiredModal({ onClose }: { onClose: () => void }) {
               Verificar agora
             </Link>
             <button type="button" onClick={onClose} className="client-secondary-button min-h-[52px] text-[15px] font-black">
-              Agora nao
+              Agora não
             </button>
           </div>
         </div>
@@ -98,7 +98,7 @@ export function ClientSensitiveGate({
           <div className="min-w-0 flex-1">
             <h2 className="text-[22px] font-black leading-7 text-white">{fallbackTitle}</h2>
             <p className="mt-2 text-[15px] leading-7 text-[#b8b8b8]">
-              Para acessar recursos privados, contatos e conteudos restritos, confirme que voce e maior de 18 anos.
+              Para acessar recursos privados, contatos e conteúdos restritos, confirme que você é maior de 18 anos.
             </p>
           </div>
         </div>

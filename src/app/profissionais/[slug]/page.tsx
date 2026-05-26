@@ -681,7 +681,7 @@ export default function ProfissionalProfilePage() {
         ) : (
           <button type="button" onClick={trackContactClick}
             style={{ flex: 1, padding: "12px", background: "rgba(212,168,67,0.12)", color: "#f5d78c", border: `1px solid ${GOLD_MID}`, borderRadius: 10, fontSize: 14, fontWeight: 800, fontFamily: PLAYFAIR }}>
-            Contato indisponivel no momento
+            Contato indisponível no momento
           </button>
         )}
       </div>

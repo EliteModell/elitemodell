@@ -84,7 +84,7 @@ export default async function AdminAvaliacoesPage() {
 
   return (
     <div>
-      <AdminHeader title="Avaliacoes contestadas" subtitle="Analise contestacoes de profissionais e decida se a avaliacao deve ser removida ou mantida." />
+      <AdminHeader title="Avaliações contestadas" subtitle="Analise contestações de profissionais e decida se a avaliação deve ser removida ou mantida." />
       <AdminPanel>
         <AdminTable>
           <thead>
@@ -123,7 +123,7 @@ export default async function AdminAvaliacoesPage() {
                 <td style={tdStyle}>
                   <form action={moderateReviewDispute} style={{ display: "grid", gap: 8 }}>
                     <input type="hidden" name="id" value={item.id} />
-                    <textarea name="adminNote" placeholder="Observacao interna" style={{ minHeight: 64, borderRadius: 8, border: "1px solid rgba(255,255,255,.14)", background: "#050506", color: "#fff", padding: 8 }} />
+                    <textarea name="adminNote" placeholder="Observação interna" style={{ minHeight: 64, borderRadius: 8, border: "1px solid rgba(255,255,255,.14)", background: "#050506", color: "#fff", padding: 8 }} />
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                       <button name="action" value="remove" style={{ ...buttonStyle, color: "#22c55e" }}>Remover avaliacao</button>
                       <button name="action" value="keep" style={{ ...buttonStyle, color: "#f5d78c" }}>Manter avaliacao</button>

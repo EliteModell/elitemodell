@@ -1,5 +1,5 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- Avatares remotos de clientes sao opcionais e pequenos nesta lista operacional. */
+/* eslint-disable @next/next/no-img-element -- Avatares remotos de clientes são opcionais e pequenos nesta lista operacional. */
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -19,9 +19,9 @@ type Appointment = {
 const statusMap: Record<AppointmentStatus, { color: string; label: string; bg: string }> = {
   PENDING:   { color: "#ccaa00", label: "Pendente",   bg: "rgba(204,170,0,0.1)" },
   CONFIRMED: { color: "#00cc66", label: "Confirmado", bg: "rgba(0,204,102,0.1)" },
-  COMPLETED: { color: "#888",    label: "Concluido",  bg: "rgba(136,136,136,0.1)" },
+  COMPLETED: { color: "#888",    label: "Concluído",  bg: "rgba(136,136,136,0.1)" },
   CANCELLED: { color: "#cc4444", label: "Cancelado",  bg: "rgba(204,68,68,0.1)" },
-  NO_SHOW:   { color: "#cc4444", label: "Nao compareceu", bg: "rgba(204,68,68,0.1)" },
+  NO_SHOW:   { color: "#cc4444", label: "Não compareceu", bg: "rgba(204,68,68,0.1)" },
 };
 
 function clientName(appointment: Appointment) {
@@ -55,7 +55,7 @@ export default function AgendamentosPage() {
       } catch {
         if (!controller.signal.aborted) {
           setAppointments([]);
-          setError("Nao foi possivel carregar seus agendamentos agora.");
+          setError("Não foi possível carregar seus agendamentos agora.");
         }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -78,9 +78,9 @@ export default function AgendamentosPage() {
       if (!res.ok) throw new Error("Failed to update appointment");
       const updated: Appointment = await res.json();
       setAppointments((prev) => prev.map((a) => a.id === id ? updated : a));
-      toast.success(status === "CONFIRMED" ? "Agendamento confirmado!" : status === "COMPLETED" ? "Marcado como concluido." : "Agendamento cancelado.");
+      toast.success(status === "CONFIRMED" ? "Agendamento confirmado!" : status === "COMPLETED" ? "Marcado como concluído." : "Agendamento cancelado.");
     } catch {
-      toast.error("Nao foi possivel atualizar o agendamento.");
+      toast.error("Não foi possível atualizar o agendamento.");
     } finally {
       setUpdatingId(null);
     }
@@ -90,14 +90,14 @@ export default function AgendamentosPage() {
     { key: "ALL", label: "Todos" },
     { key: "PENDING", label: "Pendentes" },
     { key: "CONFIRMED", label: "Confirmados" },
-    { key: "COMPLETED", label: "Concluidos" },
+    { key: "COMPLETED", label: "Concluídos" },
     { key: "CANCELLED", label: "Cancelados" },
   ];
 
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Agendamentos</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", marginBottom: 4 }}>Agendamentos</h1>
         <p style={{ color: "#666", fontSize: 14 }}>Gerencie todos os pedidos de agendamento reais do seu perfil.</p>
       </div>
 
@@ -112,7 +112,7 @@ export default function AgendamentosPage() {
                 padding: "8px 16px",
                 background: filter === t.key ? "rgba(204,0,0,0.12)" : "#111",
                 border: `1.5px solid ${filter === t.key ? "#cc0000" : "#1e1e1e"}`,
-                borderRadius: 8,
+                borderRadius: 12,
                 color: filter === t.key ? "#fff" : "#777",
                 fontSize: 13,
                 fontWeight: filter === t.key ? 700 : 400,
@@ -149,7 +149,7 @@ export default function AgendamentosPage() {
       {!loading && !error && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {filtered.length === 0 && (
-            <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, padding: 40, textAlign: "center" }}>
+            <div style={{ background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: 40, textAlign: "center" }}>
               <p style={{ color: "#555", fontSize: 14 }}>Nenhum agendamento neste status.</p>
             </div>
           )}
@@ -159,7 +159,7 @@ export default function AgendamentosPage() {
             const date = new Date(a.date);
             const label = clientName(a);
             return (
-              <div key={a.id} style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, padding: "18px 20px" }}>
+              <div key={a.id} style={{ background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: "20px 22px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
                   <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
                     <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#cc0000", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
@@ -207,7 +207,7 @@ export default function AgendamentosPage() {
                         disabled={updatingId === a.id}
                         style={{ padding: "7px 14px", background: "rgba(136,136,136,0.1)", border: "1px solid #555", borderRadius: 7, color: "#888", fontSize: 12, cursor: updatingId === a.id ? "wait" : "pointer" }}
                       >
-                        Marcar concluido
+                        Marcar concluído
                       </button>
                     )}
                   </div>

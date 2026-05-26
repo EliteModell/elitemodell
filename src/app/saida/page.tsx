@@ -18,10 +18,10 @@ export default function SafeExitPage() {
           <strong>modell</strong>
         </div>
         <p className="eyebrow">Saida segura</p>
-        <h1>Acesso nao confirmado</h1>
+        <h1>Acesso não confirmado</h1>
         <p>
-          Voce optou por nao continuar no ambiente da Elite Modell. Esta tela nao exibe conteudo adulto e mantem sua
-          navegacao em uma area neutra.
+          Você optou por não continuar no ambiente da Elite Modell. Esta tela não exibe conteúdo adulto e mantém sua
+          navegação em uma área neutra.
         </p>
         <Link href="https://www.google.com" className="exit-button">
           Sair da plataforma

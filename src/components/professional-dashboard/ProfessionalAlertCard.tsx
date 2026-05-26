@@ -18,10 +18,10 @@ export type ProfessionalAlert = {
 };
 
 const toneClass = {
-  gold: "border-[#d4a843]/35 bg-[#d4a843]/10 text-[#f5d78c]",
-  danger: "border-red-400/30 bg-red-400/10 text-red-100",
-  success: "border-emerald-400/25 bg-emerald-400/10 text-emerald-100",
-  neutral: "border-white/12 bg-white/[0.045] text-white/72",
+  gold: "border-[#d4a843]/30 bg-[linear-gradient(135deg,rgba(212,168,67,0.13),rgba(255,255,255,0.035))] text-[#f5d78c]",
+  danger: "border-red-400/28 bg-[linear-gradient(135deg,rgba(248,113,113,0.13),rgba(255,255,255,0.03))] text-red-100",
+  success: "border-emerald-400/25 bg-[linear-gradient(135deg,rgba(16,185,129,0.13),rgba(255,255,255,0.03))] text-emerald-100",
+  neutral: "border-white/12 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.025))] text-white/72",
 };
 
 const iconMap = {
@@ -45,21 +45,21 @@ export function ProfessionalAlertStack({ alerts }: { alerts: ProfessionalAlert[]
   if (visible.length === 0) return null;
 
   return (
-    <section className="grid gap-3">
+    <section className="grid gap-4">
       {visible.map((alert) => {
         const Icon = iconMap[alert.icon];
         return (
-          <div key={alert.id} className={`relative overflow-hidden rounded-[8px] border p-4 shadow-[0_18px_50px_rgba(0,0,0,0.22)] ${toneClass[alert.tone]}`}>
-            <div className="flex gap-3 pr-8">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-[8px] border border-current/20 bg-black/22">
+          <div key={alert.id} className={`relative overflow-hidden rounded-[18px] border p-4 shadow-[0_18px_50px_rgba(0,0,0,0.22)] sm:p-5 ${toneClass[alert.tone]}`}>
+            <div className="flex gap-3 pr-8 sm:gap-4">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] border border-current/20 bg-black/24">
                 <Icon className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-sm font-black text-white">{alert.title}</h2>
-                <p className="mt-1 text-sm leading-6 text-white/62">{alert.description}</p>
+                <h2 className="text-[15px] font-black leading-5 text-white">{alert.title}</h2>
+                <p className="mt-1.5 text-sm leading-6 text-white/64">{alert.description}</p>
                 <Link
                   href={alert.href}
-                  className="professional-primary-action mt-3 inline-flex min-h-10 items-center justify-center rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]"
+                  className="professional-primary-action mt-4 inline-flex min-h-11 w-full max-w-[260px] items-center justify-center rounded-[12px] bg-[#d4a843] px-5 py-2.5 text-center text-sm font-black leading-5 text-[#080704] no-underline shadow-[0_14px_34px_rgba(212,168,67,0.20)] transition hover:bg-[#f5d78c] sm:w-auto"
                 >
                   {alert.actionLabel}
                 </Link>
@@ -69,7 +69,7 @@ export function ProfessionalAlertStack({ alerts }: { alerts: ProfessionalAlert[]
               <button
                 type="button"
                 onClick={() => setHidden((current) => new Set(current).add(alert.id))}
-                className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-[8px] border border-white/10 bg-black/20 text-white/55 transition hover:text-white"
+                className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-[12px] border border-white/10 bg-black/20 text-white/55 transition hover:text-white"
                 aria-label="Fechar alerta"
               >
                 <X className="h-4 w-4" />

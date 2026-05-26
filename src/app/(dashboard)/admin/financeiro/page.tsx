@@ -12,7 +12,7 @@ function describePaymentReference(payment: {
 }) {
   if (payment.externalReference?.startsWith("professional-plan:")) {
     const [, planId, priceKey] = payment.externalReference.split(":");
-    return `${planId ?? "plano"} / ${priceKey ?? "duracao"}`;
+    return `${planId ?? "plano"} / ${priceKey ?? "duração"}`;
   }
   return payment.externalReference ?? payment.bookingId ?? "-";
 }
@@ -20,7 +20,7 @@ function describePaymentReference(payment: {
 function accountTypeLabel(user?: { accountType: string | null; role: string | null } | null) {
   if (!user) return "-";
   if (user.accountType === "model") return "Profissional";
-  if (user.accountType === "host") return "Anfitriao";
+  if (user.accountType === "host") return "Anfitrião";
   if (user.role === "ADMIN") return "Admin";
   return "Cliente";
 }
@@ -68,11 +68,11 @@ export default async function AdminFinanceiroPage() {
       </div>
       <AdminPanel>
         <AdminTable>
-          <thead><tr><th style={thStyle}>Usuario</th><th style={thStyle}>Tipo</th><th style={thStyle}>Plano/Pedido</th><th style={thStyle}>Referencia Asaas</th><th style={thStyle}>Valor</th><th style={thStyle}>Metodo</th><th style={thStyle}>Status</th><th style={thStyle}>Data</th><th style={thStyle}>Acoes</th></tr></thead>
+          <thead><tr><th style={thStyle}>Usuário</th><th style={thStyle}>Tipo</th><th style={thStyle}>Plano/Pedido</th><th style={thStyle}>Referência Asaas</th><th style={thStyle}>Valor</th><th style={thStyle}>Método</th><th style={thStyle}>Status</th><th style={thStyle}>Data</th><th style={thStyle}>Ações</th></tr></thead>
           <tbody>
             {payments.map((payment) => (
               <tr key={payment.id}>
-                <td style={tdStyle}>{payment.user?.name ?? payment.user?.email ?? "Sem usuario"}</td>
+                <td style={tdStyle}>{payment.user?.name ?? payment.user?.email ?? "Sem usuário"}</td>
                 <td style={tdStyle}>{accountTypeLabel(payment.user)}</td>
                 <td style={tdStyle}>{describePaymentReference(payment)}</td>
                 <td style={tdStyle}>{payment.providerPaymentId ?? payment.invoiceUrl ?? "-"}</td>

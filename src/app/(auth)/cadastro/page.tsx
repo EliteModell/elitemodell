@@ -438,7 +438,7 @@ export default function CadastroPage() {
     try {
       return await captchaRef.current?.getToken();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Confirme a verificacao anti-spam.");
+      toast.error(err instanceof Error ? err.message : "Confirme a verificação anti-spam.");
       throw err;
     }
   }

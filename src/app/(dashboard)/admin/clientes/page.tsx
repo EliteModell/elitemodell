@@ -55,7 +55,7 @@ export default async function AdminClientesPage() {
 
   return (
     <div>
-      <AdminHeader title="Clientes" subtitle="Lista operacional de clientes, verificacao, favoritos e denuncias relacionadas." />
+      <AdminHeader title="Clientes" subtitle="Lista operacional de clientes, verificação, favoritos e denúncias relacionadas." />
       <AdminPanel>
         <AdminTable>
           <thead>

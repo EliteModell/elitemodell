@@ -72,7 +72,7 @@ export default function ProfissionaisPage() {
       } catch {
         if (!controller.signal.aborted) {
           setProfessionals([]);
-          setError("Nao foi possivel carregar os profissionais agora.");
+          setError("Não foi possível carregar os profissionais agora.");
         }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -182,7 +182,7 @@ export default function ProfissionaisPage() {
         {!loading && error && (
           <div className="premium-empty-state premium-enter" style={{ textAlign: "center", padding: "46px 22px", borderRadius: 8 }}>
             <p style={{ margin: "0 0 8px", color: "#d4a843", fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase" }}>Instabilidade temporaria</p>
-            <h2 style={{ margin: "0 0 10px", color: "#f4f1ea", fontSize: 26, fontWeight: 850 }}>Nao conseguimos atualizar a lista.</h2>
+            <h2 style={{ margin: "0 0 10px", color: "#f4f1ea", fontSize: 26, fontWeight: 850 }}>Não conseguimos atualizar a lista.</h2>
             <p style={{ margin: "0 auto 20px", maxWidth: 460, color: "#b8b1a6", lineHeight: 1.6 }}>{error}</p>
             <button
               type="button"

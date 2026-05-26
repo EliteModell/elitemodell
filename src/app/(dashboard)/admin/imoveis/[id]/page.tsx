@@ -167,9 +167,9 @@ export default async function AdminImovelDetalhesPage({
   const canApproveSafely = currentHostStatus === "APROVADO";
   const rules = [
     property.instantBook ? "Reserva instantanea permitida" : "Reserva instantanea desativada",
-    property.allowPets ? "Aceita pets" : "Nao aceita pets",
-    property.allowSmoking ? "Permite fumar" : "Nao permite fumar",
-    property.allowParties ? "Permite festas/eventos" : "Nao permite festas/eventos",
+    property.allowPets ? "Aceita pets" : "Não aceita pets",
+    property.allowSmoking ? "Permite fumar" : "Não permite fumar",
+    property.allowParties ? "Permite festas/eventos" : "Não permite festas/eventos",
     `Check-in ${property.checkInTime}`,
     `Check-out ${property.checkOutTime}`,
     `Minimo ${property.minNights} noite(s)`,
@@ -187,9 +187,9 @@ export default async function AdminImovelDetalhesPage({
       <div style={{ display: "grid", gap: 10, marginBottom: 16 }}>
         {query?.salvo ? <Alert tone="success">Acao registrada: {actionLabel(query.salvo)}.</Alert> : null}
         {query?.erro === "motivo-obrigatorio" ? <Alert tone="danger">Informe um motivo para reprovar, ocultar ou suspender.</Alert> : null}
-        {query?.erro === "anfitriao-pendente" ? <Alert tone="danger">Anfitriao ainda nao aprovado. Revise o anfitriao antes de aprovar o imovel.</Alert> : null}
-        {!property.photos.length ? <Alert tone="warning">Imovel sem fotos cadastradas. Nao recomendado aprovar.</Alert> : null}
-        {!canApproveSafely ? <Alert tone="warning">Anfitriao ainda nao aprovado. Revise o anfitriao antes de aprovar o imovel.</Alert> : null}
+        {query?.erro === "anfitriao-pendente" ? <Alert tone="danger">Anfitrião ainda não aprovado. Revise o anfitrião antes de aprovar o imóvel.</Alert> : null}
+        {!property.photos.length ? <Alert tone="warning">Imóvel sem fotos cadastradas. Não recomendado aprovar.</Alert> : null}
+        {!canApproveSafely ? <Alert tone="warning">Anfitrião ainda não aprovado. Revise o anfitrião antes de aprovar o imóvel.</Alert> : null}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.15fr) minmax(320px, .85fr)", gap: 16 }}>
@@ -203,7 +203,7 @@ export default async function AdminImovelDetalhesPage({
               <InfoItem label="Tipo" value={property.type} />
               <InfoItem label="Cidade/Bairro" value={`${property.city}${property.bairro ? ` / ${property.bairro}` : ""}`} />
               <InfoItem label="Endereco" value={`${property.address}, ${property.state} - ${property.country}${property.zipCode ? `, ${property.zipCode}` : ""}`} />
-              <InfoItem label="Preco" value={`R$ ${property.pricePerNight.toLocaleString("pt-BR")}/periodo`} />
+              <InfoItem label="Preço" value={`R$ ${property.pricePerNight.toLocaleString("pt-BR")}/período`} />
               <InfoItem label="Quartos" value={property.bedrooms} />
               <InfoItem label="Banheiros" value={property.bathrooms} />
               <InfoItem label="Camas" value={property.beds} />

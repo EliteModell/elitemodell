@@ -18,7 +18,7 @@ export default function HistorySection() {
           <UserRound className="h-9 w-9 stroke-[1.5] text-[#f5d78c]" />
         </div>
         <p className="mx-auto mt-6 max-w-[320px] text-[17px] leading-8 text-[#f5f0e4]/62">
-          Voce ainda nao possui nenhum perfil acessado no seu historico.
+          Você ainda não possui nenhum perfil acessado no seu histórico.
         </p>
         <Link
           href="/dashboard/acompanhantes"

@@ -29,7 +29,7 @@ export default async function AdminDenunciasPage() {
 
   return (
     <div>
-      <AdminHeader title="Denuncias" subtitle="Denuncias contra perfis, clientes, anfitrioes, imoveis e conteudo. Priorize risco legal e seguranca." />
+      <AdminHeader title="Denúncias" subtitle="Denúncias contra perfis, clientes, anfitriões, imóveis e conteúdo. Priorize risco legal e segurança." />
       <AdminPanel>
         <AdminTable>
           <thead>

@@ -41,7 +41,7 @@ function loadScript(id: string, src: string) {
       script.dataset.loaded = "true";
       resolve();
     };
-    script.onerror = () => reject(new Error("Nao foi possivel carregar o CAPTCHA."));
+    script.onerror = () => reject(new Error("Não foi possível carregar o CAPTCHA."));
     document.head.appendChild(script);
   });
 }
@@ -68,13 +68,13 @@ export const CaptchaField = forwardRef<CaptchaFieldHandle>(function CaptchaField
           "expired-callback": () => setToken(""),
           "error-callback": () => {
             setToken("");
-            setError("Nao foi possivel validar o CAPTCHA. Tente novamente.");
+            setError("Não foi possível validar o CAPTCHA. Tente novamente.");
           },
         });
       })
       .catch((err) => {
         if (!active) return;
-        setError(err instanceof Error ? err.message : "Nao foi possivel carregar o CAPTCHA.");
+        setError(err instanceof Error ? err.message : "Não foi possível carregar o CAPTCHA.");
       });
 
     return () => {
@@ -85,7 +85,7 @@ export const CaptchaField = forwardRef<CaptchaFieldHandle>(function CaptchaField
   useImperativeHandle(ref, () => ({
     async getToken() {
       if (TURNSTILE_SITE_KEY) {
-        if (!token) throw new Error("Confirme a verificacao anti-spam.");
+        if (!token) throw new Error("Confirme a verificação anti-spam.");
         return token;
       }
 
@@ -94,10 +94,10 @@ export const CaptchaField = forwardRef<CaptchaFieldHandle>(function CaptchaField
           "google-recaptcha-script",
           `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(RECAPTCHA_SITE_KEY)}`
         );
-        if (!window.grecaptcha) throw new Error("Nao foi possivel carregar o reCAPTCHA.");
+        if (!window.grecaptcha) throw new Error("Não foi possível carregar o reCAPTCHA.");
         await new Promise<void>((resolve) => window.grecaptcha?.ready(resolve));
         const recaptchaToken = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: "register" });
-        if (!recaptchaToken) throw new Error("Nao foi possivel validar o reCAPTCHA.");
+        if (!recaptchaToken) throw new Error("Não foi possível validar o reCAPTCHA.");
         return recaptchaToken;
       }
 

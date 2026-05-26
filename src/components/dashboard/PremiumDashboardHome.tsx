@@ -118,7 +118,7 @@ function QuickActionGrid({
   const walletText =
     credits > 0
       ? `${credits.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} disponivel`
-      : "Saldo protegido e acesso rapido a sua carteira.";
+      : "Saldo protegido e acesso rápido à sua carteira.";
 
   return (
     <>
@@ -135,7 +135,7 @@ function QuickActionGrid({
             href="/dashboard/favoritos"
             icon={<Heart className="h-6 w-6" />}
             title="Listas"
-            description="Guarde curtidos, seguidos e colecoes privadas sem exposicao."
+            description="Guarde curtidos, seguidos e coleções privadas sem exposição."
             cta="Abrir"
           />
           {ageVerified ? (
@@ -234,9 +234,9 @@ function ReviewsSection() {
             <CircleAlert className="h-6 w-6" />
           </span>
           <div className="min-w-0">
-            <h2 className="text-[22px] font-black leading-7 text-[#f5f0e4]">Avaliacoes</h2>
+            <h2 className="text-[22px] font-black leading-7 text-[#f5f0e4]">Avaliações</h2>
             <p className="mt-2 text-[15px] leading-7 text-[#f5f0e4]/56">
-              Quando voce tiver experiencias concluidas, podera registrar avaliacoes de forma discreta.
+              Quando você tiver experiências concluídas, poderá registrar avaliações de forma discreta.
             </p>
           </div>
         </div>
@@ -260,9 +260,9 @@ function SafetyCard() {
             <ShieldAlert className="h-6 w-6" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="text-[22px] font-black leading-7 text-[#f5f0e4]">Seguranca da conta</h2>
+            <h2 className="text-[22px] font-black leading-7 text-[#f5f0e4]">Segurança da conta</h2>
             <p className="mt-2 text-[15px] leading-7 text-[#f5f0e4]/56">
-              Nunca informe senhas, codigos ou documentos fora da plataforma.
+              Nunca informe senhas, códigos ou documentos fora da plataforma.
             </p>
           </div>
         </div>

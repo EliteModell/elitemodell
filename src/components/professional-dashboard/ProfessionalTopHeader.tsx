@@ -103,17 +103,17 @@ export function ProfessionalTopHeader({ onMenuClick }: { onMenuClick: () => void
               <button
                 onClick={() => setNotifOpen((value) => !value)}
                 className="relative grid h-11 w-11 place-items-center rounded-[8px] border border-[#d4a843]/24 bg-white/[0.045] text-white/76"
-                aria-label="Notificacoes"
+                aria-label="Notificações"
               >
                 <Bell className="h-5 w-5" />
                 <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#d4a843]" />
               </button>
               {notifOpen ? (
                 <div className="absolute right-0 top-12 z-50 w-[280px] rounded-[8px] border border-[#d4a843]/18 bg-[#0b0b0d] p-3 shadow-[0_22px_70px_rgba(0,0,0,0.62)]">
-                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#d4a843]">Notificacoes</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#d4a843]">Notificações</p>
                   <div className="mt-3 rounded-[8px] border border-white/10 bg-white/[0.035] p-3">
                     <p className="text-sm font-black text-white">Painel atualizado</p>
-                    <p className="mt-1 text-xs leading-5 text-white/48">Alertas de plano, verificacao e desempenho aparecem aqui.</p>
+                    <p className="mt-1 text-xs leading-5 text-white/48">Alertas de plano, verificação e desempenho aparecem aqui.</p>
                   </div>
                 </div>
               ) : null}
@@ -127,7 +127,7 @@ export function ProfessionalTopHeader({ onMenuClick }: { onMenuClick: () => void
               {profile?.image ? <img src={profile.image} alt={profile.name} className="h-full w-full object-cover" /> : <ShieldCheck className="h-5 w-5 text-[#f5d78c]" />}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-black text-white">{profile ? `Ola, ${profile.name}` : "Ola, profissional Elite"}</p>
+              <p className="truncate text-sm font-black text-white">{profile ? `Olá, ${profile.name}` : "Olá, profissional Elite"}</p>
               <p className="truncate text-xs text-white/44">{location}</p>
             </div>
             <div className="hidden shrink-0 items-center gap-2 sm:flex">
@@ -144,7 +144,7 @@ export function ProfessionalTopHeader({ onMenuClick }: { onMenuClick: () => void
             className="hidden h-12 items-center gap-3 rounded-[8px] border border-white/10 bg-white/[0.04] px-4 text-sm font-bold text-white/48 no-underline transition hover:border-[#d4a843]/25 hover:text-[#f5d78c] lg:flex"
           >
             <Search className="h-4 w-4 text-[#d4a843]" />
-            Ver minha listagem publica
+            Ver minha listagem pública
           </Link>
         </div>
       </div>

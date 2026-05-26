@@ -39,9 +39,9 @@ const PLANS: Plan[] = [
     points: 4000,
     pointsColor: "#ff6b35",
     description: "Impulso rapido para aparecer acima de perfis comuns por tempo limitado.",
-    features: ["Perfil impulsionado", "Destaque temporario", "Mais prioridade na listagem", "Galeria em evidencia"],
+    features: ["Perfil impulsionado", "Destaque temporário", "Mais prioridade na listagem", "Galeria em evidência"],
     prices: [{ label: "1 hora", key: "hora", value: 6.9 }],
-    cta: "Comprar ja",
+    cta: "Comprar já",
     ctaColor: "#ff6b35",
     topColor: "#cc3300",
     isOneTime: true,
@@ -53,8 +53,8 @@ const PLANS: Plan[] = [
     badge: "Exclusivo",
     points: 4000,
     pointsColor: "#ff6b35",
-    description: "Coloque seu anuncio em posicao de destaque por 30 minutos.",
-    features: ["Topo temporario", "Impulso de contatos", "Destaque visual", "Prioridade imediata"],
+    description: "Coloque seu anúncio em posição de destaque por 30 minutos.",
+    features: ["Topo temporário", "Impulso de contatos", "Destaque visual", "Prioridade imediata"],
     prices: [{ label: "30 minutos", key: "30min", value: 49.9 }],
     cta: "Contratar o Plano",
     ctaColor: "#ff6b35",
@@ -68,8 +68,8 @@ const PLANS: Plan[] = [
     badge: "Mais popular",
     points: 2000,
     pointsColor: GOLD,
-    description: "Plano premium para aparecer melhor nas buscas e aumentar conversao.",
-    features: ["Anuncio grande", "Perfil em destaque", "Telefone visivel", "Boost de listagem"],
+    description: "Plano premium para aparecer melhor nas buscas e aumentar conversão.",
+    features: ["Anúncio grande", "Perfil em destaque", "Telefone visível", "Boost de listagem"],
     pricePerDay: 18.93,
     prices: [
       { label: "3 dias", key: "3d", value: 120.9 },
@@ -77,7 +77,7 @@ const PLANS: Plan[] = [
       { label: "30 dias", key: "30d", value: 567.9 },
       { label: "Assinatura mensal", key: "mensal", value: 446 },
     ],
-    cta: "Comprar ja",
+    cta: "Comprar já",
     ctaColor: GOLD,
     topColor: GOLD,
   },
@@ -88,7 +88,7 @@ const PLANS: Plan[] = [
     points: 1000,
     pointsColor: "#22c55e",
     description: "Aumente sua visibilidade com destaque moderado na listagem.",
-    features: ["Anuncio medio", "Mais informacoes", "Telefone no perfil", "Pontuacao extra"],
+    features: ["Anúncio médio", "Mais informações", "Telefone no perfil", "Pontuação extra"],
     pricePerDay: 11.03,
     prices: [
       { label: "3 dias", key: "3d", value: 66.9 },
@@ -96,7 +96,7 @@ const PLANS: Plan[] = [
       { label: "30 dias", key: "30d", value: 330.9 },
       { label: "Assinatura mensal", key: "mensal", value: 259.8 },
     ],
-    cta: "Comprar ja",
+    cta: "Comprar já",
     ctaColor: "#22c55e",
     topColor: "#22c55e",
   },
@@ -106,8 +106,8 @@ const PLANS: Plan[] = [
     icon: "Diamond",
     points: 500,
     pointsColor: "#818cf8",
-    description: "Destaque de alto valor para fortalecer sua presenca premium.",
-    features: ["Banners internos", "Destaque no perfil", "Sinal premium", "Mais exposicao"],
+    description: "Destaque de alto valor para fortalecer sua presença premium.",
+    features: ["Banners internos", "Destaque no perfil", "Sinal premium", "Mais exposição"],
     pricePerDay: 12.66,
     prices: [
       { label: "3 dias", key: "3d", value: 80.9 },
@@ -115,7 +115,7 @@ const PLANS: Plan[] = [
       { label: "30 dias", key: "30d", value: 379.9 },
       { label: "Assinatura mensal", key: "mensal", value: 342 },
     ],
-    cta: "Comprar ja",
+    cta: "Comprar já",
     ctaColor: "#818cf8",
     topColor: "#4f46e5",
   },
@@ -126,7 +126,7 @@ const PLANS: Plan[] = [
     badge: "Novo",
     points: 200,
     pointsColor: "#94a3b8",
-    description: "Visual mais chamativo para seu anuncio na listagem.",
+    description: "Visual mais chamativo para seu anúncio na listagem.",
     features: ["Visual escuro", "Sinal premium", "Mais contraste", "Destaque discreto"],
     pricePerDay: 3.83,
     prices: [
@@ -135,7 +135,7 @@ const PLANS: Plan[] = [
       { label: "30 dias", key: "30d", value: 114.9 },
       { label: "Assinatura mensal", key: "mensal", value: 103.5 },
     ],
-    cta: "Comprar ja",
+    cta: "Comprar já",
     ctaColor: "#94a3b8",
     topColor: "#334155",
   },
@@ -145,8 +145,8 @@ const PLANS: Plan[] = [
     icon: "Phone",
     points: 200,
     pointsColor: "#22c55e",
-    description: "Exiba seu contato na listagem para reduzir atrito de conversao.",
-    features: ["Contato visivel", "Mais conversas", "Botao na listagem", "Valido pelo periodo comprado"],
+    description: "Exiba seu contato na listagem para reduzir atrito de conversão.",
+    features: ["Contato visível", "Mais conversas", "Botão na listagem", "Válido pelo período comprado"],
     pricePerDay: 3.1,
     prices: [
       { label: "3 dias", key: "3d", value: 23.9 },
@@ -154,7 +154,7 @@ const PLANS: Plan[] = [
       { label: "30 dias", key: "30d", value: 92.9 },
       { label: "Assinatura mensal", key: "mensal", value: 83.7 },
     ],
-    cta: "Comprar ja",
+    cta: "Comprar já",
     ctaColor: "#22c55e",
     topColor: "#166534",
     note: "Apos pagamento aprovado, o perfil fica com telefone liberado conforme regras da plataforma.",
@@ -165,8 +165,8 @@ const PLANS: Plan[] = [
     icon: "Lock",
     points: 100,
     pointsColor: "#a78bfa",
-    description: "Oculte sua idade no perfil publico e na listagem.",
-    features: ["Idade oculta", "Mais privacidade", "Controle no perfil", "Valido pelo periodo comprado"],
+    description: "Oculte sua idade no perfil público e na listagem.",
+    features: ["Idade oculta", "Mais privacidade", "Controle no perfil", "Válido pelo período comprado"],
     pricePerDay: 3.33,
     prices: [
       { label: "3 dias", key: "3d", value: 35.9 },
@@ -174,7 +174,7 @@ const PLANS: Plan[] = [
       { label: "30 dias", key: "30d", value: 99.9 },
       { label: "Assinatura mensal", key: "mensal", value: 90 },
     ],
-    cta: "Comprar ja",
+    cta: "Comprar já",
     ctaColor: "#a78bfa",
     topColor: "#6d28d9",
   },
@@ -213,7 +213,7 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
     try {
       const res = await fetch(`/api/payments/status/${paymentId}`);
       if (!res.ok) {
-        setMessage("Ainda nao conseguimos confirmar o pagamento.");
+        setMessage("Ainda não conseguimos confirmar o pagamento.");
         return;
       }
       const data = await res.json();
@@ -222,13 +222,13 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
         setStage("paid");
       } else if (data.status === "FAILED" || data.status === "REFUNDED") {
         if (pollRef.current) clearInterval(pollRef.current);
-        setError("Pagamento nao confirmado.");
+        setError("Pagamento não confirmado.");
         setStage("failed");
       } else {
         setMessage("Pagamento ainda pendente. Assim que confirmar, o plano sera ativado.");
       }
     } catch {
-      setMessage("Nao foi possivel verificar agora. Tente novamente em instantes.");
+      setMessage("Não foi possível verificar agora. Tente novamente em instantes.");
     }
   }
 
@@ -263,7 +263,7 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Nao foi possivel gerar o Pix agora. Tente novamente ou fale com o suporte.");
+        setError(data.error || "Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte.");
         setStage("failed");
         return;
       }
@@ -273,7 +273,7 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
       setMessage(data.message || null);
       setStage("waiting");
     } catch {
-      setError("Nao foi possivel gerar o Pix agora. Tente novamente ou fale com o suporte.");
+      setError("Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte.");
       setStage("failed");
     }
   }
@@ -281,7 +281,7 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
   async function copyPix() {
     if (!qrCode) return;
     await navigator.clipboard.writeText(qrCode);
-    setMessage("Codigo Pix copiado.");
+    setMessage("Código Pix copiado.");
   }
 
   const modal = (
@@ -300,14 +300,14 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
 
           <div style={{ background: "#0f172a", border: "1px solid rgba(212,168,67,0.18)", borderRadius: 14, padding: 14, marginBottom: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", color: "#94a3b8", fontSize: 13, marginBottom: 8 }}><span>Plano</span><strong style={{ color: "#f8fafc" }}>{selection.plan.name}</strong></div>
-            <div style={{ display: "flex", justifyContent: "space-between", color: "#94a3b8", fontSize: 13, marginBottom: 8 }}><span>Duracao</span><strong style={{ color: "#f8fafc" }}>{selection.price.label}</strong></div>
+            <div style={{ display: "flex", justifyContent: "space-between", color: "#94a3b8", fontSize: 13, marginBottom: 8 }}><span>Duração</span><strong style={{ color: "#f8fafc" }}>{selection.price.label}</strong></div>
             <div style={{ display: "flex", justifyContent: "space-between", color: "#94a3b8", fontSize: 13 }}><span>Total</span><strong style={{ color: GOLD, fontSize: 18 }}>R$ {fmt(selection.price.value)}</strong></div>
           </div>
 
           {stage === "idle" && (
             <>
               <button type="button" onClick={createPix} style={primaryButtonStyle}>Gerar Pix e criar pedido</button>
-              <p style={{ margin: "12px 0 0", color: "#64748b", fontSize: 12, lineHeight: 1.6 }}>Cartao e boleto ficam ocultos enquanto nao houver captura homologada para planos profissionais.</p>
+              <p style={{ margin: "12px 0 0", color: "#64748b", fontSize: 12, lineHeight: 1.6 }}>Cartão e boleto ficam ocultos enquanto não houver captura homologada para planos profissionais.</p>
             </>
           )}
           {stage === "creating" && <p style={centerInfoStyle}>Criando pedido e gerando Pix...</p>}
@@ -319,11 +319,11 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
                 <>
                   <p style={{ margin: "0 0 10px", color: "#94a3b8", fontSize: 12 }}>Use o Pix copia e cola abaixo:</p>
                   <div style={{ wordBreak: "break-all", background: "#05070a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: 10, color: "#94a3b8", fontSize: 11, textAlign: "left" }}>{qrCode.length > 120 ? `${qrCode.slice(0, 120)}...` : qrCode}</div>
-                  <button type="button" onClick={copyPix} style={{ ...primaryButtonStyle, marginTop: 12 }}>Copiar codigo Pix</button>
+                  <button type="button" onClick={copyPix} style={{ ...primaryButtonStyle, marginTop: 12 }}>Copiar código Pix</button>
                   <button type="button" onClick={verifyPayment} style={secondaryButtonStyle}>Ja paguei / verificar pagamento</button>
                 </>
               ) : (
-                <p style={{ margin: 0, color: "#94a3b8", fontSize: 13, lineHeight: 1.6 }}>Nao foi possivel gerar o Pix agora. Tente novamente ou fale com o suporte.</p>
+                <p style={{ margin: 0, color: "#94a3b8", fontSize: 13, lineHeight: 1.6 }}>Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte.</p>
               )}
               <p style={{ margin: "12px 0 0", color: "#64748b", fontSize: 12 }}>A tela atualiza automaticamente quando o pagamento for aprovado.</p>
             </div>
@@ -337,7 +337,7 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
           )}
           {stage === "failed" && (
             <div style={{ textAlign: "center" }}>
-              <h3 style={{ color: "#ef4444", margin: "8px 0", fontSize: 20 }}>Nao foi possivel concluir</h3>
+              <h3 style={{ color: "#ef4444", margin: "8px 0", fontSize: 20 }}>Não foi possível concluir</h3>
               <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.6 }}>{error || "Tente novamente ou revise as credenciais de pagamento."}</p>
               <button type="button" onClick={() => setStage("idle")} style={primaryButtonStyle}>Tentar novamente</button>
             </div>
@@ -486,7 +486,7 @@ function PlanCard({
         </button>
 
         <button type="button" onClick={() => setPreviewOpen(!previewOpen)} style={{ width: "100%", padding: "11px 0 0", marginTop: 10, background: "transparent", border: "none", borderTop: "1px solid rgba(212,168,67,0.08)", color: "#64748b", fontSize: 12, cursor: "pointer" }}>
-          {previewOpen ? "Ocultar exemplo do anuncio" : "Veja um exemplo do anuncio"}
+          {previewOpen ? "Ocultar exemplo do anúncio" : "Veja um exemplo do anúncio"}
         </button>
         {previewOpen && (
           <div style={{ marginTop: 14, background: "#060e1b", borderRadius: 12, border: `1px solid ${GOLD_DIM}`, padding: 14 }}>
@@ -607,14 +607,14 @@ export default function PlanosPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 16, padding: 22 }}>
             <h2 style={{ margin: "0 0 8px", color: "#f8fafc", fontSize: 20, fontWeight: 900 }}>Comprar pontos de listagem</h2>
-            <p style={{ color: "#94a3b8", lineHeight: 1.7 }}>A compra avulsa de pontos ainda nao tem tabela de saldo dedicada no banco. Por isso o botao fica bloqueado, sem parecer uma compra ativa.</p>
+            <p style={{ color: "#94a3b8", lineHeight: 1.7 }}>A compra avulsa de pontos ainda não tem tabela de saldo dedicada no banco. Por isso, o botão fica bloqueado, sem parecer uma compra ativa.</p>
             <div style={{ display: "flex", alignItems: "center", maxWidth: 230, border: `1px solid ${GOLD_MID}`, borderRadius: 10, overflow: "hidden", margin: "16px 0" }}>
               <button type="button" onClick={() => setPointsAmount(Math.max(10, pointsAmount - 10))} style={stepperButtonStyle}>-</button>
               <input value={pointsAmount} onChange={(event) => setPointsAmount(Math.min(15000, Math.max(10, Number(event.target.value) || 10)))} type="number" min={10} max={15000} style={{ flex: 1, height: 44, background: "#0f172a", border: "none", color: "#f1f5f9", fontSize: 16, fontWeight: 900, textAlign: "center", outline: "none" }} />
               <button type="button" onClick={() => setPointsAmount(Math.min(15000, pointsAmount + 10))} style={stepperButtonStyle}>+</button>
             </div>
             <div style={{ color: "#f8fafc", fontSize: 28, fontWeight: 900, marginBottom: 12 }}>R$ {fmt(pointsAmount * 1.15)}</div>
-            <button type="button" disabled style={{ ...primaryButtonStyle, opacity: 0.55, cursor: "not-allowed" }}>Compra de pontos indisponivel</button>
+            <button type="button" disabled style={{ ...primaryButtonStyle, opacity: 0.55, cursor: "not-allowed" }}>Compra de pontos indisponível</button>
           </div>
         </div>
       )}

@@ -125,7 +125,7 @@ export default function FavoritosPage() {
         />
         <CollectionCard
           title="Perfis seguidos"
-          description="Use esta area para acompanhar novidades de perfis salvos."
+          description="Use esta área para acompanhar novidades de perfis salvos."
           icon={<UserRoundCheck />}
         />
       </div>

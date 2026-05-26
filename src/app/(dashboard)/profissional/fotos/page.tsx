@@ -1,5 +1,5 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- A tela gerencia URLs remotas e previews de portfolio vindos do Supabase. */
+/* eslint-disable @next/next/no-img-element -- A tela gerencia URLs remotas e previews de portfólio vindos do Supabase. */
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -57,7 +57,7 @@ export default function ProfissionalFotosPage() {
         setProfileSlug(data.professional.slug);
         setPhotos(photosFromProfile(data.professional));
       } catch {
-        if (!controller.signal.aborted) setError("Nao foi possivel carregar suas fotos agora.");
+        if (!controller.signal.aborted) setError("Não foi possível carregar suas fotos agora.");
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -66,9 +66,9 @@ export default function ProfissionalFotosPage() {
     return () => controller.abort();
   }, []);
 
-  async function persistPhotos(nextPhotos: Photo[], successMessage = "Alteracoes salvas!") {
+  async function persistPhotos(nextPhotos: Photo[], successMessage = "Alterações salvas!") {
     if (!profileSlug) {
-      toast.error("Perfil profissional nao encontrado.");
+      toast.error("Perfil profissional não encontrado.");
       return false;
     }
     const ordered = nextPhotos.map((photo, index) => ({ ...photo, order: index }));
@@ -90,7 +90,7 @@ export default function ProfissionalFotosPage() {
       toast.success(successMessage);
       return true;
     } catch {
-      toast.error("Nao foi possivel salvar as fotos.");
+      toast.error("Não foi possível salvar as fotos.");
       return false;
     } finally {
       setSaving(false);
@@ -147,19 +147,19 @@ export default function ProfissionalFotosPage() {
 
   async function handleFiles(files: File[]) {
     if (!profileId) {
-      toast.error("Perfil profissional nao encontrado.");
+      toast.error("Perfil profissional não encontrado.");
       return;
     }
 
     const images = files.filter((file) => file.type.startsWith("image/"));
     if (images.length === 0) return;
     if (photos.length + images.length > 12) {
-      toast.error("Maximo de 12 fotos permitidas.");
+      toast.error("Máximo de 12 fotos permitidas.");
       return;
     }
     const oversized = images.find((file) => file.size > 5 * 1024 * 1024);
     if (oversized) {
-      toast.error("Cada foto deve ter no maximo 5 MB.");
+      toast.error("Cada foto deve ter no máximo 5 MB.");
       return;
     }
 
@@ -184,7 +184,7 @@ export default function ProfissionalFotosPage() {
       setPhotos(next);
       await persistPhotos(next, `${uploaded.length} foto(s) enviada(s).`);
     } catch {
-      toast.error("Nao foi possivel enviar uma ou mais fotos.");
+      toast.error("Não foi possível enviar uma ou mais fotos.");
     } finally {
       setUploading(false);
     }
@@ -216,7 +216,7 @@ export default function ProfissionalFotosPage() {
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Portfolio de Fotos</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", marginBottom: 4 }}>Portfólio de fotos</h1>
         <p style={{ color: "#666", fontSize: 14 }}>Gerencie fotos reais salvas no Supabase. A foto de capa aparece nos resultados de busca.</p>
       </div>
 
@@ -227,7 +227,7 @@ export default function ProfissionalFotosPage() {
         onClick={() => fileInputRef.current?.click()}
         style={{
           border: `2px dashed ${dragging ? "#cc0000" : "#2a2a2a"}`,
-          borderRadius: 12,
+          borderRadius: 18,
           padding: "36px 24px",
           textAlign: "center",
           cursor: uploading ? "wait" : "pointer",
@@ -247,10 +247,10 @@ export default function ProfissionalFotosPage() {
           {uploading ? "Enviando fotos..." : dragging ? "Solte as fotos aqui" : "Arraste fotos ou clique para selecionar"}
         </div>
         <div style={{ color: "#333", fontSize: 12, marginTop: 4 }}>
-          JPG, PNG ou WEBP - maximo 12 fotos, 5 MB cada
+          JPG, PNG ou WEBP - máximo 12 fotos, 5 MB cada
         </div>
         <div style={{ marginTop: 14 }}>
-          <span style={{ padding: "8px 20px", background: "rgba(204,0,0,0.1)", border: "1px solid rgba(204,0,0,0.3)", borderRadius: 8, color: "#cc4444", fontSize: 13, fontWeight: 600 }}>
+          <span style={{ padding: "10px 20px", background: "rgba(212,168,67,0.12)", border: "1px solid rgba(212,168,67,0.32)", borderRadius: 12, color: "#f5d78c", fontSize: 13, fontWeight: 800 }}>
             Selecionar arquivos
           </span>
         </div>
@@ -270,7 +270,7 @@ export default function ProfissionalFotosPage() {
       </div>
 
       {photos.length === 0 ? (
-        <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, padding: "48px 24px", textAlign: "center" }}>
+        <div style={{ background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: "48px 24px", textAlign: "center" }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>Foto</div>
           <div style={{ color: "#555", fontSize: 14 }}>Nenhuma foto adicionada ainda.</div>
           <div style={{ color: "#333", fontSize: 13, marginTop: 4 }}>Adicione fotos do seu trabalho para atrair mais clientes.</div>
@@ -321,15 +321,15 @@ export default function ProfissionalFotosPage() {
         </div>
       )}
 
-      <div style={{ marginTop: 28, background: "#111", border: "1px solid #1e1e1e", borderRadius: 10, padding: 16 }}>
+      <div style={{ marginTop: 28, background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: 18 }}>
         <div style={{ fontSize: 12, color: "#555", fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>Dicas para melhores resultados</div>
         <ul style={{ margin: 0, paddingLeft: 16 }}>
           {[
-            "Use fotos em alta resolucao (minimo 800x1000px)",
-            "Prefira iluminacao natural ou estudio profissional",
+            "Use fotos em alta resolução (mínimo 800x1000px)",
+            "Prefira iluminação natural ou estúdio profissional",
             "Varie os looks: editorial, casual, fitness, etc.",
-            "A foto de capa e a mais importante - escolha sua melhor foto",
-            "Mantenha o portfolio atualizado com trabalhos recentes",
+            "A foto de capa é a mais importante - escolha sua melhor foto",
+            "Mantenha o portfólio atualizado com trabalhos recentes",
           ].map((tip) => (
             <li key={tip} style={{ color: "#444", fontSize: 12, marginBottom: 4 }}>{tip}</li>
           ))}

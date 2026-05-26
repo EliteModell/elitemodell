@@ -55,24 +55,24 @@ const hostNav: NavItem[] = [
 
 const hostOnboardingNav: NavItem[] = [
   { label: "Completar cadastro", href: ACCOUNT_ROUTES.onboardingAnfitriao, icon: <Home className="h-4 w-4" />, accent: "Etapas" },
-  { label: "Status da analise", href: ACCOUNT_ROUTES.verificacaoAnfitriao, icon: <Building2 className="h-4 w-4" /> },
+  { label: "Status da análise", href: ACCOUNT_ROUTES.verificacaoAnfitriao, icon: <Building2 className="h-4 w-4" /> },
   { label: "Perfil", href: "/dashboard/perfil", icon: <UserRound className="h-4 w-4" /> },
 ];
 
 const adminNav: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: <LayoutDashboard className="h-4 w-4" />, accent: "Admin" },
   { label: "Profissionais", href: "/admin/profissionais", icon: <UserRound className="h-4 w-4" /> },
-  { label: "Avaliacoes", href: "/admin/avaliacoes", icon: <MessageCircle className="h-4 w-4" /> },
-  { label: "Anfitrioes", href: "/admin/anfitrioes", icon: <ShieldCheck className="h-4 w-4" /> },
-  { label: "Imoveis", href: "/admin/imoveis", icon: <Building2 className="h-4 w-4" /> },
+  { label: "Avaliações", href: "/admin/avaliacoes", icon: <MessageCircle className="h-4 w-4" /> },
+  { label: "Anfitriões", href: "/admin/anfitrioes", icon: <ShieldCheck className="h-4 w-4" /> },
+  { label: "Imóveis", href: "/admin/imoveis", icon: <Building2 className="h-4 w-4" /> },
   { label: "KYC", href: "/admin/kyc", icon: <FileCheck className="h-4 w-4" /> },
   { label: "Clientes", href: "/admin/clientes", icon: <UsersRound className="h-4 w-4" /> },
-  { label: "Denuncias", href: "/admin/denuncias", icon: <ShieldAlert className="h-4 w-4" /> },
+  { label: "Denúncias", href: "/admin/denuncias", icon: <ShieldAlert className="h-4 w-4" /> },
   { label: "Suporte", href: "/admin/suporte", icon: <Headphones className="h-4 w-4" /> },
   { label: "Financeiro", href: "/admin/financeiro", icon: <Banknote className="h-4 w-4" /> },
-  { label: "Funcionarios", href: "/admin/funcionarios", icon: <UserCog className="h-4 w-4" /> },
+  { label: "Funcionários", href: "/admin/funcionarios", icon: <UserCog className="h-4 w-4" /> },
   { label: "Auditoria", href: "/admin/auditoria", icon: <ClipboardList className="h-4 w-4" /> },
-  { label: "Configuracoes", href: "/admin/configuracoes", icon: <Settings className="h-4 w-4" /> },
+  { label: "Configurações", href: "/admin/configuracoes", icon: <Settings className="h-4 w-4" /> },
   { label: "Reservas", href: "/admin/reservas", icon: <CalendarCheck className="h-4 w-4" /> },
   { label: "Cupons", href: "/admin/cupons", icon: <TicketPercent className="h-4 w-4" /> },
 ];
@@ -80,9 +80,9 @@ const adminNav: NavItem[] = [
 const professionalNav: NavItem[] = [
   { label: "Painel", href: ACCOUNT_ROUTES.painelAcompanhante, icon: <LayoutDashboard className="h-4 w-4" />, accent: "Pro" },
   { label: "Meu perfil", href: "/profissional/perfil", icon: <UserRound className="h-4 w-4" /> },
-  { label: "Estatisticas", href: "/profissional/estatisticas", icon: <ClipboardList className="h-4 w-4" /> },
-  { label: "Avaliacoes", href: "/profissional/avaliacoes", icon: <MessageCircle className="h-4 w-4" /> },
-  { label: "Configuracoes", href: "/profissional/configuracoes", icon: <Settings className="h-4 w-4" /> },
+  { label: "Estatísticas", href: "/profissional/estatisticas", icon: <ClipboardList className="h-4 w-4" /> },
+  { label: "Avaliações", href: "/profissional/avaliacoes", icon: <MessageCircle className="h-4 w-4" /> },
+  { label: "Configurações", href: "/profissional/configuracoes", icon: <Settings className="h-4 w-4" /> },
   { label: "Planos", href: "/profissional/planos", icon: <Crown className="h-4 w-4" /> },
   { label: "Fotos", href: "/profissional/fotos", icon: <Sparkles className="h-4 w-4" /> },
   { label: "Agenda", href: "/profissional/agenda", icon: <CalendarCheck className="h-4 w-4" /> },
@@ -155,14 +155,14 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
   const nav =
     isAdmin ? adminNav : isProfessionalArea ? professionalNav : isApprovedHostArea ? hostNav : isHostFlow ? hostOnboardingNav : guestNav;
   const sectionLabel = isAdmin
-    ? "Area admin"
+    ? "Área admin"
     : isProfessionalArea
-    ? "Area profissional"
+    ? "Área profissional"
     : isApprovedHostArea
       ? "AREA ANFITRIAO"
       : isHostFlow
         ? "CADASTRO DE ANFITRIAO"
-        : "Area cliente";
+        : "Área cliente";
   const logoHref = isAdminArea || isAdmin ? ACCOUNT_ROUTES.admin : "/";
 
   useEffect(() => {
@@ -270,7 +270,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                           ? "Suspenso"
                           : professionalProfile.status === "REJECTED"
                             ? "Reprovado"
-                            : "Em analise"}
+                            : "Em análise"}
                   </p>
                 ) : null}
               </div>

@@ -16,14 +16,14 @@ function formatDate(date: Date | null | undefined) {
 function statusLabel(status: string) {
   if (status === "ACTIVE") return "Ativo na listagem";
   if (status === "PAUSED") return "Perfil pausado";
-  if (status === "PENDING_REVIEW") return "Em analise";
+  if (status === "PENDING_REVIEW") return "Em análise";
   if (status === "SUSPENDED") return "Suspenso";
   if (status === "REJECTED") return "Reprovado";
   return "Oculto";
 }
 
 function categoryLabel(value: string | null | undefined) {
-  if (!value) return "Categoria nao informada";
+  if (!value) return "Categoria não informada";
   const normalized = value.toLowerCase();
   if (normalized === "mulher") return "Mulher";
   if (normalized === "homem") return "Homem";
@@ -61,8 +61,8 @@ export default async function ProfessionalListingPage() {
   const hasActivePlan = Boolean(professional.user.premiumUntil && professional.user.premiumUntil > now);
   const isBoostActive = Boolean(professional.boostActive && (!professional.boostUntil || professional.boostUntil > now));
   const allPhotosCount = professional.photos.length || professional.galleryUrls.length + (professional.image ? 1 : 0);
-  const cityLabel = professional.city && professional.state ? `${professional.city}, ${professional.state}` : "Cidade nao informada";
-  const planLabel = hasActivePlan ? "Premium Elite" : "Basico";
+  const cityLabel = professional.city && professional.state ? `${professional.city}, ${professional.state}` : "Cidade não informada";
+  const planLabel = hasActivePlan ? "Premium Elite" : "Básico";
   const services = (professional.services.length ? professional.services : ["Companhia", "Eventos sociais"]).slice(0, 2);
 
   const data: ProfessionalListingViewData = {
@@ -70,9 +70,9 @@ export default async function ProfessionalListingPage() {
     cityLabel,
     categoryLabel: categoryLabel(professional.escortCategory ?? access.user.category),
     planLabel,
-    planStatus: hasActivePlan ? `${planLabel} ate ${formatDate(professional.user.premiumUntil)}` : "Modo basico",
+    planStatus: hasActivePlan ? `${planLabel} até ${formatDate(professional.user.premiumUntil)}` : "Modo básico",
     listingStatus: statusLabel(professional.status),
-    rankingLabel: rankingPosition ? `${rankingPosition}a posicao` : "Indisponivel",
+    rankingLabel: rankingPosition ? `${rankingPosition}ª posição` : "Indisponível",
     publicProfileHref: `/profissionais/${professional.slug}`,
     image: professional.image,
     services,

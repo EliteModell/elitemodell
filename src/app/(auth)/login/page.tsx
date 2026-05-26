@@ -39,8 +39,8 @@ const blurGray = (e: React.FocusEvent<HTMLInputElement>) =>
   (e.target.style.borderColor = "#1e293b");
 
 const authMsg: Record<string, string> = {
-  invalid_credentials: "Email ou senha invalidos.",
-  user_not_found: "Email nao cadastrado.",
+  invalid_credentials: "E-mail ou senha inválidos.",
+  user_not_found: "E-mail não cadastrado.",
   over_request_rate_limit: "Muitas tentativas. Tente mais tarde.",
 };
 
@@ -130,7 +130,7 @@ function LoginContent() {
         email: form.email,
         password: form.password,
       });
-      if (error || !data.session?.access_token) throw error ?? new Error("Email ou senha invalidos.");
+      if (error || !data.session?.access_token) throw error ?? new Error("E-mail ou senha inválidos.");
       const res = await signIn("supabase", { accessToken: data.session.access_token, roleIntent: roleIntent ?? "", redirect: false });
 
       if (res?.error) {
@@ -141,7 +141,7 @@ function LoginContent() {
         router.refresh();
       }
     } catch (err: any) {
-      toast.error(authMsg[err?.code] ?? err?.message ?? "Email ou senha invalidos.");
+      toast.error(authMsg[err?.code] ?? err?.message ?? "E-mail ou senha inválidos.");
     } finally {
       setLoading(false);
     }
@@ -200,7 +200,7 @@ function LoginContent() {
           <div className="gold-line" />
           <EntryChoiceCards mode="login" />
           <div className="signup-block">
-            <p>Ainda nao tem conta?</p>
+            <p>Ainda não tem conta?</p>
             <Link href={ACCOUNT_ROUTES.cadastro}>Cadastre-se</Link>
           </div>
         </section>
@@ -260,7 +260,7 @@ function LoginContent() {
 
           <div className="security-box">
             <BadgeCheck size={20} />
-            <span>Acesso protegido com verificacao de sessao e navegacao discreta.</span>
+            <span>Acesso protegido com verificação de sessão e navegação discreta.</span>
           </div>
 
           <button type="submit" disabled={loading} className="primary-auth-button">
@@ -271,7 +271,7 @@ function LoginContent() {
         <Link href="/esqueci-senha" className="forgot-link">Esqueceu sua senha?</Link>
 
         <div className="signup-block">
-          <p>Ainda nao tem conta?</p>
+          <p>Ainda não tem conta?</p>
           <Link href={ACCOUNT_ROUTES.cadastro}>Cadastre-se</Link>
         </div>
       </section>
@@ -288,11 +288,11 @@ function LoginContent() {
         </p>
       </section>
 
-      <section className="link-groups" aria-label="Informacoes">
+      <section className="link-groups" aria-label="Informações">
         <div>
           <h2>Legal</h2>
           <Link href="/terms">Termos de Uso</Link>
-          <Link href="/privacy">Politica de Privacidade</Link>
+          <Link href="/privacy">Política de Privacidade</Link>
         </div>
         <div>
           <h2>Suporte</h2>
@@ -300,8 +300,8 @@ function LoginContent() {
           <Link href="/esqueci-senha">Recuperar senha</Link>
         </div>
         <div>
-          <h2>Seguranca</h2>
-          <Link href="/dashboard/verificacao-idade">Verificacao de conta</Link>
+          <h2>Segurança</h2>
+          <Link href="/dashboard/verificacao-idade">Verificação de conta</Link>
           <Link href="/privacy">Como cuidamos dos seus dados</Link>
         </div>
       </section>

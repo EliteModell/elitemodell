@@ -43,12 +43,12 @@ type Resource = {
 };
 
 function formatDate(date: Date | null | undefined) {
-  if (!date) return "Nao informado";
+  if (!date) return "Não informado";
   return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 function formatCurrency(value: number | null) {
-  if (value === null) return "Valor nao informado";
+  if (value === null) return "Valor não informado";
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
@@ -111,7 +111,7 @@ export function ProfessionalMainCard({
             <div className="flex flex-wrap items-center gap-2">
               <div className="min-w-0">
                 <p className="text-sm font-bold text-white/52">{greeting},</p>
-                <h1 className="break-words text-2xl font-black leading-tight text-white sm:text-3xl">{displayName}</h1>
+                <h1 className="professional-compact-title break-words text-2xl font-black leading-tight text-white sm:text-3xl">{displayName}</h1>
               </div>
               <span className={`rounded-full px-2.5 py-1 text-xs font-black ${online ? "bg-emerald-400/10 text-emerald-200" : "bg-white/[0.06] text-white/45"}`}>
                 {online ? "Online" : "Offline"}
@@ -126,19 +126,19 @@ export function ProfessionalMainCard({
             <div className="mt-3 grid gap-2 text-sm text-white/58">
               <span className="inline-flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-[#d4a843]" />
-                {city && state ? `${city}, ${state}` : "Localizacao nao informada"}
+                {city && state ? `${city}, ${state}` : "Localização não informada"}
               </span>
               <span className="inline-flex items-center gap-2">
                 <Crown className="h-4 w-4 text-[#d4a843]" />
-                {planName} {planExpiresAt ? `ate ${formatDate(planExpiresAt)}` : ""}
+                {planName} {planExpiresAt ? `até ${formatDate(planExpiresAt)}` : ""}
               </span>
               <span className="inline-flex items-center gap-2">
                 <Trophy className="h-4 w-4 text-[#d4a843]" />
-                {rankingPosition ? `${rankingPosition}a posicao na cidade` : "Posicao ainda nao disponivel"}
+                {rankingPosition ? `${rankingPosition}ª posição na cidade` : "Posição ainda não disponível"}
               </span>
               <span className="inline-flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 text-[#d4a843]" />
-                Codigo de seguranca: {securityCode ?? "nao disponivel"}
+                Código de segurança: {securityCode ?? "não disponível"}
               </span>
             </div>
           </div>
@@ -181,7 +181,7 @@ export function ProfessionalMainCard({
 }
 
 export function RankingCard({ city, position }: { city: string | null; position: number | null }) {
-  const tips = ["Completar perfil", "Manter fotos recentes", "Postar videos/stories", "Atualizar agenda", "Receber boas avaliacoes", "Manter plano ativo", "Comprar destaque/boost"];
+  const tips = ["Completar perfil", "Manter fotos recentes", "Postar vídeos/stories", "Atualizar agenda", "Receber boas avaliações", "Manter plano ativo", "Comprar destaque/boost"];
 
   return (
     <section className="rounded-[8px] border border-[#d4a843]/20 bg-[linear-gradient(180deg,rgba(18,18,20,0.98),rgba(8,8,9,0.98))] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.28)] sm:p-5">
@@ -189,14 +189,14 @@ export function RankingCard({ city, position }: { city: string | null; position:
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d4a843]">Ranking e listagem</p>
           <h2 className="mt-1 text-xl font-black text-white">
-            {position && city ? `Seu perfil esta na ${position}a posicao em ${city}` : "Posicao ainda nao disponivel"}
+            {position && city ? `Seu perfil está na ${position}ª posição em ${city}` : "Posição ainda não disponível"}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
-            A ordem considera sinais reais da plataforma, como boost ativo, destaque, avaliacao e atualizacao do perfil. Conteudo novo e agenda organizada ajudam o perfil a parecer mais confiavel para clientes.
+            A ordem considera sinais reais da plataforma, como boost ativo, destaque, avaliação e atualização do perfil. Conteúdo novo e agenda organizada ajudam o perfil a parecer mais confiável para clientes.
           </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-2 lg:w-72 lg:grid-cols-1">
-          <Link href="/profissional/perfil" className="professional-primary-action inline-flex min-h-11 items-center justify-center rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">Melhorar posicao</Link>
+          <Link href="/profissional/perfil" className="professional-primary-action inline-flex min-h-11 items-center justify-center rounded-[12px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">Melhorar posição</Link>
           <Link href="/profissional/listagem" className="inline-flex min-h-11 items-center justify-center rounded-[8px] border border-white/12 px-4 text-sm font-black text-white/70 no-underline transition hover:border-[#d4a843]/35 hover:text-[#f5d78c]">Minha listagem</Link>
         </div>
       </div>
@@ -215,25 +215,25 @@ export function RankingCard({ city, position }: { city: string | null; position:
 export function QuickPostCard() {
   const actions = [
     { label: "Postar foto", href: "/profissional/fotos", icon: ImagePlus },
-    { label: "Postar video", href: "/profissional/configuracoes", icon: FileVideo },
+    { label: "Postar vídeo", href: "/profissional/configuracoes", icon: FileVideo },
     { label: "Postar story", href: "/profissional/stories", icon: Camera },
     { label: "Atualizar agenda", href: "/profissional/agenda", icon: CalendarDays },
   ];
 
   return (
-    <section className="rounded-[8px] border border-[#d4a843]/20 bg-[linear-gradient(135deg,rgba(212,168,67,0.12),rgba(255,255,255,0.035)_44%,rgba(8,8,9,0.98))] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.26)] sm:p-5">
+    <section className="rounded-[18px] border border-[#d4a843]/20 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(255,255,255,0.035)_44%,rgba(8,8,9,0.98))] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.26)] sm:p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d4a843]">Atualize seu conteudo</p>
-          <h2 className="mt-1 text-xl font-black text-white">Fotos recentes, videos e agenda em dia</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-white/58">Perfis com fotos recentes, videos e agenda atualizada tendem a receber mais visualizacoes.</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d4a843]">Atualize seu conteúdo</p>
+          <h2 className="mt-1 text-xl font-black text-white">Fotos recentes, vídeos e agenda em dia</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-white/58">Perfis com fotos recentes, vídeos e agenda atualizada tendem a receber mais visualizações.</p>
         </div>
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {actions.map((action) => {
           const Icon = action.icon;
           return (
-            <Link key={action.href} href={action.href} className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-[8px] border border-dashed border-[#d4a843]/32 bg-black/20 p-3 text-center text-sm font-black text-white no-underline transition hover:bg-[#d4a843]/10 hover:text-[#f5d78c]">
+            <Link key={action.href} href={action.href} className="flex min-h-28 flex-col items-center justify-center gap-3 rounded-[16px] border border-dashed border-[#d4a843]/28 bg-black/25 p-4 text-center text-sm font-black text-white no-underline transition hover:border-[#d4a843]/50 hover:bg-[#d4a843]/10 hover:text-[#f5d78c]">
               <Icon className="h-6 w-6 text-[#f5d78c]" />
               {action.label}
             </Link>
@@ -262,7 +262,7 @@ export function PlanResourcesCard({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d4a843]">Meus planos e recursos</p>
-          <h2 className="mt-1 text-xl font-black text-white">{hasActivePlan ? planName : "Seu perfil esta no modo basico"}</h2>
+          <h2 className="mt-1 text-xl font-black text-white">{hasActivePlan ? planName : "Seu perfil está no modo básico"}</h2>
           <p className="mt-2 text-sm leading-6 text-white/55">
             {hasActivePlan ? `Status: ${statusLabel}. Vencimento: ${formatDate(expiresAt)}.` : "Assine um plano para ganhar mais visibilidade na listagem."}
           </p>
@@ -304,11 +304,11 @@ export function PrivacyBoostCard({
   boostActive: boolean;
 }) {
   const options = [
-    { label: "Pausar perfil temporariamente", active: isPaused, description: "Quando pausado, o perfil deixa de aparecer na busca publica pelo periodo escolhido.", icon: EyeOff },
-    { label: "Ocultar idade", active: hideAge, description: "A idade nao aparece publicamente quando este controle esta ativo.", icon: Lock },
-    { label: "Ocultar telefone", active: hidePhone, description: "Seu telefone nao aparece publicamente, mas clientes ainda podem entrar em contato pelos canais permitidos.", icon: PhoneOff },
-    { label: "Exibicao na listagem", active: isVisible, description: "Controla se o perfil aparece para clientes na cidade e nos filtros publicos.", icon: Globe2 },
-    { label: "Boost por periodo", active: boostActive, description: "Impulsionamento preparado por diaria ou periodo, conforme regra comercial ativa.", icon: Sparkles },
+    { label: "Pausar perfil temporariamente", active: isPaused, description: "Quando pausado, o perfil deixa de aparecer na busca pública pelo período escolhido.", icon: EyeOff },
+    { label: "Ocultar idade", active: hideAge, description: "A idade não aparece publicamente quando este controle está ativo.", icon: Lock },
+    { label: "Ocultar telefone", active: hidePhone, description: "Seu telefone não aparece publicamente, mas clientes ainda podem entrar em contato pelos canais permitidos.", icon: PhoneOff },
+    { label: "Exibição na listagem", active: isVisible, description: "Controla se o perfil aparece para clientes na cidade e nos filtros públicos.", icon: Globe2 },
+    { label: "Boost por período", active: boostActive, description: "Impulsionamento preparado por diária ou período, conforme regra comercial ativa.", icon: Sparkles },
   ];
 
   return (
@@ -316,7 +316,7 @@ export function PrivacyBoostCard({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d4a843]">Privacidade e boost</p>
-          <h2 className="mt-1 text-xl font-black text-white">Controle sua presenca publica</h2>
+          <h2 className="mt-1 text-xl font-black text-white">Controle sua presença pública</h2>
         </div>
         <Link href="/profissional/configuracoes" className="professional-primary-action inline-flex min-h-11 items-center justify-center rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">Configurar</Link>
       </div>
@@ -356,7 +356,7 @@ export function PendingAppointmentsCard({ appointments }: { appointments: Dashbo
         <EmptyState
           icon={CalendarClock}
           title="Nenhum agendamento pendente"
-          description="Quando clientes solicitarem horarios, eles aparecerao aqui para voce aceitar, recusar ou ver detalhes."
+          description="Quando clientes solicitarem horários, eles aparecerão aqui para você aceitar, recusar ou ver detalhes."
           actionHref="/profissional/agenda"
           actionLabel="Atualizar agenda"
         />
@@ -368,7 +368,7 @@ export function PendingAppointmentsCard({ appointments }: { appointments: Dashbo
                 <div>
                   <h3 className="text-sm font-black text-white">{appointment.clientLabel}</h3>
                   <p className="mt-1 text-xs leading-5 text-white/48">
-                    {appointment.date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })} as {appointment.date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} - {appointment.duration} min - {formatCurrency(appointment.price)}
+                    {appointment.date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })} às {appointment.date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {appointment.duration} min · {formatCurrency(appointment.price)}
                   </p>
                   <span className="mt-2 inline-flex rounded-full bg-[#d4a843]/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#f5d78c]">Pendente</span>
                 </div>
@@ -388,13 +388,13 @@ export function PendingAppointmentsCard({ appointments }: { appointments: Dashbo
 
 export function QuickManagementGrid({ slug }: { slug: string }) {
   const links = [
-    { href: `/profissionais/${slug}`, label: "Ver perfil", desc: "Abrir a pagina publica", icon: Eye },
+    { href: `/profissionais/${slug}`, label: "Ver perfil", desc: "Abrir a página pública", icon: Eye },
     { href: "/profissional/perfil", label: "Editar perfil", desc: "Bio, valores, atendimento e contatos", icon: ListChecks },
-    { href: "/profissional/fotos", label: "Adicionar fotos", desc: "Capa, galeria e portfolio", icon: ImagePlus },
-    { href: "/profissional/agenda", label: "Configurar agenda", desc: "Dias e horarios disponiveis", icon: CalendarDays },
+    { href: "/profissional/fotos", label: "Adicionar fotos", desc: "Capa, galeria e portfólio", icon: ImagePlus },
+    { href: "/profissional/agenda", label: "Configurar agenda", desc: "Dias e horários disponíveis", icon: CalendarDays },
     { href: "/profissional/planos", label: "Comprar plano", desc: "Premium, destaque e pontos", icon: Crown },
-    { href: "/profissional/estatisticas", label: "Estatisticas", desc: "Relatorios e sinais de procura", icon: Gauge },
-    { href: "/profissional/avaliacoes", label: "Avaliacoes", desc: "Respostas, nota media e disputas", icon: ShieldCheck },
+    { href: "/profissional/estatisticas", label: "Estatísticas", desc: "Relatórios e sinais de procura", icon: Gauge },
+    { href: "/profissional/avaliacoes", label: "Avaliações", desc: "Respostas, nota média e disputas", icon: ShieldCheck },
   ];
 
   return (

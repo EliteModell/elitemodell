@@ -15,7 +15,7 @@ const statusConfig: Record<string, { label: string; className: string; icon: Rea
     icon: <PauseCircle className="h-3.5 w-3.5" />,
   },
   PENDING_REVIEW: {
-    label: "Em analise",
+    label: "Em análise",
     className: "border-[#d4a843]/30 bg-[#d4a843]/10 text-[#f5d78c]",
     icon: <Clock className="h-3.5 w-3.5" />,
   },

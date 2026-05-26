@@ -68,7 +68,7 @@ function buildCompleteness(professional: {
   user: { premiumUntil: Date | null; phoneVerified: boolean };
 }) {
   const checks = [
-    { ok: professional.displayName, label: "nome artistico" },
+    { ok: professional.displayName, label: "nome artístico" },
     { ok: professional.bio, label: "bio" },
     { ok: professional.city && professional.state, label: "cidade/local" },
     { ok: professional.whatsapp || professional.phone || professional.user.phoneVerified, label: "telefone/contato" },
@@ -76,10 +76,10 @@ function buildCompleteness(professional: {
     { ok: professional.galleryUrls.length > 2, label: "fotos" },
     { ok: professional.priceMin || professional.pricePerHour, label: "valores" },
     { ok: professional.attendanceTypes.length > 0, label: "tipo de atendimento" },
-    { ok: professional.services.length > 0, label: "servicos" },
+    { ok: professional.services.length > 0, label: "serviços" },
     { ok: professional.horarioInicio && professional.horarioFim, label: "agenda" },
     { ok: professional.docFrenteUrl && professional.docVersoUrl, label: "documentos" },
-    { ok: professional.verificationUrl || professional.kycSessionId, label: "verificacao" },
+    { ok: professional.verificationUrl || professional.kycSessionId, label: "verificação" },
     { ok: professional.user.premiumUntil && professional.user.premiumUntil > new Date(), label: "plano ativo" },
   ];
 
@@ -206,8 +206,8 @@ export default async function ProfissionalDashPage() {
   if (professional.status === "SUSPENDED" || professional.status === "REJECTED") {
     alerts.push({
       id: "status-blocked",
-      title: "Seu perfil precisa de atencao",
-      description: professional.rejectReason ?? "Existe uma restricao ou pendencia de revisao antes do perfil voltar a performar.",
+      title: "Seu perfil precisa de atenção",
+      description: professional.rejectReason ?? "Existe uma restrição ou pendência de revisão antes do perfil voltar a performar.",
       href: "/verificacao/acompanhante",
       actionLabel: "Verificar status",
       tone: "danger",
@@ -228,8 +228,8 @@ export default async function ProfissionalDashPage() {
   if (!hasActivePlan) {
     alerts.push({
       id: "basic-plan",
-      title: "Seu perfil esta no modo basico",
-      description: "Planos e destaques aumentam a visibilidade na cidade e ajudam clientes a encontrarem seu anuncio.",
+      title: "Seu perfil está no modo básico",
+      description: "Planos e destaques aumentam a visibilidade na cidade e ajudam clientes a encontrarem seu anúncio.",
       href: "/profissional/planos",
       actionLabel: "Conhecer planos",
       tone: "gold",
@@ -249,8 +249,8 @@ export default async function ProfissionalDashPage() {
   if (professional.kycStatus === "PENDING" || professional.docStatus === "PENDING" || professional.verifStatus === "PENDING") {
     alerts.push({
       id: "kyc-pending",
-      title: "Documento em analise",
-      description: "Nossa equipe esta conferindo sua verificacao. Voce sera avisada quando a analise terminar.",
+      title: "Documento em análise",
+      description: "Nossa equipe está conferindo sua verificação. Você será avisada quando a análise terminar.",
       href: "/verificacao/acompanhante",
       actionLabel: "Acompanhar KYC",
       tone: "neutral",
@@ -261,8 +261,8 @@ export default async function ProfissionalDashPage() {
   if (professional.kycStatus === "APPROVED" || professional.docStatus === "APPROVED" || professional.verifStatus === "APPROVED") {
     alerts.push({
       id: "kyc-approved",
-      title: "Verificacao aprovada",
-      description: "Seu perfil tem um sinal importante de confianca. Mantenha suas informacoes atualizadas.",
+      title: "Verificação aprovada",
+      description: "Seu perfil tem um sinal importante de confiança. Mantenha suas informações atualizadas.",
       href: "/profissional/perfil",
       actionLabel: "Revisar perfil",
       tone: "success",
@@ -273,10 +273,10 @@ export default async function ProfissionalDashPage() {
   if (professional.presentationVideoStatus === "APPROVED") {
     alerts.push({
       id: "video-approved",
-      title: "Video aprovado",
-      description: "Seu conteudo foi liberado. Continue renovando sua midia para manter o perfil competitivo.",
+      title: "Vídeo aprovado",
+      description: "Seu conteúdo foi liberado. Continue renovando sua mídia para manter o perfil competitivo.",
       href: "/profissional/configuracoes",
-      actionLabel: "Ver video",
+      actionLabel: "Ver vídeo",
       tone: "success",
       dismissible: true,
       icon: "check",
@@ -284,8 +284,8 @@ export default async function ProfissionalDashPage() {
   } else if (professional.presentationVideoStatus === "REJECTED") {
     alerts.push({
       id: "video-rejected",
-      title: "Video recusado",
-      description: professional.presentationVideoRejectReason ?? "Envie um novo video seguindo as regras de conteudo da plataforma.",
+      title: "Vídeo recusado",
+      description: professional.presentationVideoRejectReason ?? "Envie um novo vídeo seguindo as regras de conteúdo da plataforma.",
       href: "/profissional/configuracoes",
       actionLabel: "Enviar novamente",
       tone: "danger",
@@ -295,8 +295,8 @@ export default async function ProfissionalDashPage() {
   if (professional.schedule.length === 0 && professional.diasDisponiveis.length === 0) {
     alerts.push({
       id: "empty-schedule",
-      title: "Agenda sem horarios cadastrados",
-      description: "Horarios claros reduzem atrito e ajudam clientes a solicitarem atendimento com mais seguranca.",
+      title: "Agenda sem horários cadastrados",
+      description: "Horários claros reduzem atrito e ajudam clientes a solicitarem atendimento com mais segurança.",
       href: "/profissional/agenda",
       actionLabel: "Atualizar agenda",
       tone: "gold",
@@ -306,10 +306,10 @@ export default async function ProfissionalDashPage() {
   if (!professional.city || !professional.state) {
     alerts.push({
       id: "location",
-      title: "Localizacao desatualizada",
-      description: "A cidade correta ajuda seu perfil a aparecer para clientes da regiao certa.",
+      title: "Localização desatualizada",
+      description: "A cidade correta ajuda seu perfil a aparecer para clientes da região certa.",
       href: "/profissional/perfil",
-      actionLabel: "Atualizar localizacao",
+      actionLabel: "Atualizar localização",
       tone: "gold",
       icon: "map",
     });
@@ -318,7 +318,7 @@ export default async function ProfissionalDashPage() {
     alerts.push({
       id: "paused",
       title: "Perfil pausado",
-      description: "Enquanto pausado, seu perfil nao aparece normalmente na busca publica.",
+      description: "Enquanto pausado, seu perfil não aparece normalmente na busca pública.",
       href: "/profissional/configuracoes",
       actionLabel: "Controlar visibilidade",
       tone: "neutral",
@@ -329,7 +329,7 @@ export default async function ProfissionalDashPage() {
     alerts.push({
       id: "few-photos",
       title: "Poucas fotos cadastradas",
-      description: "Adicione uma capa forte e uma galeria recente para aumentar confianca e conversao.",
+      description: "Adicione uma capa forte e uma galeria recente para aumentar confiança e conversão.",
       href: "/profissional/fotos",
       actionLabel: "Postar fotos",
       tone: "gold",
@@ -339,7 +339,7 @@ export default async function ProfissionalDashPage() {
   if (!professional.bio) {
     alerts.push({
       id: "missing-bio",
-      title: "Sua bio ainda esta vazia",
+      title: "Sua bio ainda está vazia",
       description: "Uma descricao objetiva ajuda o cliente a entender seu estilo de atendimento antes do contato.",
       href: "/profissional/perfil",
       actionLabel: "Escrever bio",
@@ -350,8 +350,8 @@ export default async function ProfissionalDashPage() {
   if (!professional.priceMin && !professional.pricePerHour && !professional.price30min) {
     alerts.push({
       id: "missing-prices",
-      title: "Valores nao cadastrados",
-      description: "Precos claros qualificam melhor os contatos e reduzem conversas improdutivas.",
+      title: "Valores não cadastrados",
+      description: "Preços claros qualificam melhor os contatos e reduzem conversas improdutivas.",
       href: "/profissional/perfil",
       actionLabel: "Cadastrar valores",
       tone: "gold",
@@ -361,8 +361,8 @@ export default async function ProfissionalDashPage() {
   if (!professional.user.phoneVerified && !professional.whatsapp && !professional.phone) {
     alerts.push({
       id: "phone",
-      title: "Telefone/WhatsApp nao confirmado",
-      description: "Confirme um canal de contato para nao perder clientes prontos para conversar.",
+      title: "Telefone/WhatsApp não confirmado",
+      description: "Confirme um canal de contato para não perder clientes prontos para conversar.",
       href: "/profissional/perfil",
       actionLabel: "Confirmar contato",
       tone: "gold",
@@ -372,13 +372,13 @@ export default async function ProfissionalDashPage() {
 
   const resources = [
     { label: "Perfil premium", active: hasActivePlan, description: "Sinal comercial baseado em premiumUntil da conta." },
-    { label: "Destaque na cidade", active: professional.featured, description: "Aparece acima de perfis comuns quando o destaque esta ativo." },
+    { label: "Destaque na cidade", active: professional.featured, description: "Aparece acima de perfis comuns quando o destaque está ativo." },
     { label: "Ocultar idade", active: professional.hideAge, description: "Controle de privacidade salvo no perfil." },
     { label: "Ocultar telefone", active: professional.hidePhone, description: "Telefone fica oculto publicamente." },
-    { label: "Impulsionamento", active: isBoostActive, description: "Boost ativo enquanto nao estiver vencido." },
-    { label: "Telefone na listagem", active: Boolean(!professional.hidePhone && (professional.phone || professional.whatsapp)), description: "Disponivel quando ha contato e ele nao esta oculto." },
+    { label: "Impulsionamento", active: isBoostActive, description: "Boost ativo enquanto não estiver vencido." },
+    { label: "Telefone na listagem", active: Boolean(!professional.hidePhone && (professional.phone || professional.whatsapp)), description: "Disponível quando há contato e ele não está oculto." },
     { label: "Galeria premium", active: hasActivePlan && allPhotosCount >= 6, description: "Preparado a partir de plano ativo e galeria robusta." },
-    { label: "Stories/videos", active: Boolean(professional.presentationVideoUrl), description: "Video de apresentacao existe no perfil." },
+    { label: "Stories/vídeos", active: Boolean(professional.presentationVideoUrl), description: "Vídeo de apresentação existente no perfil." },
   ];
 
   return (
@@ -386,9 +386,9 @@ export default async function ProfissionalDashPage() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#d4a843]">Painel profissional Elite Modell</p>
-          <h1 className="mt-1 text-3xl font-black leading-tight text-white sm:text-4xl">Visibilidade, conteudo e conversao</h1>
+          <h1 className="mt-1 text-3xl font-black leading-tight text-white sm:text-4xl">Visibilidade, conteúdo e conversão</h1>
         </div>
-        <p className="max-w-xl text-sm leading-6 text-white/50">Um painel para acompanhar status, melhorar posicionamento e agir rapido nos pontos que geram mais contatos.</p>
+        <p className="max-w-xl text-sm leading-6 text-white/50">Um painel para acompanhar status, melhorar posicionamento e agir rápido nos pontos que geram mais contatos.</p>
       </div>
 
       <ProfessionalAlertStack alerts={alerts.slice(0, 8)} />
@@ -399,7 +399,7 @@ export default async function ProfissionalDashPage() {
         status={professional.status}
         city={professional.city}
         state={professional.state}
-        planName={hasActivePlan ? "Premium Elite" : "Basico"}
+        planName={hasActivePlan ? "Premium Elite" : "Básico"}
         planExpiresAt={professional.user.premiumUntil}
         completeness={completeness.score}
         rankingPosition={rankingPosition}
@@ -415,7 +415,7 @@ export default async function ProfissionalDashPage() {
       <QuickPostCard />
       <PlanResourcesCard
         planName="Premium Elite"
-        statusLabel={hasActivePlan ? "ativo" : "basico"}
+        statusLabel={hasActivePlan ? "ativo" : "básico"}
         expiresAt={professional.user.premiumUntil}
         resources={resources}
         hasActivePlan={hasActivePlan}

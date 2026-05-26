@@ -294,7 +294,7 @@ function BuscarContent() {
         if (!controller.signal.aborted) {
           console.error("[buscar] Erro técnico ao carregar perfis", err);
           setPerfis([]);
-          setError("Nao foi possivel carregar os perfis agora.");
+          setError("Não foi possível carregar os perfis agora.");
         }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -383,18 +383,18 @@ function BuscarContent() {
   function useApproximateLocation() {
     setGeoMessage(null);
     if (!("geolocation" in navigator)) {
-      setGeoMessage("Seu navegador nao liberou localizacao. Escolha uma cidade na lista.");
+      setGeoMessage("Seu navegador não liberou localização. Escolha uma cidade na lista.");
       return;
     }
     setGeoLoading(true);
     navigator.geolocation.getCurrentPosition(
       () => {
         setGeoLoading(false);
-        setGeoMessage("Localizacao autorizada. Escolha uma cidade proxima para refinar a busca.");
+        setGeoMessage("Localização autorizada. Escolha uma cidade próxima para refinar a busca.");
       },
       () => {
         setGeoLoading(false);
-        setGeoMessage("Nao foi possivel acessar sua localizacao. Voce pode buscar por cidade.");
+        setGeoMessage("Não foi possível acessar sua localização. Você pode buscar por cidade.");
       },
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 15 * 60 * 1000 },
     );
