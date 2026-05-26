@@ -17,6 +17,8 @@ import { ProfessionalAlertStack, type ProfessionalAlert } from "@/components/pro
 import { PerformanceStats, type PerformancePeriod, type PerformanceSnapshot } from "@/components/professional-dashboard/PerformanceStats";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -380,7 +382,7 @@ export default async function ProfissionalDashPage() {
   ];
 
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-5" data-dashboard-version="professional-premium-v2">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#d4a843]">Painel profissional Elite Modell</p>
