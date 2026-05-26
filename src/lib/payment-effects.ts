@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { parseProfessionalPlanReference } from "@/lib/professional-plans";
 
 export async function applyPaidPaymentEffects(paymentId: string) {
   return prisma.$transaction(async (tx) => {
@@ -42,6 +43,60 @@ export async function applyPaidPaymentEffects(paymentId: string) {
         data: { premiumUntil: new Date(Math.max(current, next)) },
         select: { id: true },
       });
+    }
+
+    const professionalPlan = parseProfessionalPlanReference(payment.externalReference);
+    if (payment.userId && professionalPlan) {
+      const professional = await tx.professional.findUnique({
+        where: { userId: payment.userId },
+        select: { id: true },
+      });
+
+      if (professional) {
+        const update: {
+          featured?: boolean;
+          boostActive?: boolean;
+          boostStartedAt?: Date;
+          boostUntil?: Date | null;
+          boostSource?: string | null;
+          hideAge?: boolean;
+          hidePhone?: boolean;
+        } = {};
+
+        if (professionalPlan.plan.benefits.featured) update.featured = true;
+        if (professionalPlan.plan.benefits.hideAge) update.hideAge = true;
+        if (professionalPlan.plan.benefits.showPhone) update.hidePhone = false;
+        if (professionalPlan.plan.benefits.boost) {
+          update.boostActive = true;
+          update.boostStartedAt = new Date();
+          update.boostUntil = payment.premiumUntil ?? null;
+          update.boostSource = professionalPlan.plan.id;
+        }
+
+        await tx.professional.update({
+          where: { id: professional.id },
+          data: update,
+          select: { id: true },
+        });
+
+        await tx.professionalProfileEvent.create({
+          data: {
+            professionalId: professional.id,
+            eventType: "PLAN_ACTIVATED",
+            metadata: {
+              paymentId: payment.id,
+              planId: professionalPlan.plan.id,
+              planName: professionalPlan.plan.name,
+              priceKey: professionalPlan.price.key,
+              activationMode: professionalPlan.activationMode,
+              points: professionalPlan.plan.points,
+              amount: payment.amount,
+              premiumUntil: payment.premiumUntil?.toISOString() ?? null,
+            },
+          },
+          select: { id: true },
+        });
+      }
     }
 
     return { applied: true, reason: "paid" as const };

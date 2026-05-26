@@ -1,63 +1,60 @@
 "use client";
-import { useState } from "react";
-import Image from "next/image";
+
+import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
 const GOLD_MID = "rgba(212,168,67,0.3)";
 
 type Tab = "planos" | "assinaturas" | "trocas";
-type Duration = "3d" | "7d" | "30d" | "mensal";
+type PriceKey = "30min" | "hora" | "3d" | "7d" | "30d" | "mensal";
+type CheckoutStage = "idle" | "creating" | "waiting" | "paid" | "failed";
 
-interface Plan {
+type Plan = {
   id: string;
   name: string;
-  emoji: string;
+  icon: string;
   badge?: string;
-  badgeColor?: string;
   points: number;
   pointsColor: string;
   description: string;
   features: string[];
   pricePerDay?: number;
-  prices: { label: string; key: Duration | "hora" | "30min"; value: number }[];
+  prices: { label: string; key: PriceKey; value: number }[];
   cta: string;
   ctaColor: string;
   topColor: string;
   isOneTime?: boolean;
   note?: string;
-  activeInDemo?: boolean;
-}
+};
 
 const PLANS: Plan[] = [
   {
     id: "subir",
     name: "Subir Agora",
-    emoji: "🚀",
-    badge: "EXCLUSIVO",
-    badgeColor: "#cc3300",
+    icon: "Rocket",
+    badge: "Exclusivo",
     points: 4000,
     pointsColor: "#ff6b35",
-    description: "10x mais visitas e 5x mais contatos de clientes que outros perfis da sua cidade!",
-    features: ["Seu anúncio acima dos outros planos", "Anúncio em tamanho grande", "Galeria de fotos exclusiva", "Informações adicionais visíveis", "Prioridade na Central de Atendimento Fatal Model"],
-    prices: [{ label: "1 hora", key: "hora", value: 6.90 }],
-    cta: "Comprar já",
+    description: "Impulso rapido para aparecer acima de perfis comuns por tempo limitado.",
+    features: ["Perfil impulsionado", "Destaque temporario", "Mais prioridade na listagem", "Galeria em evidencia"],
+    prices: [{ label: "1 hora", key: "hora", value: 6.9 }],
+    cta: "Comprar ja",
     ctaColor: "#ff6b35",
     topColor: "#cc3300",
     isOneTime: true,
-    note: "Este plano só pode ser ativado se você possuir todos os pontos necessários. Ocultar Idade ou nunca ter comprado um plano antes.",
   },
   {
     id: "30min",
     name: "30min no Topo",
-    emoji: "⚡",
-    badge: "EXCLUSIVO",
-    badgeColor: "#cc3300",
+    icon: "Flash",
+    badge: "Exclusivo",
     points: 4000,
     pointsColor: "#ff6b35",
-    description: "Receba mais contatos de clientes, garantindo maior visibilidade com seu perfil no topo da sua cidade.",
-    features: ["Anúncio em posição de destaque", "+ todos os benefícios de outros planos"],
-    prices: [{ label: "30 minutos", key: "30min", value: 49.90 }],
+    description: "Coloque seu anuncio em posicao de destaque por 30 minutos.",
+    features: ["Topo temporario", "Impulso de contatos", "Destaque visual", "Prioridade imediata"],
+    prices: [{ label: "30 minutos", key: "30min", value: 49.9 }],
     cta: "Contratar o Plano",
     ctaColor: "#ff6b35",
     topColor: "#cc3300",
@@ -66,572 +63,513 @@ const PLANS: Plan[] = [
   {
     id: "super-top",
     name: "Super Top",
-    emoji: "👑",
-    badge: "MAIS POPULAR",
-    badgeColor: "#d4a843",
+    icon: "Crown",
+    badge: "Mais popular",
     points: 2000,
-    pointsColor: "#d4a843",
-    description: "Apareça em destaque nas buscas e atraia muito mais clientes.",
-    features: ["Anúncio grande", "Galeria de fotos", "Informações adicionais", "Telefone visível no perfil todos os dias"],
+    pointsColor: GOLD,
+    description: "Plano premium para aparecer melhor nas buscas e aumentar conversao.",
+    features: ["Anuncio grande", "Perfil em destaque", "Telefone visivel", "Boost de listagem"],
     pricePerDay: 18.93,
     prices: [
-      { label: "3 dias", key: "3d", value: 120.90 },
-      { label: "7 dias", key: "7d", value: 196.90 },
-      { label: "30 dias", key: "30d", value: 567.90 },
-      { label: "Assinatura mensal R$ 14,86/dia", key: "mensal", value: 446.00 },
+      { label: "3 dias", key: "3d", value: 120.9 },
+      { label: "7 dias", key: "7d", value: 196.9 },
+      { label: "30 dias", key: "30d", value: 567.9 },
+      { label: "Assinatura mensal", key: "mensal", value: 446 },
     ],
-    cta: "Comprar já",
+    cta: "Comprar ja",
     ctaColor: GOLD,
-    topColor: "#d4a843",
-    activeInDemo: true,
+    topColor: GOLD,
   },
   {
     id: "top",
     name: "Top",
-    emoji: "🏆",
+    icon: "Trophy",
     points: 1000,
     pointsColor: "#22c55e",
-    description: "Tenha uma foto maior no anúncio e mais visibilidade na listagem.",
-    features: ["Anúncio médio", "Informações adicionais", "Telefone visível no perfil todos os dias"],
+    description: "Aumente sua visibilidade com destaque moderado na listagem.",
+    features: ["Anuncio medio", "Mais informacoes", "Telefone no perfil", "Pontuacao extra"],
     pricePerDay: 11.03,
     prices: [
-      { label: "3 dias", key: "3d", value: 66.90 },
-      { label: "7 dias", key: "7d", value: 105.90 },
-      { label: "30 dias", key: "30d", value: 330.90 },
-      { label: "Assinatura mensal R$ 8,66/dia", key: "mensal", value: 259.80 },
+      { label: "3 dias", key: "3d", value: 66.9 },
+      { label: "7 dias", key: "7d", value: 105.9 },
+      { label: "30 dias", key: "30d", value: 330.9 },
+      { label: "Assinatura mensal", key: "mensal", value: 259.8 },
     ],
-    cta: "Comprar já",
+    cta: "Comprar ja",
     ctaColor: "#22c55e",
     topColor: "#22c55e",
   },
   {
     id: "diamante",
     name: "Diamante",
-    emoji: "💎",
+    icon: "Diamond",
     points: 500,
     pointsColor: "#818cf8",
-    description: "Apareça em banners dentro do perfil de outros anunciantes.",
-    features: ["Apareça em banners dentro do perfil de outros anunciantes", "+ todos os benefícios de outros planos"],
+    description: "Destaque de alto valor para fortalecer sua presenca premium.",
+    features: ["Banners internos", "Destaque no perfil", "Sinal premium", "Mais exposicao"],
     pricePerDay: 12.66,
     prices: [
-      { label: "3 dias", key: "3d", value: 80.90 },
-      { label: "7 dias", key: "7d", value: 114.90 },
-      { label: "30 dias", key: "30d", value: 379.90 },
-      { label: "Assinatura mensal R$ 11,40/dia", key: "mensal", value: 342.00 },
+      { label: "3 dias", key: "3d", value: 80.9 },
+      { label: "7 dias", key: "7d", value: 114.9 },
+      { label: "30 dias", key: "30d", value: 379.9 },
+      { label: "Assinatura mensal", key: "mensal", value: 342 },
     ],
-    cta: "Comprar já",
+    cta: "Comprar ja",
     ctaColor: "#818cf8",
     topColor: "#4f46e5",
   },
   {
     id: "black",
     name: "Black",
-    emoji: "✦",
-    badge: "NOVO",
-    badgeColor: "#475569",
+    icon: "Star",
+    badge: "Novo",
     points: 200,
     pointsColor: "#94a3b8",
-    description: "Anúncio com cor escura e mais chamativa.",
-    features: ["Anúncio com cor escura e mais chamativa"],
+    description: "Visual mais chamativo para seu anuncio na listagem.",
+    features: ["Visual escuro", "Sinal premium", "Mais contraste", "Destaque discreto"],
     pricePerDay: 3.83,
     prices: [
-      { label: "3 dias", key: "3d", value: 34.90 },
-      { label: "7 dias", key: "7d", value: 58.90 },
-      { label: "30 dias", key: "30d", value: 114.90 },
-      { label: "Assinatura mensal R$ 3,45/dia", key: "mensal", value: 103.50 },
+      { label: "3 dias", key: "3d", value: 34.9 },
+      { label: "7 dias", key: "7d", value: 58.9 },
+      { label: "30 dias", key: "30d", value: 114.9 },
+      { label: "Assinatura mensal", key: "mensal", value: 103.5 },
     ],
-    cta: "Comprar já",
+    cta: "Comprar ja",
     ctaColor: "#94a3b8",
     topColor: "#334155",
   },
   {
     id: "telefone",
     name: "Telefone na Listagem",
-    emoji: "📞",
-    badge: "VENCE EM 3 DIAS",
-    badgeColor: "#cc3300",
+    icon: "Phone",
     points: 200,
     pointsColor: "#22c55e",
-    description: "Botão exclusivo exibindo seu contato na listagem Terça, Quinta, Sábado e Domingo.",
-    features: ["Botão exclusivo exibindo seu contato na listagem Terça, Quinta, Sábado e Domingo"],
-    pricePerDay: 3.10,
+    description: "Exiba seu contato na listagem para reduzir atrito de conversao.",
+    features: ["Contato visivel", "Mais conversas", "Botao na listagem", "Valido pelo periodo comprado"],
+    pricePerDay: 3.1,
     prices: [
-      { label: "3 dias", key: "3d", value: 23.90 },
-      { label: "7 dias", key: "7d", value: 34.90 },
-      { label: "30 dias", key: "30d", value: 92.90 },
-      { label: "Assinatura mensal R$ 2,79/dia", key: "mensal", value: 83.70 },
+      { label: "3 dias", key: "3d", value: 23.9 },
+      { label: "7 dias", key: "7d", value: 34.9 },
+      { label: "30 dias", key: "30d", value: 92.9 },
+      { label: "Assinatura mensal", key: "mensal", value: 83.7 },
     ],
-    cta: "Comprar já",
+    cta: "Comprar ja",
     ctaColor: "#22c55e",
     topColor: "#166534",
-    note: "Além do plano ativo, você precisa de 1000 pontos para que seu telefone seja visto todos os dias.",
-    activeInDemo: true,
+    note: "Apos pagamento aprovado, o perfil fica com telefone liberado conforme regras da plataforma.",
   },
   {
     id: "ocultar-idade",
     name: "Ocultar Idade",
-    emoji: "🔒",
-    badge: "VENCE EM 3 DIAS",
-    badgeColor: "#cc3300",
+    icon: "Lock",
     points: 100,
     pointsColor: "#a78bfa",
-    description: "Apenas Clientes Premium poderão ver sua idade.",
-    features: ["Esconda sua idade na plataforma", "Apenas Clientes Premium poderão ver sua idade"],
+    description: "Oculte sua idade no perfil publico e na listagem.",
+    features: ["Idade oculta", "Mais privacidade", "Controle no perfil", "Valido pelo periodo comprado"],
     pricePerDay: 3.33,
     prices: [
-      { label: "3 dias", key: "3d", value: 35.90 },
-      { label: "7 dias", key: "7d", value: 49.90 },
-      { label: "30 dias", key: "30d", value: 99.90 },
-      { label: "Assinatura mensal R$ 3,00/dia", key: "mensal", value: 90.00 },
+      { label: "3 dias", key: "3d", value: 35.9 },
+      { label: "7 dias", key: "7d", value: 49.9 },
+      { label: "30 dias", key: "30d", value: 99.9 },
+      { label: "Assinatura mensal", key: "mensal", value: 90 },
     ],
-    cta: "Comprar já",
+    cta: "Comprar ja",
     ctaColor: "#a78bfa",
     topColor: "#6d28d9",
   },
 ];
 
-const FAQ_ITEMS = [
-  { q: "O anúncio é gratuito?", a: "Sim. A Elite Modell não cobra nenhuma taxa de cadastro, nem nos atendimentos. O valor é 100% recebido pelas pessoas que anunciam na plataforma. Ou seja, o anunciante fica com todo o valor." },
-  { q: "Como funciona a ordem dos anúncios na listagem?", a: "A posição dos anúncios é calculada por pontuação. Cada plano adquirido adiciona pontos e pode melhorar sua posição na listagem." },
-  { q: "Qual a diferença entre plano e assinatura?", a: "O plano tem duração fixa (3, 7 ou 30 dias). A assinatura é renovada mensalmente com desconto de 10% a partir do segundo mês." },
-  { q: "O que são pontos ao adquirir um plano?", a: "Os pontos de listagem determinam a posição do seu anúncio na busca. Quanto mais pontos, mais alto você aparece." },
-  { q: "Quanto tempo meu anúncio fica ativo?", a: "O anúncio fica ativo enquanto você tiver pelo menos um plano ativo. Após o vencimento, o anúncio continua visível, porém sem destaque." },
-  { q: "Cadastro é grátis, mas sou obrigada a comprar os planos para anunciar?", a: "Não. O cadastro e a listagem básica são gratuitos. Os planos aumentam sua visibilidade e posição na listagem." },
-];
+function fmt(value: number) {
+  return value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
-function fmt(v: number) {
-  return v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: Plan["prices"][number] }; onClose: () => void }) {
+  const [stage, setStage] = useState<CheckoutStage>("idle");
+  const [paymentId, setPaymentId] = useState<string | null>(null);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!paymentId || stage !== "waiting") return;
+
+    async function checkStatus() {
+      try {
+        const res = await fetch(`/api/payments/status/${paymentId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.status === "PAID") {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setStage("paid");
+        } else if (data.status === "FAILED" || data.status === "REFUNDED") {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setError("Pagamento nao confirmado.");
+          setStage("failed");
+        }
+      } catch {}
+    }
+
+    pollRef.current = setInterval(() => {
+      if (!document.hidden) void checkStatus();
+    }, 6000);
+    void checkStatus();
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [paymentId, stage]);
+
+  async function createPix() {
+    if (stage === "creating") return;
+    setStage("creating");
+    setError(null);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/professional/plans/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId: selection.plan.id,
+          priceKey: selection.price.key,
+          activationMode: "agora",
+          paymentMethod: "pix",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Nao foi possivel iniciar o checkout.");
+        setStage("failed");
+        return;
+      }
+      setPaymentId(data.localPaymentId);
+      setQrCode(data.copyPaste || data.qrCode || null);
+      setQrCodeBase64(data.qrCodeBase64 || null);
+      setMessage(data.message || null);
+      setStage("waiting");
+    } catch {
+      setError("Erro de conexao ao iniciar checkout.");
+      setStage("failed");
+    }
+  }
+
+  async function copyPix() {
+    if (!qrCode) return;
+    await navigator.clipboard.writeText(qrCode);
+    setMessage("Codigo Pix copiado.");
+  }
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 1400, background: "rgba(0,0,0,0.82)", display: "grid", placeItems: "center", padding: 18 }}>
+      <div style={{ width: "100%", maxWidth: 430, background: "#090d12", border: `1px solid ${GOLD_MID}`, borderRadius: 18, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.65)" }}>
+        <div style={{ height: 3, background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
+        <div style={{ padding: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 14, marginBottom: 14 }}>
+            <div>
+              <p style={{ margin: "0 0 5px", color: GOLD, fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>Checkout seguro</p>
+              <h2 style={{ margin: 0, color: "#f8fafc", fontSize: 22, fontWeight: 900 }}>{selection.plan.name}</h2>
+              <p style={{ margin: "6px 0 0", color: "#94a3b8", fontSize: 13 }}>{selection.price.label} - ativacao apos pagamento aprovado</p>
+            </div>
+            <button type="button" onClick={onClose} style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "#fff", cursor: "pointer" }}>x</button>
+          </div>
+
+          <div style={{ background: "#0f172a", border: "1px solid rgba(212,168,67,0.18)", borderRadius: 14, padding: 14, marginBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", color: "#94a3b8", fontSize: 13, marginBottom: 8 }}><span>Plano</span><strong style={{ color: "#f8fafc" }}>{selection.plan.name}</strong></div>
+            <div style={{ display: "flex", justifyContent: "space-between", color: "#94a3b8", fontSize: 13, marginBottom: 8 }}><span>Duracao</span><strong style={{ color: "#f8fafc" }}>{selection.price.label}</strong></div>
+            <div style={{ display: "flex", justifyContent: "space-between", color: "#94a3b8", fontSize: 13 }}><span>Total</span><strong style={{ color: GOLD, fontSize: 18 }}>R$ {fmt(selection.price.value)}</strong></div>
+          </div>
+
+          {stage === "idle" && (
+            <>
+              <button type="button" onClick={createPix} style={primaryButtonStyle}>Gerar Pix e criar pedido</button>
+              <p style={{ margin: "12px 0 0", color: "#64748b", fontSize: 12, lineHeight: 1.6 }}>Cartao e boleto ficam ocultos enquanto nao houver captura homologada para planos profissionais.</p>
+            </>
+          )}
+          {stage === "creating" && <p style={centerInfoStyle}>Criando pedido e gerando Pix...</p>}
+          {stage === "waiting" && (
+            <div style={{ textAlign: "center" }}>
+              {message && <p style={{ margin: "0 0 12px", color: GOLD, fontSize: 13, lineHeight: 1.6 }}>{message}</p>}
+              {qrCodeBase64 ? <img src={`data:image/png;base64,${qrCodeBase64}`} alt="QR Code Pix" width={190} height={190} style={{ background: "#fff", padding: 10, borderRadius: 12, margin: "0 auto 12px" }} /> : null}
+              {qrCode ? (
+                <>
+                  <p style={{ margin: "0 0 10px", color: "#94a3b8", fontSize: 12 }}>Use o Pix copia e cola abaixo:</p>
+                  <div style={{ wordBreak: "break-all", background: "#05070a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: 10, color: "#94a3b8", fontSize: 11, textAlign: "left" }}>{qrCode.length > 120 ? `${qrCode.slice(0, 120)}...` : qrCode}</div>
+                  <button type="button" onClick={copyPix} style={{ ...primaryButtonStyle, marginTop: 12 }}>Copiar codigo Pix</button>
+                </>
+              ) : (
+                <p style={{ margin: 0, color: "#94a3b8", fontSize: 13, lineHeight: 1.6 }}>Pedido criado como pendente. O financeiro pode acompanhar e ativar manualmente no admin.</p>
+              )}
+              <p style={{ margin: "12px 0 0", color: "#64748b", fontSize: 12 }}>A tela atualiza automaticamente quando o pagamento for aprovado.</p>
+            </div>
+          )}
+          {stage === "paid" && (
+            <div style={{ textAlign: "center" }}>
+              <h3 style={{ color: "#22c55e", margin: "8px 0", fontSize: 22 }}>Pagamento confirmado</h3>
+              <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.6 }}>Seu plano foi ativado no perfil profissional.</p>
+              <button type="button" onClick={() => window.location.reload()} style={primaryButtonStyle}>Atualizar painel</button>
+            </div>
+          )}
+          {stage === "failed" && (
+            <div style={{ textAlign: "center" }}>
+              <h3 style={{ color: "#ef4444", margin: "8px 0", fontSize: 20 }}>Nao foi possivel concluir</h3>
+              <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.6 }}>{error || "Tente novamente ou revise as credenciais de pagamento."}</p>
+              <button type="button" onClick={() => setStage("idle")} style={primaryButtonStyle}>Tentar novamente</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const primaryButtonStyle: CSSProperties = {
+  width: "100%",
+  padding: 14,
+  border: "none",
+  borderRadius: 12,
+  background: GOLD,
+  color: "#080704",
+  fontSize: 15,
+  fontWeight: 900,
+  cursor: "pointer",
+};
+
+const centerInfoStyle: CSSProperties = {
+  color: "#f8fafc",
+  margin: 0,
+  textAlign: "center",
+  padding: 18,
+};
+
+function PlanCard({
+  plan,
+  selectedIndex,
+  onSelectPrice,
+  onBuy,
+}: {
+  plan: Plan;
+  selectedIndex: number;
+  onSelectPrice: (index: number) => void;
+  onBuy: (price: Plan["prices"][number]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const price = plan.prices[selectedIndex] ?? plan.prices[0];
+
+  return (
+    <div style={{ background: "#0b1420", border: "1px solid rgba(212,168,67,0.18)", borderRadius: 16, overflow: "hidden" }}>
+      <div style={{ height: 4, background: plan.topColor }} />
+      <div style={{ padding: "20px 22px 22px" }}>
+        {plan.badge && <span style={{ background: plan.topColor, color: "#fff", fontSize: 10, fontWeight: 900, padding: "4px 10px", borderRadius: 20, letterSpacing: 1, textTransform: "uppercase" }}>{plan.badge}</span>}
+        <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ width: 36, height: 36, display: "grid", placeItems: "center", borderRadius: 12, background: GOLD_DIM, color: GOLD, fontSize: 11, fontWeight: 900 }}>{plan.icon.slice(0, 2)}</span>
+          <div>
+            <h3 style={{ fontSize: 19, fontWeight: 900, color: "#f1f5f9", margin: 0 }}>{plan.name}</h3>
+            <span style={{ fontSize: 12, color: plan.pointsColor, background: `${plan.pointsColor}22`, padding: "3px 10px", borderRadius: 20, fontWeight: 800 }}>
+              +{plan.points.toLocaleString("pt-BR")} pontos de listagem
+            </span>
+          </div>
+        </div>
+        <p style={{ margin: "14px 0", color: "#94a3b8", lineHeight: 1.6, fontSize: 13 }}>{plan.description}</p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginBottom: 16 }}>
+          {plan.features.map((feature) => (
+            <span key={feature} style={{ color: "#cbd5e1", fontSize: 12, lineHeight: 1.45 }}>✓ {feature}</span>
+          ))}
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          {plan.pricePerDay ? (
+            <>
+              <span style={{ fontSize: 30, fontWeight: 900, color: "#f1f5f9" }}>R$ {fmt(plan.pricePerDay)}</span>
+              <span style={{ fontSize: 13, color: "#64748b", marginLeft: 4 }}>/dia</span>
+              <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>total {price.label}: R$ {fmt(price.value)}</div>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: 30, fontWeight: 900, color: "#f1f5f9" }}>R$ {fmt(price.value)}</span>
+              <span style={{ fontSize: 13, color: "#64748b", marginLeft: 4 }}>por {price.label}</span>
+            </>
+          )}
+        </div>
+
+        {!plan.isOneTime && (
+          <div style={{ position: "relative", marginBottom: 12 }}>
+            <button type="button" onClick={() => setOpen(!open)} style={{ width: "100%", padding: "11px 14px", background: "#0f172a", border: `1px solid ${open ? GOLD : "#1e293b"}`, borderRadius: 10, color: "#cbd5e1", display: "flex", justifyContent: "space-between", cursor: "pointer" }}>
+              <span>{price.label} - R$ {fmt(price.value)}</span>
+              <span>{open ? "▲" : "▼"}</span>
+            </button>
+            {open && (
+              <div style={{ position: "absolute", top: "calc(100% + 5px)", left: 0, right: 0, zIndex: 10, background: "#0f172a", border: `1px solid ${GOLD_MID}`, borderRadius: 10, overflow: "hidden" }}>
+                {plan.prices.map((item, index) => (
+                  <button key={item.key} type="button" onClick={() => { onSelectPrice(index); setOpen(false); }} style={{ width: "100%", padding: "11px 14px", background: index === selectedIndex ? GOLD_DIM : "transparent", border: "none", color: index === selectedIndex ? GOLD : "#94a3b8", textAlign: "left", cursor: "pointer" }}>
+                    {item.label} - R$ {fmt(item.value)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div style={{ padding: "11px 12px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 10, color: GOLD, fontSize: 12, lineHeight: 1.5, marginBottom: 12, fontWeight: 800 }}>
+          Ativacao automatica apos confirmacao do pagamento.
+        </div>
+        {plan.note && <p style={{ margin: "0 0 12px", color: "#94a3b8", fontSize: 12, lineHeight: 1.6 }}>{plan.note}</p>}
+
+        <button type="button" onClick={() => onBuy(price)} style={{ width: "100%", padding: 14, background: plan.ctaColor, color: plan.ctaColor === GOLD ? "#080704" : "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 900, cursor: "pointer" }}>
+          {plan.cta}
+        </button>
+
+        <button type="button" onClick={() => setPreviewOpen(!previewOpen)} style={{ width: "100%", padding: "11px 0 0", marginTop: 10, background: "transparent", border: "none", borderTop: "1px solid rgba(212,168,67,0.08)", color: "#64748b", fontSize: 12, cursor: "pointer" }}>
+          {previewOpen ? "Ocultar exemplo do anuncio" : "Veja um exemplo do anuncio"}
+        </button>
+        {previewOpen && (
+          <div style={{ marginTop: 14, background: "#060e1b", borderRadius: 12, border: `1px solid ${GOLD_DIM}`, padding: 14 }}>
+            <div style={{ display: "flex", gap: 12 }}>
+              <div style={{ width: 72, height: 92, borderRadius: 10, background: "linear-gradient(135deg,#111827,#3b2f13)", display: "grid", placeItems: "center", color: GOLD, fontWeight: 900 }}>EM</div>
+              <div>
+                <strong style={{ color: "#f8fafc" }}>Seu perfil</strong>
+                <p style={{ margin: "5px 0", color: "#64748b", fontSize: 12 }}>Itauna, MG · destaque ativo</p>
+                <span style={{ color: GOLD, fontWeight: 800, fontSize: 13 }}>Mais visibilidade na listagem</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function PlanosPage() {
   const [activeTab, setActiveTab] = useState<Tab>("planos");
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [selectedDuration, setSelectedDuration] = useState<Record<string, number>>({});
-  const [activation, setActivation] = useState<Record<string, "agora" | "depois">>({});
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const [simulateOpen, setSimulateOpen] = useState<string | null>(null);
-  const [pontosQtd, setPontosQtd] = useState(10);
-  const [activePlans, setActivePlans] = useState<Record<string, boolean>>({ "super-top": true, "telefone": true });
+  const [checkout, setCheckout] = useState<{ plan: Plan; price: Plan["prices"][number] } | null>(null);
+  const [pointsAmount, setPointsAmount] = useState(10);
 
   return (
-    <div style={{ maxWidth: 760, margin: "0 auto" }}>
+    <div style={{ maxWidth: 760, margin: "0 auto", paddingBottom: 24 }}>
+      {checkout && <PlanCheckout selection={checkout} onClose={() => setCheckout(null)} />}
 
-      {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: GOLD, textTransform: "uppercase", marginBottom: 8 }}>Painel da profissional</p>
-        <h1 style={{ fontSize: "clamp(22px, 4vw, 32px)", fontWeight: 900, color: "#f1f5f9", margin: 0, lineHeight: 1.1 }}>
-          Impulsione seu sucesso<br />com os nossos Planos!
+        <p style={{ fontSize: 11, fontWeight: 900, letterSpacing: 3, color: GOLD, textTransform: "uppercase", marginBottom: 8 }}>Painel da profissional</p>
+        <h1 style={{ fontSize: "clamp(26px, 5vw, 40px)", fontWeight: 950, color: "#f8fafc", margin: 0, lineHeight: 1.05 }}>
+          Planos, destaques e pagamentos
         </h1>
+        <p style={{ color: "#94a3b8", lineHeight: 1.6, margin: "12px 0 0" }}>Todo botao de compra agora abre checkout real ou informa claramente o que falta configurar.</p>
       </div>
 
-      {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
         {[
-          { label: "Sua posição", value: "12°", color: "#cc3300", bg: "rgba(204,51,0,0.12)" },
-          { label: "Sua pontuação", value: "2.320", color: GOLD, bg: GOLD_DIM },
-          { label: "Investimentos", value: "R$ 0,00", color: "#94a3b8", bg: "rgba(148,163,184,0.08)" },
-        ].map((s) => (
-          <div key={s.label} style={{ background: "#0b1420", border: `1px solid rgba(212,168,67,0.15)`, borderRadius: 12, padding: "14px 16px", textAlign: "center" }}>
-            <div style={{ fontSize: 11, color: "#475569", marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>{s.label}</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: s.color, background: s.bg, borderRadius: 8, padding: "4px 12px", display: "inline-block" }}>{s.value}</div>
+          ["Pedidos", "Pix real"],
+          ["Provedor", "Asaas"],
+          ["Carrinho", "Removido"],
+        ].map(([label, value]) => (
+          <div key={label} style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, padding: "14px 10px", textAlign: "center" }}>
+            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 5, fontWeight: 800, textTransform: "uppercase" }}>{label}</div>
+            <div style={{ fontSize: 15, fontWeight: 900, color: GOLD }}>{value}</div>
           </div>
         ))}
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: 0, marginBottom: 24, background: "#060e1b", borderRadius: 10, padding: 4, border: `1px solid ${GOLD_DIM}` }}>
-        {(["planos", "assinaturas", "trocas"] as Tab[]).map((t) => (
-          <button key={t} onClick={() => setActiveTab(t)} style={{
-            flex: 1, padding: "9px 0", border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 700, fontSize: 13,
-            background: activeTab === t ? "#0b1420" : "transparent",
-            color: activeTab === t ? GOLD : "#475569",
-            transition: "all 0.2s",
-            textTransform: "capitalize",
-          }}>
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+      <div style={{ display: "flex", gap: 0, marginBottom: 24, background: "#060e1b", borderRadius: 12, padding: 4, border: `1px solid ${GOLD_DIM}` }}>
+        {(["planos", "assinaturas", "trocas"] as Tab[]).map((tab) => (
+          <button key={tab} type="button" onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: "10px 0", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 900, fontSize: 13, background: activeTab === tab ? "#0b1420" : "transparent", color: activeTab === tab ? GOLD : "#64748b", textTransform: "capitalize" }}>
+            {tab}
           </button>
         ))}
       </div>
 
-      {/* ── PLANOS TAB ── */}
       {activeTab === "planos" && (
         <>
-          {/* Active plans summary */}
           <div style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 14, padding: "18px 20px", marginBottom: 24 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: "#f1f5f9", margin: 0 }}>Meus planos ativos</h3>
-              <span style={{ fontSize: 11, color: "#475569" }}>Ative ou desative abaixo</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 900, color: "#f1f5f9", margin: 0 }}>Meus planos e beneficios</h3>
+              <span style={{ fontSize: 11, color: "#94a3b8" }}>Sem toggles falsos</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {PLANS.filter(p => !p.isOneTime).map(plan => (
-                <div key={plan.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid rgba(212,168,67,0.08)` }}>
+              {PLANS.filter((plan) => !plan.isOneTime).map((plan) => (
+                <div key={plan.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: "1px solid rgba(212,168,67,0.08)" }}>
                   <div>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: activePlans[plan.id] ? "#f1f5f9" : "#475569" }}>{plan.emoji} {plan.name}</span>
-                    <span style={{ marginLeft: 8, fontSize: 11, color: plan.pointsColor, background: `${plan.pointsColor}20`, padding: "2px 8px", borderRadius: 20, fontWeight: 700 }}>+{plan.points.toLocaleString("pt-BR")} pts</span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "#f1f5f9" }}>{plan.name}</span>
+                    <span style={{ marginLeft: 8, fontSize: 11, color: plan.pointsColor, background: `${plan.pointsColor}20`, padding: "2px 8px", borderRadius: 20, fontWeight: 800 }}>+{plan.points.toLocaleString("pt-BR")} pts</span>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    {activePlans[plan.id] && plan.pricePerDay && (
-                      <span style={{ fontSize: 11, color: "#475569" }}>R$ {fmt(plan.pricePerDay)}/dia</span>
-                    )}
-                    {!activePlans[plan.id] && plan.pricePerDay && (
-                      <span style={{ fontSize: 11, color: "#475569" }}>R$ {fmt(plan.pricePerDay)}/dia</span>
-                    )}
-                    {/* Toggle */}
-                    <button
-                      onClick={() => setActivePlans(p => ({ ...p, [plan.id]: !p[plan.id] }))}
-                      style={{
-                        width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer",
-                        background: activePlans[plan.id] ? GOLD : "#1e293b",
-                        position: "relative", transition: "background 0.2s", flexShrink: 0,
-                      }}
-                    >
-                      <div style={{
-                        width: 18, height: 18, borderRadius: "50%", background: "#fff",
-                        position: "absolute", top: 3,
-                        left: activePlans[plan.id] ? 23 : 3,
-                        transition: "left 0.2s",
-                      }} />
-                    </button>
-                  </div>
+                  <span style={{ fontSize: 11, color: "#94a3b8", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", padding: "4px 8px", borderRadius: 20, whiteSpace: "nowrap" }}>Comprar abaixo</span>
                 </div>
               ))}
             </div>
-            <button style={{ marginTop: 14, width: "100%", padding: "11px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
+            <button type="button" onClick={() => document.getElementById("professional-plan-cards")?.scrollIntoView({ behavior: "smooth", block: "start" })} style={{ ...primaryButtonStyle, marginTop: 14 }}>
               Comprar planos
             </button>
           </div>
 
-          {/* Plan cards */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {PLANS.map(plan => {
-              const sel = selectedDuration[plan.id] ?? (plan.prices.length > 2 ? 2 : 0);
-              const chosenPrice = plan.prices[sel];
-              const act = activation[plan.id] ?? "agora";
-              const isDropOpen = openDropdown === plan.id;
-              const isSim = simulateOpen === plan.id;
-
+          <div id="professional-plan-cards" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {PLANS.map((plan) => {
+              const index = selectedDuration[plan.id] ?? (plan.prices.length > 2 ? 2 : 0);
               return (
-                <div key={plan.id} style={{ background: "#0b1420", border: `1px solid rgba(212,168,67,0.18)`, borderRadius: 16, overflow: "hidden" }}>
-                  {/* Top color bar */}
-                  <div style={{ height: 4, background: plan.topColor }} />
-
-                  <div style={{ padding: "20px 22px 22px" }}>
-                    {/* Badge */}
-                    {plan.badge && (
-                      <div style={{ marginBottom: 10 }}>
-                        <span style={{ background: plan.badgeColor, color: "#fff", fontSize: 10, fontWeight: 800, padding: "3px 10px", borderRadius: 20, letterSpacing: 1, textTransform: "uppercase" }}>
-                          {plan.badge.includes("DIAS") ? "🔥 " : ""}{plan.badge}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Name & points */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                      <span style={{ fontSize: 20 }}>{plan.emoji}</span>
-                      <h3 style={{ fontSize: 18, fontWeight: 900, color: "#f1f5f9", margin: 0 }}>{plan.name}</h3>
-                    </div>
-                    <div style={{ marginBottom: 14 }}>
-                      <span style={{ fontSize: 12, color: plan.pointsColor, background: `${plan.pointsColor}22`, padding: "3px 10px", borderRadius: 20, fontWeight: 700 }}>
-                        +{plan.points.toLocaleString("pt-BR")} pontos de listagem
-                      </span>
-                    </div>
-
-                    {/* Features grid */}
-                    <div style={{ display: "grid", gridTemplateColumns: plan.features.length > 2 ? "1fr 1fr" : "1fr", gap: 6, marginBottom: 16 }}>
-                      {plan.features.slice(0, 4).map(f => (
-                        <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={plan.pointsColor} strokeWidth="2.5" style={{ flexShrink: 0, marginTop: 1 }}><polyline points="20 6 9 17 4 12"/></svg>
-                          <span style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.4 }}>{f}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Price */}
-                    {plan.isOneTime ? (
-                      <div style={{ marginBottom: 16 }}>
-                        <span style={{ fontSize: 28, fontWeight: 900, color: "#f1f5f9" }}>R$ {fmt(plan.prices[0].value)}</span>
-                        <span style={{ fontSize: 13, color: "#475569", marginLeft: 6 }}>por {plan.prices[0].label}</span>
-                      </div>
-                    ) : (
-                      <div style={{ marginBottom: 4 }}>
-                        {plan.pricePerDay && (
-                          <>
-                            <span style={{ fontSize: 28, fontWeight: 900, color: "#f1f5f9" }}>R$ {fmt(plan.pricePerDay)}</span>
-                            <span style={{ fontSize: 13, color: "#475569", marginLeft: 4 }}>/dia</span>
-                            <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>
-                              total por {chosenPrice.label.startsWith("Assinatura") ? "30 dias" : chosenPrice.label} R$ {fmt(chosenPrice.value)}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Duration selector */}
-                    {!plan.isOneTime && plan.prices.length > 0 && (
-                      <div style={{ position: "relative", marginBottom: 14 }}>
-                        <button
-                          onClick={() => setOpenDropdown(isDropOpen ? null : plan.id)}
-                          style={{ width: "100%", padding: "10px 14px", background: "#0f172a", border: `1px solid ${isDropOpen ? GOLD : "#1e293b"}`, borderRadius: 8, color: "#94a3b8", fontSize: 13, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", transition: "border-color 0.2s" }}
-                        >
-                          <span>{chosenPrice.label.startsWith("Assinatura") ? `${chosenPrice.label}` : `${chosenPrice.label} R$ ${fmt(chosenPrice.value)}`}</span>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: isDropOpen ? "rotate(180deg)" : undefined, transition: "transform 0.2s" }}>
-                            <polyline points="6 9 12 15 18 9"/>
-                          </svg>
-                        </button>
-                        {isDropOpen && (
-                          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#0f172a", border: `1px solid ${GOLD_MID}`, borderRadius: 8, zIndex: 20, marginTop: 4, overflow: "hidden" }}>
-                            {plan.prices.map((p, i) => (
-                              <button
-                                key={p.key}
-                                onClick={() => { setSelectedDuration(d => ({ ...d, [plan.id]: i })); setOpenDropdown(null); }}
-                                style={{ width: "100%", padding: "11px 14px", background: i === sel ? GOLD_DIM : "transparent", border: "none", borderBottom: i < plan.prices.length - 1 ? `1px solid rgba(212,168,67,0.08)` : "none", color: i === sel ? GOLD : "#94a3b8", fontSize: 13, cursor: "pointer", textAlign: "left", transition: "background 0.15s" }}
-                              >
-                                {p.label.startsWith("Assinatura") ? p.label : `${p.label} R$ ${fmt(p.value)}`}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Activation mode (for plans that need scheduling) */}
-                    {(plan.id === "telefone" || plan.id === "30min" || plan.id === "subir") && (
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
-                        {(["agora", "depois"] as const).map(mode => (
-                          <button
-                            key={mode}
-                            onClick={() => setActivation(a => ({ ...a, [plan.id]: mode }))}
-                            style={{ padding: "12px 10px", background: act === mode ? GOLD_DIM : "#0f172a", border: `1.5px solid ${act === mode ? GOLD_MID : "#1e293b"}`, borderRadius: 8, color: act === mode ? GOLD : "#475569", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}
-                          >
-                            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>
-                              {mode === "agora" ? "✓ Ativar agora" : "○ Ativar depois"}
-                            </div>
-                            <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.4 }}>
-                              {mode === "agora" ? "Ativa o plano imediatamente após a compra." : "Ativa o plano automaticamente quando o anterior vencer."}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Note */}
-                    {plan.note && (
-                      <div style={{ background: "rgba(212,168,67,0.06)", border: `1px solid ${GOLD_DIM}`, borderRadius: 8, padding: "10px 12px", marginBottom: 14, display: "flex", gap: 8 }}>
-                        <span style={{ fontSize: 14, flexShrink: 0 }}>ℹ️</span>
-                        <p style={{ margin: 0, fontSize: 11, color: "#94a3b8", lineHeight: 1.6 }}>{plan.note}</p>
-                      </div>
-                    )}
-
-                    {/* CTA */}
-                    <button
-                      style={{ width: "100%", padding: "13px", background: plan.ctaColor, color: plan.ctaColor === GOLD ? "#060e1b" : "#fff", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer", marginBottom: 8, transition: "opacity 0.2s" }}
-                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = "0.88")}
-                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.opacity = "1")}
-                    >
-                      {plan.cta}
-                    </button>
-
-                    {!plan.isOneTime && (
-                      <button style={{ width: "100%", padding: "8px", background: "transparent", border: "none", color: "#475569", fontSize: 13, cursor: "pointer" }}>
-                        Adicionar no carrinho
-                      </button>
-                    )}
-
-                    {/* Simulate toggle */}
-                    <button
-                      onClick={() => setSimulateOpen(isSim ? null : plan.id)}
-                      style={{ width: "100%", padding: "8px 0 0", background: "transparent", border: "none", borderTop: `1px solid rgba(212,168,67,0.08)`, color: "#475569", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 8 }}
-                    >
-                      Veja um exemplo do anúncio
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: isSim ? "rotate(180deg)" : undefined }}>
-                        <polyline points="6 9 12 15 18 9"/>
-                      </svg>
-                    </button>
-
-                    {isSim && (
-                      <div style={{ marginTop: 14, background: "#060e1b", borderRadius: 12, overflow: "hidden", border: `1px solid ${GOLD_DIM}` }}>
-                        <div style={{ padding: "10px 14px", borderBottom: `1px solid ${GOLD_DIM}`, background: "#0b1420" }}>
-                          <span style={{ fontSize: 11, color: "#475569", fontWeight: 700, letterSpacing: 1 }}>SIMULAÇÃO DO ANÚNCIO</span>
-                        </div>
-                        <div style={{ display: "flex", gap: 12, padding: 14, alignItems: "flex-start" }}>
-                          <div style={{ width: 70, height: 90, borderRadius: 8, overflow: "hidden", flexShrink: 0, background: "#0f172a" }}>
-                            <Image src="/model.jpeg" alt="preview" width={140} height={180} sizes="70px" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "38% top" }} />
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                              <span style={{ fontSize: 14, fontWeight: 700, color: "#f1f5f9" }}>Lora</span>
-                              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
-                              <span style={{ fontSize: 11, color: "#22c55e" }}>Online</span>
-                            </div>
-                            <div style={{ fontSize: 11, color: "#475569", marginBottom: 6 }}>São Paulo, SP · 27 anos</div>
-                            {plan.id === "super-top" && (
-                              <span style={{ fontSize: 10, background: "rgba(212,168,67,0.15)", color: GOLD, padding: "2px 7px", borderRadius: 4, fontWeight: 700 }}>DESTAQUE</span>
-                            )}
-                            <div style={{ fontSize: 13, fontWeight: 700, color: GOLD, marginTop: 6 }}>R$ 800/hora</div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <PlanCard
+                  key={plan.id}
+                  plan={plan}
+                  selectedIndex={index}
+                  onSelectPrice={(nextIndex) => setSelectedDuration((prev) => ({ ...prev, [plan.id]: nextIndex }))}
+                  onBuy={(price) => setCheckout({ plan, price })}
+                />
               );
             })}
-          </div>
-
-          {/* Mais vantagens */}
-          <div style={{ marginTop: 32, background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 16, padding: "24px 22px" }}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9", margin: "0 0 6px" }}>Mais vantagens que seu anúncio terá com planos da Elite Modell</h3>
-            <p style={{ fontSize: 13, color: "#475569", margin: "0 0 16px" }}>Adquirindo qualquer plano você também terá os seguintes benefícios:</p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {["Prioridade no atendimento", "Relatório de visitas", "Badge verificada", "Suporte prioritário", "Análise de desempenho"].map(v => (
-                <span key={v} style={{ background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 20, padding: "5px 14px", fontSize: 12, color: GOLD, fontWeight: 600 }}>{v}</span>
-              ))}
-            </div>
-          </div>
-
-          {/* FAQ */}
-          <div style={{ marginTop: 32, marginBottom: 32 }}>
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: "#f1f5f9", marginBottom: 20 }}>Ainda tem dúvidas?</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {FAQ_ITEMS.map((item, i) => (
-                <div key={i} style={{ background: "#0b1420", border: `1px solid ${openFaq === i ? GOLD_MID : GOLD_DIM}`, borderRadius: 10, overflow: "hidden", transition: "border-color 0.2s" }}>
-                  <button
-                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                    style={{ width: "100%", padding: "14px 18px", background: "transparent", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", textAlign: "left" }}
-                  >
-                    <span style={{ fontSize: 14, fontWeight: 600, color: "#f1f5f9" }}>{item.q}</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2.5" style={{ flexShrink: 0, transform: openFaq === i ? "rotate(180deg)" : undefined, transition: "transform 0.2s" }}>
-                      <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                  </button>
-                  {openFaq === i && (
-                    <div style={{ padding: "0 18px 14px" }}>
-                      <p style={{ margin: 0, fontSize: 13, color: "#94a3b8", lineHeight: 1.7 }}>{item.a}</p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
           </div>
         </>
       )}
 
-      {/* ── ASSINATURAS TAB ── */}
       {activeTab === "assinaturas" && (
-        <div style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 16, padding: 28, textAlign: "center" }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
-          <h3 style={{ color: "#f1f5f9", fontSize: 18, fontWeight: 700, margin: "0 0 10px" }}>Assinando sai mais barato!</h3>
-          <p style={{ color: "#475569", fontSize: 14, margin: "0 0 20px", lineHeight: 1.7 }}>
-            Todas as assinaturas têm desconto de 10% a partir do segundo mês.<br />
-            Ative um plano mensal e economize continuamente.
-          </p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 24 }}>
-            {PLANS.filter(p => !p.isOneTime).map(plan => {
-              const mensal = plan.prices.find(p => p.key === "mensal");
-              if (!mensal) return null;
+        <div style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 16, padding: 24, textAlign: "center" }}>
+          <h2 style={{ margin: "0 0 8px", color: "#f8fafc", fontSize: 22, fontWeight: 900 }}>Assinaturas mensais</h2>
+          <p style={{ color: "#94a3b8", lineHeight: 1.7 }}>As assinaturas usam o mesmo checkout Pix dos planos. Escolha um plano mensal abaixo para criar pedido real.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12, marginTop: 20 }}>
+            {PLANS.filter((plan) => !plan.isOneTime).map((plan) => {
+              const monthly = plan.prices.find((price) => price.key === "mensal");
+              if (!monthly) return null;
               return (
-                <div key={plan.id} style={{ background: "#060e1b", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, padding: "14px 16px", textAlign: "left" }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9", marginBottom: 4 }}>{plan.emoji} {plan.name}</div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: GOLD }}>R$ {fmt(mensal.value)}<span style={{ fontSize: 12, color: "#475569", fontWeight: 400 }}>/mês</span></div>
-                  <div style={{ fontSize: 11, color: "#334155", marginTop: 2 }}>{mensal.label.replace("Assinatura mensal ", "").replace("R$", "≈ R$")}/dia</div>
-                </div>
+                <button key={plan.id} type="button" onClick={() => setCheckout({ plan, price: monthly })} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", textAlign: "left", padding: 16, background: "#060e1b", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, cursor: "pointer" }}>
+                  <span style={{ color: "#f8fafc", fontWeight: 900 }}>{plan.name}</span>
+                  <span style={{ color: GOLD, fontWeight: 900 }}>R$ {fmt(monthly.value)}/mes</span>
+                </button>
               );
             })}
           </div>
-          <button style={{ padding: "13px 32px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
-            Ver assinaturas disponíveis
-          </button>
         </div>
       )}
 
-      {/* ── TROCAS TAB ── */}
       {activeTab === "trocas" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <div style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 16, padding: "24px 22px" }}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9", margin: "0 0 6px" }}>Comprar pontos de listagem</h3>
-            <p style={{ fontSize: 13, color: "#475569", margin: "0 0 20px" }}>Aumente sua posição comprando pontos avulsos.</p>
-
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 12, color: "#94a3b8", display: "block", marginBottom: 8, fontWeight: 600 }}>Quantidade de pontos</label>
-              <div style={{ display: "flex", alignItems: "center", gap: 0, border: `1px solid ${GOLD_MID}`, borderRadius: 8, overflow: "hidden", maxWidth: 220 }}>
-                <button
-                  onClick={() => setPontosQtd(Math.max(10, pontosQtd - 10))}
-                  style={{ width: 44, height: 44, background: "#0f172a", border: "none", color: "#94a3b8", fontSize: 20, cursor: "pointer", flexShrink: 0 }}
-                >−</button>
-                <input
-                  type="number"
-                  value={pontosQtd}
-                  min={10} max={15000}
-                  onChange={e => setPontosQtd(Math.min(15000, Math.max(10, parseInt(e.target.value) || 10)))}
-                  style={{ flex: 1, height: 44, background: "#0f172a", border: "none", color: "#f1f5f9", fontSize: 16, fontWeight: 700, textAlign: "center", outline: "none" }}
-                />
-                <button
-                  onClick={() => setPontosQtd(Math.min(15000, pontosQtd + 10))}
-                  style={{ width: 44, height: 44, background: "#0f172a", border: "none", color: "#94a3b8", fontSize: 20, cursor: "pointer", flexShrink: 0 }}
-                >+</button>
-              </div>
-              <p style={{ fontSize: 11, color: "#334155", margin: "6px 0 0" }}>Mín. 10 pontos · Máx. 15.000 pontos</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 16, padding: 22 }}>
+            <h2 style={{ margin: "0 0 8px", color: "#f8fafc", fontSize: 20, fontWeight: 900 }}>Comprar pontos de listagem</h2>
+            <p style={{ color: "#94a3b8", lineHeight: 1.7 }}>A compra avulsa de pontos ainda nao tem tabela de saldo dedicada no banco. Por isso o botao fica bloqueado, sem parecer uma compra ativa.</p>
+            <div style={{ display: "flex", alignItems: "center", maxWidth: 230, border: `1px solid ${GOLD_MID}`, borderRadius: 10, overflow: "hidden", margin: "16px 0" }}>
+              <button type="button" onClick={() => setPointsAmount(Math.max(10, pointsAmount - 10))} style={stepperButtonStyle}>-</button>
+              <input value={pointsAmount} onChange={(event) => setPointsAmount(Math.min(15000, Math.max(10, Number(event.target.value) || 10)))} type="number" min={10} max={15000} style={{ flex: 1, height: 44, background: "#0f172a", border: "none", color: "#f1f5f9", fontSize: 16, fontWeight: 900, textAlign: "center", outline: "none" }} />
+              <button type="button" onClick={() => setPointsAmount(Math.min(15000, pointsAmount + 10))} style={stepperButtonStyle}>+</button>
             </div>
-
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12, color: "#475569", marginBottom: 4 }}>Valor a pagar</div>
-              <div style={{ fontSize: 28, fontWeight: 900, color: "#f1f5f9" }}>R$ {fmt(pontosQtd * 1.15)}</div>
-              <div style={{ fontSize: 12, color: "#475569" }}>total por 30 dias R$ {fmt(pontosQtd * 1.15)}</div>
-            </div>
-
-            {/* Duration options */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 20 }}>
-              {[
-                { label: `30 dias R$ ${fmt(pontosQtd * 1.15)}`, active: true },
-                { label: `7 dias R$ ${fmt(pontosQtd * 0.55 / 10)}`, active: false },
-                { label: `3 dias R$ ${fmt(pontosQtd * 0.30 / 10)}`, active: false },
-              ].map((opt, i) => (
-                <div key={i} style={{ padding: "10px 14px", background: opt.active ? GOLD_DIM : "#0f172a", border: `1px solid ${opt.active ? GOLD_MID : "#1e293b"}`, borderRadius: 8, fontSize: 13, color: opt.active ? GOLD : "#475569", fontWeight: opt.active ? 700 : 400, cursor: "pointer" }}>
-                  {opt.label}
-                </div>
-              ))}
-            </div>
-
-            <button style={{ width: "100%", padding: "13px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
-              Comprar pontos
-            </button>
-          </div>
-
-          <div style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, padding: "14px 18px" }}>
-            <p style={{ margin: 0, fontSize: 12, color: "#475569", lineHeight: 1.7 }}>
-              * A posição do seu anúncio é calculada com base nos pontos disponíveis. Esses pontos mudam ao longo do dia, então a posição pode subir ou descer a qualquer momento.
-            </p>
-          </div>
-
-          {/* Simule */}
-          <div style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 16, overflow: "hidden" }}>
-            <div style={{ padding: "14px 18px", borderBottom: `1px solid ${GOLD_DIM}` }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: "#f1f5f9", margin: 0 }}>Simule seu anúncio</h3>
-            </div>
-            <div style={{ padding: 18, display: "flex", gap: 14, alignItems: "flex-start" }}>
-              <div style={{ width: 100, height: 130, borderRadius: 10, overflow: "hidden", flexShrink: 0 }}>
-                <Image src="/model.jpeg" alt="sim" width={200} height={260} sizes="100px" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "38% top" }} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: "#f1f5f9" }}>Lora</span>
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
-                  <span style={{ fontSize: 12, color: "#22c55e", fontWeight: 600 }}>Online</span>
-                </div>
-                <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>São Paulo · 27 anos</div>
-                <div style={{ background: "rgba(212,168,67,0.15)", borderRadius: 6, padding: "4px 8px", display: "inline-block", marginBottom: 6 }}>
-                  <span style={{ fontSize: 11, color: GOLD, fontWeight: 700 }}>DESTAQUE PREMIUM</span>
-                </div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: GOLD }}>R$ 800/h</div>
-                <div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>Com local próprio</div>
-                <button style={{ marginTop: 10, padding: "8px 16px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 800, cursor: "pointer" }}>
-                  📞 Ver Telefone
-                </button>
-              </div>
-            </div>
+            <div style={{ color: "#f8fafc", fontSize: 28, fontWeight: 900, marginBottom: 12 }}>R$ {fmt(pointsAmount * 1.15)}</div>
+            <button type="button" disabled style={{ ...primaryButtonStyle, opacity: 0.55, cursor: "not-allowed" }}>Compra de pontos indisponivel</button>
           </div>
         </div>
       )}
     </div>
   );
 }
+
+const stepperButtonStyle: CSSProperties = {
+  width: 44,
+  height: 44,
+  background: "#0f172a",
+  border: "none",
+  color: "#94a3b8",
+  fontSize: 20,
+  cursor: "pointer",
+  flexShrink: 0,
+};

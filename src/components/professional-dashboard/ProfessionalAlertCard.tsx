@@ -59,7 +59,7 @@ export function ProfessionalAlertStack({ alerts }: { alerts: ProfessionalAlert[]
                 <p className="mt-1 text-sm leading-6 text-white/62">{alert.description}</p>
                 <Link
                   href={alert.href}
-                  className="mt-3 inline-flex min-h-10 items-center justify-center rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]"
+                  className="professional-primary-action mt-3 inline-flex min-h-10 items-center justify-center rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]"
                 >
                   {alert.actionLabel}
                 </Link>

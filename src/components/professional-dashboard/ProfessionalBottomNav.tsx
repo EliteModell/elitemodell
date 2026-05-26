@@ -6,8 +6,8 @@ import { Crown, LayoutDashboard, List, PlusCircle, UserRound } from "lucide-reac
 
 const items = [
   { label: "Painel", href: "/profissional", icon: LayoutDashboard },
-  { label: "Postar", href: "/profissional/fotos", icon: PlusCircle },
-  { label: "Listagem", href: "/profissionais", icon: List },
+  { label: "Postar", href: "/profissional/postar", icon: PlusCircle },
+  { label: "Listagem", href: "/profissional/listagem", icon: List },
   { label: "Planos", href: "/profissional/planos", icon: Crown },
   { label: "Perfil", href: "/profissional/perfil", icon: UserRound },
 ];

@@ -169,7 +169,7 @@ export function ProfessionalMainCard({
               <Gauge className="h-4 w-4" />
               Editar
             </Link>
-            <Link href="/profissional/planos" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#d4a843] px-3 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">
+            <Link href="/profissional/planos" className="professional-primary-action inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#d4a843] px-3 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">
               <Sparkles className="h-4 w-4" />
               {planExpiresAt ? "Renovar" : "Comprar plano"}
             </Link>
@@ -196,8 +196,8 @@ export function RankingCard({ city, position }: { city: string | null; position:
           </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-2 lg:w-72 lg:grid-cols-1">
-          <Link href="/profissional/perfil" className="inline-flex min-h-11 items-center justify-center rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">Melhorar posicao</Link>
-          <Link href="/profissionais" className="inline-flex min-h-11 items-center justify-center rounded-[8px] border border-white/12 px-4 text-sm font-black text-white/70 no-underline transition hover:border-[#d4a843]/35 hover:text-[#f5d78c]">Ver minha listagem</Link>
+          <Link href="/profissional/perfil" className="professional-primary-action inline-flex min-h-11 items-center justify-center rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">Melhorar posicao</Link>
+          <Link href="/profissional/listagem" className="inline-flex min-h-11 items-center justify-center rounded-[8px] border border-white/12 px-4 text-sm font-black text-white/70 no-underline transition hover:border-[#d4a843]/35 hover:text-[#f5d78c]">Minha listagem</Link>
         </div>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-7">
@@ -268,7 +268,7 @@ export function PlanResourcesCard({
           </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-3 lg:w-[420px]">
-          <Link href="/profissional/planos" className="inline-flex min-h-11 items-center justify-center rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">{hasActivePlan ? "Renovar plano" : "Conhecer planos"}</Link>
+          <Link href="/profissional/planos" className="professional-primary-action inline-flex min-h-11 items-center justify-center rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">{hasActivePlan ? "Renovar plano" : "Conhecer planos"}</Link>
           <Link href="/profissional/planos" className="inline-flex min-h-11 items-center justify-center rounded-[8px] border border-white/12 px-4 text-sm font-black text-white/70 no-underline transition hover:border-[#d4a843]/35 hover:text-[#f5d78c]">Comprar destaque</Link>
           <Link href="/profissional/planos" className="inline-flex min-h-11 items-center justify-center rounded-[8px] border border-white/12 px-4 text-sm font-black text-white/70 no-underline transition hover:border-[#d4a843]/35 hover:text-[#f5d78c]">Ver planos</Link>
         </div>
@@ -318,7 +318,7 @@ export function PrivacyBoostCard({
           <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d4a843]">Privacidade e boost</p>
           <h2 className="mt-1 text-xl font-black text-white">Controle sua presenca publica</h2>
         </div>
-        <Link href="/profissional/configuracoes" className="inline-flex min-h-11 items-center justify-center rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">Configurar</Link>
+        <Link href="/profissional/configuracoes" className="professional-primary-action inline-flex min-h-11 items-center justify-center rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">Configurar</Link>
       </div>
       <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         {options.map((option) => {

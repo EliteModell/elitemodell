@@ -23,7 +23,7 @@ export function ProfessionalStoriesClient() {
           TODO: conectar esta rota ao envio para `/api/stories`, com validacao de imagem/video, expiracao e status de moderacao antes da exibicao publica.
         </p>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <Link href="/profissional/fotos" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">
+          <Link href="/profissional/fotos" className="professional-primary-action inline-flex min-h-12 items-center justify-center gap-2 rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">
             <ImagePlus className="h-4 w-4" />
             Postar foto
           </Link>

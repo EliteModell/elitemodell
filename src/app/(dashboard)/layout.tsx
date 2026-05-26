@@ -411,6 +411,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .professional-content a {
           color: #d6a83a;
         }
+        .professional-content .professional-primary-action {
+          color: #080704 !important;
+        }
+        .professional-content .professional-primary-action svg,
+        .professional-content .professional-primary-action span {
+          color: #080704 !important;
+        }
         .professional-content > div > div,
         .professional-content section,
         .professional-content article,
