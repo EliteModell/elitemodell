@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { CSSProperties } from "react";
 
 const GOLD = "#d4a843";
@@ -185,6 +186,7 @@ function fmt(value: number) {
 
 function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: Plan["prices"][number] }; onClose: () => void }) {
   const [stage, setStage] = useState<CheckoutStage>("idle");
+  const [mounted, setMounted] = useState(false);
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
@@ -193,34 +195,50 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    setMounted(true);
+    const bodyOverflow = document.body.style.overflow;
+    const htmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      document.body.style.overflow = bodyOverflow;
+      document.documentElement.style.overflow = htmlOverflow;
     };
   }, []);
+
+  async function verifyPayment() {
+    if (!paymentId) return;
+    try {
+      const res = await fetch(`/api/payments/status/${paymentId}`);
+      if (!res.ok) {
+        setMessage("Ainda nao conseguimos confirmar o pagamento.");
+        return;
+      }
+      const data = await res.json();
+      if (data.status === "PAID") {
+        if (pollRef.current) clearInterval(pollRef.current);
+        setStage("paid");
+      } else if (data.status === "FAILED" || data.status === "REFUNDED") {
+        if (pollRef.current) clearInterval(pollRef.current);
+        setError("Pagamento nao confirmado.");
+        setStage("failed");
+      } else {
+        setMessage("Pagamento ainda pendente. Assim que confirmar, o plano sera ativado.");
+      }
+    } catch {
+      setMessage("Nao foi possivel verificar agora. Tente novamente em instantes.");
+    }
+  }
 
   useEffect(() => {
     if (!paymentId || stage !== "waiting") return;
 
-    async function checkStatus() {
-      try {
-        const res = await fetch(`/api/payments/status/${paymentId}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.status === "PAID") {
-          if (pollRef.current) clearInterval(pollRef.current);
-          setStage("paid");
-        } else if (data.status === "FAILED" || data.status === "REFUNDED") {
-          if (pollRef.current) clearInterval(pollRef.current);
-          setError("Pagamento nao confirmado.");
-          setStage("failed");
-        }
-      } catch {}
-    }
-
     pollRef.current = setInterval(() => {
-      if (!document.hidden) void checkStatus();
+      if (!document.hidden) void verifyPayment();
     }, 6000);
-    void checkStatus();
+    void verifyPayment();
 
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
@@ -245,7 +263,7 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Nao foi possivel iniciar o checkout.");
+        setError(data.error || "Nao foi possivel gerar o Pix agora. Tente novamente ou fale com o suporte.");
         setStage("failed");
         return;
       }
@@ -255,7 +273,7 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
       setMessage(data.message || null);
       setStage("waiting");
     } catch {
-      setError("Erro de conexao ao iniciar checkout.");
+      setError("Nao foi possivel gerar o Pix agora. Tente novamente ou fale com o suporte.");
       setStage("failed");
     }
   }
@@ -266,9 +284,9 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
     setMessage("Codigo Pix copiado.");
   }
 
-  return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 1400, background: "rgba(0,0,0,0.82)", display: "grid", placeItems: "center", padding: 18 }}>
-      <div style={{ width: "100%", maxWidth: 430, background: "#090d12", border: `1px solid ${GOLD_MID}`, borderRadius: 18, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.65)" }}>
+  const modal = (
+    <div style={checkoutOverlayStyle} role="dialog" aria-modal="true">
+      <div style={checkoutCardStyle}>
         <div style={{ height: 3, background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
         <div style={{ padding: 20 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 14, marginBottom: 14 }}>
@@ -302,9 +320,10 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
                   <p style={{ margin: "0 0 10px", color: "#94a3b8", fontSize: 12 }}>Use o Pix copia e cola abaixo:</p>
                   <div style={{ wordBreak: "break-all", background: "#05070a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: 10, color: "#94a3b8", fontSize: 11, textAlign: "left" }}>{qrCode.length > 120 ? `${qrCode.slice(0, 120)}...` : qrCode}</div>
                   <button type="button" onClick={copyPix} style={{ ...primaryButtonStyle, marginTop: 12 }}>Copiar codigo Pix</button>
+                  <button type="button" onClick={verifyPayment} style={secondaryButtonStyle}>Ja paguei / verificar pagamento</button>
                 </>
               ) : (
-                <p style={{ margin: 0, color: "#94a3b8", fontSize: 13, lineHeight: 1.6 }}>Pedido criado como pendente. O financeiro pode acompanhar e ativar manualmente no admin.</p>
+                <p style={{ margin: 0, color: "#94a3b8", fontSize: 13, lineHeight: 1.6 }}>Nao foi possivel gerar o Pix agora. Tente novamente ou fale com o suporte.</p>
               )}
               <p style={{ margin: "12px 0 0", color: "#64748b", fontSize: 12 }}>A tela atualiza automaticamente quando o pagamento for aprovado.</p>
             </div>
@@ -327,6 +346,9 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
       </div>
     </div>
   );
+
+  if (!mounted) return null;
+  return createPortal(modal, document.body);
 }
 
 const primaryButtonStyle: CSSProperties = {
@@ -339,6 +361,43 @@ const primaryButtonStyle: CSSProperties = {
   fontSize: 15,
   fontWeight: 900,
   cursor: "pointer",
+};
+
+const secondaryButtonStyle: CSSProperties = {
+  width: "100%",
+  padding: 13,
+  border: "1px solid rgba(212,168,67,0.35)",
+  borderRadius: 12,
+  background: "rgba(212,168,67,0.08)",
+  color: GOLD,
+  fontSize: 14,
+  fontWeight: 900,
+  cursor: "pointer",
+  marginTop: 10,
+};
+
+const checkoutOverlayStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 2147483000,
+  background: "rgba(0,0,0,0.86)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "max(16px, env(safe-area-inset-top)) 16px calc(92px + env(safe-area-inset-bottom))",
+  overflowY: "auto",
+  overscrollBehavior: "contain",
+};
+
+const checkoutCardStyle: CSSProperties = {
+  width: "100%",
+  maxWidth: 430,
+  maxHeight: "min(90dvh, calc(100dvh - 112px))",
+  overflowY: "auto",
+  background: "#090d12",
+  border: `1px solid ${GOLD_MID}`,
+  borderRadius: 18,
+  boxShadow: "0 24px 80px rgba(0,0,0,0.65)",
 };
 
 const centerInfoStyle: CSSProperties = {

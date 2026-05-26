@@ -95,9 +95,7 @@ export async function POST(req: NextRequest) {
         amount: price.value,
         planName: plan.name,
         priceLabel: price.label,
-        message: !asaas.configured
-          ? "Pagamento Pix registrado como pendente. Configure ASAAS_API_KEY para gerar QR Code real."
-          : "Pagamento Pix registrado como pendente. Configure ASAAS_ENVIRONMENT=production ou ALLOW_ASAAS_SANDBOX_IN_PRODUCTION=true para gerar QR Code neste ambiente.",
+        message: "Nao foi possivel gerar o Pix agora. Tente novamente ou fale com o suporte.",
       });
     }
 
@@ -157,7 +155,7 @@ export async function POST(req: NextRequest) {
       });
       console.error("[professional-plans-checkout]", err instanceof Error ? err.message : err);
       return NextResponse.json(
-        { error: err instanceof Error ? err.message : "Erro ao criar cobranca Pix." },
+        { error: "Nao foi possivel gerar o Pix agora. Tente novamente ou fale com o suporte." },
         { status: 502 }
       );
     }

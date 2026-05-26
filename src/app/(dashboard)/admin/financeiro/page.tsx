@@ -6,6 +6,25 @@ import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 
+function describePaymentReference(payment: {
+  externalReference: string | null;
+  bookingId: string | null;
+}) {
+  if (payment.externalReference?.startsWith("professional-plan:")) {
+    const [, planId, priceKey] = payment.externalReference.split(":");
+    return `${planId ?? "plano"} / ${priceKey ?? "duracao"}`;
+  }
+  return payment.externalReference ?? payment.bookingId ?? "-";
+}
+
+function accountTypeLabel(user?: { accountType: string | null; role: string | null } | null) {
+  if (!user) return "-";
+  if (user.accountType === "model") return "Profissional";
+  if (user.accountType === "host") return "Anfitriao";
+  if (user.role === "ADMIN") return "Admin";
+  return "Cliente";
+}
+
 async function activatePayment(formData: FormData) {
   "use server";
   await requireAdmin("finance:view");
@@ -35,7 +54,7 @@ export default async function AdminFinanceiroPage() {
     prisma.payment.aggregate({ where: { status: "PAID", paidAt: { gte: monthStart } }, _sum: { amount: true }, _count: true }),
     prisma.payment.aggregate({ where: { status: "PENDING" }, _sum: { amount: true }, _count: true }),
     prisma.payment.count({ where: { status: "FAILED" } }),
-    prisma.payment.findMany({ orderBy: { createdAt: "desc" }, take: 80, include: { user: { select: { name: true, email: true } } } }),
+    prisma.payment.findMany({ orderBy: { createdAt: "desc" }, take: 80, include: { user: { select: { name: true, email: true, accountType: true, role: true } } } }),
   ]);
 
   return (
@@ -49,12 +68,14 @@ export default async function AdminFinanceiroPage() {
       </div>
       <AdminPanel>
         <AdminTable>
-          <thead><tr><th style={thStyle}>Usuario</th><th style={thStyle}>Plano/Pedido</th><th style={thStyle}>Valor</th><th style={thStyle}>Metodo</th><th style={thStyle}>Status</th><th style={thStyle}>Data</th><th style={thStyle}>Acoes</th></tr></thead>
+          <thead><tr><th style={thStyle}>Usuario</th><th style={thStyle}>Tipo</th><th style={thStyle}>Plano/Pedido</th><th style={thStyle}>Referencia Asaas</th><th style={thStyle}>Valor</th><th style={thStyle}>Metodo</th><th style={thStyle}>Status</th><th style={thStyle}>Data</th><th style={thStyle}>Acoes</th></tr></thead>
           <tbody>
             {payments.map((payment) => (
               <tr key={payment.id}>
                 <td style={tdStyle}>{payment.user?.name ?? payment.user?.email ?? "Sem usuario"}</td>
-                <td style={tdStyle}>{payment.externalReference?.startsWith("professional-plan:") ? payment.externalReference.split(":")[1] : payment.externalReference ?? payment.bookingId ?? "-"}</td>
+                <td style={tdStyle}>{accountTypeLabel(payment.user)}</td>
+                <td style={tdStyle}>{describePaymentReference(payment)}</td>
+                <td style={tdStyle}>{payment.providerPaymentId ?? payment.invoiceUrl ?? "-"}</td>
                 <td style={tdStyle}>R$ {payment.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
                 <td style={tdStyle}>{payment.provider} / {payment.method}</td>
                 <td style={tdStyle}>{payment.status}</td>
