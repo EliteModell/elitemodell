@@ -1,255 +1,242 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import type { CSSProperties } from "react";
+import {
+  ArrowUpRight,
+  BadgeCheck,
+  Check,
+  Clock,
+  Copy,
+  Crown,
+  Diamond,
+  EyeOff,
+  HelpCircle,
+  Image as ImageIcon,
+  MessageCircle,
+  Minus,
+  Phone,
+  Plus,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  TrendingUp,
+  Trophy,
+  X,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  POINTS_MAX,
+  POINTS_MIN,
+  PROFESSIONAL_PLANS,
+  getProfessionalPlanPrice,
+  normalizePointsQuantity,
+  type ProfessionalPlan,
+  type ProfessionalPlanId,
+  type ProfessionalPlanPrice,
+} from "@/lib/professional-plans";
 
-const GOLD = "#d4a843";
-const GOLD_DIM = "rgba(212,168,67,0.12)";
-const GOLD_MID = "rgba(212,168,67,0.3)";
-
-type Tab = "planos" | "assinaturas" | "trocas";
-type PriceKey = "30min" | "hora" | "3d" | "7d" | "30d" | "mensal";
 type CheckoutStage = "idle" | "creating" | "waiting" | "paid" | "failed";
-
-type Plan = {
-  id: string;
-  name: string;
-  icon: string;
-  badge?: string;
-  points: number;
-  pointsColor: string;
-  description: string;
-  features: string[];
-  pricePerDay?: number;
-  prices: { label: string; key: PriceKey; value: number }[];
-  cta: string;
-  ctaColor: string;
-  topColor: string;
-  isOneTime?: boolean;
-  note?: string;
+type CheckoutSelection = {
+  plan: ProfessionalPlan;
+  price: ProfessionalPlanPrice;
+  pointsQuantity?: number;
 };
 
-const PLANS: Plan[] = [
-  {
-    id: "subir",
-    name: "Subir Agora",
-    icon: "Rocket",
-    badge: "Exclusivo",
-    points: 4000,
-    pointsColor: "#ff6b35",
-    description: "Impulso rápido para aparecer acima de perfis comuns por tempo limitado.",
-    features: ["Perfil impulsionado", "Destaque temporário", "Mais prioridade na listagem", "Galeria em evidência"],
-    prices: [{ label: "1 hora", key: "hora", value: 6.9 }],
-    cta: "Comprar já",
-    ctaColor: "#ff6b35",
-    topColor: "#cc3300",
-    isOneTime: true,
-  },
-  {
-    id: "30min",
-    name: "30min no Topo",
-    icon: "Flash",
-    badge: "Exclusivo",
-    points: 4000,
-    pointsColor: "#ff6b35",
-    description: "Coloque seu anúncio em posição de destaque por 30 minutos.",
-    features: ["Topo temporário", "Impulso de contatos", "Destaque visual", "Prioridade imediata"],
-    prices: [{ label: "30 minutos", key: "30min", value: 49.9 }],
-    cta: "Contratar o Plano",
-    ctaColor: "#ff6b35",
-    topColor: "#cc3300",
-    isOneTime: true,
-  },
-  {
-    id: "super-top",
-    name: "Super Top",
-    icon: "Crown",
-    badge: "Mais popular",
-    points: 2000,
-    pointsColor: GOLD,
-    description: "Plano premium para aparecer melhor nas buscas e aumentar conversão.",
-    features: ["Anúncio grande", "Perfil em destaque", "Telefone visível", "Boost de listagem"],
-    pricePerDay: 18.93,
-    prices: [
-      { label: "3 dias", key: "3d", value: 120.9 },
-      { label: "7 dias", key: "7d", value: 196.9 },
-      { label: "30 dias", key: "30d", value: 567.9 },
-      { label: "Assinatura mensal", key: "mensal", value: 446 },
+type ProductMeta = {
+  eyebrow: string;
+  headline: string;
+  summary: string;
+  badge?: string;
+  primaryPrice?: string;
+  icon: LucideIcon;
+  tone: "gold" | "bronze" | "silver" | "amber" | "diamond" | "privacy" | "neutral";
+  benefits: string[];
+  cta: string;
+  exampleTitle: string;
+};
+
+const GOLD = "#d4a843";
+const GOLD_SOFT = "#f5d78c";
+
+const PRODUCT_META: Record<ProfessionalPlanId, ProductMeta> = {
+  "one-hour-top": {
+    eyebrow: "Produto principal",
+    headline: "Prioridade temporária nos horários de maior movimento",
+    summary: "Seu anúncio ganha prioridade por 1 hora, aparece com mais força no topo das buscas e recebe um formato de destaque ampliado.",
+    badge: "Destaque recomendado",
+    primaryPrice: "R$ 24,99",
+    icon: Zap,
+    tone: "gold",
+    benefits: [
+      "Prioridade temporária",
+      "Topo das buscas e listagem",
+      "Mais visibilidade na sua cidade",
+      "Formato de destaque ampliado",
+      "Mais chance de receber contatos",
+      "Ideal para horários de maior movimento",
     ],
-    cta: "Comprar já",
-    ctaColor: GOLD,
-    topColor: GOLD,
+    cta: "Comprar 1 hora no topo",
+    exampleTitle: "Destaque de topo",
+  },
+  pontos: {
+    eyebrow: "Força de listagem",
+    headline: "Compre pontos para aumentar a força do seu anúncio",
+    summary: "Os pontos ajudam a definir a força do seu anúncio na listagem. Quanto mais pontos ativos, maior a chance de aparecer melhor, conforme a concorrência da cidade.",
+    icon: TrendingUp,
+    tone: "neutral",
+    benefits: [
+      "Mínimo 10 pontos",
+      "Máximo 15.000 pontos",
+      "Duração de 3, 7 ou 30 dias",
+      "Simulação antes da compra",
+    ],
+    cta: "Comprar pontos",
+    exampleTitle: "Mais força na listagem",
+  },
+  telefone: {
+    eyebrow: "Contato direto",
+    headline: "Telefone e WhatsApp visíveis na listagem",
+    summary: "Deixe seu contato mais acessível para facilitar conversas com clientes interessados.",
+    primaryPrice: "R$ 1,99/dia",
+    icon: Phone,
+    tone: "neutral",
+    benefits: [
+      "Botão de contato direto",
+      "WhatsApp mais acessível",
+      "Menos etapas até a conversa",
+      "Período flexível",
+    ],
+    cta: "Comprar telefone na listagem",
+    exampleTitle: "Contato direto",
+  },
+  bronze: {
+    eyebrow: "Plano Bronze",
+    headline: "Destaque visual básico para ganhar presença",
+    summary: "Adiciona pontos e uma apresentação mais chamativa para seu perfil aparecer com mais presença na listagem.",
+    icon: Trophy,
+    tone: "bronze",
+    benefits: ["+200 pontos de listagem", "Destaque visual básico", "Mais presença", "Acabamento mais chamativo"],
+    cta: "Comprar Bronze",
+    exampleTitle: "Destaque Bronze",
+  },
+  prata: {
+    eyebrow: "Plano Prata",
+    headline: "Maior exposição entre anunciantes",
+    summary: "Aumenta a exposição do perfil e ajuda seu anúncio a aparecer com mais força durante a navegação.",
+    primaryPrice: "R$ 3,66/dia",
+    icon: Star,
+    tone: "silver",
+    benefits: ["+500 pontos de listagem", "Maior exposição", "Mais força entre anunciantes", "Visual premium"],
+    cta: "Comprar Prata",
+    exampleTitle: "Exposição Prata",
+  },
+  ouro: {
+    eyebrow: "Plano Ouro",
+    headline: "Anúncio médio com informações em destaque",
+    summary: "Combina pontos, informações e contato visível conforme a regra do plano para melhorar a conversão.",
+    primaryPrice: "R$ 6,99/dia",
+    icon: Crown,
+    tone: "amber",
+    benefits: ["+1.000 pontos de listagem", "Médio anúncio", "Informações em destaque", "WhatsApp visível conforme regra"],
+    cta: "Comprar Ouro",
+    exampleTitle: "Presença Ouro",
+  },
+  diamante: {
+    eyebrow: "Plano Diamante",
+    headline: "Grande anúncio com grade de fotos",
+    summary: "Pacote de maior presença para destacar fotos, informações adicionais e contato visível conforme a regra do plano.",
+    primaryPrice: "R$ 11,33/dia",
+    icon: Diamond,
+    tone: "diamond",
+    benefits: ["+2.000 pontos de listagem", "Grande anúncio", "Grade de fotos", "Informações adicionais", "WhatsApp visível conforme regra"],
+    cta: "Comprar Diamante",
+    exampleTitle: "Vitrine Diamante",
+  },
+  "idade-oculta": {
+    eyebrow: "Privacidade",
+    headline: "Mais controle sobre a idade exibida",
+    summary: "Sua idade não aparece publicamente no anúncio e na listagem, mantendo a privacidade com pontos extras.",
+    primaryPrice: "R$ 1,99/dia",
+    icon: EyeOff,
+    tone: "privacy",
+    benefits: ["+100 pontos de listagem", "Idade não aparece publicamente", "Mais controle de privacidade", "Recurso extra do anúncio"],
+    cta: "Comprar idade oculta",
+    exampleTitle: "Privacidade ativa",
+  },
+};
+
+const PLAN_ORDER: ProfessionalPlanId[] = ["bronze", "prata", "ouro", "diamante"];
+const FAQ = [
+  {
+    question: "Anunciar é gratuito?",
+    answer: "O cadastro pode ser iniciado gratuitamente, mas planos e destaques são recursos opcionais para aumentar a visibilidade do perfil.",
   },
   {
-    id: "top",
-    name: "Top",
-    icon: "Trophy",
-    points: 1000,
-    pointsColor: "#22c55e",
-    description: "Aumente sua visibilidade com destaque moderado na listagem.",
-    features: ["Anúncio médio", "Mais informações", "Telefone no perfil", "Pontuação extra"],
-    pricePerDay: 11.03,
-    prices: [
-      { label: "3 dias", key: "3d", value: 66.9 },
-      { label: "7 dias", key: "7d", value: 105.9 },
-      { label: "30 dias", key: "30d", value: 330.9 },
-      { label: "Assinatura mensal", key: "mensal", value: 259.8 },
-    ],
-    cta: "Comprar já",
-    ctaColor: "#22c55e",
-    topColor: "#22c55e",
+    question: "Comprar plano garante ficar em primeiro?",
+    answer: "Não. O plano aumenta a força e a visibilidade do anúncio, mas a posição pode variar conforme cidade, concorrência, pontos ativos e outros anúncios.",
   },
   {
-    id: "diamante",
-    name: "Diamante",
-    icon: "Diamond",
-    points: 500,
-    pointsColor: "#818cf8",
-    description: "Destaque de alto valor para fortalecer sua presença premium.",
-    features: ["Banners internos", "Destaque no perfil", "Sinal premium", "Mais exposição"],
-    pricePerDay: 12.66,
-    prices: [
-      { label: "3 dias", key: "3d", value: 80.9 },
-      { label: "7 dias", key: "7d", value: 114.9 },
-      { label: "30 dias", key: "30d", value: 379.9 },
-      { label: "Assinatura mensal", key: "mensal", value: 342 },
-    ],
-    cta: "Comprar já",
-    ctaColor: "#818cf8",
-    topColor: "#4f46e5",
+    question: "Por quanto tempo meu destaque fica ativo?",
+    answer: "Depende do período contratado: 1 hora, 3 dias, 7 dias, 30 dias ou assinatura mensal, conforme o produto escolhido.",
   },
   {
-    id: "black",
-    name: "Black",
-    icon: "Star",
-    badge: "Novo",
-    points: 200,
-    pointsColor: "#94a3b8",
-    description: "Visual mais chamativo para seu anúncio na listagem.",
-    features: ["Visual escuro", "Sinal premium", "Mais contraste", "Destaque discreto"],
-    pricePerDay: 3.83,
-    prices: [
-      { label: "3 dias", key: "3d", value: 34.9 },
-      { label: "7 dias", key: "7d", value: 58.9 },
-      { label: "30 dias", key: "30d", value: 114.9 },
-      { label: "Assinatura mensal", key: "mensal", value: 103.5 },
-    ],
-    cta: "Comprar já",
-    ctaColor: "#94a3b8",
-    topColor: "#334155",
+    question: "Posso comprar mais de um recurso?",
+    answer: "Sim. Você pode combinar plano, pontos, telefone na listagem, idade oculta e destaque de topo, conforme disponibilidade.",
   },
   {
-    id: "telefone",
-    name: "Telefone na Listagem",
-    icon: "Phone",
-    points: 200,
-    pointsColor: "#22c55e",
-    description: "Exiba seu contato na listagem para reduzir atrito de conversão.",
-    features: ["Contato visível", "Mais conversas", "Botão na listagem", "Válido pelo período comprado"],
-    pricePerDay: 3.1,
-    prices: [
-      { label: "3 dias", key: "3d", value: 23.9 },
-      { label: "7 dias", key: "7d", value: 34.9 },
-      { label: "30 dias", key: "30d", value: 92.9 },
-      { label: "Assinatura mensal", key: "mensal", value: 83.7 },
-    ],
-    cta: "Comprar já",
-    ctaColor: "#22c55e",
-    topColor: "#166534",
-    note: "Após pagamento aprovado, o perfil fica com telefone liberado conforme regras da plataforma.",
+    question: "O que acontece quando o plano vence?",
+    answer: "O benefício deixa de ficar ativo e o perfil volta ao funcionamento padrão, a menos que seja renovado.",
   },
   {
-    id: "ocultar-idade",
-    name: "Ocultar Idade",
-    icon: "Lock",
-    points: 100,
-    pointsColor: "#a78bfa",
-    description: "Oculte sua idade no perfil público e na listagem.",
-    features: ["Idade oculta", "Mais privacidade", "Controle no perfil", "Válido pelo período comprado"],
-    pricePerDay: 3.33,
-    prices: [
-      { label: "3 dias", key: "3d", value: 35.9 },
-      { label: "7 dias", key: "7d", value: 49.9 },
-      { label: "30 dias", key: "30d", value: 99.9 },
-      { label: "Assinatura mensal", key: "mensal", value: 90 },
-    ],
-    cta: "Comprar já",
-    ctaColor: "#a78bfa",
-    topColor: "#6d28d9",
+    question: "O pagamento é por Pix?",
+    answer: "Sim. Quando o pagamento estiver disponível, o sistema gera QR Code e código copia e cola para concluir por Pix.",
   },
 ];
 
-function fmt(value: number) {
-  return value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function money(value: number) {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: Plan["prices"][number] }; onClose: () => void }) {
+function planById(id: ProfessionalPlanId) {
+  const plan = PROFESSIONAL_PLANS.find((item) => item.id === id);
+  if (!plan) throw new Error(`Plano não encontrado: ${id}`);
+  return plan;
+}
+
+function selectedPrice(plan: ProfessionalPlan, selectedKey: string, pointsQuantity: number) {
+  return getProfessionalPlanPrice(plan.id, selectedKey, plan.id === "pontos" ? pointsQuantity : undefined)?.price ?? plan.prices[0];
+}
+
+function selectedPoints(plan: ProfessionalPlan, pointsQuantity: number) {
+  return plan.id === "pontos" ? pointsQuantity : plan.points;
+}
+
+function productTypeFor(plan: ProfessionalPlan) {
+  if (plan.id === "pontos") return "points";
+  if (plan.id === "one-hour-top") return "top_boost";
+  if (plan.id === "telefone") return "phone_visibility";
+  if (plan.id === "idade-oculta") return "privacy_addon";
+  return "highlight_plan";
+}
+
+function PlanCheckout({ selection, onClose }: { selection: CheckoutSelection; onClose: () => void }) {
   const [stage, setStage] = useState<CheckoutStage>("idle");
-  const [mounted, setMounted] = useState(false);
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    setMounted(true);
-    const bodyOverflow = document.body.style.overflow;
-    const htmlOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-      document.body.style.overflow = bodyOverflow;
-      document.documentElement.style.overflow = htmlOverflow;
-    };
-  }, []);
-
-  async function verifyPayment() {
-    if (!paymentId) return;
-    try {
-      const res = await fetch(`/api/payments/status/${paymentId}`);
-      if (!res.ok) {
-        setMessage("Ainda não conseguimos confirmar o pagamento.");
-        return;
-      }
-      const data = await res.json();
-      if (data.status === "PAID") {
-        if (pollRef.current) clearInterval(pollRef.current);
-        setStage("paid");
-      } else if (data.status === "FAILED" || data.status === "REFUNDED") {
-        if (pollRef.current) clearInterval(pollRef.current);
-        setError("Pagamento não confirmado.");
-        setStage("failed");
-      } else {
-        setMessage("Pagamento ainda pendente. Assim que confirmar, o plano será ativado.");
-      }
-    } catch {
-      setMessage("Não foi possível verificar agora. Tente novamente em instantes.");
-    }
-  }
-
-  useEffect(() => {
-    if (!paymentId || stage !== "waiting") return;
-
-    pollRef.current = setInterval(() => {
-      if (!document.hidden) void verifyPayment();
-    }, 6000);
-    void verifyPayment();
-
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, [paymentId, stage]);
+  const meta = PRODUCT_META[selection.plan.id];
+  const points = selectedPoints(selection.plan, selection.pointsQuantity ?? selection.plan.points);
 
   async function createPix() {
     if (stage === "creating") return;
     setStage("creating");
     setError(null);
     setMessage(null);
+
     try {
       const res = await fetch("/api/professional/plans/checkout", {
         method: "POST",
@@ -257,32 +244,58 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
         body: JSON.stringify({
           planId: selection.plan.id,
           priceKey: selection.price.key,
+          productId: selection.plan.id,
+          productType: productTypeFor(selection.plan),
+          planName: selection.plan.name,
+          duration: selection.price.label,
+          price: selection.price.value,
+          points,
+          pointsQuantity: selection.pointsQuantity,
           activationMode: "agora",
           paymentMethod: "pix",
+          metadata: {
+            headline: meta.headline,
+            benefits: meta.benefits,
+          },
         }),
       });
       const data = await res.json();
+
       if (!res.ok) {
-        console.error("[professional-plans-checkout]", data);
-        setError(data.error || "Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte.");
+        setError(data.error || "Não foi possível gerar o Pix agora. Tente novamente em instantes.");
         setStage("failed");
         return;
       }
-      if (!data.copyPaste && !data.qrCode && !data.qrCodeBase64) {
-        console.error("[professional-plans-checkout] resposta sem QR Code Pix", data);
-        setError("Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte.");
-        setStage("failed");
-        return;
-      }
+
       setPaymentId(data.localPaymentId);
       setQrCode(data.copyPaste || data.qrCode || null);
       setQrCodeBase64(data.qrCodeBase64 || null);
-      setMessage(data.message || null);
+      setMessage(data.message || "Pix gerado. A ativação acontece após a confirmação do pagamento.");
       setStage("waiting");
     } catch (err) {
       console.error("[professional-plans-checkout]", err);
-      setError("Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte.");
+      setError("Não foi possível gerar o Pix agora. Tente novamente em instantes.");
       setStage("failed");
+    }
+  }
+
+  async function verifyPayment() {
+    if (!paymentId) return;
+    try {
+      const res = await fetch(`/api/payments/status/${paymentId}`);
+      const data = await res.json().catch(() => ({}));
+      if (data.status === "PAID") {
+        setStage("paid");
+        return;
+      }
+      if (data.status === "FAILED" || data.status === "REFUNDED") {
+        setError("Pagamento não confirmado.");
+        setStage("failed");
+        return;
+      }
+      setMessage("Pagamento ainda pendente. Assim que confirmar, o produto será ativado.");
+    } catch {
+      setMessage("Não foi possível verificar agora. Tente novamente em instantes.");
     }
   }
 
@@ -292,338 +305,1131 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
     setMessage("Código Pix copiado.");
   }
 
-  const modal = (
-    <div style={checkoutOverlayStyle} role="dialog" aria-modal="true">
-      <div style={checkoutCardStyle}>
-        <div style={{ height: 3, background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
-        <div style={{ padding: 20 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 14, marginBottom: 14 }}>
-            <div>
-              <p style={{ margin: "0 0 5px", color: GOLD, fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>Checkout seguro</p>
-              <h2 style={{ margin: 0, color: "#f8fafc", fontSize: 22, fontWeight: 900 }}>{selection.plan.name}</h2>
-              <p style={{ margin: "6px 0 0", color: "#94a3b8", fontSize: 13 }}>{selection.price.label} - ativação após pagamento aprovado</p>
-            </div>
-            <button type="button" onClick={onClose} style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "#fff", cursor: "pointer" }}>x</button>
-          </div>
+  return createPortal(
+    <div className="plans-modal" role="dialog" aria-modal="true">
+      <div className="plans-checkout">
+        <button className="modal-close" type="button" onClick={onClose} aria-label="Fechar">
+          <X size={18} />
+        </button>
+        <p className="eyebrow">Pagamento</p>
+        <h2>{selection.plan.name}</h2>
+        <p className="muted">
+          {selection.price.label}
+          {points > 0 ? ` · ${points.toLocaleString("pt-BR")} pontos` : ""}
+        </p>
 
-          <div style={{ background: "#0f172a", border: "1px solid rgba(212,168,67,0.18)", borderRadius: 14, padding: 14, marginBottom: 14 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", color: "#94a3b8", fontSize: 13, marginBottom: 8 }}><span>Plano</span><strong style={{ color: "#f8fafc" }}>{selection.plan.name}</strong></div>
-            <div style={{ display: "flex", justifyContent: "space-between", color: "#94a3b8", fontSize: 13, marginBottom: 8 }}><span>Duração</span><strong style={{ color: "#f8fafc" }}>{selection.price.label}</strong></div>
-            <div style={{ display: "flex", justifyContent: "space-between", color: "#94a3b8", fontSize: 13 }}><span>Total</span><strong style={{ color: GOLD, fontSize: 18 }}>R$ {fmt(selection.price.value)}</strong></div>
-          </div>
-
-          {stage === "idle" && (
-            <>
-              <button type="button" onClick={createPix} style={primaryButtonStyle}>Gerar Pix e criar pedido</button>
-              <p style={{ margin: "12px 0 0", color: "#64748b", fontSize: 12, lineHeight: 1.6 }}>Cartão e boleto ficam ocultos enquanto não houver captura homologada para planos profissionais.</p>
-            </>
-          )}
-          {stage === "creating" && <p style={centerInfoStyle}>Criando pedido e gerando Pix...</p>}
-          {stage === "waiting" && (
-            <div style={{ textAlign: "center" }}>
-              {message && <p style={{ margin: "0 0 12px", color: GOLD, fontSize: 13, lineHeight: 1.6 }}>{message}</p>}
-              {qrCodeBase64 ? <img src={`data:image/png;base64,${qrCodeBase64}`} alt="QR Code Pix" width={190} height={190} style={{ background: "#fff", padding: 10, borderRadius: 12, margin: "0 auto 12px" }} /> : null}
-              {qrCode ? (
-                <>
-                  <p style={{ margin: "0 0 10px", color: "#94a3b8", fontSize: 12 }}>Use o Pix copia e cola abaixo:</p>
-                  <div style={{ wordBreak: "break-all", background: "#05070a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: 10, color: "#94a3b8", fontSize: 11, textAlign: "left" }}>{qrCode.length > 120 ? `${qrCode.slice(0, 120)}...` : qrCode}</div>
-                  <button type="button" onClick={copyPix} style={{ ...primaryButtonStyle, marginTop: 12 }}>Copiar código Pix</button>
-                  <button type="button" onClick={verifyPayment} style={secondaryButtonStyle}>Já paguei / verificar pagamento</button>
-                </>
-              ) : (
-                <p style={{ margin: 0, color: "#94a3b8", fontSize: 13, lineHeight: 1.6 }}>Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte.</p>
-              )}
-              <p style={{ margin: "12px 0 0", color: "#64748b", fontSize: 12 }}>A tela atualiza automaticamente quando o pagamento for aprovado.</p>
-            </div>
-          )}
-          {stage === "paid" && (
-            <div style={{ textAlign: "center" }}>
-              <h3 style={{ color: "#22c55e", margin: "8px 0", fontSize: 22 }}>Pagamento confirmado</h3>
-              <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.6 }}>Seu plano foi ativado no perfil profissional.</p>
-              <button type="button" onClick={() => window.location.reload()} style={primaryButtonStyle}>Atualizar painel</button>
-            </div>
-          )}
-          {stage === "failed" && (
-            <div style={{ textAlign: "center" }}>
-              <h3 style={{ color: "#ef4444", margin: "8px 0", fontSize: 20 }}>Não foi possível concluir</h3>
-              <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.6 }}>{error || "Tente novamente ou revise as credenciais de pagamento."}</p>
-              <button type="button" onClick={createPix} style={primaryButtonStyle}>Tentar novamente</button>
-            </div>
-          )}
+        <div className="checkout-summary">
+          <span>Total</span>
+          <strong>{money(selection.price.value)}</strong>
         </div>
-      </div>
-    </div>
-  );
 
-  if (!mounted) return null;
-  return createPortal(modal, document.body);
+        <ul className="checkout-benefits">
+          {meta.benefits.slice(0, 4).map((benefit) => (
+            <li key={benefit}><Check size={14} /> {benefit}</li>
+          ))}
+        </ul>
+
+        {stage === "idle" && <button className="primary-action" type="button" onClick={createPix}>Gerar Pix</button>}
+        {stage === "creating" && <p className="status-copy">Criando pedido e preparando o Pix...</p>}
+        {stage === "waiting" && (
+          <div className="pix-box">
+            {message && <p className="status-copy">{message}</p>}
+            {qrCodeBase64 && <img src={`data:image/png;base64,${qrCodeBase64}`} alt="QR Code Pix" />}
+            {qrCode && <code>{qrCode.length > 150 ? `${qrCode.slice(0, 150)}...` : qrCode}</code>}
+            <button className="primary-action" type="button" onClick={copyPix}><Copy size={17} /> Copiar código Pix</button>
+            <button className="ghost-action" type="button" onClick={verifyPayment}>Já paguei / verificar</button>
+          </div>
+        )}
+        {stage === "paid" && (
+          <div className="pix-box">
+            <h3>Pagamento confirmado</h3>
+            <p className="status-copy">Seu produto foi ativado no perfil profissional.</p>
+            <button className="primary-action" type="button" onClick={() => window.location.reload()}>Atualizar painel</button>
+          </div>
+        )}
+        {stage === "failed" && (
+          <div className="pix-box">
+            <h3>Não foi possível concluir</h3>
+            <p className="status-copy">{error}</p>
+            <button className="primary-action" type="button" onClick={createPix}>Tentar novamente</button>
+          </div>
+        )}
+      </div>
+    </div>,
+    document.body,
+  );
 }
 
-const primaryButtonStyle: CSSProperties = {
-  width: "100%",
-  padding: 14,
-  border: "none",
-  borderRadius: 12,
-  background: GOLD,
-  color: "#080704",
-  fontSize: 15,
-  fontWeight: 900,
-  cursor: "pointer",
-};
+function ExampleModal({ plan, onClose }: { plan: ProfessionalPlan; onClose: () => void }) {
+  const meta = PRODUCT_META[plan.id];
+  const phoneVisible = plan.benefits.showPhone || plan.id === "telefone";
+  const hasGallery = plan.id === "diamante";
+  const hiddenAge = plan.id === "idade-oculta";
 
-const secondaryButtonStyle: CSSProperties = {
-  width: "100%",
-  padding: 13,
-  border: "1px solid rgba(212,168,67,0.35)",
-  borderRadius: 12,
-  background: "rgba(212,168,67,0.08)",
-  color: GOLD,
-  fontSize: 14,
-  fontWeight: 900,
-  cursor: "pointer",
-  marginTop: 10,
-};
+  return createPortal(
+    <div className="plans-modal" role="dialog" aria-modal="true">
+      <div className="example-modal">
+        <button className="modal-close" type="button" onClick={onClose} aria-label="Fechar">
+          <X size={18} />
+        </button>
+        <p className="eyebrow">Exemplo do anúncio</p>
+        <h2>{meta.exampleTitle}</h2>
+        <p className="muted">Uma simulação visual para comparar o anúncio comum com recursos de destaque ativados.</p>
 
-const checkoutOverlayStyle: CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 2147483000,
-  background: "rgba(0,0,0,0.86)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "max(16px, env(safe-area-inset-top)) 16px calc(92px + env(safe-area-inset-bottom))",
-  overflowY: "auto",
-  overscrollBehavior: "contain",
-};
+        <div className="preview-grid">
+          <div className="preview-card muted-preview">
+            <span>Anúncio comum</span>
+            <div className="preview-photo">Foto</div>
+            <strong>Perfil padrão</strong>
+            <p>Informações básicas e aparição normal na listagem.</p>
+          </div>
+          <div className="preview-card active-preview">
+            <span>Com destaque</span>
+            <div className="preview-photo">Elite</div>
+            <strong>{plan.name}</strong>
+            <p>{hiddenAge ? "Idade protegida e privacidade maior." : "Mais presença visual e melhor apresentação."}</p>
+            {phoneVisible && <b className="contact-pill"><Phone size={13} /> WhatsApp visível</b>}
+          </div>
+          <div className="preview-card active-preview">
+            <span>Mais recursos</span>
+            <div className={hasGallery ? "mini-gallery" : "preview-photo"}>
+              {hasGallery ? <><i /><i /><i /><i /></> : <ImageIcon size={24} />}
+            </div>
+            <strong>{hasGallery ? "Grade de fotos" : "Informações em destaque"}</strong>
+            <p>Apresentação mais completa para clientes compararem seu perfil.</p>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
 
-const checkoutCardStyle: CSSProperties = {
-  width: "100%",
-  maxWidth: 430,
-  maxHeight: "min(90dvh, calc(100dvh - 112px))",
-  overflowY: "auto",
-  background: "#090d12",
-  border: `1px solid ${GOLD_MID}`,
-  borderRadius: 18,
-  boxShadow: "0 24px 80px rgba(0,0,0,0.65)",
-};
-
-const centerInfoStyle: CSSProperties = {
-  color: "#f8fafc",
-  margin: 0,
-  textAlign: "center",
-  padding: 18,
-};
-
-function PlanCard({
+function PeriodPicker({
   plan,
-  selectedIndex,
-  onSelectPrice,
-  onBuy,
+  selectedKey,
+  pointsQuantity,
+  onChange,
 }: {
-  plan: Plan;
-  selectedIndex: number;
-  onSelectPrice: (index: number) => void;
-  onBuy: (price: Plan["prices"][number]) => void;
+  plan: ProfessionalPlan;
+  selectedKey: string;
+  pointsQuantity: number;
+  onChange: (key: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const price = plan.prices[selectedIndex] ?? plan.prices[0];
+  return (
+    <div className="period-box">
+      <label htmlFor={`${plan.id}-periodo`}>Período</label>
+      <select id={`${plan.id}-periodo`} value={selectedKey} onChange={(event) => onChange(event.target.value)}>
+        {plan.prices.map((price) => {
+          const calculated = selectedPrice(plan, price.key, pointsQuantity);
+          return (
+            <option key={price.key} value={price.key}>
+              {price.label} · {price.dailyLabel ?? money(calculated.value)}
+            </option>
+          );
+        })}
+      </select>
+    </div>
+  );
+}
+
+function ProductCard({
+  plan,
+  selectedKey,
+  pointsQuantity,
+  onPeriodChange,
+  onCheckout,
+  onExample,
+}: {
+  plan: ProfessionalPlan;
+  selectedKey: string;
+  pointsQuantity: number;
+  onPeriodChange: (key: string) => void;
+  onCheckout: (selection: CheckoutSelection) => void;
+  onExample: (plan: ProfessionalPlan) => void;
+}) {
+  const meta = PRODUCT_META[plan.id];
+  const Icon = meta.icon;
+  const price = selectedPrice(plan, selectedKey, pointsQuantity);
+  const points = selectedPoints(plan, pointsQuantity);
+  const isTop = plan.id === "one-hour-top";
 
   return (
-    <div style={{ background: "#0b1420", border: "1px solid rgba(212,168,67,0.18)", borderRadius: 16, overflow: "hidden" }}>
-      <div style={{ height: 4, background: plan.topColor }} />
-      <div style={{ padding: "20px 22px 22px" }}>
-        {plan.badge && <span style={{ background: plan.topColor, color: "#fff", fontSize: 10, fontWeight: 900, padding: "4px 10px", borderRadius: 20, letterSpacing: 1, textTransform: "uppercase" }}>{plan.badge}</span>}
-        <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ width: 36, height: 36, display: "grid", placeItems: "center", borderRadius: 12, background: GOLD_DIM, color: GOLD, fontSize: 11, fontWeight: 900 }}>{plan.icon.slice(0, 2)}</span>
-          <div>
-            <h3 style={{ fontSize: 19, fontWeight: 900, color: "#f1f5f9", margin: 0 }}>{plan.name}</h3>
-            <span style={{ fontSize: 12, color: plan.pointsColor, background: `${plan.pointsColor}22`, padding: "3px 10px", borderRadius: 20, fontWeight: 800 }}>
-              +{plan.points.toLocaleString("pt-BR")} pontos de listagem
-            </span>
-          </div>
-        </div>
-        <p style={{ margin: "14px 0", color: "#94a3b8", lineHeight: 1.6, fontSize: 13 }}>{plan.description}</p>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginBottom: 16 }}>
-          {plan.features.map((feature) => (
-            <span key={feature} style={{ color: "#cbd5e1", fontSize: 12, lineHeight: 1.45 }}>✓ {feature}</span>
-          ))}
-        </div>
-
-        <div style={{ marginBottom: 12 }}>
-          {plan.pricePerDay ? (
-            <>
-              <span style={{ fontSize: 30, fontWeight: 900, color: "#f1f5f9" }}>R$ {fmt(plan.pricePerDay)}</span>
-              <span style={{ fontSize: 13, color: "#64748b", marginLeft: 4 }}>/dia</span>
-              <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>total {price.label}: R$ {fmt(price.value)}</div>
-            </>
-          ) : (
-            <>
-              <span style={{ fontSize: 30, fontWeight: 900, color: "#f1f5f9" }}>R$ {fmt(price.value)}</span>
-              <span style={{ fontSize: 13, color: "#64748b", marginLeft: 4 }}>por {price.label}</span>
-            </>
-          )}
-        </div>
-
-        {!plan.isOneTime && (
-          <div style={{ position: "relative", marginBottom: 12 }}>
-            <button type="button" onClick={() => setOpen(!open)} style={{ width: "100%", padding: "11px 14px", background: "#0f172a", border: `1px solid ${open ? GOLD : "#1e293b"}`, borderRadius: 10, color: "#cbd5e1", display: "flex", justifyContent: "space-between", cursor: "pointer" }}>
-              <span>{price.label} - R$ {fmt(price.value)}</span>
-              <span>{open ? "▲" : "▼"}</span>
-            </button>
-            {open && (
-              <div style={{ position: "absolute", top: "calc(100% + 5px)", left: 0, right: 0, zIndex: 10, background: "#0f172a", border: `1px solid ${GOLD_MID}`, borderRadius: 10, overflow: "hidden" }}>
-                {plan.prices.map((item, index) => (
-                  <button key={item.key} type="button" onClick={() => { onSelectPrice(index); setOpen(false); }} style={{ width: "100%", padding: "11px 14px", background: index === selectedIndex ? GOLD_DIM : "transparent", border: "none", color: index === selectedIndex ? GOLD : "#94a3b8", textAlign: "left", cursor: "pointer" }}>
-                    {item.label} - R$ {fmt(item.value)}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        <div style={{ padding: "11px 12px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 10, color: GOLD, fontSize: 12, lineHeight: 1.5, marginBottom: 12, fontWeight: 800 }}>
-          Ativação automática após confirmação do pagamento.
-        </div>
-        {plan.note && <p style={{ margin: "0 0 12px", color: "#94a3b8", fontSize: 12, lineHeight: 1.6 }}>{plan.note}</p>}
-
-        <button type="button" onClick={() => onBuy(price)} style={{ width: "100%", padding: 14, background: plan.ctaColor, color: plan.ctaColor === GOLD ? "#080704" : "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 900, cursor: "pointer" }}>
-          {plan.cta}
-        </button>
-
-        <button type="button" onClick={() => setPreviewOpen(!previewOpen)} style={{ width: "100%", padding: "11px 0 0", marginTop: 10, background: "transparent", border: "none", borderTop: "1px solid rgba(212,168,67,0.08)", color: "#64748b", fontSize: 12, cursor: "pointer" }}>
-          {previewOpen ? "Ocultar exemplo do anúncio" : "Veja um exemplo do anúncio"}
-        </button>
-        {previewOpen && (
-          <div style={{ marginTop: 14, background: "#060e1b", borderRadius: 12, border: `1px solid ${GOLD_DIM}`, padding: 14 }}>
-            <div style={{ display: "flex", gap: 12 }}>
-              <div style={{ width: 72, height: 92, borderRadius: 10, background: "linear-gradient(135deg,#111827,#3b2f13)", display: "grid", placeItems: "center", color: GOLD, fontWeight: 900 }}>EM</div>
-              <div>
-                <strong style={{ color: "#f8fafc" }}>Seu perfil</strong>
-                <p style={{ margin: "5px 0", color: "#64748b", fontSize: 12 }}>Itauna, MG · destaque ativo</p>
-                <span style={{ color: GOLD, fontWeight: 800, fontSize: 13 }}>Mais visibilidade na listagem</span>
-              </div>
-            </div>
-          </div>
-        )}
+    <article className={`product-card tone-${meta.tone} ${isTop ? "hero-product" : ""}`}>
+      <div className="product-topline">
+        <span>{meta.eyebrow}</span>
+        {meta.badge && <b>{meta.badge}</b>}
       </div>
-    </div>
+      <div className="product-heading">
+        <span className="product-icon"><Icon size={22} /></span>
+        <div>
+          <h2>{plan.name}</h2>
+          <p>{meta.headline}</p>
+        </div>
+      </div>
+      <p className="summary">{meta.summary}</p>
+      {points > 0 && <strong className="points-pill">+{points.toLocaleString("pt-BR")} pontos de listagem</strong>}
+
+      <ul className="benefit-grid">
+        {meta.benefits.map((benefit) => <li key={benefit}>{benefit}</li>)}
+      </ul>
+
+      <div className="price-row">
+        <span>{meta.primaryPrice ?? money(price.value)}</span>
+        <small>{meta.primaryPrice ? `${price.label}: ${money(price.value)}` : isTop ? "por 1 hora" : price.label}</small>
+      </div>
+
+      {plan.prices.length > 1 && (
+        <PeriodPicker plan={plan} selectedKey={selectedKey} pointsQuantity={pointsQuantity} onChange={onPeriodChange} />
+      )}
+
+      <div className="card-actions">
+        <button className="ghost-action" type="button" onClick={() => onExample(plan)}>Ver exemplo do anúncio</button>
+        <button className="primary-action" type="button" onClick={() => onCheckout({ plan, price })}>
+          {meta.cta}
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function PointsSection({
+  plan,
+  selectedKey,
+  pointsQuantity,
+  onPeriodChange,
+  onPointsChange,
+  onCheckout,
+  onExample,
+}: {
+  plan: ProfessionalPlan;
+  selectedKey: string;
+  pointsQuantity: number;
+  onPeriodChange: (key: string) => void;
+  onPointsChange: (value: number) => void;
+  onCheckout: (selection: CheckoutSelection) => void;
+  onExample: (plan: ProfessionalPlan) => void;
+}) {
+  const [simulated, setSimulated] = useState(false);
+  const meta = PRODUCT_META.pontos;
+  const price = selectedPrice(plan, selectedKey, pointsQuantity);
+
+  return (
+    <section className="sales-section points-section" aria-labelledby="points-title">
+      <div className="section-copy">
+        <p className="eyebrow">Pontos</p>
+        <h2 id="points-title">Entenda e ajuste sua força na listagem</h2>
+        <p>
+          Os pontos ajudam a definir a força do seu anúncio na listagem. Quanto mais pontos ativos, maior a chance de aparecer em posições melhores, conforme a concorrência da sua cidade.
+        </p>
+      </div>
+      <div className="points-panel">
+        <div className="points-control">
+          <button type="button" onClick={() => onPointsChange(pointsQuantity - 10)} aria-label="Diminuir pontos"><Minus size={18} /></button>
+          <input
+            type="number"
+            min={POINTS_MIN}
+            max={POINTS_MAX}
+            value={pointsQuantity}
+            onChange={(event) => onPointsChange(Number(event.target.value))}
+          />
+          <button type="button" onClick={() => onPointsChange(pointsQuantity + 10)} aria-label="Aumentar pontos"><Plus size={18} /></button>
+          <small>Mínimo {POINTS_MIN} pontos · Máximo {POINTS_MAX.toLocaleString("pt-BR")} pontos</small>
+        </div>
+        <PeriodPicker plan={plan} selectedKey={selectedKey} pointsQuantity={pointsQuantity} onChange={onPeriodChange} />
+        <div className="price-row compact-price">
+          <span>{money(price.value)}</span>
+          <small>{pointsQuantity.toLocaleString("pt-BR")} pontos por {price.label.toLowerCase()}</small>
+        </div>
+        <p className="quiet-note">A posição pode variar conforme novos anúncios, compras de planos e expiração de pontos na cidade.</p>
+        {simulated && (
+          <div className="simulation-box">
+            <strong>Simulação do anúncio</strong>
+            <span>{pointsQuantity.toLocaleString("pt-BR")} pontos ativos por {price.label.toLowerCase()} aumentam a força do perfil na listagem.</span>
+          </div>
+        )}
+        <div className="card-actions">
+          <button className="ghost-action" type="button" onClick={() => setSimulated((value) => !value)}>Simular meu anúncio</button>
+          <button className="ghost-action" type="button" onClick={() => onExample(plan)}>Ver exemplo</button>
+          <button className="primary-action" type="button" onClick={() => onCheckout({ plan, price, pointsQuantity })}>{meta.cta}</button>
+        </div>
+      </div>
+    </section>
   );
 }
 
 export default function PlanosPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("planos");
-  const [selectedDuration, setSelectedDuration] = useState<Record<string, number>>({});
-  const [checkout, setCheckout] = useState<{ plan: Plan; price: Plan["prices"][number] } | null>(null);
-  const [pointsAmount, setPointsAmount] = useState(10);
+  const [selectedPeriods, setSelectedPeriods] = useState<Record<string, string>>({});
+  const [pointsQuantity, setPointsQuantity] = useState(POINTS_MIN);
+  const [checkout, setCheckout] = useState<CheckoutSelection | null>(null);
+  const [examplePlan, setExamplePlan] = useState<ProfessionalPlan | null>(null);
+
+  const plans = useMemo(() => ({
+    top: planById("one-hour-top"),
+    points: planById("pontos"),
+    phone: planById("telefone"),
+    hiddenAge: planById("idade-oculta"),
+    highlights: PLAN_ORDER.map(planById),
+  }), []);
+
+  function selectedKeyFor(plan: ProfessionalPlan) {
+    if (selectedPeriods[plan.id]) return selectedPeriods[plan.id];
+    if (plan.id === "pontos") return "30d";
+    if (plan.id === "one-hour-top") return "hora";
+    if (plan.prices.some((price) => price.key === "30d")) return "30d";
+    return plan.prices[0].key;
+  }
+
+  function setPeriod(planId: string, key: string) {
+    setSelectedPeriods((current) => ({ ...current, [planId]: key }));
+  }
+
+  function setPoints(value: number) {
+    setPointsQuantity(normalizePointsQuantity(value));
+  }
 
   return (
-    <div style={{ maxWidth: 760, margin: "0 auto", paddingBottom: 24 }}>
+    <main className="plans-page">
       {checkout && <PlanCheckout selection={checkout} onClose={() => setCheckout(null)} />}
+      {examplePlan && <ExampleModal plan={examplePlan} onClose={() => setExamplePlan(null)} />}
 
-      <div style={{ marginBottom: 28 }}>
-        <p style={{ fontSize: 11, fontWeight: 900, letterSpacing: 3, color: GOLD, textTransform: "uppercase", marginBottom: 8 }}>Painel da profissional</p>
-        <h1 style={{ fontSize: "clamp(26px, 5vw, 40px)", fontWeight: 950, color: "#f8fafc", margin: 0, lineHeight: 1.05 }}>
-          Planos, destaques e pagamentos
-        </h1>
-        <p style={{ color: "#94a3b8", lineHeight: 1.6, margin: "12px 0 0" }}>Escolha como destacar seu perfil e acompanhe a ativação após a confirmação do pagamento.</p>
-      </div>
-
-      <div style={{ display: "flex", gap: 0, marginBottom: 24, background: "#060e1b", borderRadius: 12, padding: 4, border: `1px solid ${GOLD_DIM}` }}>
-        {(["planos", "assinaturas", "trocas"] as Tab[]).map((tab) => (
-          <button key={tab} type="button" onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: "10px 0", border: "none", borderRadius: 9, cursor: "pointer", fontWeight: 900, fontSize: 13, background: activeTab === tab ? "#0b1420" : "transparent", color: activeTab === tab ? GOLD : "#64748b", textTransform: "capitalize" }}>
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === "planos" && (
-        <>
-          <div style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 14, padding: "18px 20px", marginBottom: 24 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 900, color: "#f1f5f9", margin: 0 }}>Meus planos e benefícios</h3>
-              <span style={{ fontSize: 11, color: "#94a3b8" }}>Sem toggles falsos</span>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {PLANS.filter((plan) => !plan.isOneTime).map((plan) => (
-                <div key={plan.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: "1px solid rgba(212,168,67,0.08)" }}>
-                  <div>
-                    <span style={{ fontSize: 14, fontWeight: 800, color: "#f1f5f9" }}>{plan.name}</span>
-                    <span style={{ marginLeft: 8, fontSize: 11, color: plan.pointsColor, background: `${plan.pointsColor}20`, padding: "2px 8px", borderRadius: 20, fontWeight: 800 }}>+{plan.points.toLocaleString("pt-BR")} pts</span>
-                  </div>
-                  <span style={{ fontSize: 11, color: "#94a3b8", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", padding: "4px 8px", borderRadius: 20, whiteSpace: "nowrap" }}>Comprar abaixo</span>
-                </div>
-              ))}
-            </div>
-            <button type="button" onClick={() => document.getElementById("professional-plan-cards")?.scrollIntoView({ behavior: "smooth", block: "start" })} style={{ ...primaryButtonStyle, marginTop: 14 }}>
-              Comprar planos
-            </button>
-          </div>
-
-          <div id="professional-plan-cards" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {PLANS.map((plan) => {
-              const index = selectedDuration[plan.id] ?? (plan.prices.length > 2 ? 2 : 0);
-              return (
-                <PlanCard
-                  key={plan.id}
-                  plan={plan}
-                  selectedIndex={index}
-                  onSelectPrice={(nextIndex) => setSelectedDuration((prev) => ({ ...prev, [plan.id]: nextIndex }))}
-                  onBuy={(price) => setCheckout({ plan, price })}
-                />
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {activeTab === "assinaturas" && (
-        <div style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 16, padding: 24, textAlign: "center" }}>
-          <h2 style={{ margin: "0 0 8px", color: "#f8fafc", fontSize: 22, fontWeight: 900 }}>Assinaturas mensais</h2>
-          <p style={{ color: "#94a3b8", lineHeight: 1.7 }}>As assinaturas usam o mesmo checkout Pix dos planos. Escolha um plano mensal abaixo para criar pedido real.</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12, marginTop: 20 }}>
-            {PLANS.filter((plan) => !plan.isOneTime).map((plan) => {
-              const monthly = plan.prices.find((price) => price.key === "mensal");
-              if (!monthly) return null;
-              return (
-                <button key={plan.id} type="button" onClick={() => setCheckout({ plan, price: monthly })} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", textAlign: "left", padding: 16, background: "#060e1b", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, cursor: "pointer" }}>
-                  <span style={{ color: "#f8fafc", fontWeight: 900 }}>{plan.name}</span>
-                  <span style={{ color: GOLD, fontWeight: 900 }}>R$ {fmt(monthly.value)}/mês</span>
-                </button>
-              );
-            })}
-          </div>
+      <section className="hero-section">
+        <div className="hero-copy">
+          <p className="eyebrow">Elite Modell Premium</p>
+          <h1>Impulsione seu perfil e apareça mais</h1>
+          <p>Escolha planos, destaques e recursos extras para aumentar sua visibilidade na Elite Modell.</p>
         </div>
-      )}
-
-      {activeTab === "trocas" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 16, padding: 22 }}>
-            <h2 style={{ margin: "0 0 8px", color: "#f8fafc", fontSize: 20, fontWeight: 900 }}>Comprar pontos de listagem</h2>
-            <p style={{ color: "#94a3b8", lineHeight: 1.7 }}>A compra avulsa de pontos ainda não tem tabela de saldo dedicada no banco. Por isso, o botão fica bloqueado, sem parecer uma compra ativa.</p>
-            <div style={{ display: "flex", alignItems: "center", maxWidth: 230, border: `1px solid ${GOLD_MID}`, borderRadius: 10, overflow: "hidden", margin: "16px 0" }}>
-              <button type="button" onClick={() => setPointsAmount(Math.max(10, pointsAmount - 10))} style={stepperButtonStyle}>-</button>
-              <input value={pointsAmount} onChange={(event) => setPointsAmount(Math.min(15000, Math.max(10, Number(event.target.value) || 10)))} type="number" min={10} max={15000} style={{ flex: 1, height: 44, background: "#0f172a", border: "none", color: "#f1f5f9", fontSize: 16, fontWeight: 900, textAlign: "center", outline: "none" }} />
-              <button type="button" onClick={() => setPointsAmount(Math.min(15000, pointsAmount + 10))} style={stepperButtonStyle}>+</button>
-            </div>
-            <div style={{ color: "#f8fafc", fontSize: 28, fontWeight: 900, marginBottom: 12 }}>R$ {fmt(pointsAmount * 1.15)}</div>
-            <button type="button" disabled style={{ ...primaryButtonStyle, opacity: 0.55, cursor: "not-allowed" }}>Compra de pontos indisponível</button>
-          </div>
+        <div className="hero-summary" aria-label="Resumo de vantagens">
+          {[
+            { label: "Mais visibilidade", icon: TrendingUp },
+            { label: "Mais contatos", icon: MessageCircle },
+            { label: "Mais destaque na listagem", icon: Sparkles },
+            { label: "Mais controle do anúncio", icon: ShieldCheck },
+          ].map(({ label, icon: SummaryIcon }) => {
+            return (
+              <div key={label}>
+                <SummaryIcon size={18} />
+                <span>{label}</span>
+              </div>
+            );
+          })}
         </div>
-      )}
-    </div>
+      </section>
+
+      <section className="opportunity-band" aria-label="Oportunidade">
+        <span><Sparkles size={16} /> Oportunidade</span>
+        <p>Perfis com destaque aparecem com mais força na listagem e tendem a receber mais visitas. Quanto melhor sua posição, maiores as chances de receber contatos.</p>
+        <b>Vence em 3 dias</b>
+      </section>
+
+      <section className="first-product" aria-label="Produto principal">
+        <ProductCard
+          plan={plans.top}
+          selectedKey={selectedKeyFor(plans.top)}
+          pointsQuantity={pointsQuantity}
+          onPeriodChange={(key) => setPeriod(plans.top.id, key)}
+          onCheckout={setCheckout}
+          onExample={setExamplePlan}
+        />
+      </section>
+
+      <PointsSection
+        plan={plans.points}
+        selectedKey={selectedKeyFor(plans.points)}
+        pointsQuantity={pointsQuantity}
+        onPeriodChange={(key) => setPeriod(plans.points.id, key)}
+        onPointsChange={setPoints}
+        onCheckout={setCheckout}
+        onExample={setExamplePlan}
+      />
+
+      <section className="sales-section single-product" aria-labelledby="phone-title">
+        <div className="section-copy">
+          <p className="eyebrow">Telefone na listagem</p>
+          <h2 id="phone-title">Facilite conversas com clientes interessados</h2>
+          <p>Deixe seu contato mais acessível para reduzir etapas e aumentar as chances de conversa direta.</p>
+        </div>
+        <ProductCard
+          plan={plans.phone}
+          selectedKey={selectedKeyFor(plans.phone)}
+          pointsQuantity={pointsQuantity}
+          onPeriodChange={(key) => setPeriod(plans.phone.id, key)}
+          onCheckout={setCheckout}
+          onExample={setExamplePlan}
+        />
+      </section>
+
+      <section className="sales-section" aria-labelledby="highlight-title">
+        <div className="section-copy wide-copy">
+          <p className="eyebrow">Planos de destaque</p>
+          <h2 id="highlight-title">Escolha o nível de presença do seu anúncio</h2>
+          <p>Os planos aumentam a força do seu anúncio e adicionam recursos visuais para destacar seu perfil na listagem.</p>
+        </div>
+        <div className="highlight-grid">
+          {plans.highlights.map((plan) => (
+            <ProductCard
+              key={plan.id}
+              plan={plan}
+              selectedKey={selectedKeyFor(plan)}
+              pointsQuantity={pointsQuantity}
+              onPeriodChange={(key) => setPeriod(plan.id, key)}
+              onCheckout={setCheckout}
+              onExample={setExamplePlan}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="sales-section single-product" aria-labelledby="privacy-title">
+        <div className="section-copy">
+          <p className="eyebrow">Produto extra</p>
+          <h2 id="privacy-title">Controle como sua idade aparece</h2>
+          <p>Use o recurso de privacidade para ocultar a idade publicamente no anúncio e na listagem.</p>
+        </div>
+        <ProductCard
+          plan={plans.hiddenAge}
+          selectedKey={selectedKeyFor(plans.hiddenAge)}
+          pointsQuantity={pointsQuantity}
+          onPeriodChange={(key) => setPeriod(plans.hiddenAge.id, key)}
+          onCheckout={setCheckout}
+          onExample={setExamplePlan}
+        />
+      </section>
+
+      <section className="info-grid" aria-label="Informações sobre planos">
+        <article>
+          <TrendingUp size={24} />
+          <h2>Como funciona a ordenação na listagem?</h2>
+          <p>A posição dos anúncios é calculada com base em fatores como pontos ativos, plano contratado, destaque, atividade do perfil e concorrência da cidade. A posição pode mudar ao longo do tempo conforme novos anúncios compram planos ou pontos expiram.</p>
+        </article>
+        <article>
+          <BadgeCheck size={24} />
+          <h2>O que são planos e para que servem?</h2>
+          <p>Os planos são formas de aumentar a visibilidade do perfil dentro da Elite Modell. Eles adicionam pontos, recursos visuais e vantagens que ajudam seu anúncio a se destacar na listagem.</p>
+        </article>
+      </section>
+
+      <section className="advantages-section" aria-labelledby="advantages-title">
+        <p className="eyebrow">Mais vantagens</p>
+        <h2 id="advantages-title">Recursos que fortalecem sua apresentação</h2>
+        <div className="advantages-grid">
+          {[
+            { label: "Prioridade no atendimento", icon: Clock },
+            { label: "Mais destaque na listagem", icon: Sparkles },
+            { label: "Mais chances de contato", icon: MessageCircle },
+            { label: "Perfil com aparência mais completa", icon: ImageIcon },
+            { label: "Recursos extras de anúncio", icon: Trophy },
+            { label: "Controle de visibilidade", icon: ShieldCheck },
+            { label: "Melhor apresentação para clientes", icon: ArrowUpRight },
+          ].map(({ label, icon: AdvantageIcon }) => {
+            return (
+              <div key={label}>
+                <AdvantageIcon size={19} />
+                <span>{label}</span>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="faq-section" aria-labelledby="faq-title">
+        <p className="eyebrow">Dúvidas frequentes</p>
+        <h2 id="faq-title">Ainda tem dúvidas?</h2>
+        <div className="faq-list">
+          {FAQ.map((item, index) => (
+            <details key={item.question} open={index === 0}>
+              <summary><HelpCircle size={18} /> {item.question}</summary>
+              <p>{item.answer}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      <style>{`
+        .plans-page {
+          width: min(100%, 1120px);
+          margin: 0 auto;
+          padding: 8px 0 40px;
+          color: #f8fafc;
+        }
+        .eyebrow {
+          margin: 0 0 8px;
+          color: ${GOLD};
+          font-size: 11px;
+          font-weight: 950;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+        }
+        .hero-section {
+          display: grid;
+          grid-template-columns: minmax(0, 1.08fr) minmax(280px, 0.92fr);
+          gap: 22px;
+          align-items: stretch;
+          margin-bottom: 16px;
+        }
+        .hero-copy {
+          min-height: 286px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          border: 1px solid rgba(212,168,67,0.28);
+          border-radius: 8px;
+          background: linear-gradient(145deg, rgba(24,22,18,0.98), rgba(7,7,8,0.98));
+          padding: 30px;
+        }
+        .hero-copy h1 {
+          margin: 0;
+          max-width: 680px;
+          color: #fff;
+          font-size: 44px;
+          line-height: 1.02;
+          font-weight: 950;
+          letter-spacing: 0;
+        }
+        .hero-copy p:last-child {
+          max-width: 620px;
+          margin: 14px 0 0;
+          color: #aeb6c2;
+          font-size: 16px;
+          line-height: 1.6;
+        }
+        .hero-summary {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+        }
+        .hero-summary div,
+        .advantages-grid div {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          min-height: 92px;
+          border: 1px solid rgba(212,168,67,0.18);
+          border-radius: 8px;
+          background: rgba(255,255,255,0.035);
+          padding: 16px;
+          color: #e2e8f0;
+          font-size: 14px;
+          font-weight: 850;
+          line-height: 1.25;
+        }
+        .hero-summary svg,
+        .advantages-grid svg,
+        .info-grid svg {
+          color: #f5d78c;
+          flex: 0 0 auto;
+        }
+        .opportunity-band {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          gap: 16px;
+          align-items: center;
+          margin: 0 0 16px;
+          border: 1px solid rgba(245,215,140,0.30);
+          border-radius: 8px;
+          background: linear-gradient(135deg, rgba(212,168,67,0.16), rgba(255,255,255,0.035));
+          padding: 15px 16px;
+        }
+        .opportunity-band span,
+        .opportunity-band b {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          border: 1px solid rgba(245,215,140,0.32);
+          border-radius: 999px;
+          background: rgba(0,0,0,0.22);
+          color: #f5d78c;
+          padding: 8px 11px;
+          font-size: 12px;
+          font-weight: 950;
+          white-space: nowrap;
+        }
+        .opportunity-band p {
+          margin: 0;
+          color: #d7dde6;
+          font-size: 13px;
+          line-height: 1.5;
+        }
+        .first-product,
+        .sales-section,
+        .info-grid,
+        .advantages-section,
+        .faq-section {
+          margin-top: 18px;
+        }
+        .sales-section {
+          display: grid;
+          grid-template-columns: minmax(230px, 0.42fr) minmax(0, 0.58fr);
+          gap: 16px;
+          align-items: start;
+        }
+        .sales-section.points-section {
+          grid-template-columns: minmax(240px, 0.42fr) minmax(0, 0.58fr);
+        }
+        .single-product {
+          grid-template-columns: minmax(230px, 0.34fr) minmax(0, 0.66fr);
+        }
+        .section-copy {
+          position: sticky;
+          top: 16px;
+          border: 1px solid rgba(212,168,67,0.16);
+          border-radius: 8px;
+          background: rgba(255,255,255,0.035);
+          padding: 20px;
+        }
+        .section-copy.wide-copy {
+          position: static;
+          grid-column: 1 / -1;
+        }
+        .section-copy h2,
+        .advantages-section h2,
+        .faq-section h2,
+        .info-grid h2 {
+          margin: 0;
+          color: #fff;
+          font-size: 25px;
+          line-height: 1.12;
+          font-weight: 950;
+          letter-spacing: 0;
+        }
+        .section-copy p:not(.eyebrow),
+        .info-grid p {
+          margin: 12px 0 0;
+          color: #aeb6c2;
+          font-size: 14px;
+          line-height: 1.65;
+        }
+        .highlight-grid {
+          grid-column: 1 / -1;
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 16px;
+        }
+        .product-card,
+        .points-panel {
+          position: relative;
+          overflow: hidden;
+          border: 1px solid rgba(212,168,67,0.22);
+          border-radius: 8px;
+          background: linear-gradient(145deg, rgba(22,22,22,0.98), rgba(7,7,8,0.98));
+          padding: 18px;
+          box-shadow: 0 18px 60px rgba(0,0,0,0.32);
+        }
+        .product-card::before,
+        .points-panel::before {
+          content: "";
+          position: absolute;
+          inset: 0 0 auto;
+          height: 3px;
+          background: linear-gradient(90deg, transparent, rgba(212,168,67,0.72), transparent);
+        }
+        .hero-product {
+          background: linear-gradient(135deg, rgba(38,32,18,0.98), rgba(7,7,8,0.98) 56%);
+          border-color: rgba(245,215,140,0.50);
+        }
+        .tone-bronze::before { background: linear-gradient(90deg, transparent, #b87945, transparent); }
+        .tone-silver::before { background: linear-gradient(90deg, transparent, #cbd5e1, transparent); }
+        .tone-amber::before { background: linear-gradient(90deg, transparent, #fbbf24, transparent); }
+        .tone-diamond::before { background: linear-gradient(90deg, transparent, #93c5fd, transparent); }
+        .tone-privacy::before { background: linear-gradient(90deg, transparent, #c4b5fd, transparent); }
+        .product-topline,
+        .product-heading,
+        .price-row,
+        .card-actions {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+        .product-topline span {
+          color: ${GOLD};
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+        }
+        .product-topline b,
+        .points-pill {
+          width: fit-content;
+          border-radius: 999px;
+          border: 1px solid rgba(245,215,140,0.35);
+          background: rgba(212,168,67,0.14);
+          color: #f5d78c;
+          padding: 7px 10px;
+          font-size: 11px;
+          font-weight: 950;
+          white-space: nowrap;
+        }
+        .product-heading {
+          justify-content: flex-start;
+          align-items: flex-start;
+          margin-top: 15px;
+        }
+        .product-icon {
+          width: 46px;
+          height: 46px;
+          display: grid;
+          place-items: center;
+          border: 1px solid rgba(212,168,67,0.24);
+          border-radius: 8px;
+          background: rgba(212,168,67,0.10);
+          color: #f5d78c;
+          flex: 0 0 auto;
+        }
+        .product-heading h2 {
+          margin: 0;
+          color: #fff;
+          font-size: 28px;
+          line-height: 1;
+          font-weight: 950;
+          letter-spacing: 0;
+        }
+        .product-heading p {
+          margin: 7px 0 0;
+          color: #e2e8f0;
+          font-size: 15px;
+          line-height: 1.35;
+          font-weight: 750;
+        }
+        .summary {
+          margin: 14px 0 0;
+          color: #aeb6c2;
+          font-size: 14px;
+          line-height: 1.58;
+        }
+        .points-pill {
+          display: block;
+          margin-top: 14px;
+        }
+        .benefit-grid,
+        .checkout-benefits {
+          list-style: none;
+          margin: 16px 0;
+          padding: 0;
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 9px;
+        }
+        .benefit-grid li,
+        .checkout-benefits li {
+          min-height: 42px;
+          border: 1px solid rgba(212,168,67,0.14);
+          border-radius: 8px;
+          background: rgba(255,255,255,0.035);
+          color: #d7dde6;
+          padding: 10px;
+          font-size: 12px;
+          line-height: 1.35;
+        }
+        .checkout-benefits li {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+        }
+        .benefit-grid li::before {
+          content: "✓";
+          color: #f5d78c;
+          margin-right: 6px;
+          font-weight: 950;
+        }
+        .points-control {
+          display: grid;
+          grid-template-columns: 48px minmax(0, 1fr) 48px;
+          gap: 8px;
+          align-items: center;
+        }
+        .points-control button {
+          height: 50px;
+          border: 1px solid rgba(212,168,67,0.28);
+          border-radius: 8px;
+          background: rgba(212,168,67,0.10);
+          color: #f5d78c;
+          font-weight: 950;
+          cursor: pointer;
+        }
+        .points-control input {
+          height: 50px;
+          min-width: 0;
+          border: 1px solid rgba(212,168,67,0.28);
+          border-radius: 8px;
+          background: #080808;
+          color: #fff;
+          text-align: center;
+          font-size: 18px;
+          font-weight: 950;
+          outline: none;
+        }
+        .points-control small {
+          grid-column: 1 / -1;
+          color: #8e98a7;
+          font-size: 12px;
+          text-align: center;
+        }
+        .price-row {
+          align-items: flex-end;
+          margin: 18px 0 13px;
+          padding-top: 16px;
+          border-top: 1px solid rgba(212,168,67,0.14);
+        }
+        .compact-price {
+          margin-top: 12px;
+        }
+        .price-row span {
+          color: #f5d78c;
+          font-size: 34px;
+          line-height: 0.95;
+          font-weight: 950;
+        }
+        .price-row small {
+          color: #aeb6c2;
+          font-size: 12px;
+          text-align: right;
+        }
+        .period-box {
+          display: grid;
+          gap: 8px;
+          margin-bottom: 13px;
+        }
+        .period-box label {
+          color: ${GOLD};
+          font-size: 11px;
+          font-weight: 950;
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+        }
+        .period-box select {
+          width: 100%;
+          min-height: 50px;
+          border: 1px solid rgba(212,168,67,0.28);
+          border-radius: 8px;
+          background: #080808;
+          color: #fff;
+          padding: 0 14px;
+          font-size: 14px;
+          font-weight: 850;
+          outline: none;
+        }
+        .quiet-note {
+          margin: 10px 0 12px;
+          color: #8e98a7;
+          font-size: 12px;
+          line-height: 1.55;
+        }
+        .simulation-box {
+          display: grid;
+          gap: 4px;
+          margin-bottom: 12px;
+          border: 1px solid rgba(245,215,140,0.28);
+          border-radius: 8px;
+          background: rgba(212,168,67,0.10);
+          padding: 12px;
+          color: #f8fafc;
+          font-size: 13px;
+        }
+        .simulation-box span {
+          color: #cbd5e1;
+        }
+        .card-actions {
+          align-items: stretch;
+        }
+        .primary-action,
+        .ghost-action {
+          min-height: 52px;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 950;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+        .primary-action {
+          flex: 1;
+          border: 0;
+          background: linear-gradient(135deg, #f5d78c, ${GOLD} 48%, #a77818);
+          color: #080704;
+          box-shadow: 0 18px 44px rgba(212,168,67,0.20);
+        }
+        .ghost-action {
+          border: 1px solid rgba(212,168,67,0.28);
+          background: rgba(255,255,255,0.035);
+          color: #f5d78c;
+          padding: 0 16px;
+        }
+        .info-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 16px;
+        }
+        .info-grid article,
+        .advantages-section,
+        .faq-section {
+          border: 1px solid rgba(212,168,67,0.18);
+          border-radius: 8px;
+          background: rgba(255,255,255,0.035);
+          padding: 22px;
+        }
+        .advantages-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 12px;
+          margin-top: 16px;
+        }
+        .faq-list {
+          display: grid;
+          gap: 10px;
+          margin-top: 16px;
+        }
+        .faq-list details {
+          border: 1px solid rgba(212,168,67,0.16);
+          border-radius: 8px;
+          background: rgba(0,0,0,0.24);
+          padding: 14px;
+        }
+        .faq-list summary {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          color: #fff;
+          font-weight: 900;
+          cursor: pointer;
+        }
+        .faq-list p {
+          margin: 10px 0 0;
+          color: #aeb6c2;
+          font-size: 13px;
+          line-height: 1.6;
+        }
+        .plans-modal {
+          position: fixed;
+          inset: 0;
+          z-index: 2147483000;
+          display: grid;
+          place-items: center;
+          padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+          background: rgba(0,0,0,0.84);
+        }
+        .plans-checkout,
+        .example-modal {
+          position: relative;
+          width: min(100%, 500px);
+          max-height: min(90dvh, 760px);
+          overflow-y: auto;
+          border: 1px solid rgba(212,168,67,0.35);
+          border-radius: 8px;
+          background: #090909;
+          padding: 22px;
+          box-shadow: 0 24px 90px rgba(0,0,0,0.72);
+        }
+        .example-modal {
+          width: min(100%, 760px);
+        }
+        .modal-close {
+          position: absolute;
+          top: 14px;
+          right: 14px;
+          width: 36px;
+          height: 36px;
+          border: 1px solid rgba(255,255,255,0.12);
+          border-radius: 8px;
+          background: rgba(255,255,255,0.05);
+          color: #fff;
+          display: grid;
+          place-items: center;
+          cursor: pointer;
+        }
+        .plans-checkout h2,
+        .plans-checkout h3,
+        .example-modal h2 {
+          margin: 0 44px 6px 0;
+          color: #fff;
+          font-size: 24px;
+          line-height: 1.12;
+        }
+        .muted,
+        .status-copy {
+          color: #aeb6c2;
+          font-size: 13px;
+          line-height: 1.6;
+        }
+        .checkout-summary {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin: 18px 0;
+          border: 1px solid rgba(212,168,67,0.18);
+          border-radius: 8px;
+          background: rgba(255,255,255,0.035);
+          padding: 14px;
+          color: #aeb6c2;
+        }
+        .checkout-summary strong {
+          color: #f5d78c;
+          font-size: 22px;
+        }
+        .pix-box {
+          display: grid;
+          gap: 12px;
+          text-align: center;
+        }
+        .pix-box img {
+          width: 190px;
+          height: 190px;
+          margin: 0 auto;
+          border-radius: 8px;
+          background: #fff;
+          padding: 10px;
+        }
+        .pix-box code {
+          display: block;
+          max-height: 86px;
+          overflow: hidden;
+          word-break: break-all;
+          border: 1px solid rgba(255,255,255,0.10);
+          border-radius: 8px;
+          background: #050505;
+          color: #aeb6c2;
+          padding: 10px;
+          text-align: left;
+          font-size: 11px;
+        }
+        .preview-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px;
+          margin-top: 18px;
+        }
+        .preview-card {
+          min-height: 248px;
+          border: 1px solid rgba(212,168,67,0.16);
+          border-radius: 8px;
+          background: rgba(255,255,255,0.035);
+          padding: 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .preview-card span {
+          color: #f5d78c;
+          font-size: 11px;
+          font-weight: 950;
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+        }
+        .preview-photo,
+        .mini-gallery {
+          min-height: 104px;
+          border-radius: 8px;
+          background: linear-gradient(135deg, rgba(212,168,67,0.18), rgba(255,255,255,0.05));
+          display: grid;
+          place-items: center;
+          color: #f5d78c;
+          font-weight: 950;
+        }
+        .mini-gallery {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 6px;
+          padding: 8px;
+        }
+        .mini-gallery i {
+          min-height: 42px;
+          border-radius: 6px;
+          background: rgba(245,215,140,0.18);
+        }
+        .preview-card strong {
+          color: #fff;
+          font-size: 16px;
+        }
+        .preview-card p {
+          margin: 0;
+          color: #aeb6c2;
+          font-size: 13px;
+          line-height: 1.45;
+        }
+        .active-preview {
+          border-color: rgba(245,215,140,0.38);
+          box-shadow: inset 0 0 0 1px rgba(245,215,140,0.08);
+        }
+        .contact-pill {
+          width: fit-content;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          border-radius: 999px;
+          background: rgba(34,197,94,0.12);
+          color: #86efac;
+          padding: 7px 10px;
+          font-size: 12px;
+        }
+        @media (max-width: 900px) {
+          .hero-section,
+          .sales-section,
+          .sales-section.points-section,
+          .single-product,
+          .info-grid {
+            grid-template-columns: 1fr;
+          }
+          .section-copy {
+            position: static;
+          }
+          .advantages-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+        @media (max-width: 620px) {
+          .plans-page {
+            padding-bottom: 28px;
+          }
+          .hero-copy {
+            min-height: auto;
+            padding: 22px;
+          }
+          .hero-copy h1 {
+            font-size: 31px;
+          }
+          .hero-summary,
+          .highlight-grid,
+          .preview-grid {
+            grid-template-columns: 1fr;
+          }
+          .opportunity-band {
+            grid-template-columns: 1fr;
+            gap: 10px;
+          }
+          .opportunity-band b {
+            width: fit-content;
+          }
+          .product-card,
+          .points-panel,
+          .section-copy,
+          .info-grid article,
+          .advantages-section,
+          .faq-section {
+            padding: 16px;
+          }
+          .product-heading {
+            display: grid;
+            grid-template-columns: 46px minmax(0, 1fr);
+          }
+          .product-heading h2 {
+            font-size: 24px;
+          }
+          .price-row,
+          .card-actions {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          .price-row small {
+            text-align: left;
+          }
+          .benefit-grid,
+          .checkout-benefits,
+          .advantages-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+    </main>
   );
 }
-
-const stepperButtonStyle: CSSProperties = {
-  width: 44,
-  height: 44,
-  background: "#0f172a",
-  border: "none",
-  color: "#94a3b8",
-  fontSize: 20,
-  cursor: "pointer",
-  flexShrink: 0,
-};

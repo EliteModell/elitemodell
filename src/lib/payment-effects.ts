@@ -49,7 +49,7 @@ export async function applyPaidPaymentEffects(paymentId: string) {
     if (payment.userId && professionalPlan) {
       const professional = await tx.professional.findUnique({
         where: { userId: payment.userId },
-        select: { id: true },
+        select: { id: true, listingPhoneUntil: true },
       });
 
       if (professional) {
@@ -60,12 +60,15 @@ export async function applyPaidPaymentEffects(paymentId: string) {
           boostUntil?: Date | null;
           boostSource?: string | null;
           hideAge?: boolean;
-          hidePhone?: boolean;
+          listingPhoneUntil?: Date | null;
         } = {};
 
         if (professionalPlan.plan.benefits.featured) update.featured = true;
         if (professionalPlan.plan.benefits.hideAge) update.hideAge = true;
-        if (professionalPlan.plan.benefits.showPhone) update.hidePhone = false;
+        if (professionalPlan.plan.benefits.showPhone && payment.premiumUntil) {
+          const currentListingPhoneUntil = professional.listingPhoneUntil?.getTime() ?? 0;
+          update.listingPhoneUntil = new Date(Math.max(currentListingPhoneUntil, payment.premiumUntil.getTime()));
+        }
         if (professionalPlan.plan.benefits.boost) {
           update.boostActive = true;
           update.boostStartedAt = new Date();
@@ -90,6 +93,7 @@ export async function applyPaidPaymentEffects(paymentId: string) {
               priceKey: professionalPlan.price.key,
               activationMode: professionalPlan.activationMode,
               points: professionalPlan.plan.points,
+              pointsQuantity: professionalPlan.plan.id === "pontos" ? professionalPlan.plan.points : undefined,
               amount: payment.amount,
               premiumUntil: payment.premiumUntil?.toISOString() ?? null,
             },

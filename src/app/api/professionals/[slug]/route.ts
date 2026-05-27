@@ -116,6 +116,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
   });
 }
 
+function normalizePhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  // Strip Brazil country code if present: 55 + DDD(2) + number(8 or 9) = 12 or 13 digits
+  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
+    return digits.slice(2);
+  }
+  return digits.slice(0, 11);
+}
+
 const updateSchema = z.object({
   displayName: z.string().min(2).optional(),
   bio: z.string().min(20).optional(),
@@ -149,8 +158,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
   try {
     const body = await req.json();
     const data = updateSchema.parse(body);
-    const { specialties, presentationVideoUrl, ...profileData } = data;
-    const updateData: Prisma.ProfessionalUpdateInput = { ...profileData };
+    const { specialties, presentationVideoUrl, phone, whatsapp, ...profileData } = data;
+    const updateData: Prisma.ProfessionalUpdateInput = {
+      ...profileData,
+      ...(phone !== undefined && { phone: phone ? normalizePhone(phone) : null }),
+      ...(whatsapp !== undefined && { whatsapp: whatsapp ? normalizePhone(whatsapp) : null }),
+    };
 
     if (presentationVideoUrl !== undefined) {
       updateData.presentationVideoUrl = presentationVideoUrl;

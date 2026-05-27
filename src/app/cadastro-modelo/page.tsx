@@ -1,10 +1,6 @@
-import { Suspense } from "react";
-import { PhoneRegistrationClient } from "@/components/auth/PhoneRegistrationClient";
+import { redirect } from "next/navigation";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 export default function ModelRegisterPage() {
-  return (
-    <Suspense fallback={null}>
-      <PhoneRegistrationClient mode="model" screen="register" />
-    </Suspense>
-  );
+  redirect(ACCOUNT_ROUTES.onboardingAcompanhante);
 }

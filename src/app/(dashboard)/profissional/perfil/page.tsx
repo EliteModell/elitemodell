@@ -61,6 +61,33 @@ function parseMoneyValue(value: string) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
+function formatBrazilPhone(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
+function WhatsAppInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <div className="profile-whatsapp-field">
+      <div className="profile-whatsapp-prefix" aria-hidden="true">
+        <span>BR</span>
+        <strong>+55</strong>
+      </div>
+      <input
+        type="tel"
+        inputMode="numeric"
+        autoComplete="tel-national"
+        value={formatBrazilPhone(value)}
+        onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 11))}
+        placeholder="(11) 91234-5678"
+      />
+    </div>
+  );
+}
+
 function MoneyField({
   value,
   onChange,
@@ -292,17 +319,23 @@ export default function EditarPerfilPage() {
         <div style={{ background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: "22px" }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 18 }}>Contato e redes</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {[
-              { key: "phone", label: "Telefone", placeholder: "11 99999-9999" },
-              { key: "whatsapp", label: "WhatsApp (para contato direto)", placeholder: "11 99999-9999" },
-              { key: "instagram", label: "Instagram", placeholder: "@seuperfil" },
-              { key: "website", label: "Site / portfólio", placeholder: "www.seuperfil.com" },
-            ].map((f) => (
-              <div key={f.key}>
-                <label style={label}>{f.label}</label>
-                <input style={input} value={form[f.key as keyof Pick<ProfileForm, "phone" | "whatsapp" | "instagram" | "website">]} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })} placeholder={f.placeholder} {...focus} />
-              </div>
-            ))}
+            {(["phone", "instagram", "website"] as const).map((key) => {
+              const meta = {
+                phone:     { label: "Telefone", placeholder: "(11) 99999-9999" },
+                instagram: { label: "Instagram", placeholder: "@seuperfil" },
+                website:   { label: "Site / portfólio", placeholder: "www.seuperfil.com" },
+              }[key];
+              return (
+                <div key={key}>
+                  <label style={label}>{meta.label}</label>
+                  <input style={input} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} placeholder={meta.placeholder} {...focus} />
+                </div>
+              );
+            })}
+            <div>
+              <label style={label}>WhatsApp (para contato direto)</label>
+              <WhatsAppInput value={form.whatsapp} onChange={(v) => setForm({ ...form, whatsapp: v })} />
+            </div>
           </div>
         </div>
 
@@ -359,6 +392,46 @@ export default function EditarPerfilPage() {
           box-shadow: none;
         }
         .profile-money-field:focus-within {
+          border-color: ${GOLD};
+          box-shadow: 0 0 0 3px rgba(212,168,67,0.14);
+        }
+        .profile-whatsapp-field {
+          display: grid;
+          grid-template-columns: 64px minmax(0, 1fr);
+          min-height: 46px;
+          border: 1px solid #2a2a2a;
+          border-radius: 8px;
+          background: #0d0d0d;
+          overflow: hidden;
+        }
+        .profile-whatsapp-prefix {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          border-right: 1px solid rgba(212,168,67,0.25);
+          color: ${GOLD};
+          font-size: 11px;
+          user-select: none;
+          gap: 1px;
+        }
+        .profile-whatsapp-prefix strong {
+          font-size: 12px;
+          font-weight: 800;
+        }
+        .profile-whatsapp-field input {
+          width: 100%;
+          min-width: 0;
+          border: 0;
+          border-radius: 0;
+          background: transparent;
+          color: #fff;
+          padding: 11px 14px;
+          font-size: 14px;
+          outline: none;
+          box-shadow: none;
+        }
+        .profile-whatsapp-field:focus-within {
           border-color: ${GOLD};
           box-shadow: 0 0 0 3px rgba(212,168,67,0.14);
         }

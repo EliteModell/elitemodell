@@ -104,6 +104,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
       escortCategory: true,
       whatsapp: true,
       hidePhone: true,
+      listingPhoneUntil: true,
       hideAge: true,
       status: true,
       verified: true,
@@ -182,7 +183,8 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                 <td style={tdStyle}>
                   {pro.photos.length} mídia(s), {pro.specialties.length} serviço(s)<br />
                   Bio: {pro.bio.length} caracteres<br />
-                  Privacidade: {pro.hidePhone ? "telefone oculto" : "telefone público"} / {pro.hideAge ? "idade oculta" : "idade pública"}<br />
+                  Privacidade: {pro.hidePhone ? "telefone oculto" : "telefone permitido"} / {pro.hideAge ? "idade oculta" : "idade pública"}<br />
+                  Telefone listagem: {pro.listingPhoneUntil && pro.listingPhoneUntil > new Date() ? `ativo até ${pro.listingPhoneUntil.toLocaleDateString("pt-BR")}` : "sem benefício ativo"}<br />
                   Métricas: {pro.profileViews} views, {pro.contactClicks} contatos, nota {pro.rating.toFixed(1)} ({pro.totalReviews})<br />
                   Boost: {pro.boostActive ? `ativo até ${pro.boostUntil ? pro.boostUntil.toLocaleDateString("pt-BR") : "data não informada"}` : "inativo"}<br />
                   Enviado em {pro.createdAt.toLocaleDateString("pt-BR")}

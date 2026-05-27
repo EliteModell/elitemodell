@@ -603,6 +603,7 @@ model Professional {
   instagram    String?
   website      String?
   hidePhone    Boolean @default(false)
+  listingPhoneUntil DateTime?
 
   // Preços
   priceMin         Float?
@@ -695,6 +696,7 @@ model Professional {
 
   @@index([status, featured, rating, totalReviews, createdAt])
   @@index([status, boostActive, boostUntil])
+  @@index([status, listingPhoneUntil])
   @@index([status, city])
   @@index([status, escortCategory])
   @@index([status, priceMin])

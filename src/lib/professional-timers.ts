@@ -27,5 +27,13 @@ export async function refreshExpiredProfessionalTimers(now = new Date()) {
         boostSource: null,
       },
     }),
+    prisma.professional.updateMany({
+      where: {
+        listingPhoneUntil: { lt: now },
+      },
+      data: {
+        listingPhoneUntil: null,
+      },
+    }),
   ]);
 }

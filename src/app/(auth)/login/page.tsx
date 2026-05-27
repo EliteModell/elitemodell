@@ -118,6 +118,9 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get("returnUrl") ?? searchParams.get("redirectTo");
   const roleIntent = normalizeEntryRole(searchParams.get("role")) ?? inferRoleIntentFromReturnUrl(returnUrl);
+  const signupHref = roleIntent
+    ? `${ACCOUNT_ROUTES.cadastro}?tipo=cliente&continue=${roleIntent}${returnUrl ? `&returnUrl=${encodeURIComponent(returnUrl)}` : ""}`
+    : ACCOUNT_ROUTES.cadastro;
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
@@ -207,7 +210,7 @@ function LoginContent() {
           <EntryChoiceCards mode="login" />
           <div className="signup-block">
             <p>Ainda não tem conta?</p>
-            <Link href={ACCOUNT_ROUTES.cadastro}>Cadastre-se</Link>
+            <Link href={signupHref}>Cadastre-se</Link>
           </div>
         </section>
 
@@ -278,7 +281,7 @@ function LoginContent() {
 
         <div className="signup-block">
           <p>Ainda não tem conta?</p>
-          <Link href={ACCOUNT_ROUTES.cadastro}>Cadastre-se</Link>
+          <Link href={signupHref}>Cadastre-se</Link>
         </div>
       </section>
 

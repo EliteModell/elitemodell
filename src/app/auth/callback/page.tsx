@@ -15,6 +15,7 @@ const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
 const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
 const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
 const CALLBACK_TIMEOUT_MS = 15000;
+const NEXTAUTH_SIGNIN_TIMEOUT_MS = 12000;
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
 
@@ -47,6 +48,10 @@ async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRol
   }
 
   if (user.role === "ADMIN") return ACCOUNT_ROUTES.admin;
+
+  if (roleIntent === "profissional") {
+    return postLoginPathFromUser(user, roleIntent);
+  }
 
   // Usuário sem consentimento ou sem data de nascimento → completar cadastro obrigatório
   if (!user.lgpdConsent || !user.termsConsent || !user.birthDate) {
@@ -117,6 +122,14 @@ function resolveWithTimeout<T>(promise: Promise<T>, fallback: T, ms = CALLBACK_T
         resolve(fallback);
       });
   });
+}
+
+function resolveSignInWithTimeout(promise: ReturnType<typeof signIn>) {
+  return resolveWithTimeout(
+    promise,
+    { error: "Tempo limite ao criar a sessao segura. Tente novamente.", status: 408, ok: false, url: null },
+    NEXTAUTH_SIGNIN_TIMEOUT_MS,
+  );
 }
 
 function parseCallbackHash() {
@@ -443,7 +456,8 @@ function AuthCallbackContent() {
         }
       }
 
-      const res = await signIn("supabase", { accessToken, roleIntent: roleIntent ?? "", redirect: false });
+      if (active) setMessage("Criando sessao segura...");
+      const res = await resolveSignInWithTimeout(signIn("supabase", { accessToken, roleIntent: roleIntent ?? "", redirect: false }));
       if (res?.error) {
         throw new Error(`NextAuth: ${res.error}`);
       }
@@ -457,7 +471,7 @@ function AuthCallbackContent() {
 
       if (!active) return;
       setSuccess(true);
-      setMessage("Acesso confirmado!");
+      setMessage("Acesso confirmado. Redirecionando...");
       window.setTimeout(() => {
         window.location.replace(targetPath);
       }, 600);

@@ -128,6 +128,7 @@ export default async function ProfissionalDashPage() {
   const hasActivePlan = Boolean(professional.user.premiumUntil && professional.user.premiumUntil > now);
   const premiumDaysLeft = daysUntil(professional.user.premiumUntil, now);
   const isBoostActive = Boolean(professional.boostActive && (!professional.boostUntil || professional.boostUntil > now));
+  const hasListingPhoneBenefit = Boolean(professional.listingPhoneUntil && professional.listingPhoneUntil > now);
   const isVisible = professional.status === "ACTIVE" && (!professional.pauseUntil || professional.pauseUntil <= now);
 
   const cityRanking = professional.city
@@ -376,7 +377,7 @@ export default async function ProfissionalDashPage() {
     { label: "Ocultar idade", active: professional.hideAge, description: "Controle de privacidade salvo no perfil." },
     { label: "Ocultar telefone", active: professional.hidePhone, description: "Telefone fica oculto publicamente." },
     { label: "Impulsionamento", active: isBoostActive, description: "Boost ativo enquanto não estiver vencido." },
-    { label: "Telefone na listagem", active: Boolean(!professional.hidePhone && (professional.phone || professional.whatsapp)), description: "Disponível quando há contato e ele não está oculto." },
+    { label: "Telefone na listagem", active: Boolean(hasListingPhoneBenefit && !professional.hidePhone && (professional.phone || professional.whatsapp)), description: "Exige benefício pago ativo e respeita a privacidade manual." },
     { label: "Galeria premium", active: hasActivePlan && allPhotosCount >= 6, description: "Preparado a partir de plano ativo e galeria robusta." },
     { label: "Stories/vídeos", active: Boolean(professional.presentationVideoUrl), description: "Vídeo de apresentação existente no perfil." },
   ];

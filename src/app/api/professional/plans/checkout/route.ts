@@ -21,8 +21,16 @@ import {
 const schema = z.object({
   planId: z.string().min(1),
   priceKey: z.string().min(1),
+  productId: z.string().optional(),
+  productType: z.string().optional(),
+  planName: z.string().optional(),
+  duration: z.string().optional(),
+  price: z.number().optional(),
+  points: z.number().int().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   activationMode: z.enum(["agora", "depois"]).default("agora"),
   paymentMethod: z.enum(["pix"]).default("pix"),
+  pointsQuantity: z.number().int().min(10).max(15000).optional(),
   payerName: z.string().optional(),
   payerCpf: z.string().optional(),
 });
@@ -59,7 +67,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const data = schema.parse(await req.json());
-    const resolved = getProfessionalPlanPrice(data.planId, data.priceKey);
+    const resolved = getProfessionalPlanPrice(data.planId, data.priceKey, data.pointsQuantity);
     if (!resolved) return NextResponse.json({ error: "Plano ou duração inválida." }, { status: 400 });
 
     const user = await prisma.user.findUnique({
@@ -92,6 +100,7 @@ export async function POST(req: NextRequest) {
       priceKey: price.key,
       activationMode: data.activationMode,
       userId: user.id,
+      pointsQuantity: plan.id === "pontos" ? plan.points : undefined,
     });
 
     const asaas = getAsaasConfig();

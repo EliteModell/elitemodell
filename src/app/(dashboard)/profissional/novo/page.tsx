@@ -478,6 +478,14 @@ export default function ProfissionalNovoPage() {
     let active = true;
 
     async function loadUserDefaults() {
+      await fetch("/api/users/me/activate-professional", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }).catch((err) => {
+        console.warn("[professional-onboarding] Nao foi possivel ativar o contexto profissional.", err);
+      });
+
       const res = await fetch("/api/users/me");
       if (!res.ok) return;
       const user = await res.json();

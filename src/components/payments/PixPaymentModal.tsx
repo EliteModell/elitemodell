@@ -4,8 +4,10 @@ import { createPortal } from "react-dom";
 import { CheckCircle, Copy, Loader, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 
+import type { ClientPlanId } from "@/lib/client-plans";
+
 type Props = {
-  planId?: "elite-premium-monthly";
+  planId?: "elite-premium-monthly" | ClientPlanId;
   creditAmount?: number;
   bookingId?: string;
   amount: number;

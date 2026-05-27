@@ -43,14 +43,6 @@ function checkInMemory(key: string, max: number, windowMs: number): RateLimitRes
   return { allowed: true, remaining: max - rec.count, resetIn: rec.resetAt - now };
 }
 
-function isProductionRuntime() {
-  return process.env.NODE_ENV === "production";
-}
-
-function failClosed(windowMs: number): RateLimitResult {
-  return { allowed: false, remaining: 0, resetIn: windowMs };
-}
-
 // ─── Upstash Redis via REST API (produção) ────────────────────────────────────
 // Pipeline atômico: INCR → EXPIRE (apenas se nova chave) → TTL
 
@@ -58,11 +50,14 @@ async function checkRedis(key: string, max: number, windowMs: number): Promise<R
   const url = process.env.UPSTASH_REDIS_REST_URL!;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN!;
   const windowSec = Math.ceil(windowMs / 1000);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 2500);
 
   let res: Response;
   try {
     res = await fetch(`${url}/pipeline`, {
       method: "POST",
+      signal: controller.signal,
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -74,12 +69,15 @@ async function checkRedis(key: string, max: number, windowMs: number): Promise<R
       ]),
     });
   } catch {
-    return isProductionRuntime() ? failClosed(windowMs) : checkInMemory(key, max, windowMs);
+    return checkInMemory(key, max, windowMs);
+  } finally {
+    clearTimeout(timeout);
   }
 
-  if (!res.ok) return isProductionRuntime() ? failClosed(windowMs) : checkInMemory(key, max, windowMs);
+  if (!res.ok) return checkInMemory(key, max, windowMs);
 
-  const data = (await res.json()) as Array<{ result: number }>;
+  const data = (await res.json().catch(() => null)) as Array<{ result: number }> | null;
+  if (!data) return checkInMemory(key, max, windowMs);
   const count = data[0].result;
   const ttl = data[2].result;
   const resetIn = ttl > 0 ? ttl * 1000 : windowMs;
@@ -107,6 +105,5 @@ export function checkRateLimitAsync(
 ): Promise<RateLimitResult> {
   const key = `rl:${identifier}`;
   if (HAS_REDIS) return checkRedis(key, maxRequests, windowMs);
-  if (isProductionRuntime()) return Promise.resolve(failClosed(windowMs));
   return Promise.resolve(checkInMemory(key, maxRequests, windowMs));
 }

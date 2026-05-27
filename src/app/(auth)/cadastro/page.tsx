@@ -14,8 +14,10 @@ import { supabaseAuth } from "@/lib/supabase-client";
 import {
   ACCOUNT_ROUTES,
   type CadastroTipo,
+  type EntryAccountRole,
   internalAccountTypeFromTipo,
   normalizeCadastroTipo,
+  normalizeEntryRole,
 } from "@/lib/account-routes";
 
 type AccountType = "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
@@ -268,6 +270,7 @@ export default function CadastroPage() {
   const [loading, setLoading] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [accountTypeSelected, setAccountTypeSelected] = useState(false);
+  const [continueIntent, setContinueIntent] = useState<EntryAccountRole | null>(null);
   const [step, setStep] = useState<Step>("form");
   const [form, setForm] = useState({
     name: "",
@@ -297,10 +300,12 @@ export default function CadastroPage() {
     const draft = params.get("draft");
     const legacyClientEmail = params.get("legacy") === "cliente";
     const tipo = normalizeCadastroTipo(params.get("tipo"));
+    const nextIntent = normalizeEntryRole(params.get("continue")) ?? normalizeEntryRole(params.get("role"));
     const hasRoomDraft = Boolean(localStorage.getItem(PROPERTY_DRAFT_KEY));
 
     window.setTimeout(() => {
       setHydrated(true);
+      setContinueIntent(nextIntent);
       // Draft de imóvel só aplica quando não há tipo explícito de acompanhante na URL
       if ((hasRoomDraft || draft === "quarto" || draft === "imovel") && tipo !== "acompanhante" && tipo !== "cliente") {
         setForm((current) => ({ ...current, accountType: "PROPERTY_HOST", category: "" }));
@@ -422,9 +427,10 @@ export default function CadastroPage() {
   }
 
   function registrationPayload(captchaToken?: string) {
+    const effectiveAccountType = continueIntent === "profissional" ? "PROFESSIONAL" : form.accountType;
     const payload = {
-      role: form.accountType === "PROFESSIONAL" ? "HOST" : "GUEST",
-      accountType: form.accountType,
+      role: effectiveAccountType === "PROFESSIONAL" ? "HOST" : "GUEST",
+      accountType: effectiveAccountType,
       category: form.accountType === "PROFESSIONAL" ? form.category : undefined,
       birthDate: form.birthDate,
       lgpdConsent: form.lgpdConsent,
@@ -460,6 +466,8 @@ export default function CadastroPage() {
   }
 
   function nextPath() {
+    if (continueIntent === "profissional") return ACCOUNT_ROUTES.onboardingAcompanhante;
+    if (continueIntent === "anfitriao") return ACCOUNT_ROUTES.onboardingAnfitriao;
     if (form.accountType === "PROFESSIONAL") return ACCOUNT_ROUTES.onboardingAcompanhante;
     if (form.accountType === "PROPERTY_HOST") {
       return ACCOUNT_ROUTES.onboardingAnfitriao;
@@ -468,6 +476,7 @@ export default function CadastroPage() {
   }
 
   function roleIntent() {
+    if (continueIntent) return continueIntent;
     if (form.accountType === "PROFESSIONAL") return "profissional";
     if (form.accountType === "PROPERTY_HOST") return "anfitriao";
     return "cliente";
@@ -506,8 +515,26 @@ export default function CadastroPage() {
       sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload(captchaToken)));
       setStep("verify");
     } catch (err: unknown) {
-      captchaRef.current?.reset();
       const authError = asAuthError(err);
+      if ((authError.code === "user_already_exists" || authError.name === "user_already_exists") && isValidEmail(form.email)) {
+        try {
+          const { data, error } = await supabaseAuth.auth.signInWithPassword({
+            email: form.email.trim().toLowerCase(),
+            password: form.password,
+          });
+          if (error || !data.session?.access_token) throw error ?? new Error("E-mail ou senha invÃ¡lidos.");
+          const res = await signIn("supabase", { accessToken: data.session.access_token, roleIntent: roleIntent(), redirect: false });
+          if (res?.error) throw new Error("NÃ£o foi possÃ­vel atualizar sua sessÃ£o.");
+          router.push(nextPath());
+          router.refresh();
+          return;
+        } catch {
+          toast.error("Este email jÃ¡ existe. Entre com a senha correta para continuar.");
+          return;
+        }
+      }
+
+      captchaRef.current?.reset();
       const msg: Record<string, string> = {
         user_already_exists: "Este email já está cadastrado.",
         weak_password: "Senha fraca. Use no mínimo 6 caracteres.",
@@ -599,6 +626,7 @@ export default function CadastroPage() {
         title: "Quero anunciar como acompanhante",
         desc: "Inicie a ativação profissional com maioridade, termos, documentos, fotos e análise da equipe.",
         action: "Ativar perfil profissional",
+        directHref: ACCOUNT_ROUTES.onboardingAcompanhante,
       },
       {
         tipo: "anfitriao",

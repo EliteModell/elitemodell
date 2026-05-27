@@ -8,6 +8,14 @@ import { authOptions } from "@/lib/auth";
 import { MANUAL_PENDING_STATUS, PERSONA_PENDING_STATUS } from "@/lib/persona";
 import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
 
+function normalizePhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
+    return digits.slice(2);
+  }
+  return digits.slice(0, 11);
+}
+
 const createSchema = z.object({
   displayName:     z.string().min(2),
   bio:             z.string().optional().default(""),
@@ -184,6 +192,9 @@ export async function GET(req: NextRequest) {
         height: true, weight: true, hairColor: true, eyeColor: true, ethnicity: true,
         hasTattoos: true, hasSilicone: true,
         hideAge: true,
+        whatsapp: true,
+        hidePhone: true,
+        listingPhoneUntil: true,
         priceMin: true, pricePerHour: true, price30min: true,
         attendanceTypes: true, servesGenders: true,
         rating: true, totalReviews: true, totalAppointments: true,
@@ -197,8 +208,14 @@ export async function GET(req: NextRequest) {
     prisma.professional.count({ where }),
   ]);
 
+  // WhatsApp na listagem exige beneficio pago ativo e respeita a privacidade manual.
+  const safeList = professionals.map(({ hidePhone, listingPhoneUntil, ...p }) => ({
+    ...p,
+    whatsapp: !hidePhone && listingPhoneUntil && listingPhoneUntil > now ? p.whatsapp : null,
+  }));
+
   return NextResponse.json(
-    { professionals, total, page, pages: Math.ceil(total / limit) },
+    { professionals: safeList, total, page, pages: Math.ceil(total / limit) },
     { headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120" } },
   );
 }
@@ -230,7 +247,7 @@ export async function POST(req: NextRequest) {
       select: { category: true },
     });
 
-    const { specialties, services, ...profileData } = data;
+    const { specialties, services, phone, whatsapp, ...profileData } = data;
     const hasManualMedia =
       Boolean(profileData.verificationUrl) &&
       profileData.kycProvider !== "PERSONA";
@@ -251,6 +268,8 @@ export async function POST(req: NextRequest) {
     const professional = await prisma.professional.create({
       data: {
         ...profileData,
+        phone:     phone ? normalizePhone(phone) : undefined,
+        whatsapp:  whatsapp ? normalizePhone(whatsapp) : undefined,
         kycProvider: normalizedKycProvider,
         kycStatus: normalizedKycStatus,
         escortCategory,

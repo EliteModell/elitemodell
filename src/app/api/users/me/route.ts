@@ -40,6 +40,7 @@ export async function GET() {
           instagram: true,
           website: true,
           hidePhone: true,
+          listingPhoneUntil: true,
           hideAge: true,
           pauseStartedAt: true,
           pauseUntil: true,

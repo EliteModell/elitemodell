@@ -8,7 +8,7 @@ export const ACCOUNT_ROUTES = {
   cadastroCliente: "/app/consumer/register",
   verificarTelefoneCliente: "/app/consumer/verify-phone",
   loginCliente: "/app/consumer/login",
-  cadastroAcompanhante: "/cadastro-modelo",
+  cadastroAcompanhante: "/profissional/novo",
   cadastroAnfitriao: "/cadastro-anfitriao",
   verificarTelefoneAnfitriao: "/cadastro-anfitriao/verificar-telefone",
   painelCliente: "/painel/cliente",
@@ -42,7 +42,7 @@ export function normalizeCadastroTipo(value: string | null): CadastroTipo | null
   const normalized = value.toLowerCase();
 
   if (["cliente", "client", "guest"].includes(normalized)) return "cliente";
-  if (["acompanhante", "profissional", "professional", "anunciante"].includes(normalized)) {
+  if (["ac", "acompanhante", "profissional", "professional", "anunciante"].includes(normalized)) {
     return "acompanhante";
   }
   if (["anfitriao", "anfitrião", "imovel", "imóvel", "quarto", "host"].includes(normalized)) {
@@ -59,7 +59,7 @@ export function internalAccountTypeFromTipo(tipo: CadastroTipo): InternalAccount
 }
 
 export function cadastroHref(tipo: CadastroTipo) {
-  if (tipo === "acompanhante") return ACCOUNT_ROUTES.cadastroAcompanhante;
+  if (tipo === "acompanhante") return ACCOUNT_ROUTES.onboardingAcompanhante;
   if (tipo === "anfitriao") return ACCOUNT_ROUTES.onboardingAnfitriao;
   return ACCOUNT_ROUTES.cadastroCliente;
 }
@@ -109,7 +109,7 @@ export function loginHrefForRole(role: EntryAccountRole) {
 }
 
 export function cadastroHrefForRole(role: EntryAccountRole) {
-  if (role === "profissional") return ACCOUNT_ROUTES.cadastroAcompanhante;
+  if (role === "profissional") return ACCOUNT_ROUTES.onboardingAcompanhante;
   if (role === "anfitriao") return ACCOUNT_ROUTES.onboardingAnfitriao;
   // Clientes vão para o form de e-mail/senha (/cadastro)
   // que é a mesma tela acessível via "Entrar → não tem conta"
@@ -120,7 +120,7 @@ export function normalizeEntryRole(value: string | null): EntryAccountRole | nul
   if (!value) return null;
   const normalized = value.toLowerCase();
   if (["cliente", "client", "guest"].includes(normalized)) return "cliente";
-  if (["profissional", "acompanhante", "professional", "model", "modelo"].includes(normalized)) return "profissional";
+  if (["ac", "profissional", "acompanhante", "professional", "model", "modelo"].includes(normalized)) return "profissional";
   if (["anfitriao", "anfitrião", "host", "imovel", "imóvel"].includes(normalized)) return "anfitriao";
   return null;
 }
