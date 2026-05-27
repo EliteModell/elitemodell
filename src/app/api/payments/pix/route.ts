@@ -12,11 +12,21 @@ import {
   getAsaasPixQrCode,
 } from "@/lib/asaas";
 import { prisma } from "@/lib/prisma";
+import {
+  CLIENT_PLAN_IDS,
+  getClientPlan,
+  premiumUntilFromDuration,
+  resolveClientPlanPrice,
+  type ClientPlanId,
+} from "@/lib/client-plans";
+
+const LEGACY_PLAN_IDS = ["elite-premium-monthly"] as const;
+const ALL_PLAN_IDS = [...LEGACY_PLAN_IDS, ...CLIENT_PLAN_IDS] as [string, ...string[]];
 
 const schema = z
   .object({
     bookingId: z.string().optional(),
-    planId: z.enum(["elite-premium-monthly"]).optional(),
+    planId: z.enum(ALL_PLAN_IDS as [string, ...string[]]).optional(),
     creditAmount: z.number().positive().max(5000).optional(),
     description: z.string().min(1).optional(),
     payerName: z.string().optional(),
@@ -25,6 +35,21 @@ const schema = z
   .refine((data) => [data.bookingId, data.planId, data.creditAmount].filter(Boolean).length === 1, {
     message: "Informe apenas uma finalidade: reserva, plano ou credito.",
   });
+
+async function isFirstClientPremiumPurchase(userId: string): Promise<boolean> {
+  const paid = await prisma.payment.findFirst({
+    where: {
+      userId,
+      status: "PAID",
+      premiumUntil: { not: null },
+      creditAmount: null,
+      bookingId: null,
+      externalReference: { startsWith: "client-premium:" },
+    },
+    select: { id: true },
+  });
+  return paid === null;
+}
 
 function nextDueDate() {
   const date = new Date();
@@ -95,9 +120,18 @@ export async function POST(req: NextRequest) {
       creditAmount = data.creditAmount;
       description = data.description ?? `Creditos Elite Modell - R$ ${data.creditAmount.toFixed(2)}`;
     } else if (data.planId) {
-      amount = 49.9;
-      premiumUntil = premiumUntilFromNow();
-      description = data.description ?? "Elite Premium mensal";
+      if (data.planId === "elite-premium-monthly") {
+        amount = 49.9;
+        premiumUntil = premiumUntilFromNow();
+        description = data.description ?? "Elite Premium mensal";
+      } else {
+        // client-premium-24h | client-premium-30d | client-premium-90d
+        const clientPlan = getClientPlan(data.planId as ClientPlanId);
+        const firstPurchase = await isFirstClientPremiumPurchase(user.id);
+        amount = resolveClientPlanPrice(clientPlan, firstPurchase);
+        premiumUntil = premiumUntilFromDuration(clientPlan.durationMs);
+        description = data.description ?? `Elite Model Premium — ${clientPlan.durationLabel}`;
+      }
     }
 
     if (amount <= 0) return NextResponse.json({ error: "Valor invalido." }, { status: 400 });
@@ -110,7 +144,9 @@ export async function POST(req: NextRequest) {
         method: "pix",
         provider: "asaas",
         status: "PENDING",
-        externalReference: `asaas-${user.id}-${Date.now()}`,
+        externalReference: data.planId && data.planId !== "elite-premium-monthly"
+          ? `client-premium:${data.planId}:${user.id}:${Date.now()}`
+          : `asaas-${user.id}-${Date.now()}`,
         creditAmount,
         premiumUntil,
       },
