@@ -85,16 +85,14 @@ const ATTENDANCE_EXCLUSIONS: Record<string, string[]> = {
 /* ── sub-componentes reutilizáveis ──────────────────────── */
 function Tag({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} aria-pressed={active} data-active={active ? "true" : "false"} className="model-tag" style={{
-      padding: "10px 15px", borderRadius: 20, cursor: "pointer", fontSize: 13,
-      fontWeight: active ? 700 : 400,
-      border: `1.5px solid ${active ? GOLD : "#1e293b"}`,
-      background: active ? GOLD_DIM : "transparent",
-      color: active ? "#f8fafc" : "#94a3b8", transition: "all 0.15s",
-      minHeight: 42,
-      lineHeight: 1.2,
-    }}>
-      {active ? <span className="model-tag-check" aria-hidden="true">✓</span> : null}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      data-active={active ? "true" : "false"}
+      className="model-tag"
+    >
+      {active && <span className="model-tag-check" aria-hidden="true">✓</span>}
       {label}
     </button>
   );
@@ -114,7 +112,7 @@ function Section({ title, desc, children }: { title: string; desc?: string; chil
 }
 
 function ChipGroup({ children }: { children: React.ReactNode }) {
-  return <div className="model-chip-group">{children}</div>;
+  return <div className="model-chip-group" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{children}</div>;
 }
 
 function UploadZone({ label, accept, preview, onFile, loading }: {
@@ -122,26 +120,45 @@ function UploadZone({ label, accept, preview, onFile, loading }: {
 }) {
   const ref = useRef<HTMLInputElement>(null);
   const canPreview = !!preview && (preview.startsWith("http") || preview.startsWith("/") || preview.startsWith("blob:") || preview.startsWith("data:"));
+  const isPrivateFile = !!preview && !canPreview;
   const acceptLabel = accept === IMAGE_ACCEPT ? "JPG, PNG ou WebP" : accept.replace("image/*,video/*", "JPG, PNG ou MP4");
   return (
     <div>
-      <label style={labelStyle}>{label}</label>
+      {label ? <label style={labelStyle}>{label}</label> : null}
       <div
-        onClick={() => ref.current?.click()}
+        onClick={() => !loading && ref.current?.click()}
         style={{
           border: `2px dashed ${preview ? GOLD_MID : "#1e293b"}`,
-          borderRadius: 12, padding: preview ? 0 : "28px 16px",
-          textAlign: "center", cursor: "pointer", background: GOLD_DIM,
-          overflow: "hidden", minHeight: preview ? 120 : "auto",
+          borderRadius: 12,
+          padding: canPreview || isPrivateFile ? 0 : "28px 16px",
+          textAlign: "center",
+          cursor: loading ? "wait" : "pointer",
+          background: GOLD_DIM,
+          overflow: "hidden",
+          minHeight: canPreview || isPrivateFile ? 120 : "auto",
           transition: "border-color 0.2s",
+          position: "relative",
         }}
       >
-        {loading ? (
-          <div style={{ padding: "28px 0", color: "#475569", fontSize: 13 }}>Enviando...</div>
-        ) : canPreview ? (
-          <img src={preview} alt="preview" style={{ width: "100%", maxHeight: 220, objectFit: "cover", display: "block" }} />
-        ) : preview ? (
-          <div style={{ padding: "28px 0", color: GOLD, fontSize: 13, fontWeight: 700 }}>Arquivo privado enviado</div>
+        {canPreview ? (
+          <>
+            <img src={preview} alt="preview" style={{ width: "100%", maxHeight: 220, objectFit: "cover", display: "block" }} />
+            {loading && (
+              <div style={{ position: "absolute", inset: 0, background: "rgba(6,14,27,0.72)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <div style={{ width: 28, height: 28, border: `3px solid ${GOLD_MID}`, borderTopColor: GOLD, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                <span style={{ color: GOLD, fontSize: 12, fontWeight: 700 }}>Enviando…</span>
+              </div>
+            )}
+          </>
+        ) : isPrivateFile ? (
+          <div style={{ padding: "28px 0", color: GOLD, fontSize: 13, fontWeight: 700 }}>
+            {loading ? "Enviando…" : "Arquivo privado enviado ✓"}
+          </div>
+        ) : loading ? (
+          <div style={{ padding: "28px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 28, height: 28, border: `3px solid ${GOLD_MID}`, borderTopColor: GOLD, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+            <span style={{ color: "#475569", fontSize: 13 }}>Enviando…</span>
+          </div>
         ) : (
           <>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.5" style={{ marginBottom: 8 }}>
@@ -598,19 +615,23 @@ export default function ProfissionalNovoPage() {
 
     const previousPhoto = form.mainPhotoUrl;
     const previewUrl = URL.createObjectURL(file);
+    /* Mostra preview imediatamente enquanto faz upload */
     set("mainPhotoUrl", previewUrl);
     setUploadingIdx(-1);
     try {
       const url = await uploadFile(file, "profiles/main");
+      /* Substitui blob pela URL remota antes de revogar */
       set("mainPhotoUrl", url);
-      toast.success("Foto principal enviada!");
+      /* Aguarda um tick para o React renderizar com a URL remota antes de revogar o blob */
+      setTimeout(() => URL.revokeObjectURL(previewUrl), 200);
+      toast.success("Foto principal enviada com sucesso!");
     } catch (err) {
       console.error("[professional-onboarding] Erro ao enviar foto principal.", err);
       set("mainPhotoUrl", previousPhoto);
-      toast.error(err instanceof Error ? err.message : "Erro ao enviar foto.");
-    }
-    finally {
       URL.revokeObjectURL(previewUrl);
+      const msg = err instanceof Error ? err.message : "Erro ao enviar foto. Tente novamente.";
+      toast.error(msg, { duration: 5000 });
+    } finally {
       setUploadingIdx(null);
     }
   }
@@ -817,8 +838,9 @@ export default function ProfissionalNovoPage() {
     }
     if (targetStep === 5 && form.whatsapp.replace(/\D/g, "").length < 10) return "Informe um WhatsApp válido com DDD.";
     if (targetStep === 6) {
-      if (uploadingIdx === -1 || form.mainPhotoUrl.startsWith("blob:")) return "Aguarde o envio da foto principal terminar.";
-      if (!form.mainPhotoUrl || !REMOTE_IMAGE_RE.test(form.mainPhotoUrl)) return "Envie a foto principal do perfil.";
+      if (uploadingIdx === -1) return "Aguarde o envio da foto principal terminar.";
+      if (form.mainPhotoUrl.startsWith("blob:")) return "A foto está sendo processada, aguarde um momento.";
+      if (!form.mainPhotoUrl || !REMOTE_IMAGE_RE.test(form.mainPhotoUrl)) return "Selecione e envie a foto principal do perfil para continuar.";
     }
     if (targetStep === 7) {
       if (!form.docType) return "Selecione o tipo de documento.";
@@ -873,8 +895,8 @@ export default function ProfissionalNovoPage() {
         <div style={{ height: 3, background: "#1e293b", borderRadius: 3 }}>
           <div style={{ height: "100%", width: `${progress}%`, background: GOLD, borderRadius: 3, transition: "width 0.4s ease" }} />
         </div>
-        {/* Step bubbles */}
-        <div className="model-step-bubbles" aria-label="Etapas do cadastro" style={{ display: "flex", marginTop: 14, overflowX: "auto", gap: 0 }}>
+        {/* Step bubbles — labels são ocultadas no mobile via CSS (.model-step-bubbles span) */}
+        <div className="model-step-bubbles" aria-label="Etapas do cadastro">
           {STEPS.map((s, i) => (
             <div
               key={s}
@@ -887,7 +909,7 @@ export default function ProfissionalNovoPage() {
                 aria-current={i === step ? "step" : undefined}
                 style={{
                   width: 28, height: 28, borderRadius: "50%", border: "none",
-                  background: i < step ? GOLD : i === step ? GOLD : "#1e293b",
+                  background: i <= step ? GOLD : "#1e293b",
                   color: i <= step ? "#060e1b" : "#475569",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   margin: "0 auto 4px", fontSize: 11, fontWeight: 700,
@@ -898,7 +920,7 @@ export default function ProfissionalNovoPage() {
               >
                 {i < step ? "✓" : i + 1}
               </button>
-              <span style={{ fontSize: 9, color: i === step ? GOLD : "#334155", fontWeight: i === step ? 700 : 400, textTransform: "uppercase", letterSpacing: 0.3, display: "block" }}>{s}</span>
+              <span className="model-step-label" style={{ fontSize: 9, color: i === step ? GOLD : "#334155", fontWeight: i === step ? 700 : 400, textTransform: "uppercase", letterSpacing: 0.3 }}>{s}</span>
             </div>
           ))}
         </div>

@@ -145,8 +145,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
         )}
 
-        <main className={roleAreaClass ? `dashboard-content ${roleAreaClass}-page relative flex-1 px-4 py-5 pb-8 sm:px-6 sm:py-6 md:px-8 lg:px-10` : "dashboard-content relative flex-1 px-4 py-5 pb-8 sm:px-6 sm:py-6 md:px-8 lg:px-10"}>
-          <div className={roleAreaClass ? `${roleAreaClass}-content mx-auto w-full max-w-[1480px]` : "mx-auto w-full max-w-[1480px]"}>{children}</div>
+        <main className={
+          isProfessionalOnboarding
+            ? "professional-onboarding-main relative flex-1"
+            : roleAreaClass
+              ? `dashboard-content ${roleAreaClass}-page relative flex-1 px-4 py-5 pb-8 sm:px-6 sm:py-6 md:px-8 lg:px-10`
+              : "dashboard-content relative flex-1 px-4 py-5 pb-8 sm:px-6 sm:py-6 md:px-8 lg:px-10"
+        }>
+          <div className={
+            isProfessionalOnboarding
+              ? "w-full"
+              : roleAreaClass
+                ? `${roleAreaClass}-content mx-auto w-full max-w-[1480px]`
+                : "mx-auto w-full max-w-[1480px]"
+          }>{children}</div>
         </main>
 
       </div>

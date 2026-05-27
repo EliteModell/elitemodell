@@ -5156,3 +5156,210 @@ body[data-client-drawer-open="true"] .client-bottom-nav {
     padding-right: 8px !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════
+   Professional onboarding — classes usadas em /profissional/novo
+   Estas classes têm prioridade sobre os overrides do layout
+   (que só atuam em [style*="..."]).
+═══════════════════════════════════════════════════════ */
+
+/* Página e cabeçalho do onboarding */
+.model-flow-page {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 16px 80px;
+}
+
+.model-flow-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0 12px;
+  background: rgba(5, 5, 6, 0.95);
+  border-bottom: 1px solid rgba(212, 168, 67, 0.14);
+  backdrop-filter: blur(20px);
+  margin-bottom: 20px;
+}
+
+.model-flow-header button {
+  background: transparent !important;
+  border: none !important;
+  color: #94a3b8 !important;
+  font-size: 16px !important;
+  cursor: pointer !important;
+  padding: 4px 8px !important;
+  min-height: auto !important;
+  border-radius: 6px !important;
+}
+
+.model-flow-header span {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* Container do onboarding na main (sem padding enorme de bottom nav) */
+.professional-onboarding-main {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  padding: 0 !important;
+}
+
+/* Chip group (flex wrap de tags) */
+.model-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── Tags / botões de seleção múltipla ─────────────────
+   Usamos data-active para não depender de [style*="..."]
+   que o layout sobrescreve com !important.
+──────────────────────────────────────────────────────── */
+.model-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  min-height: 42px;
+  border: 1.5px solid #1e293b;
+  background: rgba(11, 20, 32, 0.8);
+  color: #94a3b8;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.model-tag:hover {
+  border-color: rgba(212, 168, 67, 0.4) !important;
+  color: #cbd5e1 !important;
+}
+
+.model-tag[data-active="true"] {
+  border: 1.5px solid #d4a843 !important;
+  background: rgba(212, 168, 67, 0.2) !important;
+  color: #f5d78c !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 0 1px rgba(212, 168, 67, 0.2), inset 0 0 12px rgba(212, 168, 67, 0.07) !important;
+}
+
+.model-tag-check {
+  font-size: 11px;
+  font-weight: 900;
+  color: #d4a843;
+  flex-shrink: 0;
+}
+
+/* ── Barra de progresso / bubbles ─────────────────── */
+.model-step-bubbles {
+  display: flex;
+  margin-top: 14px;
+  overflow-x: auto;
+  gap: 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-snap-type: x mandatory;
+}
+
+.model-step-bubbles::-webkit-scrollbar {
+  display: none;
+}
+
+.model-step-bubbles > div {
+  scroll-snap-align: center;
+}
+
+/* Em telas pequenas, esconde os labels para as bolhas não transbordem */
+@media (max-width: 520px) {
+  .model-step-label {
+    display: none !important;
+  }
+  .model-step-bubbles > div {
+    min-width: 36px !important;
+    flex: 0 0 36px !important;
+  }
+}
+
+/* Label de subseção dentro das etapas */
+.model-subsection-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin: 0 0 8px;
+}
+
+/* ── Campos de contato especiais ─────────────────── */
+.whatsapp-field,
+.instagram-field,
+.money-field {
+  display: flex;
+  align-items: center;
+  background: #0b1420;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.whatsapp-field:focus-within,
+.instagram-field:focus-within,
+.money-field:focus-within {
+  border-color: rgba(212, 168, 67, 0.55);
+}
+
+.whatsapp-prefix {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px;
+  color: #64748b;
+  font-size: 12px;
+  white-space: nowrap;
+  border-right: 1px solid #1e293b;
+  height: 100%;
+  min-height: 46px;
+}
+
+.whatsapp-prefix strong {
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.whatsapp-field input,
+.instagram-field input,
+.money-field input {
+  flex: 1 !important;
+  padding: 12px 14px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  color: #f1f5f9 !important;
+  font-size: 14px !important;
+  outline: none !important;
+  min-height: auto !important;
+  box-shadow: none !important;
+  width: 100% !important;
+}
+
+.instagram-field span,
+.money-field span {
+  padding: 0 12px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
+  border-right: 1px solid #1e293b;
+  white-space: nowrap;
+}
+
