@@ -47,9 +47,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isPublicPropertyDraft = pathname === ACCOUNT_ROUTES.onboardingAnfitriao;
   const isClientArea = pathname === ACCOUNT_ROUTES.dashboardCliente || pathname.startsWith(`${ACCOUNT_ROUTES.dashboardCliente}/`);
   const isProfessionalArea = pathname === ACCOUNT_ROUTES.dashboardAcompanhante || pathname.startsWith(`${ACCOUNT_ROUTES.dashboardAcompanhante}/`);
+  const isProfessionalOnboarding = pathname === ACCOUNT_ROUTES.onboardingAcompanhante || pathname.startsWith(`${ACCOUNT_ROUTES.onboardingAcompanhante}/`);
+  const showProfessionalChrome = isProfessionalArea && !isProfessionalOnboarding;
   const isHostArea = pathname === ACCOUNT_ROUTES.dashboardAnfitriao || pathname.startsWith(`${ACCOUNT_ROUTES.dashboardAnfitriao}/`);
   const isAdminArea = pathname === "/admin" || pathname.startsWith("/admin/");
   const roleAreaClass = isProfessionalArea ? "professional" : isHostArea ? "host" : isAdminArea ? "admin" : "";
+  const layoutClass = roleAreaClass
+    ? `${roleAreaClass}-layout relative flex min-h-screen flex-col ${isProfessionalOnboarding ? "" : "md:ml-[280px]"}`
+    : `relative flex min-h-screen flex-col ${isProfessionalOnboarding ? "" : "md:ml-[280px]"}`;
 
   useEffect(() => {
     if (status === "unauthenticated" && !isPublicPropertyDraft) {
@@ -82,12 +87,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className={roleAreaClass ? `${roleAreaClass}-shell min-h-screen overflow-x-hidden bg-[#050506] text-white` : "min-h-screen overflow-x-hidden bg-[#050506] text-white"}>
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,168,67,0.10),transparent_34%)]" />
 
-      <DashSidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      {isProfessionalOnboarding ? null : <DashSidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />}
 
-      <div className={roleAreaClass ? `${roleAreaClass}-layout relative flex min-h-screen flex-col md:ml-[280px]` : "relative flex min-h-screen flex-col md:ml-[280px]"}>
-        {isProfessionalArea ? (
+      <div className={layoutClass}>
+        {showProfessionalChrome ? (
           <ProfessionalTopHeader onMenuClick={() => setSidebarOpen(true)} />
-        ) : (
+        ) : isProfessionalOnboarding ? null : (
         <header className={roleAreaClass ? `${roleAreaClass}-header sticky top-0 z-30 border-b border-white/10 bg-[#050506]/72 px-4 py-3 backdrop-blur-2xl sm:px-6 md:px-8` : "sticky top-0 z-30 border-b border-white/10 bg-[#050506]/72 px-4 py-3 backdrop-blur-2xl sm:px-6 md:px-8"}>
           <div className="flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
@@ -145,7 +150,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
 
       </div>
-      {isProfessionalArea ? <ProfessionalBottomNav /> : null}
+      {showProfessionalChrome ? <ProfessionalBottomNav /> : null}
       <style>{`
         .dashboard-content {
           animation: dashboard-fade-in 180ms ease-out both;
@@ -203,12 +208,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
         .host-content {
           width: 100%;
-          max-width: 430px !important;
+          max-width: 1180px !important;
           margin: 0 auto;
         }
         .host-content > div {
           width: 100%;
-          max-width: 430px !important;
+          max-width: 1180px !important;
           margin-left: auto;
           margin-right: auto;
         }
@@ -342,7 +347,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         @media (min-width: 768px) {
           .host-content,
           .host-content > div {
-            max-width: 760px !important;
+            max-width: 1180px !important;
           }
           .host-content [style*="repeat(auto-fit"] {
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;

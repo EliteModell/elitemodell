@@ -22,6 +22,7 @@ export async function isApprovedProfessional(user: PropertyAccessUser | null | u
     where: { id: user.id },
     select: {
       accountType: true,
+      clientProfile: { select: { id: true } },
       professional: { select: { status: true, verified: true } },
     },
   });
@@ -37,6 +38,11 @@ export async function isApprovedProfessional(user: PropertyAccessUser | null | u
 export async function canViewApprovedProperties(user: PropertyAccessUser | null | undefined) {
   if (!user?.id) return false;
   if (user.role === "ADMIN") return true;
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { accountType: true, clientProfile: { select: { id: true } } },
+  });
+  if (dbUser?.clientProfile || dbUser?.accountType === "client") return true;
   return isApprovedProfessional(user);
 }
 

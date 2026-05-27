@@ -1,30 +1,31 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
+import { isHostAccountType } from "@/lib/account-routes";
 import { AdminHeader, AdminPanel, AdminTable, StatusPill, adminColors, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
 
 const statusLabel: Record<string, string> = {
   DRAFT: "Rascunho",
-  PENDING_REVIEW: "Pendente aprovacao",
+  PENDING_REVIEW: "Pendente de análise",
   ACTIVE: "Aprovado",
-  INACTIVE: "Oculto/Suspenso",
+  INACTIVE: "Pausado",
   REJECTED: "Reprovado",
 };
 
 const statusFilterLabel: Record<string, string> = {
-  DRAFT: "Rascunho do imovel",
-  PENDING_REVIEW: "Pendente aprovacao",
-  ACTIVE: "Aprovado (imovel)",
-  INACTIVE: "Oculto/Suspenso",
+  DRAFT: "Rascunho do imóvel",
+  PENDING_REVIEW: "Pendente de análise",
+  ACTIVE: "Aprovado",
+  INACTIVE: "Pausado",
   REJECTED: "Reprovado",
 };
 
-function hostStatus(host: { blocked: boolean; hostProfile: { id: string } | null }) {
+function hostStatus(host: { blocked: boolean; accountType: string }) {
   if (host.blocked) return "SUSPENSO";
-  if (host.hostProfile) return "APROVADO";
-  return "PENDENTE_APROVACAO";
+  if (isHostAccountType(host.accountType)) return "CADASTRADO";
+  return "PENDENTE";
 }
 
 function statusTone(status: string): "neutral" | "warning" | "success" | "danger" {
@@ -44,7 +45,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams?
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     take: 100,
     include: {
-      host: { select: { id: true, name: true, email: true, phone: true, blocked: true, hostProfile: { select: { id: true } } } },
+      host: { select: { id: true, name: true, email: true, phone: true, blocked: true, accountType: true } },
       photos: { orderBy: { order: "asc" } },
       amenities: true,
     },
@@ -66,11 +67,11 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams?
             <tr>
               <th style={thStyle}>Foto</th>
               <th style={thStyle}>Local</th>
-              <th style={thStyle}>Anfitriao</th>
-              <th style={thStyle}>Status anfitriao</th>
-              <th style={thStyle}>Status imovel</th>
+              <th style={thStyle}>Anfitrião</th>
+              <th style={thStyle}>Status anfitrião</th>
+              <th style={thStyle}>Status imóvel</th>
               <th style={thStyle}>Dados</th>
-              <th style={thStyle}>Revisao</th>
+              <th style={thStyle}>Revisão</th>
             </tr>
           </thead>
           <tbody>
@@ -107,13 +108,13 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams?
                   </td>
                   <td style={tdStyle}>{property.host.name ?? "Sem nome"}<br />{property.host.email}<br />{property.host.phone ?? "-"}</td>
                   <td style={tdStyle}>
-                    <StatusPill tone={currentHostStatus === "APROVADO" ? "success" : currentHostStatus === "SUSPENSO" ? "danger" : "warning"}>
+                    <StatusPill tone={currentHostStatus === "CADASTRADO" ? "success" : currentHostStatus === "SUSPENSO" ? "danger" : "warning"}>
                       {currentHostStatus}
                     </StatusPill>
                   </td>
                   <td style={tdStyle}><StatusPill tone={statusTone(property.status)}>{statusLabel[property.status] ?? property.status}</StatusPill></td>
                   <td style={tdStyle}>
-                    R$ {property.pricePerNight.toLocaleString("pt-BR")}/periodo<br />
+                    R$ {property.pricePerNight.toLocaleString("pt-BR")}/período<br />
                     {property.bedrooms} quarto(s), {property.bathrooms} banheiro(s)<br />
                     {property.amenities.length} comodidade(s)
                   </td>
@@ -125,7 +126,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams?
                 </tr>
               );
             })}
-            {!properties.length ? <tr><td style={tdStyle} colSpan={7}>Nenhum imovel encontrado.</td></tr> : null}
+            {!properties.length ? <tr><td style={tdStyle} colSpan={7}>Nenhum imóvel encontrado.</td></tr> : null}
           </tbody>
         </AdminTable>
       </AdminPanel>

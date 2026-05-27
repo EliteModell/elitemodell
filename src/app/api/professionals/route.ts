@@ -207,7 +207,14 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
 
-  if (session.user.role !== "HOST" && session.user.role !== "ADMIN") {
+  const canManageProfessional =
+    session.user.role === "ADMIN" ||
+    session.user.activeProfileType === "PROFESSIONAL" ||
+    session.user.accountType === "model" ||
+    session.user.accountType === "professional" ||
+    session.user.isProfessional;
+
+  if (!canManageProfessional) {
     return NextResponse.json({ error: "Apenas anunciantes podem criar perfil profissional." }, { status: 403 });
   }
 

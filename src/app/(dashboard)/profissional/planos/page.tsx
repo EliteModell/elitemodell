@@ -38,7 +38,7 @@ const PLANS: Plan[] = [
     badge: "Exclusivo",
     points: 4000,
     pointsColor: "#ff6b35",
-    description: "Impulso rapido para aparecer acima de perfis comuns por tempo limitado.",
+    description: "Impulso rápido para aparecer acima de perfis comuns por tempo limitado.",
     features: ["Perfil impulsionado", "Destaque temporário", "Mais prioridade na listagem", "Galeria em evidência"],
     prices: [{ label: "1 hora", key: "hora", value: 6.9 }],
     cta: "Comprar já",
@@ -157,7 +157,7 @@ const PLANS: Plan[] = [
     cta: "Comprar já",
     ctaColor: "#22c55e",
     topColor: "#166534",
-    note: "Apos pagamento aprovado, o perfil fica com telefone liberado conforme regras da plataforma.",
+    note: "Após pagamento aprovado, o perfil fica com telefone liberado conforme regras da plataforma.",
   },
   {
     id: "ocultar-idade",
@@ -225,7 +225,7 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
         setError("Pagamento não confirmado.");
         setStage("failed");
       } else {
-        setMessage("Pagamento ainda pendente. Assim que confirmar, o plano sera ativado.");
+        setMessage("Pagamento ainda pendente. Assim que confirmar, o plano será ativado.");
       }
     } catch {
       setMessage("Não foi possível verificar agora. Tente novamente em instantes.");
@@ -263,7 +263,14 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
       });
       const data = await res.json();
       if (!res.ok) {
+        console.error("[professional-plans-checkout]", data);
         setError(data.error || "Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte.");
+        setStage("failed");
+        return;
+      }
+      if (!data.copyPaste && !data.qrCode && !data.qrCodeBase64) {
+        console.error("[professional-plans-checkout] resposta sem QR Code Pix", data);
+        setError("Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte.");
         setStage("failed");
         return;
       }
@@ -272,7 +279,8 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
       setQrCodeBase64(data.qrCodeBase64 || null);
       setMessage(data.message || null);
       setStage("waiting");
-    } catch {
+    } catch (err) {
+      console.error("[professional-plans-checkout]", err);
       setError("Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte.");
       setStage("failed");
     }
@@ -293,7 +301,7 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
             <div>
               <p style={{ margin: "0 0 5px", color: GOLD, fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>Checkout seguro</p>
               <h2 style={{ margin: 0, color: "#f8fafc", fontSize: 22, fontWeight: 900 }}>{selection.plan.name}</h2>
-              <p style={{ margin: "6px 0 0", color: "#94a3b8", fontSize: 13 }}>{selection.price.label} - ativacao apos pagamento aprovado</p>
+              <p style={{ margin: "6px 0 0", color: "#94a3b8", fontSize: 13 }}>{selection.price.label} - ativação após pagamento aprovado</p>
             </div>
             <button type="button" onClick={onClose} style={{ width: 34, height: 34, borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "#fff", cursor: "pointer" }}>x</button>
           </div>
@@ -320,7 +328,7 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
                   <p style={{ margin: "0 0 10px", color: "#94a3b8", fontSize: 12 }}>Use o Pix copia e cola abaixo:</p>
                   <div style={{ wordBreak: "break-all", background: "#05070a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: 10, color: "#94a3b8", fontSize: 11, textAlign: "left" }}>{qrCode.length > 120 ? `${qrCode.slice(0, 120)}...` : qrCode}</div>
                   <button type="button" onClick={copyPix} style={{ ...primaryButtonStyle, marginTop: 12 }}>Copiar código Pix</button>
-                  <button type="button" onClick={verifyPayment} style={secondaryButtonStyle}>Ja paguei / verificar pagamento</button>
+                  <button type="button" onClick={verifyPayment} style={secondaryButtonStyle}>Já paguei / verificar pagamento</button>
                 </>
               ) : (
                 <p style={{ margin: 0, color: "#94a3b8", fontSize: 13, lineHeight: 1.6 }}>Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte.</p>
@@ -339,7 +347,7 @@ function PlanCheckout({ selection, onClose }: { selection: { plan: Plan; price: 
             <div style={{ textAlign: "center" }}>
               <h3 style={{ color: "#ef4444", margin: "8px 0", fontSize: 20 }}>Não foi possível concluir</h3>
               <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.6 }}>{error || "Tente novamente ou revise as credenciais de pagamento."}</p>
-              <button type="button" onClick={() => setStage("idle")} style={primaryButtonStyle}>Tentar novamente</button>
+              <button type="button" onClick={createPix} style={primaryButtonStyle}>Tentar novamente</button>
             </div>
           )}
         </div>
@@ -477,7 +485,7 @@ function PlanCard({
         )}
 
         <div style={{ padding: "11px 12px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 10, color: GOLD, fontSize: 12, lineHeight: 1.5, marginBottom: 12, fontWeight: 800 }}>
-          Ativacao automatica apos confirmacao do pagamento.
+          Ativação automática após confirmação do pagamento.
         </div>
         {plan.note && <p style={{ margin: "0 0 12px", color: "#94a3b8", fontSize: 12, lineHeight: 1.6 }}>{plan.note}</p>}
 
@@ -520,20 +528,7 @@ export default function PlanosPage() {
         <h1 style={{ fontSize: "clamp(26px, 5vw, 40px)", fontWeight: 950, color: "#f8fafc", margin: 0, lineHeight: 1.05 }}>
           Planos, destaques e pagamentos
         </h1>
-        <p style={{ color: "#94a3b8", lineHeight: 1.6, margin: "12px 0 0" }}>Todo botao de compra agora abre checkout real ou informa claramente o que falta configurar.</p>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
-        {[
-          ["Pedidos", "Pix real"],
-          ["Provedor", "Asaas"],
-          ["Carrinho", "Removido"],
-        ].map(([label, value]) => (
-          <div key={label} style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, padding: "14px 10px", textAlign: "center" }}>
-            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 5, fontWeight: 800, textTransform: "uppercase" }}>{label}</div>
-            <div style={{ fontSize: 15, fontWeight: 900, color: GOLD }}>{value}</div>
-          </div>
-        ))}
+        <p style={{ color: "#94a3b8", lineHeight: 1.6, margin: "12px 0 0" }}>Escolha como destacar seu perfil e acompanhe a ativação após a confirmação do pagamento.</p>
       </div>
 
       <div style={{ display: "flex", gap: 0, marginBottom: 24, background: "#060e1b", borderRadius: 12, padding: 4, border: `1px solid ${GOLD_DIM}` }}>
@@ -548,7 +543,7 @@ export default function PlanosPage() {
         <>
           <div style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 14, padding: "18px 20px", marginBottom: 24 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 900, color: "#f1f5f9", margin: 0 }}>Meus planos e beneficios</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 900, color: "#f1f5f9", margin: 0 }}>Meus planos e benefícios</h3>
               <span style={{ fontSize: 11, color: "#94a3b8" }}>Sem toggles falsos</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -595,7 +590,7 @@ export default function PlanosPage() {
               return (
                 <button key={plan.id} type="button" onClick={() => setCheckout({ plan, price: monthly })} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", textAlign: "left", padding: 16, background: "#060e1b", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, cursor: "pointer" }}>
                   <span style={{ color: "#f8fafc", fontWeight: 900 }}>{plan.name}</span>
-                  <span style={{ color: GOLD, fontWeight: 900 }}>R$ {fmt(monthly.value)}/mes</span>
+                  <span style={{ color: GOLD, fontWeight: 900 }}>R$ {fmt(monthly.value)}/mês</span>
                 </button>
               );
             })}

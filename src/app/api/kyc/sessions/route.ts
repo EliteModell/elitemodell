@@ -39,10 +39,27 @@ function friendlyUnavailableResponse(reason: string, status = 503) {
   );
 }
 
+function canUseProfessionalKyc(session: {
+  user: {
+    role?: string | null;
+    activeProfileType?: string | null;
+    accountType?: string | null;
+    isProfessional?: boolean | null;
+  };
+}) {
+  return Boolean(
+    session.user.role === "ADMIN" ||
+      session.user.activeProfileType === "PROFESSIONAL" ||
+      session.user.accountType === "model" ||
+      session.user.accountType === "professional" ||
+      session.user.isProfessional,
+  );
+}
+
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
-  if (session.user.role !== "HOST" && session.user.role !== "ADMIN") {
+  if (!canUseProfessionalKyc(session)) {
     return NextResponse.json({ error: "Apenas anunciantes podem iniciar biometria." }, { status: 403 });
   }
 
@@ -63,7 +80,7 @@ export async function GET() {
 export async function POST() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
-  if (session.user.role !== "HOST" && session.user.role !== "ADMIN") {
+  if (!canUseProfessionalKyc(session)) {
     return NextResponse.json({ error: "Apenas anunciantes podem iniciar biometria." }, { status: 403 });
   }
 

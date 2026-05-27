@@ -30,17 +30,17 @@ export async function PATCH(
       id: true,
       hostId: true,
       status: true,
-      host: { select: { blocked: true, hostProfile: { select: { id: true } } } },
+      host: { select: { blocked: true, accountType: true } },
     },
   });
 
   if (!property) {
-    return NextResponse.json({ error: "Imovel nao encontrado." }, { status: 404 });
+    return NextResponse.json({ error: "Imóvel não encontrado." }, { status: 404 });
   }
 
-  if (body.action === "approve" && (property.host.blocked || !property.host.hostProfile)) {
+  if (body.action === "approve" && property.host.blocked) {
     return NextResponse.json(
-      { error: "Aprove o anfitriao antes de aprovar o imovel." },
+      { error: "O anfitrião está bloqueado. Desbloqueie a conta antes de aprovar o imóvel." },
       { status: 409 },
     );
   }
@@ -50,10 +50,24 @@ export async function PATCH(
     body.action === "suspend" ? "INACTIVE" :
     "REJECTED";
 
-  await prisma.property.update({
-    where: { id: property.id },
-    data: { status: nextStatus },
-    select: { id: true },
+  await prisma.$transaction(async (tx) => {
+    await tx.property.update({
+      where: { id: property.id },
+      data: { status: nextStatus },
+      select: { id: true },
+    });
+
+    if (body.action === "approve") {
+      await tx.user.update({
+        where: { id: property.hostId },
+        data: { accountType: "host", blockReason: null },
+      });
+      await tx.hostProfile.upsert({
+        where: { userId: property.hostId },
+        create: { userId: property.hostId },
+        update: {},
+      });
+    }
   });
 
   await logAudit({
@@ -66,7 +80,8 @@ export async function PATCH(
       previousStatus: property.status,
       newStatus: nextStatus,
       hostId: property.hostId,
-      hostApprovedAtReview: Boolean(property.host.hostProfile && !property.host.blocked),
+      hostBlockedAtReview: property.host.blocked,
+      hostAccountTypeAtReview: property.host.accountType,
     },
   });
 

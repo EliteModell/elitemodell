@@ -7,6 +7,8 @@ import { isAgeOfMajority } from "@/lib/age-validation";
 import { verifyCaptcha } from "@/lib/captcha";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
+import { ensureProfileForIntent } from "@/lib/account-profiles";
+import type { EntryAccountRole } from "@/lib/account-routes";
 
 const schema = z.object({
   accessToken: z.string(),
@@ -18,6 +20,22 @@ const schema = z.object({
   captchaToken: z.string().optional(),
 });
 
+function publicAccountType(accountType: "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST" | undefined) {
+  if (accountType === "PROFESSIONAL") return "model";
+  if (accountType === "PROPERTY_HOST") return "host";
+  return "client";
+}
+
+function roleIntentFor(accountType: "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST" | undefined): EntryAccountRole {
+  if (accountType === "PROFESSIONAL") return "profissional";
+  if (accountType === "PROPERTY_HOST") return "anfitriao";
+  return "cliente";
+}
+
+function legacyRoleFor(accountType: "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST" | undefined) {
+  return accountType === "PROFESSIONAL" ? "HOST" : "GUEST";
+}
+
 export async function POST(req: NextRequest) {
   const requestIp = getClientIP(req);
   const limited = await enforceRateLimitAsync(`register:${requestIp}`, 20, 60 * 60 * 1000, "Muitas tentativas de cadastro. Tente novamente mais tarde.");
@@ -26,12 +44,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { accessToken, accountType, category, birthDate, lgpdConsent, termsConsent, captchaToken } = schema.parse(body);
-    const publicAccountType = accountType === "PROFESSIONAL" ? "model" : "client";
+    const profileIntent = roleIntentFor(accountType);
+    const targetAccountType = publicAccountType(accountType);
 
     const captcha = await verifyCaptcha(captchaToken ?? req.headers.get("x-captcha-token") ?? "", requestIp);
     if (!captcha.success) {
       console.warn("[register] CAPTCHA bloqueou cadastro", { providerError: captcha.error, ip: requestIp });
-      return NextResponse.json({ error: "Nao foi possivel validar a protecao anti-spam. Tente novamente." }, { status: 403 });
+      return NextResponse.json({ error: "Não foi possível validar a proteção anti-spam. Tente novamente." }, { status: 403 });
     }
 
     const supabase = createSupabaseServerClient();
@@ -45,7 +64,7 @@ export async function POST(req: NextRequest) {
     const email = authUser.email ?? (phone ? `phone_${phone}@sms.elitemodell.local` : null);
 
     if (!email) {
-      return NextResponse.json({ error: "Email ou telefone não encontrado" }, { status: 400 });
+      return NextResponse.json({ error: "E-mail ou telefone não encontrado." }, { status: 400 });
     }
 
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -53,69 +72,37 @@ export async function POST(req: NextRequest) {
     const birthDateIsValid = birthDate ? isAgeOfMajority(birthDate) : Boolean(existing?.birthDate);
 
     if (!hasBirthDate || !birthDateIsValid) {
-      return NextResponse.json(
-        { error: "Você deve ter 18 anos ou mais para se registrar" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Você deve ter 18 anos ou mais para se registrar." }, { status: 400 });
     }
 
     if (!(lgpdConsent || existing?.lgpdConsent) || !(termsConsent || existing?.termsConsent)) {
-      return NextResponse.json(
-        { error: "Você deve aceitar os Termos de Uso e Política de Privacidade" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Você deve aceitar os Termos de Uso e a Política de Privacidade." }, { status: 400 });
     }
 
     if (existing) {
-      // Segurança: nunca alterar role/accountType/category de conta existente.
-      // Evita que um cliente se autopromova a modelo/anfitrião via parâmetro.
-      // Upgrades legítimos devem usar endpoints dedicados com verificação adicional.
-      const isProtectedAccount = existing.role === "ADMIN" ||
-        existing.accountType === "model" ||
-        existing.accountType === "host";
-
-      if (isProtectedAccount && existing.accountType !== publicAccountType) {
-        // Conta já tem tipo definido — retorna sucesso sem alterar tipo
-        return NextResponse.json(
-          { id: existing.id, name: existing.name, email: existing.email, role: existing.role },
-          { status: 200 }
-        );
-      }
-
       const user = await prisma.user.update({
         where: { id: existing.id },
         data: {
           name: existing.name ?? (authUser.user_metadata?.name as string | undefined) ?? null,
           image: existing.image ?? (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
           phone: existing.phone ?? phone ?? null,
-          // Preserva role e accountType originais — não permite mudança via request
-          role: existing.role,
-          accountType: existing.accountType,
-          category: existing.category ?? category,
+          accountType: targetAccountType === "client" ? existing.accountType : targetAccountType,
+          role: existing.role === "ADMIN" ? "ADMIN" : targetAccountType === "model" ? "HOST" : existing.role,
+          category: targetAccountType === "model" ? category ?? existing.category : existing.category,
           birthDate: birthDate ? new Date(birthDate) : existing.birthDate,
           lgpdConsent: existing.lgpdConsent || lgpdConsent,
           termsConsent: existing.termsConsent || termsConsent,
           consentDate: existing.consentDate ?? new Date(),
         },
-        select: { id: true, name: true, email: true, role: true },
+        select: { id: true, name: true, email: true, role: true, accountType: true },
       });
 
-      if (existing.role === "HOST" && existing.accountType === "model") {
-        await prisma.hostProfile.upsert({
-          where: { userId: existing.id },
-          create: { userId: existing.id },
-          update: {},
-        });
-      }
-
+      await ensureProfileForIntent(user.id, profileIntent, category);
       return NextResponse.json(user, { status: 200 });
     }
 
     if (!birthDate) {
-      return NextResponse.json(
-        { error: "Você deve ter 18 anos ou mais para se registrar" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Você deve ter 18 anos ou mais para se registrar." }, { status: 400 });
     }
 
     const user = await prisma.user.create({
@@ -124,17 +111,19 @@ export async function POST(req: NextRequest) {
         name: (authUser.user_metadata?.name as string | undefined) ?? authUser.email ?? phone ?? null,
         image: (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
         phone: phone ?? null,
-        role: "GUEST",
-        accountType: publicAccountType,
-        category: category ?? null,
+        role: legacyRoleFor(accountType),
+        accountType: targetAccountType,
+        category: targetAccountType === "model" ? category ?? null : null,
         birthDate: new Date(birthDate),
         lgpdConsent,
         termsConsent,
         consentDate: new Date(),
+        clientProfile: { create: {} },
       },
-      select: { id: true, name: true, email: true, role: true },
+      select: { id: true, name: true, email: true, role: true, accountType: true },
     });
 
+    await ensureProfileForIntent(user.id, profileIntent, category);
     return NextResponse.json(user, { status: 201 });
   } catch (err) {
     if (err instanceof z.ZodError) {

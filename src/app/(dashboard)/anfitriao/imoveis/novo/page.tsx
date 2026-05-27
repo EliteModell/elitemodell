@@ -584,7 +584,7 @@ export default function NovoImovelPage() {
       router.push("/");
       return;
     }
-    router.push(ACCOUNT_ROUTES.dashboardCliente);
+    router.push(ACCOUNT_ROUTES.verificacaoAnfitriao);
   }
 
   function discardDraft() {

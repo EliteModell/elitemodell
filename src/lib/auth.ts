@@ -5,6 +5,7 @@ import { verifyPhoneAuthToken } from "./phone-otp";
 import { createSupabaseServerClient } from "./supabase-server";
 import { checkRateLimitAsync } from "./rate-limit";
 import { getHostRegistrationStatus, normalizeEntryRole } from "./account-routes";
+import { deriveAvailableProfiles, ensureProfileForIntent, profileTypeFromIntent } from "./account-profiles";
 
 function accountTypeFromRoleIntent(roleIntent: ReturnType<typeof normalizeEntryRole>) {
   if (roleIntent === "profissional") return "model";
@@ -78,15 +79,16 @@ export const authOptions: NextAuthOptions = {
               phone: true,
               emailVerified: true,
               role: true,
+              accountType: true,
+              clientProfile: { select: { id: true } },
+              hostProfile: { select: { id: true } },
+              professional: { select: { id: true } },
+              properties: { select: { status: true } },
               blocked: true,
             },
           });
 
           if (!user) {
-            if (!isGoogleAuth && (!birthDate || !hasConsent)) {
-              return null;
-            }
-
             const metadataAccountType =
               intentAccountType ??
               (metadata.accountType === "PROFESSIONAL"
@@ -117,6 +119,22 @@ export const authOptions: NextAuthOptions = {
                 termsConsent: hasConsent,
                 consentDate: hasConsent ? new Date() : null,
                 ...(metadataClientStatus ? { clientStatus: metadataClientStatus, kycReviewedAt: new Date() } : {}),
+                clientProfile: { create: { displayName: metadataName } },
+              },
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+                phone: true,
+                emailVerified: true,
+                role: true,
+                accountType: true,
+                clientProfile: { select: { id: true } },
+                hostProfile: { select: { id: true } },
+                professional: { select: { id: true } },
+                properties: { select: { status: true } },
+                blocked: true,
               },
             });
 
@@ -146,12 +164,37 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
+          const activeProfileType = await ensureProfileForIntent(
+            user.id,
+            roleIntent,
+            typeof metadata.category === "string" ? metadata.category : null,
+          );
+          const refreshedUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+              role: true,
+              accountType: true,
+              clientProfile: { select: { id: true } },
+              hostProfile: { select: { id: true } },
+              professional: { select: { id: true } },
+              properties: { select: { status: true } },
+            },
+          });
+          const availableProfiles = refreshedUser ? deriveAvailableProfiles(refreshedUser) : [activeProfileType];
+
           return {
             id: user.id,
-            name: user.name ?? metadataName,
+            name: refreshedUser?.name ?? user.name ?? metadataName,
             email: user.email,
-            image: user.image ?? metadataImage,
-            role: user.role,
+            image: refreshedUser?.image ?? user.image ?? metadataImage,
+            role: refreshedUser?.role ?? user.role,
+            accountType: refreshedUser?.accountType ?? user.accountType,
+            activeProfileType,
+            availableProfiles,
           };
         } catch (err) {
           console.error("[AUTH] Erro no authorize supabase:", err);
@@ -181,9 +224,14 @@ export const authOptions: NextAuthOptions = {
             email: true,
             image: true,
             role: true,
+            accountType: true,
             phone: true,
             phoneVerified: true,
             phoneVerifiedAt: true,
+            clientProfile: { select: { id: true } },
+            hostProfile: { select: { id: true } },
+            professional: { select: { id: true } },
+            properties: { select: { status: true } },
             blocked: true,
           },
         });
@@ -198,6 +246,9 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           image: user.image,
           role: user.role,
+          accountType: user.accountType,
+          activeProfileType: user.accountType === "host" ? "HOST" : user.accountType === "model" ? "PROFESSIONAL" : "CLIENTE",
+          availableProfiles: deriveAvailableProfiles(user),
         };
       },
     }),
@@ -210,6 +261,9 @@ export const authOptions: NextAuthOptions = {
         token.name = user.name;
         token.email = user.email;
         token.picture = user.image;
+        token.accountType = user.accountType;
+        token.activeProfileType = user.activeProfileType ?? profileTypeFromIntent(null);
+        token.availableProfiles = user.availableProfiles ?? ["CLIENTE"];
       }
       if (token.id) {
         try {
@@ -222,6 +276,8 @@ export const authOptions: NextAuthOptions = {
               role: true,
               accountType: true,
               clientStatus: true,
+              clientProfile: { select: { id: true } },
+              hostProfile: { select: { id: true } },
               lgpdConsent: true,
               termsConsent: true,
               birthDate: true,
@@ -241,9 +297,13 @@ export const authOptions: NextAuthOptions = {
             token.role = dbUser.role;
             token.accountType = dbUser.accountType;
             token.clientStatus = dbUser.clientStatus;
-            token.isProfessional = !!dbUser.professional;
+            token.availableProfiles = deriveAvailableProfiles(dbUser);
+            token.isProfessional = !!dbUser.professional || token.availableProfiles.includes("PROFESSIONAL");
             token.needsConsent = !dbUser.lgpdConsent || !dbUser.termsConsent || !dbUser.birthDate;
             token.hostStatus = getHostRegistrationStatus(dbUser);
+            if (!token.activeProfileType || !token.availableProfiles.includes(token.activeProfileType)) {
+              token.activeProfileType = token.availableProfiles.includes("CLIENTE") ? "CLIENTE" : token.availableProfiles[0];
+            }
           }
         } catch (err) {
           console.error("[JWT] Erro ao buscar usuário no banco:", err);
@@ -263,6 +323,8 @@ export const authOptions: NextAuthOptions = {
         session.user.isProfessional = token.isProfessional ?? false;
         session.user.needsConsent = token.needsConsent ?? false;
         session.user.hostStatus = token.hostStatus as string | undefined;
+        session.user.activeProfileType = token.activeProfileType as string | undefined;
+        session.user.availableProfiles = token.availableProfiles as string[] | undefined;
       }
       return session;
     },

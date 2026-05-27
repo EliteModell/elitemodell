@@ -177,6 +177,7 @@ model User {
   referrals          Referral[]     @relation("ReferrerUser")
   referredBy         Referral?      @relation("ReferredUser")
   hostProfile        HostProfile?
+  clientProfile      ClientProfile?
   notifications      Notification[]
   professional       Professional?
   clientAppointments Appointment[]  @relation("ClientAppointments")
@@ -251,6 +252,17 @@ model HostProfile {
   updatedAt    DateTime @updatedAt
 
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ClientProfile {
+  id          String       @id @default(cuid())
+  userId      String       @unique
+  displayName String?
+  status      ClientStatus @default(UNVERIFIED)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {

@@ -2,22 +2,53 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireHostPanel } from "@/lib/account-access";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import { pauseProperty, submitPropertyForReview } from "@/lib/host-property-actions";
+import { PROPERTY_STATUS_DESCRIPTION, PROPERTY_STATUS_LABEL, propertyStatusTone } from "@/lib/property-status";
 
 export const dynamic = "force-dynamic";
 
-const statusLabel: Record<string, string> = {
-  DRAFT: "Rascunho",
-  PENDING_REVIEW: "Pendente aprovação",
-  ACTIVE: "Aprovado",
-  INACTIVE: "Oculto/Suspenso",
-  REJECTED: "Reprovado",
-};
+const GOLD = "#d4a843";
 
-function statusColor(status: string) {
-  if (status === "ACTIVE") return "#22c55e";
-  if (status === "REJECTED" || status === "INACTIVE") return "#ef4444";
-  if (status === "PENDING_REVIEW") return "#d4a843";
+function money(value: number | null | undefined) {
+  return `R$ ${(value ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+}
+
+function badgeColor(status: string) {
+  const tone = propertyStatusTone(status);
+  if (tone === "success") return "#22c55e";
+  if (tone === "danger") return "#ef4444";
+  if (tone === "paused") return "#60a5fa";
+  if (tone === "warning") return GOLD;
   return "#94a3b8";
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const color = badgeColor(status);
+  return (
+    <span style={{ border: `1px solid ${color}66`, background: `${color}14`, color, borderRadius: 999, padding: "6px 10px", fontSize: 11, fontWeight: 950 }}>
+      {PROPERTY_STATUS_LABEL[status] ?? status}
+    </span>
+  );
+}
+
+function ActionLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} style={{ minHeight: 38, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, borderRadius: 8, border: "1px solid rgba(212,168,67,0.24)", padding: "0 12px", color: "#f5d78c", textDecoration: "none", fontSize: 12, fontWeight: 900 }}>
+      {children}
+    </Link>
+  );
+}
+
+function ActionButton({ children }: { children: React.ReactNode }) {
+  return (
+    <button style={{ minHeight: 38, borderRadius: 8, border: "1px solid rgba(212,168,67,0.24)", background: "rgba(212,168,67,0.08)", color: "#f5d78c", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "0 12px", fontSize: 12, fontWeight: 900, cursor: "pointer" }}>
+      {children}
+    </button>
+  );
+}
+
+function IconMark({ children }: { children: React.ReactNode }) {
+  return <span aria-hidden="true" style={{ fontSize: 15, fontWeight: 950, lineHeight: 1 }}>{children}</span>;
 }
 
 export default async function ImoveisAnfitriaoPage() {
@@ -36,71 +67,94 @@ export default async function ImoveisAnfitriaoPage() {
   });
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
+    <div style={{ display: "grid", gap: 22 }}>
+      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
         <div>
-          <h1 style={{ color: "#fff", fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Meus espaços</h1>
-          <p style={{ color: "#777", margin: 0 }}>Acompanhe o status de aprovação de cada imóvel, quarto ou espaço reservado.</p>
+          <p style={{ margin: "0 0 8px", color: GOLD, fontSize: 11, fontWeight: 950, letterSpacing: 2.2, textTransform: "uppercase" }}>Portfólio de imóveis</p>
+          <h1 style={{ color: "#fff", fontSize: "clamp(28px, 5vw, 42px)", fontWeight: 950, margin: 0, lineHeight: 1.05 }}>Meus imóveis</h1>
+          <p style={{ color: "#b8b8b8", margin: "12px 0 0", maxWidth: 760 }}>Veja rascunhos, pendências, imóveis aprovados e pontos que precisam de correção.</p>
         </div>
-        <Link href={ACCOUNT_ROUTES.onboardingAnfitriao} style={{ minHeight: 42, display: "inline-flex", alignItems: "center", padding: "0 16px", borderRadius: 8, background: "#d4a843", color: "#060e1b", textDecoration: "none", fontWeight: 900 }}>
-          Cadastrar novo espaço
+        <Link href={ACCOUNT_ROUTES.onboardingAnfitriao} style={{ minHeight: 46, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 8, background: GOLD, color: "#070707", padding: "0 16px", textDecoration: "none", fontWeight: 950 }}>
+          <IconMark>+</IconMark> Cadastrar imóvel
         </Link>
-      </div>
+      </header>
 
       {properties.length === 0 ? (
-        <div style={{ border: "1px solid #222", borderRadius: 12, background: "#111", padding: 20 }}>
-          <p style={{ color: "#aaa", margin: "0 0 12px" }}>Nenhum imóvel cadastrado ainda.</p>
-          <Link href={ACCOUNT_ROUTES.onboardingAnfitriao} style={{ color: "#d4a843", textDecoration: "none", fontWeight: 800 }}>Cadastrar primeiro espaço</Link>
-        </div>
+        <section style={{ border: "1px dashed rgba(212,168,67,0.32)", borderRadius: 8, background: "rgba(255,255,255,0.03)", padding: 28, textAlign: "center" }}>
+          <div style={{ width: 58, height: 58, display: "grid", placeItems: "center", margin: "0 auto 14px", borderRadius: 8, color: GOLD, background: "rgba(212,168,67,0.10)", border: "1px solid rgba(212,168,67,0.22)" }}>
+            <IconMark>+</IconMark>
+          </div>
+          <h2 style={{ color: "#fff", margin: "0 0 8px", fontSize: 22 }}>Nenhum imóvel cadastrado ainda</h2>
+          <p style={{ color: "#9ca3af", margin: "0 auto 18px", maxWidth: 520, lineHeight: 1.7 }}>
+            Cadastre seu primeiro imóvel com fotos, endereço, regras e disponibilidade. Você pode salvar rascunho e continuar depois.
+          </p>
+          <Link href={ACCOUNT_ROUTES.onboardingAnfitriao} style={{ minHeight: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 8, background: GOLD, color: "#070707", padding: "0 16px", textDecoration: "none", fontWeight: 950 }}>
+            Cadastrar imóvel
+          </Link>
+        </section>
       ) : (
-        <div style={{ display: "grid", gap: 14 }}>
+        <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16 }}>
           {properties.map((property) => {
             const photo = property.photos[0]?.url;
-            const color = statusColor(property.status);
+            const canSendReview = ["DRAFT", "REJECTED", "INACTIVE"].includes(property.status);
+            const canPause = property.status === "ACTIVE";
             return (
-              <article key={property.id} style={{ display: "grid", gridTemplateColumns: "112px minmax(0, 1fr)", gap: 14, border: "1px solid #222", borderRadius: 12, background: "#111", padding: 12 }}>
+              <article key={property.id} style={{ overflow: "hidden", border: "1px solid rgba(212,168,67,0.18)", borderRadius: 8, background: "linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98))" }}>
                 <div
                   role="img"
                   aria-label={`Foto de ${property.title}`}
                   style={{
-                    width: 112,
-                    aspectRatio: "4 / 3",
-                    borderRadius: 8,
-                    background: photo ? `url(${photo}) center / cover` : "#0b0b0b",
-                    border: photo ? "1px solid #2a2620" : "1px dashed rgba(255,255,255,.18)",
-                    display: photo ? "block" : "grid",
+                    aspectRatio: "16 / 9",
+                    background: photo ? `url(${photo}) center / cover` : "linear-gradient(135deg, rgba(212,168,67,0.12), rgba(255,255,255,0.04))",
+                    display: "grid",
                     placeItems: "center",
-                    color: "#777",
-                    fontSize: 11,
+                    color: GOLD,
+                    borderBottom: "1px solid rgba(212,168,67,0.16)",
                   }}
                 >
-                  {photo ? null : "Sem foto"}
+                  {photo ? null : <IconMark>+</IconMark>}
                 </div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
-                    <h2 style={{ margin: 0, color: "#fff", fontSize: 17, lineHeight: 1.25 }}>{property.title || "Imóvel sem título"}</h2>
-                    <span style={{ border: `1px solid ${color}66`, color, borderRadius: 999, padding: "4px 8px", fontSize: 11, fontWeight: 900 }}>
-                      {statusLabel[property.status] ?? property.status}
-                    </span>
+
+                <div style={{ padding: 16, display: "grid", gap: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <h2 style={{ margin: 0, color: "#fff", fontSize: 19, lineHeight: 1.25, fontWeight: 950 }}>{property.title || "Imóvel sem título"}</h2>
+                      <p style={{ color: "#9ca3af", margin: "7px 0 0", fontSize: 13 }}>{[property.bairro, property.city, property.state].filter(Boolean).join(", ") || "Localização não informada"}</p>
+                    </div>
+                    <StatusBadge status={property.status} />
                   </div>
-                  <p style={{ color: "#aaa", margin: "0 0 8px", fontSize: 13 }}>
-                    {[property.bairro, property.city, property.state].filter(Boolean).join(", ") || "Localização não informada"}
+
+                  <p style={{ color: "#b8b8b8", margin: 0, fontSize: 13, lineHeight: 1.6 }}>
+                    {PROPERTY_STATUS_DESCRIPTION[property.status] ?? "Acompanhe o status deste imóvel."}
                   </p>
-                  <p style={{ color: "#777", margin: "0 0 12px", fontSize: 13 }}>
-                    R$ {property.pricePerNight.toLocaleString("pt-BR")}/período · {property.bedrooms} quarto(s) · {property.bathrooms} banheiro(s) · {property._count.bookings} reserva(s)
-                  </p>
-                  {property.status === "REJECTED" ? (
-                    <p style={{ color: "#ef4444", margin: "0 0 12px", fontSize: 12 }}>Seu espaço foi reprovado. Revise os dados e entre em contato com o suporte para reenviar.</p>
-                  ) : null}
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                    <div><span style={{ color: GOLD, fontSize: 11, fontWeight: 900 }}>Preço</span><strong style={{ display: "block", color: "#fff", fontSize: 13 }}>{money(property.pricePerNight)}</strong></div>
+                    <div><span style={{ color: GOLD, fontSize: 11, fontWeight: 900 }}>Fotos</span><strong style={{ display: "block", color: "#fff", fontSize: 13 }}>{property.photos.length}</strong></div>
+                    <div><span style={{ color: GOLD, fontSize: 11, fontWeight: 900 }}>Reservas</span><strong style={{ display: "block", color: "#fff", fontSize: 13 }}>{property._count.bookings}</strong></div>
+                  </div>
+
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <Link href={`/anfitriao/imoveis/${property.id}`} style={{ color: "#d4a843", textDecoration: "none", fontWeight: 800, fontSize: 13 }}>Ver detalhes</Link>
-                    {property.status !== "ACTIVE" ? <Link href={ACCOUNT_ROUTES.onboardingAnfitriao} style={{ color: "#aaa", textDecoration: "none", fontWeight: 700, fontSize: 13 }}>Cadastrar/editar novo envio</Link> : null}
+                    <ActionLink href={`/anfitriao/imoveis/${property.id}`}><IconMark>Ver</IconMark> Detalhes</ActionLink>
+                    <ActionLink href={`/anfitriao/imoveis/${property.id}/editar`}><IconMark>Ed</IconMark> Editar imóvel</ActionLink>
+                    {canSendReview ? (
+                      <form action={submitPropertyForReview}>
+                        <input type="hidden" name="id" value={property.id} />
+                        <ActionButton><IconMark>→</IconMark> Enviar para análise</ActionButton>
+                      </form>
+                    ) : null}
+                    {canPause ? (
+                      <form action={pauseProperty}>
+                        <input type="hidden" name="id" value={property.id} />
+                        <ActionButton><IconMark>||</IconMark> Pausar</ActionButton>
+                      </form>
+                    ) : null}
                   </div>
                 </div>
               </article>
             );
           })}
-        </div>
+        </section>
       )}
     </div>
   );

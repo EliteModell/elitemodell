@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
@@ -19,21 +20,29 @@ const createSchema = z.object({
   notes: z.string().optional(),
 });
 
+function isHostSession(session: { user: { accountType?: string | null; availableProfiles?: string[] | null } }) {
+  const accountType = (session.user.accountType ?? "").toLowerCase();
+  return accountType === "host" || accountType === "property_host" || session.user.availableProfiles?.includes("HOST") === true;
+}
+
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
-  if (!(await canCreatePropertyUseRequest(session.user))) {
+
+  const { searchParams } = new URL(req.url);
+  const status = searchParams.get("status");
+  const isHost = isHostSession(session);
+
+  if (session.user.role !== "ADMIN" && !isHost && !(await canCreatePropertyUseRequest(session.user))) {
     return NextResponse.json({ error: "Solicitações de uso de local são exclusivas para profissionais aprovadas." }, { status: 403 });
   }
 
-  const { searchParams } = new URL(req.url);
-  const role = session.user.role;
-  const status = searchParams.get("status");
-
   const where: Prisma.BookingWhereInput = {};
-  if (role === "GUEST") where.guestId = session.user.id;
-  if (role === "HOST") {
+  if (session.user.role === "ADMIN") {
+  } else if (isHost) {
     where.property = { hostId: session.user.id };
+  } else {
+    where.guestId = session.user.id;
   }
   if (status && Object.values(BookingStatus).includes(status as BookingStatus)) {
     where.status = status as BookingStatus;
@@ -54,6 +63,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  if (!(await canCreatePropertyUseRequest(session.user))) {
+    return NextResponse.json({ error: "Solicitações de uso de local são exclusivas para profissionais aprovadas." }, { status: 403 });
+  }
 
   try {
     const body = await req.json();
@@ -82,26 +94,21 @@ export async function POST(req: NextRequest) {
     if (data.guests > property.maxGuests) {
       return NextResponse.json({ error: `Este local aceita no máximo ${property.maxGuests} modelos por vez.` }, { status: 400 });
     }
-
     if (nights < property.minNights) {
       return NextResponse.json({ error: `Mínimo de ${property.minNights} período.` }, { status: 400 });
     }
 
-    // Check conflicts
     const conflict = await prisma.booking.findFirst({
       where: {
         propertyId: data.propertyId,
         status: { in: ["PENDING", "CONFIRMED"] },
-        OR: [
-          { checkIn: { lt: checkOut }, checkOut: { gt: checkIn } },
-        ],
+        OR: [{ checkIn: { lt: checkOut }, checkOut: { gt: checkIn } }],
       },
     });
     if (conflict) {
       return NextResponse.json({ error: "Local já possui solicitação confirmada neste período." }, { status: 409 });
     }
 
-    // Coupon
     let discount = 0;
     if (data.couponCode) {
       const coupon = await prisma.coupon.findUnique({ where: { code: data.couponCode } });
@@ -112,7 +119,7 @@ export async function POST(req: NextRequest) {
 
       if (coupon && coupon.active && !couponExpired && !couponLimitReached && !couponBelowMinimum) {
         discount = coupon.type === "PERCENTAGE" ? subtotal * (coupon.value / 100) : coupon.value;
-      } else if (data.couponCode) {
+      } else {
         return NextResponse.json({ error: "Cupom inválido ou expirado." }, { status: 400 });
       }
     }
@@ -157,4 +164,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });
   }
 }
-

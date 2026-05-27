@@ -40,8 +40,10 @@ export default function NavbarSessionControls({
   showGuestActions?: boolean;
 }) {
   const { data: session, status } = useSession();
-  const showLocations = canSeeLocations(session);
-  const accountHref = accountHomePathFromSession(session?.user);
+  const hasValidSession = status === "authenticated" && Boolean(session?.user?.id);
+  const safeSession = hasValidSession ? session : null;
+  const showLocations = canSeeLocations(safeSession);
+  const accountHref = accountHomePathFromSession(safeSession?.user);
 
   async function handleSignOut() {
     await supabaseAuth.auth.signOut();
@@ -76,7 +78,7 @@ export default function NavbarSessionControls({
             Locais
           </Link>
         ) : null}
-        {status === "loading" ? null : session ? (
+        {status === "loading" ? null : hasValidSession ? (
           <>
             <Link href={accountHref} onClick={onNavigate} style={{ padding: "10px 14px", borderRadius: 8, color: "#d4a843", textDecoration: "none", fontSize: 14, border: "1px solid rgba(212,168,67,0.2)" }}>
               Minha área
@@ -103,7 +105,7 @@ export default function NavbarSessionControls({
     return <span className="hidden h-9 w-[142px] rounded-[8px] border border-[rgba(212,168,67,0.14)] bg-white/[0.025] sm:block" aria-hidden="true" />;
   }
 
-  if (session) {
+  if (hasValidSession) {
     return (
       <>
         <Link className="nav-auth-link" href={accountHref} style={{ padding: "8px 18px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14, fontWeight: 500, border: "1px solid rgba(212,168,67,0.2)" }}>

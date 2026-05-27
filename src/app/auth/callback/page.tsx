@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { supabaseAuth } from "@/lib/supabase-client";
 import { ACCOUNT_ROUTES, hostPathForStatus, normalizeEntryRole, postLoginPathFromUser } from "@/lib/account-routes";
@@ -36,8 +36,6 @@ function safeInternalPath(value: string | null) {
 const PROFESSIONAL_CATEGORIES = ["MULHER", "HOMEM", "TRANS"];
 
 async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRole>) {
-  if (roleIntent === "profissional") return ACCOUNT_ROUTES.dashboardAcompanhante;
-
   const res = await fetch("/api/users/me", { cache: "no-store" });
   if (!res.ok) return fallbackPathForRoleIntent(roleIntent);
 
@@ -64,6 +62,13 @@ async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRol
   }
 
   return postLoginPathFromUser(user, roleIntent);
+}
+
+async function clearInvalidAuthState() {
+  clearRoleIntentStorage();
+  sessionStorage.removeItem("elitemodell_pending_registration");
+  await supabaseAuth.auth.signOut().catch(() => undefined);
+  await signOut({ redirect: false }).catch(() => undefined);
 }
 
 function fallbackPathForRoleIntent(roleIntent?: ReturnType<typeof normalizeEntryRole>) {
@@ -298,7 +303,7 @@ function CallbackCard({ message, success, error }: { message: string; success?: 
             textAlign: "left",
           }}>
             <p style={{ color: "#94a3b8", fontSize: 11, margin: "0 0 4px", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600 }}>
-              Código do erro
+              Mensagem
             </p>
             <p style={{ color: "#f87171", fontSize: 13, margin: 0, wordBreak: "break-all", fontFamily: "monospace" }}>
               {error}
@@ -458,15 +463,16 @@ function AuthCallbackContent() {
       }, 600);
     }
 
-    finishAuth().catch((err) => {
+    finishAuth().catch(async (err) => {
       if (!active) return;
       const rawMsg: string = err?.message ?? "Nao foi possivel finalizar o acesso.";
       const msg = rawMsg.includes("Sessao nao encontrada")
         ? "Nao foi possivel criar a sessao neste navegador. Abra o link novamente ou tente pelo botao de login."
         : rawMsg;
       console.error("[CALLBACK] Erro no login Google:", rawMsg);
-      setMessage("Erro ao finalizar o acesso");
-      setErrorDetail(msg);
+      await clearInvalidAuthState();
+      setMessage("Não foi possível concluir o login. Tente novamente ou use outro método.");
+      setErrorDetail("Confira sua conexão e tente novamente. Se continuar, use outro método de acesso.");
     });
 
     return () => {

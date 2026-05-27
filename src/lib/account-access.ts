@@ -8,6 +8,7 @@ import {
   ACCOUNT_ROUTES,
   getHostRegistrationStatus,
   hostPathForStatus,
+  isHostAccountType,
   isProfessionalCategory,
   postLoginPathFromUser,
 } from "@/lib/account-routes";
@@ -23,6 +24,8 @@ export async function getCurrentAccountAccess() {
       role: true,
       accountType: true,
       category: true,
+      clientProfile: { select: { id: true } },
+      hostProfile: { select: { id: true } },
       professional: { select: { id: true, status: true, rejectReason: true } },
       properties: {
         select: { id: true, title: true, status: true },
@@ -47,8 +50,8 @@ export async function getCurrentAccountAccess() {
     companionApproved: companionStatus === "ACTIVE" || companionStatus === "PAUSED",
     companionInReview: Boolean(companionStatus && companionStatus !== "ACTIVE" && companionStatus !== "PAUSED"),
     hostStatus,
-    hasHostRequest: user.properties.length > 0,
-    hasHostIntent: (user.role === "HOST" || user.accountType === "host") && !isCompanionIntent,
+    hasHostRequest: Boolean(user.hostProfile) || user.properties.length > 0,
+    hasHostIntent: (Boolean(user.hostProfile) || isHostAccountType(user.accountType)) && !isCompanionIntent,
     hostApproved: hostStatus === "APROVADO",
     hostInReview: hostStatus === "PENDENTE_APROVACAO",
     hostRejected: hostStatus === "REPROVADO",
@@ -81,8 +84,8 @@ export async function requireCompanionPanel() {
 export async function requireHostPanel() {
   const access = await requireAuthenticatedAccount();
   if (access.isAdmin) return access;
-  if (!access.hostApproved) {
-    redirect(hostPathForStatus(access.hostStatus));
-  }
+  if (access.hasHostRequest || access.hasHostIntent) return access;
+  if (access.hasCompanionRequest) redirect(access.postLoginPath);
+  redirect(hostPathForStatus(access.hostStatus));
   return access;
 }

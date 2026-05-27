@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import {
+  AsaasApiError,
   createAsaasCustomer,
   createAsaasPixPayment,
   getAsaasConfig,
@@ -30,6 +31,26 @@ function nextDueDate() {
   const date = new Date();
   date.setDate(date.getDate() + 1);
   return date.toISOString().slice(0, 10);
+}
+
+function logCheckoutError(err: unknown, context: Record<string, unknown>) {
+  const technical =
+    err instanceof AsaasApiError
+      ? {
+          name: err.name,
+          message: err.message,
+          status: err.status,
+          path: err.path,
+          details: err.details,
+        }
+      : err instanceof Error
+        ? { name: err.name, message: err.message, stack: err.stack }
+        : err;
+
+  console.error("[professional-plans-checkout]", {
+    ...context,
+    error: technical,
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -74,30 +95,43 @@ export async function POST(req: NextRequest) {
     });
 
     const asaas = getAsaasConfig();
+    if (!asaas.configured) {
+      console.error("[professional-plans-checkout]", {
+        userId: user.id,
+        planId: plan.id,
+        priceKey: price.key,
+        error: "ASAAS_API_KEY não configurada.",
+      });
+      return NextResponse.json(
+        { error: "Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte." },
+        { status: 503 }
+      );
+    }
+    if (!asaas.productionReady) {
+      console.error("[professional-plans-checkout]", {
+        userId: user.id,
+        planId: plan.id,
+        priceKey: price.key,
+        environment: asaas.environment,
+        error: "Asaas em sandbox durante NODE_ENV=production.",
+      });
+      return NextResponse.json(
+        { error: "Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte." },
+        { status: 503 }
+      );
+    }
+
     const localPayment = await prisma.payment.create({
       data: {
         userId: user.id,
         amount: Number(price.value.toFixed(2)),
         method: "pix",
-        provider: asaas.configured && asaas.productionReady ? "asaas" : "manual",
+        provider: "asaas",
         status: "PENDING",
         externalReference,
         premiumUntil,
       },
     });
-
-    if (!asaas.configured || !asaas.productionReady) {
-      return NextResponse.json({
-        localPaymentId: localPayment.id,
-        provider: localPayment.provider,
-        providerConfigured: false,
-        status: "PENDING",
-        amount: price.value,
-        planName: plan.name,
-        priceLabel: price.label,
-        message: "Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte.",
-      });
-    }
 
     try {
       const customer = await createAsaasCustomer({
@@ -117,6 +151,9 @@ export async function POST(req: NextRequest) {
       });
 
       const pix = await getAsaasPixQrCode(asaasPayment.id);
+      if (!pix.payload || !pix.encodedImage) {
+        throw new Error("Asaas criou a cobrança, mas não retornou QR Code Pix completo.");
+      }
 
       await prisma.payment.update({
         where: { id: localPayment.id },
@@ -153,7 +190,15 @@ export async function POST(req: NextRequest) {
         data: { status: "FAILED" },
         select: { id: true },
       });
-      console.error("[professional-plans-checkout]", err instanceof Error ? err.message : err);
+      logCheckoutError(err, {
+        userId: user.id,
+        professionalId: user.professional.id,
+        localPaymentId: localPayment.id,
+        planId: plan.id,
+        priceKey: price.key,
+        amount: Number(price.value.toFixed(2)),
+        environment: asaas.environment,
+      });
       return NextResponse.json(
         { error: "Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte." },
         { status: 502 }

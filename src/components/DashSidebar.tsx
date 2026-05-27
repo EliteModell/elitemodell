@@ -46,8 +46,8 @@ const guestNav: NavItem[] = [
 ];
 
 const hostNav: NavItem[] = [
-  { label: "Painel", href: ACCOUNT_ROUTES.painelAnfitriao, icon: <LayoutDashboard className="h-4 w-4" />, accent: "Imóvel" },
-  { label: "Meus espaços", href: "/anfitriao/imoveis", icon: <Home className="h-4 w-4" /> },
+  { label: "Painel", href: ACCOUNT_ROUTES.dashboardAnfitriao, icon: <LayoutDashboard className="h-4 w-4" />, accent: "Imóvel" },
+  { label: "Meus imóveis", href: "/anfitriao/imoveis", icon: <Home className="h-4 w-4" /> },
   { label: "Reservas", href: "/anfitriao/reservas", icon: <CalendarCheck className="h-4 w-4" /> },
   { label: "Ganhos", href: "/anfitriao/ganhos", icon: <WalletCards className="h-4 w-4" /> },
   { label: "Meu Perfil", href: "/dashboard/perfil", icon: <UserRound className="h-4 w-4" /> },
@@ -150,18 +150,19 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
   const isAdminArea = path === "/admin" || path.startsWith("/admin/");
   const isProfessionalArea = path.startsWith("/profissional");
   const isHostFlow = path.startsWith("/anfitriao") || path.startsWith("/verificacao/anfitriao");
-  const isApprovedHostArea = isHostFlow && session?.user?.hostStatus === "APROVADO";
+  const hostStatus = session?.user?.hostStatus;
+  const isRegisteredHostArea = isHostFlow && Boolean(hostStatus && hostStatus !== "NO_REQUEST");
   const isAdmin = role === "ADMIN";
   const nav =
-    isAdmin ? adminNav : isProfessionalArea ? professionalNav : isApprovedHostArea ? hostNav : isHostFlow ? hostOnboardingNav : guestNav;
+    isAdmin ? adminNav : isProfessionalArea ? professionalNav : isRegisteredHostArea ? hostNav : isHostFlow ? hostOnboardingNav : guestNav;
   const sectionLabel = isAdmin
     ? "Área admin"
     : isProfessionalArea
     ? "Área profissional"
-    : isApprovedHostArea
-      ? "AREA ANFITRIAO"
+    : isRegisteredHostArea
+      ? "ÁREA ANFITRIÃO"
       : isHostFlow
-        ? "CADASTRO DE ANFITRIAO"
+        ? "CADASTRO DE ANFITRIÃO"
         : "Área cliente";
   const logoHref = isAdminArea || isAdmin ? ACCOUNT_ROUTES.admin : "/";
 
@@ -287,7 +288,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
               const active =
                 path === navItem.href ||
                 (navItem.href === ACCOUNT_ROUTES.painelCliente && path === ACCOUNT_ROUTES.dashboardCliente) ||
-                (navItem.href === ACCOUNT_ROUTES.painelAnfitriao && path === ACCOUNT_ROUTES.dashboardAnfitriao) ||
+                (navItem.href === ACCOUNT_ROUTES.dashboardAnfitriao && path === ACCOUNT_ROUTES.painelAnfitriao) ||
                 (navItem.href === ACCOUNT_ROUTES.painelAcompanhante && path === ACCOUNT_ROUTES.dashboardAcompanhante) ||
                 (navItem.href !== ACCOUNT_ROUTES.painelCliente &&
                   navItem.href !== ACCOUNT_ROUTES.painelAnfitriao &&
@@ -330,7 +331,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
           {isAdmin ? (
             <div className="mt-5 rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(255,255,255,0.03))] p-3">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f5d78c]">
-                Navegacao segura
+                Navegação segura
               </p>
               <p className="mt-2 text-xs leading-5 text-white/48">
                 O logo permanece no painel administrativo.
@@ -341,7 +342,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                 className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-[8px] border border-[#d4a843]/28 px-3 py-2 text-xs font-black text-[#f5d78c] transition hover:bg-[#d4a843]/10"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
-                Ver site publico
+                Ver site público
               </Link>
             </div>
           ) : isProfessionalArea ? (

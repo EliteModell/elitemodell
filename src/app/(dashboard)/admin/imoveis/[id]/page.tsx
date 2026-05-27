@@ -5,22 +5,23 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
+import { isHostAccountType } from "@/lib/account-routes";
 import { AdminHeader, AdminPanel, StatusPill, adminColors, buttonStyle, tdStyle, thStyle } from "../../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
 
 const statusLabel: Record<string, string> = {
   DRAFT: "Rascunho",
-  PENDING_REVIEW: "Pendente aprovacao",
+  PENDING_REVIEW: "Pendente de análise",
   ACTIVE: "Aprovado",
-  INACTIVE: "Oculto/Suspenso",
+  INACTIVE: "Pausado",
   REJECTED: "Reprovado",
 };
 
-function hostStatus(host: { blocked: boolean; hostProfile: { id: string } | null }) {
+function hostStatus(host: { blocked: boolean; accountType: string }) {
   if (host.blocked) return "SUSPENSO";
-  if (host.hostProfile) return "APROVADO";
-  return "PENDENTE_APROVACAO";
+  if (isHostAccountType(host.accountType)) return "CADASTRADO";
+  return "PENDENTE";
 }
 
 function pillTone(status: string): "neutral" | "warning" | "success" | "danger" {
@@ -39,7 +40,7 @@ function actionToStatus(action: string) {
 function actionLabel(action: string) {
   if (action === "approve") return "Aprovado";
   if (action === "reject") return "Reprovado";
-  if (action === "hide") return "Oculto";
+  if (action === "hide") return "Pausado";
   if (action === "suspend") return "Suspenso";
   return action;
 }
@@ -61,8 +62,9 @@ async function reviewProperty(formData: FormData) {
     where: { id },
     select: {
       id: true,
+      hostId: true,
       status: true,
-      host: { select: { blocked: true, hostProfile: { select: { id: true } } } },
+      host: { select: { blocked: true, accountType: true } },
       photos: { select: { id: true } },
     },
   });
@@ -71,13 +73,27 @@ async function reviewProperty(formData: FormData) {
 
   const previousStatus = property.status;
   const currentHostStatus = hostStatus(property.host);
-  if (action === "approve" && currentHostStatus !== "APROVADO") {
-    redirect(`/admin/imoveis/${id}?erro=anfitriao-pendente`);
+  if (action === "approve" && currentHostStatus === "SUSPENSO") {
+    redirect(`/admin/imoveis/${id}?erro=anfitriao-bloqueado`);
   }
 
-  await prisma.property.update({
-    where: { id },
-    data: { status: nextStatus },
+  await prisma.$transaction(async (tx) => {
+    await tx.property.update({
+      where: { id },
+      data: { status: nextStatus },
+    });
+
+    if (action === "approve") {
+      await tx.user.update({
+        where: { id: property.hostId },
+        data: { accountType: "host", blockReason: null },
+      });
+      await tx.hostProfile.upsert({
+        where: { userId: property.hostId },
+        create: { userId: property.hostId },
+        update: {},
+      });
+    }
   });
 
   await logAudit({
@@ -96,6 +112,7 @@ async function reviewProperty(formData: FormData) {
       reason: reason || null,
       photoCountAtReview: property.photos.length,
       hostStatusAtReview: currentHostStatus,
+      hostAccountTypeAtReview: property.host.accountType,
     },
   });
 
@@ -146,7 +163,6 @@ export default async function AdminImovelDetalhesPage({
           blockReason: true,
           role: true,
           accountType: true,
-          hostProfile: { select: { id: true, createdAt: true } },
         },
       },
       photos: { orderBy: { order: "asc" } },
@@ -164,54 +180,54 @@ export default async function AdminImovelDetalhesPage({
   });
 
   const currentHostStatus = hostStatus(property.host);
-  const canApproveSafely = currentHostStatus === "APROVADO";
+  const canApproveSafely = currentHostStatus !== "SUSPENSO";
   const rules = [
-    property.instantBook ? "Reserva instantanea permitida" : "Reserva instantanea desativada",
+    property.instantBook ? "Reserva instantânea permitida" : "Reserva instantânea desativada",
     property.allowPets ? "Aceita pets" : "Não aceita pets",
     property.allowSmoking ? "Permite fumar" : "Não permite fumar",
     property.allowParties ? "Permite festas/eventos" : "Não permite festas/eventos",
     `Check-in ${property.checkInTime}`,
     `Check-out ${property.checkOutTime}`,
-    `Minimo ${property.minNights} noite(s)`,
-    property.maxNights ? `Maximo ${property.maxNights} noite(s)` : "Sem maximo de noites definido",
+    `Mínimo ${property.minNights} período(s)`,
+    property.maxNights ? `Máximo ${property.maxNights} período(s)` : "Sem máximo de períodos definido",
   ];
 
   return (
     <div>
       <AdminHeader
         title={property.title}
-        subtitle="Revisao administrativa completa do imovel antes de qualquer aprovacao."
-        action={<Link href="/admin/imoveis" style={{ ...buttonStyle, textDecoration: "none" }}>Voltar para imoveis</Link>}
+        subtitle="Revisão administrativa completa do imóvel antes de qualquer aprovação."
+        action={<Link href="/admin/imoveis" style={{ ...buttonStyle, textDecoration: "none" }}>Voltar para imóveis</Link>}
       />
 
       <div style={{ display: "grid", gap: 10, marginBottom: 16 }}>
-        {query?.salvo ? <Alert tone="success">Acao registrada: {actionLabel(query.salvo)}.</Alert> : null}
-        {query?.erro === "motivo-obrigatorio" ? <Alert tone="danger">Informe um motivo para reprovar, ocultar ou suspender.</Alert> : null}
-        {query?.erro === "anfitriao-pendente" ? <Alert tone="danger">Anfitrião ainda não aprovado. Revise o anfitrião antes de aprovar o imóvel.</Alert> : null}
+        {query?.salvo ? <Alert tone="success">Ação registrada: {actionLabel(query.salvo)}.</Alert> : null}
+        {query?.erro === "motivo-obrigatorio" ? <Alert tone="danger">Informe um motivo para reprovar, pausar ou suspender.</Alert> : null}
+        {query?.erro === "anfitriao-bloqueado" ? <Alert tone="danger">Anfitrião bloqueado. Desbloqueie a conta antes de aprovar o imóvel.</Alert> : null}
         {!property.photos.length ? <Alert tone="warning">Imóvel sem fotos cadastradas. Não recomendado aprovar.</Alert> : null}
-        {!canApproveSafely ? <Alert tone="warning">Anfitrião ainda não aprovado. Revise o anfitrião antes de aprovar o imóvel.</Alert> : null}
+        {!canApproveSafely ? <Alert tone="warning">Anfitrião bloqueado. Aprovação indisponível até revisão da conta.</Alert> : null}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.15fr) minmax(320px, .85fr)", gap: 16 }}>
         <div style={{ display: "grid", gap: 16 }}>
           <AdminPanel>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
-              <h2 style={{ margin: 0, color: "#fff", fontSize: 16 }}>Dados do imovel</h2>
+              <h2 style={{ margin: 0, color: "#fff", fontSize: 16 }}>Dados do imóvel</h2>
               <StatusPill tone={pillTone(property.status)}>{statusLabel[property.status] ?? property.status}</StatusPill>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
               <InfoItem label="Tipo" value={property.type} />
               <InfoItem label="Cidade/Bairro" value={`${property.city}${property.bairro ? ` / ${property.bairro}` : ""}`} />
-              <InfoItem label="Endereco" value={`${property.address}, ${property.state} - ${property.country}${property.zipCode ? `, ${property.zipCode}` : ""}`} />
+              <InfoItem label="Endereço" value={`${property.address}, ${property.state} - ${property.country}${property.zipCode ? `, ${property.zipCode}` : ""}`} />
               <InfoItem label="Preço" value={`R$ ${property.pricePerNight.toLocaleString("pt-BR")}/período`} />
               <InfoItem label="Quartos" value={property.bedrooms} />
               <InfoItem label="Banheiros" value={property.bathrooms} />
               <InfoItem label="Camas" value={property.beds} />
-              <InfoItem label="Hospedes" value={property.maxGuests} />
+              <InfoItem label="Hóspedes" value={property.maxGuests} />
               <InfoItem label="Data de envio" value={property.createdAt.toLocaleString("pt-BR")} />
             </div>
             <div style={{ marginTop: 16 }}>
-              <p style={{ margin: "0 0 8px", color: adminColors.gold, fontSize: 11, fontWeight: 900, letterSpacing: 1.6, textTransform: "uppercase" }}>Descricao</p>
+              <p style={{ margin: "0 0 8px", color: adminColors.gold, fontSize: 11, fontWeight: 900, letterSpacing: 1.6, textTransform: "uppercase" }}>Descrição</p>
               <p style={{ margin: 0, color: "#d1d5db", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{property.description}</p>
             </div>
           </AdminPanel>
@@ -239,7 +255,7 @@ export default async function AdminImovelDetalhesPage({
                 ))}
               </div>
             ) : (
-              <p style={{ margin: 0, color: "#94a3b8" }}>Nenhuma foto salva para este imovel.</p>
+              <p style={{ margin: 0, color: "#94a3b8" }}>Nenhuma foto salva para este imóvel.</p>
             )}
           </AdminPanel>
 
@@ -268,43 +284,43 @@ export default async function AdminImovelDetalhesPage({
 
         <div style={{ display: "grid", gap: 16, alignSelf: "start" }}>
           <AdminPanel>
-            <h2 style={{ margin: "0 0 14px", color: "#fff", fontSize: 16 }}>Anfitriao responsavel</h2>
+            <h2 style={{ margin: "0 0 14px", color: "#fff", fontSize: 16 }}>Anfitrião responsável</h2>
             <div style={{ display: "grid", gap: 10 }}>
               <InfoItem label="Nome" value={property.host.name ?? "Sem nome"} />
               <InfoItem label="E-mail" value={property.host.email} />
               <InfoItem label="Telefone" value={property.host.phone ?? "-"} />
               <InfoItem label="Role / Tipo" value={`${property.host.role} / ${property.host.accountType}`} />
-              <InfoItem label="Status anfitriao" value={<StatusPill tone={pillTone(currentHostStatus)}>{currentHostStatus}</StatusPill>} />
+              <InfoItem label="Status anfitrião" value={<StatusPill tone={pillTone(currentHostStatus)}>{currentHostStatus}</StatusPill>} />
               {property.host.blockReason ? <InfoItem label="Motivo de bloqueio" value={property.host.blockReason} /> : null}
             </div>
           </AdminPanel>
 
           <AdminPanel>
-            <h2 style={{ margin: "0 0 14px", color: "#fff", fontSize: 16 }}>Acoes de moderacao</h2>
+            <h2 style={{ margin: "0 0 14px", color: "#fff", fontSize: 16 }}>Ações de moderação</h2>
             <form action={reviewProperty} style={{ display: "grid", gap: 10 }}>
               <input type="hidden" name="id" value={property.id} />
               <textarea
                 name="reason"
-                placeholder="Motivo obrigatorio para reprovar, ocultar ou suspender"
+                placeholder="Motivo obrigatório para reprovar, pausar ou suspender"
                 style={{ minHeight: 92, background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 10, resize: "vertical" }}
               />
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <button name="action" value="approve" style={{ ...buttonStyle, opacity: canApproveSafely ? 1 : 0.55 }}>Aprovar</button>
                 <button name="action" value="reject" style={{ ...buttonStyle, color: "#ef4444" }}>Reprovar</button>
-                <button name="action" value="hide" style={{ ...buttonStyle, color: "#f97316" }}>Ocultar</button>
+                <button name="action" value="hide" style={{ ...buttonStyle, color: "#f97316" }}>Pausar</button>
                 <button name="action" value="suspend" style={{ ...buttonStyle, color: "#f97316" }}>Suspender</button>
               </div>
             </form>
           </AdminPanel>
 
           <AdminPanel>
-            <h2 style={{ margin: "0 0 14px", color: "#fff", fontSize: 16 }}>Historico de auditoria</h2>
+            <h2 style={{ margin: "0 0 14px", color: "#fff", fontSize: 16 }}>Histórico de auditoria</h2>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
                 <thead>
                   <tr>
                     <th style={thStyle}>Quando</th>
-                    <th style={thStyle}>Acao</th>
+                    <th style={thStyle}>Ação</th>
                     <th style={thStyle}>Admin</th>
                     <th style={thStyle}>Motivo</th>
                   </tr>
@@ -318,7 +334,7 @@ export default async function AdminImovelDetalhesPage({
                       <td style={tdStyle}>{audit.reason ?? "-"}</td>
                     </tr>
                   )) : (
-                    <tr><td style={tdStyle} colSpan={4}>Nenhum registro de auditoria para este imovel.</td></tr>
+                    <tr><td style={tdStyle} colSpan={4}>Nenhum registro de auditoria para este imóvel.</td></tr>
                   )}
                 </tbody>
               </table>

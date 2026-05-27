@@ -35,6 +35,12 @@ export default async function DashboardPage() {
   }
 
   if (userType) {
+    if (session.user.activeProfileType === "CLIENTE") {
+      const data = await getDashboardHomeData(session.user.id);
+      if (!data) redirect(ACCOUNT_ROUTES.login);
+      return <PremiumDashboardHome data={data} clientStatus={session.user.clientStatus} />;
+    }
+
     const isApprovedProfessional = userType.professional?.status === "ACTIVE" || userType.professional?.status === "PAUSED";
     const hostStatus = getHostRegistrationStatus(userType);
     const isModel = userType.accountType === "model";

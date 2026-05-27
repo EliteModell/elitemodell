@@ -43,7 +43,7 @@ const createSchema = z.object({
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!(await canViewApprovedProperties(session?.user))) {
-    return NextResponse.json({ error: "Locais disponiveis apenas para profissionais aprovadas." }, { status: 403 });
+    return NextResponse.json({ error: "Locais disponíveis apenas para profissionais aprovadas." }, { status: 403 });
   }
 
   const { searchParams } = new URL(req.url);
@@ -109,8 +109,7 @@ export async function POST(req: NextRequest) {
     where: { id: session.user.id },
     select: { role: true, accountType: true },
   });
-  const canSubmitHostProperty =
-    Boolean(currentUser) && (currentUser?.role === "ADMIN" || currentUser?.accountType !== "model");
+  const canSubmitHostProperty = Boolean(currentUser);
   if (!canSubmitHostProperty) {
     return NextResponse.json({ error: "Apenas anunciantes podem cadastrar espaços." }, { status: 403 });
   }
@@ -120,15 +119,31 @@ export async function POST(req: NextRequest) {
     const data = createSchema.parse(body);
     const { amenities, photos, ...propertyData } = data;
 
-    const property = await prisma.property.create({
-      data: {
-        ...propertyData,
-        hostId: session.user.id,
-        status: "PENDING_REVIEW",
-        amenities: { create: amenities.map((name) => ({ name })) },
-        photos: { create: photos.map((url, order) => ({ url, order })) },
-      },
-      include: { amenities: true, photos: true },
+    const property = await prisma.$transaction(async (tx) => {
+      if (currentUser?.role !== "ADMIN" && currentUser?.accountType !== "host") {
+        await tx.user.update({
+          where: { id: session.user.id },
+          data: { accountType: "host" },
+          select: { id: true },
+        });
+      }
+
+      await tx.hostProfile.upsert({
+        where: { userId: session.user.id },
+        create: { userId: session.user.id },
+        update: {},
+      });
+
+      return tx.property.create({
+        data: {
+          ...propertyData,
+          hostId: session.user.id,
+          status: "PENDING_REVIEW",
+          amenities: { create: amenities.map((name) => ({ name })) },
+          photos: { create: photos.map((url, order) => ({ url, order })) },
+        },
+        include: { amenities: true, photos: true },
+      });
     });
 
     return NextResponse.json(property, { status: 201 });

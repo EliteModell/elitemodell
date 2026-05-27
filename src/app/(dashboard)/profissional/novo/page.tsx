@@ -68,11 +68,24 @@ const CATEGORIAS = [
 ];
 
 const STEPS = ["Dados", "Aparência", "Atendimento", "Serviços", "Valores", "Contato", "Fotos", "Documentos", "Biometria"];
+const DRAFT_KEY = "elitemodell_professional_onboarding_v1";
+const IMAGE_ACCEPT = "image/jpeg,image/jpg,image/png,image/webp";
+const MAX_PROFILE_IMAGE_BYTES = 10 * 1024 * 1024;
+const REMOTE_IMAGE_RE = /^(https?:\/\/|\/)/i;
+const ATTENDANCE_EXCLUSIONS: Record<string, string[]> = {
+  "Somente local do cliente": ["Local próprio", "Hotéis", "Motéis", "Somente hotéis/motéis"],
+  "Local próprio": ["Somente local do cliente", "Não atendo em residência própria", "Somente hotéis/motéis"],
+  "Não atendo em residência própria": ["Local próprio"],
+  "Hotéis": ["Somente local do cliente", "Somente hotéis/motéis"],
+  "Motéis": ["Somente local do cliente", "Somente hotéis/motéis"],
+  "Somente hotéis/motéis": ["A domicílio", "Somente local do cliente", "Local próprio", "Não atendo em residência própria", "Hotéis", "Motéis"],
+  "A domicílio": ["Somente hotéis/motéis"],
+};
 
 /* ── sub-componentes reutilizáveis ──────────────────────── */
 function Tag({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} style={{
+    <button type="button" onClick={onClick} aria-pressed={active} data-active={active ? "true" : "false"} className="model-tag" style={{
       padding: "10px 15px", borderRadius: 20, cursor: "pointer", fontSize: 13,
       fontWeight: active ? 700 : 400,
       border: `1.5px solid ${active ? GOLD : "#1e293b"}`,
@@ -81,6 +94,7 @@ function Tag({ label, active, onClick }: { label: string; active: boolean; onCli
       minHeight: 42,
       lineHeight: 1.2,
     }}>
+      {active ? <span className="model-tag-check" aria-hidden="true">✓</span> : null}
       {label}
     </button>
   );
@@ -108,6 +122,7 @@ function UploadZone({ label, accept, preview, onFile, loading }: {
 }) {
   const ref = useRef<HTMLInputElement>(null);
   const canPreview = !!preview && (preview.startsWith("http") || preview.startsWith("/") || preview.startsWith("blob:") || preview.startsWith("data:"));
+  const acceptLabel = accept === IMAGE_ACCEPT ? "JPG, PNG ou WebP" : accept.replace("image/*,video/*", "JPG, PNG ou MP4");
   return (
     <div>
       <label style={labelStyle}>{label}</label>
@@ -133,11 +148,20 @@ function UploadZone({ label, accept, preview, onFile, loading }: {
               <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
             </svg>
             <p style={{ color: "#475569", fontSize: 13, margin: 0 }}>Clique para selecionar</p>
-            <p style={{ color: "#334155", fontSize: 11, margin: "4px 0 0" }}>{accept.replace("image/*,video/*", "JPG, PNG ou MP4")}</p>
+            <p style={{ color: "#334155", fontSize: 11, margin: "4px 0 0" }}>{acceptLabel}</p>
           </>
         )}
       </div>
-      <input ref={ref} type="file" accept={accept} style={{ display: "none" }} onChange={(e) => { if (e.target.files?.[0]) onFile(e.target.files[0]); }} />
+      <input
+        ref={ref}
+        type="file"
+        accept={accept}
+        style={{ display: "none" }}
+        onChange={(e) => {
+          if (e.target.files?.[0]) onFile(e.target.files[0]);
+          e.currentTarget.value = "";
+        }}
+      />
     </div>
   );
 }
@@ -335,6 +359,9 @@ export default function ProfissionalNovoPage() {
   const [birthParts, setBirthParts] = useState({ day: "", month: "", year: "" });
   const birthMonthRef = useRef<HTMLInputElement>(null);
   const birthYearRef = useRef<HTMLInputElement>(null);
+  const progressStepRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const draftLoadedRef = useRef(false);
+  const skipInitialDraftSaveRef = useRef(true);
 
   /* código único de verificação – gerado 1x por sessão */
   const verificationCode = useMemo(() => {
@@ -369,6 +396,66 @@ export default function ProfissionalNovoPage() {
     verificationUrl: "", verificationFile: null as File | null, verificationType: "foto" as "foto" | "video" | "biometria",
     kycProvider: "", kycSessionId: "", kycStatus: "NOT_STARTED", kycChallenge: "", kycExpiresAt: "",
   });
+
+  useEffect(() => {
+    try {
+      const rawDraft = localStorage.getItem(DRAFT_KEY);
+      if (!rawDraft) {
+        draftLoadedRef.current = true;
+        return;
+      }
+
+      const parsed = JSON.parse(rawDraft) as { step?: number; form?: Partial<typeof form> };
+      if (parsed?.form && typeof parsed.form === "object") {
+        setForm((current) => ({
+          ...current,
+          ...parsed.form,
+          galleryUrls: Array.isArray(parsed.form?.galleryUrls) ? parsed.form.galleryUrls.filter((url) => !String(url).startsWith("blob:")) : current.galleryUrls,
+          mainPhotoUrl: parsed.form?.mainPhotoUrl && !String(parsed.form.mainPhotoUrl).startsWith("blob:") ? parsed.form.mainPhotoUrl : current.mainPhotoUrl,
+          docFrenteFile: null,
+          docVersoFile: null,
+          verificationFile: null,
+        }));
+
+        if (parsed.form.birthDate) {
+          const [year, month, day] = String(parsed.form.birthDate).split("-");
+          setBirthParts({ day: day ?? "", month: month ?? "", year: year ?? "" });
+        }
+      }
+
+      if (Number.isInteger(parsed.step)) {
+        setStep(Math.max(0, Math.min(Number(parsed.step), STEPS.length - 1)));
+      }
+    } catch (err) {
+      console.warn("[professional-onboarding] Não foi possível restaurar o rascunho local.", err);
+      localStorage.removeItem(DRAFT_KEY);
+    } finally {
+      draftLoadedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!draftLoadedRef.current) return;
+    if (skipInitialDraftSaveRef.current) {
+      skipInitialDraftSaveRef.current = false;
+      return;
+    }
+
+    const draftForm = {
+      ...form,
+      mainPhotoUrl: form.mainPhotoUrl.startsWith("blob:") ? "" : form.mainPhotoUrl,
+      galleryUrls: form.galleryUrls.filter((url) => !url.startsWith("blob:")),
+      docFrenteFile: null,
+      docVersoFile: null,
+      verificationFile: null,
+    };
+
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ step, form: draftForm, updatedAt: new Date().toISOString() }));
+    } catch (err) {
+      console.warn("[professional-onboarding] Não foi possível salvar o rascunho local.", err);
+    }
+  }, [form, step]);
 
   useEffect(() => {
     let active = true;
@@ -462,8 +549,30 @@ export default function ProfissionalNovoPage() {
       return { ...f, [field]: arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val] };
     });
   }
+  function toggleAttendanceOption(val: string) {
+    setForm((f) => {
+      const current = f.attendanceTypes;
+      if (current.includes(val)) {
+        return { ...f, attendanceTypes: current.filter((item) => item !== val) };
+      }
+
+      const blocked = new Set(ATTENDANCE_EXCLUSIONS[val] ?? []);
+      const normalized = current.filter((item) => !blocked.has(item));
+      return { ...f, attendanceTypes: [...normalized, val] };
+    });
+  }
   function toggleSingle(field: SingleFormField, val: string) {
     setForm((f) => ({ ...f, [field]: f[field] === val ? "" : val }));
+  }
+
+  function validateImageFile(file: File) {
+    if (!IMAGE_ACCEPT.split(",").includes(file.type)) {
+      return "Use uma imagem em JPG, PNG ou WebP.";
+    }
+    if (file.size > MAX_PROFILE_IMAGE_BYTES) {
+      return "A imagem deve ter no máximo 10MB.";
+    }
+    return null;
   }
 
   /* ── upload helper ────────────────────────────────────── */
@@ -481,24 +590,59 @@ export default function ProfissionalNovoPage() {
 
   /* upload da foto principal */
   async function handleMainPhoto(file: File) {
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
+    const previousPhoto = form.mainPhotoUrl;
+    const previewUrl = URL.createObjectURL(file);
+    set("mainPhotoUrl", previewUrl);
     setUploadingIdx(-1);
     try {
       const url = await uploadFile(file, "profiles/main");
       set("mainPhotoUrl", url);
       toast.success("Foto principal enviada!");
-    } catch { toast.error("Erro ao enviar foto."); }
-    finally { setUploadingIdx(null); }
+    } catch (err) {
+      console.error("[professional-onboarding] Erro ao enviar foto principal.", err);
+      set("mainPhotoUrl", previousPhoto);
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar foto.");
+    }
+    finally {
+      URL.revokeObjectURL(previewUrl);
+      setUploadingIdx(null);
+    }
   }
 
   /* upload de foto de galeria */
   async function handleGalleryPhoto(file: File) {
     if (form.galleryUrls.length >= 10) return toast.error("Máximo 10 fotos na galeria.");
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
     setUploadingIdx(form.galleryUrls.length);
+    setForm((current) => ({ ...current, galleryUrls: [...current.galleryUrls, previewUrl] }));
     try {
       const url = await uploadFile(file, "profiles/gallery");
-      set("galleryUrls", [...form.galleryUrls, url]);
-    } catch { toast.error("Erro ao enviar foto."); }
-    finally { setUploadingIdx(null); }
+      setForm((current) => ({
+        ...current,
+        galleryUrls: current.galleryUrls.map((item) => item === previewUrl ? url : item),
+      }));
+      toast.success("Foto adicionada à galeria.");
+    } catch (err) {
+      console.error("[professional-onboarding] Erro ao enviar foto da galeria.", err);
+      setForm((current) => ({ ...current, galleryUrls: current.galleryUrls.filter((item) => item !== previewUrl) }));
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar foto.");
+    }
+    finally {
+      URL.revokeObjectURL(previewUrl);
+      setUploadingIdx(null);
+    }
   }
 
   /* upload de documento (privado) */
@@ -630,6 +774,7 @@ export default function ProfissionalNovoPage() {
         toast.error(d.error ?? "Erro ao criar perfil.");
         return;
       }
+      localStorage.removeItem(DRAFT_KEY);
       toast.success("Perfil enviado! Aguarde a aprovação em até 3 dias úteis.");
       router.push(ACCOUNT_ROUTES.verificacaoAcompanhante);
     } catch { toast.error("Erro ao enviar perfil."); }
@@ -639,9 +784,17 @@ export default function ProfissionalNovoPage() {
   const progress = ((step + 1) / STEPS.length) * 100;
   const isLast = step === STEPS.length - 1;
 
+  useEffect(() => {
+    progressStepRefs.current[step]?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  }, [step]);
+
   function validateStep(targetStep: number) {
     if (targetStep === 0) {
-      if (!form.displayName.trim()) return "Informe seu nome artistico.";
+      if (!form.displayName.trim()) return "Informe seu nome artístico.";
       if (form.bio.trim().length < 80) return "Escreva uma biografia com pelo menos 80 caracteres.";
       if (!form.escortCategory) return "Selecione uma categoria.";
       if (!form.city.trim()) return "Informe sua cidade.";
@@ -657,13 +810,16 @@ export default function ProfissionalNovoPage() {
       if (form.servesGenders.length === 0) return "Selecione quem você atende.";
       if (form.diasDisponiveis.length === 0) return "Selecione pelo menos um dia disponível.";
     }
-    if (targetStep === 3 && form.services.length === 0) return "Selecione pelo menos um servico.";
+    if (targetStep === 3 && form.services.length === 0) return "Selecione pelo menos um serviço.";
     if (targetStep === 4) {
       if (!form.pricePerHour && !form.price30min && !form.price2h && !form.priceOvernight && !form.priceWebcam) return "Informe pelo menos um valor.";
       if (form.paymentMethods.length === 0) return "Selecione pelo menos uma forma de pagamento.";
     }
     if (targetStep === 5 && form.whatsapp.replace(/\D/g, "").length < 10) return "Informe um WhatsApp válido com DDD.";
-    if (targetStep === 6 && !form.mainPhotoUrl) return "Envie a foto principal do perfil.";
+    if (targetStep === 6) {
+      if (uploadingIdx === -1 || form.mainPhotoUrl.startsWith("blob:")) return "Aguarde o envio da foto principal terminar.";
+      if (!form.mainPhotoUrl || !REMOTE_IMAGE_RE.test(form.mainPhotoUrl)) return "Envie a foto principal do perfil.";
+    }
     if (targetStep === 7) {
       if (!form.docType) return "Selecione o tipo de documento.";
       if (!form.docFrenteUrl || !form.docVersoUrl) return "Envie frente e verso do documento.";
@@ -718,11 +874,17 @@ export default function ProfissionalNovoPage() {
           <div style={{ height: "100%", width: `${progress}%`, background: GOLD, borderRadius: 3, transition: "width 0.4s ease" }} />
         </div>
         {/* Step bubbles */}
-        <div style={{ display: "flex", marginTop: 14, overflowX: "auto", gap: 0 }}>
+        <div className="model-step-bubbles" aria-label="Etapas do cadastro" style={{ display: "flex", marginTop: 14, overflowX: "auto", gap: 0 }}>
           {STEPS.map((s, i) => (
-            <div key={s} style={{ flex: 1, textAlign: "center", minWidth: 48 }}>
+            <div
+              key={s}
+              ref={(node) => { progressStepRefs.current[i] = node; }}
+              data-current={i === step ? "true" : "false"}
+              style={{ flex: 1, textAlign: "center", minWidth: 48 }}
+            >
               <button
                 onClick={() => i < step && setStep(i)}
+                aria-current={i === step ? "step" : undefined}
                 style={{
                   width: 28, height: 28, borderRadius: "50%", border: "none",
                   background: i < step ? GOLD : i === step ? GOLD : "#1e293b",
@@ -931,7 +1093,7 @@ export default function ProfissionalNovoPage() {
                 <div key={group.title}>
                   <p className="model-subsection-label">{group.title}</p>
                   <ChipGroup>
-                    {group.options.map((a) => <Tag key={a} label={a} active={form.attendanceTypes.includes(a)} onClick={() => toggleArr("attendanceTypes", a)} />)}
+                    {group.options.map((a) => <Tag key={a} label={a} active={form.attendanceTypes.includes(a)} onClick={() => toggleAttendanceOption(a)} />)}
                   </ChipGroup>
                 </div>
               ))}
@@ -1051,7 +1213,7 @@ export default function ProfissionalNovoPage() {
       {step === 6 && (
         <div>
           <Section title="Foto principal" desc="Esta é a primeira foto que os clientes veem. Deve ser real, clara e você pode escolher mostrar ou não o rosto.">
-            <UploadZone label="Foto de capa do perfil *" accept="image/*"
+            <UploadZone label="Foto de capa do perfil *" accept={IMAGE_ACCEPT}
               preview={form.mainPhotoUrl || null}
               loading={uploadingIdx === -1}
               onFile={handleMainPhoto} />
@@ -1073,7 +1235,7 @@ export default function ProfissionalNovoPage() {
               ))}
               {form.galleryUrls.length < 10 && (
                 <div>
-                  <UploadZone label="" accept="image/*"
+                  <UploadZone label="" accept={IMAGE_ACCEPT}
                     preview={null}
                     loading={typeof uploadingIdx === "number" && uploadingIdx >= 0 && uploadingIdx < 90}
                     onFile={handleGalleryPhoto} />
@@ -1125,11 +1287,11 @@ export default function ProfissionalNovoPage() {
           </Section>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
-            <UploadZone label="Frente do documento *" accept="image/*"
+            <UploadZone label="Frente do documento *" accept={IMAGE_ACCEPT}
               preview={form.docFrenteUrl || null}
               loading={uploadingIdx === 90}
               onFile={(f) => handleDocUpload(f, "frente")} />
-            <UploadZone label="Verso do documento *" accept="image/*"
+            <UploadZone label="Verso do documento *" accept={IMAGE_ACCEPT}
               preview={form.docVersoUrl || null}
               loading={uploadingIdx === 91}
               onFile={(f) => handleDocUpload(f, "verso")} />
@@ -1345,10 +1507,36 @@ export default function ProfissionalNovoPage() {
           border-color: rgba(214,168,58,0.28) !important;
           background: rgba(11,11,13,0.74) !important;
         }
-        .model-chip-group button[style*="rgba(212,168,67"] {
-          color: #fff !important;
-          border-color: rgba(245,184,59,0.74) !important;
-          background: rgba(214,168,67,0.16) !important;
+        .model-tag {
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          gap: 7px !important;
+          text-align: center !important;
+          touch-action: manipulation;
+        }
+        .model-tag[data-active="true"] {
+          color: #070707 !important;
+          border-color: rgba(245,215,122,0.95) !important;
+          background: linear-gradient(135deg, #f5d77a, #d6a83a 54%, #a77818) !important;
+          box-shadow: 0 12px 30px rgba(214,168,58,0.22), inset 0 1px 0 rgba(255,255,255,0.22) !important;
+        }
+        .model-tag[data-active="false"] {
+          color: #d4d8df !important;
+          border-color: rgba(214,168,58,0.28) !important;
+          background: rgba(11,11,13,0.74) !important;
+        }
+        .model-tag-check {
+          display: inline-grid;
+          width: 17px;
+          height: 17px;
+          place-items: center;
+          flex: 0 0 auto;
+          border-radius: 999px;
+          background: rgba(7,7,7,0.20);
+          color: #070707;
+          font-size: 11px;
+          font-weight: 950;
         }
         .model-subsection-label {
           margin: 0 0 8px !important;
@@ -1502,6 +1690,36 @@ export default function ProfissionalNovoPage() {
           line-height: 1.15 !important;
           white-space: normal !important;
           word-break: keep-all;
+        }
+        .model-step-bubbles {
+          scroll-snap-type: x proximity;
+          scroll-padding-inline: 42%;
+          overscroll-behavior-x: contain;
+        }
+        .model-step-bubbles > div {
+          scroll-snap-align: center;
+        }
+        .model-step-bubbles > div[data-current="true"] span {
+          color: #f5d77a !important;
+          font-weight: 950 !important;
+        }
+        .model-step-bubbles > div[data-current="true"] button {
+          transform: scale(1.08);
+          box-shadow: 0 0 0 4px rgba(214,168,58,0.14), 0 12px 24px rgba(214,168,58,0.20) !important;
+        }
+        @media (max-width: 520px) {
+          .model-step-bubbles {
+            margin-left: -8px !important;
+            margin-right: -8px !important;
+            padding: 0 44% 4px !important;
+          }
+          .model-step-bubbles > div {
+            flex: 0 0 64px !important;
+            min-width: 64px !important;
+          }
+          .model-step-bubbles > div span {
+            font-size: 8px !important;
+          }
         }
         .model-flow-page img { max-width: 100%; height: auto; }
         .model-step-actions {

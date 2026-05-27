@@ -62,14 +62,27 @@ export async function proxy(request: NextRequest) {
     role?: string;
     isProfessional?: boolean;
     accountType?: string;
+    activeProfileType?: string;
+    availableProfiles?: string[];
   };
+  const availableProfiles = tokenWithRole.availableProfiles ?? [];
+  const hasClientProfile = availableProfiles.length === 0 || availableProfiles.includes("CLIENTE");
+  const isHostAccount = ["host", "property_host", "PROPERTY_HOST"].includes(tokenWithRole.accountType ?? "") || availableProfiles.includes("HOST");
+  const isProfessionalAccount =
+    tokenWithRole.isProfessional ||
+    tokenWithRole.accountType === "model" ||
+    tokenWithRole.accountType === "professional" ||
+    availableProfiles.includes("PROFESSIONAL");
 
   const homeForToken = () => {
     if (tokenWithRole.role === "ADMIN") return "/admin";
-    if (tokenWithRole.isProfessional || tokenWithRole.accountType === "model" || tokenWithRole.accountType === "professional") {
+    if (tokenWithRole.activeProfileType === "CLIENTE") return "/dashboard";
+    if (tokenWithRole.activeProfileType === "PROFESSIONAL") return "/profissional";
+    if (tokenWithRole.activeProfileType === "HOST") return "/anfitriao";
+    if (isProfessionalAccount) {
       return tokenWithRole.isProfessional ? "/profissional" : "/profissional/novo";
     }
-    if (tokenWithRole.role === "HOST" || tokenWithRole.accountType === "host") return "/anfitriao";
+    if (isHostAccount) return "/anfitriao";
     return "/dashboard";
   };
 
@@ -78,14 +91,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (pathname.startsWith("/dashboard") || pathname.startsWith("/cliente") || pathname.startsWith("/painel/cliente")) {
-    const isOnlyClientArea =
-      tokenWithRole.role !== "ADMIN" &&
-      !tokenWithRole.isProfessional &&
-      tokenWithRole.accountType !== "model" &&
-      tokenWithRole.accountType !== "professional" &&
-      tokenWithRole.role !== "HOST" &&
-      tokenWithRole.accountType !== "host";
-    if (!isOnlyClientArea) return forbidden(homeForToken());
+    if (tokenWithRole.role !== "ADMIN" && !hasClientProfile) return forbidden(homeForToken());
   }
 
   if (pathname.startsWith("/painel/acompanhante")) {
@@ -93,15 +99,15 @@ export async function proxy(request: NextRequest) {
   }
 
   if (pathname.startsWith("/painel/anfitriao")) {
-    if (tokenWithRole.role !== "HOST" && tokenWithRole.role !== "ADMIN" && tokenWithRole.accountType !== "host") return forbidden(homeForToken());
+    if (tokenWithRole.role !== "ADMIN" && !isHostAccount) return forbidden(homeForToken());
   }
 
   if (pathname.startsWith("/anfitriao") || pathname.startsWith("/api/anfitriao")) {
-    if (tokenWithRole.role !== "HOST" && tokenWithRole.role !== "ADMIN" && tokenWithRole.accountType !== "host") return forbidden(homeForToken());
+    if (tokenWithRole.role !== "ADMIN" && !isHostAccount) return forbidden(homeForToken());
   }
 
   if (pathname === "/profissional/novo") {
-    if (tokenWithRole.role !== "HOST" && tokenWithRole.role !== "ADMIN") return forbidden(homeForToken());
+    if (!isProfessionalAccount && tokenWithRole.role !== "ADMIN") return forbidden(homeForToken());
     return NextResponse.next();
   }
 

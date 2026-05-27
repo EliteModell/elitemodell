@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { getHostRegistrationStatus, postLoginPathFromUser } from "@/lib/account-routes";
+import { deriveAvailableProfiles } from "@/lib/account-profiles";
 
 const updateSchema = z.object({
   name: z.string().min(2).optional(),
@@ -25,7 +26,7 @@ export async function GET() {
       id: true, name: true, email: true, image: true, phone: true, phoneVerified: true, phoneVerifiedAt: true,
       city: true, state: true, document: true, role: true, accountType: true, category: true, birthDate: true, verified: true, credits: true, premiumUntil: true,
       lgpdConsent: true, termsConsent: true,
-      createdAt: true, hostProfile: true, professional: {
+      createdAt: true, clientProfile: true, hostProfile: true, professional: {
         select: {
           id: true,
           slug: true,
@@ -77,7 +78,13 @@ export async function GET() {
   });
 
   const hostStatus = getHostRegistrationStatus(user);
-  return NextResponse.json(user ? { ...user, hostStatus, redirectTo: postLoginPathFromUser(user) } : null);
+  return NextResponse.json(user ? {
+    ...user,
+    hostStatus,
+    availableProfiles: deriveAvailableProfiles(user),
+    activeProfileType: session.user.activeProfileType,
+    redirectTo: postLoginPathFromUser(user),
+  } : null);
 }
 
 export async function PATCH(req: NextRequest) {

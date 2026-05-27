@@ -25,14 +25,32 @@ export type AsaasPixQrCode = {
   expirationDate?: string | null;
 };
 
+export class AsaasApiError extends Error {
+  status: number;
+  path: string;
+  details: unknown;
+
+  constructor(message: string, input: { status: number; path: string; details: unknown }) {
+    super(message);
+    this.name = "AsaasApiError";
+    this.status = input.status;
+    this.path = input.path;
+    this.details = input.details;
+  }
+}
+
 function getAsaasEnvironment(): AsaasEnvironment {
-  return process.env.ASAAS_ENVIRONMENT === "production" ? "production" : "sandbox";
+  const value = process.env.ASAAS_ENVIRONMENT?.trim() || process.env.ASAAS_ENV?.trim();
+  return value === "production" ? "production" : "sandbox";
 }
 
 export function getAsaasConfig() {
   const environment = getAsaasEnvironment();
   const apiKey = process.env.ASAAS_API_KEY?.trim();
-  const baseUrl = process.env.ASAAS_API_URL?.trim() || DEFAULT_API_URLS[environment];
+  const baseUrl =
+    process.env.ASAAS_API_URL?.trim() ||
+    process.env.ASAAS_BASE_URL?.trim() ||
+    DEFAULT_API_URLS[environment];
   const productionReady =
     process.env.NODE_ENV !== "production" ||
     environment === "production" ||
@@ -51,7 +69,7 @@ async function asaasRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const config = getAsaasConfig();
 
   if (!config.apiKey) {
-    throw new Error("ASAAS_API_KEY nao configurada.");
+    throw new Error("ASAAS_API_KEY não configurada.");
   }
 
   const response = await fetch(`${config.baseUrl}${path}`, {
@@ -71,7 +89,11 @@ async function asaasRequest<T>(path: string, init?: RequestInit): Promise<T> {
       Array.isArray(payload?.errors) && payload.errors[0]?.description
         ? payload.errors[0].description
         : "Erro ao comunicar com o Asaas.";
-    throw new Error(message);
+    throw new AsaasApiError(message, {
+      status: response.status,
+      path,
+      details: payload,
+    });
   }
 
   return payload as T;

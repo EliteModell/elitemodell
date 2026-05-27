@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Existing auth error payloads are provider-specific. */
 
 import { Suspense, useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -67,7 +67,6 @@ function safeInternalPath(value: string | null) {
 async function getPostLoginPath(returnUrl: string | null, roleIntent: ReturnType<typeof normalizeEntryRole>) {
   const safeReturnUrl = safeInternalPath(returnUrl);
   if (safeReturnUrl && !roleIntent) return safeReturnUrl;
-  if (roleIntent === "profissional") return ACCOUNT_ROUTES.dashboardAcompanhante;
   if (roleIntent === "anfitriao" && localStorage.getItem(PROPERTY_DRAFT_KEY)) return PROPERTY_DRAFT_FINAL_PATH;
 
   const res = await fetch("/api/users/me");
@@ -76,6 +75,11 @@ async function getPostLoginPath(returnUrl: string | null, roleIntent: ReturnType
   if (roleIntent) return postLoginPathFromUser(user, roleIntent);
   if (!user?.lgpdConsent || !user?.termsConsent || !user?.birthDate) return "/completar-cadastro";
   return postLoginPathFromUser(user, roleIntent);
+}
+
+async function clearInvalidAuthState() {
+  await supabaseAuth.auth.signOut().catch(() => undefined);
+  await signOut({ redirect: false }).catch(() => undefined);
 }
 
 function fallbackPathForRoleIntent(roleIntent: ReturnType<typeof normalizeEntryRole>) {
@@ -134,6 +138,8 @@ function LoginContent() {
       const res = await signIn("supabase", { accessToken: data.session.access_token, roleIntent: roleIntent ?? "", redirect: false });
 
       if (res?.error) {
+        await clearInvalidAuthState();
+        console.error("[login] NextAuth recusou sessão Supabase", { error: res.error, roleIntent });
         toast.error("Erro ao entrar. Tente novamente.");
       } else {
         toast.success("Bem-vindo de volta!");

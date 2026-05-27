@@ -7,6 +7,8 @@ declare module "next-auth" {
     role: string;
     accountType?: string;
     clientStatus?: string;
+    activeProfileType?: string;
+    availableProfiles?: string[];
   }
 
   interface Session {
@@ -21,6 +23,8 @@ declare module "next-auth" {
       isProfessional?: boolean;
       needsConsent?: boolean;
       hostStatus?: string;
+      activeProfileType?: string;
+      availableProfiles?: string[];
     };
   }
 }
@@ -34,6 +38,8 @@ declare module "next-auth/jwt" {
     isProfessional?: boolean;
     needsConsent?: boolean;
     hostStatus?: string;
+    activeProfileType?: string;
+    availableProfiles?: string[];
     name?: string | null;
     email?: string | null;
     picture?: string | null;

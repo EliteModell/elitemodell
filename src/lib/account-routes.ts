@@ -33,6 +33,10 @@ export function isProfessionalCategory(value: string | null | undefined) {
   return (PROFESSIONAL_CATEGORIES as readonly string[]).includes(value ?? "");
 }
 
+export function isHostAccountType(value: string | null | undefined) {
+  return ["host", "property_host", "PROPERTY_HOST"].includes(value ?? "");
+}
+
 export function normalizeCadastroTipo(value: string | null): CadastroTipo | null {
   if (!value) return null;
   const normalized = value.toLowerCase();
@@ -80,9 +84,8 @@ export function getHostRegistrationStatus(user: Pick<PostLoginUser, "role" | "ac
   if (!user) return "NO_REQUEST";
   const properties = user.properties ?? [];
   const statuses = properties.map((property) => property.status).filter(Boolean);
-  const isApprovedHostIdentity = user.role === "HOST" || user.accountType === "host";
 
-  if (isApprovedHostIdentity && statuses.some((status) => APPROVED_HOST_STATUSES.includes(status as typeof APPROVED_HOST_STATUSES[number]))) {
+  if (statuses.some((status) => APPROVED_HOST_STATUSES.includes(status as typeof APPROVED_HOST_STATUSES[number]))) {
     return "APROVADO";
   }
 
@@ -91,6 +94,7 @@ export function getHostRegistrationStatus(user: Pick<PostLoginUser, "role" | "ac
     return "PENDENTE_APROVACAO";
   }
   if (properties.length > 0) return "CADASTRO_INCOMPLETO";
+  if (isHostAccountType(user.accountType)) return "CADASTRO_INCOMPLETO";
   return "NO_REQUEST";
 }
 
@@ -130,6 +134,8 @@ export function postLoginPathFromUser(user: PostLoginUser | null | undefined, in
   const isProfessionalIntent = isProfessionalCategory(user.category);
   const hostStatus = getHostRegistrationStatus(user);
 
+  if (user.role === "ADMIN") return ACCOUNT_ROUTES.admin;
+
   if (intent === "cliente") return ACCOUNT_ROUTES.dashboardCliente;
 
   if (intent === "profissional") {
@@ -142,13 +148,11 @@ export function postLoginPathFromUser(user: PostLoginUser | null | undefined, in
     return hostPathForStatus(hostStatus);
   }
 
-  if (user.role === "ADMIN") return ACCOUNT_ROUTES.admin;
-
   if (professionalStatus === "ACTIVE" || professionalStatus === "PAUSED") return ACCOUNT_ROUTES.dashboardAcompanhante;
   if (!professionalStatus && (isProfessionalIntent || isModelAccount)) return ACCOUNT_ROUTES.onboardingAcompanhante;
   if (professionalStatus || isProfessionalIntent || isModelAccount) return ACCOUNT_ROUTES.verificacaoAcompanhante;
 
-  if (hostStatus !== "NO_REQUEST") return hostPathForStatus(hostStatus);
+  if (hostStatus !== "NO_REQUEST" || isHostAccountType(user.accountType)) return hostPathForStatus(hostStatus);
 
   return ACCOUNT_ROUTES.dashboardCliente;
 }
@@ -158,14 +162,21 @@ export function accountHomePathFromSession(sessionUser: {
   accountType?: string | null;
   isProfessional?: boolean | null;
   hostStatus?: string | null;
+  activeProfileType?: string | null;
 } | null | undefined) {
   if (!sessionUser) return ACCOUNT_ROUTES.dashboardCliente;
   if (sessionUser.role === "ADMIN") return ACCOUNT_ROUTES.admin;
+  if (sessionUser.activeProfileType === "CLIENTE") return ACCOUNT_ROUTES.dashboardCliente;
+  if (sessionUser.activeProfileType === "PROFESSIONAL") return ACCOUNT_ROUTES.dashboardAcompanhante;
+  if (sessionUser.activeProfileType === "HOST") {
+    return hostPathForStatus((sessionUser.hostStatus ?? "CADASTRO_INCOMPLETO") as HostRegistrationStatus);
+  }
   if (sessionUser.isProfessional || sessionUser.accountType === "model" || sessionUser.accountType === "professional") {
     return ACCOUNT_ROUTES.dashboardAcompanhante;
   }
   if (sessionUser.hostStatus && sessionUser.hostStatus !== "NO_REQUEST") {
     return hostPathForStatus(sessionUser.hostStatus as HostRegistrationStatus);
   }
+  if (isHostAccountType(sessionUser.accountType)) return ACCOUNT_ROUTES.onboardingAnfitriao;
   return ACCOUNT_ROUTES.dashboardCliente;
 }
