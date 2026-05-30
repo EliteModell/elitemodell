@@ -53,9 +53,7 @@ async function isFirstClientPremiumPurchase(userId: string): Promise<boolean> {
 }
 
 function nextDueDate() {
-  const date = new Date();
-  date.setDate(date.getDate() + 1);
-  return date.toISOString().slice(0, 10);
+  return new Date().toISOString().slice(0, 10);
 }
 
 function premiumUntilFromNow() {

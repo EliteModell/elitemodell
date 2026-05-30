@@ -36,9 +36,7 @@ const schema = z.object({
 });
 
 function nextDueDate() {
-  const date = new Date();
-  date.setDate(date.getDate() + 1);
-  return date.toISOString().slice(0, 10);
+  return new Date().toISOString().slice(0, 10);
 }
 
 function logCheckoutError(err: unknown, context: Record<string, unknown>) {
