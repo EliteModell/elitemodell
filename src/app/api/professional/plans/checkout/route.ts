@@ -61,6 +61,28 @@ function logCheckoutError(err: unknown, context: Record<string, unknown>) {
   });
 }
 
+function clientSafeCheckoutError(err: unknown) {
+  if (err instanceof AsaasApiError) {
+    if (err.status === 400) {
+      return `Nao foi possivel gerar o Pix: ${err.message}`;
+    }
+    if (err.status === 401 || err.status === 403) {
+      return "Nao foi possivel gerar o Pix agora. Configuracao do provedor recusada.";
+    }
+    return "Nao foi possivel gerar o Pix no Asaas agora. Tente novamente em instantes.";
+  }
+  return "Nao foi possivel gerar o Pix agora. Tente novamente em instantes.";
+}
+
+function cpfCnpjDigits(value?: string | null) {
+  return value?.replace(/\D/g, "") ?? "";
+}
+
+function hasValidCpfCnpjLength(value?: string | null) {
+  const length = cpfCnpjDigits(value).length;
+  return length === 11 || length === 14;
+}
+
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
@@ -87,6 +109,10 @@ export async function POST(req: NextRequest) {
     if (!user.professional) {
       return NextResponse.json({ error: "Apenas perfis profissionais podem comprar estes planos." }, { status: 403 });
     }
+    const payerCpfCnpj = cpfCnpjDigits(data.payerCpf || user.document);
+    if (!hasValidCpfCnpjLength(payerCpfCnpj)) {
+      return NextResponse.json({ error: "Informe um CPF ou CNPJ valido para gerar o Pix." }, { status: 400 });
+    }
 
     const { plan, price } = resolved;
     const now = new Date();
@@ -112,7 +138,7 @@ export async function POST(req: NextRequest) {
         error: "ASAAS_API_KEY não configurada.",
       });
       return NextResponse.json(
-        { error: "Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte." },
+        { error: "Nao foi possivel gerar o Pix agora. Asaas nao configurado no ambiente." },
         { status: 503 }
       );
     }
@@ -125,7 +151,7 @@ export async function POST(req: NextRequest) {
         error: "Asaas em sandbox durante NODE_ENV=production.",
       });
       return NextResponse.json(
-        { error: "Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte." },
+        { error: "Nao foi possivel gerar o Pix agora. Asaas esta em sandbox no ambiente de producao." },
         { status: 503 }
       );
     }
@@ -146,7 +172,7 @@ export async function POST(req: NextRequest) {
       const customer = await createAsaasCustomer({
         name: data.payerName?.trim() || user.name || user.professional.displayName || "Profissional Elite Modell",
         email: user.email,
-        cpfCnpj: data.payerCpf || user.document,
+        cpfCnpj: payerCpfCnpj,
         phone: user.phone,
       });
 
@@ -169,12 +195,25 @@ export async function POST(req: NextRequest) {
         data: {
           providerPaymentId: asaasPayment.id,
           stripePaymentId: asaasPayment.id,
-          pixCode: pix.payload ?? null,
-          pixQrCodeBase64: pix.encodedImage ?? null,
+          pixCode: pix.payload,
+          pixQrCodeBase64: pix.encodedImage,
           invoiceUrl: asaasPayment.invoiceUrl ?? null,
           boletoUrl: asaasPayment.bankSlipUrl ?? null,
         },
         select: { id: true },
+      });
+
+      console.info("[professional-plans-checkout] Pix criado", {
+        userId: user.id,
+        professionalId: user.professional.id,
+        localPaymentId: localPayment.id,
+        providerPaymentId: asaasPayment.id,
+        planId: plan.id,
+        priceKey: price.key,
+        amount: Number(price.value.toFixed(2)),
+        environment: asaas.environment,
+        hasQrCode: Boolean(pix.encodedImage),
+        hasCopyPaste: Boolean(pix.payload),
       });
 
       return NextResponse.json({
@@ -209,7 +248,7 @@ export async function POST(req: NextRequest) {
         environment: asaas.environment,
       });
       return NextResponse.json(
-        { error: "Não foi possível gerar o Pix agora. Tente novamente ou fale com o suporte." },
+        { error: clientSafeCheckoutError(err) },
         { status: 502 }
       );
     }

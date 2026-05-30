@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   ArrowUpRight,
@@ -221,6 +221,31 @@ function productTypeFor(plan: ProfessionalPlan) {
   return "highlight_plan";
 }
 
+function cpfCnpjDigits(value: string) {
+  return value.replace(/\D/g, "").slice(0, 14);
+}
+
+function formatCpfCnpj(value: string) {
+  const digits = cpfCnpjDigits(value);
+  if (digits.length <= 11) {
+    return digits
+      .replace(/^(\d{3})(\d)/, "$1.$2")
+      .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+      .replace(/\.(\d{3})(\d)/, ".$1-$2");
+  }
+
+  return digits
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+}
+
+function hasValidCpfCnpjLength(value: string) {
+  const length = cpfCnpjDigits(value).length;
+  return length === 11 || length === 14;
+}
+
 function PlanCheckout({ selection, onClose }: { selection: CheckoutSelection; onClose: () => void }) {
   const [stage, setStage] = useState<CheckoutStage>("idle");
   const [paymentId, setPaymentId] = useState<string | null>(null);
@@ -228,11 +253,18 @@ function PlanCheckout({ selection, onClose }: { selection: CheckoutSelection; on
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [payerCpf, setPayerCpf] = useState("");
   const meta = PRODUCT_META[selection.plan.id];
   const points = selectedPoints(selection.plan, selection.pointsQuantity ?? selection.plan.points);
+  const payerCpfDigits = cpfCnpjDigits(payerCpf);
+  const payerCpfReady = hasValidCpfCnpjLength(payerCpf);
 
   async function createPix() {
     if (stage === "creating") return;
+    if (!payerCpfReady) {
+      setError("Informe um CPF ou CNPJ válido para gerar o Pix.");
+      return;
+    }
     setStage("creating");
     setError(null);
     setMessage(null);
@@ -253,6 +285,7 @@ function PlanCheckout({ selection, onClose }: { selection: CheckoutSelection; on
           pointsQuantity: selection.pointsQuantity,
           activationMode: "agora",
           paymentMethod: "pix",
+          payerCpf: payerCpfDigits,
           metadata: {
             headline: meta.headline,
             benefits: meta.benefits,
@@ -262,6 +295,7 @@ function PlanCheckout({ selection, onClose }: { selection: CheckoutSelection; on
       const data = await res.json();
 
       if (!res.ok) {
+        console.error("[professional-plans-checkout]", { status: res.status, error: data.error });
         setError(data.error || "Não foi possível gerar o Pix agora. Tente novamente em instantes.");
         setStage("failed");
         return;
@@ -305,6 +339,16 @@ function PlanCheckout({ selection, onClose }: { selection: CheckoutSelection; on
     setMessage("Código Pix copiado.");
   }
 
+  useEffect(() => {
+    if (!paymentId || stage !== "waiting") return;
+
+    const timer = window.setInterval(() => {
+      if (!document.hidden) void verifyPayment();
+    }, 6000);
+
+    return () => window.clearInterval(timer);
+  }, [paymentId, stage]);
+
   return createPortal(
     <div className="plans-modal" role="dialog" aria-modal="true">
       <div className="plans-checkout">
@@ -329,7 +373,20 @@ function PlanCheckout({ selection, onClose }: { selection: CheckoutSelection; on
           ))}
         </ul>
 
-        {stage === "idle" && <button className="primary-action" type="button" onClick={createPix}>Gerar Pix</button>}
+        <label className="checkout-field">
+          <span>CPF ou CNPJ para cobrança Pix</span>
+          <input
+            value={payerCpf}
+            onChange={(event) => setPayerCpf(formatCpfCnpj(event.target.value))}
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="000.000.000-00"
+            disabled={stage === "creating" || stage === "waiting" || stage === "paid"}
+          />
+        </label>
+        {error && stage === "idle" && <p className="checkout-error">{error}</p>}
+
+        {stage === "idle" && <button className="primary-action" type="button" onClick={createPix} disabled={!payerCpfReady}>Gerar Pix</button>}
         {stage === "creating" && <p className="status-copy">Criando pedido e preparando o Pix...</p>}
         {stage === "waiting" && (
           <div className="pix-box">
@@ -1151,6 +1208,11 @@ export default function PlanosPage() {
           color: #080704;
           box-shadow: 0 18px 44px rgba(212,168,67,0.20);
         }
+        .primary-action:disabled {
+          opacity: 0.46;
+          cursor: not-allowed;
+          box-shadow: none;
+        }
         .ghost-action {
           border: 1px solid rgba(212,168,67,0.28);
           background: rgba(255,255,255,0.035);
@@ -1267,6 +1329,43 @@ export default function PlanosPage() {
         .checkout-summary strong {
           color: #f5d78c;
           font-size: 22px;
+        }
+        .checkout-field {
+          display: grid;
+          gap: 8px;
+          margin: 0 0 14px;
+        }
+        .checkout-field span {
+          color: ${GOLD};
+          font-size: 11px;
+          font-weight: 950;
+          letter-spacing: 0.10em;
+          text-transform: uppercase;
+        }
+        .checkout-field input {
+          width: 100%;
+          min-height: 50px;
+          border: 1px solid rgba(212,168,67,0.28);
+          border-radius: 8px;
+          background: #080808;
+          color: #fff;
+          padding: 0 14px;
+          font-size: 15px;
+          font-weight: 850;
+          outline: none;
+        }
+        .checkout-field input:focus {
+          border-color: rgba(245,215,140,0.72);
+          box-shadow: 0 0 0 3px rgba(212,168,67,0.14);
+        }
+        .checkout-field input:disabled {
+          opacity: 0.58;
+        }
+        .checkout-error {
+          margin: -4px 0 12px;
+          color: #fca5a5;
+          font-size: 13px;
+          line-height: 1.45;
         }
         .pix-box {
           display: grid;

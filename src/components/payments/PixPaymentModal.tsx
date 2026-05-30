@@ -30,6 +30,7 @@ export default function PixPaymentModal({ planId, creditAmount, bookingId, amoun
   const [stage, setStage] = useState<Stage>("loading");
   const [pix, setPix] = useState<PixData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
 
@@ -51,6 +52,7 @@ export default function PixPaymentModal({ planId, creditAmount, bookingId, amoun
         const data = await res.json();
 
         if (!res.ok) {
+          console.error("[pix-payment-modal]", { status: res.status, error: data.error });
           if (!mountedRef.current) return;
           setError(data.error ?? "Erro ao gerar PIX.");
           setStage("failed");
@@ -65,7 +67,8 @@ export default function PixPaymentModal({ planId, creditAmount, bookingId, amoun
           expiresAt: data.expiresAt ?? null,
         });
         setStage("waiting");
-      } catch {
+      } catch (err) {
+        console.error("[pix-payment-modal]", err);
         if (!mountedRef.current) return;
         setError("Erro de conexao. Tente novamente.");
         setStage("failed");
@@ -77,7 +80,14 @@ export default function PixPaymentModal({ planId, creditAmount, bookingId, amoun
     return () => {
       mountedRef.current = false;
     };
-  }, [planId, creditAmount, bookingId]);
+  }, [planId, creditAmount, bookingId, attempt]);
+
+  function retryCreatePayment() {
+    setPix(null);
+    setError(null);
+    setStage("loading");
+    setAttempt((current) => current + 1);
+  }
 
   // Inicia polling quando temos o localPaymentId
   useEffect(() => {
@@ -233,6 +243,13 @@ export default function PixPaymentModal({ planId, creditAmount, bookingId, amoun
               {error ?? "Ocorreu um erro ao processar o pagamento."}
             </p>
             <div className="mt-2 flex w-full flex-col gap-3">
+              <button
+                type="button"
+                onClick={retryCreatePayment}
+                className="client-primary-button py-4 text-[15px] font-black"
+              >
+                Tentar novamente
+              </button>
               <button
                 type="button"
                 onClick={onClose}

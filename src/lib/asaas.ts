@@ -39,22 +39,35 @@ export class AsaasApiError extends Error {
   }
 }
 
+function cleanEnv(value?: string | null) {
+  const trimmed = value?.trim();
+  if (!trimmed) return undefined;
+
+  const first = trimmed[0];
+  const last = trimmed[trimmed.length - 1];
+  if ((first === `"` && last === `"`) || (first === "'" && last === "'")) {
+    return trimmed.slice(1, -1).trim() || undefined;
+  }
+
+  return trimmed;
+}
+
 function getAsaasEnvironment(): AsaasEnvironment {
-  const value = process.env.ASAAS_ENVIRONMENT?.trim() || process.env.ASAAS_ENV?.trim();
-  return value === "production" ? "production" : "sandbox";
+  const value = cleanEnv(process.env.ASAAS_ENVIRONMENT) || cleanEnv(process.env.ASAAS_ENV);
+  return value?.toLowerCase() === "production" ? "production" : "sandbox";
 }
 
 export function getAsaasConfig() {
   const environment = getAsaasEnvironment();
-  const apiKey = process.env.ASAAS_API_KEY?.trim();
+  const apiKey = cleanEnv(process.env.ASAAS_API_KEY);
   const baseUrl =
-    process.env.ASAAS_API_URL?.trim() ||
-    process.env.ASAAS_BASE_URL?.trim() ||
+    cleanEnv(process.env.ASAAS_API_URL) ||
+    cleanEnv(process.env.ASAAS_BASE_URL) ||
     DEFAULT_API_URLS[environment];
   const productionReady =
     process.env.NODE_ENV !== "production" ||
     environment === "production" ||
-    process.env.ALLOW_ASAAS_SANDBOX_IN_PRODUCTION === "true";
+    cleanEnv(process.env.ALLOW_ASAAS_SANDBOX_IN_PRODUCTION) === "true";
 
   return {
     apiKey,
