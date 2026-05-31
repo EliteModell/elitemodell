@@ -855,8 +855,35 @@ model VoucherPrize {
 
   spins           VoucherSpin[]
   vouchers        ClientVoucher[]
+  dailyStocks     VoucherDailyStock[]
 
   @@index([active, sortOrder])
+}
+
+model VoucherDailyStock {
+  id                    String   @id @default(cuid())
+  date                  DateTime
+  prizeId               String
+  prizeName             String
+  prizeValue            Float
+  initialQuantity       Int
+  remainingQuantity     Int
+  usedQuantity          Int      @default(0)
+  initialBudget         Float
+  usedBudget            Float    @default(0)
+  remainingBudget       Float
+  carryoverFromPrevious Float    @default(0)
+  carryoverToNext       Float    @default(0)
+  expiredBudget         Float    @default(0)
+  active                Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  prize                 VoucherPrize @relation(fields: [prizeId], references: [id], onDelete: Cascade)
+
+  @@unique([date, prizeId])
+  @@index([date, active])
+  @@index([prizeId, date])
 }
 
 model VoucherSpin {

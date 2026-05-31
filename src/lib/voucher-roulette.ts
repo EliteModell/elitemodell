@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import type { Prisma, User, VoucherBudget, VoucherPrize, VoucherSettings, VoucherSpin } from "@prisma/client";
+import type { Prisma, User, VoucherBudget, VoucherDailyStock, VoucherPrize, VoucherSettings, VoucherSpin } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export const VOUCHER_VISITOR_COOKIE = "elite_voucher_visitor";
@@ -32,13 +32,14 @@ const ACTIVE_VOUCHER_STATUSES = ["AVAILABLE", "AWAITING_REGISTRATION"];
 const VOUCHER_100_PRIZE_ID = "voucher-100-paid";
 
 const DEFAULT_PRIZES = [
-  { id: "voucher-5", name: "Voucher R$ 5", type: "VOUCHER", value: 5, probability: 18, monthlyQuantityLimit: 180, dailyQuantityLimit: 6, weeklyQuantityLimit: null, expiresInDays: 3, expiresInHours: 72, sortOrder: 0 },
+  { id: "voucher-5", name: "Voucher R$ 5", type: "VOUCHER", value: 5, probability: 18, monthlyQuantityLimit: 180, dailyQuantityLimit: 10, weeklyQuantityLimit: null, expiresInDays: 3, expiresInHours: 72, sortOrder: 0 },
   { id: "voucher-10", name: "Voucher R$ 10", type: "VOUCHER", value: 10, probability: 8, monthlyQuantityLimit: 90, dailyQuantityLimit: 3, weeklyQuantityLimit: null, expiresInDays: 3, expiresInHours: 72, sortOrder: 1 },
   { id: "voucher-20", name: "Voucher R$ 20", type: "VOUCHER", value: 20, probability: 3, monthlyQuantityLimit: 30, dailyQuantityLimit: 1, weeklyQuantityLimit: null, expiresInDays: 2, expiresInHours: 48, sortOrder: 2 },
   { id: "voucher-50", name: "Voucher R$ 50", type: "VOUCHER", value: 50, probability: 0.8, monthlyQuantityLimit: 8, dailyQuantityLimit: null, weeklyQuantityLimit: 2, expiresInDays: 1, expiresInHours: 24, sortOrder: 3 },
   { id: VOUCHER_100_PRIZE_ID, name: "Voucher R$ 100", type: "VOUCHER", value: 100, probability: 0.2, monthlyQuantityLimit: 2, dailyQuantityLimit: null, weeklyQuantityLimit: null, expiresInDays: 1, expiresInHours: 24, sortOrder: 4 },
-  { id: "try-again", name: "Tente outra vez", type: "TRY_AGAIN", value: null, probability: 45, monthlyQuantityLimit: null, dailyQuantityLimit: null, weeklyQuantityLimit: null, expiresInDays: 0, expiresInHours: null, sortOrder: 5 },
-  { id: "try-tomorrow", name: "Tente amanhã", type: "TRY_TOMORROW", value: null, probability: 25, monthlyQuantityLimit: null, dailyQuantityLimit: null, weeklyQuantityLimit: null, expiresInDays: 0, expiresInHours: null, sortOrder: 6 },
+  { id: "near-miss", name: "Quase lá!", type: "TRY_AGAIN", value: null, probability: 20, monthlyQuantityLimit: null, dailyQuantityLimit: null, weeklyQuantityLimit: null, expiresInDays: 0, expiresInHours: null, sortOrder: 5 },
+  { id: "try-again", name: "Mais sorte na próxima", type: "TRY_AGAIN", value: null, probability: 25, monthlyQuantityLimit: null, dailyQuantityLimit: null, weeklyQuantityLimit: null, expiresInDays: 0, expiresInHours: null, sortOrder: 6 },
+  { id: "try-tomorrow", name: "Tente amanhã", type: "TRY_TOMORROW", value: null, probability: 25, monthlyQuantityLimit: null, dailyQuantityLimit: null, weeklyQuantityLimit: null, expiresInDays: 0, expiresInHours: null, sortOrder: 7 },
 ] as const;
 
 export type BudgetStats = {
@@ -62,6 +63,14 @@ export type BudgetStats = {
   vouchersExpired: number;
   vouchersAwaitingRegistration: number;
   usageRate: number;
+  spinsToday: number;
+  winnersToday: number;
+  noPrizeToday: number;
+  dailyStockInitialBudget: number;
+  dailyStockUsedBudget: number;
+  dailyStockRemainingBudget: number;
+  dailyStockExpiredBudget: number;
+  dailyStockCarryoverToNext: number;
 };
 
 export type PrizeWithChance = VoucherPrize & {
@@ -69,6 +78,7 @@ export type PrizeWithChance = VoucherPrize & {
   monthUsed: number;
   dayUsed: number;
   weekUsed: number;
+  dailyStock?: VoucherDailyStock | null;
 };
 
 export function normalizeVoucherPhone(raw: string | null | undefined) {
@@ -123,6 +133,38 @@ function db<T extends Prisma.TransactionClient | typeof prisma>(tx?: T) {
   return tx ?? prisma;
 }
 
+function sameDayId(date: Date, suffix: string) {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `voucher-stock-${yyyy}-${mm}-${dd}-${suffix}`;
+}
+
+function rareDayNumber(seed: number, maxDay: number) {
+  return (Math.abs(seed) % maxDay) + 1;
+}
+
+function isVoucher100Day(now: Date) {
+  const monthDays = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const first = rareDayNumber(now.getFullYear() * 37 + (now.getMonth() + 1) * 19, monthDays);
+  const second = Math.min(monthDays, first + 14);
+  return now.getDate() === first || now.getDate() === second;
+}
+
+function isVoucher50Day(now: Date) {
+  const { start } = weekRange(now);
+  const weeklySlot = Math.abs(start.getFullYear() * 31 + start.getMonth() * 11 + start.getDate()) % 7;
+  return now.getDay() === weeklySlot || now.getDay() === (weeklySlot + 3) % 7;
+}
+
+async function lockVoucherBudget(tx: Prisma.TransactionClient, budgetId: string) {
+  await tx.$queryRaw<{ id: string }[]>`SELECT "id" FROM "VoucherBudget" WHERE "id" = ${budgetId} FOR UPDATE`;
+}
+
+async function lockDailyStockRows(tx: Prisma.TransactionClient, date: Date) {
+  await tx.$queryRaw<{ id: string }[]>`SELECT "id" FROM "VoucherDailyStock" WHERE "date" = ${date} FOR UPDATE`;
+}
+
 export async function updateExpiredVouchers(now = new Date(), tx?: Prisma.TransactionClient) {
   await db(tx).clientVoucher.updateMany({
     where: {
@@ -130,6 +172,20 @@ export async function updateExpiredVouchers(now = new Date(), tx?: Prisma.Transa
       expiresAt: { lt: now },
     },
     data: { status: "EXPIRED" },
+  });
+
+  const { start: todayStart } = todayRange(now);
+  await db(tx).voucherDailyStock.updateMany({
+    where: {
+      date: { lt: todayStart },
+      active: true,
+      remainingBudget: { gt: 0 },
+    },
+    data: {
+      active: false,
+      expiredBudget: { increment: 0 },
+      carryoverToNext: 0,
+    },
   });
 }
 
@@ -283,15 +339,12 @@ export async function getBudgetStats(now = new Date(), tx?: Prisma.TransactionCl
     value: { gt: 0 },
     status: { in: BUDGET_STATUSES },
   };
-  const [monthAgg, beforeTodayAgg, todayAgg, issued, used, expired, awaitingRegistration] = await Promise.all([
+
+  const [monthAgg, todayAgg, issued, used, expired, awaitingRegistration, spinsToday, winnersToday, stockRows] = await Promise.all([
     database.clientVoucher.aggregate({
       where: { ...budgetWhere, createdAt: { gte: monthStart, lt: monthEnd } },
       _sum: { value: true },
       _count: { _all: true },
-    }),
-    database.clientVoucher.aggregate({
-      where: { ...budgetWhere, createdAt: { gte: monthStart, lt: todayStart } },
-      _sum: { value: true },
     }),
     database.clientVoucher.aggregate({
       where: { ...budgetWhere, createdAt: { gte: todayStart, lt: tomorrowStart } },
@@ -301,15 +354,21 @@ export async function getBudgetStats(now = new Date(), tx?: Prisma.TransactionCl
     database.clientVoucher.count({ where: { ...budgetWhere, status: "USED", createdAt: { gte: monthStart, lt: monthEnd } } }),
     database.clientVoucher.count({ where: { ...budgetWhere, status: "EXPIRED", createdAt: { gte: monthStart, lt: monthEnd } } }),
     database.clientVoucher.count({ where: { ...budgetWhere, status: "AWAITING_REGISTRATION", createdAt: { gte: monthStart, lt: monthEnd } } }),
+    database.voucherSpin.count({ where: { createdAt: { gte: todayStart, lt: tomorrowStart } } }),
+    database.voucherSpin.count({ where: { result: "VOUCHER", voucherValue: { gt: 0 }, createdAt: { gte: todayStart, lt: tomorrowStart } } }),
+    database.voucherDailyStock.findMany({ where: { date: todayStart } }),
   ]);
 
   const monthlyUsed = monthAgg._sum.value ?? 0;
-  const usedBeforeToday = beforeTodayAgg._sum.value ?? 0;
   const dailyUsed = todayAgg._sum.value ?? 0;
-  const dailyAllowanceToDate = Math.min(budget.monthlyLimit, budget.dailyLimit * dayOfMonth);
-  const dailyAllowance = Math.max(0, dailyAllowanceToDate - usedBeforeToday);
   const monthlyRemaining = Math.max(0, budget.monthlyLimit - monthlyUsed);
-  const dailyRemaining = Math.max(0, Math.min(monthlyRemaining, dailyAllowance - dailyUsed));
+  const dailyAllowance = Math.max(0, Math.min(budget.dailyLimit, monthlyRemaining + dailyUsed));
+  const dailyRemaining = Math.max(0, Math.min(monthlyRemaining, budget.dailyLimit - dailyUsed));
+  const dailyStockInitialBudget = stockRows.reduce((sum, stock) => sum + stock.initialBudget, 0);
+  const dailyStockUsedBudget = stockRows.reduce((sum, stock) => sum + stock.usedBudget, 0);
+  const dailyStockRemainingBudget = stockRows.reduce((sum, stock) => sum + stock.remainingBudget, 0);
+  const dailyStockExpiredBudget = stockRows.reduce((sum, stock) => sum + stock.expiredBudget, 0);
+  const dailyStockCarryoverToNext = stockRows.reduce((sum, stock) => sum + stock.carryoverToNext, 0);
 
   return {
     budget,
@@ -332,7 +391,132 @@ export async function getBudgetStats(now = new Date(), tx?: Prisma.TransactionCl
     vouchersExpired: expired,
     vouchersAwaitingRegistration: awaitingRegistration,
     usageRate: budget.monthlyLimit > 0 ? used / Math.max(1, issued) : 0,
+    spinsToday,
+    winnersToday,
+    noPrizeToday: Math.max(0, spinsToday - winnersToday),
+    dailyStockInitialBudget,
+    dailyStockUsedBudget,
+    dailyStockRemainingBudget,
+    dailyStockExpiredBudget,
+    dailyStockCarryoverToNext,
   };
+}
+
+async function countPrizeVouchers(tx: Prisma.TransactionClient, prize: VoucherPrize, start: Date, end: Date) {
+  return tx.clientVoucher.count({
+    where: {
+      prizeId: prize.id,
+      status: { in: BUDGET_STATUSES },
+      createdAt: { gte: start, lt: end },
+    },
+  });
+}
+
+async function getRemainingQuantityLimit(tx: Prisma.TransactionClient, prize: VoucherPrize, stats: BudgetStats, now: Date) {
+  const [monthUsed, dayUsed, weekUsed] = await Promise.all([
+    countPrizeVouchers(tx, prize, stats.monthStart, stats.monthEnd),
+    countPrizeVouchers(tx, prize, stats.todayStart, stats.tomorrowStart),
+    countPrizeVouchers(tx, prize, stats.weekStart, stats.weekEnd),
+  ]);
+  const limits = [
+    prize.monthlyQuantityLimit == null ? Number.POSITIVE_INFINITY : Math.max(0, prize.monthlyQuantityLimit - monthUsed),
+    prize.dailyQuantityLimit == null ? Number.POSITIVE_INFINITY : Math.max(0, prize.dailyQuantityLimit - dayUsed),
+    prize.weeklyQuantityLimit == null ? Number.POSITIVE_INFINITY : Math.max(0, prize.weeklyQuantityLimit - weekUsed),
+  ];
+  if ((prize.value ?? 0) === 100 && !isVoucher100Day(now)) return 0;
+  if ((prize.value ?? 0) === 50 && !isVoucher50Day(now)) return 0;
+  return Math.floor(Math.min(...limits));
+}
+
+export async function ensureDailyPrizeStock(input?: {
+  tx?: Prisma.TransactionClient;
+  settings?: VoucherSettings | null;
+  stats?: BudgetStats;
+  now?: Date;
+}) {
+  const now = input?.now ?? new Date();
+  const tx = input?.tx ?? prisma;
+  const settings = input?.settings ?? await tx.voucherSettings.findUnique({ where: { id: "default" } });
+  const stats = input?.stats ?? await getBudgetStats(now, input?.tx);
+  const { start: todayStart } = todayRange(now);
+
+  await tx.voucherDailyStock.updateMany({
+    where: {
+      date: { lt: todayStart },
+      active: true,
+    },
+    data: {
+      active: false,
+      carryoverToNext: 0,
+    },
+  });
+  await tx.$executeRaw`UPDATE "VoucherDailyStock" SET "expiredBudget" = "remainingBudget", "remainingBudget" = 0, "remainingQuantity" = 0 WHERE "date" < ${todayStart} AND "expiredBudget" = 0 AND "remainingBudget" > 0`;
+
+  const existing = await tx.voucherDailyStock.findMany({
+    where: { date: todayStart },
+    orderBy: [{ prizeValue: "asc" }, { createdAt: "asc" }],
+    include: { prize: true },
+  });
+  if (existing.length) return existing;
+
+  const prizes = await tx.voucherPrize.findMany({
+    where: { active: true, type: { in: ["VOUCHER", "PAID_VOUCHER"] }, value: { gt: 0 } },
+    orderBy: [{ value: "asc" }, { sortOrder: "asc" }],
+  });
+  const byValue = new Map(prizes.map((prize) => [Math.round(prize.value ?? 0), prize]));
+  let remainingBudget = Math.max(0, Math.min(settings?.dailyBudgetLimit ?? VOUCHER_DAILY_LIMIT, stats.budget.dailyLimit, stats.monthlyRemaining));
+  const stockRows: Prisma.VoucherDailyStockCreateManyInput[] = [];
+
+  async function addStock(value: number, desiredQuantity: number) {
+    const prize = byValue.get(value);
+    if (!prize || remainingBudget < value || desiredQuantity <= 0) return;
+    const remainingLimit = await getRemainingQuantityLimit(tx, prize, stats, now);
+    const quantity = Math.max(0, Math.min(desiredQuantity, remainingLimit, Math.floor(remainingBudget / value)));
+    if (!quantity) return;
+    const budget = quantity * value;
+    remainingBudget -= budget;
+    stockRows.push({
+      id: sameDayId(todayStart, prize.id),
+      date: todayStart,
+      prizeId: prize.id,
+      prizeName: prize.name,
+      prizeValue: value,
+      initialQuantity: quantity,
+      remainingQuantity: quantity,
+      usedQuantity: 0,
+      initialBudget: budget,
+      usedBudget: 0,
+      remainingBudget: budget,
+      carryoverFromPrevious: 0,
+      carryoverToNext: 0,
+      expiredBudget: 0,
+      active: true,
+    });
+  }
+
+  if (remainingBudget >= 100 && byValue.has(100) && isVoucher100Day(now)) {
+    await addStock(100, 1);
+  } else {
+    if (remainingBudget >= 50 && byValue.has(50) && isVoucher50Day(now)) {
+      await addStock(5, 4);
+      await addStock(10, 3);
+      await addStock(50, 1);
+    } else {
+      await addStock(5, 10);
+      await addStock(10, 3);
+      await addStock(20, 1);
+    }
+  }
+
+  if (stockRows.length) {
+    await tx.voucherDailyStock.createMany({ data: stockRows, skipDuplicates: true });
+  }
+
+  return tx.voucherDailyStock.findMany({
+    where: { date: todayStart },
+    orderBy: [{ prizeValue: "asc" }, { createdAt: "asc" }],
+    include: { prize: true },
+  });
 }
 
 function identityOr(identity: VoucherIdentity, target: "spin" | "voucher" = "spin") {
@@ -348,16 +532,6 @@ function identityOr(identity: VoucherIdentity, target: "spin" | "voucher" = "spi
     else or.push({ OR: [{ whatsapp: phone }, { recipientPhone: phone }] } as never);
   }
   return or;
-}
-
-async function countPrizeVouchers(tx: Prisma.TransactionClient, prize: VoucherPrize, start: Date, end: Date) {
-  return tx.clientVoucher.count({
-    where: {
-      prizeId: prize.id,
-      status: { in: BUDGET_STATUSES },
-      createdAt: { gte: start, lt: end },
-    },
-  });
 }
 
 async function hasRecentVoucherWin(tx: Prisma.TransactionClient, identity: VoucherIdentity, cooldownDays: number, now = new Date()) {
@@ -432,24 +606,41 @@ async function hasVoucher100ThisMonth(tx: Prisma.TransactionClient, identity: Vo
   return Boolean(spin || voucher || voucherByUser);
 }
 
-function adjustedProbability(prize: VoucherPrize, stats: BudgetStats, settings: VoucherSettings) {
+function adjustedProbability(prize: VoucherPrize, stats: BudgetStats, settings: VoucherSettings, stock?: VoucherDailyStock | null) {
   const base = prize.baseProbability || prize.currentProbability || prize.probability;
   if (prize.type !== "VOUCHER" || !prize.value) return base;
-  if (!stats.budget.active || stats.monthlyRemaining < prize.value) return 0;
+  if (!stats.budget.active || stats.monthlyRemaining < prize.value || stats.dailyRemaining < prize.value) return 0;
+  if (!stock || !stock.active || stock.remainingQuantity <= 0 || stock.remainingBudget < prize.value) return 0;
   if (settings.dailyBudgetMode === "BLOCK_FREE_VOUCHERS" && stats.dailyRemaining < prize.value) return 0;
 
   const remainingRatio = stats.budget.monthlyLimit > 0 ? stats.monthlyRemaining / stats.budget.monthlyLimit : 0;
-  if (remainingRatio > 0.7) return base;
-  if (remainingRatio > 0.3) {
-    if (prize.value >= 50) return base * 0.35;
-    if (prize.value >= 20) return base * 0.55;
-    if (prize.value === 5) return base * 1.15;
-    return base * 0.85;
+  const stockRatio = stock.initialQuantity > 0 ? stock.remainingQuantity / stock.initialQuantity : 0;
+  let multiplier = 1;
+
+  if (stats.spinsToday < 12) {
+    if (prize.value <= 10) multiplier *= 1.9;
+    else if (prize.value === 20) multiplier *= 1.35;
+    else if (prize.value === 50) multiplier *= 0.7;
+    else if (prize.value === 100) multiplier *= 0.35;
   }
-  if (prize.value >= 50) return base * 0.05;
-  if (prize.value >= 20) return base * 0.15;
-  if (prize.value >= 10) return base * 0.25;
-  return base * 0.65;
+  if (stats.winnersToday === 0 && stats.spinsToday >= 6 && prize.value <= 10) multiplier *= 2.1;
+  if (stats.noPrizeToday >= 10 && prize.value <= 10) multiplier *= 1.45;
+  if (stockRatio <= 0.25) multiplier *= 0.62;
+  if (stock.remainingQuantity <= 1) multiplier *= 0.45;
+
+  if (remainingRatio <= 0.7 && remainingRatio > 0.3) {
+    if (prize.value >= 50) multiplier *= 0.35;
+    else if (prize.value >= 20) multiplier *= 0.55;
+    else if (prize.value === 5) multiplier *= 1.15;
+    else multiplier *= 0.85;
+  } else if (remainingRatio <= 0.3) {
+    if (prize.value >= 50) multiplier *= 0.05;
+    else if (prize.value >= 20) multiplier *= 0.15;
+    else if (prize.value >= 10) multiplier *= 0.25;
+    else multiplier *= 0.65;
+  }
+
+  return Math.max(0, base * multiplier);
 }
 
 export async function eligiblePrizes(input: {
@@ -460,7 +651,13 @@ export async function eligiblePrizes(input: {
   now?: Date;
 }) {
   const now = input.now ?? new Date();
-  const stats = await getBudgetStats(now, input.tx);
+  let stats = await getBudgetStats(now, input.tx);
+  await lockVoucherBudget(input.tx, stats.budget.id);
+  const stocks = await ensureDailyPrizeStock({ tx: input.tx, settings: input.settings, stats, now });
+  await lockDailyStockRows(input.tx, stats.todayStart);
+  stats = await getBudgetStats(now, input.tx);
+
+  const stockByPrize = new Map(stocks.map((stock) => [stock.prizeId, stock]));
   const recentVoucherWin = await hasRecentVoucherWin(input.tx, input.identity, input.settings.voucherWinCooldownDays, now);
   const activeVoucher = input.settings.blockMultipleActiveVouchers ? await hasActiveVoucher(input.tx, input.identity) : false;
   const has100 = await hasVoucher100ThisMonth(input.tx, input.identity, stats);
@@ -471,7 +668,7 @@ export async function eligiblePrizes(input: {
     if (!prize.active) continue;
     if (normalizedType !== "VOUCHER") {
       const chance = prize.baseProbability || prize.currentProbability || prize.probability;
-      if (chance > 0) eligible.push({ ...prize, type: normalizedType, effectiveProbability: chance, monthUsed: 0, dayUsed: 0, weekUsed: 0 });
+      if (chance > 0) eligible.push({ ...prize, type: normalizedType, effectiveProbability: chance, monthUsed: 0, dayUsed: 0, weekUsed: 0, dailyStock: null });
       continue;
     }
 
@@ -480,6 +677,7 @@ export async function eligiblePrizes(input: {
     if (recentVoucherWin || activeVoucher) continue;
     if (value === 100 && has100) continue;
 
+    const stock = stockByPrize.get(prize.id) ?? null;
     const [monthUsed, dayUsed, weekUsed] = await Promise.all([
       countPrizeVouchers(input.tx, prize, stats.monthStart, stats.monthEnd),
       countPrizeVouchers(input.tx, prize, stats.todayStart, stats.tomorrowStart),
@@ -489,8 +687,21 @@ export async function eligiblePrizes(input: {
     if (prize.dailyQuantityLimit != null && dayUsed >= prize.dailyQuantityLimit) continue;
     if (prize.weeklyQuantityLimit != null && weekUsed >= prize.weeklyQuantityLimit) continue;
 
-    const chance = adjustedProbability(prize, stats, input.settings);
-    if (chance > 0) eligible.push({ ...prize, type: normalizedType, effectiveProbability: chance, monthUsed, dayUsed, weekUsed });
+    const chance = adjustedProbability(prize, stats, input.settings, stock);
+    if (chance > 0) eligible.push({ ...prize, type: normalizedType, effectiveProbability: chance, monthUsed, dayUsed, weekUsed, dailyStock: stock });
+  }
+
+  const voucherOptions = eligible.filter((item) => item.type === "VOUCHER" && (item.value ?? 0) > 0);
+  if (voucherOptions.length && stats.winnersToday === 0 && stats.spinsToday >= 12) {
+    for (const prize of eligible) {
+      if (prize.type !== "VOUCHER") prize.effectiveProbability = 0;
+      else if ((prize.value ?? 0) <= 10) prize.effectiveProbability *= 3;
+    }
+  } else if (voucherOptions.length && stats.noPrizeToday >= 10) {
+    for (const prize of eligible) {
+      if (prize.type !== "VOUCHER") prize.effectiveProbability *= 0.45;
+      else if ((prize.value ?? 0) <= 10) prize.effectiveProbability *= 1.6;
+    }
   }
 
   return { prizes: eligible, stats };
@@ -509,6 +720,43 @@ export function pickPrize(prizes: PrizeWithChance[]) {
   return eligible[eligible.length - 1] ?? null;
 }
 
+export async function consumeDailyStock(input: {
+  tx: Prisma.TransactionClient;
+  prize: PrizeWithChance;
+  stats: BudgetStats;
+}) {
+  const value = input.prize.value ?? 0;
+  const stock = input.prize.dailyStock;
+  if (value <= 0) return null;
+  if (!stock) throw new Error("Este prêmio não tem estoque disponível hoje.");
+
+  const updated = await input.tx.voucherDailyStock.updateMany({
+    where: {
+      id: stock.id,
+      active: true,
+      remainingQuantity: { gt: 0 },
+      remainingBudget: { gte: value },
+    },
+    data: {
+      remainingQuantity: { decrement: 1 },
+      usedQuantity: { increment: 1 },
+      usedBudget: { increment: value },
+      remainingBudget: { decrement: value },
+    },
+  });
+  if (updated.count !== 1) throw new Error("O estoque deste prêmio acabou. Gire novamente.");
+
+  await input.tx.voucherBudget.update({
+    where: { id: input.stats.budget.id },
+    data: {
+      monthlyUsed: { increment: value },
+      dailyUsed: { increment: value },
+    },
+  });
+
+  return stock;
+}
+
 export async function createVoucherFromSpin(input: {
   tx?: Prisma.TransactionClient;
   spin: VoucherSpin;
@@ -525,10 +773,13 @@ export async function createVoucherFromSpin(input: {
   const value = input.prize.value ?? 0;
   const clientId = input.clientId ?? input.spin.clientId ?? null;
   const phone = normalizeVoucherPhone(input.recipientPhone ?? input.spin.recipientPhone ?? input.spin.whatsapp);
-  const awaitingRegistration = value === 100 && !clientId;
-  const expiresAt = awaitingRegistration
-    ? voucherExpiresAtByHours(input.settings?.registrationClaimHours ?? 24, now)
-    : voucherExpiresAt(input.prize, now);
+  const awaitingRegistration = !clientId;
+  const pendingSmallGuest = awaitingRegistration && value < 100 && !phone;
+  const expiresAt = pendingSmallGuest
+    ? input.spin.pendingExpiresAt ?? voucherExpiresAtByHours(input.settings?.pendingClaimMinutes ? input.settings.pendingClaimMinutes / 60 : 1, now)
+    : awaitingRegistration && value === 100
+      ? voucherExpiresAtByHours(input.settings?.registrationClaimHours ?? 24, now)
+      : voucherExpiresAt(input.prize, now);
 
   return tx.clientVoucher.create({
     data: {
@@ -570,24 +821,32 @@ export async function releaseRegistrationVouchersForUser(input: {
   if (!whereOr.length) return { count: 0 };
 
   const now = new Date();
-  return tx.clientVoucher.updateMany({
+  const vouchers = await tx.clientVoucher.findMany({
     where: {
       OR: whereOr,
-      value: 100,
       status: "AWAITING_REGISTRATION",
       expiresAt: { gt: now },
     },
-    data: {
-      clientId: user.id,
-      status: "AVAILABLE",
-      expiresAt: voucherExpiresAtByHours(24, now),
-      registrationRequired: false,
-      registrationReleasedAt: now,
-      recipientName: user.name,
-      recipientPhone: phone || null,
-      whatsapp: phone || null,
-    },
+    include: { prize: true },
   });
+
+  for (const voucher of vouchers) {
+    await tx.clientVoucher.update({
+      where: { id: voucher.id },
+      data: {
+        clientId: user.id,
+        status: "AVAILABLE",
+        expiresAt: voucher.prize ? voucherExpiresAt(voucher.prize, now) : voucherExpiresAtByHours(24, now),
+        registrationRequired: false,
+        registrationReleasedAt: now,
+        recipientName: user.name,
+        recipientPhone: phone || voucher.recipientPhone,
+        whatsapp: phone || voucher.whatsapp,
+      },
+    });
+  }
+
+  return { count: vouchers.length };
 }
 
 export function userVoucherIdentity(user: Pick<User, "id" | "phone" | "email" | "document"> | null | undefined, extra?: Partial<VoucherIdentity>): VoucherIdentity {

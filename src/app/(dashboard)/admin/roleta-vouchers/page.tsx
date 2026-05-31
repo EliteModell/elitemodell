@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
-import { ensureVoucherDefaults, getBudgetStats, updateExpiredVouchers, VOUCHER_STATUS_LABEL } from "@/lib/voucher-roulette";
+import { ensureDailyPrizeStock, ensureVoucherDefaults, getBudgetStats, monthRange, todayRange, updateExpiredVouchers, VOUCHER_STATUS_LABEL, weekRange } from "@/lib/voucher-roulette";
 import { AdminHeader, AdminPanel, AdminTable, StatCard, StatusPill, adminColors, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +30,12 @@ function statusTone(status: string): "neutral" | "warning" | "success" | "danger
   if (status === "AWAITING_REGISTRATION") return "warning";
   if (status === "CANCELLED" || status === "EXPIRED") return "danger";
   return "neutral";
+}
+
+function periodRange(period: string | undefined, now = new Date()) {
+  if (period === "week") return { label: "semana", ...weekRange(now) };
+  if (period === "month") return { label: "mês", ...monthRange(now) };
+  return { label: "hoje", ...todayRange(now) };
 }
 
 async function updateSettings(formData: FormData) {
@@ -139,16 +145,22 @@ async function cancelVoucher(formData: FormData) {
   revalidatePath("/admin/roleta-vouchers");
 }
 
-export default async function AdminRoletaVouchersPage() {
+export default async function AdminRoletaVouchersPage({ searchParams }: { searchParams?: Promise<{ period?: string }> }) {
   await requireAdmin("vouchers:manage");
   await ensureVoucherDefaults();
   await updateExpiredVouchers();
 
+  const params = await searchParams;
+  const selectedPeriod = params?.period === "week" || params?.period === "month" ? params.period : "day";
+  const range = periodRange(selectedPeriod);
   const stats = await getBudgetStats();
+  const dailyStock = await ensureDailyPrizeStock({ stats });
   const [
     settings,
     prizes,
-    totalSpins,
+    spinsInPeriod,
+    winnersInPeriod,
+    noPrizeInPeriod,
     availableCount,
     usedCount,
     expiredCount,
@@ -161,7 +173,9 @@ export default async function AdminRoletaVouchersPage() {
   ] = await Promise.all([
     prisma.voucherSettings.findUnique({ where: { id: "default" } }),
     prisma.voucherPrize.findMany({ orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] }),
-    prisma.voucherSpin.count(),
+    prisma.voucherSpin.count({ where: { createdAt: { gte: range.start, lt: range.end } } }),
+    prisma.voucherSpin.count({ where: { result: "VOUCHER", voucherValue: { gt: 0 }, createdAt: { gte: range.start, lt: range.end } } }),
+    prisma.voucherSpin.count({ where: { result: { not: "VOUCHER" }, createdAt: { gte: range.start, lt: range.end } } }),
     prisma.clientVoucher.count({ where: { status: "AVAILABLE" } }),
     prisma.clientVoucher.count({ where: { status: "USED" } }),
     prisma.clientVoucher.count({ where: { status: "EXPIRED" } }),
@@ -169,16 +183,22 @@ export default async function AdminRoletaVouchersPage() {
     prisma.clientVoucher.count({ where: { status: "CANCELLED" } }),
     prisma.clientVoucher.groupBy({
       by: ["prizeId"],
-      where: { createdAt: { gte: stats.monthStart, lt: stats.monthEnd }, status: { not: "CANCELLED" } },
+      where: { createdAt: { gte: range.start, lt: range.end }, status: { not: "CANCELLED" } },
       _count: { _all: true },
       _sum: { value: true },
     }),
     prisma.voucherSpin.findMany({
+      where: { createdAt: { gte: range.start, lt: range.end } },
       orderBy: { createdAt: "desc" },
       take: 35,
-      include: { client: { select: { name: true, email: true, phone: true } }, prize: true },
+      include: {
+        client: { select: { name: true, email: true, phone: true } },
+        prize: true,
+        vouchers: { select: { status: true, usedAt: true, code: true } },
+      },
     }),
     prisma.clientVoucher.findMany({
+      where: { createdAt: { gte: range.start, lt: range.end } },
       orderBy: { createdAt: "desc" },
       take: 45,
       include: {
@@ -201,17 +221,30 @@ export default async function AdminRoletaVouchersPage() {
     <div>
       <AdminHeader
         title="Roleta de Vouchers"
-        subtitle="Controle financeiro da roleta exibida no Buscar Prazer. O backend bloqueia vouchers quando o orçamento mensal, saldo diário acumulado ou limite do prêmio acaba."
+        subtitle="Controle financeiro da roleta exibida no Buscar Prazer. O backend consome estoque diário em transação e bloqueia vouchers quando o orçamento diário ou mensal acaba."
       />
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+        {[
+          ["day", "Hoje"],
+          ["week", "Semana"],
+          ["month", "Mês"],
+        ].map(([period, label]) => (
+          <a key={period} href={`/admin/roleta-vouchers?period=${period}`} style={{ ...buttonStyle, background: selectedPeriod === period ? "rgba(212,168,67,.18)" : "transparent" }}>{label}</a>
+        ))}
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 14, marginBottom: 18 }}>
         <StatCard label={`Orçamento mensal ${stats.month}/${stats.year}`} value={money(stats.budget.monthlyLimit)} />
         <StatCard label="Usado no mês" value={money(stats.monthlyUsed)} tone={stats.monthlyRemaining <= 0 ? "danger" : "warning"} />
         <StatCard label="Restante no mês" value={money(stats.monthlyRemaining)} tone={stats.monthlyRemaining > 0 ? "success" : "danger"} />
         <StatCard label="Usado hoje" value={money(stats.dailyUsed)} />
-        <StatCard label="Disponível hoje com acúmulo" value={money(stats.dailyRemaining)} tone={stats.dailyRemaining > 0 ? "success" : "danger"} />
+        <StatCard label="Saldo restante hoje" value={money(stats.dailyRemaining)} tone={stats.dailyRemaining > 0 ? "success" : "danger"} />
+        <StatCard label="Estoque restante hoje" value={money(stats.dailyStockRemainingBudget)} tone={stats.dailyStockRemainingBudget > 0 ? "success" : "danger"} />
         <StatCard label="Taxa de uso" value={`${Math.round(stats.usageRate * 100)}%`} />
-        <StatCard label="Giros registrados" value={totalSpins} />
+        <StatCard label={`Giros no ${range.label}`} value={spinsInPeriod} />
+        <StatCard label={`Ganhadores no ${range.label}`} value={winnersInPeriod} tone="success" />
+        <StatCard label={`Sem prêmio no ${range.label}`} value={noPrizeInPeriod} />
         <StatCard label="Vouchers disponíveis" value={availableCount} tone="success" />
         <StatCard label="Vouchers usados" value={usedCount} tone="success" />
         <StatCard label="Aguardando cadastro" value={awaitingRegistrationCount} tone="warning" />
@@ -242,6 +275,44 @@ export default async function AdminRoletaVouchersPage() {
           <button style={{ ...buttonStyle, minHeight: 42 }}>Salvar orçamento</button>
         </form>
       </AdminPanel>
+
+      <div style={{ marginTop: 16 }}>
+        <AdminPanel>
+          <h2 style={sectionTitle}>Estoque de prêmios do dia</h2>
+          <AdminTable>
+            <thead>
+              <tr>
+                <th style={thStyle}>Prêmio</th>
+                <th style={thStyle}>Estoque inicial</th>
+                <th style={thStyle}>Restam</th>
+                <th style={thStyle}>Usados</th>
+                <th style={thStyle}>Valor inicial</th>
+                <th style={thStyle}>Usado</th>
+                <th style={thStyle}>Sobra</th>
+                <th style={thStyle}>Acumulou/expirou</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dailyStock.length ? dailyStock.map((stock) => (
+                <tr key={stock.id}>
+                  <td style={tdStyle}>{stock.prizeName}</td>
+                  <td style={tdStyle}>{stock.initialQuantity}</td>
+                  <td style={tdStyle}>{stock.remainingQuantity}</td>
+                  <td style={tdStyle}>{stock.usedQuantity}</td>
+                  <td style={tdStyle}>{money(stock.initialBudget)}</td>
+                  <td style={tdStyle}>{money(stock.usedBudget)}</td>
+                  <td style={tdStyle}>{money(stock.remainingBudget)}</td>
+                  <td style={tdStyle}>Acumulou {money(stock.carryoverToNext)} · Expirou {money(stock.expiredBudget)}</td>
+                </tr>
+              )) : (
+                <tr>
+                  <td style={tdStyle} colSpan={8}>Sem estoque de voucher gratuito para hoje. A roleta retorna apenas opções sem prêmio.</td>
+                </tr>
+              )}
+            </tbody>
+          </AdminTable>
+        </AdminPanel>
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.1fr) minmax(320px,.9fr)", gap: 16, marginTop: 16 }}>
         <AdminPanel>
@@ -340,7 +411,8 @@ export default async function AdminRoletaVouchersPage() {
                 <th style={thStyle}>Valor</th>
                 <th style={thStyle}>Cliente/visitante</th>
                 <th style={thStyle}>IP</th>
-                <th style={thStyle}>Identificação</th>
+                <th style={thStyle}>Device</th>
+                <th style={thStyle}>Status/uso</th>
               </tr>
             </thead>
             <tbody>
@@ -351,7 +423,12 @@ export default async function AdminRoletaVouchersPage() {
                   <td style={tdStyle}>{spin.voucherValue ? money(spin.voucherValue) : "-"}</td>
                   <td style={tdStyle}>{spin.client?.name ?? spin.client?.email ?? spin.visitorId ?? "-"}</td>
                   <td style={tdStyle}>{spin.ipAddress ?? "-"}</td>
-                  <td style={tdStyle}>{spin.claimedAt ? "Salvo" : spin.pendingToken ? "Pendente" : "-"}</td>
+                  <td style={tdStyle}>{spin.userAgent ? `${spin.userAgent.slice(0, 64)}${spin.userAgent.length > 64 ? "..." : ""}` : "-"}</td>
+                  <td style={tdStyle}>
+                    {spin.vouchers[0]
+                      ? `${VOUCHER_STATUS_LABEL[spin.vouchers[0].status] ?? spin.vouchers[0].status}${spin.vouchers[0].usedAt ? " · usado" : ""}`
+                      : spin.claimedAt ? "Salvo" : spin.pendingToken ? "Pendente" : "-"}
+                  </td>
                 </tr>
               ))}
             </tbody>

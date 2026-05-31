@@ -9,7 +9,7 @@ import {
   createVoucherFromSpin,
   normalizeVoucherPhone,
   releaseRegistrationVouchersForUser,
-  voucherExpiresAtByHours,
+  voucherExpiresAt,
   VOUCHER_VISITOR_COOKIE,
 } from "@/lib/voucher-roulette";
 
@@ -40,15 +40,14 @@ export async function POST(req: NextRequest) {
     if (spin.pendingExpiresAt && spin.pendingExpiresAt < new Date()) throw new Error("O prazo para salvar este voucher expirou.");
 
     const value = spin.prize.value ?? 0;
+    const existingVoucher = spin.vouchers[0] ?? null;
     if (value === 100 && !session?.user?.id) {
       throw new Error("Para liberar o voucher de R$ 100, conclua seu cadastro na plataforma.");
     }
 
-    if (spin.claimedAt && spin.vouchers[0]) return spin.vouchers[0];
-
-    if (value === 100 && session?.user?.id && spin.vouchers[0]?.status === "AWAITING_REGISTRATION") {
+    if (session?.user?.id && existingVoucher?.status === "AWAITING_REGISTRATION") {
       await releaseRegistrationVouchersForUser({ userId: session.user.id, visitorId: spin.visitorId ?? visitorId, tx });
-      const voucher = await tx.clientVoucher.findUnique({ where: { id: spin.vouchers[0].id } });
+      const voucher = await tx.clientVoucher.findUnique({ where: { id: existingVoucher.id } });
       if (!voucher) throw new Error("Voucher não encontrado.");
       await tx.voucherSpin.update({ where: { id: spin.id }, data: { claimedAt: new Date() } });
       return voucher;
@@ -58,12 +57,35 @@ export async function POST(req: NextRequest) {
       const activeVoucher = await tx.clientVoucher.findFirst({
         where: {
           OR: [{ recipientPhone: phone }, { whatsapp: phone }],
+          id: existingVoucher ? { not: existingVoucher.id } : undefined,
           status: { in: ["AVAILABLE", "AWAITING_REGISTRATION"] },
           expiresAt: { gt: new Date() },
         },
         select: { id: true },
       });
       if (activeVoucher) throw new Error("Este WhatsApp já possui um voucher ativo.");
+    }
+
+    if (existingVoucher) {
+      const voucher = await tx.clientVoucher.update({
+        where: { id: existingVoucher.id },
+        data: {
+          recipientName: data.name ?? existingVoucher.recipientName,
+          recipientPhone: phone || existingVoucher.recipientPhone,
+          whatsapp: phone || existingVoucher.whatsapp,
+          expiresAt: voucherExpiresAt(spin.prize),
+        },
+      });
+      await tx.voucherSpin.update({
+        where: { id: spin.id },
+        data: {
+          claimedAt: new Date(),
+          recipientName: data.name ?? null,
+          recipientPhone: phone,
+          whatsapp: phone,
+        },
+      });
+      return voucher;
     }
 
     const settings = await tx.voucherSettings.findUnique({ where: { id: "default" } });
@@ -90,20 +112,6 @@ export async function POST(req: NextRequest) {
   }).catch((err) => ({ error: err instanceof Error ? err.message : "Não foi possível salvar o voucher." }));
 
   if ("error" in result) return NextResponse.json({ error: result.error }, { status: 400 });
-
-  if (result.status === "AWAITING_REGISTRATION" && session?.user?.id) {
-    const voucher = await prisma.clientVoucher.update({
-      where: { id: result.id },
-      data: {
-        clientId: session.user.id,
-        status: "AVAILABLE",
-        expiresAt: voucherExpiresAtByHours(24),
-        registrationRequired: false,
-        registrationReleasedAt: new Date(),
-      },
-    });
-    return NextResponse.json({ voucher });
-  }
 
   return NextResponse.json({ voucher: result });
 }

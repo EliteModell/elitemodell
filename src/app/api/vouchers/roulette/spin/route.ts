@@ -7,6 +7,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
+  consumeDailyStock,
   createVoucherFromSpin,
   eligiblePrizes,
   ensureVoucherDefaults,
@@ -25,13 +26,17 @@ const schema = z.object({
   idempotencyKey: z.string().min(8).max(120),
 });
 
-function modalMessage(type: string, value?: number | null, needsRegistration?: boolean) {
-  if (type === "TRY_AGAIN") return "Não foi dessa vez. Você pode tentar novamente.";
+function modalMessage(type: string, value?: number | null, needsRegistration?: boolean, prizeName?: string | null) {
+  if (type === "TRY_AGAIN") {
+    if (prizeName === "Quase lá!") return "Foi por pouco. Continue acompanhando a campanha.";
+    if (prizeName === "Mais sorte na próxima") return "Não foi dessa vez. Mais sorte na próxima.";
+    return "Não foi dessa vez. Você pode tentar novamente.";
+  }
   if (type === "TRY_TOMORROW") return "Volte amanhã para tentar novamente.";
   if (value === 100 && needsRegistration) {
     return "Parabéns! Você ganhou um voucher de R$ 100. Para liberar esse benefício, conclua seu cadastro na plataforma.";
   }
-  return `Parabéns! Você ganhou um voucher de R$ ${Math.round(value ?? 0)} para usar com profissionais participantes.`;
+  return `Parabéns! Você ganhou R$ ${Math.round(value ?? 0)} OFF. Use seu desconto após criar sua conta na plataforma.`;
 }
 
 export async function POST(req: NextRequest) {
@@ -58,13 +63,14 @@ export async function POST(req: NextRequest) {
     const prizes = await prisma.voucherPrize.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] });
     const prizeIndex = prizes.findIndex((item) => item.id === existing.prizeId);
     const voucher = existing.vouchers[0] ?? null;
-    const needsRegistration = voucher?.status === "AWAITING_REGISTRATION";
-    const needsIdentification = !voucher && existing.result === "VOUCHER" && (existing.voucherValue ?? existing.prize.value ?? 0) < 100;
+    const value = existing.voucherValue ?? existing.prize.value ?? 0;
+    const needsIdentification = Boolean(voucher && existing.result === "VOUCHER" && value < 100 && !voucher.recipientPhone && !session?.user?.id);
+    const needsRegistration = Boolean(voucher?.status === "AWAITING_REGISTRATION" && !needsIdentification);
     return NextResponse.json({
       spinId: existing.id,
       prize: publicPrize(existing.prize, Math.max(0, prizeIndex)),
       result: existing.result,
-      message: modalMessage(existing.result, existing.prize.value, needsRegistration),
+      message: modalMessage(existing.result, existing.prize.value, needsRegistration, existing.prize.name),
       needsIdentification,
       needsRegistration,
       pendingToken: existing.pendingToken,
@@ -96,7 +102,7 @@ export async function POST(req: NextRequest) {
       where: { active: true },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     });
-    const { prizes: candidates } = await eligiblePrizes({ tx, prizes, settings, identity });
+    const { prizes: candidates, stats } = await eligiblePrizes({ tx, prizes, settings, identity });
     const prize = pickPrize(candidates);
     if (!prize) throw new Error("Nenhum prêmio ativo configurado.");
 
@@ -112,6 +118,10 @@ export async function POST(req: NextRequest) {
       : isVoucher100Guest
         ? new Date(Date.now() + settings.registrationClaimHours * 60 * 60 * 1000)
         : null;
+
+    if (isVoucher) {
+      await consumeDailyStock({ tx, prize, stats });
+    }
 
     const spin = await tx.voucherSpin.create({
       data: {
@@ -129,11 +139,11 @@ export async function POST(req: NextRequest) {
     });
 
     let voucher = null;
-    if (session?.user?.id && isVoucher) {
-      voucher = await createVoucherFromSpin({ tx, spin, prize, settings, clientId: session.user.id, visitorId });
-      await tx.voucherSpin.update({ where: { id: spin.id }, data: { claimedAt: new Date() } });
-    } else if (isVoucher100Guest) {
-      voucher = await createVoucherFromSpin({ tx, spin, prize, settings, visitorId });
+    if (isVoucher) {
+      voucher = await createVoucherFromSpin({ tx, spin, prize, settings, clientId: session?.user?.id ?? null, visitorId });
+      if (session?.user?.id) {
+        await tx.voucherSpin.update({ where: { id: spin.id }, data: { claimedAt: new Date() } });
+      }
     }
 
     return { spin, prize, prizeIndex, voucher, needsGuestClaim, needsRegistration: isVoucher100Guest };
@@ -143,7 +153,7 @@ export async function POST(req: NextRequest) {
     spinId: result.spin.id,
     prize: publicPrize(result.prize, Math.max(0, result.prizeIndex)),
     result: result.spin.result,
-    message: modalMessage(result.spin.result, result.prize.value, result.needsRegistration),
+    message: modalMessage(result.spin.result, result.prize.value, result.needsRegistration, result.prize.name),
     needsIdentification: result.needsGuestClaim,
     needsRegistration: result.needsRegistration,
     pendingToken: result.spin.pendingToken,
