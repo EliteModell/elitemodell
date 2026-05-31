@@ -7,6 +7,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FiltersModal from "@/components/FiltersModal";
+import VoucherRouletteModal from "@/components/vouchers/VoucherRouletteModal";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 const GOLD = "#d4a843";
@@ -830,6 +831,7 @@ function BuscarContent() {
         )}
       </div>
 
+      <VoucherRouletteModal />
       <Footer />
     </div>
   );

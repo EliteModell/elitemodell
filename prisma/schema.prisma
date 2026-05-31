@@ -188,6 +188,8 @@ model User {
   auditLogsCreated   AuditLog[]     @relation("AuditAdmin")
   phoneVerificationCodes PhoneVerificationCode[]
   payments           Payment[]
+  voucherSpins       VoucherSpin[]    @relation("VoucherSpinClient")
+  clientVouchers     ClientVoucher[]  @relation("ClientVouchers")
 
   @@index([phone])
   @@index([accountType])
@@ -459,6 +461,7 @@ model Payment {
 
   booking         Booking?      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   user            User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  voucherUnlocks  ClientVoucher[]
 
   @@index([userId, status])
   @@index([provider, providerPaymentId])
@@ -693,6 +696,7 @@ model Professional {
   reviewDisputes ProfessionalReviewDispute[]
   profileEvents ProfessionalProfileEvent[]
   favorites    Favorite[]
+  voucherSettings ProfessionalVoucherSettings?
 
   @@index([status, featured, rating, totalReviews, createdAt])
   @@index([status, boostActive, boostUntil])
@@ -759,12 +763,16 @@ model Appointment {
   notes          String?           @db.Text
   contactMethod  String            @default("whatsapp")
   price          Float?
+  originalPrice  Float?
+  voucherDiscount Float             @default(0)
+  finalPrice     Float?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 
   professional   Professional       @relation(fields: [professionalId], references: [id])
   client         User               @relation("ClientAppointments", fields: [clientId], references: [id])
   review         ProfessionalReview?
+  voucher        ClientVoucher?      @relation("AppointmentVoucher")
 
   @@index([clientId, status, createdAt])
   @@index([professionalId, status, date])
@@ -787,6 +795,140 @@ model ProfessionalReview {
   appointment    Appointment  @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   author         User         @relation("ProReviewAuthor", fields: [authorId], references: [id])
   dispute        ProfessionalReviewDispute?
+}
+
+model VoucherSettings {
+  id                  String   @id @default("default")
+  active              Boolean  @default(true)
+  dailySpinLimit      Int      @default(1)
+  guestDailySpinLimit Int      @default(1)
+  pendingClaimMinutes Int      @default(30)
+  defaultExpiresInDays Int     @default(15)
+  monthlyBudgetLimit  Float    @default(3000)
+  dailyBudgetLimit    Float    @default(100)
+  dailyBudgetMode     String   @default("BLOCK_FREE_VOUCHERS")
+  voucherWinCooldownDays Int   @default(7)
+  blockMultipleActiveVouchers Boolean @default(true)
+  registrationClaimHours Int   @default(24)
+  allowMultipleVouchersPerAppointment Boolean @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model VoucherBudget {
+  id           String   @id @default(cuid())
+  month        Int
+  year         Int
+  monthlyLimit Float    @default(3000)
+  dailyLimit   Float    @default(100)
+  monthlyUsed  Float    @default(0)
+  dailyUsed    Float    @default(0)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([month, year])
+  @@index([year, month, active])
+}
+
+model VoucherPrize {
+  id              String   @id @default(cuid())
+  name            String
+  type            String
+  value           Float?
+  probability     Float
+  baseProbability Float    @default(0)
+  currentProbability Float @default(0)
+  monthlyQuantityLimit Int?
+  monthlyQuantityUsed Int  @default(0)
+  dailyQuantityLimit Int?
+  dailyQuantityUsed Int   @default(0)
+  weeklyQuantityLimit Int?
+  active          Boolean  @default(true)
+  requiresPayment Boolean  @default(false)
+  paymentAmount   Float?
+  expiresInDays   Int      @default(15)
+  expiresInHours  Int?
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  spins           VoucherSpin[]
+  vouchers        ClientVoucher[]
+
+  @@index([active, sortOrder])
+}
+
+model VoucherSpin {
+  id              String   @id @default(cuid())
+  clientId        String?
+  visitorId       String?
+  prizeId         String?
+  result          String
+  voucherValue    Float?
+  whatsapp        String?
+  ipAddress       String?
+  userAgent       String?  @db.Text
+  idempotencyKey  String   @unique
+  pendingToken    String?  @unique
+  pendingExpiresAt DateTime?
+  claimedAt       DateTime?
+  recipientName   String?
+  recipientPhone  String?
+  createdAt       DateTime @default(now())
+
+  client          User?        @relation("VoucherSpinClient", fields: [clientId], references: [id], onDelete: SetNull)
+  prize           VoucherPrize? @relation(fields: [prizeId], references: [id], onDelete: SetNull)
+  vouchers        ClientVoucher[]
+
+  @@index([clientId, createdAt])
+  @@index([visitorId, createdAt])
+  @@index([ipAddress, createdAt])
+  @@index([result, createdAt])
+}
+
+model ClientVoucher {
+  id              String   @id @default(cuid())
+  clientId        String?
+  visitorId       String?
+  prizeId         String?
+  spinId          String?
+  code            String   @unique
+  value           Float
+  status          String   @default("AVAILABLE")
+  expiresAt       DateTime
+  usedAt          DateTime?
+  appointmentId   String?  @unique
+  requiresPayment Boolean  @default(false)
+  paymentStatus   String   @default("NOT_REQUIRED")
+  paymentId       String?
+  whatsapp        String?
+  registrationRequired Boolean @default(false)
+  registrationReleasedAt DateTime?
+  recipientName   String?
+  recipientPhone  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  client          User?         @relation("ClientVouchers", fields: [clientId], references: [id], onDelete: SetNull)
+  prize           VoucherPrize? @relation(fields: [prizeId], references: [id], onDelete: SetNull)
+  spin            VoucherSpin?  @relation(fields: [spinId], references: [id], onDelete: SetNull)
+  appointment     Appointment?  @relation("AppointmentVoucher", fields: [appointmentId], references: [id], onDelete: SetNull)
+  payment         Payment?      @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([clientId, status, expiresAt])
+  @@index([visitorId, status, expiresAt])
+  @@index([recipientPhone, status])
+  @@index([paymentStatus])
+}
+
+model ProfessionalVoucherSettings {
+  id              String   @id @default(cuid())
+  professionalId  String   @unique
+  acceptsVouchers Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+
+  professional    Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
 }
 
 model ProfessionalReviewDispute {

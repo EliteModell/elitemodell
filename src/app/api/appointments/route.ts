@@ -13,6 +13,7 @@ const createSchema = z.object({
   duration: z.number().int().positive().default(60),
   contactMethod: z.string().default("whatsapp"),
   notes: z.string().optional(),
+  voucherId: z.string().cuid().optional(),
 });
 
 const updateSchema = z.object({
@@ -53,6 +54,7 @@ export async function GET(req: NextRequest) {
     include: {
       professional: { select: { displayName: true, slug: true } },
       client: { select: { name: true, email: true, image: true } },
+      voucher: { select: { id: true, code: true, value: true, status: true } },
     },
     orderBy: { date: "desc" },
   });
@@ -72,7 +74,13 @@ export async function POST(req: NextRequest) {
 
     const professional = await prisma.professional.findUnique({
       where: { slug: data.professionalSlug },
+      include: { voucherSettings: true },
     });
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { phone: true },
+    });
+    const phone = user?.phone ? user.phone.replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, "") : null;
     const isPausedByDate = Boolean(professional?.pauseUntil && professional.pauseUntil.getTime() > Date.now());
     if (!professional || professional.status !== "ACTIVE" || !professional.verified || isPausedByDate) {
       return NextResponse.json({ error: "Profissional não disponível." }, { status: 404 });
@@ -82,22 +90,81 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Você não pode agendar com você mesmo." }, { status: 400 });
     }
 
-    const appointment = await prisma.appointment.create({
-      data: {
-        professionalId: professional.id,
-        clientId: session.user.id,
-        date: new Date(data.date),
-        duration: data.duration,
-        contactMethod: data.contactMethod,
-        notes: data.notes,
-        status: "PENDING",
-      },
-    });
+    const originalPrice = professional.pricePerHour ?? professional.priceMin ?? data.duration;
+    let voucherDiscount = 0;
+    let finalPrice = originalPrice;
 
-    // Increment total appointments counter
-    await prisma.professional.update({
-      where: { id: professional.id },
-      data: { totalAppointments: { increment: 1 } },
+    const appointment = await prisma.$transaction(async (tx) => {
+      if (data.voucherId) {
+        if (!professional.voucherSettings?.acceptsVouchers) {
+          throw new Error("Profissional não aceita vouchers promocionais.");
+        }
+        const voucher = await tx.clientVoucher.findFirst({
+          where: {
+            id: data.voucherId,
+            AND: [
+              {
+                OR: [
+                  { clientId: session.user.id },
+                  ...(phone ? [{ recipientPhone: phone }, { whatsapp: phone }] : []),
+                ],
+              },
+              { requiresPayment: false },
+            ],
+            status: "AVAILABLE",
+            expiresAt: { gt: new Date() },
+            appointmentId: null,
+          },
+        });
+        if (!voucher) throw new Error("Voucher indisponível, vencido ou já usado.");
+        voucherDiscount = Math.min(originalPrice, voucher.value);
+        finalPrice = Math.max(0, originalPrice - voucherDiscount);
+      }
+
+      const created = await tx.appointment.create({
+        data: {
+          professionalId: professional.id,
+          clientId: session.user.id,
+          date: new Date(data.date),
+          duration: data.duration,
+          contactMethod: data.contactMethod,
+          notes: data.notes,
+          status: "PENDING",
+          price: finalPrice,
+          originalPrice,
+          voucherDiscount,
+          finalPrice,
+        },
+      });
+
+      if (data.voucherId) {
+        const claimed = await tx.clientVoucher.updateMany({
+          where: {
+            id: data.voucherId,
+            AND: [
+              {
+                OR: [
+                  { clientId: session.user.id },
+                  ...(phone ? [{ recipientPhone: phone }, { whatsapp: phone }] : []),
+                ],
+              },
+              { requiresPayment: false },
+            ],
+            status: "AVAILABLE",
+            expiresAt: { gt: new Date() },
+            appointmentId: null,
+          },
+          data: { status: "USED", usedAt: new Date(), appointmentId: created.id, clientId: session.user.id },
+        });
+        if (claimed.count !== 1) throw new Error("Voucher indisponível, vencido ou já usado.");
+      }
+
+      await tx.professional.update({
+        where: { id: professional.id },
+        data: { totalAppointments: { increment: 1 } },
+      });
+
+      return created;
     });
 
     return NextResponse.json(appointment, { status: 201 });
@@ -105,7 +172,9 @@ export async function POST(req: NextRequest) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues }, { status: 400 });
     }
-    return NextResponse.json({ error: "Erro interno." }, { status: 500 });
+    const message = err instanceof Error ? err.message : "Erro interno.";
+    const status = message.includes("Voucher") || message.includes("voucher") || message.includes("Profissional") ? 400 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -142,6 +211,7 @@ export async function PATCH(req: NextRequest) {
       include: {
         professional: { select: { displayName: true, slug: true } },
         client: { select: { name: true, email: true, image: true } },
+        voucher: { select: { id: true, code: true, value: true, status: true } },
       },
     });
 
@@ -150,7 +220,9 @@ export async function PATCH(req: NextRequest) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues }, { status: 400 });
     }
-    return NextResponse.json({ error: "Erro interno." }, { status: 500 });
+    const message = err instanceof Error ? err.message : "Erro interno.";
+    const status = message.includes("Voucher") || message.includes("voucher") || message.includes("Profissional") ? 400 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 

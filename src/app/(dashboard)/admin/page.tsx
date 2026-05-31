@@ -76,6 +76,7 @@ export default async function AdminPage() {
               ["Imóveis", "/admin/imoveis", "Quartos, apartamentos, fotos, regras e preços"],
               ["KYC", "/admin/kyc", "Persona, manual, documentos e aprovação sensível"],
               ["Denúncias", "/admin/denuncias", "Moderação de risco e conteúdo"],
+              ["Roleta de Vouchers", "/admin/roleta-vouchers", "Prêmios, giros, vouchers e profissionais participantes"],
               ["Auditoria", "/admin/auditoria", "Trilha das ações administrativas"],
             ].map(([label, href, desc]) => (
               <Link key={href} href={href} style={{ textDecoration: "none", border: `1px solid ${adminColors.border}`, borderRadius: 8, padding: 14, background: "rgba(255,255,255,0.025)" }}>

@@ -9,6 +9,7 @@ type Settings = {
   status: string;
   hidePhone: boolean;
   hideAge: boolean;
+  voucherSettings?: { acceptsVouchers: boolean } | null;
   pauseUntil?: string | null;
   pauseReason?: string | null;
   boostActive: boolean;
@@ -133,6 +134,22 @@ export default function ProfissionalConfiguracoesPage() {
               <p style={{ ...muted, margin: "4px 0 0" }}>Recurso preparado para planos premium. A idade não aparece no perfil público.</p>
             </span>
             <input type="checkbox" checked={settings.hideAge} disabled={saving} onChange={(event) => save({ hideAge: event.target.checked })} />
+          </label>
+        </section>
+
+        <section style={card}>
+          <h2 style={{ color: "#fff", fontSize: 17, margin: "0 0 12px" }}>Vouchers promocionais</h2>
+          <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "4px 0" }}>
+            <span>
+              <strong style={{ color: "#eee" }}>Aceitar vouchers promocionais da plataforma?</strong>
+              <p style={{ ...muted, margin: "4px 0 0" }}>Quando ativado, clientes podem aplicar vouchers da Elite Modell nos agendamentos com você.</p>
+            </span>
+            <input
+              type="checkbox"
+              checked={Boolean(settings.voucherSettings?.acceptsVouchers)}
+              disabled={saving}
+              onChange={(event) => save({ acceptsVouchers: event.target.checked }, event.target.checked ? "Vouchers promocionais aceitos." : "Vouchers promocionais desativados.")}
+            />
           </label>
         </section>
 

@@ -16,6 +16,7 @@ import {
   Crown,
   FileCheck,
   ExternalLink,
+  Gift,
   Headphones,
   Heart,
   Home,
@@ -75,6 +76,7 @@ const adminNav: NavItem[] = [
   { label: "Configurações", href: "/admin/configuracoes", icon: <Settings className="h-4 w-4" /> },
   { label: "Reservas", href: "/admin/reservas", icon: <CalendarCheck className="h-4 w-4" /> },
   { label: "Cupons", href: "/admin/cupons", icon: <TicketPercent className="h-4 w-4" /> },
+  { label: "Roleta", href: "/admin/roleta-vouchers", icon: <Gift className="h-4 w-4" /> },
 ];
 
 const professionalNav: NavItem[] = [

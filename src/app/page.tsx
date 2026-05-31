@@ -15,25 +15,34 @@ const quickActions = [
     label: "Busco prazer",
     href: "/buscar?tab=acompanhantes",
     text: "Explore perfis verificados sem cadastro obrigatório.",
+    tag: "Cliente",
+    badge: "Mais acessado",
+    cta: "Ver perfis agora",
+    primary: true,
     icon: Heart,
   },
   {
     label: "Anunciar imóvel",
     href: ACCOUNT_ROUTES.onboardingAnfitriao,
     text: "Cadastre um espaço reservado para atendimento discreto.",
+    tag: "Anfitrião",
+    cta: "Cadastrar espaço",
     icon: HousePlus,
   },
   {
     label: "Alugar quarto",
     href: "/buscar?tab=imoveis",
     text: "Encontre quartos, suítes e flats para atendimento.",
+    tag: "Reservar espaço",
+    cta: "Buscar quartos",
     icon: LockKeyhole,
   },
   {
     label: "Sou profissional",
     href: ACCOUNT_ROUTES.cadastroAcompanhante,
     text: "Anunciar meu perfil",
-    cta: "Ativar perfil",
+    tag: "Modelo / acompanhante",
+    cta: "Criar meu perfil",
     featured: true,
     icon: UserRoundPlus,
   },
@@ -91,15 +100,17 @@ export default function HomePage() {
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={item.featured ? "action-tile professional-tile" : "action-tile"}
+                  className={`action-tile${item.featured ? " professional-tile" : ""}${item.primary ? " client-tile" : ""}`}
                 >
+                  <span className="action-tag">{item.tag}</span>
+                  {item.badge ? <span className="action-badge">{item.badge}</span> : null}
                   <span className="action-icon">
                     <Icon size={22} />
                   </span>
                   <strong>{item.label}</strong>
                   <p>{item.text}</p>
                   <span className="action-cta">
-                    {item.cta ?? "Acessar"} <ChevronRight size={16} />
+                    {item.cta} <ChevronRight size={16} />
                   </span>
                 </Link>
               );
@@ -261,32 +272,115 @@ export default function HomePage() {
         .action-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          border: 1px solid ${GOLD_DIM};
-          border-radius: 16px;
-          overflow: hidden;
-          background: #101010;
+          gap: 14px;
+          overflow: visible;
         }
 
         .action-tile {
           position: relative;
-          min-height: 178px;
+          min-height: 234px;
           padding: 22px;
           color: inherit;
           text-decoration: none;
-          border-right: 1px solid ${GOLD_DIM};
-          background: #111;
-          transition: background 0.18s, border-color 0.18s, transform 0.18s;
+          border: 1px solid ${GOLD_DIM};
+          border-radius: 16px;
+          background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.015)), #101010;
+          box-shadow: 0 16px 42px rgba(0,0,0,0.22);
+          overflow: hidden;
+          animation: actionEnter 0.58s ease both;
+          transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .action-tile:last-child {
-          border-right: 0;
+        .action-tile:nth-child(1) {
+          animation-delay: 0.02s;
         }
 
-        .action-tile:hover {
-          background: rgba(212,168,67,0.08);
+        .action-tile:nth-child(2) {
+          animation-delay: 0.12s;
+        }
+
+        .action-tile:nth-child(3) {
+          animation-delay: 0.22s;
+        }
+
+        .action-tile:nth-child(4) {
+          animation-delay: 0.32s;
+        }
+
+        .action-tile::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          opacity: 0;
+          background: linear-gradient(135deg, rgba(212,168,67,0.12), transparent 46%);
+          transition: opacity 0.2s ease;
+        }
+
+        .action-tile:hover,
+        .action-tile:focus-visible,
+        .action-tile:active {
+          transform: translateY(-5px);
+          border-color: rgba(212,168,67,0.5);
+          background: linear-gradient(180deg, rgba(212,168,67,0.085), rgba(255,255,255,0.02)), #111;
+          box-shadow: 0 22px 56px rgba(0,0,0,0.3), 0 0 0 1px rgba(212,168,67,0.12), 0 0 34px rgba(212,168,67,0.09);
+        }
+
+        .action-tile:hover::before,
+        .action-tile:focus-visible::before,
+        .action-tile:active::before {
+          opacity: 1;
+        }
+
+        .action-tile:hover .action-icon,
+        .action-tile:focus-visible .action-icon,
+        .action-tile:active .action-icon {
+          transform: translateY(-2px) scale(1.04);
+          border-color: rgba(212,168,67,0.42);
+          box-shadow: 0 12px 26px rgba(212,168,67,0.12);
+        }
+
+        .action-tag {
+          position: relative;
+          z-index: 1;
+          display: inline-flex;
+          align-items: center;
+          min-height: 24px;
+          margin-bottom: 16px;
+          padding: 4px 9px;
+          border: 1px solid rgba(212,168,67,0.18);
+          border-radius: 999px;
+          background: rgba(212,168,67,0.07);
+          color: #f5d78c;
+          font-size: 10px;
+          font-weight: 900;
+          letter-spacing: 0;
+          text-transform: uppercase;
+        }
+
+        .action-badge {
+          position: absolute;
+          z-index: 2;
+          top: 18px;
+          right: 18px;
+          min-height: 24px;
+          display: inline-flex;
+          align-items: center;
+          padding: 4px 9px;
+          border: 1px solid rgba(255,70,86,0.28);
+          border-radius: 999px;
+          background: rgba(120,16,26,0.24);
+          color: #ffb3ba;
+          font-size: 10px;
+          font-weight: 950;
+          letter-spacing: 0;
+          text-transform: uppercase;
+          box-shadow: 0 0 22px rgba(255,70,86,0.12);
         }
 
         .action-icon {
+          position: relative;
+          z-index: 1;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -297,9 +391,12 @@ export default function HomePage() {
           border-radius: 14px;
           background: rgba(212,168,67,0.1);
           color: ${GOLD};
+          transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
         .action-tile strong {
+          position: relative;
+          z-index: 1;
           display: block;
           color: #f4f1ea;
           font-size: 22px;
@@ -307,6 +404,8 @@ export default function HomePage() {
         }
 
         .action-tile p {
+          position: relative;
+          z-index: 1;
           max-width: 190px;
           color: #9f978b;
           font-size: 13px;
@@ -316,6 +415,7 @@ export default function HomePage() {
 
         .action-cta {
           position: absolute;
+          z-index: 1;
           right: 18px;
           bottom: 18px;
           display: inline-flex;
@@ -326,6 +426,35 @@ export default function HomePage() {
           font-weight: 900;
           letter-spacing: 0;
           text-transform: uppercase;
+        }
+
+        .client-tile {
+          border-color: rgba(245,215,140,0.36);
+          background:
+            radial-gradient(circle at 22% 24%, rgba(255,58,78,0.15), transparent 28%),
+            linear-gradient(135deg, rgba(212,168,67,0.1), rgba(17,17,17,0.98));
+          box-shadow: 0 20px 60px rgba(0,0,0,0.32), 0 0 46px rgba(212,168,67,0.08);
+        }
+
+        .client-tile .action-icon {
+          border-color: rgba(255,70,86,0.4);
+          background: rgba(255,70,86,0.11);
+          color: #ff4054;
+          box-shadow: 0 0 22px rgba(255,70,86,0.18);
+          animation: heartGlow 2.2s ease-in-out infinite;
+        }
+
+        .client-tile .action-icon svg {
+          animation: heartBeat 1.65s ease-in-out infinite;
+          fill: rgba(255,64,84,0.14);
+        }
+
+        .client-tile .action-cta {
+          color: #160507;
+          background: linear-gradient(135deg, #ff7080, #d4a843 58%, #f5d78c);
+          border-radius: 999px;
+          padding: 9px 12px;
+          box-shadow: 0 12px 28px rgba(212,168,67,0.16), 0 0 28px rgba(255,70,86,0.12);
         }
 
         .professional-tile {
@@ -345,6 +474,44 @@ export default function HomePage() {
           padding: 8px 11px;
           letter-spacing: 0;
           box-shadow: 0 10px 28px rgba(212,168,67,0.14);
+        }
+
+        @keyframes actionEnter {
+          from {
+            opacity: 0;
+            transform: translateY(14px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes heartBeat {
+          0%, 100% {
+            transform: scale(1);
+          }
+          18% {
+            transform: scale(1.16);
+          }
+          32% {
+            transform: scale(1);
+          }
+          48% {
+            transform: scale(1.1);
+          }
+          64% {
+            transform: scale(1);
+          }
+        }
+
+        @keyframes heartGlow {
+          0%, 100% {
+            box-shadow: 0 0 18px rgba(255,70,86,0.16);
+          }
+          50% {
+            box-shadow: 0 0 32px rgba(255,70,86,0.28), 0 0 22px rgba(212,168,67,0.12);
+          }
         }
 
         @media (max-width: 980px) {
@@ -425,9 +592,7 @@ export default function HomePage() {
           }
 
           .action-tile {
-            transform: none !important;
             backface-visibility: hidden;
-            box-shadow: none !important;
             filter: none !important;
           }
 
@@ -463,24 +628,41 @@ export default function HomePage() {
           }
 
           .action-tile {
-            min-height: 186px;
+            min-height: 218px;
             display: flex;
             flex-direction: column;
-            padding: 16px;
+            padding: 14px;
             border: 1px solid ${GOLD_DIM};
             border-radius: 14px;
             background: #111;
           }
 
-          .action-tile:last-child {
-            border-right: 1px solid ${GOLD_DIM};
+          .action-tile:hover,
+          .action-tile:focus-visible,
+          .action-tile:active {
+            transform: translateY(-3px);
           }
 
           .action-icon {
             width: 42px;
             height: 42px;
-            margin-bottom: 14px;
+            margin-bottom: 13px;
             border-radius: 12px;
+          }
+
+          .action-tag {
+            min-height: 22px;
+            margin-bottom: 12px;
+            padding: 3px 7px;
+            font-size: 8.7px;
+          }
+
+          .action-badge {
+            top: 13px;
+            right: 13px;
+            min-height: 22px;
+            padding: 3px 7px;
+            font-size: 8.5px;
           }
 
           .action-tile strong {
@@ -511,10 +693,16 @@ export default function HomePage() {
           .action-cta {
             position: static;
             margin-top: auto;
-            padding-top: 12px;
+            padding-top: 10px;
             justify-content: space-between;
             font-size: 10.5px;
             letter-spacing: 0;
+          }
+
+          .client-tile .action-cta {
+            justify-content: center;
+            padding: 8px 9px;
+            text-align: center;
           }
 
           .professional-tile .action-cta {

@@ -21,6 +21,7 @@ export type AdminPermission =
   | "reports:manage"
   | "support:manage"
   | "finance:view"
+  | "vouchers:manage"
   | "settings:manage"
   | "staff:manage"
   | "audit:view";
@@ -36,6 +37,7 @@ export const ADMIN_ROLE_PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
     "reports:manage",
     "support:manage",
     "finance:view",
+    "vouchers:manage",
     "settings:manage",
     "staff:manage",
     "audit:view",
@@ -50,6 +52,7 @@ export const ADMIN_ROLE_PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
     "reports:manage",
     "support:manage",
     "finance:view",
+    "vouchers:manage",
     "audit:view",
   ],
   MODERADOR_CADASTROS: [
@@ -63,7 +66,7 @@ export const ADMIN_ROLE_PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
   ],
   MODERADOR_CONTEUDO: ["dashboard:view", "reports:manage", "professionals:review", "properties:review", "audit:view"],
   SUPORTE: ["dashboard:view", "clients:manage", "reports:manage", "support:manage"],
-  FINANCEIRO: ["dashboard:view", "finance:view", "audit:view"],
+  FINANCEIRO: ["dashboard:view", "finance:view", "vouchers:manage", "audit:view"],
 };
 
 function adminMasterEmails() {

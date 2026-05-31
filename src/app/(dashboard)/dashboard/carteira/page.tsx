@@ -28,6 +28,20 @@ type WalletData = {
 
 type AddMethod = "pix" | "card" | null;
 
+type Voucher = {
+  id: string;
+  code: string;
+  value: number;
+  status: string;
+  statusLabel: string;
+  createdAt: string;
+  expiresAt: string;
+  usedAt?: string | null;
+  requiresPayment: boolean;
+  paymentStatus: string;
+  participantOnly: boolean;
+};
+
 const STATUS_LABEL: Record<string, string> = {
   PAID: "Confirmado",
   PENDING: "Pendente",
@@ -46,6 +60,7 @@ function fmt(iso: string) {
 
 export default function CarteiraPage() {
   const [wallet, setWallet] = useState<WalletData | null>(null);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [loading, setLoading] = useState(true);
   const [addMethod, setAddMethod] = useState<AddMethod>(null);
   const [addAmount, setAddAmount] = useState(50);
@@ -56,6 +71,11 @@ export default function CarteiraPage() {
       if (!res.ok) return;
       const data: WalletData = await res.json();
       setWallet(data);
+      const voucherRes = await fetch("/api/vouchers/client", { cache: "no-store" });
+      if (voucherRes.ok) {
+        const voucherData: { vouchers: Voucher[] } = await voucherRes.json();
+        setVouchers(voucherData.vouchers ?? []);
+      }
     } finally {
       setLoading(false);
     }
@@ -132,6 +152,48 @@ export default function CarteiraPage() {
           </p>
         </div>
       </ClientSensitiveGate>
+
+      <div className="client-card p-6">
+        <h2 className="text-[20px] font-black text-[#f5f0e4]">Meus Vouchers</h2>
+        <p className="mt-2 text-[13px] text-white/45">Vouchers promocionais para usar com profissionais participantes.</p>
+        {loading ? (
+          <div className="mt-5 flex min-h-[100px] items-center justify-center">
+            <Loader className="h-7 w-7 animate-spin text-[#d4a843]" />
+          </div>
+        ) : vouchers.length === 0 ? (
+          <div className="mt-5 border-y border-[#d4a843]/12 bg-white/[0.025] p-6 text-center text-[14px] text-white/45">
+            Nenhum voucher disponível ainda.
+          </div>
+        ) : (
+          <ul className="mt-5 grid gap-3">
+            {vouchers.map((voucher) => (
+              <li key={voucher.id} className="rounded-[8px] border border-[#d4a843]/16 bg-white/[0.025] p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[18px] font-black text-[#f5d78c]">R$ {voucher.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                    <p className="mt-1 font-mono text-[13px] font-bold text-white">{voucher.code}</p>
+                    <p className="mt-2 text-[12px] text-white/42">Ganho em {fmt(voucher.createdAt)} · válido até {fmt(voucher.expiresAt)}</p>
+                    {voucher.participantOnly && <p className="mt-1 text-[12px] text-white/42">Válido somente para profissionais participantes.</p>}
+                  </div>
+                  <span className={`rounded-full border px-3 py-1 text-[11px] font-black uppercase ${
+                    voucher.status === "AVAILABLE" ? "border-emerald-400/30 text-emerald-200" :
+                    voucher.status === "AWAITING_REGISTRATION" ? "border-[#d4a843]/30 text-[#f5d78c]" :
+                    "border-white/12 text-white/40"
+                  }`}>
+                    {voucher.statusLabel}
+                  </span>
+                </div>
+                {voucher.status === "AVAILABLE" && (
+                  <a href="/dashboard/acompanhantes" className="mt-4 inline-flex min-h-10 items-center justify-center rounded-[8px] bg-[#d4a843] px-4 text-[13px] font-black text-[#080704] no-underline">
+                    Usar no agendamento
+                  </a>
+                )}
+                {voucher.status === "AWAITING_REGISTRATION" && <p className="mt-4 text-[13px] text-[#f5d78c]">Conclua o cadastro para liberar este voucher.</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {/* Transações */}
       <div className="client-card p-6">

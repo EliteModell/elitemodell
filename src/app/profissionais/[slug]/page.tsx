@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
@@ -79,6 +80,15 @@ type SimilarPro = {
   pricePerHour?: number | null;
 };
 
+type AvailableVoucher = {
+  id: string;
+  code: string;
+  value: number;
+  expiresAt: string;
+  requiresPayment: boolean;
+  paymentStatus: string;
+};
+
 function buildWaLink(raw: string): string {
   const digits = raw.replace(/\D/g, "");
   const withDDI = digits.startsWith("55") && digits.length >= 12 ? digits : `55${digits}`;
@@ -100,11 +110,23 @@ const DIAS_SEMANA = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"
 export default function ProfissionalProfilePage() {
   const params = useParams();
   const slug = params.slug as string;
+  const { data: session, status: authStatus } = useSession();
 
   const [pro, setPro] = useState<ApiProfessional | null>(null);
   const [similar, setSimilar] = useState<SimilarPro[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [bookingDate, setBookingDate] = useState("");
+  const [bookingDuration, setBookingDuration] = useState(60);
+  const [bookingNotes, setBookingNotes] = useState("");
+  const [bookingSaving, setBookingSaving] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
+  const [bookingSuccess, setBookingSuccess] = useState<string | null>(null);
+  const [availableVouchers, setAvailableVouchers] = useState<AvailableVoucher[]>([]);
+  const [selectedVoucherId, setSelectedVoucherId] = useState("");
+  const [acceptsVouchers, setAcceptsVouchers] = useState<boolean | null>(null);
+  const [voucherLoading, setVoucherLoading] = useState(false);
 
   const [galeriaFiltro, setGaleriaFiltro] = useState<GaleriaFiltro>("todas");
   const [photoOpen, setPhotoOpen] = useState<number | null>(null);
@@ -159,6 +181,70 @@ export default function ProfissionalProfilePage() {
     load();
     return () => controller.abort();
   }, [slug]);
+
+  useEffect(() => {
+    if (!bookingOpen || authStatus !== "authenticated") return;
+    const controller = new AbortController();
+    setVoucherLoading(true);
+    fetch(`/api/vouchers/available?professionalSlug=${encodeURIComponent(slug)}`, { signal: controller.signal, cache: "no-store" })
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Não foi possível carregar seus vouchers.");
+        return res.json();
+      })
+      .then((data) => {
+        setAcceptsVouchers(Boolean(data.acceptsVouchers));
+        setAvailableVouchers(data.vouchers ?? []);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setAcceptsVouchers(false);
+          setAvailableVouchers([]);
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setVoucherLoading(false);
+      });
+    return () => controller.abort();
+  }, [authStatus, bookingOpen, slug]);
+
+  async function submitBooking(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!session?.user) {
+      setBookingError("Entre ou crie uma conta rápida para confirmar o agendamento e usar voucher.");
+      return;
+    }
+    if (!bookingDate) {
+      setBookingError("Escolha a data e o horário do atendimento.");
+      return;
+    }
+
+    setBookingSaving(true);
+    setBookingError(null);
+    setBookingSuccess(null);
+    try {
+      const res = await fetch("/api/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          professionalSlug: slug,
+          date: bookingDate,
+          duration: bookingDuration,
+          contactMethod: "whatsapp",
+          notes: bookingNotes || undefined,
+          voucherId: selectedVoucherId || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Não foi possível criar o agendamento.");
+      setBookingSuccess("Agendamento enviado. A profissional verá o voucher aplicado antes de confirmar.");
+      setSelectedVoucherId("");
+      setBookingNotes("");
+    } catch (err) {
+      setBookingError(err instanceof Error ? err.message : "Não foi possível criar o agendamento.");
+    } finally {
+      setBookingSaving(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -221,6 +307,10 @@ export default function ProfissionalProfilePage() {
   const idade = calcAge(pro.birthDate);
   const preco = pro.priceMin ?? pro.pricePerHour;
   const memberYear = new Date(pro.createdAt).getFullYear();
+  const bookingBasePrice = pro.pricePerHour ?? pro.priceMin ?? bookingDuration;
+  const selectedVoucher = availableVouchers.find((voucher) => voucher.id === selectedVoucherId) ?? null;
+  const voucherDiscount = selectedVoucher ? Math.min(bookingBasePrice, selectedVoucher.value) : 0;
+  const bookingFinalPrice = Math.max(0, bookingBasePrice - voucherDiscount);
 
   return (
     <div style={{ background: "#060e1b", minHeight: "100vh", color: "#f1f5f9", paddingBottom: 72 }}>
@@ -670,19 +760,144 @@ export default function ProfissionalProfilePage() {
         )}
       </div>
 
+      {bookingOpen ? (
+        <div style={{ position: "fixed", inset: 0, zIndex: 900, background: "rgba(2,6,15,0.82)", backdropFilter: "blur(14px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ width: "min(100%, 560px)", maxHeight: "88vh", overflowY: "auto", border: `1px solid ${GOLD_MID}`, borderRadius: 14, background: "linear-gradient(180deg,#111827,#060e1b)", boxShadow: "0 30px 90px rgba(0,0,0,0.58)" }}>
+            <div style={{ padding: 18, borderBottom: `1px solid ${GOLD_DIM}`, display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+              <div>
+                <p style={{ margin: "0 0 6px", color: GOLD, fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase" }}>Agendamento Elite</p>
+                <h2 style={{ margin: 0, color: "#f8fafc", fontSize: 24, fontFamily: PLAYFAIR }}>Agendar com {pro.displayName}</h2>
+                <p style={{ margin: "8px 0 0", color: "#94a3b8", fontSize: 13, lineHeight: 1.5 }}>Use um voucher disponível se a profissional aceitar vouchers promocionais.</p>
+              </div>
+              <button onClick={() => setBookingOpen(false)} aria-label="Fechar agendamento" style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "rgba(255,255,255,0.03)", color: GOLD, cursor: "pointer", fontSize: 18 }}>×</button>
+            </div>
+
+            {authStatus !== "authenticated" ? (
+              <div style={{ padding: 18, display: "grid", gap: 12 }}>
+                <div style={{ border: `1px solid ${GOLD_DIM}`, background: "#0b1420", borderRadius: 12, padding: 14 }}>
+                  <p style={{ margin: "0 0 6px", color: "#f8fafc", fontWeight: 800 }}>Confirme sua conta para usar voucher</p>
+                  <p style={{ margin: 0, color: "#94a3b8", fontSize: 13, lineHeight: 1.55 }}>Você pode ganhar voucher sem cadastro na roleta, mas para usar no agendamento precisa entrar ou concluir um cadastro simples.</p>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <Link href={`${ACCOUNT_ROUTES.login}?returnUrl=${encodeURIComponent(`/profissionais/${slug}`)}`} style={{ textAlign: "center", padding: "12px", borderRadius: 10, background: GOLD, color: "#060e1b", fontWeight: 900, textDecoration: "none" }}>Entrar</Link>
+                  <Link href={ACCOUNT_ROUTES.cadastro} style={{ textAlign: "center", padding: "12px", borderRadius: 10, border: `1px solid ${GOLD_MID}`, color: GOLD, fontWeight: 900, textDecoration: "none" }}>Criar conta</Link>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={submitBooking} style={{ padding: 18, display: "grid", gap: 14 }}>
+                <label style={{ display: "grid", gap: 6, color: "#e2e8f0", fontSize: 13, fontWeight: 800 }}>
+                  Data e horário
+                  <input
+                    type="datetime-local"
+                    value={bookingDate}
+                    onChange={(event) => setBookingDate(event.target.value)}
+                    style={{ minHeight: 44, borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "#050b15", color: "#f8fafc", padding: "0 12px" }}
+                  />
+                </label>
+
+                <label style={{ display: "grid", gap: 6, color: "#e2e8f0", fontSize: 13, fontWeight: 800 }}>
+                  Duração
+                  <select
+                    value={bookingDuration}
+                    onChange={(event) => setBookingDuration(Number(event.target.value))}
+                    style={{ minHeight: 44, borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "#050b15", color: "#f8fafc", padding: "0 12px" }}
+                  >
+                    <option value={30}>30 minutos</option>
+                    <option value={60}>1 hora</option>
+                    <option value={120}>2 horas</option>
+                  </select>
+                </label>
+
+                <div style={{ border: `1px solid ${GOLD_DIM}`, borderRadius: 12, background: "#0b1420", padding: 14 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, color: "#94a3b8", fontSize: 13 }}>
+                    <span>Valor do atendimento</span>
+                    <strong style={{ color: "#f8fafc" }}>R$ {bookingBasePrice.toLocaleString("pt-BR")}</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, color: "#94a3b8", fontSize: 13, marginTop: 8 }}>
+                    <span>Voucher aplicado</span>
+                    <strong style={{ color: voucherDiscount ? "#22c55e" : "#64748b" }}>- R$ {voucherDiscount.toLocaleString("pt-BR")}</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, color: "#f8fafc", fontSize: 16, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${GOLD_DIM}` }}>
+                    <span>Total com desconto</span>
+                    <strong style={{ color: GOLD }}>R$ {bookingFinalPrice.toLocaleString("pt-BR")}</strong>
+                  </div>
+                </div>
+
+                <label style={{ display: "grid", gap: 6, color: "#e2e8f0", fontSize: 13, fontWeight: 800 }}>
+                  Voucher
+                  <select
+                    value={selectedVoucherId}
+                    onChange={(event) => setSelectedVoucherId(event.target.value)}
+                    disabled={!acceptsVouchers || voucherLoading || availableVouchers.length === 0}
+                    style={{ minHeight: 44, borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "#050b15", color: "#f8fafc", padding: "0 12px" }}
+                  >
+                    <option value="">
+                      {voucherLoading
+                        ? "Carregando vouchers..."
+                        : acceptsVouchers === false
+                          ? "Profissional não aceita vouchers promocionais"
+                          : availableVouchers.length
+                            ? "Não usar voucher"
+                            : "Nenhum voucher disponível"}
+                    </option>
+                    {availableVouchers.map((voucher) => (
+                      <option key={voucher.id} value={voucher.id}>
+                        {voucher.code} - R$ {voucher.value.toLocaleString("pt-BR")} - vence em {new Date(voucher.expiresAt).toLocaleDateString("pt-BR")}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label style={{ display: "grid", gap: 6, color: "#e2e8f0", fontSize: 13, fontWeight: 800 }}>
+                  Observação
+                  <textarea
+                    value={bookingNotes}
+                    onChange={(event) => setBookingNotes(event.target.value)}
+                    placeholder="Mensagem opcional para a profissional"
+                    style={{ minHeight: 86, resize: "vertical", borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "#050b15", color: "#f8fafc", padding: 12 }}
+                  />
+                </label>
+
+                {bookingError ? <p style={{ margin: 0, color: "#fca5a5", fontSize: 13 }}>{bookingError}</p> : null}
+                {bookingSuccess ? <p style={{ margin: 0, color: "#86efac", fontSize: 13 }}>{bookingSuccess}</p> : null}
+
+                <button
+                  type="submit"
+                  disabled={bookingSaving}
+                  style={{ minHeight: 48, borderRadius: 10, border: "none", background: GOLD, color: "#060e1b", fontSize: 15, fontWeight: 950, cursor: bookingSaving ? "wait" : "pointer" }}
+                >
+                  {bookingSaving ? "Enviando..." : "Confirmar agendamento"}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      ) : null}
+
       {/* CTA FIXO */}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 55, background: "rgba(6,14,27,0.98)", backdropFilter: "blur(12px)", borderTop: `1px solid ${GOLD_DIM}`, padding: "10px 16px calc(10px + env(safe-area-inset-bottom))", display: "flex", gap: 10, alignItems: "center" }}>
         <div style={{ flexShrink: 0 }}>
           <p style={{ margin: 0, fontSize: 9, color: "#475569" }}>a partir de</p>
           <p style={{ margin: 0, fontSize: 17, fontWeight: 900, color: GOLD, fontFamily: PLAYFAIR, lineHeight: 1.1 }}>{preco ? `R$ ${preco.toLocaleString("pt-BR")}/h` : "Consulte"}</p>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            setBookingError(null);
+            setBookingSuccess(null);
+            setBookingOpen(true);
+          }}
+          style={{ flex: 1, minWidth: 0, padding: "12px 10px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 900, fontFamily: PLAYFAIR, cursor: "pointer" }}
+        >
+          Agendar
+        </button>
         {pro.whatsapp ? (
           <a href={buildWaLink(pro.whatsapp)} target="_blank" rel="noopener noreferrer" onClick={trackContactClick}
-            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px", background: GOLD, color: "#060e1b", borderRadius: 10, fontSize: 14, fontWeight: 800, textDecoration: "none", fontFamily: PLAYFAIR }}>
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="#060e1b">
+            style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 10px", background: "rgba(212,168,67,0.12)", color: GOLD, border: `1px solid ${GOLD_MID}`, borderRadius: 10, fontSize: 14, fontWeight: 800, textDecoration: "none", fontFamily: PLAYFAIR }}>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill={GOLD}>
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
             </svg>
-            Chamar no WhatsApp
+            WhatsApp
           </a>
         ) : (
           <button type="button" onClick={trackContactClick}
