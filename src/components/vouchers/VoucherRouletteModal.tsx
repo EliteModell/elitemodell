@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
+import { CalendarClock, Gift, RotateCcw } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 type Prize = {
   id: string;
@@ -33,6 +35,7 @@ type SpinResult = {
 
 const CLOSED_KEY = "elite_voucher_modal_closed";
 const GOLD = "#d4a843";
+const ROULETTE_IMAGE_SRC = "/images/roleta/roleta-premiada.png";
 
 function randomKey() {
   const bytes = new Uint8Array(16);
@@ -40,10 +43,40 @@ function randomKey() {
   return Array.from(bytes).map((item) => item.toString(16).padStart(2, "0")).join("");
 }
 
-function prizeShortLabel(prize: Prize) {
-  if (prize.type === "TRY_AGAIN") return "Tente outra vez";
-  if (prize.type === "TRY_TOMORROW") return "Tente amanhã";
-  return `Voucher R$ ${Math.round(prize.value ?? 0)}`;
+function getPrizeValue(result: SpinResult) {
+  return Math.round(result.prize?.value ?? result.voucher?.value ?? 0);
+}
+
+function isVoucherWin(result: SpinResult) {
+  return getPrizeValue(result) > 0 || result.result === "VOUCHER" || result.result === "PAID_VOUCHER";
+}
+
+function getResultView(result: SpinResult) {
+  if (isVoucherWin(result)) {
+    const value = getPrizeValue(result);
+    return {
+      Icon: Gift,
+      tone: "voucher",
+      title: `Parabéns! Você ganhou R$ ${value} OFF.`,
+      subtitle: "Use seu desconto após criar sua conta na plataforma.",
+    };
+  }
+
+  if (result.prize?.type === "TRY_TOMORROW" || result.result === "TRY_TOMORROW") {
+    return {
+      Icon: CalendarClock,
+      tone: "tomorrow",
+      title: "Tente amanhã.",
+      subtitle: result.message || "Volte amanhã para tentar novamente.",
+    };
+  }
+
+  return {
+    Icon: RotateCcw,
+    tone: "again",
+    title: result.result === "ERROR" ? "Não foi possível girar agora." : "Tente outra vez.",
+    subtitle: result.message || "Não foi dessa vez. Você pode tentar novamente.",
+  };
 }
 
 export default function VoucherRouletteModal() {
@@ -60,6 +93,7 @@ export default function VoucherRouletteModal() {
 
   useEffect(() => {
     if (sessionStorage.getItem(CLOSED_KEY)) return;
+
     let active = true;
     fetch("/api/vouchers/roulette", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
@@ -69,6 +103,7 @@ export default function VoucherRouletteModal() {
         window.setTimeout(() => setOpen(true), 700);
       })
       .catch(() => undefined);
+
     return () => {
       active = false;
     };
@@ -76,17 +111,6 @@ export default function VoucherRouletteModal() {
 
   const segments = config?.prizes ?? [];
   const segmentAngle = segments.length ? 360 / segments.length : 0;
-  const wheelBackground = useMemo(() => {
-    if (!segments.length) return "#120612";
-    return `conic-gradient(${segments.map((segment, index) => {
-      const color = segment.value === 100
-        ? "#d4a843"
-        : index % 2 === 0
-          ? "#160916"
-          : "#4c0f54";
-      return `${color} ${index * segmentAngle}deg ${(index + 1) * segmentAngle}deg`;
-    }).join(",")})`;
-  }, [segmentAngle, segments]);
 
   function close() {
     sessionStorage.setItem(CLOSED_KEY, "1");
@@ -95,8 +119,10 @@ export default function VoucherRouletteModal() {
 
   async function spin() {
     if (!config || spinning || result) return;
+
     setSpinning(true);
     setShowResult(false);
+
     try {
       const res = await fetch("/api/vouchers/roulette/spin", {
         method: "POST",
@@ -105,9 +131,11 @@ export default function VoucherRouletteModal() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Não foi possível girar agora.");
+
       const prizeIndex = Math.max(0, data.prize?.index ?? 0);
       const target = 360 * 6 + (360 - (prizeIndex * segmentAngle + segmentAngle / 2));
       setRotation((current) => current + target);
+
       window.setTimeout(() => {
         setResult(data);
         setShowResult(true);
@@ -128,6 +156,7 @@ export default function VoucherRouletteModal() {
 
   async function claimVoucher() {
     if (!result?.pendingToken) return;
+
     setClaiming(true);
     try {
       const res = await fetch("/api/vouchers/roulette/claim", {
@@ -147,10 +176,14 @@ export default function VoucherRouletteModal() {
 
   if (!open || !config) return null;
 
+  const resultView = result ? getResultView(result) : null;
+  const ResultIcon = resultView?.Icon;
+
   return (
     <div className="voucher-modal-backdrop" role="dialog" aria-modal="true" aria-label="Roleta de Vouchers">
       <div className="voucher-modal">
         <button type="button" className="voucher-close" onClick={close} aria-label="Fechar">x</button>
+
         <div className="voucher-copy">
           <div className="voucher-brand"><span>elite</span>modell</div>
           <p className="voucher-kicker">Buscar Prazer</p>
@@ -160,34 +193,41 @@ export default function VoucherRouletteModal() {
         </div>
 
         <div className="voucher-wheel-wrap">
-          <div className="voucher-pointer" />
-          <div className="voucher-wheel" style={{ transform: `rotate(${rotation}deg)`, background: wheelBackground }}>
-            {segments.map((segment, index) => {
-              const angle = index * segmentAngle + segmentAngle / 2;
-              return (
-                <div key={segment.id} className="voucher-segment-label" style={{ transform: `rotate(${angle}deg) translateY(-38%) rotate(${-angle}deg)` }}>
-                  <span>{segment.type === "TRY_AGAIN" ? "↻" : segment.type === "TRY_TOMORROW" ? "▣" : "🎟"}</span>
-                  <strong>{prizeShortLabel(segment)}</strong>
-                </div>
-              );
-            })}
-            <div className="voucher-wheel-center">E</div>
+          <div className={`voucher-art-stage${spinning ? " is-spinning" : ""}`}>
+            <Image
+              src={ROULETTE_IMAGE_SRC}
+              alt="Roleta de Vouchers Elite Modell"
+              fill
+              priority
+              sizes="(max-width: 820px) 92vw, 520px"
+              className="voucher-roulette-image"
+            />
+            <span className="voucher-spin-ring" style={{ transform: `rotate(${rotation}deg)` }} aria-hidden="true" />
+            <span className="voucher-spin-sweep" aria-hidden="true" />
+            <button type="button" className="voucher-image-spin-button" onClick={spin} disabled={spinning || Boolean(result)}>
+              <span>{spinning ? "Girando..." : "Girar agora"}</span>
+            </button>
           </div>
-          <button type="button" className="voucher-spin-button" onClick={spin} disabled={spinning || Boolean(result)}>
-            {spinning ? "Girando..." : "Girar agora"}
-          </button>
         </div>
 
         <p className="voucher-footer">Vouchers promocionais para uso interno na plataforma.</p>
       </div>
 
-      {showResult && result && (
+      {showResult && result && resultView && ResultIcon && (
         <div className="voucher-result">
           <div className="voucher-result-card">
             <button type="button" className="voucher-close small" onClick={close} aria-label="Fechar">x</button>
             <p className="voucher-kicker">Resultado</p>
-            <h3>{result.result === "VOUCHER" || result.result === "PAID_VOUCHER" ? "Parabéns!" : "Roleta de Vouchers"}</h3>
-            <p>{result.message}</p>
+
+            <div className={`voucher-result-prize ${resultView.tone}`}>
+              <div className="voucher-result-icon" aria-hidden="true">
+                <ResultIcon size={30} strokeWidth={2.2} />
+              </div>
+              <div>
+                <h3>{resultView.title}</h3>
+                <p>{resultView.subtitle}</p>
+              </div>
+            </div>
 
             {result.needsRegistration && (
               <div className="voucher-identify">
@@ -244,21 +284,28 @@ export default function VoucherRouletteModal() {
           radial-gradient(ellipse at 52% 14%, #201014 0 22%, transparent 24%),
           linear-gradient(135deg, #6b1c78, #210728 55%, #09030a); border: 1px solid rgba(212,168,67,.24); box-shadow: inset 0 0 45px rgba(212,168,67,.1), 0 24px 70px rgba(0,0,0,.5); opacity: .9; }
         .voucher-wheel-wrap { display: grid; justify-items: center; align-content: center; position: relative; min-height: 560px; }
-        .voucher-pointer { position: absolute; top: 16px; z-index: 3; width: 76px; height: 92px; background: linear-gradient(180deg, #ffe9a8, #d4a843 58%, #5f3509); clip-path: polygon(50% 100%, 0 0, 100% 0); filter: drop-shadow(0 8px 14px rgba(0,0,0,.55)); }
-        .voucher-wheel { position: relative; width: min(72vw, 520px); aspect-ratio: 1; border-radius: 50%; border: 16px solid #b77b22; box-shadow: inset 0 0 0 3px rgba(255,239,170,.72), inset 0 0 60px rgba(0,0,0,.68), 0 28px 90px rgba(0,0,0,.7); transition: transform 3.8s cubic-bezier(.12,.78,.08,1); }
-        .voucher-wheel::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(255,230,160,.72) 0deg 1deg, transparent 1deg 51.42deg); pointer-events: none; }
-        .voucher-segment-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 58px; text-align: center; color: #ffe7a5; pointer-events: none; }
-        .voucher-segment-label span { font-size: 24px; }
-        .voucher-segment-label strong { max-width: 108px; font-size: clamp(11px, 2vw, 17px); line-height: 1.05; text-shadow: 0 2px 8px rgba(0,0,0,.7); }
-        .voucher-segment-label small { font-size: 11px; color: #1a0900; font-weight: 900; }
-        .voucher-wheel-center { position: absolute; inset: 50%; transform: translate(-50%,-50%); width: 110px; height: 110px; border-radius: 50%; display: grid; place-items: center; z-index: 2; color: #ffe7a5; font-family: var(--font-playfair), serif; font-size: 58px; font-weight: 950; border: 5px solid #f5d78c; background: radial-gradient(circle, #875515, #1b0c07 72%); box-shadow: 0 0 28px rgba(212,168,67,.45); }
-        .voucher-spin-button { margin-top: 18px; min-height: 66px; width: min(100%, 460px); border: 1px solid #ffe7a5; border-radius: 18px; background: linear-gradient(180deg, #ffe7a5, #d4a843 48%, #9a6719); color: #14080a; font-size: clamp(24px, 4vw, 44px); font-weight: 950; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; box-shadow: 0 12px 34px rgba(212,168,67,.28); }
-        .voucher-spin-button:disabled { opacity: .68; cursor: wait; }
+        .voucher-art-stage { position: relative; width: min(100%, 520px); max-width: 100%; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 18px; border: 1px solid rgba(212,168,67,.28); background: #050205; box-shadow: 0 28px 90px rgba(0,0,0,.7), 0 0 46px rgba(126,32,143,.22); }
+        .voucher-roulette-image { object-fit: contain; filter: drop-shadow(0 14px 30px rgba(0,0,0,.5)); }
+        .voucher-spin-ring { position: absolute; left: 12%; right: 12%; top: 36%; aspect-ratio: 1; border-radius: 999px; border: 2px solid rgba(255,231,165,.2); box-shadow: 0 0 30px rgba(212,168,67,.3), inset 0 0 26px rgba(212,168,67,.16); opacity: 0; transition: transform 3.8s cubic-bezier(.12,.78,.08,1), opacity .2s ease; pointer-events: none; }
+        .voucher-spin-ring::after { content: ""; position: absolute; left: 50%; top: -8px; width: 18px; height: 18px; border-radius: 999px; background: #ffe7a5; box-shadow: 0 0 18px #ffe7a5, 0 0 34px rgba(212,168,67,.72); transform: translateX(-50%); }
+        .voucher-spin-sweep { position: absolute; inset: 0; opacity: 0; pointer-events: none; background: linear-gradient(110deg, transparent 0 42%, rgba(255,231,165,.22) 48%, transparent 56% 100%); mix-blend-mode: screen; }
+        .voucher-art-stage.is-spinning .voucher-spin-ring { opacity: 1; }
+        .voucher-art-stage.is-spinning .voucher-spin-sweep { opacity: 1; animation: voucherSweep 1s linear infinite; }
+        .voucher-image-spin-button { position: absolute; left: 15%; right: 15%; bottom: 6.2%; min-height: clamp(48px, 7.2vw, 78px); border-radius: 18px; border: 1px solid rgba(255,231,165,.76); background: rgba(12,6,8,.08); color: transparent; font-size: 0; cursor: pointer; transition: box-shadow .2s ease, background .2s ease, opacity .2s ease; }
+        .voucher-image-spin-button:hover, .voucher-image-spin-button:focus-visible { background: rgba(255,231,165,.08); box-shadow: 0 0 28px rgba(212,168,67,.45); outline: none; }
+        .voucher-image-spin-button:disabled { cursor: wait; opacity: .78; }
+        .voucher-image-spin-button:disabled span { position: absolute; inset: 0; display: grid; place-items: center; border-radius: inherit; background: rgba(0,0,0,.52); color: #ffe7a5; font-size: clamp(16px, 3vw, 24px); font-weight: 950; text-transform: uppercase; letter-spacing: .04em; }
         .voucher-footer { grid-column: 1 / -1; margin: 0; text-align: center; color: rgba(255,255,255,.54); font-size: 13px; }
         .voucher-result { position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center; padding: 18px; background: rgba(0,0,0,.74); }
-        .voucher-result-card { position: relative; width: min(100%, 460px); border-radius: 16px; border: 1px solid rgba(212,168,67,.32); background: #0b070d; color: #f6efe0; padding: 26px; box-shadow: 0 28px 90px rgba(0,0,0,.72); }
-        .voucher-result-card h3 { margin: 0; font-size: 32px; color: #ffe7a5; }
-        .voucher-result-card p { color: rgba(255,255,255,.72); line-height: 1.55; }
+        .voucher-result-card { position: relative; width: min(100%, 480px); border-radius: 16px; border: 1px solid rgba(212,168,67,.32); background:
+          radial-gradient(circle at 18% 0%, rgba(126,32,143,.3), transparent 32%),
+          linear-gradient(145deg, #0b070d, #040304 72%); color: #f6efe0; padding: 26px; box-shadow: 0 28px 90px rgba(0,0,0,.72); }
+        .voucher-result-prize { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: center; padding: 18px; border-radius: 14px; border: 1px solid rgba(212,168,67,.34); background: linear-gradient(145deg, rgba(255,231,165,.1), rgba(126,32,143,.1) 58%, rgba(0,0,0,.24)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 16px 42px rgba(0,0,0,.36); }
+        .voucher-result-prize.voucher { border-color: rgba(255,231,165,.48); box-shadow: inset 0 0 0 1px rgba(255,255,255,.05), 0 0 34px rgba(212,168,67,.18), 0 18px 48px rgba(0,0,0,.42); }
+        .voucher-result-icon { width: 56px; height: 56px; border-radius: 999px; display: grid; place-items: center; color: #16090a; background: linear-gradient(180deg, #fff0b8, #d4a843 54%, #9f6b1e); box-shadow: 0 0 24px rgba(212,168,67,.4); }
+        .voucher-result-card h3 { margin: 0; font-size: clamp(25px, 6vw, 34px); line-height: 1.05; color: #ffe7a5; font-family: var(--font-playfair), serif; }
+        .voucher-result-card p { color: rgba(255,255,255,.74); line-height: 1.55; }
+        .voucher-result-prize p { margin: 8px 0 0; color: rgba(255,255,255,.78); }
         .voucher-identify, .voucher-saved, .voucher-pix { display: grid; gap: 10px; margin-top: 14px; }
         .voucher-identify input, .voucher-pix textarea { min-height: 44px; border-radius: 8px; border: 1px solid rgba(212,168,67,.22); background: #050506; color: #fff; padding: 0 12px; }
         .voucher-identify button, .voucher-saved button, .voucher-saved a, .voucher-secondary { min-height: 44px; border-radius: 8px; border: 0; background: #d4a843; color: #080704; font-weight: 950; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; cursor: pointer; }
@@ -266,15 +313,15 @@ export default function VoucherRouletteModal() {
         .voucher-saved strong { font-family: monospace; color: #f5d78c; font-size: 18px; }
         .voucher-saved span { color: rgba(255,255,255,.68); }
         .voucher-pix img { width: 180px; height: 180px; background: #fff; padding: 8px; border-radius: 8px; }
+        @keyframes voucherSweep { from { transform: translateX(-48%); } to { transform: translateX(48%); } }
         @media (max-width: 820px) {
           .voucher-modal { grid-template-columns: 1fr; padding: 22px; }
           .voucher-copy { text-align: center; }
           .voucher-copy p:not(.voucher-kicker) { margin-left: auto; margin-right: auto; }
           .voucher-muse { display: none; }
-          .voucher-wheel-wrap { min-height: auto; padding-top: 52px; }
-          .voucher-wheel { width: min(86vw, 430px); border-width: 12px; }
-          .voucher-segment-label { padding-top: 44px; }
-          .voucher-wheel-center { width: 82px; height: 82px; font-size: 44px; }
+          .voucher-wheel-wrap { min-height: auto; }
+          .voucher-art-stage { width: min(100%, 430px); }
+          .voucher-result-prize { grid-template-columns: 1fr; justify-items: center; text-align: center; }
         }
       `}</style>
     </div>
