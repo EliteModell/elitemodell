@@ -36,8 +36,9 @@ const CLOSED_KEY = "elite_voucher_modal_closed";
 const GOLD = "#d4a843";
 const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.png?v=20260531-spin";
 const SEGMENT_ANGLE = 36; // 360 / 10 segments
-const SPIN_DURATION_MS = 4500;
-const RESULT_REVEAL_DELAY_MS = 1100;
+const SPIN_DURATION_MS = 3500;
+const MIN_DECELERATION_MS = 1400;
+const RESULT_REVEAL_DELAY_MS = 1000;
 
 function randomKey() {
   const bytes = new Uint8Array(16);
@@ -127,6 +128,8 @@ export default function VoucherRouletteModal() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const soundNodesRef = useRef<{ osc: OscillatorNode; gain: GainNode } | null>(null);
   const tickTimersRef = useRef<number[]>([]);
+  const soundActiveRef = useRef(false);
+  const soundStartedAtRef = useRef(0);
   const spinFrameRef = useRef<number | null>(null);
   const preSpinActiveRef = useRef(false);
 
@@ -176,43 +179,40 @@ export default function VoucherRouletteModal() {
       spinGain.connect(ctx.destination);
       spinOsc.start(startAt);
       soundNodesRef.current = { osc: spinOsc, gain: spinGain };
-
-      const timers: number[] = [];
-      let elapsed = 0;
-      let interval = 55; // start fast
-
-      while (elapsed < SPIN_DURATION_MS - 300) {
-        const t = elapsed;
-        timers.push(
-          window.setTimeout(() => {
-            if (!audioCtxRef.current || audioCtxRef.current.state === "closed") return;
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.type = "triangle";
-            osc.frequency.value = 680 + Math.random() * 120;
-            const now = ctx.currentTime;
-            gain.gain.setValueAtTime(0.14, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
-            osc.start(now);
-            osc.stop(now + 0.045);
-          }, t),
-        );
-
-        // Quadratic ease-out: interval grows from 55ms → 380ms
-        const progress = elapsed / SPIN_DURATION_MS;
-        interval = 55 + progress * progress * 325;
-        elapsed += interval;
-      }
-
-      tickTimersRef.current = timers;
+      soundActiveRef.current = true;
+      soundStartedAtRef.current = performance.now();
+      scheduleSpinTick(ctx);
     } catch {
       // AudioContext unavailable
     }
   }
 
+  function scheduleSpinTick(ctx: AudioContext) {
+    if (!soundActiveRef.current) return;
+
+    const elapsed = performance.now() - soundStartedAtRef.current;
+    const progress = Math.min(elapsed / SPIN_DURATION_MS, 1);
+
+    if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "triangle";
+      osc.frequency.value = 680 + Math.random() * 120;
+      const now = ctx.currentTime;
+      gain.gain.setValueAtTime(0.13 - progress * 0.04, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+      osc.start(now);
+      osc.stop(now + 0.045);
+    }
+
+    const interval = 55 + progress * progress * 325;
+    tickTimersRef.current = [window.setTimeout(() => scheduleSpinTick(ctx), interval)];
+  }
+
   function stopSpinSound() {
+    soundActiveRef.current = false;
     tickTimersRef.current.forEach((id) => window.clearTimeout(id));
     tickTimersRef.current = [];
     if (soundNodesRef.current && audioCtxRef.current) {
@@ -263,7 +263,7 @@ export default function VoucherRouletteModal() {
     spinFrameRef.current = window.requestAnimationFrame(step);
   }
 
-  function animateWheelToSegment(index: number) {
+  function animateWheelToSegment(index: number, durationMs: number) {
     if (!wheelRef.current) return Promise.resolve();
     stopWheelMotion();
     const current = rotationRef.current;
@@ -278,7 +278,7 @@ export default function VoucherRouletteModal() {
       const easeOut = (progress: number) => 1 - Math.pow(1 - progress, 3);
 
       const step = (now: number) => {
-        const progress = Math.min((now - start) / SPIN_DURATION_MS, 1);
+        const progress = Math.min((now - start) / durationMs, 1);
         const eased = easeOut(progress);
         setWheelRotation(current + delta * eased);
 
@@ -302,6 +302,7 @@ export default function VoucherRouletteModal() {
     setSpinning(true);
     setShowResult(false);
     setWinningIndex(null);
+    const spinStartedAt = performance.now();
     startWheelMotion();
     startSpinSound();
 
@@ -315,7 +316,9 @@ export default function VoucherRouletteModal() {
       if (!res.ok) throw new Error(data.error ?? "Não foi possível girar agora.");
 
       const visualIndex = resolveVisualIndex(data);
-      await animateWheelToSegment(visualIndex);
+      const elapsed = performance.now() - spinStartedAt;
+      const decelerationDuration = Math.max(MIN_DECELERATION_MS, SPIN_DURATION_MS - elapsed);
+      await animateWheelToSegment(visualIndex, decelerationDuration);
 
       stopSpinSound();
       setWinningIndex(visualIndex);
@@ -513,9 +516,9 @@ export default function VoucherRouletteModal() {
           position: fixed; inset: 0; z-index: 9998;
           display: flex; align-items: center; justify-content: center;
           padding: 12px;
-          background: rgba(0,0,0,.82);
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
+          background: rgba(0,0,0,.76);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
         }
 
         /* ── Main card ── */
@@ -535,7 +538,7 @@ export default function VoucherRouletteModal() {
             radial-gradient(ellipse at 80% 8%, rgba(212,168,67,.14) 0%, transparent 40%),
             linear-gradient(170deg, #090212 0%, #110520 55%, #060208 100%);
           box-shadow:
-            0 40px 120px rgba(0,0,0,.84),
+            0 30px 80px rgba(0,0,0,.68),
             inset 0 0 0 1px rgba(255,255,255,.03);
           padding: 20px 18px 16px;
           color: #f6efe0;
@@ -597,18 +600,18 @@ export default function VoucherRouletteModal() {
         .vm-pointer {
           position: relative;
           z-index: 5;
-          margin-bottom: -18px; /* overlaps the top edge of the ring */
-          width: 52px; height: 64px;
+          margin-bottom: -14px; /* overlaps the top edge of the ring */
+          width: 44px; height: 54px;
           background: linear-gradient(180deg, #fff4cc 0%, ${GOLD} 52%, #6d3c0c 100%);
           clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
-          filter: drop-shadow(0 6px 14px rgba(0,0,0,.7));
+          filter: drop-shadow(0 4px 9px rgba(0,0,0,.5));
           flex-shrink: 0;
         }
         .vm-pointer-gem {
           position: absolute;
-          top: 13px; left: 50%;
+          top: 11px; left: 50%;
           transform: translateX(-50%);
-          width: 13px; height: 13px;
+          width: 11px; height: 11px;
           border-radius: 50%;
           background: #8c1fa8;
           box-shadow: 0 0 14px rgba(181,76,212,.85);
@@ -619,16 +622,16 @@ export default function VoucherRouletteModal() {
 
         /* Wheel ring — circular, clips the image, no bleed-through */
         .vm-wheel-ring {
-          width: min(68vw, 268px);
-          height: min(68vw, 268px);
+          width: min(70vw, 280px);
+          height: min(70vw, 280px);
           border-radius: 50%;
           overflow: hidden;
-          background: #08020e; /* solid base, no transparency */
+          background: #0b0311; /* solid base, no transparency */
           box-shadow:
-            0 0 0 4px rgba(212,168,67,.65),
-            0 0 0 9px rgba(212,168,67,.12),
-            0 16px 50px rgba(0,0,0,.75),
-            0 0 40px rgba(126,32,143,.28);
+            0 0 0 3px rgba(238,190,78,.78),
+            0 0 0 8px rgba(212,168,67,.08),
+            0 10px 28px rgba(0,0,0,.42),
+            0 0 34px rgba(171,63,188,.24);
           flex-shrink: 0;
           position: relative;
           z-index: 2;
@@ -642,6 +645,7 @@ export default function VoucherRouletteModal() {
           transform: translateZ(0) rotate(0deg);
           transform-origin: 50% 50%;
           backface-visibility: hidden;
+          filter: brightness(1.1) saturate(1.12) contrast(1.03);
           user-select: none;
           pointer-events: none;
           will-change: transform;
@@ -669,10 +673,10 @@ export default function VoucherRouletteModal() {
         }
 
         @keyframes vm-pointer-landed {
-          0% { filter: drop-shadow(0 6px 14px rgba(0,0,0,.7)); transform: translateY(0); }
+          0% { filter: drop-shadow(0 4px 9px rgba(0,0,0,.5)); transform: translateY(0); }
           20% { filter: drop-shadow(0 0 22px rgba(255,222,128,.92)); transform: translateY(3px); }
           52% { filter: drop-shadow(0 0 18px rgba(255,222,128,.72)); transform: translateY(0); }
-          100% { filter: drop-shadow(0 6px 14px rgba(0,0,0,.7)); transform: translateY(0); }
+          100% { filter: drop-shadow(0 4px 9px rgba(0,0,0,.5)); transform: translateY(0); }
         }
 
         /* ── Spin button ── */
