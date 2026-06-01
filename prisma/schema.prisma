@@ -922,7 +922,11 @@ model VoucherSpin {
   @@index([clientId, createdAt])
   @@index([visitorId, createdAt])
   @@index([ipAddress, createdAt])
+  @@index([clientId, result, createdAt])
+  @@index([visitorId, result, createdAt])
+  @@index([ipAddress, result, createdAt])
   @@index([result, createdAt])
+  @@index([createdAt])
 }
 
 model ClientVoucher {
@@ -956,7 +960,11 @@ model ClientVoucher {
 
   @@index([clientId, status, expiresAt])
   @@index([visitorId, status, expiresAt])
+  @@index([spinId])
+  @@index([status, expiresAt])
+  @@index([prizeId, status, createdAt])
   @@index([recipientPhone, status])
+  @@index([whatsapp, status])
   @@index([paymentStatus])
 }
 

@@ -266,8 +266,12 @@ export async function ensureVoucherDefaults(now = new Date()) {
   return settings;
 }
 
+export async function getVoucherSettings(now = new Date()) {
+  const settings = await prisma.voucherSettings.findUnique({ where: { id: "default" } });
+  return settings ?? ensureVoucherDefaults(now);
+}
+
 export async function activePrizes(tx?: Prisma.TransactionClient) {
-  await ensureVoucherDefaults();
   return db(tx).voucherPrize.findMany({
     where: { active: true },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],

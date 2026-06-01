@@ -10,14 +10,13 @@ import {
   consumeDailyStock,
   createVoucherFromSpin,
   eligiblePrizes,
-  ensureVoucherDefaults,
+  getVoucherSettings,
   getIp,
   newPendingToken,
   newVisitorId,
   pickPrize,
   publicPrize,
   todayRange,
-  updateExpiredVouchers,
   userVoucherIdentity,
   VOUCHER_VISITOR_COOKIE,
 } from "@/lib/voucher-roulette";
@@ -42,18 +41,15 @@ function modalMessage(type: string, value?: number | null, needsRegistration?: b
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions).catch(() => null);
   const body = schema.parse(await req.json().catch(() => ({})));
-  const settings = await ensureVoucherDefaults();
+  const settings = await getVoucherSettings();
   if (!settings.active) return NextResponse.json({ error: "A roleta está temporariamente indisponível." }, { status: 403 });
 
   const visitorId = req.cookies.get(VOUCHER_VISITOR_COOKIE)?.value ?? newVisitorId();
   const ipAddress = getIp(req.headers);
   const userAgent = req.headers.get("user-agent");
   const { start, end } = todayRange();
-  const scopedIdempotencyKey = `${session?.user?.id ?? visitorId}:${body.idempotencyKey}`;
-  const user = session?.user?.id
-    ? await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true, phone: true, email: true, document: true } })
-    : null;
-  const identity = userVoucherIdentity(user, { visitorId, ipAddress, userAgent });
+  const sessionUserId = session?.user?.id ?? null;
+  const scopedIdempotencyKey = `${sessionUserId ?? visitorId}:${body.idempotencyKey}`;
 
   const existing = await prisma.voucherSpin.findUnique({
     where: { idempotencyKey: scopedIdempotencyKey },
@@ -64,7 +60,7 @@ export async function POST(req: NextRequest) {
     const prizeIndex = prizes.findIndex((item) => item.id === existing.prizeId);
     const voucher = existing.vouchers[0] ?? null;
     const value = existing.voucherValue ?? existing.prize.value ?? 0;
-    const needsIdentification = Boolean(voucher && existing.result === "VOUCHER" && value < 100 && !voucher.recipientPhone && !session?.user?.id);
+    const needsIdentification = Boolean(voucher && existing.result === "VOUCHER" && value < 100 && !voucher.recipientPhone && !sessionUserId);
     const needsRegistration = Boolean(voucher?.status === "AWAITING_REGISTRATION" && !needsIdentification);
     return NextResponse.json({
       spinId: existing.id,
@@ -78,16 +74,31 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const identityWhere = session?.user?.id
-    ? { clientId: session.user.id }
-    : { OR: [{ visitorId }, ...(ipAddress ? [{ ipAddress }] : []), ...(userAgent ? [{ userAgent }] : [])] };
+  const identityWhere = sessionUserId
+    ? { clientId: sessionUserId }
+    : { OR: [{ visitorId }, ...(ipAddress ? [{ ipAddress }] : [])] };
 
-  const [spinsToday, tryTomorrowSpin] = await Promise.all([
-    prisma.voucherSpin.count({ where: { ...identityWhere, createdAt: { gte: start, lt: end } } }),
-    prisma.voucherSpin.findFirst({ where: { ...identityWhere, result: "TRY_TOMORROW", createdAt: { gte: start, lt: end } } }),
-  ]);
+  const limit = sessionUserId ? settings.dailySpinLimit : settings.guestDailySpinLimit;
+  const firstSpinToday = await prisma.voucherSpin.findFirst({
+    where: { ...identityWhere, createdAt: { gte: start, lt: end } },
+    select: { id: true, result: true },
+    orderBy: { createdAt: "desc" },
+  });
+  let spinsToday = firstSpinToday ? 1 : 0;
+  let tryTomorrowSpin = firstSpinToday?.result === "TRY_TOMORROW" ? firstSpinToday : null;
 
-  const limit = session?.user?.id ? settings.dailySpinLimit : settings.guestDailySpinLimit;
+  if (firstSpinToday && limit > 1 && !tryTomorrowSpin) {
+    const [countToday, tomorrowSpin] = await Promise.all([
+      prisma.voucherSpin.count({ where: { ...identityWhere, createdAt: { gte: start, lt: end } } }),
+      prisma.voucherSpin.findFirst({
+        where: { ...identityWhere, result: "TRY_TOMORROW", createdAt: { gte: start, lt: end } },
+        select: { id: true, result: true },
+      }),
+    ]);
+    spinsToday = countToday;
+    tryTomorrowSpin = tomorrowSpin;
+  }
+
   if (tryTomorrowSpin || spinsToday >= limit) {
     const prizes = await prisma.voucherPrize.findMany({
       where: { active: true },
@@ -115,9 +126,12 @@ export async function POST(req: NextRequest) {
 
   let result;
   try {
-    result = await prisma.$transaction(async (tx) => {
-      await updateExpiredVouchers(new Date(), tx);
+    const user = sessionUserId
+      ? await prisma.user.findUnique({ where: { id: sessionUserId }, select: { id: true, phone: true, email: true, document: true } })
+      : null;
+    const identity = userVoucherIdentity(user, { visitorId, ipAddress, userAgent });
 
+    result = await prisma.$transaction(async (tx) => {
       const prizes = await tx.voucherPrize.findMany({
         where: { active: true },
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
@@ -130,8 +144,8 @@ export async function POST(req: NextRequest) {
       const normalizedResult = prize.type === "PAID_VOUCHER" ? "VOUCHER" : prize.type;
       const isVoucher = normalizedResult === "VOUCHER" && Boolean(prize.value && prize.value > 0);
       const value = prize.value ?? null;
-      const isVoucher100Guest = isVoucher && value === 100 && !session?.user?.id;
-      const needsGuestClaim = isVoucher && !session?.user?.id && value !== 100;
+      const isVoucher100Guest = isVoucher && value === 100 && !sessionUserId;
+      const needsGuestClaim = isVoucher && !sessionUserId && value !== 100;
       const pendingToken = needsGuestClaim || isVoucher100Guest ? newPendingToken() : null;
       const pendingExpiresAt = needsGuestClaim
         ? new Date(Date.now() + settings.pendingClaimMinutes * 60 * 1000)
@@ -145,7 +159,7 @@ export async function POST(req: NextRequest) {
 
       const spin = await tx.voucherSpin.create({
         data: {
-          clientId: session?.user?.id ?? null,
+          clientId: sessionUserId,
           visitorId,
           prizeId: prize.id,
           result: normalizedResult,
@@ -160,8 +174,8 @@ export async function POST(req: NextRequest) {
 
       let voucher = null;
       if (isVoucher) {
-        voucher = await createVoucherFromSpin({ tx, spin, prize, settings, clientId: session?.user?.id ?? null, visitorId });
-        if (session?.user?.id) {
+        voucher = await createVoucherFromSpin({ tx, spin, prize, settings, clientId: sessionUserId, visitorId });
+        if (sessionUserId) {
           await tx.voucherSpin.update({ where: { id: spin.id }, data: { claimedAt: new Date() } });
         }
       }
@@ -186,7 +200,7 @@ export async function POST(req: NextRequest) {
 
     const spin = await prisma.voucherSpin.create({
       data: {
-        clientId: session?.user?.id ?? null,
+        clientId: sessionUserId,
         visitorId,
         prizeId: prize.id,
         result: prize.type === "TRY_TOMORROW" ? "TRY_TOMORROW" : "TRY_AGAIN",

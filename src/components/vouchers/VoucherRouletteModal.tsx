@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CalendarClock, Gift, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 
 type Prize = {
   id: string;
@@ -38,6 +39,8 @@ const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.webp?v=20260601-spin-audio";
 const SEGMENT_ANGLE = 36; // 360 / 10 segments
 const SPIN_DURATION_MS = 4000;   // duração fixa do giro visual (ms)
 const RESULT_REVEAL_DELAY_MS = 1000; // pausa após parar para mostrar onde caiu
+const SLOW_PREPARE_MS = 500;
+const SPIN_API_TIMEOUT_MS = 12000;
 
 function randomKey() {
   const bytes = new Uint8Array(16);
@@ -126,6 +129,7 @@ export default function VoucherRouletteModal() {
   const [showResult, setShowResult] = useState(false);
   const [result, setResult] = useState<SpinResult | null>(null);
   const [winningIndex, setWinningIndex] = useState<number | null>(null);
+  const [slowPreparing, setSlowPreparing] = useState(false);
   const [name, setName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [claiming, setClaiming] = useState(false);
@@ -140,6 +144,7 @@ export default function VoucherRouletteModal() {
   const soundStartedAtRef = useRef(0);
   const spinFrameRef = useRef<number | null>(null);
   const preSpinActiveRef = useRef(false);
+  const slowPrepareTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (sessionStorage.getItem(CLOSED_KEY)) return;
@@ -157,11 +162,28 @@ export default function VoucherRouletteModal() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!open) return;
+    const img = new Image();
+    img.decoding = "async";
+    img.src = WHEEL_IMAGE_SRC;
+    void img.decode?.().catch(() => undefined);
+  }, [open]);
+
   function close() {
     sessionStorage.setItem(CLOSED_KEY, "1");
+    clearSlowPrepareTimer();
     stopWheelMotion();
     stopSpinSound();
     setOpen(false);
+  }
+
+  function clearSlowPrepareTimer() {
+    if (slowPrepareTimerRef.current !== null) {
+      window.clearTimeout(slowPrepareTimerRef.current);
+      slowPrepareTimerRef.current = null;
+    }
+    setSlowPreparing(false);
   }
 
   function getAudioContext() {
@@ -334,23 +356,39 @@ export default function VoucherRouletteModal() {
   async function spin() {
     if (!config || spinning || result) return;
 
-    // 1. Bloqueia novo clique imediatamente
+    // 1. Bloqueia novo clique imediatamente e pinta o loading antes da requisição.
     primeSpinAudio();
-    setSpinning(true);
-    setFetching(true);
-    setShowResult(false);
-    setWinningIndex(null);
+    clearSlowPrepareTimer();
+    flushSync(() => {
+      setSpinning(true);
+      setFetching(true);
+      setShowResult(false);
+      setWinningIndex(null);
+    });
+    slowPrepareTimerRef.current = window.setTimeout(() => {
+      setSlowPreparing(true);
+      slowPrepareTimerRef.current = null;
+    }, SLOW_PREPARE_MS);
+
+    let timeoutId: number | null = null;
 
     try {
+      const controller = new AbortController();
+      timeoutId = window.setTimeout(() => controller.abort(), SPIN_API_TIMEOUT_MS);
+
       // 2. Busca resultado PRIMEIRO — roleta não gira enquanto espera
       const res = await fetch("/api/vouchers/roulette/spin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idempotencyKey: idempotencyRef.current }),
+        signal: controller.signal,
       });
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+      timeoutId = null;
       const data: SpinResult & { error?: string } = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Não foi possível girar agora.");
 
+      clearSlowPrepareTimer();
       setFetching(false);
       const visualIndex = resolveVisualIndex(data);
 
@@ -368,6 +406,8 @@ export default function VoucherRouletteModal() {
       setShowResult(true);
       setSpinning(false);
     } catch (err) {
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+      clearSlowPrepareTimer();
       stopWheelMotion();
       stopSpinSound();
       setFetching(false);
@@ -384,7 +424,7 @@ export default function VoucherRouletteModal() {
           paymentAmount: null,
         },
         result: "ERROR",
-        message: err instanceof Error ? err.message : "Não foi possível girar agora.",
+        message: err instanceof Error && err.name !== "AbortError" ? err.message : "Não foi possível girar agora. Tente novamente.",
         needsIdentification: false,
       });
       setShowResult(true);
@@ -460,6 +500,11 @@ export default function VoucherRouletteModal() {
         >
           {fetching ? "Preparando..." : spinning ? "Girando..." : "GIRAR AGORA"}
         </button>
+        {fetching && slowPreparing && (
+          <p className="vm-prepare-note" role="status">
+            Preparando seu giro com segurança...
+          </p>
+        )}
 
         <p className="vm-footnote">Descontos promocionais para uso interno na plataforma.</p>
       </div>
@@ -745,6 +790,21 @@ export default function VoucherRouletteModal() {
         .vm-spin-btn:not(:disabled):hover { opacity: .9; }
         .vm-spin-btn:not(:disabled):active { transform: scale(.97); }
         .vm-spin-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+        .vm-prepare-note {
+          margin: 8px 0 0;
+          min-height: 18px;
+          color: rgba(255,231,165,.82);
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: .02em;
+          animation: vm-prepare-pulse .9s ease-in-out infinite alternate;
+        }
+
+        @keyframes vm-prepare-pulse {
+          from { opacity: .62; }
+          to { opacity: 1; }
+        }
 
         /* ── Footnote ── */
         .vm-footnote {
