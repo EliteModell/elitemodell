@@ -10,14 +10,31 @@ const schema = z.object({
   professionalId: z.string().cuid(),
 });
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
   const now = new Date();
+  const { searchParams } = new URL(req.url);
+  const pageParam = Number(searchParams.get("page") ?? 1);
+  const limitParam = Number(searchParams.get("limit") ?? 30);
+  const page = Number.isFinite(pageParam) ? Math.max(1, Math.floor(pageParam)) : 1;
+  const limit = Number.isFinite(limitParam) ? Math.min(60, Math.max(1, Math.floor(limitParam))) : 30;
 
   const favorites = await prisma.favorite.findMany({
-    where: { userId: session.user.id, professionalId: { not: null } },
+    where: {
+      userId: session.user.id,
+      professionalId: { not: null },
+      professional: {
+        is: {
+          status: "ACTIVE",
+          verified: true,
+          OR: [{ pauseUntil: null }, { pauseUntil: { lt: now } }],
+        },
+      },
+    },
     orderBy: { createdAt: "desc" },
+    skip: (page - 1) * limit,
+    take: limit,
     include: {
       professional: {
         select: {
@@ -40,11 +57,6 @@ export async function GET() {
 
   return NextResponse.json({
     favorites: favorites
-      .filter((favorite) =>
-        favorite.professional?.status === "ACTIVE" &&
-        favorite.professional.verified &&
-        (!favorite.professional.pauseUntil || favorite.professional.pauseUntil < now)
-      )
       .map((favorite) => ({
         id: favorite.id,
         createdAt: favorite.createdAt,

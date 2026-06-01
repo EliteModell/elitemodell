@@ -36,6 +36,12 @@ export default function Stories() {
     };
   }, [carregar]);
 
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
   function scroll(dir: "left" | "right") {
     rowRef.current?.scrollBy({ left: dir === "right" ? 220 : -220, behavior: "smooth" });
   }
@@ -153,7 +159,7 @@ export default function Stories() {
             {/* Mídia */}
             <div style={{ position: "relative", paddingTop: "170%", background: "#111" }}>
               {story.mediaType === "video"
-                ? <video src={story.mediaUrl} autoPlay loop muted playsInline style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                ? <video src={story.mediaUrl} poster={story.thumbnail ?? undefined} autoPlay loop muted playsInline preload="metadata" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                 : <Image src={story.mediaUrl} alt="" fill sizes="min(380px, 95vw)" style={{ objectFit: "cover" }} />
               }
               <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 40%)" }} />

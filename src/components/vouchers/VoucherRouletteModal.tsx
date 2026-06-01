@@ -34,7 +34,7 @@ type SpinResult = {
 
 const CLOSED_KEY = "elite_voucher_modal_closed";
 const GOLD = "#d4a843";
-const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.png?v=20260531-spin";
+const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.webp?v=20260601-perf";
 const SEGMENT_ANGLE = 36; // 360 / 10 segments
 const SPIN_DURATION_MS = 3500;
 const MIN_DECELERATION_MS = 900;
@@ -400,7 +400,11 @@ export default function VoucherRouletteModal() {
               ref={wheelRef}
               src={WHEEL_IMAGE_SRC}
               alt="Roda da Roleta Premiada"
-              className="vm-wheel-img"
+              className={`vm-wheel-img${spinning ? " vm-wheel-img--spinning" : ""}`}
+              width={836}
+              height={836}
+              decoding="async"
+              loading="eager"
               draggable={false}
             />
             {winningIndex !== null && <div className="vm-winning-glow" aria-hidden="true" />}
@@ -518,8 +522,6 @@ export default function VoucherRouletteModal() {
           display: flex; align-items: center; justify-content: center;
           padding: 12px;
           background: rgba(0,0,0,.76);
-          backdrop-filter: blur(6px);
-          -webkit-backdrop-filter: blur(6px);
         }
 
         /* ── Main card ── */
@@ -539,7 +541,7 @@ export default function VoucherRouletteModal() {
             radial-gradient(ellipse at 80% 8%, rgba(212,168,67,.14) 0%, transparent 40%),
             linear-gradient(170deg, #090212 0%, #110520 55%, #060208 100%);
           box-shadow:
-            0 30px 80px rgba(0,0,0,.68),
+            0 22px 54px rgba(0,0,0,.62),
             inset 0 0 0 1px rgba(255,255,255,.03);
           padding: 20px 18px 16px;
           color: #f6efe0;
@@ -631,8 +633,8 @@ export default function VoucherRouletteModal() {
           box-shadow:
             0 0 0 3px rgba(238,190,78,.78),
             0 0 0 8px rgba(212,168,67,.08),
-            0 10px 28px rgba(0,0,0,.42),
-            0 0 34px rgba(171,63,188,.24);
+            0 10px 24px rgba(0,0,0,.34),
+            0 0 24px rgba(171,63,188,.18);
           flex-shrink: 0;
           position: relative;
           z-index: 2;
@@ -649,8 +651,9 @@ export default function VoucherRouletteModal() {
           filter: brightness(1.1) saturate(1.12) contrast(1.03);
           user-select: none;
           pointer-events: none;
-          will-change: transform;
+          will-change: auto;
         }
+        .vm-wheel-img--spinning { will-change: transform; }
 
         .vm-winning-glow {
           position: absolute;
@@ -715,8 +718,6 @@ export default function VoucherRouletteModal() {
           display: flex; align-items: center; justify-content: center;
           padding: 16px;
           background: rgba(0,0,0,.76);
-          backdrop-filter: blur(4px);
-          -webkit-backdrop-filter: blur(4px);
         }
 
         /* ── Result card ── */
@@ -730,7 +731,7 @@ export default function VoucherRouletteModal() {
             linear-gradient(145deg, #0d0912 0%, #050206 100%);
           color: #f6efe0;
           padding: 30px 24px 24px;
-          box-shadow: 0 32px 100px rgba(0,0,0,.82), inset 0 0 0 1px rgba(255,255,255,.03);
+          box-shadow: 0 22px 58px rgba(0,0,0,.66), inset 0 0 0 1px rgba(255,255,255,.03);
           display: flex;
           flex-direction: column;
           align-items: center;

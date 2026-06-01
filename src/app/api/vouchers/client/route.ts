@@ -9,6 +9,12 @@ import { releaseRegistrationVouchersForUser, updateExpiredVouchers, VOUCHER_STAT
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  const { searchParams } = new URL(req.url);
+  const pageParam = Number(searchParams.get("page") ?? 1);
+  const limitParam = Number(searchParams.get("limit") ?? 30);
+  const page = Number.isFinite(pageParam) ? Math.max(1, Math.floor(pageParam)) : 1;
+  const limit = Number.isFinite(limitParam) ? Math.min(60, Math.max(1, Math.floor(limitParam))) : 30;
+
   await updateExpiredVouchers();
   await releaseRegistrationVouchersForUser({
     userId: session.user.id,
@@ -28,8 +34,22 @@ export async function GET(req: NextRequest) {
         ...(phone ? [{ recipientPhone: phone }, { whatsapp: phone }] : []),
       ],
     },
-    include: { prize: true, appointment: { select: { id: true, date: true, professional: { select: { displayName: true, slug: true } } } } },
+    select: {
+      id: true,
+      code: true,
+      value: true,
+      status: true,
+      expiresAt: true,
+      usedAt: true,
+      createdAt: true,
+      requiresPayment: true,
+      paymentStatus: true,
+      prize: { select: { id: true, name: true, type: true, value: true } },
+      appointment: { select: { id: true, date: true, professional: { select: { displayName: true, slug: true } } } },
+    },
     orderBy: { createdAt: "desc" },
+    skip: (page - 1) * limit,
+    take: limit,
   });
 
   return NextResponse.json({

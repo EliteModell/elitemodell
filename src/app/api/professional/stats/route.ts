@@ -23,7 +23,7 @@ export async function GET() {
       contactClicks: true,
       totalReviews: true,
       rating: true,
-      favorites: { select: { id: true } },
+      _count: { select: { favorites: true } },
     },
   });
 
@@ -60,7 +60,7 @@ export async function GET() {
     totals: {
       views: professional.profileViews,
       contacts: professional.contactClicks,
-      favorites: professional.favorites.length,
+      favorites: professional._count.favorites,
       reviews: professional.totalReviews,
       rating: professional.rating,
     },

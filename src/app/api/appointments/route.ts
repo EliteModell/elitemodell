@@ -27,6 +27,10 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
+  const pageParam = Number(searchParams.get("page") ?? 1);
+  const limitParam = Number(searchParams.get("limit") ?? 50);
+  const page = Number.isFinite(pageParam) ? Math.max(1, Math.floor(pageParam)) : 1;
+  const limit = Number.isFinite(limitParam) ? Math.min(100, Math.max(1, Math.floor(limitParam))) : 50;
   const role = session.user.role;
 
   const where: Prisma.AppointmentWhereInput = {};
@@ -57,6 +61,8 @@ export async function GET(req: NextRequest) {
       voucher: { select: { id: true, code: true, value: true, status: true } },
     },
     orderBy: { date: "desc" },
+    skip: (page - 1) * limit,
+    take: limit,
   });
 
   return NextResponse.json(appointments);

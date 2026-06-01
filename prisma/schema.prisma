@@ -222,6 +222,7 @@ model PhoneVerificationCode {
   @@index([phone, accountType, usedAt, expiresAt])
   @@index([requestIp, createdAt])
   @@index([expiresAt])
+  @@index([expiresAt, createdAt])
 }
 
 model Story {
@@ -522,6 +523,9 @@ model Message {
 
   booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   sender    User     @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@index([bookingId, createdAt])
+  @@index([bookingId, read])
 }
 
 // ─── Favorite ────────────────────────────────────────────────────────────────
@@ -539,6 +543,7 @@ model Favorite {
 
   @@unique([userId, propertyId])
   @@unique([userId, professionalId])
+  @@index([userId, createdAt])
   @@index([professionalId])
 }
 
@@ -729,6 +734,8 @@ model ProfessionalPhoto {
   createdAt      DateTime     @default(now())
 
   professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@index([professionalId, cover, order])
 }
 
 model ProfessionalSpecialty {
@@ -775,7 +782,9 @@ model Appointment {
   voucher        ClientVoucher?      @relation("AppointmentVoucher")
 
   @@index([clientId, status, createdAt])
+  @@index([clientId, date])
   @@index([professionalId, status, date])
+  @@index([professionalId, date])
 }
 
 model ProfessionalReview {
@@ -795,6 +804,8 @@ model ProfessionalReview {
   appointment    Appointment  @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   author         User         @relation("ProReviewAuthor", fields: [authorId], references: [id])
   dispute        ProfessionalReviewDispute?
+
+  @@index([professionalId, hidden, createdAt])
 }
 
 model VoucherSettings {

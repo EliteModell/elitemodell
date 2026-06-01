@@ -50,6 +50,7 @@ export async function GET() {
       },
     },
     orderBy: { createdAt: "desc" },
+    take: 80,
   });
 
   const grouped = Object.values(

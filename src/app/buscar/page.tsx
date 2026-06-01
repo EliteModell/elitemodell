@@ -519,7 +519,6 @@ function BuscarContent() {
           justify-content: center;
           background: rgba(0,0,0,0.72);
           padding: 16px;
-          backdrop-filter: blur(6px);
         }
         .location-modal {
           width: 100%;
@@ -529,7 +528,7 @@ function BuscarContent() {
           border-radius: 18px;
           border: 1px solid ${GOLD_MID};
           background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(8,8,8,0.98));
-          box-shadow: 0 28px 90px rgba(0,0,0,0.62);
+          box-shadow: 0 22px 58px rgba(0,0,0,0.54);
         }
         .location-list { max-height: 280px; overflow-y: auto; padding: 4px 18px 0; }
         .location-option {

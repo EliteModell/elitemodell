@@ -223,7 +223,6 @@ export default function HomePage() {
           font-weight: 750;
           line-height: 1.35;
           box-shadow: 0 14px 36px rgba(0,0,0,0.2);
-          backdrop-filter: blur(8px);
         }
 
         .hero-benefits svg {
@@ -441,7 +440,6 @@ export default function HomePage() {
           background: rgba(255,70,86,0.11);
           color: #ff4054;
           box-shadow: 0 0 22px rgba(255,70,86,0.18);
-          animation: heartGlow 2.2s ease-in-out infinite;
         }
 
         .client-tile .action-icon svg {
@@ -502,15 +500,6 @@ export default function HomePage() {
           }
           64% {
             transform: scale(1);
-          }
-        }
-
-        @keyframes heartGlow {
-          0%, 100% {
-            box-shadow: 0 0 18px rgba(255,70,86,0.16);
-          }
-          50% {
-            box-shadow: 0 0 32px rgba(255,70,86,0.28), 0 0 22px rgba(212,168,67,0.12);
           }
         }
 
