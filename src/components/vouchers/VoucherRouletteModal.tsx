@@ -356,7 +356,7 @@ export default function VoucherRouletteModal() {
   async function spin() {
     if (!config || spinning || result) return;
 
-    // 1. Bloqueia novo clique imediatamente e pinta o loading antes da requisição.
+    // 1. Bloqueia novo clique imediatamente e já dá vida à roleta enquanto o backend sorteia.
     primeSpinAudio();
     clearSlowPrepareTimer();
     flushSync(() => {
@@ -365,6 +365,8 @@ export default function VoucherRouletteModal() {
       setShowResult(false);
       setWinningIndex(null);
     });
+    startSpinSound();
+    startWheelMotion();
     slowPrepareTimerRef.current = window.setTimeout(() => {
       setSlowPreparing(true);
       slowPrepareTimerRef.current = null;
@@ -392,7 +394,7 @@ export default function VoucherRouletteModal() {
       setFetching(false);
       const visualIndex = resolveVisualIndex(data);
 
-      // 3. Som e giro começam juntos, duração fixa — sem loop infinito
+      // 3. Reinicia o som para sincronizar com a desaceleração final no prêmio sorteado.
       startSpinSound();
       await animateWheelToSegment(visualIndex, SPIN_DURATION_MS);
 
