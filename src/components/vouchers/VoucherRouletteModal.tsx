@@ -120,6 +120,8 @@ export default function VoucherRouletteModal() {
   const idempotencyRef = useRef(randomKey());
   const audioCtxRef = useRef<AudioContext | null>(null);
   const tickTimersRef = useRef<number[]>([]);
+  const spinFrameRef = useRef<number | null>(null);
+  const preSpinActiveRef = useRef(false);
 
   useEffect(() => {
     if (sessionStorage.getItem(CLOSED_KEY)) return;
@@ -139,6 +141,7 @@ export default function VoucherRouletteModal() {
 
   function close() {
     sessionStorage.setItem(CLOSED_KEY, "1");
+    stopWheelMotion();
     stopSpinSound();
     setOpen(false);
   }
@@ -195,29 +198,78 @@ export default function VoucherRouletteModal() {
     }
   }
 
-  function rotateToSegment(index: number) {
-    const wheel = wheelRef.current;
-    if (!wheel) return;
+  function setWheelRotation(angle: number) {
+    rotationRef.current = angle;
+    if (wheelRef.current) {
+      wheelRef.current.style.transform = `translateZ(0) rotate(${angle}deg)`;
+    }
+  }
 
+  function stopWheelMotion() {
+    preSpinActiveRef.current = false;
+    if (spinFrameRef.current !== null) {
+      window.cancelAnimationFrame(spinFrameRef.current);
+      spinFrameRef.current = null;
+    }
+  }
+
+  function startWheelMotion() {
+    stopWheelMotion();
+    preSpinActiveRef.current = true;
+
+    let lastFrame = performance.now();
+    const step = (now: number) => {
+      const elapsed = Math.min(now - lastFrame, 40);
+      lastFrame = now;
+      setWheelRotation(rotationRef.current + elapsed * 0.82);
+
+      if (preSpinActiveRef.current) {
+        spinFrameRef.current = window.requestAnimationFrame(step);
+      }
+    };
+
+    spinFrameRef.current = window.requestAnimationFrame(step);
+  }
+
+  function animateWheelToSegment(index: number) {
+    if (!wheelRef.current) return Promise.resolve();
+    stopWheelMotion();
     const current = rotationRef.current;
     const normalized = ((current % 360) + 360) % 360;
     const target = (360 - index * SEGMENT_ANGLE) % 360;
     let delta = 360 * 6 + target - normalized;
     if (delta < 360 * 5) delta += 360;
     const next = current + delta;
-    rotationRef.current = next;
 
-    // Reset any existing transition, flush layout, then animate
-    wheel.style.transition = "none";
-    void wheel.offsetWidth;
-    wheel.style.transition = `transform ${SPIN_DURATION_MS}ms cubic-bezier(0.15, 0.85, 0.25, 1)`;
-    wheel.style.transform = `rotate(${next}deg)`;
+    return new Promise<void>((resolve) => {
+      const start = performance.now();
+      const easeOut = (progress: number) => 1 - Math.pow(1 - progress, 3);
+
+      const step = (now: number) => {
+        const progress = Math.min((now - start) / SPIN_DURATION_MS, 1);
+        const eased = easeOut(progress);
+        setWheelRotation(current + delta * eased);
+
+        if (progress < 1) {
+          spinFrameRef.current = window.requestAnimationFrame(step);
+          return;
+        }
+
+        setWheelRotation(next);
+        spinFrameRef.current = null;
+        resolve();
+      };
+
+      spinFrameRef.current = window.requestAnimationFrame(step);
+    });
   }
 
   async function spin() {
     if (!config || spinning || result) return;
 
     setSpinning(true);
+    setShowResult(false);
+    startWheelMotion();
     startSpinSound();
 
     try {
@@ -229,15 +281,14 @@ export default function VoucherRouletteModal() {
       const data: SpinResult & { error?: string } = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Não foi possível girar agora.");
 
-      rotateToSegment(resolveVisualIndex(data));
+      await animateWheelToSegment(resolveVisualIndex(data));
 
-      window.setTimeout(() => {
-        stopSpinSound();
-        setResult(data);
-        setShowResult(true);
-        setSpinning(false);
-      }, SPIN_DURATION_MS);
+      stopSpinSound();
+      setResult(data);
+      setShowResult(true);
+      setSpinning(false);
     } catch (err) {
+      stopWheelMotion();
       stopSpinSound();
       setResult({
         spinId: "",
@@ -547,7 +598,9 @@ export default function VoucherRouletteModal() {
           display: block;
           width: 100%; height: 100%;
           object-fit: cover;
+          transform: translateZ(0) rotate(0deg);
           transform-origin: 50% 50%;
+          backface-visibility: hidden;
           user-select: none;
           pointer-events: none;
           will-change: transform;
