@@ -89,10 +89,28 @@ export async function POST(req: NextRequest) {
 
   const limit = session?.user?.id ? settings.dailySpinLimit : settings.guestDailySpinLimit;
   if (tryTomorrowSpin || spinsToday >= limit) {
-    return NextResponse.json(
-      { error: "Você já girou hoje. Volte amanhã para tentar novamente.", blockedUntil: end.toISOString() },
-      { status: 429 },
-    );
+    const prizes = await prisma.voucherPrize.findMany({
+      where: { active: true },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    });
+    const prize = prizes.find((item) => item.type === "TRY_TOMORROW") ??
+      prizes.find((item) => item.type === "TRY_AGAIN");
+
+    if (!prize) {
+      return NextResponse.json({ error: "Você já girou hoje. Volte amanhã para tentar novamente.", blockedUntil: end.toISOString() }, { status: 429 });
+    }
+
+    return NextResponse.json({
+      spinId: tryTomorrowSpin?.id ?? `blocked-${visitorId}`,
+      prize: publicPrize(prize, Math.max(0, prizes.findIndex((item) => item.id === prize.id))),
+      result: prize.type === "TRY_TOMORROW" ? "TRY_TOMORROW" : "TRY_AGAIN",
+      message: "Você já girou hoje. Volte amanhã para tentar novamente.",
+      needsIdentification: false,
+      needsRegistration: false,
+      pendingToken: null,
+      blockedUntil: end.toISOString(),
+      voucher: null,
+    });
   }
 
   let result;

@@ -106,7 +106,7 @@ function getResultView(result: SpinResult) {
       Icon: CalendarClock,
       tone: "tomorrow" as const,
       title: "Tente amanhã!",
-      subtitle: "Você pode tentar novamente amanhã.",
+      subtitle: result.message || "Você pode tentar novamente amanhã.",
     };
   }
   const isNearMiss = result.prize?.name?.toLowerCase().includes("quase");
@@ -114,7 +114,7 @@ function getResultView(result: SpinResult) {
     Icon: Sparkles,
     tone: "again" as const,
     title: isNearMiss ? "Quase lá!" : "Mais sorte na próxima!",
-    subtitle: isNearMiss ? "Você pode tentar novamente amanhã." : "Continue navegando na plataforma.",
+    subtitle: result.message || (isNearMiss ? "Você pode tentar novamente amanhã." : "Continue navegando na plataforma."),
   };
 }
 
