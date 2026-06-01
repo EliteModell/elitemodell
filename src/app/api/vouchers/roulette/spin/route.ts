@@ -95,59 +95,99 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    await updateExpiredVouchers(new Date(), tx);
+  let result;
+  try {
+    result = await prisma.$transaction(async (tx) => {
+      await updateExpiredVouchers(new Date(), tx);
 
-    const prizes = await tx.voucherPrize.findMany({
+      const prizes = await tx.voucherPrize.findMany({
+        where: { active: true },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      });
+      const { prizes: candidates, stats } = await eligiblePrizes({ tx, prizes, settings, identity });
+      const prize = pickPrize(candidates);
+      if (!prize) throw new Error("Nenhum prêmio ativo configurado.");
+
+      const prizeIndex = prizes.findIndex((item) => item.id === prize.id);
+      const normalizedResult = prize.type === "PAID_VOUCHER" ? "VOUCHER" : prize.type;
+      const isVoucher = normalizedResult === "VOUCHER" && Boolean(prize.value && prize.value > 0);
+      const value = prize.value ?? null;
+      const isVoucher100Guest = isVoucher && value === 100 && !session?.user?.id;
+      const needsGuestClaim = isVoucher && !session?.user?.id && value !== 100;
+      const pendingToken = needsGuestClaim || isVoucher100Guest ? newPendingToken() : null;
+      const pendingExpiresAt = needsGuestClaim
+        ? new Date(Date.now() + settings.pendingClaimMinutes * 60 * 1000)
+        : isVoucher100Guest
+          ? new Date(Date.now() + settings.registrationClaimHours * 60 * 60 * 1000)
+          : null;
+
+      if (isVoucher) {
+        await consumeDailyStock({ tx, prize, stats });
+      }
+
+      const spin = await tx.voucherSpin.create({
+        data: {
+          clientId: session?.user?.id ?? null,
+          visitorId,
+          prizeId: prize.id,
+          result: normalizedResult,
+          voucherValue: value,
+          ipAddress,
+          userAgent,
+          idempotencyKey: scopedIdempotencyKey,
+          pendingToken,
+          pendingExpiresAt,
+        },
+      });
+
+      let voucher = null;
+      if (isVoucher) {
+        voucher = await createVoucherFromSpin({ tx, spin, prize, settings, clientId: session?.user?.id ?? null, visitorId });
+        if (session?.user?.id) {
+          await tx.voucherSpin.update({ where: { id: spin.id }, data: { claimedAt: new Date() } });
+        }
+      }
+
+      return { spin, prize, prizeIndex, voucher, needsGuestClaim, needsRegistration: isVoucher100Guest };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 20_000 });
+  } catch (err) {
+    const safeError = err instanceof Error ? err.message : "Erro desconhecido";
+    console.error("[voucher-roulette-spin] fallback sem prêmio", { error: safeError.slice(0, 240) });
+
+    const prizes = await prisma.voucherPrize.findMany({
       where: { active: true },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     });
-    const { prizes: candidates, stats } = await eligiblePrizes({ tx, prizes, settings, identity });
-    const prize = pickPrize(candidates);
-    if (!prize) throw new Error("Nenhum prêmio ativo configurado.");
+    const prize = prizes.find((item) => item.type === "TRY_AGAIN" && item.name.toLowerCase().includes("sorte")) ??
+      prizes.find((item) => item.type === "TRY_AGAIN") ??
+      prizes.find((item) => item.type === "TRY_TOMORROW");
 
-    const prizeIndex = prizes.findIndex((item) => item.id === prize.id);
-    const normalizedResult = prize.type === "PAID_VOUCHER" ? "VOUCHER" : prize.type;
-    const isVoucher = normalizedResult === "VOUCHER" && Boolean(prize.value && prize.value > 0);
-    const value = prize.value ?? null;
-    const isVoucher100Guest = isVoucher && value === 100 && !session?.user?.id;
-    const needsGuestClaim = isVoucher && !session?.user?.id && value !== 100;
-    const pendingToken = needsGuestClaim || isVoucher100Guest ? newPendingToken() : null;
-    const pendingExpiresAt = needsGuestClaim
-      ? new Date(Date.now() + settings.pendingClaimMinutes * 60 * 1000)
-      : isVoucher100Guest
-        ? new Date(Date.now() + settings.registrationClaimHours * 60 * 60 * 1000)
-        : null;
-
-    if (isVoucher) {
-      await consumeDailyStock({ tx, prize, stats });
+    if (!prize) {
+      return NextResponse.json({ error: "Não foi possível girar agora. Tente novamente." }, { status: 500 });
     }
 
-    const spin = await tx.voucherSpin.create({
+    const spin = await prisma.voucherSpin.create({
       data: {
         clientId: session?.user?.id ?? null,
         visitorId,
         prizeId: prize.id,
-        result: normalizedResult,
-        voucherValue: value,
+        result: prize.type === "TRY_TOMORROW" ? "TRY_TOMORROW" : "TRY_AGAIN",
+        voucherValue: null,
         ipAddress,
         userAgent,
         idempotencyKey: scopedIdempotencyKey,
-        pendingToken,
-        pendingExpiresAt,
       },
     });
 
-    let voucher = null;
-    if (isVoucher) {
-      voucher = await createVoucherFromSpin({ tx, spin, prize, settings, clientId: session?.user?.id ?? null, visitorId });
-      if (session?.user?.id) {
-        await tx.voucherSpin.update({ where: { id: spin.id }, data: { claimedAt: new Date() } });
-      }
-    }
-
-    return { spin, prize, prizeIndex, voucher, needsGuestClaim, needsRegistration: isVoucher100Guest };
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    result = {
+      spin,
+      prize,
+      prizeIndex: prizes.findIndex((item) => item.id === prize.id),
+      voucher: null,
+      needsGuestClaim: false,
+      needsRegistration: false,
+    };
+  }
 
   const response = NextResponse.json({
     spinId: result.spin.id,
