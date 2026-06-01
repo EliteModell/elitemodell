@@ -34,7 +34,7 @@ type SpinResult = {
 
 const CLOSED_KEY = "elite_voucher_modal_closed";
 const GOLD = "#d4a843";
-const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.png";
+const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.png?v=20260531-spin";
 const SEGMENT_ANGLE = 36; // 360 / 10 segments
 const SPIN_DURATION_MS = 4500;
 
