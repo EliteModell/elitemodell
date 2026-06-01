@@ -34,7 +34,7 @@ type SpinResult = {
 
 const CLOSED_KEY = "elite_voucher_modal_closed";
 const GOLD = "#d4a843";
-const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.png";
+const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.webp?v=20260601-spin-audio";
 const SEGMENT_ANGLE = 36; // 360 / 10 segments
 const SPIN_DURATION_MS = 4000;   // duração fixa do giro visual (ms)
 const RESULT_REVEAL_DELAY_MS = 1000; // pausa após parar para mostrar onde caiu
@@ -84,6 +84,14 @@ function resolveVisualIndex(result: SpinResult) {
 }
 
 function getResultView(result: SpinResult) {
+  if (result.result === "ERROR") {
+    return {
+      Icon: Sparkles,
+      tone: "again" as const,
+      title: "Não foi possível girar agora.",
+      subtitle: result.message || "Tente novamente em instantes.",
+    };
+  }
   if (isVoucherWin(result)) {
     const value = getPrizeValue(result);
     return {
@@ -156,14 +164,40 @@ export default function VoucherRouletteModal() {
     setOpen(false);
   }
 
+  function getAudioContext() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const AudioCtx = window.AudioContext ?? (window as any).webkitAudioContext;
+    if (!AudioCtx) return null;
+    if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+      audioCtxRef.current = new AudioCtx() as AudioContext;
+    }
+    return audioCtxRef.current;
+  }
+
+  function primeSpinAudio() {
+    try {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      if (ctx.state === "suspended") void ctx.resume();
+
+      // Unlock mobile audio during the user's click. The real sound starts after the API result.
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.01);
+    } catch {
+      // Audio is optional; the wheel animation must still run.
+    }
+  }
+
   function startSpinSound() {
     try {
-      stopSpinSound();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const AudioCtx = window.AudioContext ?? (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx() as AudioContext;
-      audioCtxRef.current = ctx;
+      stopSpinSound(false);
+      const ctx = getAudioContext();
+      if (!ctx) return;
       if (ctx.state === "suspended") void ctx.resume();
 
       const startAt = ctx.currentTime;
@@ -211,7 +245,7 @@ export default function VoucherRouletteModal() {
     tickTimersRef.current = [window.setTimeout(() => scheduleSpinTick(ctx), interval)];
   }
 
-  function stopSpinSound() {
+  function stopSpinSound(closeContext = true) {
     soundActiveRef.current = false;
     tickTimersRef.current.forEach((id) => window.clearTimeout(id));
     tickTimersRef.current = [];
@@ -223,7 +257,7 @@ export default function VoucherRouletteModal() {
       soundNodesRef.current.osc.stop(now + 0.1);
       soundNodesRef.current = null;
     }
-    if (audioCtxRef.current) {
+    if (audioCtxRef.current && closeContext) {
       const ctx = audioCtxRef.current;
       window.setTimeout(() => ctx.close().catch(() => {}), 130);
       audioCtxRef.current = null;
@@ -301,6 +335,7 @@ export default function VoucherRouletteModal() {
     if (!config || spinning || result) return;
 
     // 1. Bloqueia novo clique imediatamente
+    primeSpinAudio();
     setSpinning(true);
     setFetching(true);
     setShowResult(false);
