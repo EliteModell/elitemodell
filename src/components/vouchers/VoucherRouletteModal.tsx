@@ -34,7 +34,7 @@ type SpinResult = {
 
 const CLOSED_KEY = "elite_voucher_modal_closed";
 const GOLD = "#d4a843";
-const WHEEL_IMAGE_SRC = "/roleta%20(2).png";
+const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.png";
 const SEGMENT_ANGLE = 36; // 360 / 10 segments
 const SPIN_DURATION_MS = 4500;
 
@@ -432,7 +432,7 @@ export default function VoucherRouletteModal() {
         /* ── Main card ── */
         .vm-card {
           position: relative;
-          width: min(100%, 420px);
+          width: min(100%, 400px);
           max-height: calc(100dvh - 24px);
           overflow-y: auto;
           overflow-x: hidden;
@@ -448,7 +448,7 @@ export default function VoucherRouletteModal() {
           box-shadow:
             0 40px 120px rgba(0,0,0,.84),
             inset 0 0 0 1px rgba(255,255,255,.03);
-          padding: 22px 20px 18px;
+          padding: 20px 18px 16px;
           color: #f6efe0;
           text-align: center;
           gap: 0;
@@ -527,16 +527,16 @@ export default function VoucherRouletteModal() {
 
         /* Wheel ring — circular, clips the image, no bleed-through */
         .vm-wheel-ring {
-          width: min(80vw, 340px);
-          height: min(80vw, 340px);
+          width: min(68vw, 268px);
+          height: min(68vw, 268px);
           border-radius: 50%;
           overflow: hidden;
           background: #08020e; /* solid base, no transparency */
           box-shadow:
-            0 0 0 5px rgba(212,168,67,.65),
-            0 0 0 10px rgba(212,168,67,.12),
-            0 20px 60px rgba(0,0,0,.75),
-            0 0 50px rgba(126,32,143,.28);
+            0 0 0 4px rgba(212,168,67,.65),
+            0 0 0 9px rgba(212,168,67,.12),
+            0 16px 50px rgba(0,0,0,.75),
+            0 0 40px rgba(126,32,143,.28);
           flex-shrink: 0;
           position: relative;
           z-index: 2;
@@ -733,18 +733,18 @@ export default function VoucherRouletteModal() {
           color: rgba(255,255,255,.6);
         }
 
-        /* ── Small screen: reduce wheel size ── */
+        /* ── Small screen ── */
         @media (max-height: 700px) {
-          .vm-title { font-size: 26px; margin-bottom: 4px; }
-          .vm-sub   { font-size: 12px; margin-bottom: 10px; }
-          .vm-wheel-ring { width: min(68vw, 260px); height: min(68vw, 260px); }
-          .vm-pointer { width: 40px; height: 50px; margin-bottom: -14px; }
-          .vm-pointer-gem { top: 10px; width: 11px; height: 11px; }
-          .vm-spin-btn { min-height: 48px; margin-top: 14px; font-size: 16px; }
+          .vm-title { font-size: 24px; margin-bottom: 4px; }
+          .vm-sub   { font-size: 12px; margin-bottom: 8px; }
+          .vm-wheel-ring { width: min(58vw, 220px); height: min(58vw, 220px); }
+          .vm-pointer { width: 36px; height: 46px; margin-bottom: -12px; }
+          .vm-pointer-gem { top: 9px; width: 10px; height: 10px; }
+          .vm-spin-btn { min-height: 46px; margin-top: 12px; font-size: 15px; }
         }
         @media (max-width: 380px) {
-          .vm-card { padding: 18px 14px 14px; border-radius: 18px; }
-          .vm-wheel-ring { width: min(82vw, 300px); height: min(82vw, 300px); }
+          .vm-card { padding: 16px 14px 14px; border-radius: 18px; }
+          .vm-wheel-ring { width: min(66vw, 240px); height: min(66vw, 240px); }
         }
       `}</style>
     </div>
