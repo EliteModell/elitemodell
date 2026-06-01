@@ -37,7 +37,7 @@ const GOLD = "#d4a843";
 const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.png?v=20260531-spin";
 const SEGMENT_ANGLE = 36; // 360 / 10 segments
 const SPIN_DURATION_MS = 3500;
-const MIN_DECELERATION_MS = 1400;
+const MIN_DECELERATION_MS = 900;
 const RESULT_REVEAL_DELAY_MS = 1000;
 
 function randomKey() {
@@ -173,8 +173,8 @@ export default function VoucherRouletteModal() {
       spinOsc.frequency.setValueAtTime(120, startAt);
       spinOsc.frequency.exponentialRampToValueAtTime(72, startAt + SPIN_DURATION_MS / 1000);
       spinGain.gain.setValueAtTime(0.001, startAt);
-      spinGain.gain.linearRampToValueAtTime(0.038, startAt + 0.08);
-      spinGain.gain.linearRampToValueAtTime(0.018, startAt + SPIN_DURATION_MS / 1000);
+      spinGain.gain.linearRampToValueAtTime(0.036, startAt + 0.08);
+      spinGain.gain.linearRampToValueAtTime(0.032, startAt + SPIN_DURATION_MS / 1000);
       spinOsc.connect(spinGain);
       spinGain.connect(ctx.destination);
       spinOsc.start(startAt);
@@ -191,7 +191,7 @@ export default function VoucherRouletteModal() {
     if (!soundActiveRef.current) return;
 
     const elapsed = performance.now() - soundStartedAtRef.current;
-    const progress = Math.min(elapsed / SPIN_DURATION_MS, 1);
+    const progress = Math.min(elapsed / SPIN_DURATION_MS, 0.95);
 
     if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
       const osc = ctx.createOscillator();
@@ -201,7 +201,7 @@ export default function VoucherRouletteModal() {
       osc.type = "triangle";
       osc.frequency.value = 680 + Math.random() * 120;
       const now = ctx.currentTime;
-      gain.gain.setValueAtTime(0.13 - progress * 0.04, now);
+      gain.gain.setValueAtTime(0.13 - progress * 0.03, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
       osc.start(now);
       osc.stop(now + 0.045);
@@ -269,8 +269,9 @@ export default function VoucherRouletteModal() {
     const current = rotationRef.current;
     const normalized = ((current % 360) + 360) % 360;
     const target = (360 - index * SEGMENT_ANGLE) % 360;
-    let delta = 360 * 6 + target - normalized;
-    if (delta < 360 * 5) delta += 360;
+    const extraSpins = durationMs <= 1200 ? 3 : 4;
+    let delta = 360 * extraSpins + target - normalized;
+    if (delta < 360 * (extraSpins - 1)) delta += 360;
     const next = current + delta;
 
     return new Promise<void>((resolve) => {
