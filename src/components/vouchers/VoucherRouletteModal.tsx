@@ -37,6 +37,7 @@ const GOLD = "#d4a843";
 const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.png?v=20260531-spin";
 const SEGMENT_ANGLE = 36; // 360 / 10 segments
 const SPIN_DURATION_MS = 4500;
+const RESULT_REVEAL_DELAY_MS = 1100;
 
 function randomKey() {
   const bytes = new Uint8Array(16);
@@ -48,6 +49,10 @@ function randomKey() {
 
 function hashText(value: string) {
   return Array.from(value).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+}
+
+function delay(ms: number) {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 }
 
 function getPrizeValue(result: SpinResult) {
@@ -111,6 +116,7 @@ export default function VoucherRouletteModal() {
   const [spinning, setSpinning] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [result, setResult] = useState<SpinResult | null>(null);
+  const [winningIndex, setWinningIndex] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [claiming, setClaiming] = useState(false);
@@ -119,6 +125,7 @@ export default function VoucherRouletteModal() {
   const rotationRef = useRef(0);
   const idempotencyRef = useRef(randomKey());
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const soundNodesRef = useRef<{ osc: OscillatorNode; gain: GainNode } | null>(null);
   const tickTimersRef = useRef<number[]>([]);
   const spinFrameRef = useRef<number | null>(null);
   const preSpinActiveRef = useRef(false);
@@ -148,11 +155,27 @@ export default function VoucherRouletteModal() {
 
   function startSpinSound() {
     try {
+      stopSpinSound();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const AudioCtx = window.AudioContext ?? (window as any).webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx() as AudioContext;
       audioCtxRef.current = ctx;
+      if (ctx.state === "suspended") void ctx.resume();
+
+      const startAt = ctx.currentTime;
+      const spinOsc = ctx.createOscillator();
+      const spinGain = ctx.createGain();
+      spinOsc.type = "sawtooth";
+      spinOsc.frequency.setValueAtTime(120, startAt);
+      spinOsc.frequency.exponentialRampToValueAtTime(72, startAt + SPIN_DURATION_MS / 1000);
+      spinGain.gain.setValueAtTime(0.001, startAt);
+      spinGain.gain.linearRampToValueAtTime(0.038, startAt + 0.08);
+      spinGain.gain.linearRampToValueAtTime(0.018, startAt + SPIN_DURATION_MS / 1000);
+      spinOsc.connect(spinGain);
+      spinGain.connect(ctx.destination);
+      spinOsc.start(startAt);
+      soundNodesRef.current = { osc: spinOsc, gain: spinGain };
 
       const timers: number[] = [];
       let elapsed = 0;
@@ -170,7 +193,7 @@ export default function VoucherRouletteModal() {
             osc.type = "triangle";
             osc.frequency.value = 680 + Math.random() * 120;
             const now = ctx.currentTime;
-            gain.gain.setValueAtTime(0.07, now);
+            gain.gain.setValueAtTime(0.14, now);
             gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
             osc.start(now);
             osc.stop(now + 0.045);
@@ -192,8 +215,17 @@ export default function VoucherRouletteModal() {
   function stopSpinSound() {
     tickTimersRef.current.forEach((id) => window.clearTimeout(id));
     tickTimersRef.current = [];
+    if (soundNodesRef.current && audioCtxRef.current) {
+      const now = audioCtxRef.current.currentTime;
+      soundNodesRef.current.gain.gain.cancelScheduledValues(now);
+      soundNodesRef.current.gain.gain.setValueAtTime(soundNodesRef.current.gain.gain.value, now);
+      soundNodesRef.current.gain.gain.linearRampToValueAtTime(0.001, now + 0.08);
+      soundNodesRef.current.osc.stop(now + 0.1);
+      soundNodesRef.current = null;
+    }
     if (audioCtxRef.current) {
-      audioCtxRef.current.close().catch(() => {});
+      const ctx = audioCtxRef.current;
+      window.setTimeout(() => ctx.close().catch(() => {}), 130);
       audioCtxRef.current = null;
     }
   }
@@ -269,6 +301,7 @@ export default function VoucherRouletteModal() {
 
     setSpinning(true);
     setShowResult(false);
+    setWinningIndex(null);
     startWheelMotion();
     startSpinSound();
 
@@ -281,15 +314,19 @@ export default function VoucherRouletteModal() {
       const data: SpinResult & { error?: string } = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Não foi possível girar agora.");
 
-      await animateWheelToSegment(resolveVisualIndex(data));
+      const visualIndex = resolveVisualIndex(data);
+      await animateWheelToSegment(visualIndex);
 
       stopSpinSound();
+      setWinningIndex(visualIndex);
+      await delay(RESULT_REVEAL_DELAY_MS);
       setResult(data);
       setShowResult(true);
       setSpinning(false);
     } catch (err) {
       stopWheelMotion();
       stopSpinSound();
+      setWinningIndex(null);
       setResult({
         spinId: "",
         prize: {
@@ -350,7 +387,7 @@ export default function VoucherRouletteModal() {
 
         {/* Wheel section — pointer + ring are siblings; pointer overlaps ring top via negative margin */}
         <div className="vm-wheel-section">
-          <div className="vm-pointer" aria-hidden="true">
+          <div className={`vm-pointer${winningIndex !== null ? " is-landed" : ""}`} aria-hidden="true">
             <div className="vm-pointer-gem" />
           </div>
 
@@ -362,6 +399,7 @@ export default function VoucherRouletteModal() {
               className="vm-wheel-img"
               draggable={false}
             />
+            {winningIndex !== null && <div className="vm-winning-glow" aria-hidden="true" />}
           </div>
         </div>
 
@@ -371,7 +409,7 @@ export default function VoucherRouletteModal() {
           onClick={spin}
           disabled={spinning || Boolean(result)}
         >
-          {spinning ? "Girando..." : "GIRAR AGORA"}
+          {spinning ? (winningIndex !== null ? "Resultado..." : "Girando...") : "GIRAR AGORA"}
         </button>
 
         <p className="vm-footnote">Descontos promocionais para uso interno na plataforma.</p>
@@ -575,6 +613,9 @@ export default function VoucherRouletteModal() {
           background: #8c1fa8;
           box-shadow: 0 0 14px rgba(181,76,212,.85);
         }
+        .vm-pointer.is-landed {
+          animation: vm-pointer-landed 1.05s ease-out both;
+        }
 
         /* Wheel ring — circular, clips the image, no bleed-through */
         .vm-wheel-ring {
@@ -604,6 +645,34 @@ export default function VoucherRouletteModal() {
           user-select: none;
           pointer-events: none;
           will-change: transform;
+        }
+
+        .vm-winning-glow {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          z-index: 3;
+          background:
+            radial-gradient(circle at 50% 26%, rgba(255,238,169,.56), transparent 18%),
+            conic-gradient(from -18deg, rgba(255,229,130,.66) 0deg, rgba(255,229,130,.34) 22deg, transparent 37deg 360deg);
+          mix-blend-mode: screen;
+          -webkit-mask: radial-gradient(circle, transparent 0 22%, #000 25% 91%, transparent 96%);
+          mask: radial-gradient(circle, transparent 0 22%, #000 25% 91%, transparent 96%);
+          animation: vm-winning-glow 1.05s ease-out both;
+        }
+
+        @keyframes vm-winning-glow {
+          0% { opacity: 0; transform: scale(.96); filter: blur(1px); }
+          24% { opacity: 1; transform: scale(1.02); filter: blur(0); }
+          70% { opacity: .78; transform: scale(1); }
+          100% { opacity: 0; transform: scale(1.03); }
+        }
+
+        @keyframes vm-pointer-landed {
+          0% { filter: drop-shadow(0 6px 14px rgba(0,0,0,.7)); transform: translateY(0); }
+          20% { filter: drop-shadow(0 0 22px rgba(255,222,128,.92)); transform: translateY(3px); }
+          52% { filter: drop-shadow(0 0 18px rgba(255,222,128,.72)); transform: translateY(0); }
+          100% { filter: drop-shadow(0 6px 14px rgba(0,0,0,.7)); transform: translateY(0); }
         }
 
         /* ── Spin button ── */
