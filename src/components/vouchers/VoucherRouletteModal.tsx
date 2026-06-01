@@ -34,11 +34,10 @@ type SpinResult = {
 
 const CLOSED_KEY = "elite_voucher_modal_closed";
 const GOLD = "#d4a843";
-const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.webp?v=20260601-perf";
+const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.png";
 const SEGMENT_ANGLE = 36; // 360 / 10 segments
-const SPIN_DURATION_MS = 3500;
-const MIN_DECELERATION_MS = 900;
-const RESULT_REVEAL_DELAY_MS = 1000;
+const SPIN_DURATION_MS = 4000;   // duração fixa do giro visual (ms)
+const RESULT_REVEAL_DELAY_MS = 1000; // pausa após parar para mostrar onde caiu
 
 function randomKey() {
   const bytes = new Uint8Array(16);
@@ -115,6 +114,7 @@ export default function VoucherRouletteModal() {
   const [config, setConfig] = useState<RouletteConfig | null>(null);
   const [open, setOpen] = useState(false);
   const [spinning, setSpinning] = useState(false);
+  const [fetching, setFetching] = useState(false); // aguardando resposta da API
   const [showResult, setShowResult] = useState(false);
   const [result, setResult] = useState<SpinResult | null>(null);
   const [winningIndex, setWinningIndex] = useState<number | null>(null);
@@ -300,14 +300,14 @@ export default function VoucherRouletteModal() {
   async function spin() {
     if (!config || spinning || result) return;
 
+    // 1. Bloqueia novo clique imediatamente
     setSpinning(true);
+    setFetching(true);
     setShowResult(false);
     setWinningIndex(null);
-    const spinStartedAt = performance.now();
-    startWheelMotion();
-    startSpinSound();
 
     try {
+      // 2. Busca resultado PRIMEIRO — roleta não gira enquanto espera
       const res = await fetch("/api/vouchers/roulette/spin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -316,20 +316,26 @@ export default function VoucherRouletteModal() {
       const data: SpinResult & { error?: string } = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Não foi possível girar agora.");
 
+      setFetching(false);
       const visualIndex = resolveVisualIndex(data);
-      const elapsed = performance.now() - spinStartedAt;
-      const decelerationDuration = Math.max(MIN_DECELERATION_MS, SPIN_DURATION_MS - elapsed);
-      await animateWheelToSegment(visualIndex, decelerationDuration);
 
+      // 3. Som e giro começam juntos, duração fixa — sem loop infinito
+      startSpinSound();
+      await animateWheelToSegment(visualIndex, SPIN_DURATION_MS);
+
+      // 4. Parou: encerra o som e mostra onde caiu por 1 segundo
       stopSpinSound();
       setWinningIndex(visualIndex);
       await delay(RESULT_REVEAL_DELAY_MS);
+
+      // 5. Só então exibe o resultado
       setResult(data);
       setShowResult(true);
       setSpinning(false);
     } catch (err) {
       stopWheelMotion();
       stopSpinSound();
+      setFetching(false);
       setWinningIndex(null);
       setResult({
         spinId: "",
@@ -417,7 +423,7 @@ export default function VoucherRouletteModal() {
           onClick={spin}
           disabled={spinning || Boolean(result)}
         >
-          {spinning ? (winningIndex !== null ? "Resultado..." : "Girando...") : "GIRAR AGORA"}
+          {fetching ? "Preparando..." : spinning ? "Girando..." : "GIRAR AGORA"}
         </button>
 
         <p className="vm-footnote">Descontos promocionais para uso interno na plataforma.</p>
