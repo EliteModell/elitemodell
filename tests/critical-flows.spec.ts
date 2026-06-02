@@ -66,6 +66,24 @@ async function gotoWithMock(page: Page, path: string) {
   return page.goto(path, { waitUntil: "domcontentloaded" });
 }
 
+async function expectCadastroChoiceOptions(page: Page) {
+  const body = (await page.textContent("body"))?.toLowerCase() ?? "";
+  expect(body).toContain("cliente");
+  expect(body).toContain("profissional");
+  expect(body).toContain("anfitri");
+}
+
+async function seedHostDraft(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.setItem("elitemodell_location_onboarding_v2", JSON.stringify({
+      form: {},
+      step: 1,
+      status: "draft_local",
+      updatedAt: new Date().toISOString(),
+    }));
+  });
+}
+
 /* ════════════════════════════════════════════════════════════════════════════
    FLUXO 1 — CADASTRO
    ════════════════════════════════════════════════════════════════════════════ */
@@ -83,13 +101,46 @@ test.describe("Fluxo 1 — Cadastro", () => {
     await bypassAgeGate(page);
     await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
-    const body = await page.textContent("body");
-    const hasClientOption = body?.toLowerCase().includes("cliente") || body?.toLowerCase().includes("busco");
-    const hasProfOption = body?.toLowerCase().includes("profissional") || body?.toLowerCase().includes("acompanhante") || body?.toLowerCase().includes("modelo");
-    const hasHostOption = body?.toLowerCase().includes("anfitri") || body?.toLowerCase().includes("im");
-    // Deve ter pelo menos 2 das 3 opções
-    const count = [hasClientOption, hasProfOption, hasHostOption].filter(Boolean).length;
-    expect(count).toBeGreaterThanOrEqual(2);
+    await expectCadastroChoiceOptions(page);
+  });
+
+  test("/cadastro com rascunho de anfitriao salvo ainda mostra escolha de tipo", async ({ page }) => {
+    await bypassAgeGate(page);
+    await seedHostDraft(page);
+    await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await expectCadastroChoiceOptions(page);
+    expect(page.url()).toMatch(/\/cadastro$/);
+  });
+
+  test("/cadastro logado com rascunho anterior ainda permite escolher tipo", async ({ page }) => {
+    await bypassAgeGate(page);
+    await seedHostDraft(page);
+    await mockAuth(page);
+    await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await expectCadastroChoiceOptions(page);
+  });
+
+  test("cliente e profissional podem trocar tipo antes de finalizar", async ({ page }) => {
+    await bypassAgeGate(page);
+    for (const label of ["Criar conta cliente", "Ativar perfil profissional"]) {
+      await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
+      await page.locator("button", { hasText: label }).first().click();
+      await expect(page.locator("button", { hasText: "Trocar tipo de cadastro" })).toBeVisible();
+      await page.locator("button", { hasText: "Trocar tipo de cadastro" }).click();
+      await expectCadastroChoiceOptions(page);
+    }
+  });
+
+  test("anfitriao iniciado nao prende o proximo clique em cadastrar", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
+    await page.locator('a[href="/anfitriao/imoveis/novo"]').first().click();
+    await page.waitForURL(/\/anfitriao\/imoveis\/novo/);
+    await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await expectCadastroChoiceOptions(page);
   });
 
   test("/app/consumer/register (cadastro cliente) carrega sem 404", async ({ page }) => {

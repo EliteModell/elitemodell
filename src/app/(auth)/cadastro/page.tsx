@@ -90,6 +90,22 @@ function rememberCadastroOAuthState(payload: unknown, intent: EntryAccountRole) 
   rememberRoleIntent(intent);
 }
 
+function clearCadastroIntentState() {
+  try {
+    sessionStorage.removeItem(ROLE_INTENT_KEY);
+    sessionStorage.removeItem(PENDING_REGISTRATION_KEY);
+    localStorage.removeItem(ROLE_INTENT_KEY);
+    localStorage.removeItem(PENDING_REGISTRATION_KEY);
+  } catch {
+    // Storage pode estar indisponivel em navegadores privados.
+  }
+
+  document.cookie = `${ROLE_INTENT_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax; Secure`;
+  if (window.location.hostname.endsWith("elitemodell.com.br")) {
+    document.cookie = `${ROLE_INTENT_COOKIE}=; Max-Age=0; Path=/; Domain=.elitemodell.com.br; SameSite=Lax; Secure`;
+  }
+}
+
 function composeBirthDate(parts: Record<BirthPart, string>) {
   if (parts.day.length !== 2 || parts.month.length !== 2 || parts.year.length !== 4) {
     return "";
@@ -330,13 +346,20 @@ export default function CadastroPage() {
     const legacyClientEmail = params.get("legacy") === "cliente";
     const tipo = normalizeCadastroTipo(params.get("tipo"));
     const nextIntent = normalizeEntryRole(params.get("continue")) ?? normalizeEntryRole(params.get("role"));
-    const hasRoomDraft = Boolean(localStorage.getItem(PROPERTY_DRAFT_KEY));
+    const shouldResumeRoomDraft = draft === "quarto" || draft === "imovel";
+    const isFreshCadastroEntry = !tipo && !nextIntent && !draft;
 
     window.setTimeout(() => {
       setHydrated(true);
       setContinueIntent(nextIntent);
-      // Draft de imóvel só aplica quando não há tipo explícito de acompanhante na URL
-      if ((hasRoomDraft || draft === "quarto" || draft === "imovel") && tipo !== "acompanhante" && tipo !== "cliente") {
+      if (isFreshCadastroEntry) {
+        clearCadastroIntentState();
+        setAccountTypeSelected(false);
+        return;
+      }
+
+      // Draft de imóvel só aplica quando a URL pede explicitamente retomada.
+      if (shouldResumeRoomDraft && tipo !== "acompanhante" && tipo !== "cliente") {
         setForm((current) => ({ ...current, accountType: "PROPERTY_HOST", category: "" }));
         setAccountTypeSelected(true);
         return;
@@ -390,6 +413,15 @@ export default function CadastroPage() {
     }));
     setAccountTypeSelected(true);
     window.history.replaceState(null, "", `${ACCOUNT_ROUTES.cadastro}?tipo=${tipo}`);
+  }
+
+  function resetCadastroTypeSelection() {
+    clearCadastroIntentState();
+    setContinueIntent(null);
+    setErrors({});
+    setForm((current) => ({ ...current, accountType: "GUEST", category: "" }));
+    setAccountTypeSelected(false);
+    window.history.replaceState(null, "", ACCOUNT_ROUTES.cadastro);
   }
 
   const categories = [
@@ -1032,6 +1064,26 @@ export default function CadastroPage() {
           {loading ? "Criando conta..." : "Criar conta"}
         </button>
       </form>}
+
+      <button
+        type="button"
+        onClick={resetCadastroTypeSelection}
+        disabled={loading}
+        style={{
+          width: "100%",
+          marginTop: 16,
+          padding: "11px 13px",
+          border: "1px solid rgba(212,168,67,0.24)",
+          borderRadius: 8,
+          background: "rgba(212,168,67,0.06)",
+          color: GOLD,
+          fontSize: 13,
+          fontWeight: 800,
+          cursor: loading ? "not-allowed" : "pointer",
+        }}
+      >
+        Trocar tipo de cadastro
+      </button>
 
       <p style={{ textAlign: "center", marginTop: 24, fontSize: 14, color: "#475569" }}>
         Já tem uma conta? <Link href={ACCOUNT_ROUTES.login} style={{ color: GOLD, textDecoration: "none", fontWeight: 600 }}>Entrar</Link>
