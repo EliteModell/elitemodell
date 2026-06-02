@@ -118,9 +118,14 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get("returnUrl") ?? searchParams.get("redirectTo");
   const roleIntent = normalizeEntryRole(searchParams.get("role")) ?? inferRoleIntentFromReturnUrl(returnUrl);
-  const signupHref = roleIntent
-    ? `${ACCOUNT_ROUTES.cadastro}?tipo=cliente&continue=${roleIntent}${returnUrl ? `&returnUrl=${encodeURIComponent(returnUrl)}` : ""}`
-    : ACCOUNT_ROUTES.cadastro;
+  const signupHref =
+    roleIntent === "profissional"
+      ? `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`
+      : roleIntent === "anfitriao"
+        ? ACCOUNT_ROUTES.onboardingAnfitriao
+        : roleIntent === "cliente"
+          ? `${ACCOUNT_ROUTES.cadastro}?tipo=cliente`
+          : ACCOUNT_ROUTES.cadastro;
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
@@ -317,7 +322,7 @@ function LoginContent() {
 
       <section className="visibility-section">
         <h2>Aumente sua visibilidade</h2>
-        <Link href={ACCOUNT_ROUTES.cadastroAcompanhante} className="secondary-cta">Ativar perfil profissional</Link>
+        <Link href={`${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`} className="secondary-cta">Ativar perfil profissional</Link>
         <Link href={ACCOUNT_ROUTES.cadastroAnfitriao} className="outline-cta">Cadastrar local reservado</Link>
       </section>
 

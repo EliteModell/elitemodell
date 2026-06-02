@@ -12,5 +12,5 @@ export default async function ProfessionalOnboardingLayout({
   if (access.companionApproved) redirect(ACCOUNT_ROUTES.painelAcompanhante);
   if (access.isAdmin || access.hasCompanionRequest) return children;
 
-  redirect(ACCOUNT_ROUTES.cadastroAcompanhante);
+  redirect(`${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`);
 }

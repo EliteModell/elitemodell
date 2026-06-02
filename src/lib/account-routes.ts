@@ -109,11 +109,9 @@ export function loginHrefForRole(role: EntryAccountRole) {
 }
 
 export function cadastroHrefForRole(role: EntryAccountRole) {
-  if (role === "profissional") return ACCOUNT_ROUTES.onboardingAcompanhante;
+  if (role === "profissional") return `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`;
   if (role === "anfitriao") return ACCOUNT_ROUTES.onboardingAnfitriao;
-  // Clientes vão para o form de e-mail/senha (/cadastro)
-  // que é a mesma tela acessível via "Entrar → não tem conta"
-  return ACCOUNT_ROUTES.cadastro;
+  return `${ACCOUNT_ROUTES.cadastro}?tipo=cliente`;
 }
 
 export function normalizeEntryRole(value: string | null): EntryAccountRole | null {

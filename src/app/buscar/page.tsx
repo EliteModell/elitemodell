@@ -804,7 +804,7 @@ function BuscarContent() {
                   </p>
                   <div className="profiles-empty-actions">
                     <button type="button" onClick={clearSearch}>Limpar busca</button>
-                    <Link href={ACCOUNT_ROUTES.cadastroAcompanhante}>Ativar perfil profissional</Link>
+                    <Link href={`${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`}>Ativar perfil profissional</Link>
                   </div>
                 </div>
               </div>

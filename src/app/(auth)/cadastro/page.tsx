@@ -319,7 +319,8 @@ export default function CadastroPage() {
       }
 
       if (tipo === "acompanhante" && !legacyClientEmail) {
-        router.replace(ACCOUNT_ROUTES.cadastroAcompanhante);
+        setForm((current) => ({ ...current, accountType: "PROFESSIONAL" }));
+        setAccountTypeSelected(true);
         return;
       }
 
@@ -626,7 +627,6 @@ export default function CadastroPage() {
         title: "Quero anunciar como acompanhante",
         desc: "Inicie a ativação profissional com maioridade, termos, documentos, fotos e análise da equipe.",
         action: "Ativar perfil profissional",
-        directHref: ACCOUNT_ROUTES.onboardingAcompanhante,
       },
       {
         tipo: "anfitriao",
