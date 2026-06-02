@@ -472,25 +472,52 @@ export default function CadastroPage() {
 
   async function getCaptchaToken() {
     try {
-      return await captchaRef.current?.getToken();
+      console.info("[cadastro] solicitando token anti-spam");
+      const token = await captchaRef.current?.getToken();
+      console.info("[cadastro] token anti-spam gerado", {
+        hasToken: Boolean(token),
+        tokenLength: token?.length ?? 0,
+      });
+      return token;
     } catch (err) {
+      console.error("[cadastro] falha ao gerar token anti-spam", {
+        message: err instanceof Error ? err.message : "erro desconhecido",
+      });
       toast.error(err instanceof Error ? err.message : "Confirme a verificação anti-spam.");
       throw err;
     }
   }
 
   async function registerUser(accessToken: string, captchaToken?: string) {
+    const payload = registrationPayload(captchaToken);
+    console.info("[cadastro] enviando cadastro ao backend", {
+      accountType: payload.accountType,
+      category: payload.category ?? null,
+      hasBirthDate: Boolean(payload.birthDate),
+      hasTermsConsent: Boolean(payload.termsConsent),
+      hasLgpdConsent: Boolean(payload.lgpdConsent),
+      hasCaptchaToken: Boolean(captchaToken),
+      captchaTokenLength: captchaToken?.length ?? 0,
+      loggedUpgradeFlow: isLoggedUpgradeFlow,
+    });
+
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         accessToken,
-        ...registrationPayload(captchaToken),
+        ...payload,
       }),
     });
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
+      console.error("[cadastro] backend recusou cadastro", {
+        status: res.status,
+        error: typeof data.error === "string" ? data.error : data.error ? "erro estruturado" : "erro ausente",
+        hasCaptchaToken: Boolean(captchaToken),
+        captchaTokenLength: captchaToken?.length ?? 0,
+      });
       throw new Error(typeof data.error === "string" ? data.error : "Erro ao criar conta.");
     }
   }
@@ -599,9 +626,13 @@ export default function CadastroPage() {
 
     setLoading(true);
     try {
-      const captchaToken = await getCaptchaToken();
       const intent = roleIntent();
-      rememberCadastroOAuthState(registrationPayload(captchaToken), intent);
+      console.info("[cadastro] iniciando cadastro Google sem CAPTCHA local", {
+        intent,
+        accountType: form.accountType,
+        provider: "google",
+      });
+      rememberCadastroOAuthState(registrationPayload(), intent);
       const { error } = await supabaseAuth.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo: buildAuthCallbackUrl(callbackParams()) },
@@ -626,19 +657,22 @@ export default function CadastroPage() {
 
     setLoading(true);
     try {
-      const captchaToken = await getCaptchaToken();
       const { data } = await supabaseAuth.auth.getSession();
       const accessToken = data.session?.access_token;
 
       if (!accessToken) {
         const intent = roleIntent();
-        rememberCadastroOAuthState(registrationPayload(captchaToken), intent);
+        rememberCadastroOAuthState(registrationPayload(), intent);
         toast.error("Entre novamente para continuar seu cadastro.");
         router.push(`${ACCOUNT_ROUTES.login}?returnUrl=${encodeURIComponent(nextPath())}&role=${intent}`);
         return;
       }
 
-      await registerUser(accessToken, captchaToken);
+      console.info("[cadastro] continuando cadastro com usuario autenticado; CAPTCHA dispensado", {
+        accountType: form.accountType,
+        category: form.category || null,
+      });
+      await registerUser(accessToken);
       const res = await signIn("supabase", nextAuthCadastroPayload(accessToken));
       if (res?.error) throw new Error("Não foi possível atualizar sua sessão.");
 
@@ -886,7 +920,6 @@ export default function CadastroPage() {
                 {errors.lgpdConsent && <span data-auth-required-error="true" style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.lgpdConsent}</span>}
               </span>
             </label>
-            <CaptchaField ref={captchaRef} />
           </div>
           <button
             type="button"

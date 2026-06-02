@@ -120,6 +120,16 @@ test.describe("Fluxo 1 — Cadastro", () => {
     expect(page.url()).toMatch(/\/(profissional\/novo|login)/);
   });
 
+  test("/cadastro profissional logado nao exige anti-spam para continuar", async ({ page }) => {
+    await gotoWithMock(page, "/cadastro?tipo=acompanhante");
+    await page.waitForLoadState("networkidle").catch(() => {});
+    const body = (await page.textContent("body"))?.toLowerCase() ?? "";
+    expect(body).toContain("continuar como profissional");
+    expect(body).toContain("ir para as fases do cadastro");
+    expect(body).not.toContain("anti-spam");
+    expect(body).not.toContain("captcha");
+  });
+
   test("/completar-cadastro carrega sem 404", async ({ page }) => {
     await mockAuth(page);
     const resp = await page.goto("/completar-cadastro", { waitUntil: "domcontentloaded" });

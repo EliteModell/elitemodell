@@ -36,6 +36,21 @@ function legacyRoleFor(accountType: "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST" |
   return accountType === "PROFESSIONAL" ? "HOST" : "GUEST";
 }
 
+function safeTokenInfo(token: string | undefined | null) {
+  return {
+    hasToken: Boolean(token),
+    tokenLength: token?.length ?? 0,
+  };
+}
+
+function isTrustedOAuthProvider(authUser: {
+  app_metadata?: { provider?: unknown } | null;
+  identities?: Array<{ provider?: string | null }> | null;
+}) {
+  const provider = typeof authUser.app_metadata?.provider === "string" ? authUser.app_metadata.provider : "";
+  return provider === "google" || Boolean(authUser.identities?.some((identity) => identity.provider === "google"));
+}
+
 export async function POST(req: NextRequest) {
   const requestIp = getClientIP(req);
   const limited = await enforceRateLimitAsync(`register:${requestIp}`, 20, 60 * 60 * 1000, "Muitas tentativas de cadastro. Tente novamente mais tarde.");
@@ -46,20 +61,32 @@ export async function POST(req: NextRequest) {
     const { accessToken, accountType, category, birthDate, lgpdConsent, termsConsent, captchaToken } = schema.parse(body);
     const profileIntent = roleIntentFor(accountType);
     const targetAccountType = publicAccountType(accountType);
+    const headerCaptchaToken = req.headers.get("x-captcha-token");
+    const effectiveCaptchaToken = captchaToken ?? headerCaptchaToken ?? "";
 
-    const captcha = await verifyCaptcha(captchaToken ?? req.headers.get("x-captcha-token") ?? "", requestIp);
-    if (!captcha.success) {
-      console.warn("[register] CAPTCHA bloqueou cadastro", { providerError: captcha.error, ip: requestIp });
-      return NextResponse.json({ error: "Não foi possível validar a proteção anti-spam. Tente novamente." }, { status: 403 });
-    }
+    console.info("[register] inicio", {
+      accountType,
+      profileIntent,
+      hasAccessToken: Boolean(accessToken),
+      bodyCaptcha: safeTokenInfo(captchaToken),
+      headerCaptcha: safeTokenInfo(headerCaptchaToken),
+      ip: requestIp,
+    });
 
     const supabase = createSupabaseServerClient();
     const { data, error } = await supabase.auth.getUser(accessToken);
     if (error || !data.user) {
+      console.warn("[register] sessao Supabase invalida", {
+        reason: error?.message ?? "usuario ausente",
+        hasAccessToken: Boolean(accessToken),
+        captcha: safeTokenInfo(effectiveCaptchaToken),
+        ip: requestIp,
+      });
       return NextResponse.json({ error: "Sessão Supabase inválida." }, { status: 401 });
     }
 
     const authUser = data.user;
+    const trustedOAuthProvider = isTrustedOAuthProvider(authUser);
     const phone = authUser.phone?.replace(/\D/g, "").replace(/^55/, "");
     const email = authUser.email ?? (phone ? `phone_${phone}@sms.elitemodell.local` : null);
 
@@ -68,6 +95,37 @@ export async function POST(req: NextRequest) {
     }
 
     const existing = await prisma.user.findUnique({ where: { email } });
+    const shouldValidateCaptcha = !existing && !trustedOAuthProvider;
+
+    if (shouldValidateCaptcha) {
+      console.info("[register] validando CAPTCHA", {
+        reason: "novo cadastro sem provedor OAuth confiavel",
+        captcha: safeTokenInfo(effectiveCaptchaToken),
+        ip: requestIp,
+      });
+      const captcha = await verifyCaptcha(effectiveCaptchaToken, requestIp);
+      if (!captcha.success) {
+        console.warn("[register] CAPTCHA bloqueou cadastro", {
+          providerError: captcha.error,
+          captcha: safeTokenInfo(effectiveCaptchaToken),
+          ip: requestIp,
+        });
+        return NextResponse.json({ error: "Não foi possível validar a proteção anti-spam. Tente novamente." }, { status: 403 });
+      }
+      console.info("[register] CAPTCHA validado", {
+        captcha: safeTokenInfo(effectiveCaptchaToken),
+        ip: requestIp,
+      });
+    } else {
+      console.info("[register] CAPTCHA dispensado", {
+        reason: existing ? "usuario existente autenticado" : "provedor OAuth confiavel",
+        trustedOAuthProvider,
+        existingUser: Boolean(existing),
+        captcha: safeTokenInfo(effectiveCaptchaToken),
+        ip: requestIp,
+      });
+    }
+
     const hasBirthDate = Boolean(birthDate || existing?.birthDate);
     const birthDateIsValid = birthDate ? isAgeOfMajority(birthDate) : Boolean(existing?.birthDate);
 
