@@ -622,6 +622,7 @@ function BuscarContent() {
           color: #f4f1ea;
         }
         @media (max-width: 640px) {
+          .search-shell { margin-top: 18px; }
           .top-search-grid { grid-template-columns: 1fr 42px; }
           .type-toggle { grid-column: 1 / -1; width: 100%; }
           .type-toggle button { flex: 1; }

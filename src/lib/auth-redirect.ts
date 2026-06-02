@@ -5,16 +5,14 @@ function trimTrailingSlash(value: string) {
 }
 
 export function getPublicAppOrigin() {
+  // OAuth PKCE stores its verifier per browser origin; the callback must use
+  // the exact origin that started the Google flow.
+  if (typeof window !== "undefined") return trimTrailingSlash(window.location.origin);
+
   const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
   if (configured) return trimTrailingSlash(configured);
 
-  if (typeof window === "undefined") return FALLBACK_CANONICAL_ORIGIN;
-
-  if (window.location.hostname === "elitemodell.com.br") {
-    return FALLBACK_CANONICAL_ORIGIN;
-  }
-
-  return window.location.origin;
+  return FALLBACK_CANONICAL_ORIGIN;
 }
 
 export function buildAuthCallbackUrl(params?: URLSearchParams | string) {

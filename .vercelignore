@@ -1,5 +1,6 @@
 .env*
 .tmp/
+tmp/
 .next/
 node_modules/
 playwright-report/

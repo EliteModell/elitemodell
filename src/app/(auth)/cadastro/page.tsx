@@ -26,6 +26,8 @@ type Step = "form" | "verify";
 type BirthPart = "day" | "month" | "year";
 type PendingAuthMethod = "google" | null;
 const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
+const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
+const PENDING_REGISTRATION_KEY = "elitemodell_pending_registration";
 type AuthError = { code?: string; name?: string; message?: string };
 
 const GOLD = "#d4a843";
@@ -58,6 +60,35 @@ function onlyDigits(value: string, maxLength: number) {
 
 function asAuthError(err: unknown): AuthError {
   return typeof err === "object" && err !== null ? (err as AuthError) : {};
+}
+
+function safeSetStorage(storage: Storage, key: string, value: string) {
+  try {
+    storage.setItem(key, value);
+  } catch {
+    // Navegadores privados podem negar storage; o OAuth ainda leva role/returnUrl na URL.
+  }
+}
+
+function rememberPendingRegistration(payload: unknown) {
+  const serialized = JSON.stringify(payload);
+  safeSetStorage(sessionStorage, PENDING_REGISTRATION_KEY, serialized);
+  safeSetStorage(localStorage, PENDING_REGISTRATION_KEY, serialized);
+}
+
+function rememberRoleIntent(intent: EntryAccountRole) {
+  safeSetStorage(sessionStorage, ROLE_INTENT_KEY, intent);
+  safeSetStorage(localStorage, ROLE_INTENT_KEY, intent);
+
+  const domain = window.location.hostname.endsWith("elitemodell.com.br")
+    ? "; Domain=.elitemodell.com.br"
+    : "";
+  document.cookie = `${ROLE_INTENT_COOKIE}=${encodeURIComponent(intent)}; Max-Age=900; Path=/${domain}; SameSite=Lax; Secure`;
+}
+
+function rememberCadastroOAuthState(payload: unknown, intent: EntryAccountRole) {
+  rememberPendingRegistration(payload);
+  rememberRoleIntent(intent);
 }
 
 function composeBirthDate(parts: Record<BirthPart, string>) {
@@ -466,6 +497,20 @@ export default function CadastroPage() {
     }
   }
 
+  function nextAuthCadastroPayload(accessToken: string) {
+    const payload = registrationPayload();
+    return {
+      accessToken,
+      roleIntent: roleIntent(),
+      authFlow: "cadastro",
+      redirect: false,
+      ...(payload.category ? { category: payload.category } : {}),
+      ...(payload.birthDate ? { birthDate: payload.birthDate } : {}),
+      ...(payload.lgpdConsent ? { lgpdConsent: "true" } : {}),
+      ...(payload.termsConsent ? { termsConsent: "true" } : {}),
+    };
+  }
+
   function nextPath() {
     if (continueIntent === "profissional") return ACCOUNT_ROUTES.onboardingAcompanhante;
     if (continueIntent === "anfitriao") return ACCOUNT_ROUTES.onboardingAnfitriao;
@@ -484,7 +529,12 @@ export default function CadastroPage() {
   }
 
   function callbackParams() {
-    return `returnUrl=${encodeURIComponent(nextPath())}&role=${roleIntent()}`;
+    const params = new URLSearchParams({
+      returnUrl: nextPath(),
+      role: roleIntent(),
+      flow: "cadastro",
+    });
+    return params.toString();
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -506,14 +556,14 @@ export default function CadastroPage() {
       if (error) throw error;
       if (data.session?.access_token) {
         await registerUser(data.session.access_token, captchaToken);
-        const res = await signIn("supabase", { accessToken: data.session.access_token, roleIntent: roleIntent(), redirect: false });
+        const res = await signIn("supabase", nextAuthCadastroPayload(data.session.access_token));
         if (res?.ok) {
           router.push(nextPath());
           router.refresh();
           return;
         }
       }
-      sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload(captchaToken)));
+      rememberPendingRegistration(registrationPayload(captchaToken));
       setStep("verify");
     } catch (err: unknown) {
       const authError = asAuthError(err);
@@ -524,7 +574,7 @@ export default function CadastroPage() {
             password: form.password,
           });
           if (error || !data.session?.access_token) throw error ?? new Error("E-mail ou senha invÃ¡lidos.");
-          const res = await signIn("supabase", { accessToken: data.session.access_token, roleIntent: roleIntent(), redirect: false });
+          const res = await signIn("supabase", nextAuthCadastroPayload(data.session.access_token));
           if (res?.error) throw new Error("NÃ£o foi possÃ­vel atualizar sua sessÃ£o.");
           router.push(nextPath());
           router.refresh();
@@ -554,8 +604,8 @@ export default function CadastroPage() {
     setLoading(true);
     try {
       const captchaToken = await getCaptchaToken();
-      sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload(captchaToken)));
-      sessionStorage.setItem(ROLE_INTENT_KEY, roleIntent());
+      const intent = roleIntent();
+      rememberCadastroOAuthState(registrationPayload(captchaToken), intent);
       const { error } = await supabaseAuth.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo: buildAuthCallbackUrl(callbackParams()) },
@@ -585,14 +635,15 @@ export default function CadastroPage() {
       const accessToken = data.session?.access_token;
 
       if (!accessToken) {
-        sessionStorage.setItem("elitemodell_pending_registration", JSON.stringify(registrationPayload(captchaToken)));
+        const intent = roleIntent();
+        rememberCadastroOAuthState(registrationPayload(captchaToken), intent);
         toast.error("Entre novamente para continuar seu cadastro.");
-        router.push(`${ACCOUNT_ROUTES.login}?returnUrl=${encodeURIComponent(nextPath())}&role=${roleIntent()}`);
+        router.push(`${ACCOUNT_ROUTES.login}?returnUrl=${encodeURIComponent(nextPath())}&role=${intent}`);
         return;
       }
 
       await registerUser(accessToken, captchaToken);
-      const res = await signIn("supabase", { accessToken, roleIntent: roleIntent(), redirect: false });
+      const res = await signIn("supabase", nextAuthCadastroPayload(accessToken));
       if (res?.error) throw new Error("Não foi possível atualizar sua sessão.");
 
       router.push(nextPath());

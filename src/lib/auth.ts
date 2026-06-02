@@ -26,6 +26,11 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         accessToken: { label: "Supabase Access Token", type: "text" },
         roleIntent: { label: "Role Intent", type: "text" },
+        authFlow: { label: "Auth Flow", type: "text" },
+        category: { label: "Professional Category", type: "text" },
+        birthDate: { label: "Birth Date", type: "text" },
+        lgpdConsent: { label: "LGPD Consent", type: "text" },
+        termsConsent: { label: "Terms Consent", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.accessToken) return null;
@@ -44,7 +49,18 @@ export const authOptions: NextAuthOptions = {
           const metadata = authUser.user_metadata ?? {};
           const credentialMap = credentials as Record<string, string | undefined>;
           const roleIntent = normalizeEntryRole(credentialMap.roleIntent ?? null);
+          const isCadastroFlow = credentialMap.authFlow === "cadastro";
           const intentAccountType = accountTypeFromRoleIntent(roleIntent);
+          const credentialBirthDate =
+            credentialMap.birthDate && /^\d{4}-\d{2}-\d{2}$/.test(credentialMap.birthDate)
+              ? new Date(`${credentialMap.birthDate}T00:00:00.000Z`)
+              : null;
+          const credentialCategory = typeof credentialMap.category === "string" ? credentialMap.category : undefined;
+          const metadataCategory = typeof metadata.category === "string" ? metadata.category : undefined;
+          const rawCategory = credentialCategory ?? metadataCategory;
+          const category = ["MULHER", "HOMEM", "TRANS"].includes(rawCategory ?? "")
+            ? rawCategory as "MULHER" | "HOMEM" | "TRANS"
+            : null;
           const emailVerified = authUser.email_confirmed_at
             ? new Date(authUser.email_confirmed_at)
             : null;
@@ -58,11 +74,13 @@ export const authOptions: NextAuthOptions = {
             (metadata.avatar_url as string | undefined) ??
             (metadata.picture as string | undefined) ??
             null;
-          const birthDate =
+          const metadataBirthDate =
             typeof metadata.birthDate === "string" && metadata.birthDate
               ? new Date(metadata.birthDate)
               : null;
-          const hasConsent = Boolean(metadata.lgpdConsent && metadata.termsConsent);
+          const birthDate = credentialBirthDate ?? metadataBirthDate;
+          const hasConsent = (credentialMap.lgpdConsent === "true" && credentialMap.termsConsent === "true") ||
+            Boolean(metadata.lgpdConsent && metadata.termsConsent);
           const isGoogleAuth =
             authUser.app_metadata?.provider === "google" ||
             Boolean(authUser.identities?.some((identity) => identity.provider === "google"));
@@ -80,6 +98,10 @@ export const authOptions: NextAuthOptions = {
               emailVerified: true,
               role: true,
               accountType: true,
+              category: true,
+              birthDate: true,
+              lgpdConsent: true,
+              termsConsent: true,
               clientProfile: { select: { id: true } },
               hostProfile: { select: { id: true } },
               professional: { select: { id: true } },
@@ -90,18 +112,13 @@ export const authOptions: NextAuthOptions = {
 
           if (!user) {
             const metadataAccountType =
-              intentAccountType ??
+              (isCadastroFlow ? intentAccountType : null) ??
               (metadata.accountType === "PROFESSIONAL"
                 ? "model"
                 : metadata.accountType === "model" || metadata.accountType === "host"
                     ? metadata.accountType
                     : "client");
-            const role = metadataAccountType === "model" && metadata.role === "HOST" ? "HOST" : "GUEST";
-            const metadataCategory =
-              typeof metadata.category === "string" ? metadata.category : undefined;
-            const category = ["MULHER", "HOMEM", "TRANS"].includes(metadataCategory ?? "")
-              ? (metadataCategory as "MULHER" | "HOMEM" | "TRANS")
-              : null;
+            const role = metadataAccountType === "model" ? "HOST" : "GUEST";
             const metadataClientStatus = metadata.clientStatus === "VERIFIED" ? "VERIFIED" as const : undefined;
 
             user = await prisma.user.create({
@@ -130,6 +147,10 @@ export const authOptions: NextAuthOptions = {
                 emailVerified: true,
                 role: true,
                 accountType: true,
+                category: true,
+                birthDate: true,
+                lgpdConsent: true,
+                termsConsent: true,
                 clientProfile: { select: { id: true } },
                 hostProfile: { select: { id: true } },
                 professional: { select: { id: true } },
@@ -154,6 +175,11 @@ export const authOptions: NextAuthOptions = {
               image: user.image ?? metadataImage,
               phone: user.phone ?? phone ?? null,
               emailVerified: emailVerified && !user.emailVerified ? emailVerified : user.emailVerified,
+              category: user.category ?? (roleIntent === "profissional" ? category : undefined),
+              birthDate: user.birthDate ?? birthDate ?? undefined,
+              lgpdConsent: user.lgpdConsent || hasConsent,
+              termsConsent: user.termsConsent || hasConsent,
+              consentDate: hasConsent && (!user.lgpdConsent || !user.termsConsent) ? new Date() : undefined,
             },
             select: { id: true },
           });
@@ -164,11 +190,15 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          const activeProfileType = await ensureProfileForIntent(
-            user.id,
-            roleIntent,
-            typeof metadata.category === "string" ? metadata.category : null,
-          );
+          let activeProfileType = profileTypeFromIntent(null);
+          if (isCadastroFlow || roleIntent === "cliente") {
+            activeProfileType = await ensureProfileForIntent(
+              user.id,
+              roleIntent,
+              category,
+            );
+          }
+
           const refreshedUser = await prisma.user.findUnique({
             where: { id: user.id },
             select: {
@@ -185,6 +215,14 @@ export const authOptions: NextAuthOptions = {
             },
           });
           const availableProfiles = refreshedUser ? deriveAvailableProfiles(refreshedUser) : [activeProfileType];
+          if (!isCadastroFlow && roleIntent) {
+            const requestedProfileType = profileTypeFromIntent(roleIntent);
+            activeProfileType = availableProfiles.includes(requestedProfileType)
+              ? requestedProfileType
+              : availableProfiles.includes("CLIENTE")
+                ? "CLIENTE"
+                : availableProfiles[0] ?? "CLIENTE";
+          }
 
           return {
             id: user.id,

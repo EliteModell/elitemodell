@@ -8,12 +8,18 @@ import { ACCOUNT_ROUTES, hostPathForStatus, normalizeEntryRole, postLoginPathFro
 
 type PendingRegistration = {
   accountType?: "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
+  category?: "MULHER" | "HOMEM" | "TRANS";
+  birthDate?: string;
+  lgpdConsent?: boolean;
+  termsConsent?: boolean;
+  captchaToken?: string;
 };
 
 const PROPERTY_DRAFT_KEY = "elitemodell_location_onboarding_v2";
 const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
 const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
 const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
+const PENDING_REGISTRATION_KEY = "elitemodell_pending_registration";
 const CALLBACK_TIMEOUT_MS = 15000;
 const NEXTAUTH_SIGNIN_TIMEOUT_MS = 12000;
 const GOLD = "#d4a843";
@@ -34,6 +40,20 @@ function safeInternalPath(value: string | null) {
   }
 }
 
+function inferRoleIntentFromReturnUrl(returnUrl: string | null) {
+  if (!returnUrl) return null;
+  if (returnUrl.startsWith("/profissional") || returnUrl.startsWith("/verificacao/acompanhante") || returnUrl.startsWith("/painel/acompanhante")) {
+    return "profissional" as const;
+  }
+  if (returnUrl.startsWith("/anfitriao") || returnUrl.startsWith("/verificacao/anfitriao") || returnUrl.startsWith("/painel/anfitriao")) {
+    return "anfitriao" as const;
+  }
+  if (returnUrl.startsWith("/dashboard") || returnUrl.startsWith("/painel/cliente")) {
+    return "cliente" as const;
+  }
+  return null;
+}
+
 const PROFESSIONAL_CATEGORIES = ["MULHER", "HOMEM", "TRANS"];
 
 async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRole>) {
@@ -48,8 +68,15 @@ async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRol
   }
 
   if (user.role === "ADMIN") return ACCOUNT_ROUTES.admin;
+  const isProfessional = PROFESSIONAL_CATEGORIES.includes(user.category);
+  const hasProfessionalAccess =
+    Boolean(user.professional) ||
+    user.accountType === "model" ||
+    user.accountType === "professional" ||
+    isProfessional;
 
   if (roleIntent === "profissional") {
+    if (!hasProfessionalAccess) return `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`;
     return postLoginPathFromUser(user, roleIntent);
   }
 
@@ -57,8 +84,6 @@ async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRol
   if (!user.lgpdConsent || !user.termsConsent || !user.birthDate) {
     return "/completar-cadastro";
   }
-
-  const isProfessional = PROFESSIONAL_CATEGORIES.includes(user.category);
 
   if (user.role === "HOST" && isProfessional) {
     if (!user.professional) return ACCOUNT_ROUTES.onboardingAcompanhante;
@@ -71,7 +96,7 @@ async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRol
 
 async function clearInvalidAuthState() {
   clearRoleIntentStorage();
-  sessionStorage.removeItem("elitemodell_pending_registration");
+  clearPendingRegistrationStorage();
   await supabaseAuth.auth.signOut().catch(() => undefined);
   await signOut({ redirect: false }).catch(() => undefined);
 }
@@ -97,6 +122,11 @@ function clearRoleIntentStorage() {
   if (window.location.hostname.endsWith("elitemodell.com.br")) {
     document.cookie = `${ROLE_INTENT_COOKIE}=; Max-Age=0; Path=/; Domain=.elitemodell.com.br; SameSite=Lax; Secure`;
   }
+}
+
+function clearPendingRegistrationStorage() {
+  sessionStorage.removeItem(PENDING_REGISTRATION_KEY);
+  localStorage.removeItem(PENDING_REGISTRATION_KEY);
 }
 
 function resolveWithTimeout<T>(promise: Promise<T>, fallback: T, ms = CALLBACK_TIMEOUT_MS) {
@@ -186,7 +216,83 @@ function getRegistrationPath(pending: PendingRegistration | null) {
   return ACCOUNT_ROUTES.dashboardCliente;
 }
 
-function CallbackCard({ message, success, error }: { message: string; success?: boolean; error?: string }) {
+function roleIntentFromPending(pending: PendingRegistration | null) {
+  if (pending?.accountType === "PROFESSIONAL") return "profissional" as const;
+  if (pending?.accountType === "PROPERTY_HOST") return "anfitriao" as const;
+  if (pending?.accountType === "GUEST") return "cliente" as const;
+  return null;
+}
+
+function readPendingRegistrationRaw(allowLocalStorage: boolean) {
+  if (!allowLocalStorage) return null;
+  return sessionStorage.getItem(PENDING_REGISTRATION_KEY) ?? localStorage.getItem(PENDING_REGISTRATION_KEY);
+}
+
+function parsePendingRegistration(raw: string | null) {
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    const validTypes = ["GUEST", "PROFESSIONAL", "PROPERTY_HOST"];
+    if (!parsed || typeof parsed !== "object") return null;
+
+    const pending = parsed as PendingRegistration;
+    if ("accountType" in parsed && pending.accountType && !validTypes.includes(pending.accountType)) {
+      return null;
+    }
+    if (pending.category && !PROFESSIONAL_CATEGORIES.includes(pending.category)) {
+      return null;
+    }
+
+    return pending;
+  } catch {
+    console.warn("[CALLBACK] Cadastro pendente corrompido no navegador. Ignorando.");
+    return null;
+  }
+}
+
+async function parseJsonError(res: Response) {
+  const payload = await res.json().catch(() => ({}));
+  return typeof payload.error === "string" ? payload.error : JSON.stringify(payload.error ?? payload);
+}
+
+async function applyRegistrationFallback(pending: PendingRegistration, roleIntent: ReturnType<typeof normalizeEntryRole>) {
+  if (pending.birthDate && pending.lgpdConsent && pending.termsConsent) {
+    const profileRes = await fetch("/api/auth/complete-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        birthDate: pending.birthDate,
+        lgpdConsent: true,
+        termsConsent: true,
+      }),
+    });
+
+    if (!profileRes.ok) {
+      console.error("[CALLBACK] Fallback de consentimento/data falhou:", {
+        status: profileRes.status,
+        error: await parseJsonError(profileRes),
+      });
+    }
+  }
+
+  if (roleIntent === "profissional" || pending.accountType === "PROFESSIONAL") {
+    const activateRes = await fetch("/api/users/me/activate-professional", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category: pending.category }),
+    });
+
+    if (!activateRes.ok) {
+      console.error("[CALLBACK] Fallback de ativacao profissional falhou:", {
+        status: activateRes.status,
+        error: await parseJsonError(activateRes),
+      });
+    }
+  }
+}
+
+function CallbackCard({ message, success, error, retryHref = "/login" }: { message: string; success?: boolean; error?: string; retryHref?: string }) {
   return (
     <main style={{
       minHeight: "100vh",
@@ -327,7 +433,7 @@ function CallbackCard({ message, success, error }: { message: string; success?: 
         {/* Retry link when error */}
         {error && (
           <a
-            href="/login"
+            href={retryHref}
             style={{
               display: "inline-block",
               marginTop: 20,
@@ -387,14 +493,21 @@ function AuthCallbackContent() {
   const [message, setMessage] = useState("Verificando suas credenciais...");
   const [success, setSuccess] = useState(false);
   const [errorDetail, setErrorDetail] = useState<string | undefined>(undefined);
+  const [retryHref, setRetryHref] = useState("/login");
 
   useEffect(() => {
     let active = true;
     const returnUrl = safeInternalPath(searchParams.get("returnUrl") ?? searchParams.get("redirectTo"));
+    const isCadastroFlow = searchParams.get("flow") === "cadastro";
     const roleIntent = normalizeEntryRole(searchParams.get("role"))
+      ?? inferRoleIntentFromReturnUrl(returnUrl)
       ?? normalizeEntryRole(sessionStorage.getItem(ROLE_INTENT_KEY))
       ?? normalizeEntryRole(localStorage.getItem(ROLE_INTENT_KEY))
       ?? normalizeEntryRole(readCookie(ROLE_INTENT_COOKIE));
+    const retryTarget = isCadastroFlow && (roleIntent === "profissional" || returnUrl?.startsWith(ACCOUNT_ROUTES.onboardingAcompanhante))
+      ? `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`
+      : "/login";
+    setRetryHref(retryTarget);
 
     async function finishAuth() {
       const code = searchParams.get("code");
@@ -421,53 +534,59 @@ function AuthCallbackContent() {
 
       if (active) setMessage("Configurando sua conta...");
 
-      const pendingRaw = sessionStorage.getItem("elitemodell_pending_registration");
-      let pendingRegistration: PendingRegistration | null = null;
-      if (pendingRaw) {
-        let pending: PendingRegistration | null = null;
-        try {
-          const parsed = JSON.parse(pendingRaw) as unknown;
-          const validTypes = ["GUEST", "PROFESSIONAL", "PROPERTY_HOST"];
-          if (
-            parsed &&
-            typeof parsed === "object" &&
-            (!("accountType" in parsed) || validTypes.includes((parsed as PendingRegistration).accountType ?? ""))
-          ) {
-            pending = parsed as PendingRegistration;
-          }
-        } catch {
-          // sessionStorage corrompido — ignora silenciosamente
-        }
+      const pendingRegistration = parsePendingRegistration(readPendingRegistrationRaw(isCadastroFlow));
+      const effectiveRoleIntent = roleIntent ?? roleIntentFromPending(pendingRegistration) ?? inferRoleIntentFromReturnUrl(returnUrl);
+      let shouldRunRegistrationFallback = false;
 
-        if (pending) {
-          pendingRegistration = pending;
+      if (pendingRegistration) {
+        try {
           const regRes = await fetch("/api/auth/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ accessToken, ...pending }),
+            body: JSON.stringify({ accessToken, ...pendingRegistration }),
           });
           if (!regRes.ok) {
-            const payload = await regRes.json().catch(() => ({}));
-            if (regRes.status !== 200) {
-              throw new Error(typeof payload.error === "string" ? payload.error : "Erro ao criar conta.");
-            }
+            throw new Error(`${regRes.status}: ${await parseJsonError(regRes)}`);
           }
-          sessionStorage.removeItem("elitemodell_pending_registration");
+        } catch (registerErr) {
+          shouldRunRegistrationFallback = true;
+          console.error("[CALLBACK] Cadastro OAuth pendente falhou antes da sessao; seguindo com fallback:", {
+            error: registerErr instanceof Error ? registerErr.message : registerErr,
+            roleIntent: effectiveRoleIntent,
+            accountType: pendingRegistration.accountType,
+          });
         }
       }
 
       if (active) setMessage("Criando sessao segura...");
-      const res = await resolveSignInWithTimeout(signIn("supabase", { accessToken, roleIntent: roleIntent ?? "", redirect: false }));
+      const res = await resolveSignInWithTimeout(signIn("supabase", {
+        accessToken,
+        roleIntent: effectiveRoleIntent ?? "",
+        authFlow: isCadastroFlow ? "cadastro" : "",
+        redirect: false,
+        ...(pendingRegistration?.category ? { category: pendingRegistration.category } : {}),
+        ...(pendingRegistration?.birthDate ? { birthDate: pendingRegistration.birthDate } : {}),
+        ...(pendingRegistration?.lgpdConsent ? { lgpdConsent: "true" } : {}),
+        ...(pendingRegistration?.termsConsent ? { termsConsent: "true" } : {}),
+      }));
       if (res?.error) {
         throw new Error(`NextAuth: ${res.error}`);
       }
+
+      if (pendingRegistration && shouldRunRegistrationFallback) {
+        await applyRegistrationFallback(pendingRegistration, effectiveRoleIntent).catch((fallbackErr) => {
+          console.error("[CALLBACK] Fallback de cadastro OAuth falhou:", fallbackErr);
+        });
+      }
+
       clearRoleIntentStorage();
+      clearPendingRegistrationStorage();
 
       const targetPath = pendingRegistration
         ? getRegistrationPath(pendingRegistration)
-        : roleIntent
-          ? await resolveWithTimeout(getPostLoginPath(roleIntent), fallbackPathForRoleIntent(roleIntent))
-          : returnUrl ?? await resolveWithTimeout(getPostLoginPath(roleIntent), ACCOUNT_ROUTES.dashboardCliente);
+        : effectiveRoleIntent
+          ? await resolveWithTimeout(getPostLoginPath(effectiveRoleIntent), fallbackPathForRoleIntent(effectiveRoleIntent))
+          : returnUrl ?? await resolveWithTimeout(getPostLoginPath(effectiveRoleIntent), ACCOUNT_ROUTES.dashboardCliente);
 
       if (!active) return;
       setSuccess(true);
@@ -480,12 +599,12 @@ function AuthCallbackContent() {
     finishAuth().catch(async (err) => {
       if (!active) return;
       const rawMsg: string = err?.message ?? "Nao foi possivel finalizar o acesso.";
-      const msg = rawMsg.includes("Sessao nao encontrada")
-        ? "Nao foi possivel criar a sessao neste navegador. Abra o link novamente ou tente pelo botao de login."
-        : rawMsg;
-      console.error("[CALLBACK] Erro no login Google:", rawMsg);
+      const isCadastroError = retryTarget !== "/login";
+      console.error(isCadastroError ? "[CALLBACK] Erro no cadastro Google:" : "[CALLBACK] Erro no login Google:", rawMsg);
       await clearInvalidAuthState();
-      setMessage("Não foi possível concluir o login. Tente novamente ou use outro método.");
+      setMessage(isCadastroError
+        ? "Não foi possível concluir o cadastro. Tente novamente ou use outro método."
+        : "Não foi possível concluir o login. Tente novamente ou use outro método.");
       setErrorDetail("Confira sua conexão e tente novamente. Se continuar, use outro método de acesso.");
     });
 
@@ -494,7 +613,7 @@ function AuthCallbackContent() {
     };
   }, [searchParams]);
 
-  return <CallbackCard message={message} success={success} error={errorDetail} />;
+  return <CallbackCard message={message} success={success} error={errorDetail} retryHref={retryHref} />;
 }
 
 export default function AuthCallbackPage() {

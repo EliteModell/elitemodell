@@ -19,6 +19,7 @@ const PROPERTY_DRAFT_KEY = "elitemodell_location_onboarding_v2";
 const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
 const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
 const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
+const PROFESSIONAL_CATEGORIES = ["MULHER", "HOMEM", "TRANS"];
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -72,6 +73,14 @@ async function getPostLoginPath(returnUrl: string | null, roleIntent: ReturnType
   const res = await fetch("/api/users/me");
   if (!res.ok) return fallbackPathForRoleIntent(roleIntent);
   const user = await res.json();
+  const hasProfessionalAccess =
+    Boolean(user?.professional) ||
+    user?.accountType === "model" ||
+    user?.accountType === "professional" ||
+    PROFESSIONAL_CATEGORIES.includes(user?.category ?? "");
+  if (roleIntent === "profissional" && !hasProfessionalAccess) {
+    return `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`;
+  }
   if (roleIntent) return postLoginPathFromUser(user, roleIntent);
   if (!user?.lgpdConsent || !user?.termsConsent || !user?.birthDate) return "/completar-cadastro";
   return postLoginPathFromUser(user, roleIntent);
