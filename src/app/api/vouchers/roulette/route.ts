@@ -9,23 +9,53 @@ import {
   getIp,
   newVisitorId,
   publicPrize,
+  rouletteSpinIdentityWhere,
   todayRange,
+  userVoucherIdentity,
   VOUCHER_VISITOR_COOKIE,
 } from "@/lib/voucher-roulette";
 import { prisma } from "@/lib/prisma";
 
+const SESSION_TIMEOUT_MS = 700;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T) {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), timeoutMs)),
+  ]);
+}
+
+function hasSessionCookie(req: NextRequest) {
+  return Boolean(
+    req.cookies.get("next-auth.session-token")?.value ||
+    req.cookies.get("__Secure-next-auth.session-token")?.value
+  );
+}
+
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions).catch(() => null);
+  const session = hasSessionCookie(req)
+    ? await withTimeout(getServerSession(authOptions).catch(() => null), SESSION_TIMEOUT_MS, null)
+    : null;
   const settings = await getVoucherSettings();
 
   const visitorId = req.cookies.get(VOUCHER_VISITOR_COOKIE)?.value ?? newVisitorId();
   const ipAddress = getIp(req.headers);
   const { start, end } = todayRange();
   const sessionUserId = session?.user?.id ?? null;
+  const user = sessionUserId
+    ? await prisma.user.findUnique({
+        where: { id: sessionUserId },
+        select: { id: true, phone: true, email: true, document: true },
+      })
+    : null;
+  const identity = userVoucherIdentity(user, {
+    clientId: sessionUserId,
+    visitorId,
+    ipAddress,
+    userAgent: req.headers.get("user-agent"),
+  });
 
-  const identityWhere = sessionUserId
-    ? { clientId: sessionUserId }
-    : { OR: [{ visitorId }, ...(ipAddress ? [{ ipAddress }] : [])] };
+  const identityWhere = rouletteSpinIdentityWhere(identity);
 
   const limit = sessionUserId ? settings.dailySpinLimit : settings.guestDailySpinLimit;
   const [firstSpinToday, prizes] = await Promise.all([

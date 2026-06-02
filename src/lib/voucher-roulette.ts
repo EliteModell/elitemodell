@@ -292,6 +292,22 @@ export function publicPrize(prize: VoucherPrize | PrizeWithChance, index: number
   };
 }
 
+export function rouletteSpinIdentityWhere(identity: VoucherIdentity): Prisma.VoucherSpinWhereInput {
+  const phone = normalizeVoucherPhone(identity.whatsapp);
+  const userOr: Prisma.UserWhereInput[] = [
+    ...(phone ? [{ phone }] : []),
+    ...(identity.email ? [{ email: identity.email }] : []),
+    ...(identity.document ? [{ document: identity.document }] : []),
+  ];
+  const or: Prisma.VoucherSpinWhereInput[] = [];
+
+  if (identity.clientId) or.push({ clientId: identity.clientId });
+  if (userOr.length) or.push({ client: { is: { OR: userOr } } });
+  if (identity.visitorId) or.push({ visitorId: identity.visitorId });
+
+  return or.length ? { OR: or } : {};
+}
+
 export function voucherExpiresAtByHours(hours: number, now = new Date()) {
   const expiresAt = new Date(now);
   expiresAt.setHours(expiresAt.getHours() + Math.max(1, hours));
@@ -529,8 +545,6 @@ function identityOr(identity: VoucherIdentity, target: "spin" | "voucher" = "spi
 
   if (identity.clientId) or.push({ clientId: identity.clientId } as never);
   if (identity.visitorId) or.push({ visitorId: identity.visitorId } as never);
-  if (identity.ipAddress && target === "spin") or.push({ ipAddress: identity.ipAddress } as never);
-  if (identity.userAgent && target === "spin") or.push({ userAgent: identity.userAgent } as never);
   if (phone) {
     if (target === "spin") or.push({ OR: [{ whatsapp: phone }, { recipientPhone: phone }] } as never);
     else or.push({ OR: [{ whatsapp: phone }, { recipientPhone: phone }] } as never);

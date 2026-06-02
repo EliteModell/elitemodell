@@ -39,8 +39,8 @@ const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.webp?v=20260601-spin-audio";
 const SEGMENT_ANGLE = 36; // 360 / 10 segments
 const SPIN_DURATION_MS = 4000;   // duração fixa do giro visual (ms)
 const RESULT_REVEAL_DELAY_MS = 1000; // pausa após parar para mostrar onde caiu
-const SLOW_PREPARE_MS = 500;
-const SPIN_API_TIMEOUT_MS = 12000;
+const SLOW_PREPARE_MS = 180;
+const SPIN_API_TIMEOUT_MS = 8000;
 
 function randomKey() {
   const bytes = new Uint8Array(16);
@@ -145,6 +145,7 @@ export default function VoucherRouletteModal() {
   const spinFrameRef = useRef<number | null>(null);
   const preSpinActiveRef = useRef(false);
   const slowPrepareTimerRef = useRef<number | null>(null);
+  const preloadedWheelRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     if (sessionStorage.getItem(CLOSED_KEY)) return;
@@ -166,8 +167,22 @@ export default function VoucherRouletteModal() {
     if (!open) return;
     const img = new Image();
     img.decoding = "async";
+    img.loading = "eager";
     img.src = WHEEL_IMAGE_SRC;
+    preloadedWheelRef.current = img;
     void img.decode?.().catch(() => undefined);
+
+    try {
+      void getAudioContext();
+    } catch {
+      // Audio still gets unlocked on the user's tap.
+    }
+
+    const warmTimer = window.setTimeout(() => {
+      fetch("/api/vouchers/roulette", { cache: "no-store" }).catch(() => undefined);
+    }, 250);
+
+    return () => window.clearTimeout(warmTimer);
   }, [open]);
 
   function close() {
@@ -356,7 +371,7 @@ export default function VoucherRouletteModal() {
   async function spin() {
     if (!config || spinning || result) return;
 
-    // 1. Bloqueia novo clique imediatamente e já dá vida à roleta enquanto o backend sorteia.
+    // 1. Bloqueia novo clique imediatamente e prepara o giro sem animar a roda indefinidamente.
     primeSpinAudio();
     clearSlowPrepareTimer();
     flushSync(() => {
@@ -365,7 +380,6 @@ export default function VoucherRouletteModal() {
       setShowResult(false);
       setWinningIndex(null);
     });
-    startSpinSound();
     startWheelMotion();
     slowPrepareTimerRef.current = window.setTimeout(() => {
       setSlowPreparing(true);
@@ -378,7 +392,7 @@ export default function VoucherRouletteModal() {
       const controller = new AbortController();
       timeoutId = window.setTimeout(() => controller.abort(), SPIN_API_TIMEOUT_MS);
 
-      // 2. Busca resultado PRIMEIRO — roleta não gira enquanto espera
+      // 2. Busca resultado primeiro; se passar do limite, cancela e mostra erro claro.
       const res = await fetch("/api/vouchers/roulette/spin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -394,7 +408,7 @@ export default function VoucherRouletteModal() {
       setFetching(false);
       const visualIndex = resolveVisualIndex(data);
 
-      // 3. Reinicia o som para sincronizar com a desaceleração final no prêmio sorteado.
+      // 3. A API respondeu: agora sim gira por 4s até o prêmio sorteado.
       startSpinSound();
       await animateWheelToSegment(visualIndex, SPIN_DURATION_MS);
 
@@ -409,6 +423,11 @@ export default function VoucherRouletteModal() {
       setSpinning(false);
     } catch (err) {
       if (timeoutId !== null) window.clearTimeout(timeoutId);
+      console.error("[voucher-roulette-modal] spin_failed", {
+        name: err instanceof Error ? err.name : "UnknownError",
+        message: err instanceof Error ? err.message : String(err),
+        timeoutMs: SPIN_API_TIMEOUT_MS,
+      });
       clearSlowPrepareTimer();
       stopWheelMotion();
       stopSpinSound();
@@ -426,7 +445,11 @@ export default function VoucherRouletteModal() {
           paymentAmount: null,
         },
         result: "ERROR",
-        message: err instanceof Error && err.name !== "AbortError" ? err.message : "Não foi possível girar agora. Tente novamente.",
+        message: err instanceof Error && err.name === "AbortError"
+          ? "Não foi possível preparar seu giro agora. Tente novamente."
+          : err instanceof Error
+            ? err.message
+            : "Não foi possível girar agora. Tente novamente.",
         needsIdentification: false,
       });
       setShowResult(true);
