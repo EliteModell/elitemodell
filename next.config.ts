@@ -48,6 +48,43 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "X-DNS-Prefetch-Control", value: "on" },
           { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=(self), payment=(self)" },
+          // HSTS: força HTTPS por 2 anos em todos os subdomínios
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              // Next.js exige unsafe-inline/unsafe-eval para hidratação e estilos em runtime
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://maps.googleapis.com https://cdn.withpersona.com https://www.asaas.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.withpersona.com",
+              "font-src 'self' data: https://fonts.gstatic.com https://cdn.withpersona.com",
+              // img-src amplo: Next Image usa blob e data URIs; imagens vêm de Supabase e CDNs
+              "img-src 'self' data: blob: https:",
+              // connect-src: lista todos os serviços externos que o app chama via fetch/XHR/WS
+              [
+                "connect-src 'self'",
+                "https://*.supabase.co",
+                "wss://*.supabase.co",
+                "https://identitytoolkit.googleapis.com",
+                "https://securetoken.googleapis.com",
+                "https://firebaseinstallations.googleapis.com",
+                "https://*.googleapis.com",
+                "https://api.withpersona.com",
+                "https://maps.googleapis.com",
+                "https://*.sentry.io",
+                "https://*.ingest.sentry.io",
+                "https://api.asaas.com",
+                "https://www.asaas.com",
+              ].join(" "),
+              // frame-src: Persona usa iframe para KYC
+              "frame-src 'self' https://withpersona.com https://cdn.withpersona.com",
+              "media-src 'self' blob: https://*.supabase.co",
+              "worker-src 'self' blob:",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join("; "),
+          },
         ],
       },
     ];
