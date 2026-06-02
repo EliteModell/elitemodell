@@ -24,7 +24,6 @@ type AccountType = "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
 type Category = "MULHER" | "TRANS" | "HOMEM";
 type Step = "form" | "verify";
 type BirthPart = "day" | "month" | "year";
-type PendingAuthMethod = "google" | null;
 const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
 const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
 const PENDING_REGISTRATION_KEY = "elitemodell_pending_registration";
@@ -319,7 +318,6 @@ export default function CadastroPage() {
     month: "",
     year: "",
   });
-  const [pendingAuthMethod, setPendingAuthMethod] = useState<PendingAuthMethod>(null);
   const monthRef = useRef<HTMLInputElement>(null);
   const yearRef = useRef<HTMLInputElement>(null);
   const captchaRef = useRef<CaptchaFieldHandle>(null);
@@ -539,7 +537,6 @@ export default function CadastroPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setPendingAuthMethod(null);
     if (!validateRequiredForm(true)) return;
 
     setLoading(true);
@@ -598,7 +595,6 @@ export default function CadastroPage() {
   }
 
   async function handleGoogle() {
-    setPendingAuthMethod("google");
     if (!validateRequiredForm(false, true)) return;
 
     setLoading(true);
@@ -998,31 +994,6 @@ export default function CadastroPage() {
             {errors.lgpdConsent && <span data-auth-required-error="true" style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.lgpdConsent}</span>}
           </span>
         </label>
-
-        {pendingAuthMethod === "google" && (
-          <button
-            type="button"
-            onClick={handleGoogle}
-            disabled={loading}
-            style={{
-              padding: "13px",
-              background: "#f8fafc",
-              color: "#0f172a",
-              border: "none",
-              borderRadius: 8,
-              fontSize: 15,
-              fontWeight: 800,
-              cursor: loading ? "not-allowed" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-            }}
-          >
-            {GoogleIcon}
-            {loading ? "Abrindo Google..." : "Continuar com Google"}
-          </button>
-        )}
 
         <button type="submit" disabled={loading} style={{ padding: "13px", background: loading ? "#9e7b2a" : GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer", marginTop: 4 }}>
           {loading ? "Criando conta..." : "Criar conta"}

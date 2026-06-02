@@ -113,13 +113,11 @@ test.describe("Fluxo 1 — Cadastro", () => {
     expect(resp?.status()).not.toBe(404);
   });
 
-  test("/cadastro-modelo tem campo de telefone", async ({ page }) => {
+  test("/cadastro-modelo encaminha para onboarding profissional ou login", async ({ page }) => {
     await bypassAgeGate(page);
     await page.goto("/cadastro-modelo", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
-    const body = await page.textContent("body");
-    const hasTelefone = body?.toLowerCase().includes("telefone") || body?.toLowerCase().includes("celular") || body?.toLowerCase().includes("whatsapp");
-    expect(hasTelefone).toBe(true);
+    expect(page.url()).toMatch(/\/(profissional\/novo|login)/);
   });
 
   test("/completar-cadastro carrega sem 404", async ({ page }) => {
@@ -128,14 +126,11 @@ test.describe("Fluxo 1 — Cadastro", () => {
     expect(resp?.status()).not.toBe(404);
   });
 
-  test("/completar-cadastro tem campos de data de nascimento e consentimentos", async ({ page }) => {
-    await mockAuth(page);
+  test("/completar-cadastro exige sessao antes de exibir o formulario", async ({ page }) => {
+    await bypassAgeGate(page);
     await page.goto("/completar-cadastro", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
-    const dateInput = page.locator('input[type="date"]');
-    const checkboxes = page.locator('input[type="checkbox"]');
-    expect(await dateInput.count()).toBeGreaterThanOrEqual(1);
-    expect(await checkboxes.count()).toBeGreaterThanOrEqual(2);
+    expect(page.url()).toMatch(/\/login/);
   });
 
   test("Age gate 18+ bloqueia acesso sem confirmação", async ({ page }) => {

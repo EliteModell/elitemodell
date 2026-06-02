@@ -712,7 +712,7 @@ export default function NovoImovelPage() {
         </Link>
         <button type="button" onClick={saveAndExit}>Salvar e sair</button>
         <button type="button" onClick={discardDraft}>Descartar rascunho</button>
-        <Link href="/suporte">Dúvidas?</Link>
+        <a href="mailto:suporte@elitemodell.com.br">Dúvidas?</a>
       </header>
 
       {hydrated && draftLoaded && step < 16 && (
