@@ -211,13 +211,13 @@ export default function VoucherRouletteModal() {
     return audioCtxRef.current;
   }
 
-  function primeSpinAudio() {
+  async function primeSpinAudio() {
     try {
       const ctx = getAudioContext();
       if (!ctx) return;
-      if (ctx.state === "suspended") void ctx.resume();
+      if (ctx.state === "suspended") await ctx.resume().catch(() => undefined);
 
-      // Unlock mobile audio during the user's click. The real sound starts after the API result.
+      // Unlock mobile audio during the user's click so the spin sound can start with the wheel.
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       gain.gain.setValueAtTime(0.0001, ctx.currentTime);
@@ -372,7 +372,7 @@ export default function VoucherRouletteModal() {
     if (!config || spinning || result) return;
 
     // 1. Bloqueia novo clique imediatamente e prepara o giro sem animar a roda indefinidamente.
-    primeSpinAudio();
+    await primeSpinAudio();
     clearSlowPrepareTimer();
     flushSync(() => {
       setSpinning(true);
@@ -380,6 +380,7 @@ export default function VoucherRouletteModal() {
       setShowResult(false);
       setWinningIndex(null);
     });
+    startSpinSound();
     startWheelMotion();
     slowPrepareTimerRef.current = window.setTimeout(() => {
       setSlowPreparing(true);
@@ -408,8 +409,7 @@ export default function VoucherRouletteModal() {
       setFetching(false);
       const visualIndex = resolveVisualIndex(data);
 
-      // 3. A API respondeu: agora sim gira por 4s até o prêmio sorteado.
-      startSpinSound();
+      // 3. A API respondeu: agora sim desacelera por 4s até o prêmio sorteado.
       await animateWheelToSegment(visualIndex, SPIN_DURATION_MS);
 
       // 4. Parou: encerra o som e mostra onde caiu por 1 segundo
