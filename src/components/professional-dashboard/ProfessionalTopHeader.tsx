@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Bell, Camera, ChevronRight, Mail, MapPin, Menu, UserRound } from "lucide-react";
 
 type HeaderProfile = {
@@ -28,6 +29,10 @@ type MeResponse = {
 
 export function ProfessionalTopHeader({ onMenuClick }: { onMenuClick: () => void }) {
   const [profile, setProfile] = useState<HeaderProfile | null>(null);
+  const pathname = usePathname() ?? "";
+  const inProfessionalArea = pathname.startsWith("/profissional");
+  const messagesHref = inProfessionalArea ? "/profissional/mensagens" : "/dashboard/mensagens";
+  const notificationsHref = inProfessionalArea ? "/profissional/notificacoes" : "/notifications";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -77,19 +82,18 @@ export function ProfessionalTopHeader({ onMenuClick }: { onMenuClick: () => void
 
           <div className="flex justify-end gap-3">
             <Link
-              href="/notifications"
+              href={messagesHref}
               className="grid h-14 w-14 place-items-center rounded-[18px] border border-[#D6A83A]/38 bg-white/[0.035] text-[#F5D46B] no-underline shadow-[0_12px_34px_rgba(0,0,0,0.34)]"
               aria-label="Mensagens"
             >
               <Mail className="h-6 w-6" />
             </Link>
             <Link
-              href="/notifications"
+              href={notificationsHref}
               className="relative grid h-14 w-14 place-items-center rounded-[18px] border border-[#D6A83A]/38 bg-white/[0.035] text-[#F5D46B] no-underline shadow-[0_12px_34px_rgba(0,0,0,0.34)]"
               aria-label="Notificações"
             >
               <Bell className="h-6 w-6" />
-              <span className="absolute -right-1 -top-1 grid h-6 min-w-6 place-items-center rounded-full bg-[#F5D46B] px-1 text-[12px] font-black text-[#080808]">6</span>
             </Link>
           </div>
         </div>

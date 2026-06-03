@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import {
   BadgePlus,
   Banknote,
+  Bell,
   Building2,
   CalendarCheck,
   ClipboardList,
@@ -80,7 +81,7 @@ const adminNav: NavItem[] = [
 ];
 
 const professionalNav: NavItem[] = [
-  { label: "Painel", href: ACCOUNT_ROUTES.painelAcompanhante, icon: <LayoutDashboard className="h-4 w-4" />, accent: "Pro" },
+  { label: "Painel", href: ACCOUNT_ROUTES.dashboardAcompanhante, icon: <LayoutDashboard className="h-4 w-4" />, accent: "Pro" },
   { label: "Meu perfil", href: "/profissional/perfil", icon: <UserRound className="h-4 w-4" /> },
   { label: "Estatísticas", href: "/profissional/estatisticas", icon: <ClipboardList className="h-4 w-4" /> },
   { label: "Avaliações", href: "/profissional/avaliacoes", icon: <MessageCircle className="h-4 w-4" /> },
@@ -89,8 +90,9 @@ const professionalNav: NavItem[] = [
   { label: "Fotos", href: "/profissional/fotos", icon: <Sparkles className="h-4 w-4" /> },
   { label: "Agenda", href: "/profissional/agenda", icon: <CalendarCheck className="h-4 w-4" /> },
   { label: "Agendamentos", href: "/profissional/agendamentos", icon: <UsersRound className="h-4 w-4" /> },
+  { label: "Mensagens", href: "/profissional/mensagens", icon: <MessageCircle className="h-4 w-4" /> },
   { label: "Perfil de anunciante", href: "/profissional/perfil", icon: <BadgePlus className="h-4 w-4" /> },
-  { label: "Suporte", href: "/notifications", icon: <Headphones className="h-4 w-4" /> },
+  { label: "Notificações", href: "/profissional/notificacoes", icon: <Bell className="h-4 w-4" /> },
 ];
 
 type ProfessionalMenuProfile = {
@@ -166,7 +168,13 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
       : isHostFlow
         ? "CADASTRO DE ANFITRIÃO"
         : "Área cliente";
-  const logoHref = isAdminArea || isAdmin ? ACCOUNT_ROUTES.admin : "/";
+  const logoHref = isAdminArea || isAdmin
+    ? ACCOUNT_ROUTES.admin
+    : isProfessionalArea
+      ? ACCOUNT_ROUTES.dashboardAcompanhante
+      : isRegisteredHostArea || isHostFlow
+        ? ACCOUNT_ROUTES.dashboardAnfitriao
+        : "/";
 
   useEffect(() => {
     if (!isProfessionalArea) {
