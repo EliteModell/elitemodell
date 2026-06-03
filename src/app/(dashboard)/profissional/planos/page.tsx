@@ -36,6 +36,7 @@ import {
   type ProfessionalPlanId,
   type ProfessionalPlanPrice,
 } from "@/lib/professional-plans";
+import { PremiumIllustration } from "@/components/professional-dashboard/ProfessionalPremium";
 
 type CheckoutStage = "idle" | "creating" | "waiting" | "paid" | "failed";
 type CheckoutSelection = {
@@ -58,7 +59,6 @@ type ProductMeta = {
 };
 
 const GOLD = "#d4a843";
-const GOLD_SOFT = "#f5d78c";
 
 const PRODUCT_META: Record<ProfessionalPlanId, ProductMeta> = {
   "one-hour-top": {
@@ -167,7 +167,52 @@ const PRODUCT_META: Record<ProfessionalPlanId, ProductMeta> = {
   },
 };
 
-const PLAN_ORDER: ProfessionalPlanId[] = ["bronze", "prata", "ouro", "diamante"];
+type ShowcasePlanId = Extract<ProfessionalPlanId, "bronze" | "ouro" | "diamante">;
+
+const SHOWCASE_PLAN_IDS: ShowcasePlanId[] = ["bronze", "ouro", "diamante"];
+const PLAN_SHOWCASE_META: Record<ShowcasePlanId, {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  benefits: string[];
+}> = {
+  bronze: {
+    title: "BÁSICO",
+    description: "Para começar a se destacar.",
+    icon: Crown,
+    benefits: ["Mais contatos", "Destaque na listagem", "Suporte por e-mail"],
+  },
+  ouro: {
+    title: "OURO",
+    description: "Mais visibilidade para crescer de verdade.",
+    icon: Crown,
+    benefits: ["Mais contatos", "Destaque na listagem", "Verificação de perfil", "Suporte prioritário"],
+  },
+  diamante: {
+    title: "DIAMANTE",
+    description: "O máximo de recursos para se destacar.",
+    icon: Diamond,
+    benefits: ["Tudo do plano Ouro", "Destaque máximo", "Selos exclusivos", "Suporte VIP"],
+  },
+};
+
+const PLAN_BENEFITS = [
+  {
+    title: "Mais contatos",
+    description: "Seu perfil pode receber mais contatos de clientes interessados em você.",
+    icon: MessageCircle,
+  },
+  {
+    title: "Mais destaque na listagem",
+    description: "Apareça nas primeiras posições e seja visto por mais pessoas todos os dias.",
+    icon: Star,
+  },
+  {
+    title: "Oportunidade",
+    description: "Perfis com destaque recebem mais visitas e têm mais chances de fechar contatos.",
+    icon: TrendingUp,
+  },
+];
 const FAQ = [
   {
     question: "Anunciar é gratuito?",
@@ -615,6 +660,54 @@ function PointsSection({
   );
 }
 
+function PlanShowcaseCard({
+  plan,
+  selectedKey,
+  pointsQuantity,
+  onPeriodChange,
+  onCheckout,
+}: {
+  plan: ProfessionalPlan;
+  selectedKey: string;
+  pointsQuantity: number;
+  onPeriodChange: (key: string) => void;
+  onCheckout: (selection: CheckoutSelection) => void;
+}) {
+  const planId = plan.id as ShowcasePlanId;
+  const meta = PLAN_SHOWCASE_META[planId];
+  const price = selectedPrice(plan, selectedKey, pointsQuantity);
+  const Icon = meta.icon;
+  const featured = planId === "ouro";
+  const isDiamond = planId === "diamante";
+
+  return (
+    <article className={`showcase-plan-card ${featured ? "featured" : ""} ${isDiamond ? "diamond" : ""}`}>
+      {featured ? <span className="popular-ribbon">MAIS POPULAR</span> : null}
+      <span className="showcase-plan-icon">
+        <Icon size={42} />
+      </span>
+      <h3>{meta.title}</h3>
+      <p>{meta.description}</p>
+      <strong className="showcase-price">
+        {price.dailyLabel ?? money(price.value)}
+        <small>{price.dailyLabel ? price.label : "período selecionado"}</small>
+      </strong>
+      <ul className="showcase-benefits">
+        {meta.benefits.map((benefit) => (
+          <li key={benefit}>
+            <Check size={16} />
+            <span>{benefit}</span>
+          </li>
+        ))}
+      </ul>
+      <PeriodPicker plan={plan} selectedKey={selectedKey} pointsQuantity={pointsQuantity} onChange={onPeriodChange} />
+      <button className={featured ? "showcase-plan-button featured" : "showcase-plan-button"} type="button" onClick={() => onCheckout({ plan, price })}>
+        Escolher plano
+      </button>
+    </article>
+  );
+}
+
 export default function PlanosPage() {
   const [selectedPeriods, setSelectedPeriods] = useState<Record<string, string>>({});
   const [pointsQuantity, setPointsQuantity] = useState(POINTS_MIN);
@@ -626,7 +719,7 @@ export default function PlanosPage() {
     points: planById("pontos"),
     phone: planById("telefone"),
     hiddenAge: planById("idade-oculta"),
-    highlights: PLAN_ORDER.map(planById),
+    showcase: SHOWCASE_PLAN_IDS.map(planById),
   }), []);
 
   function selectedKeyFor(plan: ProfessionalPlan) {
@@ -650,41 +743,89 @@ export default function PlanosPage() {
       {checkout && <PlanCheckout selection={checkout} onClose={() => setCheckout(null)} />}
       {examplePlan && <ExampleModal plan={examplePlan} onClose={() => setExamplePlan(null)} />}
 
-      <section className="hero-section">
-        <div className="hero-copy">
+      <section className="plans-hero premium-card">
+        <div className="plans-hero-copy">
           <p className="eyebrow">Elite Modell Premium</p>
           <h1>Impulsione seu perfil e apareça mais</h1>
           <p>Escolha planos, destaques e recursos extras para aumentar sua visibilidade na Elite Modell.</p>
         </div>
-        <div className="hero-summary" aria-label="Resumo de vantagens">
-          {[
-            { label: "Mais visibilidade", icon: TrendingUp },
-            { label: "Mais contatos", icon: MessageCircle },
-            { label: "Mais destaque na listagem", icon: Sparkles },
-            { label: "Mais controle do anúncio", icon: ShieldCheck },
-          ].map(({ label, icon: SummaryIcon }) => {
-            return (
-              <div key={label}>
-                <SummaryIcon size={18} />
-                <span>{label}</span>
-              </div>
-            );
-          })}
+        <div className="plans-hero-art">
+          <PremiumIllustration kind="crown" />
         </div>
       </section>
 
-      <section className="opportunity-band" aria-label="Oportunidade">
-        <span><Sparkles size={16} /> Oportunidade</span>
-        <p>Perfis com destaque aparecem com mais força na listagem e tendem a receber mais visitas. Quanto melhor sua posição, maiores as chances de receber contatos.</p>
-        <b>Vence em 3 dias</b>
+      <section className="plans-benefit-stack" aria-label="Benefícios premium">
+        {PLAN_BENEFITS.map(({ title, description, icon: BenefitIcon }) => (
+          <a key={title} href="#planos-em-destaque" className="plans-benefit-card">
+            <span className="plans-benefit-icon">
+              <BenefitIcon size={38} />
+            </span>
+            <span>
+              <strong>{title}</strong>
+              <small>{description}</small>
+            </span>
+            <ArrowUpRight size={24} />
+          </a>
+        ))}
       </section>
 
-      <section className="first-product" aria-label="Produto principal">
+      <section id="planos-em-destaque" className="plan-showcase" aria-labelledby="showcase-title">
+        <div className="plan-showcase-heading">
+          <span />
+          <h2 id="showcase-title"><Crown size={18} /> Planos em destaque</h2>
+          <span />
+        </div>
+        <div className="showcase-plan-grid">
+          {plans.showcase.map((plan) => (
+            <PlanShowcaseCard
+              key={plan.id}
+              plan={plan}
+              selectedKey={selectedKeyFor(plan)}
+              pointsQuantity={pointsQuantity}
+              onPeriodChange={(key) => setPeriod(plan.id, key)}
+              onCheckout={setCheckout}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="secure-strip" aria-label="Pagamento seguro">
+        <span className="secure-icon"><ShieldCheck size={30} /></span>
+        <span>
+          <strong>Pagamento seguro e cancelamento fácil</strong>
+          <small>Ambiente 100% seguro. Cancele quando quiser, sem burocracia.</small>
+        </span>
+        <BadgeCheck size={24} />
+      </section>
+
+      <section className="premium-section-card plans-extra-heading">
+        <p className="eyebrow">Recursos extras</p>
+        <h2>Impulsos rápidos para momentos estratégicos</h2>
+        <p>Combine planos com topo temporário, telefone na listagem, pontos e privacidade quando precisar de mais alcance.</p>
+      </section>
+
+      <section className="extra-products-grid" aria-label="Produtos extras">
         <ProductCard
           plan={plans.top}
           selectedKey={selectedKeyFor(plans.top)}
           pointsQuantity={pointsQuantity}
           onPeriodChange={(key) => setPeriod(plans.top.id, key)}
+          onCheckout={setCheckout}
+          onExample={setExamplePlan}
+        />
+        <ProductCard
+          plan={plans.phone}
+          selectedKey={selectedKeyFor(plans.phone)}
+          pointsQuantity={pointsQuantity}
+          onPeriodChange={(key) => setPeriod(plans.phone.id, key)}
+          onCheckout={setCheckout}
+          onExample={setExamplePlan}
+        />
+        <ProductCard
+          plan={plans.hiddenAge}
+          selectedKey={selectedKeyFor(plans.hiddenAge)}
+          pointsQuantity={pointsQuantity}
+          onPeriodChange={(key) => setPeriod(plans.hiddenAge.id, key)}
           onCheckout={setCheckout}
           onExample={setExamplePlan}
         />
@@ -699,59 +840,6 @@ export default function PlanosPage() {
         onCheckout={setCheckout}
         onExample={setExamplePlan}
       />
-
-      <section className="sales-section single-product" aria-labelledby="phone-title">
-        <div className="section-copy">
-          <p className="eyebrow">Telefone na listagem</p>
-          <h2 id="phone-title">Facilite conversas com clientes interessados</h2>
-          <p>Deixe seu contato mais acessível para reduzir etapas e aumentar as chances de conversa direta.</p>
-        </div>
-        <ProductCard
-          plan={plans.phone}
-          selectedKey={selectedKeyFor(plans.phone)}
-          pointsQuantity={pointsQuantity}
-          onPeriodChange={(key) => setPeriod(plans.phone.id, key)}
-          onCheckout={setCheckout}
-          onExample={setExamplePlan}
-        />
-      </section>
-
-      <section className="sales-section" aria-labelledby="highlight-title">
-        <div className="section-copy wide-copy">
-          <p className="eyebrow">Planos de destaque</p>
-          <h2 id="highlight-title">Escolha o nível de presença do seu anúncio</h2>
-          <p>Os planos aumentam a força do seu anúncio e adicionam recursos visuais para destacar seu perfil na listagem.</p>
-        </div>
-        <div className="highlight-grid">
-          {plans.highlights.map((plan) => (
-            <ProductCard
-              key={plan.id}
-              plan={plan}
-              selectedKey={selectedKeyFor(plan)}
-              pointsQuantity={pointsQuantity}
-              onPeriodChange={(key) => setPeriod(plan.id, key)}
-              onCheckout={setCheckout}
-              onExample={setExamplePlan}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section className="sales-section single-product" aria-labelledby="privacy-title">
-        <div className="section-copy">
-          <p className="eyebrow">Produto extra</p>
-          <h2 id="privacy-title">Controle como sua idade aparece</h2>
-          <p>Use o recurso de privacidade para ocultar a idade publicamente no anúncio e na listagem.</p>
-        </div>
-        <ProductCard
-          plan={plans.hiddenAge}
-          selectedKey={selectedKeyFor(plans.hiddenAge)}
-          pointsQuantity={pointsQuantity}
-          onPeriodChange={(key) => setPeriod(plans.hiddenAge.id, key)}
-          onCheckout={setCheckout}
-          onExample={setExamplePlan}
-        />
-      </section>
 
       <section className="info-grid" aria-label="Informações sobre planos">
         <article>
@@ -816,6 +904,332 @@ export default function PlanosPage() {
           font-weight: 950;
           letter-spacing: 0.18em;
           text-transform: uppercase;
+        }
+        .plans-hero {
+          min-height: 308px;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(250px, 0.62fr);
+          gap: 18px;
+          align-items: center;
+          padding: 34px 30px;
+          margin-bottom: 18px;
+          isolation: isolate;
+        }
+        .plans-hero::after {
+          content: "";
+          position: absolute;
+          right: -8%;
+          top: 6%;
+          width: 48%;
+          height: 88%;
+          background: radial-gradient(ellipse at center, rgba(245,215,140,0.24), rgba(212,168,67,0.10) 42%, transparent 72%);
+          filter: blur(4px);
+          pointer-events: none;
+        }
+        .plans-hero-copy {
+          position: relative;
+          z-index: 2;
+          max-width: 610px;
+        }
+        .plans-hero-copy h1 {
+          margin: 10px 0 0;
+          color: #fff;
+          font-family: Georgia, "Times New Roman", serif;
+          font-size: clamp(44px, 7vw, 68px);
+          line-height: 0.98;
+          font-weight: 600;
+          letter-spacing: 0;
+          text-wrap: balance;
+        }
+        .plans-hero-copy p:last-child {
+          max-width: 590px;
+          margin: 18px 0 0;
+          color: #b8b8b8;
+          font-size: 17px;
+          line-height: 1.62;
+        }
+        .plans-hero-art {
+          position: relative;
+          z-index: 1;
+          min-width: 0;
+        }
+        .plans-hero-art .premium-illustration {
+          min-height: 244px;
+        }
+        .plans-benefit-stack {
+          display: grid;
+          gap: 10px;
+          margin-bottom: 18px;
+        }
+        .plans-benefit-card {
+          min-height: 112px;
+          display: grid;
+          grid-template-columns: 112px minmax(0, 1fr) auto;
+          gap: 22px;
+          align-items: center;
+          border: 1px solid rgba(212,168,67,0.26);
+          border-radius: 24px;
+          background:
+            radial-gradient(circle at 13% 50%, rgba(245,215,140,0.12), transparent 28%),
+            linear-gradient(145deg, rgba(22,22,22,0.98), rgba(8,8,8,0.98));
+          padding: 18px 20px;
+          color: inherit;
+          text-decoration: none;
+          box-shadow: 0 14px 34px rgba(0,0,0,0.36);
+        }
+        .plans-benefit-card:hover {
+          border-color: rgba(245,215,140,0.58);
+        }
+        .plans-benefit-icon {
+          width: 82px;
+          height: 82px;
+          display: grid;
+          place-items: center;
+          border: 1px solid rgba(245,215,140,0.42);
+          border-radius: 999px;
+          color: #f5d78c;
+          background:
+            radial-gradient(circle at 50% 42%, rgba(245,215,140,0.30), rgba(212,168,67,0.08) 56%, rgba(0,0,0,0.24)),
+            linear-gradient(145deg, rgba(212,168,67,0.16), rgba(0,0,0,0.32));
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 0 28px rgba(212,168,67,0.13);
+        }
+        .plans-benefit-card strong {
+          display: block;
+          color: #f5d78c;
+          font-family: Georgia, "Times New Roman", serif;
+          font-size: 24px;
+          line-height: 1.05;
+        }
+        .plans-benefit-card small {
+          display: block;
+          max-width: 500px;
+          margin-top: 5px;
+          color: #b8b8b8;
+          font-size: 15px;
+          line-height: 1.35;
+        }
+        .plans-benefit-card > svg {
+          color: #f5d78c;
+        }
+        .plan-showcase {
+          margin-top: 22px;
+        }
+        .plan-showcase-heading {
+          display: grid;
+          grid-template-columns: minmax(24px, 1fr) auto minmax(24px, 1fr);
+          gap: 16px;
+          align-items: center;
+          margin: 4px 0 18px;
+        }
+        .plan-showcase-heading span {
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(245,215,140,0.56), transparent);
+        }
+        .plan-showcase-heading h2 {
+          margin: 0;
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          color: #f5d78c;
+          font-size: 13px;
+          font-weight: 950;
+          letter-spacing: 0.24em;
+          text-transform: uppercase;
+          text-align: center;
+        }
+        .showcase-plan-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 18px;
+          align-items: stretch;
+        }
+        .showcase-plan-card {
+          position: relative;
+          min-height: 430px;
+          display: flex;
+          flex-direction: column;
+          gap: 13px;
+          border: 1px solid rgba(212,168,67,0.30);
+          border-radius: 24px;
+          background:
+            radial-gradient(circle at 50% 0%, rgba(245,215,140,0.10), transparent 36%),
+            linear-gradient(145deg, rgba(22,22,22,0.98), rgba(8,8,8,0.98));
+          padding: 24px 20px 20px;
+          box-shadow: 0 18px 42px rgba(0,0,0,0.42);
+        }
+        .showcase-plan-card.featured {
+          border-color: rgba(245,215,140,0.82);
+          box-shadow: 0 24px 62px rgba(0,0,0,0.50), 0 0 34px rgba(212,168,67,0.22);
+        }
+        .showcase-plan-card.diamond {
+          border-color: rgba(190,231,255,0.48);
+        }
+        .popular-ribbon {
+          position: absolute;
+          left: 50%;
+          top: -1px;
+          transform: translateX(-50%);
+          min-width: 128px;
+          border-radius: 0 0 14px 14px;
+          background: linear-gradient(135deg, #f5d78c, #d4a843);
+          color: #111;
+          padding: 7px 12px;
+          font-size: 11px;
+          font-weight: 950;
+          text-align: center;
+          letter-spacing: 0.06em;
+        }
+        .showcase-plan-icon {
+          width: 76px;
+          height: 76px;
+          display: grid;
+          place-items: center;
+          margin: 8px auto 0;
+          border-radius: 999px;
+          color: #f5d78c;
+          background:
+            radial-gradient(circle, rgba(245,215,140,0.26), rgba(212,168,67,0.08) 60%, transparent),
+            rgba(255,255,255,0.035);
+          filter: drop-shadow(0 0 20px rgba(212,168,67,0.18));
+        }
+        .showcase-plan-card.diamond .showcase-plan-icon {
+          color: #bee7ff;
+          filter: drop-shadow(0 0 18px rgba(147,197,253,0.28));
+        }
+        .showcase-plan-card h3 {
+          margin: 0;
+          color: #fff;
+          font-family: Georgia, "Times New Roman", serif;
+          font-size: 27px;
+          line-height: 1.02;
+          text-align: center;
+          letter-spacing: 0.04em;
+        }
+        .showcase-plan-card p {
+          min-height: 44px;
+          margin: 0 auto;
+          color: #b8b8b8;
+          font-size: 15px;
+          line-height: 1.35;
+          text-align: center;
+        }
+        .showcase-price {
+          display: grid;
+          gap: 3px;
+          justify-items: center;
+          color: #f5d78c;
+          font-size: 20px;
+          line-height: 1;
+        }
+        .showcase-price small {
+          color: #9aa0aa;
+          font-size: 11px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+        }
+        .showcase-benefits {
+          list-style: none;
+          margin: 2px 0 0;
+          padding: 14px 0 0;
+          border-top: 1px solid rgba(212,168,67,0.18);
+          display: grid;
+          gap: 10px;
+        }
+        .showcase-benefits li {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          color: #d7dde6;
+          font-size: 14px;
+          line-height: 1.25;
+        }
+        .showcase-benefits svg {
+          color: #f5d78c;
+          flex: 0 0 auto;
+        }
+        .showcase-plan-card .period-box {
+          margin: auto 0 0;
+        }
+        .showcase-plan-card .period-box select,
+        .showcase-plan-card .period-box label {
+          text-align: center;
+        }
+        .showcase-plan-button {
+          min-height: 52px;
+          border: 1px solid rgba(212,168,67,0.38);
+          border-radius: 16px;
+          background: rgba(212,168,67,0.08);
+          color: #f5d78c;
+          font-size: 14px;
+          font-weight: 950;
+          cursor: pointer;
+        }
+        .showcase-plan-button.featured {
+          border-color: rgba(255,255,255,0.18);
+          background: linear-gradient(135deg, #f5d78c, ${GOLD} 48%, #a77818);
+          color: #080704;
+          box-shadow: 0 16px 36px rgba(212,168,67,0.24);
+        }
+        .secure-strip {
+          min-height: 78px;
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          gap: 16px;
+          align-items: center;
+          margin-top: 18px;
+          border: 1px solid rgba(212,168,67,0.26);
+          border-radius: 22px;
+          background:
+            radial-gradient(circle at 6% 50%, rgba(245,215,140,0.12), transparent 24%),
+            rgba(255,255,255,0.035);
+          padding: 16px 20px;
+        }
+        .secure-icon {
+          width: 56px;
+          height: 56px;
+          display: grid;
+          place-items: center;
+          border-radius: 999px;
+          color: #f5d78c;
+          background: rgba(212,168,67,0.12);
+          border: 1px solid rgba(245,215,140,0.28);
+        }
+        .secure-strip strong,
+        .plans-extra-heading h2 {
+          display: block;
+          color: #fff;
+          font-size: 20px;
+          line-height: 1.16;
+        }
+        .secure-strip small,
+        .plans-extra-heading p:not(.eyebrow) {
+          display: block;
+          margin-top: 4px;
+          color: #b8b8b8;
+          font-size: 14px;
+          line-height: 1.45;
+        }
+        .secure-strip > svg {
+          color: #f5d78c;
+        }
+        .plans-extra-heading {
+          margin-top: 18px;
+        }
+        .plans-extra-heading h2 {
+          margin: 0;
+          font-family: Georgia, "Times New Roman", serif;
+          font-size: 34px;
+          font-weight: 600;
+        }
+        .extra-products-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 16px;
+          margin-top: 18px;
+        }
+        .extra-products-grid .product-card {
+          min-height: 100%;
         }
         .hero-section {
           display: grid;
@@ -1461,13 +1875,46 @@ export default function PlanosPage() {
           padding: 7px 10px;
           font-size: 12px;
         }
+        .plans-page .product-card,
+        .plans-page .points-panel,
+        .plans-page .section-copy,
+        .plans-page .info-grid article,
+        .plans-page .advantages-section,
+        .plans-page .faq-section,
+        .plans-page .plans-checkout,
+        .plans-page .example-modal {
+          border-radius: 22px;
+        }
+        .plans-page .product-icon {
+          border-radius: 16px;
+        }
+        .plans-page .primary-action,
+        .plans-page .ghost-action,
+        .plans-page .period-box select,
+        .plans-page .checkout-field input,
+        .plans-page .checkout-summary,
+        .plans-page .checkout-benefits li {
+          border-radius: 16px;
+        }
         @media (max-width: 900px) {
+          .plans-hero,
+          .showcase-plan-grid,
+          .extra-products-grid,
           .hero-section,
           .sales-section,
           .sales-section.points-section,
           .single-product,
           .info-grid {
             grid-template-columns: 1fr;
+          }
+          .plans-hero {
+            min-height: auto;
+            padding: 28px 22px 18px;
+          }
+          .plans-hero-art .premium-illustration {
+            min-height: 168px;
+            justify-content: flex-end;
+            margin-top: -8px;
           }
           .section-copy {
             position: static;
@@ -1479,6 +1926,39 @@ export default function PlanosPage() {
         @media (max-width: 620px) {
           .plans-page {
             padding-bottom: 28px;
+          }
+          .plans-hero-copy h1 {
+            font-size: 42px;
+          }
+          .plans-benefit-card {
+            grid-template-columns: 82px minmax(0, 1fr) auto;
+            gap: 14px;
+            padding: 16px;
+          }
+          .plans-benefit-icon {
+            width: 66px;
+            height: 66px;
+          }
+          .plans-benefit-card strong {
+            font-size: 21px;
+          }
+          .plans-benefit-card small {
+            font-size: 14px;
+          }
+          .plan-showcase-heading {
+            grid-template-columns: 1fr;
+          }
+          .plan-showcase-heading span {
+            display: none;
+          }
+          .showcase-plan-card {
+            min-height: auto;
+          }
+          .secure-strip {
+            grid-template-columns: auto minmax(0, 1fr);
+          }
+          .secure-strip > svg {
+            display: none;
           }
           .hero-copy {
             min-height: auto;
@@ -1526,6 +2006,21 @@ export default function PlanosPage() {
           .checkout-benefits,
           .advantages-grid {
             grid-template-columns: 1fr;
+          }
+        }
+        @media (max-width: 390px) {
+          .plans-hero-copy h1 {
+            font-size: 36px;
+          }
+          .plans-benefit-card {
+            grid-template-columns: 1fr;
+            text-align: center;
+          }
+          .plans-benefit-icon {
+            margin: 0 auto;
+          }
+          .plans-benefit-card > svg {
+            display: none;
           }
         }
       `}</style>
