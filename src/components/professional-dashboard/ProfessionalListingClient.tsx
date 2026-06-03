@@ -79,7 +79,7 @@ export function ProfessionalListingClient({ data }: { data: ProfessionalListingV
       >
         <div className="premium-grid premium-grid-2">
           <PremiumActionCard href="/profissional/fotos" icon="image" title="Postar foto" description="Adicione fotos recentes à sua galeria." buttonLabel="Abrir" />
-          <PremiumActionCard href="/profissional/configuracoes" icon="video" title="Postar vídeo" description="Vídeos aumentam a confiança e o engajamento." buttonLabel="Abrir" />
+          <PremiumActionCard href="/profissional/postar" icon="video" title="Postar vídeo" description="Vídeos aumentam a confiança e o engajamento." buttonLabel="Abrir" />
           <PremiumActionCard href="/profissional/stories" icon="story" title="Postar story" description="Publique conteúdo rápido e temporário." buttonLabel="Abrir" />
           <PremiumActionCard href="/profissional/agenda" icon="calendar" title="Atualizar agenda" description="Mantenha horários e disponibilidade em dia." buttonLabel="Abrir" />
         </div>

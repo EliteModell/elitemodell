@@ -32,8 +32,20 @@ function isTrustedStorageUrl(url: string) {
   return url.startsWith(`${supabaseUrl}/storage/v1/object/public/`);
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const now = new Date();
+  const url = new URL(req.url);
+  if (url.searchParams.get("mine") === "1") {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
+    const stories = await prisma.story.findMany({
+      where: { userId: session.user.id, expiresAt: { gt: now } },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, mediaUrl: true, mediaType: true, thumbnail: true, views: true, expiresAt: true, createdAt: true },
+    });
+    return NextResponse.json({ stories });
+  }
+
   const stories = await prisma.story.findMany({
     where: {
       expiresAt: { gt: now },
@@ -59,7 +71,7 @@ export async function GET() {
         acc[story.userId] = {
           userId: story.userId,
           nome: story.user.professional?.displayName ?? story.user.name ?? "Usuaria",
-          foto: story.user.professional?.photos?.[0]?.url ?? story.user.image ?? null,
+          foto: story.user.image ?? story.user.professional?.photos?.[0]?.url ?? null,
           stories: [],
         };
       }

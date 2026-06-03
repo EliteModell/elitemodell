@@ -5,9 +5,12 @@ import {
   ArrowRight,
   BadgeCheck,
   Camera,
+  CalendarDays,
   Check,
+  CirclePlus,
   Crown,
   Diamond,
+  FileVideo,
   Gem,
   ImagePlus,
   ShieldCheck,
@@ -647,8 +650,11 @@ function renderPremiumIcon(kind: PremiumIconName, className?: string, size?: num
   const props = { className, size };
   switch (kind) {
     case "content":
-    case "video":
       return <Camera {...props} />;
+    case "video":
+      return <FileVideo {...props} />;
+    case "calendar":
+      return <CalendarDays {...props} />;
     case "crown":
       return <Crown {...props} />;
     case "diamond":
@@ -661,6 +667,7 @@ function renderPremiumIcon(kind: PremiumIconName, className?: string, size?: num
     case "shield":
       return <ShieldCheck {...props} />;
     case "story":
+      return <CirclePlus {...props} />;
     case "message":
     case "star":
       return <Sparkles {...props} />;

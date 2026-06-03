@@ -1,345 +1,526 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- A tela gerencia URLs remotas e previews de portfólio vindos do Supabase. */
-import { useEffect, useRef, useState } from "react";
-import toast from "react-hot-toast";
+/* eslint-disable @next/next/no-img-element -- Imagens sao previews locais ou URLs publicas enviadas pela propria profissional. */
 
-type Photo = {
-  id: string;
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ChangeEvent, ReactNode, RefObject } from "react";
+import toast from "react-hot-toast";
+import { Camera, ImageIcon, Images, Loader2, Trash2, UploadCloud, UserRound } from "lucide-react";
+import { PremiumHeroCard, PremiumSection } from "@/components/professional-dashboard/ProfessionalPremium";
+
+type PhotoRecord = {
+  id?: string;
   url: string;
   cover: boolean;
   order: number;
 };
 
+type PendingFile = {
+  file: File;
+  preview: string;
+};
+
 type MeResponse = {
+  id: string;
+  image?: string | null;
   professional?: {
     id: string;
     slug: string;
     image?: string | null;
     galleryUrls?: string[];
+    photos?: PhotoRecord[];
   } | null;
 };
 
-function photosFromProfile(profile: NonNullable<MeResponse["professional"]>): Photo[] {
-  const urls = [profile.image, ...(profile.galleryUrls ?? [])].filter(Boolean) as string[];
-  return Array.from(new Set(urls)).map((url, index) => ({
-    id: `${index}-${url}`,
-    url,
-    cover: index === 0,
-    order: index,
-  }));
+const IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_GALLERY = 12;
+
+function formatSize(bytes: number) {
+  return `${Math.round(bytes / 1024 / 1024)} MB`;
+}
+
+function validateImage(file: File) {
+  if (!file) return "Escolha uma imagem válida.";
+  if (!IMAGE_TYPES.includes(file.type)) return "Escolha uma imagem JPG, PNG ou WebP.";
+  if (file.size > MAX_IMAGE_BYTES) return `O arquivo é muito grande. Use uma imagem de até ${formatSize(MAX_IMAGE_BYTES)}.`;
+  return null;
+}
+
+function normalizeMedia(data: MeResponse) {
+  const professional = data.professional;
+  const savedPhotos = professional?.photos ?? [];
+  const coverPhoto = savedPhotos.find((photo) => photo.cover)?.url ?? professional?.image ?? null;
+  const relationGallery = savedPhotos.filter((photo) => !photo.cover).map((photo) => photo.url);
+  const legacyGallery = professional?.galleryUrls ?? [];
+  const gallery = Array.from(new Set(relationGallery.length ? relationGallery : legacyGallery)).filter((url) => url !== coverPhoto);
+
+  return {
+    profilePhoto: data.image ?? null,
+    coverPhoto,
+    gallery,
+  };
+}
+
+function createPending(file: File): PendingFile {
+  return { file, preview: URL.createObjectURL(file) };
 }
 
 export default function ProfissionalFotosPage() {
-  const [photos, setPhotos] = useState<Photo[]>([]);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [profileSlug, setProfileSlug] = useState<string | null>(null);
-  const [dragging, setDragging] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [coverPhoto, setCoverPhoto] = useState<string | null>(null);
+  const [gallery, setGallery] = useState<string[]>([]);
+  const [profilePending, setProfilePending] = useState<PendingFile | null>(null);
+  const [coverPending, setCoverPending] = useState<PendingFile | null>(null);
+  const [galleryPending, setGalleryPending] = useState<PendingFile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const profileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  const galleryTotal = useMemo(() => gallery.length + galleryPending.length, [gallery.length, galleryPending.length]);
 
   useEffect(() => {
     const controller = new AbortController();
-    async function loadPhotos() {
+    async function loadMedia() {
       setLoading(true);
-      setError(null);
       try {
-        const res = await fetch("/api/users/me", { signal: controller.signal });
-        if (!res.ok) throw new Error("Failed to load profile");
+        const res = await fetch("/api/users/me", { signal: controller.signal, cache: "no-store" });
+        if (!res.ok) throw new Error("load");
         const data: MeResponse = await res.json();
-        if (!data.professional) {
-          setError("Nenhum perfil profissional encontrado para esta conta.");
-          return;
-        }
+        if (!data.professional) throw new Error("missing-profile");
+        const media = normalizeMedia(data);
         setProfileId(data.professional.id);
         setProfileSlug(data.professional.slug);
-        setPhotos(photosFromProfile(data.professional));
+        setProfilePhoto(media.profilePhoto);
+        setCoverPhoto(media.coverPhoto);
+        setGallery(media.gallery);
       } catch {
-        if (!controller.signal.aborted) setError("Não foi possível carregar suas fotos agora.");
+        if (!controller.signal.aborted) toast.error("Não foi possível carregar suas fotos agora.");
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
     }
-    loadPhotos();
+    void loadMedia();
     return () => controller.abort();
   }, []);
 
-  async function persistPhotos(nextPhotos: Photo[], successMessage = "Alterações salvas!") {
-    if (!profileSlug) {
-      toast.error("Perfil profissional não encontrado.");
-      return false;
-    }
-    const ordered = nextPhotos.map((photo, index) => ({ ...photo, order: index }));
-    const cover = ordered.find((photo) => photo.cover) ?? ordered[0];
-    const normalized = ordered.map((photo) => ({ ...photo, cover: cover ? photo.url === cover.url : false }));
+  useEffect(() => {
+    return () => {
+      if (profilePending) URL.revokeObjectURL(profilePending.preview);
+      if (coverPending) URL.revokeObjectURL(coverPending.preview);
+      galleryPending.forEach((item) => URL.revokeObjectURL(item.preview));
+    };
+  }, [coverPending, galleryPending, profilePending]);
 
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/professionals/${profileSlug}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image: cover?.url ?? null,
-          galleryUrls: cover ? normalized.filter((photo) => photo.url !== cover.url).map((photo) => photo.url) : [],
-        }),
-      });
-      if (!res.ok) throw new Error("Failed to save photos");
-      setPhotos(normalized);
-      toast.success(successMessage);
-      return true;
-    } catch {
-      toast.error("Não foi possível salvar as fotos.");
-      return false;
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function setCover(id: string) {
-    const next = photos.map((p) => ({ ...p, cover: p.id === id }));
-    setPhotos(next);
-    void persistPhotos(next, "Foto de capa atualizada.");
-  }
-
-  function removePhoto(id: string) {
-    const remaining = photos.filter((p) => p.id !== id).map((p, index) => ({ ...p, order: index }));
-    const hasCover = remaining.some((p) => p.cover);
-    const next = hasCover ? remaining : remaining.map((p, index) => ({ ...p, cover: index === 0 }));
-    setPhotos(next);
-    void persistPhotos(next, "Foto removida.");
-  }
-
-  function moveUp(idx: number) {
-    if (idx === 0) return;
-    setPhotos((prev) => {
-      const arr = [...prev];
-      [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
-      return arr.map((p, index) => ({ ...p, order: index }));
-    });
-  }
-
-  function moveDown(idx: number) {
-    setPhotos((prev) => {
-      if (idx === prev.length - 1) return prev;
-      const arr = [...prev];
-      [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]];
-      return arr.map((p, index) => ({ ...p, order: index }));
-    });
-  }
-
-  function handleDragOver(e: React.DragEvent) {
-    e.preventDefault();
-    setDragging(true);
-  }
-
-  function handleDragLeave() {
-    setDragging(false);
-  }
-
-  function handleDrop(e: React.DragEvent) {
-    e.preventDefault();
-    setDragging(false);
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) void handleFiles(files);
-  }
-
-  async function handleFiles(files: File[]) {
-    if (!profileId) {
-      toast.error("Perfil profissional não encontrado.");
+  function setSinglePending(kind: "profile" | "cover", file: File) {
+    const error = validateImage(file);
+    if (error) {
+      toast.error(error);
       return;
     }
+    const pending = createPending(file);
+    if (kind === "profile") {
+      if (profilePending) URL.revokeObjectURL(profilePending.preview);
+      setProfilePending(pending);
+    } else {
+      if (coverPending) URL.revokeObjectURL(coverPending.preview);
+      setCoverPending(pending);
+    }
+  }
 
-    const images = files.filter((file) => file.type.startsWith("image/"));
-    if (images.length === 0) return;
-    if (photos.length + images.length > 12) {
-      toast.error("Máximo de 12 fotos permitidas.");
+  function handleSingleInput(kind: "profile" | "cover", event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (file) setSinglePending(kind, file);
+    event.target.value = "";
+  }
+
+  function handleGalleryInput(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (!files.length) {
+      toast.error("Escolha uma imagem válida.");
       return;
     }
-    const oversized = images.find((file) => file.size > 5 * 1024 * 1024);
-    if (oversized) {
-      toast.error("Cada foto deve ter no máximo 5 MB.");
+    if (galleryTotal + files.length > MAX_GALLERY) {
+      toast.error(`Você pode manter até ${MAX_GALLERY} fotos na galeria.`);
       return;
     }
-
-    setUploading(true);
-    try {
-      const uploaded: Photo[] = [];
-      for (const file of images) {
-        const body = new FormData();
-        body.append("file", file);
-        const res = await fetch(`/api/upload?folder=profiles/${profileId}`, { method: "POST", body });
-        if (!res.ok) throw new Error("Upload failed");
-        const data: { url?: string | null } = await res.json();
-        if (!data.url) throw new Error("Missing upload URL");
-        uploaded.push({
-          id: `${Date.now()}-${file.name}-${uploaded.length}`,
-          url: data.url,
-          cover: photos.length === 0 && uploaded.length === 0,
-          order: photos.length + uploaded.length,
-        });
+    const next: PendingFile[] = [];
+    for (const file of files) {
+      const error = validateImage(file);
+      if (error) {
+        toast.error(error);
+        return;
       }
-      const next = [...photos, ...uploaded];
-      setPhotos(next);
-      await persistPhotos(next, `${uploaded.length} foto(s) enviada(s).`);
-    } catch {
-      toast.error("Não foi possível enviar uma ou mais fotos.");
+      next.push(createPending(file));
+    }
+    setGalleryPending((current) => [...current, ...next]);
+  }
+
+  async function uploadImage(file: File) {
+    if (!profileId) throw new Error("Perfil profissional não encontrado.");
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`/api/upload?folder=profiles/${profileId}`, { method: "POST", body: formData });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.url) {
+      throw new Error(typeof data.error === "string" ? data.error : "Não foi possível enviar agora. Tente novamente.");
+    }
+    return data.url as string;
+  }
+
+  async function saveUserImage(image: string | null) {
+    const res = await fetch("/api/users/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Não foi possível atualizar sua foto agora.");
+  }
+
+  async function saveProfessionalPhotos(nextCover: string | null, nextGallery: string[]) {
+    if (!profileSlug) throw new Error("Perfil profissional não encontrado.");
+    const photos = [
+      ...(nextCover ? [{ url: nextCover, cover: true, order: 0 }] : []),
+      ...nextGallery.map((url, index) => ({ url, cover: false, order: nextCover ? index + 1 : index })),
+    ];
+    const res = await fetch(`/api/professionals/${profileSlug}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ photos }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Não foi possível salvar suas fotos agora.");
+  }
+
+  async function publishProfilePhoto() {
+    if (!profilePending) {
+      toast.error("Escolha uma imagem válida.");
+      return;
+    }
+    setSavingKey("profile");
+    try {
+      const url = await uploadImage(profilePending.file);
+      await saveUserImage(url);
+      setProfilePhoto(url);
+      URL.revokeObjectURL(profilePending.preview);
+      setProfilePending(null);
+      toast.success("Sua foto foi atualizada.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível enviar agora. Tente novamente.");
     } finally {
-      setUploading(false);
+      setSavingKey(null);
     }
   }
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    if (files.length > 0) void handleFiles(files);
-    e.target.value = "";
+  async function publishCoverPhoto() {
+    if (!coverPending) {
+      toast.error("Escolha uma imagem válida.");
+      return;
+    }
+    setSavingKey("cover");
+    try {
+      const url = await uploadImage(coverPending.file);
+      await saveProfessionalPhotos(url, gallery);
+      setCoverPhoto(url);
+      URL.revokeObjectURL(coverPending.preview);
+      setCoverPending(null);
+      toast.success("Capa atualizada com sucesso.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível enviar agora. Tente novamente.");
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
+  async function publishGalleryPhotos() {
+    if (!galleryPending.length) {
+      toast.error("Escolha uma imagem válida.");
+      return;
+    }
+    setSavingKey("gallery");
+    try {
+      const uploaded: string[] = [];
+      for (const pending of galleryPending) {
+        uploaded.push(await uploadImage(pending.file));
+      }
+      const nextGallery = [...gallery, ...uploaded];
+      await saveProfessionalPhotos(coverPhoto, nextGallery);
+      setGallery(nextGallery);
+      galleryPending.forEach((item) => URL.revokeObjectURL(item.preview));
+      setGalleryPending([]);
+      toast.success(uploaded.length === 1 ? "Foto publicada com sucesso." : "Fotos publicadas com sucesso.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível enviar agora. Tente novamente.");
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
+  async function removeProfilePhoto() {
+    setSavingKey("profile-remove");
+    try {
+      await saveUserImage(null);
+      setProfilePhoto(null);
+      toast.success("Sua foto foi removida.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível remover agora. Tente novamente.");
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
+  async function removeCoverPhoto() {
+    setSavingKey("cover-remove");
+    try {
+      await saveProfessionalPhotos(null, gallery);
+      setCoverPhoto(null);
+      toast.success("Capa removida.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível remover agora. Tente novamente.");
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
+  async function removeGalleryPhoto(url: string) {
+    const nextGallery = gallery.filter((item) => item !== url);
+    setSavingKey(url);
+    try {
+      await saveProfessionalPhotos(coverPhoto, nextGallery);
+      setGallery(nextGallery);
+      toast.success("Foto removida.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível remover agora. Tente novamente.");
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
+  function removePendingGallery(index: number) {
+    setGalleryPending((current) => {
+      const item = current[index];
+      if (item) URL.revokeObjectURL(item.preview);
+      return current.filter((_, currentIndex) => currentIndex !== index);
+    });
   }
 
   if (loading) {
     return (
-      <div className="premium-card premium-enter" style={{ borderRadius: 8, padding: 24 }}>
-        <div className="premium-skeleton" style={{ height: 24, width: 220, borderRadius: 999 }} />
-        <div className="premium-skeleton" style={{ height: 12, width: "70%", borderRadius: 999, marginTop: 14 }} />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="premium-empty-state premium-enter" style={{ borderRadius: 8, padding: 32, color: "#aaa" }}>
-        {error}
+      <div className="professional-premium-page">
+        <div className="premium-section-card">
+          <div className="premium-skeleton" style={{ height: 28, width: 220, borderRadius: 999 }} />
+          <div className="premium-skeleton" style={{ height: 180, width: "100%", borderRadius: 22, marginTop: 20 }} />
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", marginBottom: 4 }}>Portfólio de fotos</h1>
-        <p style={{ color: "#666", fontSize: 14 }}>Gerencie fotos reais salvas no Supabase. A foto de capa aparece nos resultados de busca.</p>
-      </div>
+    <div className="professional-premium-page">
+      <PremiumHeroCard
+        eyebrow="Fotos profissionais"
+        title={<>Fotos, <span className="gold">capa</span> e galeria</>}
+        subtitle="Separe a imagem principal, a capa do anúncio e as fotos recentes que ajudam clientes a confiar no seu perfil."
+        illustration="camera"
+      />
 
-      <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-        style={{
-          border: `2px dashed ${dragging ? "#cc0000" : "#2a2a2a"}`,
-          borderRadius: 18,
-          padding: "36px 24px",
-          textAlign: "center",
-          cursor: uploading ? "wait" : "pointer",
-          background: dragging ? "rgba(204,0,0,0.04)" : "#0d0d0d",
-          transition: "all 0.2s",
-          marginBottom: 28,
-          opacity: uploading ? 0.75 : 1,
-        }}
-      >
-        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={handleInputChange} disabled={uploading} />
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={dragging ? "#cc0000" : "#333"} strokeWidth="1.5" style={{ margin: "0 auto 12px" }}>
-          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-          <polyline points="17 8 12 3 7 8" />
-          <line x1="12" y1="3" x2="12" y2="15" />
-        </svg>
-        <div style={{ color: dragging ? "#cc0000" : "#555", fontSize: 14, fontWeight: 600 }}>
-          {uploading ? "Enviando fotos..." : dragging ? "Solte as fotos aqui" : "Arraste fotos ou clique para selecionar"}
-        </div>
-        <div style={{ color: "#333", fontSize: 12, marginTop: 4 }}>
-          JPG, PNG ou WEBP - máximo 12 fotos, 5 MB cada
-        </div>
-        <div style={{ marginTop: 14 }}>
-          <span style={{ padding: "10px 20px", background: "rgba(212,168,67,0.12)", border: "1px solid rgba(212,168,67,0.32)", borderRadius: 12, color: "#f5d78c", fontSize: 13, fontWeight: 800 }}>
-            Selecionar arquivos
-          </span>
-        </div>
-      </div>
+      <PremiumSection eyebrow="Imagem principal" title="Foto de perfil" description="Essa é a imagem principal do seu perfil.">
+        <MediaEditor
+          icon={<UserRound size={34} />}
+          currentUrl={profilePending?.preview ?? profilePhoto}
+          emptyLabel="Nenhuma foto de perfil publicada."
+          primaryLabel={profilePhoto ? "Trocar foto" : "Adicionar foto"}
+          removeLabel="Remover foto"
+          inputRef={profileInputRef}
+          accept="image/jpeg,image/png,image/webp"
+          onPick={() => profileInputRef.current?.click()}
+          onInput={(event) => handleSingleInput("profile", event)}
+          onPublish={publishProfilePhoto}
+          onRemove={profilePhoto ? removeProfilePhoto : undefined}
+          pending={Boolean(profilePending)}
+          saving={savingKey === "profile" || savingKey === "profile-remove"}
+        />
+      </PremiumSection>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <span style={{ color: "#555", fontSize: 13 }}>{photos.length}/12 fotos</span>
-        {photos.length > 0 && (
-          <button
-            onClick={() => void persistPhotos(photos, "Ordem salva!")}
-            disabled={saving}
-            style={{ padding: "7px 18px", background: saving ? "#8a0000" : "#cc0000", border: "none", borderRadius: 8, color: "#fff", fontSize: 13, fontWeight: 700, cursor: saving ? "wait" : "pointer" }}
-          >
-            {saving ? "Salvando..." : "Salvar ordem"}
-          </button>
-        )}
-      </div>
+      <PremiumSection eyebrow="Topo do anúncio" title="Foto de capa" description="Essa imagem aparece no topo do seu anúncio e nos cards de listagem.">
+        <MediaEditor
+          icon={<ImageIcon size={34} />}
+          currentUrl={coverPending?.preview ?? coverPhoto}
+          emptyLabel="Nenhuma capa publicada."
+          primaryLabel={coverPhoto ? "Trocar capa" : "Adicionar capa"}
+          removeLabel="Remover capa"
+          inputRef={coverInputRef}
+          accept="image/jpeg,image/png,image/webp"
+          onPick={() => coverInputRef.current?.click()}
+          onInput={(event) => handleSingleInput("cover", event)}
+          onPublish={publishCoverPhoto}
+          onRemove={coverPhoto ? removeCoverPhoto : undefined}
+          pending={Boolean(coverPending)}
+          saving={savingKey === "cover" || savingKey === "cover-remove"}
+        />
+      </PremiumSection>
 
-      {photos.length === 0 ? (
-        <div style={{ background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: "48px 24px", textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>Foto</div>
-          <div style={{ color: "#555", fontSize: 14 }}>Nenhuma foto adicionada ainda.</div>
-          <div style={{ color: "#333", fontSize: 13, marginTop: 4 }}>Adicione fotos do seu trabalho para atrair mais clientes.</div>
-        </div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-          {photos.map((photo, idx) => (
-            <div key={photo.id} style={{ position: "relative", borderRadius: 10, overflow: "hidden", border: `2px solid ${photo.cover ? "#cc0000" : "#1e1e1e"}`, background: "#111", aspectRatio: "4/5" }}>
-              <img src={photo.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-
-              {photo.cover && (
-                <div style={{ position: "absolute", top: 8, left: 8, padding: "3px 8px", background: "#cc0000", borderRadius: 20, fontSize: 10, fontWeight: 700, color: "#fff" }}>
-                  CAPA
-                </div>
-              )}
-
-              <div style={{ position: "absolute", top: 8, right: 8, width: 22, height: 22, background: "rgba(0,0,0,0.7)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#ccc", fontWeight: 700 }}>
-                {idx + 1}
-              </div>
-
-              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 50%)", display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: 8, gap: 4 }}>
-                <div style={{ display: "flex", gap: 4, justifyContent: "center", marginBottom: 4 }}>
-                  <button onClick={() => moveUp(idx)} disabled={idx === 0}
-                    style={{ padding: "4px 8px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: idx === 0 ? "#444" : "#ccc", fontSize: 11, cursor: idx === 0 ? "default" : "pointer" }}>
-                    Ant.
-                  </button>
-                  <button onClick={() => moveDown(idx)} disabled={idx === photos.length - 1}
-                    style={{ padding: "4px 8px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: idx === photos.length - 1 ? "#444" : "#ccc", fontSize: 11, cursor: idx === photos.length - 1 ? "default" : "pointer" }}>
-                    Prox.
-                  </button>
-                </div>
-
-                <div style={{ display: "flex", gap: 4 }}>
-                  {!photo.cover && (
-                    <button onClick={() => setCover(photo.id)}
-                      style={{ flex: 1, padding: "5px 4px", background: "rgba(204,0,0,0.15)", border: "1px solid rgba(204,0,0,0.4)", borderRadius: 6, color: "#cc6666", fontSize: 10, cursor: "pointer", fontWeight: 600 }}>
-                      Def. capa
-                    </button>
-                  )}
-                  <button onClick={() => removePhoto(photo.id)}
-                    style={{ flex: 1, padding: "5px 4px", background: "rgba(80,0,0,0.2)", border: "1px solid rgba(150,0,0,0.3)", borderRadius: 6, color: "#cc4444", fontSize: 10, cursor: "pointer" }}>
-                    Remover
-                  </button>
-                </div>
-              </div>
+      <PremiumSection eyebrow="Portfólio" title="Galeria de fotos" description="Adicione fotos recentes para aumentar a confiança dos clientes.">
+        <section className="premium-card" style={{ padding: 18 }}>
+          <div className="premium-upload-zone" style={{ padding: 22, cursor: "pointer" }} onClick={() => galleryInputRef.current?.click()}>
+            <input ref={galleryInputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={handleGalleryInput} />
+            <div style={{ display: "grid", placeItems: "center", gap: 10, textAlign: "center" }}>
+              <Images size={36} color="var(--elite-gold-light)" />
+              <strong style={{ color: "#fff" }}>Postar fotos</strong>
+              <span style={{ color: "var(--elite-text-muted)", fontSize: 13 }}>JPG, PNG ou WebP. Até {MAX_GALLERY} fotos, {formatSize(MAX_IMAGE_BYTES)} cada.</span>
             </div>
-          ))}
+          </div>
+
+          {galleryPending.length ? (
+            <div style={{ marginTop: 18 }}>
+              <p className="premium-eyebrow">Preview antes de publicar</p>
+              <PhotoGrid
+                items={galleryPending.map((item) => item.preview)}
+                savingKey={savingKey}
+                onRemove={(url) => removePendingGallery(galleryPending.findIndex((item) => item.preview === url))}
+              />
+              <button type="button" onClick={publishGalleryPhotos} disabled={savingKey === "gallery"} className="premium-button" style={{ width: "100%", marginTop: 14 }}>
+                {savingKey === "gallery" ? <Loader2 size={18} className="spin" /> : <UploadCloud size={18} />}
+                {savingKey === "gallery" ? "Enviando..." : "Publicar fotos"}
+              </button>
+            </div>
+          ) : null}
+
+          <div style={{ marginTop: 22, display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+            <div>
+              <p className="premium-eyebrow">Fotos publicadas</p>
+              <p style={{ margin: "8px 0 0", color: "var(--elite-text-muted)", fontSize: 13 }}>{gallery.length}/{MAX_GALLERY} fotos na galeria</p>
+            </div>
+            <button type="button" onClick={() => galleryInputRef.current?.click()} className="premium-button-secondary">
+              <Camera size={17} />
+              Adicionar
+            </button>
+          </div>
+
+          {gallery.length ? (
+            <PhotoGrid items={gallery} savingKey={savingKey} onRemove={removeGalleryPhoto} />
+          ) : (
+            <div className="premium-empty-state" style={{ marginTop: 18 }}>
+              Nenhuma foto de galeria publicada ainda.
+            </div>
+          )}
+        </section>
+      </PremiumSection>
+    </div>
+  );
+}
+
+function MediaEditor({
+  icon,
+  currentUrl,
+  emptyLabel,
+  primaryLabel,
+  removeLabel,
+  inputRef,
+  accept,
+  onPick,
+  onInput,
+  onPublish,
+  onRemove,
+  pending,
+  saving,
+}: {
+  icon: ReactNode;
+  currentUrl: string | null;
+  emptyLabel: string;
+  primaryLabel: string;
+  removeLabel: string;
+  inputRef: RefObject<HTMLInputElement | null>;
+  accept: string;
+  onPick: () => void;
+  onInput: (event: ChangeEvent<HTMLInputElement>) => void;
+  onPublish: () => void;
+  onRemove?: () => void;
+  pending: boolean;
+  saving: boolean;
+}) {
+  return (
+    <section className="premium-card" style={{ padding: 18 }}>
+      <input ref={inputRef} type="file" accept={accept} hidden onChange={onInput} />
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 220px) minmax(0, 1fr)", gap: 18, alignItems: "center" }}>
+        <div style={{ aspectRatio: "4 / 5", borderRadius: 22, border: "1px solid var(--elite-border-soft)", overflow: "hidden", background: "rgba(255,255,255,0.035)", display: "grid", placeItems: "center" }}>
+          {currentUrl ? <img src={currentUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ color: "var(--elite-gold-light)" }}>{icon}</span>}
         </div>
-      )}
-
-      <div style={{ marginTop: 28, background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: 18 }}>
-        <div style={{ fontSize: 12, color: "#555", fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>Dicas para melhores resultados</div>
-        <ul style={{ margin: 0, paddingLeft: 16 }}>
-          {[
-            "Use fotos em alta resolução (mínimo 800x1000px)",
-            "Prefira iluminação natural ou estúdio profissional",
-            "Varie os looks: editorial, casual, fitness, etc.",
-            "A foto de capa é a mais importante - escolha sua melhor foto",
-            "Mantenha o portfólio atualizado com trabalhos recentes",
-          ].map((tip) => (
-            <li key={tip} style={{ color: "#444", fontSize: 12, marginBottom: 4 }}>{tip}</li>
-          ))}
-        </ul>
+        <div>
+          <p style={{ margin: 0, color: currentUrl ? "var(--elite-success)" : "var(--elite-text-muted)", fontWeight: 900 }}>
+            {pending ? "Preview pronto para publicar." : currentUrl ? "Imagem publicada." : emptyLabel}
+          </p>
+          <p style={{ margin: "8px 0 0", color: "var(--elite-text-muted)", lineHeight: 1.6, fontSize: 14 }}>
+            Escolha uma imagem nítida em JPG, PNG ou WebP. Você pode conferir o preview antes de publicar.
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 18 }}>
+            <button type="button" onClick={onPick} disabled={saving} className="premium-button-secondary">
+              <UploadCloud size={17} />
+              {primaryLabel}
+            </button>
+            {pending ? (
+              <button type="button" onClick={onPublish} disabled={saving} className="premium-button">
+                {saving ? <Loader2 size={17} className="spin" /> : <Camera size={17} />}
+                {saving ? "Enviando..." : "Publicar"}
+              </button>
+            ) : null}
+            {onRemove ? (
+              <button type="button" onClick={onRemove} disabled={saving} className="premium-button-secondary">
+                {saving ? <Loader2 size={17} className="spin" /> : <Trash2 size={17} />}
+                {removeLabel}
+              </button>
+            ) : null}
+          </div>
+        </div>
       </div>
+      <style jsx>{`
+        .spin {
+          animation: spin 900ms linear infinite;
+        }
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+        @media (max-width: 640px) {
+          section > div {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+    </section>
+  );
+}
 
-      <style>{`
-        @media (max-width: 600px) {
-          div[style*="minmax(200px"] {
-            grid-template-columns: repeat(2, 1fr) !important;
+function PhotoGrid({ items, onRemove, savingKey }: { items: string[]; onRemove: (url: string) => void; savingKey: string | null }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12, marginTop: 14 }}>
+      {items.map((url, index) => (
+        <div key={`${url}-${index}`} style={{ position: "relative", aspectRatio: "4 / 5", borderRadius: 18, overflow: "hidden", border: "1px solid var(--elite-border-soft)", background: "rgba(255,255,255,0.04)" }}>
+          <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <button
+            type="button"
+            onClick={() => onRemove(url)}
+            disabled={savingKey === url}
+            aria-label="Remover foto"
+            style={{ position: "absolute", right: 8, top: 8, width: 36, height: 36, borderRadius: 12, border: "1px solid rgba(255,255,255,0.16)", background: "rgba(0,0,0,0.62)", color: "#fff", display: "grid", placeItems: "center", cursor: "pointer" }}
+          >
+            {savingKey === url ? <Loader2 size={16} className="spin" /> : <Trash2 size={16} />}
+          </button>
+        </div>
+      ))}
+      <style jsx>{`
+        .spin {
+          animation: spin 900ms linear infinite;
+        }
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
           }
         }
       `}</style>

@@ -66,19 +66,29 @@ function buildCompleteness(professional: {
   docVersoUrl: string | null;
   verificationUrl: string | null;
   kycSessionId: string | null;
-  user: { premiumUntil: Date | null; phoneVerified: boolean };
+  presentationVideoUrl?: string | null;
+  photos?: { url: string; cover: boolean }[];
+  schedule?: { available: boolean }[];
+  user: { premiumUntil: Date | null; phoneVerified: boolean; image?: string | null; stories?: { id: string }[] };
 }) {
+  const profilePhoto = professional.user.image ?? null;
+  const coverPhoto = professional.photos?.find((photo) => photo.cover)?.url ?? professional.image;
+  const galleryCount = professional.photos?.filter((photo) => !photo.cover).length ?? professional.galleryUrls.length;
+  const hasSchedule = Boolean(professional.schedule?.some((day) => day.available) || (professional.horarioInicio && professional.horarioFim));
   const checks = [
     { ok: professional.displayName, label: "nome artístico" },
     { ok: professional.bio, label: "bio" },
     { ok: professional.city && professional.state, label: "cidade/local" },
     { ok: professional.whatsapp || professional.phone || professional.user.phoneVerified, label: "telefone/contato" },
-    { ok: professional.image, label: "foto de perfil" },
-    { ok: professional.galleryUrls.length > 2, label: "fotos" },
+    { ok: profilePhoto, label: "foto de perfil" },
+    { ok: coverPhoto, label: "foto de capa" },
+    { ok: galleryCount >= 3, label: "galeria" },
+    { ok: professional.presentationVideoUrl, label: "video" },
+    { ok: (professional.user.stories?.length ?? 0) > 0, label: "stories" },
     { ok: professional.priceMin || professional.pricePerHour, label: "valores" },
     { ok: professional.attendanceTypes.length > 0, label: "tipo de atendimento" },
     { ok: professional.services.length > 0, label: "serviços" },
-    { ok: professional.horarioInicio && professional.horarioFim, label: "agenda" },
+    { ok: hasSchedule, label: "agenda" },
     { ok: professional.docFrenteUrl && professional.docVersoUrl, label: "documentos" },
     { ok: professional.verificationUrl || professional.kycSessionId, label: "verificação" },
     { ok: professional.user.premiumUntil && professional.user.premiumUntil > new Date(), label: "plano ativo" },
@@ -103,7 +113,17 @@ export default async function ProfissionalDashPage() {
   const professional = await prisma.professional.findUnique({
     where: { userId: access.user.id },
     include: {
-      user: { select: { premiumUntil: true, phoneVerified: true } },
+      user: {
+        select: {
+          premiumUntil: true,
+          phoneVerified: true,
+          image: true,
+          stories: {
+            where: { expiresAt: { gt: now } },
+            select: { id: true },
+          },
+        },
+      },
       appointments: {
         orderBy: { date: "desc" },
         take: 12,
@@ -124,13 +144,167 @@ export default async function ProfissionalDashPage() {
     redirect(ACCOUNT_ROUTES.onboardingAcompanhante);
   }
 
-  const allPhotosCount = professional.photos.length || professional.galleryUrls.length + (professional.image ? 1 : 0);
+  const profilePhoto = professional.user.image ?? null;
+  const coverPhoto = professional.photos.find((photo) => photo.cover)?.url ?? professional.image ?? null;
+  const galleryCount = professional.photos.filter((photo) => !photo.cover).length || professional.galleryUrls.filter((url) => url !== coverPhoto).length;
+  const allPhotosCount = (coverPhoto ? 1 : 0) + galleryCount;
+  const activeStoriesCount = professional.user.stories.length;
+  const hasPresentationVideo = Boolean(professional.presentationVideoUrl && professional.presentationVideoStatus !== "REJECTED");
+  const hasSchedule = Boolean(professional.schedule.some((day) => day.available) || (professional.horarioInicio && professional.horarioFim) || professional.diasDisponiveis.length > 0);
+  const hasApprovedVerification = professional.verified || professional.kycStatus === "APPROVED" || professional.docStatus === "APPROVED" || professional.verifStatus === "APPROVED";
   const completeness = buildCompleteness(professional);
   const hasActivePlan = Boolean(professional.user.premiumUntil && professional.user.premiumUntil > now);
   const premiumDaysLeft = daysUntil(professional.user.premiumUntil, now);
   const isBoostActive = Boolean(professional.boostActive && (!professional.boostUntil || professional.boostUntil > now));
   const hasListingPhoneBenefit = Boolean(professional.listingPhoneUntil && professional.listingPhoneUntil > now);
   const isVisible = professional.status === "ACTIVE" && (!professional.pauseUntil || professional.pauseUntil <= now);
+  const smartCards: Array<Parameters<typeof PremiumActionCard>[0] & { id: string }> = [];
+  const addSmartCard = (card: Parameters<typeof PremiumActionCard>[0] & { id: string }) => smartCards.push(card);
+
+  if (!profilePhoto) {
+    addSmartCard({
+      id: "profile-photo",
+      href: "/profissional/fotos",
+      icon: "profile",
+      title: "Falta foto de perfil",
+      description: "Adicione uma foto principal para deixar seu perfil mais confiável para os clientes.",
+      buttonLabel: "Adicionar foto",
+      badge: "Pendente",
+    });
+  }
+  if (!coverPhoto) {
+    addSmartCard({
+      id: "cover-photo",
+      href: "/profissional/fotos",
+      icon: "image",
+      title: "Falta foto de capa",
+      description: "Escolha uma capa forte para destacar seu anúncio na plataforma.",
+      buttonLabel: "Adicionar capa",
+      badge: "Pendente",
+    });
+  }
+  if (galleryCount < 3) {
+    addSmartCard({
+      id: "gallery",
+      href: "/profissional/fotos",
+      icon: "camera",
+      title: "Poucas fotos cadastradas",
+      description: "Adicione mais fotos recentes para aumentar a confiança no seu perfil.",
+      buttonLabel: "Postar fotos",
+      badge: "Recomendado",
+    });
+  }
+  if (!hasPresentationVideo) {
+    addSmartCard({
+      id: "video",
+      href: "/profissional/postar",
+      icon: "video",
+      title: "Adicione um vídeo de apresentação",
+      description: "Vídeos ajudam clientes a conhecerem melhor seu perfil.",
+      buttonLabel: "Postar vídeo",
+      badge: "Recomendado",
+    });
+  }
+  if (activeStoriesCount === 0) {
+    addSmartCard({
+      id: "story",
+      href: "/profissional/stories",
+      icon: "story",
+      title: "Publique um story",
+      description: "Stories mantêm seu perfil ativo e aparecem para clientes na área de conteúdo recente.",
+      buttonLabel: "Postar story",
+      badge: "Recomendado",
+    });
+  }
+  if (!hasSchedule) {
+    addSmartCard({
+      id: "schedule",
+      href: "/profissional/agenda",
+      icon: "calendar",
+      title: "Atualize sua agenda",
+      description: "Informe seus horários e disponibilidade para melhorar a experiência dos clientes.",
+      buttonLabel: "Atualizar agenda",
+      badge: "Pendente",
+    });
+  }
+  if (!professional.bio || professional.bio.trim().length < 80) {
+    addSmartCard({
+      id: "bio",
+      href: "/profissional/perfil",
+      icon: "profile",
+      title: "Complete sua descrição",
+      description: "Uma descrição clara ajuda clientes a entenderem seu estilo de atendimento.",
+      buttonLabel: "Escrever bio",
+      badge: "Pendente",
+    });
+  }
+  if (!hasApprovedVerification) {
+    addSmartCard({
+      id: "verification",
+      href: ACCOUNT_ROUTES.analiseAcompanhante,
+      icon: "shield",
+      title: "Verificação pendente",
+      description: "Acompanhe sua análise para manter o perfil com sinal de confiança.",
+      buttonLabel: "Ver status",
+      badge: "Análise",
+    });
+  } else {
+    addSmartCard({
+      id: "verification-approved",
+      href: "/profissional/perfil",
+      icon: "shield",
+      title: "Perfil aprovado",
+      description: "Sua verificação está registrada. Mantenha seus dados sempre atualizados.",
+      buttonLabel: "Revisar perfil",
+      badge: "Completo",
+    });
+  }
+  if (professional.status === "ACTIVE") {
+    addSmartCard({
+      id: "active",
+      href: `/profissionais/${professional.slug}`,
+      icon: "star",
+      title: "Perfil ativo",
+      description: "Seu anúncio está liberado para aparecer para clientes.",
+      buttonLabel: "Ver perfil",
+      badge: "Ativo",
+    });
+  }
+  if (!hasActivePlan) {
+    addSmartCard({
+      id: "plan",
+      href: "/profissional/planos",
+      icon: "diamond",
+      title: "Plano básico",
+      description: "Planos e destaques aumentam a visibilidade na cidade.",
+      buttonLabel: "Conhecer planos",
+      badge: "Visibilidade",
+    });
+  }
+  if (!professional.featured && !isBoostActive) {
+    addSmartCard({
+      id: "highlight",
+      href: "/profissional/planos",
+      icon: "crown",
+      title: "Destaque disponível",
+      description: "Use destaque ou boost para melhorar sua posição na listagem.",
+      buttonLabel: "Ver opções",
+      badge: "Oportunidade",
+    });
+  }
+
+  const checklist = [
+    { label: "Foto de perfil", href: "/profissional/fotos", done: Boolean(profilePhoto), status: profilePhoto ? "completo" : "pendente" },
+    { label: "Foto de capa", href: "/profissional/fotos", done: Boolean(coverPhoto), status: coverPhoto ? "completo" : "pendente" },
+    { label: "Galeria", href: "/profissional/fotos", done: galleryCount >= 3, status: galleryCount >= 3 ? "completo" : "pendente" },
+    { label: "Vídeo", href: "/profissional/postar", done: hasPresentationVideo, status: hasPresentationVideo ? "completo" : "recomendado" },
+    { label: "Stories", href: "/profissional/stories", done: activeStoriesCount > 0, status: activeStoriesCount > 0 ? "completo" : "recomendado" },
+    { label: "Agenda", href: "/profissional/agenda", done: hasSchedule, status: hasSchedule ? "completo" : "pendente" },
+    { label: "Descrição", href: "/profissional/perfil", done: Boolean(professional.bio && professional.bio.trim().length >= 80), status: professional.bio && professional.bio.trim().length >= 80 ? "completo" : "pendente" },
+    { label: "Verificação", href: ACCOUNT_ROUTES.analiseAcompanhante, done: hasApprovedVerification, status: hasApprovedVerification ? "completo" : "pendente" },
+    { label: "Plano ativo", href: "/profissional/planos", done: hasActivePlan, status: hasActivePlan ? "completo" : "recomendado" },
+  ];
+  const checklistProgress = Math.round((checklist.filter((item) => item.done).length / checklist.length) * 100);
 
   const cityRanking = professional.city
     ? await prisma.professional.findMany({
@@ -277,7 +451,7 @@ export default async function ProfissionalDashPage() {
       id: "video-approved",
       title: "Vídeo aprovado",
       description: "Seu conteúdo foi liberado. Continue renovando sua mídia para manter o perfil competitivo.",
-      href: "/profissional/configuracoes",
+      href: "/profissional/postar",
       actionLabel: "Ver vídeo",
       tone: "success",
       dismissible: true,
@@ -288,7 +462,7 @@ export default async function ProfissionalDashPage() {
       id: "video-rejected",
       title: "Vídeo recusado",
       description: professional.presentationVideoRejectReason ?? "Envie um novo vídeo seguindo as regras de conteúdo da plataforma.",
-      href: "/profissional/configuracoes",
+      href: "/profissional/postar",
       actionLabel: "Enviar novamente",
       tone: "danger",
       icon: "alert",
@@ -373,14 +547,14 @@ export default async function ProfissionalDashPage() {
   }
 
   const resources = [
-    { label: "Perfil premium", active: hasActivePlan, description: "Sinal comercial baseado em premiumUntil da conta." },
-    { label: "Destaque na cidade", active: professional.featured, description: "Aparece acima de perfis comuns quando o destaque está ativo." },
-    { label: "Ocultar idade", active: professional.hideAge, description: "Controle de privacidade salvo no perfil." },
-    { label: "Ocultar telefone", active: professional.hidePhone, description: "Telefone fica oculto publicamente." },
-    { label: "Impulsionamento", active: isBoostActive, description: "Boost ativo enquanto não estiver vencido." },
-    { label: "Telefone na listagem", active: Boolean(hasListingPhoneBenefit && !professional.hidePhone && (professional.phone || professional.whatsapp)), description: "Exige benefício pago ativo e respeita a privacidade manual." },
-    { label: "Galeria premium", active: hasActivePlan && allPhotosCount >= 6, description: "Preparado a partir de plano ativo e galeria robusta." },
-    { label: "Stories/vídeos", active: Boolean(professional.presentationVideoUrl), description: "Vídeo de apresentação existente no perfil." },
+    { label: "Perfil premium", active: hasActivePlan, description: "Plano ativo para ampliar visibilidade e recursos comerciais." },
+    { label: "Destaque na cidade", active: professional.featured, description: "Ajuda seu perfil a ganhar mais presença na listagem." },
+    { label: "Ocultar idade", active: professional.hideAge, description: "Sua idade fica fora da exibição pública." },
+    { label: "Ocultar telefone", active: professional.hidePhone, description: "Seu telefone não aparece publicamente quando esta opção está ativa." },
+    { label: "Impulsionamento", active: isBoostActive, description: "Aumenta temporariamente sua presença para clientes." },
+    { label: "Telefone na listagem", active: Boolean(hasListingPhoneBenefit && !professional.hidePhone && (professional.phone || professional.whatsapp)), description: "Mostra seu contato na listagem quando o recurso estiver ativo." },
+    { label: "Galeria premium", active: hasActivePlan && allPhotosCount >= 6, description: "Galeria mais completa para aumentar confiança no perfil." },
+    { label: "Stories/vídeos", active: Boolean(professional.presentationVideoUrl || activeStoriesCount > 0), description: "Conteúdo recente ajuda clientes a conhecerem melhor seu perfil." },
   ];
 
   return (
@@ -394,39 +568,40 @@ export default async function ProfissionalDashPage() {
         <PremiumIllustration kind="growth" />
       </section>
 
-      <PremiumActionCard
-        href="/profissional/perfil"
-        icon="profile"
-        title="Seu perfil pode receber mais contatos"
-        description="Complete foto de perfil, fotos, documentos e verificação."
-        buttonLabel="Melhorar perfil"
-      />
-      <PremiumActionCard
-        href="/profissional/planos"
-        icon="diamond"
-        title="Seu perfil está no modo básico"
-        description="Planos e destaques aumentam a visibilidade na cidade e ajudam clientes a encontrarem seu anúncio."
-        buttonLabel="Conhecer planos"
-      />
-      <PremiumActionCard
-        href="/profissional/perfil"
-        icon="shield"
-        title="Verificação aprovada"
-        description="Seu perfil tem um sinal importante de confiança. Mantenha suas informações atualizadas."
-        buttonLabel="Revisar perfil"
-      />
-      <PremiumActionCard
-        href="/profissional/fotos"
-        icon="camera"
-        title="Poucas fotos cadastradas"
-        description="Adicione uma capa forte e uma galeria recente para aumentar confiança e conversão."
-        buttonLabel="Postar fotos"
-      />
+      {smartCards.slice(0, 8).map(({ id, ...card }) => (
+        <PremiumActionCard key={id} {...card} />
+      ))}
+
+      <section className="premium-section-card">
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div>
+            <p className="premium-eyebrow">Seu perfil profissional</p>
+            <h2 className="premium-section-title">Perfil {checklistProgress}% completo</h2>
+            <p className="premium-action-text" style={{ marginTop: 10 }}>
+              Complete os itens essenciais para melhorar confiança, visibilidade e conversão.
+            </p>
+          </div>
+          <span className="premium-badge">{checklistProgress === 100 ? "Perfil completo" : "Pendências reais"}</span>
+        </div>
+        <div style={{ height: 10, overflow: "hidden", borderRadius: 999, background: "rgba(255,255,255,0.10)", marginTop: 18 }}>
+          <div style={{ width: `${checklistProgress}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#D6A83A,#F5D46B)" }} />
+        </div>
+        <div className="premium-grid premium-grid-3" style={{ marginTop: 18 }}>
+          {checklist.map((item) => (
+            <Link key={item.label} href={item.href} className="premium-check-card" style={{ textDecoration: "none", justifyContent: "space-between" }}>
+              <span>{item.label}</span>
+              <span style={{ color: item.done ? "var(--elite-success)" : item.status === "pendente" ? "var(--elite-warning)" : "var(--elite-gold-light)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em" }}>
+                {item.status}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       {alerts.length > 4 ? <ProfessionalAlertStack alerts={alerts.slice(4, 8)} /> : null}
 
       <ProfessionalMainCard
-        image={professional.image}
+        image={profilePhoto}
         displayName={professional.displayName}
         status={professional.status}
         city={professional.city}

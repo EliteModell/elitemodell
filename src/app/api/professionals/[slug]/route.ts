@@ -138,6 +138,12 @@ const updateSchema = z.object({
   priceMax: z.number().positive().optional(),
   image: z.string().url().nullable().optional(),
   galleryUrls: z.array(z.string().url()).max(12).optional(),
+  photos: z.array(z.object({
+    url: z.string().url(),
+    cover: z.boolean().optional(),
+    order: z.number().int().min(0).optional(),
+    caption: z.string().max(160).nullable().optional(),
+  })).max(12).optional(),
   specialties: z.array(z.string()).optional(),
   hidePhone: z.boolean().optional(),
   hideAge: z.boolean().optional(),
@@ -158,12 +164,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
   try {
     const body = await req.json();
     const data = updateSchema.parse(body);
-    const { specialties, presentationVideoUrl, phone, whatsapp, ...profileData } = data;
+    const { specialties, presentationVideoUrl, phone, whatsapp, photos, ...profileData } = data;
+    const normalizedPhotos = photos?.map((photo, index) => ({ ...photo, order: photo.order ?? index })) ?? null;
+    const coverPhoto = normalizedPhotos?.find((photo) => photo.cover) ?? null;
     const updateData: Prisma.ProfessionalUpdateInput = {
       ...profileData,
       ...(phone !== undefined && { phone: phone ? normalizePhone(phone) : null }),
       ...(whatsapp !== undefined && { whatsapp: whatsapp ? normalizePhone(whatsapp) : null }),
     };
+
+    if (normalizedPhotos) {
+      updateData.image = coverPhoto?.url ?? null;
+      updateData.galleryUrls = normalizedPhotos
+        .filter((photo) => photo.url !== coverPhoto?.url)
+        .map((photo) => photo.url);
+    }
 
     if (presentationVideoUrl !== undefined) {
       updateData.presentationVideoUrl = presentationVideoUrl;
@@ -175,6 +190,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
       where: { slug },
       data: {
         ...updateData,
+        ...(normalizedPhotos && {
+          photos: {
+            deleteMany: {},
+            create: normalizedPhotos.map((photo, index) => ({
+              url: photo.url,
+              caption: photo.caption ?? null,
+              cover: coverPhoto ? photo.url === coverPhoto.url : false,
+              order: index,
+            })),
+          },
+        }),
         ...(specialties !== undefined && {
           specialties: {
             deleteMany: {},

@@ -201,6 +201,7 @@ export async function GET(req: NextRequest) {
         verified: true, featured: true,
         boostActive: true, boostUntil: true,
         profileViews: true, contactClicks: true,
+        user: { select: { image: true } },
         photos:     { where: { cover: true }, take: 1 },
         specialties: true,
       },

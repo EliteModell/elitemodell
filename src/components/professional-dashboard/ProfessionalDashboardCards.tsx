@@ -215,7 +215,7 @@ export function RankingCard({ city, position }: { city: string | null; position:
 export function QuickPostCard() {
   const actions = [
     { label: "Postar foto", href: "/profissional/fotos", icon: ImagePlus },
-    { label: "Postar vídeo", href: "/profissional/configuracoes", icon: FileVideo },
+    { label: "Postar vídeo", href: "/profissional/postar", icon: FileVideo },
     { label: "Postar story", href: "/profissional/stories", icon: Camera },
     { label: "Atualizar agenda", href: "/profissional/agenda", icon: CalendarDays },
   ];

@@ -24,6 +24,9 @@ type ProfileForm = {
 };
 
 type MeResponse = {
+  image?: string | null;
+  premiumUntil?: string | null;
+  stories?: Array<{ id: string }>;
   professional?: {
     slug: string;
     displayName: string;
@@ -32,7 +35,15 @@ type MeResponse = {
     state: string;
     status?: string | null;
     verified?: boolean | null;
+    kycStatus?: string | null;
+    docStatus?: string | null;
+    verifStatus?: string | null;
     image?: string | null;
+    galleryUrls?: string[];
+    presentationVideoUrl?: string | null;
+    presentationVideoStatus?: string | null;
+    photos?: Array<{ id: string; url: string; cover: boolean; order: number }>;
+    schedule?: Array<{ dayOfWeek: number; available: boolean; startTime: string; endTime: string }>;
     phone?: string | null;
     whatsapp?: string | null;
     instagram?: string | null;
@@ -40,6 +51,12 @@ type MeResponse = {
     priceMin?: number | null;
     priceMax?: number | null;
   } | null;
+};
+
+type ProfileSignal = {
+  label: string;
+  done: boolean;
+  status: "completo" | "pendente" | "recomendado";
 };
 
 const emptyForm: ProfileForm = {
@@ -77,6 +94,7 @@ export default function EditarPerfilPage() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [profileStatus, setProfileStatus] = useState<string | null>(null);
   const [verified, setVerified] = useState(false);
+  const [profileSignals, setProfileSignals] = useState<ProfileSignal[]>([]);
   const [form, setForm] = useState<ProfileForm>(emptyForm);
 
   useEffect(() => {
@@ -93,10 +111,28 @@ export default function EditarPerfilPage() {
           setError("Nenhum perfil profissional encontrado para esta conta.");
           return;
         }
+        const coverPhoto = professional.photos?.find((photo) => photo.cover)?.url ?? professional.image ?? null;
+        const galleryCount = professional.photos?.filter((photo) => !photo.cover).length || (professional.galleryUrls ?? []).filter((url) => url !== coverPhoto).length;
+        const hasVideo = Boolean(professional.presentationVideoUrl && professional.presentationVideoStatus !== "REJECTED");
+        const hasStories = (data.stories?.length ?? 0) > 0;
+        const hasAgenda = Boolean(professional.schedule?.some((day) => day.available));
+        const hasVerification = Boolean(professional.verified || professional.kycStatus === "APPROVED" || professional.docStatus === "APPROVED" || professional.verifStatus === "APPROVED");
+        const hasPlan = Boolean(data.premiumUntil && new Date(data.premiumUntil) > new Date());
         setProfileSlug(professional.slug);
-        setProfileImage(professional.image ?? null);
+        setProfileImage(data.image ?? null);
         setProfileStatus(professional.status ?? null);
-        setVerified(Boolean(professional.verified));
+        setVerified(hasVerification);
+        setProfileSignals([
+          { label: "Foto de perfil", done: Boolean(data.image), status: data.image ? "completo" : "pendente" },
+          { label: "Foto de capa", done: Boolean(coverPhoto), status: coverPhoto ? "completo" : "pendente" },
+          { label: "Galeria", done: galleryCount >= 3, status: galleryCount >= 3 ? "completo" : "pendente" },
+          { label: "Vídeo", done: hasVideo, status: hasVideo ? "completo" : "recomendado" },
+          { label: "Stories", done: hasStories, status: hasStories ? "completo" : "recomendado" },
+          { label: "Agenda", done: hasAgenda, status: hasAgenda ? "completo" : "pendente" },
+          { label: "Descrição", done: Boolean(professional.bio && professional.bio.trim().length >= 80), status: professional.bio && professional.bio.trim().length >= 80 ? "completo" : "pendente" },
+          { label: "Verificação", done: hasVerification, status: hasVerification ? "completo" : "pendente" },
+          { label: "Plano ativo", done: hasPlan, status: hasPlan ? "completo" : "recomendado" },
+        ]);
         setForm({
           displayName: professional.displayName ?? "",
           bio: professional.bio ?? "",
@@ -167,6 +203,11 @@ export default function EditarPerfilPage() {
     return <div className="professional-premium-page"><div className="premium-section-card">{error}</div></div>;
   }
 
+  const profileProgress = profileSignals.length
+    ? Math.round((profileSignals.filter((item) => item.done).length / profileSignals.length) * 100)
+    : 0;
+  const statusBadges = profileSignals.filter((item) => !item.done);
+
   return (
     <div className="professional-premium-page premium-form">
       <PremiumHeroCard
@@ -195,7 +236,38 @@ export default function EditarPerfilPage() {
               <span className="premium-badge"><ShieldCheck size={14} /> Revisão manual</span>
               <span className="premium-badge"><Eye size={14} /> Visibilidade</span>
             </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+              {statusBadges.length ? statusBadges.slice(0, 6).map((item) => (
+                <span key={item.label} className="premium-badge" style={{ color: item.status === "pendente" ? "var(--elite-warning)" : "var(--elite-gold-light)" }}>
+                  {item.label === "Galeria" ? "Adicione mais fotos" : `${item.label} ${item.status}`}
+                </span>
+              )) : <span className="premium-badge" style={{ color: "var(--elite-success)" }}>Perfil completo</span>}
+            </div>
           </div>
+        </div>
+      </section>
+
+      <section className="premium-section-card">
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
+          <div>
+            <p className="premium-eyebrow">Seu perfil profissional</p>
+            <h2 className="premium-section-title">Perfil {profileProgress}% completo</h2>
+            <p className="premium-action-text" style={{ marginTop: 10 }}>Veja o que está completo e o que ainda merece atenção.</p>
+          </div>
+          <span className="premium-badge">{profileProgress === 100 ? "Perfil completo" : "Orientação"}</span>
+        </div>
+        <div style={{ height: 10, overflow: "hidden", borderRadius: 999, background: "rgba(255,255,255,0.10)", marginTop: 18 }}>
+          <div style={{ width: `${profileProgress}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#D6A83A,#F5D46B)" }} />
+        </div>
+        <div className="premium-grid premium-grid-3" style={{ marginTop: 18 }}>
+          {profileSignals.map((item) => (
+            <div key={item.label} className="premium-check-card" style={{ justifyContent: "space-between" }}>
+              <span>{item.label}</span>
+              <span style={{ color: item.done ? "var(--elite-success)" : item.status === "pendente" ? "var(--elite-warning)" : "var(--elite-gold-light)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em" }}>
+                {item.status}
+              </span>
+            </div>
+          ))}
         </div>
       </section>
 

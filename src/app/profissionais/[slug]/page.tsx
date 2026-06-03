@@ -69,6 +69,7 @@ type ApiProfessional = {
   verificationUrl?: string | null;
   verificationType?: string | null;
   createdAt: string;
+  user?: { name: string | null; image: string | null; createdAt: string };
 };
 
 type SimilarPro = {
@@ -266,9 +267,12 @@ export default function ProfissionalProfilePage() {
     );
   }
 
-  // Monta galeria: capa + galeria
-  const coverImage = pro.galleryUrls?.[0] ?? pro.image ?? "";
-  const allPhotos = [pro.image, ...(pro.galleryUrls ?? [])].filter(Boolean) as string[];
+  // Monta capa, avatar e galeria sem misturar os papéis das imagens.
+  const coverImage = pro.photos?.find((photo) => photo.cover)?.url ?? pro.image ?? pro.galleryUrls?.[0] ?? "";
+  const relationGallery = pro.photos?.filter((photo) => !photo.cover).map((photo) => photo.url) ?? [];
+  const legacyGallery = pro.galleryUrls ?? [];
+  const allPhotos = Array.from(new Set([coverImage, ...(relationGallery.length ? relationGallery : legacyGallery)].filter(Boolean))) as string[];
+  const profileImage = pro.user?.image ?? null;
   const fotosExibidas = galeriaFiltro === "videos" ? allPhotos.slice(0, 1) : allPhotos;
 
   // Serviços
@@ -348,9 +352,9 @@ export default function ProfissionalProfilePage() {
         <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 16px" }}>
           <div style={{ display: "flex", gap: 14, alignItems: "center", marginTop: -48, marginBottom: 16 }}>
             <div style={{ width: 88, height: 88, borderRadius: "50%", flexShrink: 0, border: `3px solid ${GOLD}`, overflow: "hidden", background: "#0b1420", boxShadow: `0 0 24px rgba(212,168,67,0.3)`, position: "relative", zIndex: 10 }}>
-              {pro.image ? (
+              {profileImage ? (
                 <Image
-                  src={pro.image}
+                  src={profileImage}
                   alt={pro.displayName}
                   fill
                   sizes="88px"

@@ -13,12 +13,14 @@ const updateSchema = z.object({
   city: z.string().min(2).max(80).optional(),
   state: z.string().min(2).max(40).optional(),
   document: z.string().optional(),
-  image: z.string().url().optional(),
+  image: z.string().url().nullable().optional(),
 });
 
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+
+  const now = new Date();
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -26,11 +28,20 @@ export async function GET() {
       id: true, name: true, email: true, image: true, phone: true, phoneVerified: true, phoneVerifiedAt: true,
       city: true, state: true, document: true, role: true, accountType: true, category: true, birthDate: true, verified: true, credits: true, premiumUntil: true,
       lgpdConsent: true, termsConsent: true,
+      stories: {
+        where: { expiresAt: { gt: now } },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, mediaUrl: true, mediaType: true, thumbnail: true, views: true, expiresAt: true, createdAt: true },
+      },
       createdAt: true, clientProfile: true, hostProfile: true, professional: {
         select: {
           id: true,
           slug: true,
           status: true,
+          verified: true,
+          kycStatus: true,
+          docStatus: true,
+          verifStatus: true,
           displayName: true,
           bio: true,
           city: true,
@@ -58,6 +69,14 @@ export async function GET() {
           priceMax: true,
           image: true,
           galleryUrls: true,
+          photos: {
+            orderBy: { order: "asc" },
+            select: { id: true, url: true, caption: true, cover: true, order: true, createdAt: true },
+          },
+          schedule: {
+            orderBy: { dayOfWeek: "asc" },
+            select: { id: true, dayOfWeek: true, startTime: true, endTime: true, available: true },
+          },
           specialties: { select: { name: true } },
           reviews: {
             orderBy: { createdAt: "desc" },

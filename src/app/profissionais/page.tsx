@@ -23,6 +23,7 @@ type ApiProfessional = {
   specialties: { id: string; name: string }[];
   photos: { id: string; url: string; cover: boolean }[];
   galleryUrls?: string[];
+  user?: { image: string | null };
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -313,6 +314,7 @@ function ProfessionalGridSkeleton() {
 function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: boolean }) {
   const photoCount = (pro.galleryUrls?.length ?? 0) + (pro.photos?.length ?? 0);
   const coverPhoto = pro.photos?.find((p) => p.cover)?.url ?? pro.image;
+  const profilePhoto = pro.user?.image ?? null;
   const specialtyNames = pro.specialties.map((s) => s.name);
 
   return (
@@ -362,10 +364,19 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
               {CATEGORY_LABELS[pro.escortCategory] ?? pro.escortCategory}
             </div>
           )}
+          <div style={{ position: "absolute", left: 14, bottom: -28, width: 64, height: 64, borderRadius: "50%", border: "3px solid #d4a843", overflow: "hidden", background: "#111", boxShadow: "0 10px 26px rgba(0,0,0,0.42)" }}>
+            {profilePhoto ? (
+              <Image src={profilePhoto} alt={pro.displayName} fill sizes="64px" style={{ objectFit: "cover", objectPosition: "top" }} />
+            ) : (
+              <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", color: "#d4a843", fontWeight: 900 }}>
+                {pro.displayName.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Info */}
-        <div style={{ padding: "16px" }}>
+        <div style={{ padding: "34px 16px 16px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
