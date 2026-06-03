@@ -121,8 +121,10 @@ export const authOptions: NextAuthOptions = {
             const role = metadataAccountType === "model" ? "HOST" : "GUEST";
             const metadataClientStatus = metadata.clientStatus === "VERIFIED" ? "VERIFIED" as const : undefined;
 
-            user = await prisma.user.create({
-              data: {
+            user = await prisma.user.upsert({
+              where: { email },
+              update: {},
+              create: {
                 email,
                 name: metadataName,
                 image: metadataImage,
