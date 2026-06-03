@@ -1,5 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { verifyPhoneAuthToken } from "./phone-otp";
 import { createSupabaseServerClient } from "./supabase-server";
@@ -11,6 +12,13 @@ function accountTypeFromRoleIntent(roleIntent: ReturnType<typeof normalizeEntryR
   if (roleIntent === "profissional") return "model";
   if (roleIntent === "anfitriao") return "host";
   return null;
+}
+
+function isUniqueEmailConflict(err: unknown) {
+  return err instanceof Prisma.PrismaClientKnownRequestError &&
+    err.code === "P2002" &&
+    Array.isArray(err.meta?.target) &&
+    err.meta.target.includes("email");
 }
 
 export const authOptions: NextAuthOptions = {
@@ -159,6 +167,32 @@ export const authOptions: NextAuthOptions = {
                 properties: { select: { status: true } },
                 blocked: true,
               },
+            }).catch(async (err: unknown) => {
+              if (!isUniqueEmailConflict(err)) throw err;
+              const existingUser = await prisma.user.findUnique({
+                where: { email },
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  image: true,
+                  phone: true,
+                  emailVerified: true,
+                  role: true,
+                  accountType: true,
+                  category: true,
+                  birthDate: true,
+                  lgpdConsent: true,
+                  termsConsent: true,
+                  clientProfile: { select: { id: true } },
+                  hostProfile: { select: { id: true } },
+                  professional: { select: { id: true, status: true } },
+                  properties: { select: { status: true } },
+                  blocked: true,
+                },
+              });
+              if (!existingUser) throw err;
+              return existingUser;
             });
 
             if (role === "HOST") {
