@@ -26,6 +26,18 @@ function canSeeLocations(session: ReturnType<typeof useSession>["data"]) {
   );
 }
 
+function isIncompleteProfessionalSession(session: ReturnType<typeof useSession>["data"]) {
+  if (!session?.user) return false;
+  const status = session.user.professionalStatus;
+  const isProfessional =
+    session.user.activeProfileType === "PROFESSIONAL" ||
+    session.user.accountType === "model" ||
+    session.user.accountType === "professional" ||
+    session.user.isProfessional === true;
+
+  return isProfessional && status !== "ACTIVE" && status !== "PAUSED";
+}
+
 export default function NavbarSessionControls({
   variant,
   onNavigate,
@@ -44,6 +56,7 @@ export default function NavbarSessionControls({
   const safeSession = hasValidSession ? session : null;
   const showLocations = canSeeLocations(safeSession);
   const accountHref = accountHomePathFromSession(safeSession?.user);
+  const incompleteProfessional = isIncompleteProfessionalSession(safeSession);
 
   async function handleSignOut() {
     await supabaseAuth.auth.signOut();
@@ -109,7 +122,7 @@ export default function NavbarSessionControls({
     return (
       <>
         <Link className="nav-auth-link" href={accountHref} style={{ padding: "8px 18px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14, fontWeight: 500, border: "1px solid rgba(212,168,67,0.2)" }}>
-          {session.user?.name?.split(" ")[0] ?? "Explorar"}
+          {incompleteProfessional ? "Continuar cadastro" : session.user?.name?.split(" ")[0] ?? "Explorar"}
         </Link>
         <button className="nav-auth-link" onClick={handleSignOut} style={{ padding: "8px 18px", borderRadius: 8, background: "transparent", border: "1px solid rgba(212,168,67,0.3)", color: "#d4a843", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
           Sair

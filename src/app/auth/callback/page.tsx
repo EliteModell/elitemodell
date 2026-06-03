@@ -20,8 +20,9 @@ const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
 const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
 const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
 const PENDING_REGISTRATION_KEY = "elitemodell_pending_registration";
-const CALLBACK_TIMEOUT_MS = 15000;
-const NEXTAUTH_SIGNIN_TIMEOUT_MS = 12000;
+const CALLBACK_TIMEOUT_MS = 9000;
+const NEXTAUTH_SIGNIN_TIMEOUT_MS = 7000;
+const CALLBACK_SLOW_MESSAGE_MS = 3200;
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
 
@@ -432,24 +433,42 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
 
         {/* Retry link when error */}
         {error && (
-          <a
-            href={retryHref}
-            style={{
-              display: "inline-block",
-              marginTop: 20,
-              padding: "10px 24px",
-              background: "rgba(212,168,67,0.12)",
-              border: `1px solid ${GOLD}`,
-              borderRadius: 8,
-              color: GOLD,
-              fontSize: 13,
-              fontWeight: 600,
-              textDecoration: "none",
-              letterSpacing: 0.3,
-            }}
-          >
-            Tentar novamente
-          </a>
+          <div style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
+            <a
+              href={retryHref}
+              style={{
+                display: "inline-block",
+                padding: "10px 18px",
+                background: "rgba(212,168,67,0.12)",
+                border: `1px solid ${GOLD}`,
+                borderRadius: 8,
+                color: GOLD,
+                fontSize: 13,
+                fontWeight: 700,
+                textDecoration: "none",
+                letterSpacing: 0.3,
+              }}
+            >
+              Tentar novamente
+            </a>
+            <a
+              href={ACCOUNT_ROUTES.cadastro}
+              style={{
+                display: "inline-block",
+                padding: "10px 18px",
+                background: "transparent",
+                border: "1px solid rgba(148,163,184,0.32)",
+                borderRadius: 8,
+                color: "#cbd5e1",
+                fontSize: 13,
+                fontWeight: 700,
+                textDecoration: "none",
+                letterSpacing: 0.3,
+              }}
+            >
+              Voltar ao cadastro
+            </a>
+          </div>
         )}
 
         {/* Subtle bottom label */}
@@ -507,7 +526,12 @@ function AuthCallbackContent() {
     const retryTarget = isCadastroFlow && (roleIntent === "profissional" || returnUrl?.startsWith(ACCOUNT_ROUTES.onboardingAcompanhante))
       ? `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`
       : "/login";
-    setRetryHref(retryTarget);
+    const retryHrefTimer = window.setTimeout(() => {
+      if (active) setRetryHref(retryTarget);
+    }, 0);
+    const slowMessageTimer = window.setTimeout(() => {
+      if (active) setMessage("Estamos finalizando seu acesso. Aguarde um instante.");
+    }, CALLBACK_SLOW_MESSAGE_MS);
 
     async function finishAuth() {
       const code = searchParams.get("code");
@@ -536,27 +560,6 @@ function AuthCallbackContent() {
 
       const pendingRegistration = parsePendingRegistration(readPendingRegistrationRaw(isCadastroFlow));
       const effectiveRoleIntent = roleIntent ?? roleIntentFromPending(pendingRegistration) ?? inferRoleIntentFromReturnUrl(returnUrl);
-      let shouldRunRegistrationFallback = false;
-
-      if (pendingRegistration) {
-        try {
-          const regRes = await fetch("/api/auth/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ accessToken, ...pendingRegistration }),
-          });
-          if (!regRes.ok) {
-            throw new Error(`${regRes.status}: ${await parseJsonError(regRes)}`);
-          }
-        } catch (registerErr) {
-          shouldRunRegistrationFallback = true;
-          console.error("[CALLBACK] Cadastro OAuth pendente falhou antes da sessao; seguindo com fallback:", {
-            error: registerErr instanceof Error ? registerErr.message : registerErr,
-            roleIntent: effectiveRoleIntent,
-            accountType: pendingRegistration.accountType,
-          });
-        }
-      }
 
       if (active) setMessage("Criando sessao segura...");
       const res = await resolveSignInWithTimeout(signIn("supabase", {
@@ -573,8 +576,8 @@ function AuthCallbackContent() {
         throw new Error(`NextAuth: ${res.error}`);
       }
 
-      if (pendingRegistration && shouldRunRegistrationFallback) {
-        await applyRegistrationFallback(pendingRegistration, effectiveRoleIntent).catch((fallbackErr) => {
+      if (pendingRegistration) {
+        void applyRegistrationFallback(pendingRegistration, effectiveRoleIntent).catch((fallbackErr) => {
           console.error("[CALLBACK] Fallback de cadastro OAuth falhou:", fallbackErr);
         });
       }
@@ -589,6 +592,7 @@ function AuthCallbackContent() {
           : returnUrl ?? await resolveWithTimeout(getPostLoginPath(effectiveRoleIntent), ACCOUNT_ROUTES.dashboardCliente);
 
       if (!active) return;
+      window.clearTimeout(slowMessageTimer);
       setSuccess(true);
       setMessage("Acesso confirmado. Redirecionando...");
       window.setTimeout(() => {
@@ -597,6 +601,7 @@ function AuthCallbackContent() {
     }
 
     finishAuth().catch(async (err) => {
+      window.clearTimeout(slowMessageTimer);
       if (!active) return;
       const rawMsg: string = err?.message ?? "Nao foi possivel finalizar o acesso.";
       const isCadastroError = retryTarget !== "/login";
@@ -610,6 +615,8 @@ function AuthCallbackContent() {
 
     return () => {
       active = false;
+      window.clearTimeout(retryHrefTimer);
+      window.clearTimeout(slowMessageTimer);
     };
   }, [searchParams]);
 

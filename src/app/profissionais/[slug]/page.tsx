@@ -185,25 +185,26 @@ export default function ProfissionalProfilePage() {
   useEffect(() => {
     if (!bookingOpen || authStatus !== "authenticated") return;
     const controller = new AbortController();
-    setVoucherLoading(true);
-    fetch(`/api/vouchers/available?professionalSlug=${encodeURIComponent(slug)}`, { signal: controller.signal, cache: "no-store" })
-      .then(async (res) => {
+    async function loadAvailableVouchers() {
+      await Promise.resolve();
+      if (controller.signal.aborted) return;
+      setVoucherLoading(true);
+      try {
+        const res = await fetch(`/api/vouchers/available?professionalSlug=${encodeURIComponent(slug)}`, { signal: controller.signal, cache: "no-store" });
         if (!res.ok) throw new Error("Não foi possível carregar seus vouchers.");
-        return res.json();
-      })
-      .then((data) => {
+        const data = await res.json();
         setAcceptsVouchers(Boolean(data.acceptsVouchers));
         setAvailableVouchers(data.vouchers ?? []);
-      })
-      .catch(() => {
+      } catch {
         if (!controller.signal.aborted) {
           setAcceptsVouchers(false);
           setAvailableVouchers([]);
         }
-      })
-      .finally(() => {
+      } finally {
         if (!controller.signal.aborted) setVoucherLoading(false);
-      });
+      }
+    }
+    void loadAvailableVouchers();
     return () => controller.abort();
   }, [authStatus, bookingOpen, slug]);
 

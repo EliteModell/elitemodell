@@ -159,17 +159,28 @@ export function accountHomePathFromSession(sessionUser: {
   role?: string | null;
   accountType?: string | null;
   isProfessional?: boolean | null;
+  professionalStatus?: string | null;
   hostStatus?: string | null;
   activeProfileType?: string | null;
 } | null | undefined) {
   if (!sessionUser) return ACCOUNT_ROUTES.dashboardCliente;
   if (sessionUser.role === "ADMIN") return ACCOUNT_ROUTES.admin;
   if (sessionUser.activeProfileType === "CLIENTE") return ACCOUNT_ROUTES.dashboardCliente;
-  if (sessionUser.activeProfileType === "PROFESSIONAL") return ACCOUNT_ROUTES.dashboardAcompanhante;
+  if (sessionUser.activeProfileType === "PROFESSIONAL") {
+    if (sessionUser.professionalStatus === "ACTIVE" || sessionUser.professionalStatus === "PAUSED") {
+      return ACCOUNT_ROUTES.dashboardAcompanhante;
+    }
+    if (!sessionUser.professionalStatus || sessionUser.professionalStatus === "DRAFT") {
+      return ACCOUNT_ROUTES.onboardingAcompanhante;
+    }
+    return ACCOUNT_ROUTES.verificacaoAcompanhante;
+  }
   if (sessionUser.activeProfileType === "HOST") {
     return hostPathForStatus((sessionUser.hostStatus ?? "CADASTRO_INCOMPLETO") as HostRegistrationStatus);
   }
   if (sessionUser.isProfessional || sessionUser.accountType === "model" || sessionUser.accountType === "professional") {
+    if (!sessionUser.professionalStatus || sessionUser.professionalStatus === "DRAFT") return ACCOUNT_ROUTES.onboardingAcompanhante;
+    if (sessionUser.professionalStatus !== "ACTIVE" && sessionUser.professionalStatus !== "PAUSED") return ACCOUNT_ROUTES.verificacaoAcompanhante;
     return ACCOUNT_ROUTES.dashboardAcompanhante;
   }
   if (sessionUser.hostStatus && sessionUser.hostStatus !== "NO_REQUEST") {

@@ -1,6 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- Upload previews can be blob/data/private URLs before the final hosted image is available. */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
@@ -70,7 +70,11 @@ const CATEGORIAS = [
 const STEPS = ["Dados", "Aparência", "Atendimento", "Serviços", "Valores", "Contato", "Fotos", "Documentos", "Biometria"];
 const DRAFT_KEY = "elitemodell_professional_onboarding_v1";
 const IMAGE_ACCEPT = "image/jpeg,image/jpg,image/png,image/webp";
-const MAX_PROFILE_IMAGE_BYTES = 10 * 1024 * 1024;
+const IMAGE_MIME_TYPES = new Set(IMAGE_ACCEPT.split(","));
+const IMAGE_EXTENSION_RE = /\.(jpe?g|png|webp)$/i;
+const GENERIC_MOBILE_MIME_TYPES = new Set(["", "application/octet-stream"]);
+const MAX_PROFILE_IMAGE_BYTES = 20 * 1024 * 1024;
+const MAX_ONBOARDING_GALLERY_PHOTOS = 20;
 const REMOTE_IMAGE_RE = /^(https?:\/\/|\/)/i;
 const ATTENDANCE_EXCLUSIONS: Record<string, string[]> = {
   "Somente local do cliente": ["Local próprio", "Hotéis", "Motéis", "Somente hotéis/motéis"],
@@ -81,6 +85,14 @@ const ATTENDANCE_EXCLUSIONS: Record<string, string[]> = {
   "Somente hotéis/motéis": ["A domicílio", "Somente local do cliente", "Local próprio", "Não atendo em residência própria", "Hotéis", "Motéis"],
   "A domicílio": ["Somente hotéis/motéis"],
 };
+
+function generateVerificationCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const randomValues = new Uint32Array(8);
+  crypto.getRandomValues(randomValues);
+  const code = Array.from(randomValues, (value) => chars[value % chars.length]).join("");
+  return `${code.slice(0, 4)}-${code.slice(4)}`;
+}
 
 /* ── sub-componentes reutilizáveis ──────────────────────── */
 function Tag({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
@@ -373,18 +385,13 @@ export default function ProfissionalNovoPage() {
     checked: false,
     available: false,
   });
+  const [birthDateLockedFromAccount, setBirthDateLockedFromAccount] = useState(false);
   const [birthParts, setBirthParts] = useState({ day: "", month: "", year: "" });
   const birthMonthRef = useRef<HTMLInputElement>(null);
   const birthYearRef = useRef<HTMLInputElement>(null);
   const progressStepRefs = useRef<Array<HTMLDivElement | null>>([]);
   const draftLoadedRef = useRef(false);
   const skipInitialDraftSaveRef = useRef(true);
-
-  /* código único de verificação – gerado 1x por sessão */
-  const verificationCode = useMemo(() => {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("-").slice(0, 4) + "-" + Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  }, []);
 
   /* ── estado do formulário ─────────────────────────────── */
   const [form, setForm] = useState({
@@ -415,6 +422,7 @@ export default function ProfissionalNovoPage() {
   });
 
   useEffect(() => {
+    const restoreTimer = window.setTimeout(() => {
     try {
       const rawDraft = localStorage.getItem(DRAFT_KEY);
       if (!rawDraft) {
@@ -449,6 +457,11 @@ export default function ProfissionalNovoPage() {
     } finally {
       draftLoadedRef.current = true;
     }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(restoreTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -505,6 +518,7 @@ export default function ProfissionalNovoPage() {
       if (loadedDate) {
         const [y, m, d] = loadedDate.split("-");
         setBirthParts({ day: d ?? "", month: m ?? "", year: y ?? "" });
+        setBirthDateLockedFromAccount(true);
       }
     }
 
@@ -556,6 +570,7 @@ export default function ProfissionalNovoPage() {
   }
 
   function handleBirthPart(part: "day" | "month" | "year", value: string) {
+    setBirthDateLockedFromAccount(false);
     const maxLen = part === "year" ? 4 : 2;
     const cleaned = value.replace(/\D/g, "").slice(0, maxLen);
     const next = { ...birthParts, [part]: cleaned };
@@ -591,11 +606,14 @@ export default function ProfissionalNovoPage() {
   }
 
   function validateImageFile(file: File) {
-    if (!IMAGE_ACCEPT.split(",").includes(file.type)) {
+    const hasAllowedMime = IMAGE_MIME_TYPES.has(file.type);
+    const hasAllowedGenericMobileMime = GENERIC_MOBILE_MIME_TYPES.has(file.type) && IMAGE_EXTENSION_RE.test(file.name);
+
+    if (!hasAllowedMime && !hasAllowedGenericMobileMime) {
       return "Use uma imagem em JPG, PNG ou WebP.";
     }
     if (file.size > MAX_PROFILE_IMAGE_BYTES) {
-      return "A imagem deve ter no máximo 10MB.";
+      return "A imagem deve ter no maximo 20MB.";
     }
     return null;
   }
@@ -646,7 +664,7 @@ export default function ProfissionalNovoPage() {
 
   /* upload de foto de galeria */
   async function handleGalleryPhoto(file: File) {
-    if (form.galleryUrls.length >= 10) return toast.error("Máximo 10 fotos na galeria.");
+    if (form.galleryUrls.length >= MAX_ONBOARDING_GALLERY_PHOTOS) return toast.error("Maximo 20 fotos na galeria.");
     const validationError = validateImageFile(file);
     if (validationError) {
       toast.error(validationError);
@@ -787,7 +805,7 @@ export default function ProfissionalNovoPage() {
         docFrenteUrl: form.docFrenteUrl, docVersoUrl: form.docVersoUrl,
         verificationUrl: form.verificationUrl,
         verificationType: form.verificationType,
-        verificationCode,
+        verificationCode: generateVerificationCode(),
         kycProvider: form.kycProvider,
         kycSessionId: form.kycSessionId,
         kycStatus: form.kycStatus,
@@ -1001,41 +1019,52 @@ export default function ProfissionalNovoPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
               <div>
                 <label style={labelStyle}>Data de nascimento *</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.4fr", gap: 6 }}>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="bday-day"
-                    maxLength={2}
-                    placeholder="DD"
-                    value={birthParts.day}
-                    onChange={(e) => handleBirthPart("day", e.target.value)}
-                    style={{ ...inputStyle, textAlign: "center", padding: "12px 6px" }}
-                  />
-                  <input
-                    ref={birthMonthRef}
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="bday-month"
-                    maxLength={2}
-                    placeholder="MM"
-                    value={birthParts.month}
-                    onChange={(e) => handleBirthPart("month", e.target.value)}
-                    style={{ ...inputStyle, textAlign: "center", padding: "12px 6px" }}
-                  />
-                  <input
-                    ref={birthYearRef}
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="bday-year"
-                    maxLength={4}
-                    placeholder="AAAA"
-                    value={birthParts.year}
-                    onChange={(e) => handleBirthPart("year", e.target.value)}
-                    style={{ ...inputStyle, textAlign: "center", padding: "12px 6px" }}
-                  />
-                </div>
-                <div style={{ fontSize: 10, color: "#334155", marginTop: 3 }}>Mínimo 18 anos</div>
+                {birthDateLockedFromAccount && form.birthDate ? (
+                  <div className="birth-date-confirmed">
+                    <span>{`${birthParts.day}/${birthParts.month}/${birthParts.year}`}</span>
+                    <button type="button" onClick={() => setBirthDateLockedFromAccount(false)}>
+                      Alterar
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="birth-date-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 0.78fr) minmax(0, 0.78fr) minmax(0, 1.25fr)", gap: 8 }}>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="bday-day"
+                        maxLength={2}
+                        placeholder="DD"
+                        value={birthParts.day}
+                        onChange={(e) => handleBirthPart("day", e.target.value)}
+                        style={{ ...inputStyle, textAlign: "center", padding: "12px 6px", minWidth: 0 }}
+                      />
+                      <input
+                        ref={birthMonthRef}
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="bday-month"
+                        maxLength={2}
+                        placeholder="MM"
+                        value={birthParts.month}
+                        onChange={(e) => handleBirthPart("month", e.target.value)}
+                        style={{ ...inputStyle, textAlign: "center", padding: "12px 6px", minWidth: 0 }}
+                      />
+                      <input
+                        ref={birthYearRef}
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="bday-year"
+                        maxLength={4}
+                        placeholder="AAAA"
+                        value={birthParts.year}
+                        onChange={(e) => handleBirthPart("year", e.target.value)}
+                        style={{ ...inputStyle, textAlign: "center", padding: "12px 6px", minWidth: 0 }}
+                      />
+                    </div>
+                    <div style={{ fontSize: 10, color: "#334155", marginTop: 3 }}>Minimo 18 anos</div>
+                  </>
+                )}
               </div>
               <div>
                 <label style={labelStyle}>Altura (cm)</label>
@@ -1254,7 +1283,7 @@ export default function ProfissionalNovoPage() {
             )}
           </Section>
 
-          <Section title="Galeria de fotos" desc={`Adicione até 10 fotos. Fotos de boa qualidade aumentam muito as chances de contato. (${form.galleryUrls.length}/10)`}>
+          <Section title="Galeria de fotos" desc={`Adicione ate ${MAX_ONBOARDING_GALLERY_PHOTOS} fotos. Fotos de boa qualidade aumentam muito as chances de contato. (${form.galleryUrls.length}/${MAX_ONBOARDING_GALLERY_PHOTOS})`}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               {form.galleryUrls.map((url, i) => (
                 <div key={i} style={{ position: "relative", borderRadius: 10, overflow: "hidden", aspectRatio: "3/4", background: "#0b1420" }}>
@@ -1263,7 +1292,7 @@ export default function ProfissionalNovoPage() {
                     style={{ position: "absolute", top: 6, right: 6, width: 24, height: 24, borderRadius: "50%", background: "rgba(6,14,27,0.9)", border: "none", color: "#f1f5f9", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
                 </div>
               ))}
-              {form.galleryUrls.length < 10 && (
+              {form.galleryUrls.length < MAX_ONBOARDING_GALLERY_PHOTOS && (
                 <div>
                   <UploadZone label="" accept={IMAGE_ACCEPT}
                     preview={null}
@@ -1690,6 +1719,42 @@ export default function ProfissionalNovoPage() {
         .money-field:focus-within {
           border-color: rgba(245,184,59,0.72);
           box-shadow: 0 0 0 4px rgba(214,168,58,0.12);
+        }
+        .birth-date-grid {
+          grid-template-columns: minmax(0, 0.78fr) minmax(0, 0.78fr) minmax(0, 1.25fr) !important;
+          gap: 8px !important;
+        }
+        .birth-date-grid input {
+          min-width: 0 !important;
+          padding-left: 6px !important;
+          padding-right: 6px !important;
+          text-align: center !important;
+        }
+        .birth-date-confirmed {
+          min-height: 58px;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          align-items: center;
+          gap: 10px;
+          border: 1px solid rgba(214,168,58,0.28);
+          border-radius: 18px;
+          background: rgba(11,11,13,0.94);
+          padding: 9px 10px 9px 16px;
+        }
+        .birth-date-confirmed span {
+          color: #fff;
+          font-size: 15px;
+          font-weight: 800;
+        }
+        .birth-date-confirmed button {
+          min-height: 40px;
+          border: 1px solid rgba(214,168,58,0.28) !important;
+          border-radius: 12px !important;
+          background: rgba(214,168,58,0.10) !important;
+          color: #f5d77a !important;
+          padding: 0 12px;
+          font-size: 12px;
+          font-weight: 900;
         }
         .model-flow-page > div:nth-of-type(2) {
           margin-bottom: 30px !important;

@@ -104,7 +104,7 @@ export const authOptions: NextAuthOptions = {
               termsConsent: true,
               clientProfile: { select: { id: true } },
               hostProfile: { select: { id: true } },
-              professional: { select: { id: true } },
+              professional: { select: { id: true, status: true } },
               properties: { select: { status: true } },
               blocked: true,
             },
@@ -153,7 +153,7 @@ export const authOptions: NextAuthOptions = {
                 termsConsent: true,
                 clientProfile: { select: { id: true } },
                 hostProfile: { select: { id: true } },
-                professional: { select: { id: true } },
+                professional: { select: { id: true, status: true } },
                 properties: { select: { status: true } },
                 blocked: true,
               },
@@ -210,7 +210,7 @@ export const authOptions: NextAuthOptions = {
               accountType: true,
               clientProfile: { select: { id: true } },
               hostProfile: { select: { id: true } },
-              professional: { select: { id: true } },
+              professional: { select: { id: true, status: true } },
               properties: { select: { status: true } },
             },
           });
@@ -231,6 +231,7 @@ export const authOptions: NextAuthOptions = {
             image: refreshedUser?.image ?? user.image ?? metadataImage,
             role: refreshedUser?.role ?? user.role,
             accountType: refreshedUser?.accountType ?? user.accountType,
+            professionalStatus: refreshedUser?.professional?.status ?? user.professional?.status ?? null,
             activeProfileType,
             availableProfiles,
           };
@@ -268,7 +269,7 @@ export const authOptions: NextAuthOptions = {
             phoneVerifiedAt: true,
             clientProfile: { select: { id: true } },
             hostProfile: { select: { id: true } },
-            professional: { select: { id: true } },
+            professional: { select: { id: true, status: true } },
             properties: { select: { status: true } },
             blocked: true,
           },
@@ -285,6 +286,7 @@ export const authOptions: NextAuthOptions = {
           image: user.image,
           role: user.role,
           accountType: user.accountType,
+          professionalStatus: user.professional?.status ?? null,
           activeProfileType: user.accountType === "host" ? "HOST" : user.accountType === "model" ? "PROFESSIONAL" : "CLIENTE",
           availableProfiles: deriveAvailableProfiles(user),
         };
@@ -300,6 +302,7 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email;
         token.picture = user.image;
         token.accountType = user.accountType;
+        token.professionalStatus = user.professionalStatus ?? null;
         token.activeProfileType = user.activeProfileType ?? profileTypeFromIntent(null);
         token.availableProfiles = user.availableProfiles ?? ["CLIENTE"];
       }
@@ -319,7 +322,7 @@ export const authOptions: NextAuthOptions = {
               lgpdConsent: true,
               termsConsent: true,
               birthDate: true,
-              professional: { select: { id: true } },
+              professional: { select: { id: true, status: true } },
               properties: { select: { status: true } },
               blocked: true,
             },
@@ -335,6 +338,7 @@ export const authOptions: NextAuthOptions = {
             token.role = dbUser.role;
             token.accountType = dbUser.accountType;
             token.clientStatus = dbUser.clientStatus;
+            token.professionalStatus = dbUser.professional?.status ?? null;
             token.availableProfiles = deriveAvailableProfiles(dbUser);
             token.isProfessional = !!dbUser.professional || token.availableProfiles.includes("PROFESSIONAL");
             token.needsConsent = !dbUser.lgpdConsent || !dbUser.termsConsent || !dbUser.birthDate;
@@ -358,6 +362,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as string;
         session.user.accountType = token.accountType as string;
         session.user.clientStatus = token.clientStatus as string;
+        session.user.professionalStatus = token.professionalStatus as string | null | undefined;
         session.user.isProfessional = token.isProfessional ?? false;
         session.user.needsConsent = token.needsConsent ?? false;
         session.user.hostStatus = token.hostStatus as string | undefined;

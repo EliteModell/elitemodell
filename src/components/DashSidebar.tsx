@@ -170,8 +170,8 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
 
   useEffect(() => {
     if (!isProfessionalArea) {
-      setProfessionalProfile(null);
-      return;
+      const clearTimer = window.setTimeout(() => setProfessionalProfile(null), 0);
+      return () => window.clearTimeout(clearTimer);
     }
     const controller = new AbortController();
     async function loadProfessionalProfile() {

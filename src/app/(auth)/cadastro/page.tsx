@@ -312,7 +312,7 @@ function AuthInfoFooter() {
 
 export default function CadastroPage() {
   const router = useRouter();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [accountTypeSelected, setAccountTypeSelected] = useState(false);
@@ -337,6 +337,7 @@ export default function CadastroPage() {
   const monthRef = useRef<HTMLInputElement>(null);
   const yearRef = useRef<HTMLInputElement>(null);
   const captchaRef = useRef<CaptchaFieldHandle>(null);
+  const autoContinueRef = useRef(false);
   const isAuthenticated = status === "authenticated";
   const isLoggedUpgradeFlow = isAuthenticated && form.accountType !== "GUEST";
 
@@ -403,6 +404,66 @@ export default function CadastroPage() {
       router.replace(ACCOUNT_ROUTES.mainClientFeed);
     }
   }, [accountTypeSelected, form.accountType, hydrated, router, status]);
+
+  useEffect(() => {
+    if (!hydrated || !isLoggedUpgradeFlow || !session?.user?.id || autoContinueRef.current) return;
+
+    let active = true;
+
+    async function loadExistingRegistrationState() {
+      try {
+        const res = await fetch("/api/users/me", { cache: "no-store" });
+        if (!res.ok) return;
+        const user = await res.json();
+        if (!active) return;
+
+        const savedBirthDate = user.birthDate ? String(user.birthDate).slice(0, 10) : "";
+        if (savedBirthDate && !form.birthDate) {
+          const [year, month, day] = savedBirthDate.split("-");
+          setBirthParts({ day: day ?? "", month: month ?? "", year: year ?? "" });
+        }
+
+        const savedCategory = ["MULHER", "HOMEM", "TRANS"].includes(user.category) ? user.category as Category : "";
+        const category = form.category || savedCategory;
+        setForm((current) => ({
+          ...current,
+          birthDate: current.birthDate || savedBirthDate,
+          termsConsent: current.termsConsent || Boolean(user.termsConsent),
+          lgpdConsent: current.lgpdConsent || Boolean(user.lgpdConsent),
+          category: current.category || savedCategory,
+        }));
+
+        if (form.accountType !== "PROFESSIONAL") return;
+
+        const professionalStatus = user.professional?.status as string | undefined;
+        if (professionalStatus === "ACTIVE" || professionalStatus === "PAUSED") {
+          autoContinueRef.current = true;
+          router.replace(ACCOUNT_ROUTES.dashboardAcompanhante);
+          return;
+        }
+
+        if (professionalStatus && professionalStatus !== "DRAFT") {
+          autoContinueRef.current = true;
+          router.replace(ACCOUNT_ROUTES.verificacaoAcompanhante);
+          return;
+        }
+
+        if (savedBirthDate && user.termsConsent && user.lgpdConsent && category) {
+          autoContinueRef.current = true;
+          await postJsonOrThrow("/api/users/me/activate-professional", { category });
+          router.replace(ACCOUNT_ROUTES.onboardingAcompanhante);
+          router.refresh();
+        }
+      } catch (err) {
+        console.warn("[cadastro] nao foi possivel retomar cadastro profissional automaticamente", err);
+      }
+    }
+
+    loadExistingRegistrationState();
+    return () => {
+      active = false;
+    };
+  }, [form.accountType, form.birthDate, form.category, hydrated, isLoggedUpgradeFlow, router, session?.user?.id]);
 
   function selectAccountType(tipo: CadastroTipo) {
     const accountType = internalAccountTypeFromTipo(tipo);
@@ -554,6 +615,19 @@ export default function CadastroPage() {
     }
   }
 
+  async function postJsonOrThrow(path: string, body: Record<string, unknown>) {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(typeof data.error === "string" ? data.error : "Nao foi possivel continuar o cadastro.");
+    }
+  }
+
   function nextAuthCadastroPayload(accessToken: string) {
     const payload = registrationPayload();
     return {
@@ -682,42 +756,48 @@ export default function CadastroPage() {
     if (!validateRequiredForm(false, true)) return;
 
     if (form.accountType === "PROFESSIONAL" && !form.category) {
-      setErrors((current) => ({ ...current, category: "Selecione a categoria do anúncio" }));
-      toast.error("Selecione a categoria do anúncio.");
+      setErrors((current) => ({ ...current, category: "Selecione a categoria do anuncio" }));
+      toast.error("Selecione a categoria do anuncio.");
       return;
     }
 
     setLoading(true);
     try {
-      const { data } = await supabaseAuth.auth.getSession();
-      const accessToken = data.session?.access_token;
-
-      if (!accessToken) {
-        const intent = roleIntent();
-        rememberCadastroOAuthState(registrationPayload(), intent);
-        toast.error("Entre novamente para continuar seu cadastro.");
-        router.push(`${ACCOUNT_ROUTES.login}?returnUrl=${encodeURIComponent(nextPath())}&role=${intent}`);
-        return;
-      }
-
       console.info("[cadastro] continuando cadastro com usuario autenticado; CAPTCHA dispensado", {
         accountType: form.accountType,
         category: form.category || null,
       });
-      await registerUser(accessToken);
-      const res = await signIn("supabase", nextAuthCadastroPayload(accessToken));
-      if (res?.error) throw new Error("Não foi possível atualizar sua sessão.");
 
-      router.push(nextPath());
+      await postJsonOrThrow("/api/auth/complete-profile", {
+        birthDate: form.birthDate,
+        lgpdConsent: true,
+        termsConsent: true,
+      });
+
+      if (form.accountType === "PROFESSIONAL") {
+        await postJsonOrThrow("/api/users/me/activate-professional", { category: form.category });
+      } else {
+        const { data } = await supabaseAuth.auth.getSession();
+        const accessToken = data.session?.access_token;
+        if (accessToken) await registerUser(accessToken);
+      }
+
+      const { data } = await supabaseAuth.auth.getSession();
+      const accessToken = data.session?.access_token;
+      if (accessToken) {
+        const res = await signIn("supabase", nextAuthCadastroPayload(accessToken));
+        if (res?.error) console.warn("[cadastro] refresh de sessao apos continuar cadastro falhou", res.error);
+      }
+
+      router.replace(nextPath());
       router.refresh();
     } catch (err: unknown) {
       captchaRef.current?.reset();
-      toast.error(asAuthError(err).message ?? "Não foi possível continuar o cadastro.");
+      toast.error(asAuthError(err).message ?? "Nao foi possivel continuar o cadastro.");
     } finally {
       setLoading(false);
     }
   }
-
   if (hydrated && !accountTypeSelected) {
     const options: Array<{
       tipo: CadastroTipo;

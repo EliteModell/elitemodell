@@ -7,6 +7,7 @@ declare module "next-auth" {
     role: string;
     accountType?: string;
     clientStatus?: string;
+    professionalStatus?: string | null;
     activeProfileType?: string;
     availableProfiles?: string[];
   }
@@ -20,6 +21,7 @@ declare module "next-auth" {
       role: string;
       accountType?: string;
       clientStatus?: string;
+      professionalStatus?: string | null;
       isProfessional?: boolean;
       needsConsent?: boolean;
       hostStatus?: string;
@@ -35,6 +37,7 @@ declare module "next-auth/jwt" {
     role?: string;
     accountType?: string;
     clientStatus?: string;
+    professionalStatus?: string | null;
     isProfessional?: boolean;
     needsConsent?: boolean;
     hostStatus?: string;

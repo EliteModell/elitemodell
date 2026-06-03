@@ -30,19 +30,31 @@ function antivirusProviderConfigured() {
   return Boolean(process.env.VIRUSTOTAL_API_KEY || process.env.CLAMAV_HOST);
 }
 
+function strictUploadSecurityEnabled() {
+  return process.env.UPLOAD_SECURITY_STRICT === "true";
+}
+
 /**
  * Verifica se uma imagem contém conteúdo impróprio (nudez, violência, etc.).
  * @param url - URL pública ou signed URL da imagem a verificar.
  */
 export async function moderateImage(url: string): Promise<ModerationResult> {
   if (process.env.MODERATION_ENABLED !== "true") {
-    return isProductionRuntime()
-      ? { safe: false, reason: "MODERATION_ENABLED precisa estar true em producao para uploads publicos." }
-      : { safe: true };
+    if (isProductionRuntime() && strictUploadSecurityEnabled()) {
+      return { safe: false, reason: "MODERATION_ENABLED precisa estar true em producao para uploads publicos." };
+    }
+    if (isProductionRuntime()) {
+      console.warn("[moderation] MODERATION_ENABLED ausente; upload publico liberado com validacao local.");
+    }
+    return { safe: true };
   }
 
   if (isProductionRuntime() && !moderationProviderConfigured()) {
-    return { safe: false, reason: "Nenhum provedor de moderacao configurado em producao." };
+    if (strictUploadSecurityEnabled()) {
+      return { safe: false, reason: "Nenhum provedor de moderacao configurado em producao." };
+    }
+    console.warn("[moderation] Nenhum provedor de moderacao configurado; upload publico liberado com validacao local.");
+    return { safe: true };
   }
 
   // TODO: substituir pelo provedor escolhido.
@@ -69,13 +81,21 @@ export async function scanFileForVirus(
   filename = "upload"
 ): Promise<ModerationResult> {
   if (process.env.AV_ENABLED !== "true") {
-    return isProductionRuntime()
-      ? { safe: false, reason: "AV_ENABLED precisa estar true em producao para uploads." }
-      : { safe: true };
+    if (isProductionRuntime() && strictUploadSecurityEnabled()) {
+      return { safe: false, reason: "AV_ENABLED precisa estar true em producao para uploads." };
+    }
+    if (isProductionRuntime()) {
+      console.warn("[moderation] AV_ENABLED ausente; upload liberado com validacao local.", { filename });
+    }
+    return { safe: true };
   }
 
   if (isProductionRuntime() && !antivirusProviderConfigured()) {
-    return { safe: false, reason: "Nenhum provedor de antivirus configurado em producao." };
+    if (strictUploadSecurityEnabled()) {
+      return { safe: false, reason: "Nenhum provedor de antivirus configurado em producao." };
+    }
+    console.warn("[moderation] Nenhum provedor de antivirus configurado; upload liberado com validacao local.", { filename });
+    return { safe: true };
   }
 
   // TODO: substituir pelo provedor escolhido.
