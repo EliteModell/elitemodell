@@ -14,7 +14,7 @@ const supabase = createClient(
 
 // Tipos MIME permitidos por contexto. Alguns celulares enviam fotos validas com
 // MIME vazio ou application/octet-stream; nesses casos a assinatura binaria decide.
-const ALLOWED_IMAGE = ["image/jpeg", "image/jpg", "image/pjpeg", "image/png", "image/webp"];
+const ALLOWED_IMAGE = ["image/jpeg", "image/jpg", "image/pjpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 const ALLOWED_DOC   = [...ALLOWED_IMAGE, "application/pdf"];
 const ALLOWED_VIDEO = [...ALLOWED_IMAGE, "video/mp4", "video/webm", "video/quicktime"];
 const ALLOWED_ROOT_FOLDERS = new Set(["verificacao", "documentos", "properties", "profiles", "profile-videos", "stories"]);
@@ -31,6 +31,10 @@ function normalizeFolder(folder: string) {
 
 function headerText(bytes: Uint8Array, start: number, length: number) {
   return String.fromCharCode(...bytes.slice(start, start + length));
+}
+
+function isHeicHeifBrand(brand: string) {
+  return ["heic", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs", "heif", "mif1", "msf1"].includes(brand);
 }
 
 type FileKind = {
@@ -55,6 +59,9 @@ async function detectFileKind(file: File): Promise<FileKind | null> {
   }
   if (headerText(bytes, 4, 4) === "ftyp") {
     const brand = headerText(bytes, 8, 4).toLowerCase();
+    if (isHeicHeifBrand(brand)) {
+      return { mime: brand === "heif" || brand === "mif1" ? "image/heif" : "image/heic", ext: "heic", category: "image" };
+    }
     const mime = brand.includes("qt") ? "video/quicktime" : "video/mp4";
     return { mime, ext: mime === "video/quicktime" ? "mov" : "mp4", category: "video" };
   }

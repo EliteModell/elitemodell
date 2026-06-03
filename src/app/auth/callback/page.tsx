@@ -20,6 +20,7 @@ const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
 const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
 const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
 const PENDING_REGISTRATION_KEY = "elitemodell_pending_registration";
+const PENDING_REGISTRATION_COOKIE = "elitemodell_pending_registration";
 const CALLBACK_TIMEOUT_MS = 9000;
 const NEXTAUTH_SIGNIN_TIMEOUT_MS = 7000;
 const CALLBACK_SLOW_MESSAGE_MS = 3200;
@@ -128,6 +129,10 @@ function clearRoleIntentStorage() {
 function clearPendingRegistrationStorage() {
   sessionStorage.removeItem(PENDING_REGISTRATION_KEY);
   localStorage.removeItem(PENDING_REGISTRATION_KEY);
+  document.cookie = `${PENDING_REGISTRATION_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax; Secure`;
+  if (window.location.hostname.endsWith("elitemodell.com.br")) {
+    document.cookie = `${PENDING_REGISTRATION_COOKIE}=; Max-Age=0; Path=/; Domain=.elitemodell.com.br; SameSite=Lax; Secure`;
+  }
 }
 
 function resolveWithTimeout<T>(promise: Promise<T>, fallback: T, ms = CALLBACK_TIMEOUT_MS) {
@@ -224,9 +229,10 @@ function roleIntentFromPending(pending: PendingRegistration | null) {
   return null;
 }
 
-function readPendingRegistrationRaw(allowLocalStorage: boolean) {
-  if (!allowLocalStorage) return null;
-  return sessionStorage.getItem(PENDING_REGISTRATION_KEY) ?? localStorage.getItem(PENDING_REGISTRATION_KEY);
+function readPendingRegistrationRaw() {
+  return sessionStorage.getItem(PENDING_REGISTRATION_KEY)
+    ?? localStorage.getItem(PENDING_REGISTRATION_KEY)
+    ?? readCookie(PENDING_REGISTRATION_COOKIE);
 }
 
 function parsePendingRegistration(raw: string | null) {
@@ -517,12 +523,22 @@ function AuthCallbackContent() {
   useEffect(() => {
     let active = true;
     const returnUrl = safeInternalPath(searchParams.get("returnUrl") ?? searchParams.get("redirectTo"));
-    const isCadastroFlow = searchParams.get("flow") === "cadastro";
+    const pendingRegistration = parsePendingRegistration(readPendingRegistrationRaw());
+    const explicitIntent = searchParams.get("intent");
+    const hasProfessionalSignupIntent =
+      explicitIntent === "professional-signup" ||
+      roleIntentFromPending(pendingRegistration) === "profissional";
     const roleIntent = normalizeEntryRole(searchParams.get("role"))
+      ?? (hasProfessionalSignupIntent ? "profissional" : null)
+      ?? roleIntentFromPending(pendingRegistration)
       ?? inferRoleIntentFromReturnUrl(returnUrl)
       ?? normalizeEntryRole(sessionStorage.getItem(ROLE_INTENT_KEY))
       ?? normalizeEntryRole(localStorage.getItem(ROLE_INTENT_KEY))
       ?? normalizeEntryRole(readCookie(ROLE_INTENT_COOKIE));
+    const isCadastroFlow =
+      searchParams.get("flow") === "cadastro" ||
+      Boolean(pendingRegistration) ||
+      explicitIntent === "professional-signup";
     const retryTarget = isCadastroFlow && (roleIntent === "profissional" || returnUrl?.startsWith(ACCOUNT_ROUTES.onboardingAcompanhante))
       ? `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`
       : "/login";
@@ -558,14 +574,15 @@ function AuthCallbackContent() {
 
       if (active) setMessage("Configurando sua conta...");
 
-      const pendingRegistration = parsePendingRegistration(readPendingRegistrationRaw(isCadastroFlow));
       const effectiveRoleIntent = roleIntent ?? roleIntentFromPending(pendingRegistration) ?? inferRoleIntentFromReturnUrl(returnUrl);
+      const fallbackRegistration = pendingRegistration
+        ?? (effectiveRoleIntent === "profissional" ? { accountType: "PROFESSIONAL" as const } : null);
 
       if (active) setMessage("Criando sessao segura...");
       const res = await resolveSignInWithTimeout(signIn("supabase", {
         accessToken,
         roleIntent: effectiveRoleIntent ?? "",
-        authFlow: isCadastroFlow ? "cadastro" : "",
+        authFlow: (isCadastroFlow || fallbackRegistration) ? "cadastro" : "",
         redirect: false,
         ...(pendingRegistration?.category ? { category: pendingRegistration.category } : {}),
         ...(pendingRegistration?.birthDate ? { birthDate: pendingRegistration.birthDate } : {}),
@@ -576,20 +593,21 @@ function AuthCallbackContent() {
         throw new Error(`NextAuth: ${res.error}`);
       }
 
-      if (pendingRegistration) {
-        void applyRegistrationFallback(pendingRegistration, effectiveRoleIntent).catch((fallbackErr) => {
-          console.error("[CALLBACK] Fallback de cadastro OAuth falhou:", fallbackErr);
-        });
+      if (fallbackRegistration) {
+        if (active) setMessage("Preparando seu cadastro profissional...");
+        await applyRegistrationFallback(fallbackRegistration, effectiveRoleIntent);
       }
 
       clearRoleIntentStorage();
       clearPendingRegistrationStorage();
 
-      const targetPath = pendingRegistration
-        ? getRegistrationPath(pendingRegistration)
-        : effectiveRoleIntent
-          ? await resolveWithTimeout(getPostLoginPath(effectiveRoleIntent), fallbackPathForRoleIntent(effectiveRoleIntent))
-          : returnUrl ?? await resolveWithTimeout(getPostLoginPath(effectiveRoleIntent), ACCOUNT_ROUTES.dashboardCliente);
+      const targetPath = fallbackRegistration && effectiveRoleIntent
+        ? await resolveWithTimeout(getPostLoginPath(effectiveRoleIntent), getRegistrationPath(fallbackRegistration))
+        : fallbackRegistration
+          ? getRegistrationPath(fallbackRegistration)
+          : effectiveRoleIntent
+            ? await resolveWithTimeout(getPostLoginPath(effectiveRoleIntent), fallbackPathForRoleIntent(effectiveRoleIntent))
+            : returnUrl ?? await resolveWithTimeout(getPostLoginPath(effectiveRoleIntent), ACCOUNT_ROUTES.dashboardCliente);
 
       if (!active) return;
       window.clearTimeout(slowMessageTimer);

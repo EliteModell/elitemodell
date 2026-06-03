@@ -69,9 +69,9 @@ const CATEGORIAS = [
 
 const STEPS = ["Dados", "Aparência", "Atendimento", "Serviços", "Valores", "Contato", "Fotos", "Documentos", "Biometria"];
 const DRAFT_KEY = "elitemodell_professional_onboarding_v1";
-const IMAGE_ACCEPT = "image/jpeg,image/jpg,image/png,image/webp";
-const IMAGE_MIME_TYPES = new Set(IMAGE_ACCEPT.split(","));
-const IMAGE_EXTENSION_RE = /\.(jpe?g|png|webp)$/i;
+const IMAGE_ACCEPT = "image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,.heic,.heif";
+const IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif"]);
+const IMAGE_EXTENSION_RE = /\.(jpe?g|png|webp|heic|heif)$/i;
 const GENERIC_MOBILE_MIME_TYPES = new Set(["", "application/octet-stream"]);
 const MAX_PROFILE_IMAGE_BYTES = 20 * 1024 * 1024;
 const MAX_ONBOARDING_GALLERY_PHOTOS = 20;
@@ -133,7 +133,7 @@ function UploadZone({ label, accept, preview, onFile, loading }: {
   const ref = useRef<HTMLInputElement>(null);
   const canPreview = !!preview && (preview.startsWith("http") || preview.startsWith("/") || preview.startsWith("blob:") || preview.startsWith("data:"));
   const isPrivateFile = !!preview && !canPreview;
-  const acceptLabel = accept === IMAGE_ACCEPT ? "JPG, PNG ou WebP" : accept.replace("image/*,video/*", "JPG, PNG ou MP4");
+  const acceptLabel = accept === IMAGE_ACCEPT ? "JPG, PNG, WebP ou HEIC" : accept.replace("image/*,video/*", "JPG, PNG ou MP4");
   return (
     <div>
       {label ? <label style={labelStyle}>{label}</label> : null}
@@ -610,7 +610,7 @@ export default function ProfissionalNovoPage() {
     const hasAllowedGenericMobileMime = GENERIC_MOBILE_MIME_TYPES.has(file.type) && IMAGE_EXTENSION_RE.test(file.name);
 
     if (!hasAllowedMime && !hasAllowedGenericMobileMime) {
-      return "Use uma imagem em JPG, PNG ou WebP.";
+      return "Use uma imagem em JPG, PNG, WebP ou HEIC.";
     }
     if (file.size > MAX_PROFILE_IMAGE_BYTES) {
       return "A imagem deve ter no maximo 20MB.";

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { type EntryAccountRole, isHostAccountType } from "@/lib/account-routes";
 
@@ -13,6 +14,38 @@ export function profileTypeFromIntent(intent: EntryAccountRole | null | undefine
 
 export function hasProfessionalAccountType(value: string | null | undefined) {
   return ["model", "professional", "PROFESSIONAL"].includes(value ?? "");
+}
+
+const PROFESSIONAL_CATEGORIES = ["MULHER", "HOMEM", "TRANS"] as const;
+
+function normalizeProfessionalCategory(category?: string | null) {
+  return category && (PROFESSIONAL_CATEGORIES as readonly string[]).includes(category)
+    ? category as typeof PROFESSIONAL_CATEGORIES[number]
+    : undefined;
+}
+
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+async function uniqueDraftProfessionalSlug(tx: Prisma.TransactionClient, userId: string, seed: string) {
+  const base = slugify(seed) || `profissional-${userId.slice(-8)}`;
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const slug = attempt === 0 ? base : `${base}-${attempt + 1}`;
+    const existing = await tx.professional.findUnique({
+      where: { slug },
+      select: { userId: true },
+    });
+    if (!existing || existing.userId === userId) return slug;
+  }
+
+  return `${base}-${Date.now()}`;
 }
 
 export function deriveAvailableProfiles(user: {
@@ -62,14 +95,57 @@ export async function ensureProfileForIntent(userId: string, intent: EntryAccoun
     return profileType;
   }
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      accountType: "model",
-      role: "HOST",
-      category: category && ["MULHER", "HOMEM", "TRANS"].includes(category) ? category as "MULHER" | "HOMEM" | "TRANS" : undefined,
-    },
-    select: { id: true },
+  await prisma.$transaction(async (tx) => {
+    const normalizedCategory = normalizeProfessionalCategory(category);
+    const user = await tx.user.update({
+      where: { id: userId },
+      data: {
+        accountType: "model",
+        role: "HOST",
+        category: normalizedCategory,
+      },
+      select: { id: true, name: true, email: true, category: true },
+    });
+
+    const existing = await tx.professional.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (existing) {
+      await tx.professional.update({
+        where: { userId },
+        data: { escortCategory: normalizedCategory },
+        select: { id: true },
+      });
+      return;
+    }
+
+    const displayName = user.name?.trim() || "Perfil em cadastro";
+    const slug = await uniqueDraftProfessionalSlug(tx, userId, `${displayName}-${user.email ?? userId.slice(-8)}`);
+    await tx.professional.create({
+      data: {
+        userId,
+        slug,
+        displayName,
+        bio: "",
+        city: "",
+        state: "",
+        escortCategory: normalizedCategory ?? user.category ?? undefined,
+        status: "DRAFT",
+        verified: false,
+        paymentMethods: [],
+        attendanceTypes: [],
+        servesGenders: [],
+        idiomas: [],
+        diasDisponiveis: [],
+        services: [],
+        fetishes: [],
+        galleryUrls: [],
+      },
+      select: { id: true },
+    });
   });
+
   return profileType;
 }

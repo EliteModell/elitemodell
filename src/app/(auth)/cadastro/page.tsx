@@ -27,6 +27,7 @@ type BirthPart = "day" | "month" | "year";
 const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
 const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
 const PENDING_REGISTRATION_KEY = "elitemodell_pending_registration";
+const PENDING_REGISTRATION_COOKIE = "elitemodell_pending_registration";
 type AuthError = { code?: string; name?: string; message?: string };
 
 const GOLD = "#d4a843";
@@ -69,20 +70,24 @@ function safeSetStorage(storage: Storage, key: string, value: string) {
   }
 }
 
+function cookieDomainAttribute() {
+  return window.location.hostname.endsWith("elitemodell.com.br")
+    ? "; Domain=.elitemodell.com.br"
+    : "";
+}
+
 function rememberPendingRegistration(payload: unknown) {
   const serialized = JSON.stringify(payload);
   safeSetStorage(sessionStorage, PENDING_REGISTRATION_KEY, serialized);
   safeSetStorage(localStorage, PENDING_REGISTRATION_KEY, serialized);
+  document.cookie = `${PENDING_REGISTRATION_COOKIE}=${encodeURIComponent(serialized)}; Max-Age=900; Path=/${cookieDomainAttribute()}; SameSite=Lax; Secure`;
 }
 
 function rememberRoleIntent(intent: EntryAccountRole) {
   safeSetStorage(sessionStorage, ROLE_INTENT_KEY, intent);
   safeSetStorage(localStorage, ROLE_INTENT_KEY, intent);
 
-  const domain = window.location.hostname.endsWith("elitemodell.com.br")
-    ? "; Domain=.elitemodell.com.br"
-    : "";
-  document.cookie = `${ROLE_INTENT_COOKIE}=${encodeURIComponent(intent)}; Max-Age=900; Path=/${domain}; SameSite=Lax; Secure`;
+  document.cookie = `${ROLE_INTENT_COOKIE}=${encodeURIComponent(intent)}; Max-Age=900; Path=/${cookieDomainAttribute()}; SameSite=Lax; Secure`;
 }
 
 function rememberCadastroOAuthState(payload: unknown, intent: EntryAccountRole) {
@@ -101,8 +106,10 @@ function clearCadastroIntentState() {
   }
 
   document.cookie = `${ROLE_INTENT_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax; Secure`;
+  document.cookie = `${PENDING_REGISTRATION_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax; Secure`;
   if (window.location.hostname.endsWith("elitemodell.com.br")) {
     document.cookie = `${ROLE_INTENT_COOKIE}=; Max-Age=0; Path=/; Domain=.elitemodell.com.br; SameSite=Lax; Secure`;
+    document.cookie = `${PENDING_REGISTRATION_COOKIE}=; Max-Age=0; Path=/; Domain=.elitemodell.com.br; SameSite=Lax; Secure`;
   }
 }
 
@@ -652,6 +659,18 @@ export default function CadastroPage() {
     return ACCOUNT_ROUTES.mainClientFeed;
   }
 
+  async function resolvedNextPathAfterAuth() {
+    const fallback = nextPath();
+    try {
+      const res = await fetch("/api/users/me", { cache: "no-store" });
+      if (!res.ok) return fallback;
+      const user = await res.json();
+      return typeof user?.redirectTo === "string" ? user.redirectTo : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
   function roleIntent() {
     if (continueIntent) return continueIntent;
     if (form.accountType === "PROFESSIONAL") return "profissional";
@@ -660,11 +679,13 @@ export default function CadastroPage() {
   }
 
   function callbackParams() {
+    const intent = roleIntent();
     const params = new URLSearchParams({
       returnUrl: nextPath(),
-      role: roleIntent(),
+      role: intent,
       flow: "cadastro",
     });
+    if (intent === "profissional") params.set("intent", "professional-signup");
     return params.toString();
   }
 
@@ -688,7 +709,7 @@ export default function CadastroPage() {
         await registerUser(data.session.access_token, captchaToken);
         const res = await signIn("supabase", nextAuthCadastroPayload(data.session.access_token));
         if (res?.ok) {
-          router.push(nextPath());
+          router.push(await resolvedNextPathAfterAuth());
           router.refresh();
           return;
         }
@@ -706,7 +727,7 @@ export default function CadastroPage() {
           if (error || !data.session?.access_token) throw error ?? new Error("E-mail ou senha invÃ¡lidos.");
           const res = await signIn("supabase", nextAuthCadastroPayload(data.session.access_token));
           if (res?.error) throw new Error("NÃ£o foi possÃ­vel atualizar sua sessÃ£o.");
-          router.push(nextPath());
+          router.push(await resolvedNextPathAfterAuth());
           router.refresh();
           return;
         } catch {
@@ -789,7 +810,7 @@ export default function CadastroPage() {
         if (res?.error) console.warn("[cadastro] refresh de sessao apos continuar cadastro falhou", res.error);
       }
 
-      router.replace(nextPath());
+      router.replace(await resolvedNextPathAfterAuth());
       router.refresh();
     } catch (err: unknown) {
       captchaRef.current?.reset();

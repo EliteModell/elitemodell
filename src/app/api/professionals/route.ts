@@ -235,8 +235,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Apenas anunciantes podem criar perfil profissional." }, { status: 403 });
   }
 
-  const existing = await prisma.professional.findUnique({ where: { userId: session.user.id } });
-  if (existing) return NextResponse.json({ error: "Você já tem um perfil profissional." }, { status: 409 });
+  const existing = await prisma.professional.findUnique({
+    where: { userId: session.user.id },
+    select: { id: true, status: true },
+  });
+  if (existing && existing.status !== "DRAFT") {
+    return NextResponse.json({ error: "Você já tem um perfil profissional." }, { status: 409 });
+  }
 
   try {
     const body = await req.json();
@@ -260,26 +265,46 @@ export async function POST(req: NextRequest) {
 
     // garante slug único
     let slug = slugify(data.displayName);
-    const slugExists = await prisma.professional.findUnique({ where: { slug } });
-    if (slugExists) slug = `${slug}-${Date.now()}`;
+    const slugExists = await prisma.professional.findUnique({
+      where: { slug },
+      select: { userId: true },
+    });
+    if (slugExists && slugExists.userId !== session.user.id) slug = `${slug}-${Date.now()}`;
 
     const allSpecialties = [...new Set([...(specialties ?? []), ...(services ?? [])])];
 
-    const professional = await prisma.professional.create({
+    const professionalData = {
+      ...profileData,
+      phone:     phone ? normalizePhone(phone) : undefined,
+      whatsapp:  whatsapp ? normalizePhone(whatsapp) : undefined,
+      kycProvider: normalizedKycProvider,
+      kycStatus: normalizedKycStatus,
+      escortCategory,
+      slug,
+      bio:       profileData.bio ?? "",
+      birthDate: profileData.birthDate ? new Date(profileData.birthDate) : undefined,
+      status:    "PENDING_REVIEW" as const,
+      verified:  false,
+      docStatus:  profileData.docFrenteUrl ? "PENDING" : "NOT_SENT",
+      verifStatus: profileData.verificationUrl || profileData.kycSessionId ? "PENDING" : "NOT_SENT",
+    };
+
+    const professional = existing
+      ? await prisma.professional.update({
+        where: { userId: session.user.id },
+        data: {
+          ...professionalData,
+          specialties: {
+            deleteMany: {},
+            create: allSpecialties.map((name) => ({ name })),
+          },
+        },
+        include: { specialties: true },
+      })
+      : await prisma.professional.create({
       data: {
-        ...profileData,
-        phone:     phone ? normalizePhone(phone) : undefined,
-        whatsapp:  whatsapp ? normalizePhone(whatsapp) : undefined,
-        kycProvider: normalizedKycProvider,
-        kycStatus: normalizedKycStatus,
-        escortCategory,
-        slug,
+        ...professionalData,
         userId:    session.user.id,
-        bio:       profileData.bio ?? "",
-        birthDate: profileData.birthDate ? new Date(profileData.birthDate) : undefined,
-        status:    "PENDING_REVIEW",
-        docStatus:  profileData.docFrenteUrl ? "PENDING" : "NOT_SENT",
-        verifStatus: profileData.verificationUrl || profileData.kycSessionId ? "PENDING" : "NOT_SENT",
         specialties: {
           create: allSpecialties.map((name) => ({ name })),
         },
@@ -287,7 +312,7 @@ export async function POST(req: NextRequest) {
       include: { specialties: true },
     });
 
-    return NextResponse.json(professional, { status: 201 });
+    return NextResponse.json(professional, { status: existing ? 200 : 201 });
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues }, { status: 400 });
