@@ -71,6 +71,20 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
+    const professionalStatus = typeof token.professionalStatus === "string" ? token.professionalStatus : null;
+    const isProfessionalAccount =
+      token.accountType === "model" ||
+      token.accountType === "professional" ||
+      token.activeProfileType === "PROFESSIONAL" ||
+      token.isProfessional === true;
+
+    if (isProfessionalAccount && professionalStatus !== "ACTIVE" && professionalStatus !== "PAUSED") {
+      const target = !professionalStatus || professionalStatus === "DRAFT" ? "/profissional/novo" : "/profissional/analise";
+      return NextResponse.redirect(new URL(target, req.url));
+    }
+  }
+
   return NextResponse.next();
 }
 

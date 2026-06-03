@@ -1,6 +1,9 @@
 "use client";
+
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { CalendarDays, Check, Clock } from "lucide-react";
+import { PremiumHeroCard, PremiumSection } from "@/components/professional-dashboard/ProfessionalPremium";
 
 const days = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const timeSlots = ["06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00","21:00","22:00"];
@@ -9,13 +12,13 @@ type DaySchedule = { available: boolean; startTime: string; endTime: string };
 
 export default function AgendaPage() {
   const [schedule, setSchedule] = useState<DaySchedule[]>([
-    { available: false, startTime: "09:00", endTime: "18:00" }, // Dom
-    { available: true,  startTime: "09:00", endTime: "18:00" }, // Seg
-    { available: true,  startTime: "09:00", endTime: "18:00" }, // Ter
-    { available: true,  startTime: "09:00", endTime: "18:00" }, // Qua
-    { available: true,  startTime: "09:00", endTime: "18:00" }, // Qui
-    { available: true,  startTime: "09:00", endTime: "17:00" }, // Sex
-    { available: true,  startTime: "10:00", endTime: "14:00" }, // Sáb
+    { available: false, startTime: "09:00", endTime: "18:00" },
+    { available: true,  startTime: "09:00", endTime: "18:00" },
+    { available: true,  startTime: "09:00", endTime: "18:00" },
+    { available: true,  startTime: "09:00", endTime: "18:00" },
+    { available: true,  startTime: "09:00", endTime: "18:00" },
+    { available: true,  startTime: "09:00", endTime: "17:00" },
+    { available: true,  startTime: "10:00", endTime: "14:00" },
   ]);
   const [loading, setLoading] = useState(false);
 
@@ -25,141 +28,70 @@ export default function AgendaPage() {
 
   async function handleSave() {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 900));
+    await new Promise((r) => setTimeout(r, 700));
     toast.success("Agenda atualizada!");
     setLoading(false);
   }
 
-  const selectStyle = {
-    padding: "8px 10px",
-    background: "#0d0d0d",
-    border: "1px solid #2a2a2a",
-    borderRadius: 7,
-    color: "#ccc",
-    fontSize: 13,
-    outline: "none",
-    cursor: "pointer",
-  };
-
   return (
-    <div style={{ maxWidth: 600 }}>
-      <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Minha agenda</h1>
-        <p style={{ color: "#666", fontSize: 14 }}>Configure seus dias e horários disponíveis para agendamentos.</p>
-      </div>
+    <div className="professional-premium-page">
+      <PremiumHeroCard
+        eyebrow="Disponibilidade"
+        title={<>Atualizar <span className="gold">agenda</span></>}
+        subtitle="Mantenha seus horários, disponibilidade e presença sempre atualizados."
+        illustration="calendar"
+      />
 
-      <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, overflow: "hidden", marginBottom: 20 }}>
-        {schedule.map((day, i) => (
-          <div
-            key={days[i]}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 16,
-              padding: "16px 20px",
-              borderBottom: i < 6 ? "1px solid #141414" : "none",
-              background: day.available ? "#111" : "#0d0d0d",
-              transition: "background 0.2s",
-              flexWrap: "wrap",
-            }}
-          >
-            {/* Toggle */}
-            <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", userSelect: "none", minWidth: 110 }}>
-              <div
-                onClick={() => update(i, "available", !day.available)}
-                style={{
-                  width: 40,
-                  height: 22,
-                  borderRadius: 11,
-                  background: day.available ? "#cc0000" : "#2a2a2a",
-                  position: "relative",
-                  cursor: "pointer",
-                  transition: "background 0.2s",
-                  flexShrink: 0,
-                }}
-              >
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 3,
-                    left: day.available ? 21 : 3,
-                    width: 16,
-                    height: 16,
-                    borderRadius: "50%",
-                    background: "#fff",
-                    transition: "left 0.2s",
-                  }}
-                />
+      <PremiumSection eyebrow="Semana" title="Horários de atendimento" description="Organize os dias disponíveis com horários claros para reduzir atrito no contato.">
+        <div className="premium-grid">
+          {schedule.map((day, i) => (
+            <article key={days[i]} className="premium-card" style={{ padding: 18 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 14, alignItems: "center" }}>
+                <button
+                  type="button"
+                  onClick={() => update(i, "available", !day.available)}
+                  className={day.available ? "premium-button" : "premium-button-secondary"}
+                  style={{ justifyContent: "flex-start", width: "100%" }}
+                >
+                  {day.available ? <Check size={18} /> : <Clock size={18} />}
+                  {days[i]}
+                </button>
+                <span className="premium-badge" style={{ color: day.available ? "var(--elite-success)" : "var(--elite-text-muted)" }}>
+                  {day.available ? "Disponível" : "Indisponível"}
+                </span>
               </div>
-              <span style={{ fontSize: 14, fontWeight: 600, color: day.available ? "#fff" : "#555", width: 65 }}>
-                {days[i]}
-              </span>
-            </label>
 
-            {day.available ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <select value={day.startTime} onChange={(e) => update(i, "startTime", e.target.value)} style={selectStyle}>
-                  {timeSlots.map((t) => <option key={t} value={t} style={{ background: "#111" }}>{t}</option>)}
-                </select>
-                <span style={{ color: "#555", fontSize: 13 }}>até</span>
-                <select value={day.endTime} onChange={(e) => update(i, "endTime", e.target.value)} style={selectStyle}>
-                  {timeSlots.map((t) => <option key={t} value={t} style={{ background: "#111" }}>{t}</option>)}
-                </select>
-              </div>
-            ) : (
-              <span style={{ fontSize: 13, color: "#444", fontStyle: "italic" }}>Não disponível</span>
-            )}
-
-            {/* Availability dot */}
-            <div style={{ marginLeft: "auto", width: 8, height: 8, borderRadius: "50%", background: day.available ? "#00cc66" : "#2a2a2a" }} />
-          </div>
-        ))}
-      </div>
-
-      {/* Visual summary */}
-      <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 12, padding: "18px 20px", marginBottom: 20 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 14 }}>Resumo da semana</h3>
-        <div style={{ display: "flex", gap: 6 }}>
-          {schedule.map((d, i) => (
-            <div
-              key={i}
-              style={{
-                flex: 1,
-                borderRadius: 6,
-                background: d.available ? "#cc0000" : "#1a1a1a",
-                padding: "8px 4px",
-                textAlign: "center",
-              }}
-            >
-              <div style={{ fontSize: 11, fontWeight: 600, color: d.available ? "#fff" : "#444", marginBottom: 4 }}>
-                {days[i].slice(0, 3)}
-              </div>
-              {d.available && (
-                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.7)" }}>
-                  {d.startTime}–{d.endTime}
+              {day.available ? (
+                <div className="premium-form" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 10, alignItems: "center", marginTop: 16 }}>
+                  <select value={day.startTime} onChange={(e) => update(i, "startTime", e.target.value)}>
+                    {timeSlots.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <span style={{ color: "var(--elite-text-muted)", fontWeight: 800 }}>até</span>
+                  <select value={day.endTime} onChange={(e) => update(i, "endTime", e.target.value)}>
+                    {timeSlots.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
                 </div>
-              )}
+              ) : null}
+            </article>
+          ))}
+        </div>
+      </PremiumSection>
+
+      <section className="premium-section-card">
+        <p className="premium-eyebrow">Resumo</p>
+        <h2 className="premium-section-title">Resumo da semana</h2>
+        <div className="premium-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(72px, 1fr))", marginTop: 18 }}>
+          {schedule.map((d, i) => (
+            <div key={days[i]} style={{ minHeight: 74, border: "1px solid var(--elite-border-soft)", borderRadius: 16, background: d.available ? "rgba(117,217,154,0.10)" : "rgba(255,255,255,0.035)", display: "grid", placeItems: "center", padding: 8, textAlign: "center" }}>
+              <strong style={{ color: d.available ? "var(--elite-success)" : "var(--elite-text-muted)", fontSize: 12 }}>{days[i].slice(0, 3)}</strong>
+              {d.available ? <small style={{ color: "#fff", fontSize: 10 }}>{d.startTime}-{d.endTime}</small> : null}
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
-      <button
-        onClick={handleSave}
-        disabled={loading}
-        style={{
-          padding: "13px 28px",
-          background: loading ? "#8a0000" : "#cc0000",
-          color: "#fff",
-          border: "none",
-          borderRadius: 9,
-          fontSize: 15,
-          fontWeight: 700,
-          cursor: loading ? "not-allowed" : "pointer",
-        }}
-        onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = "#e00000"; }}
-        onMouseLeave={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = "#cc0000"; }}
-      >
+      <button onClick={handleSave} disabled={loading} className="premium-button" style={{ width: "100%" }}>
+        <CalendarDays size={18} />
         {loading ? "Salvando..." : "Salvar agenda"}
       </button>
     </div>

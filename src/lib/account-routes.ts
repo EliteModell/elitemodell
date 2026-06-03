@@ -18,9 +18,10 @@ export const ACCOUNT_ROUTES = {
   mainClientFeed: "/dashboard/acompanhantes",
   dashboardAcompanhante: "/profissional",
   dashboardAnfitriao: "/anfitriao",
-  verificacaoAcompanhante: "/verificacao/acompanhante",
+  verificacaoAcompanhante: "/profissional/analise",
   verificacaoAnfitriao: "/verificacao/anfitriao",
   onboardingAcompanhante: "/profissional/novo",
+  analiseAcompanhante: "/profissional/analise",
   onboardingAnfitriao: "/anfitriao/imoveis/novo",
   admin: "/admin",
 } as const;
@@ -133,6 +134,9 @@ export function postLoginPathFromUser(user: PostLoginUser | null | undefined, in
   const hostStatus = getHostRegistrationStatus(user);
 
   if (user.role === "ADMIN") return ACCOUNT_ROUTES.admin;
+  if (professionalStatus && professionalStatus !== "ACTIVE" && professionalStatus !== "PAUSED") {
+    return professionalStatus === "DRAFT" ? ACCOUNT_ROUTES.onboardingAcompanhante : ACCOUNT_ROUTES.analiseAcompanhante;
+  }
 
   if (intent === "cliente") return ACCOUNT_ROUTES.dashboardCliente;
 
@@ -166,6 +170,9 @@ export function accountHomePathFromSession(sessionUser: {
 } | null | undefined) {
   if (!sessionUser) return ACCOUNT_ROUTES.dashboardCliente;
   if (sessionUser.role === "ADMIN") return ACCOUNT_ROUTES.admin;
+  if (sessionUser.professionalStatus && sessionUser.professionalStatus !== "ACTIVE" && sessionUser.professionalStatus !== "PAUSED") {
+    return sessionUser.professionalStatus === "DRAFT" ? ACCOUNT_ROUTES.onboardingAcompanhante : ACCOUNT_ROUTES.analiseAcompanhante;
+  }
   if (sessionUser.activeProfileType === "CLIENTE") return ACCOUNT_ROUTES.dashboardCliente;
   if (sessionUser.activeProfileType === "PROFESSIONAL") {
     if (sessionUser.professionalStatus === "ACTIVE" || sessionUser.professionalStatus === "PAUSED") {

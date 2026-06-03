@@ -2,8 +2,10 @@
 /* eslint-disable @next/next/no-img-element -- Upload previews can be blob/data/private URLs before the final hosted image is available. */
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import toast from "react-hot-toast";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import { supabaseAuth } from "@/lib/supabase-client";
 
 /* ── constantes de tema ─────────────────────────────────── */
 const GOLD = "#d4a843";
@@ -887,6 +889,11 @@ export default function ProfissionalNovoPage() {
   }
   function back() { setStep((s) => Math.max(s - 1, 0)); window.scrollTo({ top: 0, behavior: "smooth" }); }
 
+  async function handleExit() {
+    await supabaseAuth.auth.signOut();
+    await signOut({ callbackUrl: "/" });
+  }
+
   const personaButtonDisabled =
     uploadingIdx === 100 || (personaAvailability.checked && !personaAvailability.available);
   const personaUnavailable =
@@ -898,7 +905,7 @@ export default function ProfissionalNovoPage() {
       <header className="model-flow-header">
         <button type="button" onClick={() => router.back()} aria-label="Voltar">←</button>
         <span aria-label="Elite Modell"><b>elite</b>modell</span>
-        <button type="button" onClick={() => router.push(ACCOUNT_ROUTES.dashboardAcompanhante)}>Sair</button>
+        <button type="button" onClick={handleExit}>Sair</button>
       </header>
 
       {/* ── Header ── */}

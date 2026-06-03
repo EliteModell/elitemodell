@@ -79,6 +79,12 @@ export default async function ProfessionalListingPage() {
     ratingLabel: professional.rating.toLocaleString("pt-BR", { maximumFractionDigits: 1 }),
     priceLabel: `R$ ${Math.round(professional.priceMin ?? professional.pricePerHour ?? 100)}`,
     isHighlighted: professional.featured || isBoostActive,
+    highlightPoints:
+      (hasActivePlan ? 2000 : 0) +
+      (professional.featured ? 1000 : 0) +
+      (isBoostActive ? 1200 : 0) +
+      Math.min(allPhotosCount * 80, 640) +
+      Math.round(professional.rating * 100),
     tips: [
       { label: "Adicionar fotos recentes", done: allPhotosCount >= 3 },
       { label: "Manter agenda ativa", done: professional.schedule.length > 0 || professional.diasDisponiveis.length > 0 },

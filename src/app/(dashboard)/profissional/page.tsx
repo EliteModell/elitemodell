@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireCompanionPanel } from "@/lib/account-access";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
@@ -9,12 +10,12 @@ import {
   PrivacyBoostCard,
   ProfessionalMainCard,
   QuickManagementGrid,
-  QuickPostCard,
   RankingCard,
   type DashboardAppointment,
 } from "@/components/professional-dashboard/ProfessionalDashboardCards";
 import { ProfessionalAlertStack, type ProfessionalAlert } from "@/components/professional-dashboard/ProfessionalAlertCard";
 import { PerformanceStats, type PerformancePeriod, type PerformanceSnapshot } from "@/components/professional-dashboard/PerformanceStats";
+import { PremiumActionCard, PremiumIllustration } from "@/components/professional-dashboard/ProfessionalPremium";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -209,7 +210,7 @@ export default async function ProfissionalDashPage() {
       id: "status-blocked",
       title: "Seu perfil precisa de atenção",
       description: professional.rejectReason ?? "Existe uma restrição ou pendência de revisão antes do perfil voltar a performar.",
-      href: "/verificacao/acompanhante",
+      href: ACCOUNT_ROUTES.analiseAcompanhante,
       actionLabel: "Verificar status",
       tone: "danger",
       icon: "shield",
@@ -252,7 +253,7 @@ export default async function ProfissionalDashPage() {
       id: "kyc-pending",
       title: "Documento em análise",
       description: "Nossa equipe está conferindo sua verificação. Você será avisada quando a análise terminar.",
-      href: "/verificacao/acompanhante",
+      href: ACCOUNT_ROUTES.analiseAcompanhante,
       actionLabel: "Acompanhar KYC",
       tone: "neutral",
       dismissible: true,
@@ -383,16 +384,46 @@ export default async function ProfissionalDashPage() {
   ];
 
   return (
-    <div className="grid gap-5" data-dashboard-version="professional-premium-v2">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#d4a843]">Painel profissional Elite Modell</p>
-          <h1 className="mt-1 text-3xl font-black leading-tight text-white sm:text-4xl">Visibilidade, conteúdo e conversão</h1>
+    <div className="professional-premium-page" data-dashboard-version="professional-premium-v3">
+      <section className="premium-hero">
+        <div className="premium-hero-copy">
+          <p className="premium-eyebrow">Painel profissional Elite Modell</p>
+          <h1 className="premium-title">Visibilidade,<br />conteúdo e conversão</h1>
+          <p className="premium-description">Um painel para acompanhar status, melhorar posicionamento e agir rápido nos pontos que geram mais contatos.</p>
         </div>
-        <p className="max-w-xl text-sm leading-6 text-white/50">Um painel para acompanhar status, melhorar posicionamento e agir rápido nos pontos que geram mais contatos.</p>
-      </div>
+        <PremiumIllustration kind="growth" />
+      </section>
 
-      <ProfessionalAlertStack alerts={alerts.slice(0, 8)} />
+      <PremiumActionCard
+        href="/profissional/perfil"
+        icon="profile"
+        title="Seu perfil pode receber mais contatos"
+        description="Complete foto de perfil, fotos, documentos e verificação."
+        buttonLabel="Melhorar perfil"
+      />
+      <PremiumActionCard
+        href="/profissional/planos"
+        icon="diamond"
+        title="Seu perfil está no modo básico"
+        description="Planos e destaques aumentam a visibilidade na cidade e ajudam clientes a encontrarem seu anúncio."
+        buttonLabel="Conhecer planos"
+      />
+      <PremiumActionCard
+        href="/profissional/perfil"
+        icon="shield"
+        title="Verificação aprovada"
+        description="Seu perfil tem um sinal importante de confiança. Mantenha suas informações atualizadas."
+        buttonLabel="Revisar perfil"
+      />
+      <PremiumActionCard
+        href="/profissional/fotos"
+        icon="camera"
+        title="Poucas fotos cadastradas"
+        description="Adicione uma capa forte e uma galeria recente para aumentar confiança e conversão."
+        buttonLabel="Postar fotos"
+      />
+
+      {alerts.length > 4 ? <ProfessionalAlertStack alerts={alerts.slice(4, 8)} /> : null}
 
       <ProfessionalMainCard
         image={professional.image}
@@ -413,7 +444,9 @@ export default async function ProfissionalDashPage() {
 
       <PerformanceStats snapshots={snapshots} />
       <RankingCard city={professional.city} position={rankingPosition} />
-      <QuickPostCard />
+      <Link href="/profissional/postar" className="premium-button" style={{ width: "100%" }}>
+        Postar conteúdo
+      </Link>
       <PlanResourcesCard
         planName="Premium Elite"
         statusLabel={hasActivePlan ? "ativo" : "básico"}

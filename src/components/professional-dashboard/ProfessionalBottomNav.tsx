@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Crown, LayoutDashboard, List, PlusCircle, UserRound } from "lucide-react";
+import { Crown, Grid2X2, List, PlusCircle, UserRound } from "lucide-react";
 
 const items = [
-  { label: "Painel", href: "/profissional", icon: LayoutDashboard },
+  { label: "Painel", href: "/profissional", icon: Grid2X2 },
   { label: "Postar", href: "/profissional/postar", icon: PlusCircle },
   { label: "Listagem", href: "/profissional/listagem", icon: List },
   { label: "Planos", href: "/profissional/planos", icon: Crown },
@@ -16,20 +16,17 @@ export function ProfessionalBottomNav() {
   const pathname = usePathname() ?? "";
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#d4a843]/20 bg-[#070708]/96 px-2 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 shadow-[0_-18px_55px_rgba(0,0,0,0.42)] backdrop-blur-xl md:hidden" aria-label="Atalhos profissionais">
-      <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
+    <nav className="professional-bottom-nav md:hidden" aria-label="Atalhos profissionais">
+      <div className="professional-bottom-nav-inner">
         {items.map((item) => {
           const Icon = item.icon;
-          const active = item.href === "/profissional" ? pathname === item.href || pathname === "/painel/acompanhante" : pathname.startsWith(item.href);
+          const active = item.href === "/profissional"
+            ? pathname === item.href || pathname === "/painel/acompanhante"
+            : pathname.startsWith(item.href);
+
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex min-h-[54px] flex-col items-center justify-center gap-1 rounded-[8px] text-[11px] font-black no-underline transition ${
-                active ? "bg-[#d4a843]/12 text-[#f5d78c]" : "text-white/45 hover:bg-white/[0.05] hover:text-white"
-              }`}
-            >
-              <Icon className="h-5 w-5" />
+            <Link key={item.href} href={item.href} className={active ? "active" : ""}>
+              <Icon />
               <span>{item.label}</span>
             </Link>
           );

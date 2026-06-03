@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import DashSidebar from "@/components/DashSidebar";
 import ClientAreaShell from "@/components/client-area/ClientAreaShell";
 import { ProfessionalBottomNav } from "@/components/professional-dashboard/ProfessionalBottomNav";
+import { ProfessionalPremiumStyles } from "@/components/professional-dashboard/ProfessionalPremium";
 import { ProfessionalTopHeader } from "@/components/professional-dashboard/ProfessionalTopHeader";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
@@ -86,6 +87,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className={roleAreaClass ? `${roleAreaClass}-shell min-h-screen overflow-x-hidden bg-[#050506] text-white` : "min-h-screen overflow-x-hidden bg-[#050506] text-white"}>
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,168,67,0.10),transparent_34%)]" />
+      {isProfessionalArea ? <ProfessionalPremiumStyles /> : null}
 
       {isProfessionalOnboarding ? null : <DashSidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />}
 

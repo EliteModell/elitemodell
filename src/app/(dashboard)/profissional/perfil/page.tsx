@@ -1,14 +1,14 @@
 "use client";
+
+/* eslint-disable @next/next/no-img-element -- Avatar/profile image can come from uploaded Supabase URLs. */
+
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-
-const GOLD = "#d4a843";
-
-const specialtyOptions = [
-  "Modelo Fotográfico", "Modelo Publicitário", "Modelo Fitness", "Modelo Plus Size",
-  "Modelo Editorial", "Atriz/Ator", "Influencer", "Promoter",
-  "Make Artist", "Stylist", "Fotógrafo", "Videomaker",
-];
+import { BadgeCheck, Eye, MapPin, Save, ShieldCheck, UserRound } from "lucide-react";
+import {
+  PremiumHeroCard,
+  PremiumSection,
+} from "@/components/professional-dashboard/ProfessionalPremium";
 
 type ProfileForm = {
   displayName: string;
@@ -21,7 +21,6 @@ type ProfileForm = {
   website: string;
   priceMin: string;
   priceMax: string;
-  specialties: string[];
 };
 
 type MeResponse = {
@@ -31,13 +30,15 @@ type MeResponse = {
     bio: string;
     city: string;
     state: string;
+    status?: string | null;
+    verified?: boolean | null;
+    image?: string | null;
     phone?: string | null;
     whatsapp?: string | null;
     instagram?: string | null;
     website?: string | null;
     priceMin?: number | null;
     priceMax?: number | null;
-    specialties: { name: string }[];
   } | null;
 };
 
@@ -52,7 +53,6 @@ const emptyForm: ProfileForm = {
   website: "",
   priceMin: "",
   priceMax: "",
-  specialties: [],
 };
 
 function parseMoneyValue(value: string) {
@@ -61,54 +61,12 @@ function parseMoneyValue(value: string) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
-function formatBrazilPhone(value: string) {
-  const digits = value.replace(/\D/g, "").slice(0, 11);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-}
-
-function WhatsAppInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-  return (
-    <div className="profile-whatsapp-field">
-      <div className="profile-whatsapp-prefix" aria-hidden="true">
-        <span>BR</span>
-        <strong>+55</strong>
-      </div>
-      <input
-        type="tel"
-        inputMode="numeric"
-        autoComplete="tel-national"
-        value={formatBrazilPhone(value)}
-        onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 11))}
-        placeholder="(11) 91234-5678"
-      />
-    </div>
-  );
-}
-
-function MoneyField({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-}) {
-  return (
-    <div className="profile-money-field">
-      <span aria-hidden="true">R$</span>
-      <input
-        type="text"
-        inputMode="decimal"
-        value={value}
-        onChange={(event) => onChange(event.target.value.replace(/[^\d,.]/g, ""))}
-        placeholder={placeholder}
-      />
-    </div>
-  );
+function statusLabel(status?: string | null) {
+  if (status === "ACTIVE") return "ATIVO";
+  if (status === "PAUSED") return "PAUSADO";
+  if (status === "REJECTED") return "REPROVADO";
+  if (status === "SUSPENDED") return "SUSPENSO";
+  return "EM ANÁLISE";
 }
 
 export default function EditarPerfilPage() {
@@ -116,6 +74,9 @@ export default function EditarPerfilPage() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [profileSlug, setProfileSlug] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileStatus, setProfileStatus] = useState<string | null>(null);
+  const [verified, setVerified] = useState(false);
   const [form, setForm] = useState<ProfileForm>(emptyForm);
 
   useEffect(() => {
@@ -130,10 +91,12 @@ export default function EditarPerfilPage() {
         const professional = data.professional;
         if (!professional) {
           setError("Nenhum perfil profissional encontrado para esta conta.");
-          setForm(emptyForm);
           return;
         }
         setProfileSlug(professional.slug);
+        setProfileImage(professional.image ?? null);
+        setProfileStatus(professional.status ?? null);
+        setVerified(Boolean(professional.verified));
         setForm({
           displayName: professional.displayName ?? "",
           bio: professional.bio ?? "",
@@ -145,7 +108,6 @@ export default function EditarPerfilPage() {
           website: professional.website ?? "",
           priceMin: professional.priceMin ? String(professional.priceMin) : "",
           priceMax: professional.priceMax ? String(professional.priceMax) : "",
-          specialties: professional.specialties?.map((s) => s.name) ?? [],
         });
       } catch {
         if (!controller.signal.aborted) setError("Não foi possível carregar seu perfil agora.");
@@ -153,17 +115,9 @@ export default function EditarPerfilPage() {
         if (!controller.signal.aborted) setInitialLoading(false);
       }
     }
-    loadProfile();
+    void loadProfile();
     return () => controller.abort();
   }, []);
-
-  const toggle = (s: string) =>
-    setForm((f) => ({
-      ...f,
-      specialties: f.specialties.includes(s)
-        ? f.specialties.filter((x) => x !== s)
-        : [...f.specialties, s],
-    }));
 
   async function handleSave() {
     if (!profileSlug) {
@@ -173,8 +127,6 @@ export default function EditarPerfilPage() {
 
     setLoading(true);
     try {
-      const priceMin = parseMoneyValue(form.priceMin);
-      const priceMax = parseMoneyValue(form.priceMax);
       const res = await fetch(`/api/professionals/${profileSlug}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -187,9 +139,8 @@ export default function EditarPerfilPage() {
           whatsapp: form.whatsapp || undefined,
           instagram: form.instagram || undefined,
           website: form.website || undefined,
-          priceMin,
-          priceMax,
-          specialties: form.specialties,
+          priceMin: parseMoneyValue(form.priceMin),
+          priceMax: parseMoneyValue(form.priceMax),
         }),
       });
       if (!res.ok) throw new Error("Failed to update profile");
@@ -201,241 +152,105 @@ export default function EditarPerfilPage() {
     }
   }
 
-  const input = {
-    width: "100%",
-    padding: "11px 14px",
-    background: "#0d0d0d",
-    border: "1px solid #2a2a2a",
-    borderRadius: 12,
-    color: "#fff" as const,
-    fontSize: 14,
-    outline: "none",
-    boxSizing: "border-box" as const,
-  };
-  const label = { fontSize: 13, color: "#aaa", display: "block", marginBottom: 6, fontWeight: 500 } as const;
-  const focus = {
-    onFocus: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      e.currentTarget.style.borderColor = GOLD;
-    },
-    onBlur: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      e.currentTarget.style.borderColor = "#2a2a2a";
-    },
-  };
-  const allSpecialtyOptions = Array.from(new Set([...specialtyOptions, ...form.specialties]));
-
   if (initialLoading) {
     return (
-      <div className="premium-card premium-enter" style={{ maxWidth: 700, borderRadius: 8, padding: 24 }}>
-        <div className="premium-skeleton" style={{ height: 24, width: 220, borderRadius: 999 }} />
-        <div className="premium-skeleton" style={{ height: 12, width: "75%", borderRadius: 999, marginTop: 14 }} />
+      <div className="professional-premium-page">
+        <div className="premium-section-card">
+          <div className="premium-skeleton" style={{ height: 28, width: 220, borderRadius: 999 }} />
+          <div className="premium-skeleton" style={{ height: 14, width: "70%", borderRadius: 999, marginTop: 16 }} />
+        </div>
       </div>
     );
   }
 
   if (error) {
-    return (
-      <div className="premium-empty-state premium-enter" style={{ maxWidth: 700, borderRadius: 8, padding: 32, color: "#aaa" }}>
-        {error}
-      </div>
-    );
+    return <div className="professional-premium-page"><div className="premium-section-card">{error}</div></div>;
   }
 
   return (
-    <div style={{ maxWidth: 700 }}>
-      <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Editar perfil</h1>
-        <p style={{ color: "#666", fontSize: 14 }}>Mantenha suas informações sempre atualizadas com dados salvos no banco.</p>
-      </div>
+    <div className="professional-premium-page premium-form">
+      <PremiumHeroCard
+        eyebrow="Meu perfil profissional"
+        title={<>Perfil <span className="gold">profissional</span></>}
+        subtitle="Mantenha seus dados, descrição, contato e visibilidade atualizados com acabamento premium."
+        illustration="profile"
+      />
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        <div style={{ background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: "22px" }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 18 }}>Informações básicas</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div>
-              <label style={label}>Nome artístico / nome público</label>
-              <input style={input} value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} {...focus} />
-            </div>
-            <div>
-              <label style={label}>Biografia profissional</label>
-              <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={5}
-                placeholder="Descreva sua experiência, especialidades e diferenciais..."
-                style={{ ...input, resize: "vertical" }} {...focus} />
-              <p style={{ fontSize: 12, color: "#555", marginTop: 4 }}>{form.bio.length}/1000 caracteres</p>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
-              <div>
-                <label style={label}>Cidade</label>
-                <input style={input} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="São Paulo" {...focus} />
-              </div>
-              <div>
-                <label style={label}>Estado</label>
-                <input style={input} value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} placeholder="SP" {...focus} />
-              </div>
+      <section className="premium-section-card">
+        <div style={{ display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", gap: 18, alignItems: "center" }}>
+          <div className="premium-avatar" style={{ width: 112, height: 112 }}>
+            {profileImage ? <img src={profileImage} alt={form.displayName} /> : <UserRound size={52} color="#F5D46B" />}
+          </div>
+          <div>
+            <span className="premium-badge" style={{ color: profileStatus === "ACTIVE" ? "var(--elite-success)" : "var(--elite-gold-light)" }}>
+              {statusLabel(profileStatus)}
+            </span>
+            <h2 className="premium-section-title" style={{ marginTop: 10 }}>{form.displayName || "Perfil Elite"}</h2>
+            <p className="premium-action-text" style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+              <MapPin size={18} />
+              {form.city || "Cidade"}{form.state ? `, ${form.state}` : ""}
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 14 }}>
+              {verified ? <span className="premium-badge"><BadgeCheck size={14} /> Verificação aprovada</span> : null}
+              <span className="premium-badge"><ShieldCheck size={14} /> Revisão manual</span>
+              <span className="premium-badge"><Eye size={14} /> Visibilidade</span>
             </div>
           </div>
         </div>
+      </section>
 
-        <div style={{ background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: "22px" }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 6 }}>Especialidades</h2>
-          <p style={{ fontSize: 13, color: "#666", marginBottom: 16 }}>Selecione todas que se aplicam ao seu trabalho.</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {allSpecialtyOptions.map((s) => (
-              <button
-                key={s}
-                onClick={() => toggle(s)}
-                style={{
-                  padding: "7px 14px",
-                  background: form.specialties.includes(s) ? "rgba(204,0,0,0.12)" : "#0d0d0d",
-                  border: `1.5px solid ${form.specialties.includes(s) ? "#cc0000" : "#222"}`,
-                  borderRadius: 999,
-                  color: form.specialties.includes(s) ? "#fff" : "#888",
-                  fontSize: 13,
-                  cursor: "pointer",
-                  fontWeight: form.specialties.includes(s) ? 600 : 400,
-                  transition: "all 0.15s",
-                }}
-              >
-                {form.specialties.includes(s) ? "OK " : ""}{s}
-              </button>
-            ))}
+      <PremiumSection eyebrow="Dados principais" title="Dados principais">
+        <div className="premium-grid premium-grid-2">
+          <div>
+            <label>Nome profissional</label>
+            <input value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} />
+          </div>
+          <div>
+            <label>Cidade</label>
+            <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+          </div>
+          <div>
+            <label>Estado</label>
+            <input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
+          </div>
+          <div>
+            <label>WhatsApp</label>
+            <input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} />
           </div>
         </div>
+      </PremiumSection>
 
-        <div style={{ background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: "22px" }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 18 }}>Faixa de preço</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
-            <div>
-              <label style={label}>Preço mínimo (R$)</label>
-              <MoneyField value={form.priceMin} onChange={(value) => setForm({ ...form, priceMin: value })} placeholder="500" />
-            </div>
-            <div>
-              <label style={label}>Preço máximo (R$)</label>
-              <MoneyField value={form.priceMax} onChange={(value) => setForm({ ...form, priceMax: value })} placeholder="2000" />
-            </div>
+      <PremiumSection eyebrow="Bio/descrição" title="Bio e descrição">
+        <label>Descrição pública</label>
+        <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="Descreva seu atendimento, diferenciais e estilo de forma clara." />
+        <p className="premium-action-text" style={{ marginTop: 8 }}>{form.bio.length}/1000 caracteres</p>
+      </PremiumSection>
+
+      <PremiumSection eyebrow="Contato e valores" title="Contato e valores">
+        <div className="premium-grid premium-grid-2">
+          <div>
+            <label>Telefone</label>
+            <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
           </div>
-          <p style={{ fontSize: 12, color: "#555", marginTop: 10 }}>Os valores são uma referência. O preço final é negociado com cada cliente.</p>
-        </div>
-
-        <div style={{ background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: "22px" }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 18 }}>Contato e redes</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {(["phone", "instagram", "website"] as const).map((key) => {
-              const meta = {
-                phone:     { label: "Telefone", placeholder: "(11) 99999-9999" },
-                instagram: { label: "Instagram", placeholder: "@seuperfil" },
-                website:   { label: "Site / portfólio", placeholder: "www.seuperfil.com" },
-              }[key];
-              return (
-                <div key={key}>
-                  <label style={label}>{meta.label}</label>
-                  <input style={input} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} placeholder={meta.placeholder} {...focus} />
-                </div>
-              );
-            })}
-            <div>
-              <label style={label}>WhatsApp (para contato direto)</label>
-              <WhatsAppInput value={form.whatsapp} onChange={(v) => setForm({ ...form, whatsapp: v })} />
-            </div>
+          <div>
+            <label>Instagram</label>
+            <input value={form.instagram} onChange={(e) => setForm({ ...form, instagram: e.target.value })} />
+          </div>
+          <div>
+            <label>Preço mínimo</label>
+            <input inputMode="decimal" value={form.priceMin} onChange={(e) => setForm({ ...form, priceMin: e.target.value.replace(/[^\d,.]/g, "") })} />
+          </div>
+          <div>
+            <label>Preço máximo</label>
+            <input inputMode="decimal" value={form.priceMax} onChange={(e) => setForm({ ...form, priceMax: e.target.value.replace(/[^\d,.]/g, "") })} />
           </div>
         </div>
+      </PremiumSection>
 
-        <button
-          onClick={handleSave}
-          disabled={loading}
-          style={{
-            padding: "14px",
-            background: loading ? "#8f7128" : "#d4a843",
-            color: "#080704",
-            border: "none",
-            borderRadius: 12,
-            fontSize: 15,
-            fontWeight: 700,
-            cursor: loading ? "not-allowed" : "pointer",
-            transition: "background 0.2s",
-          }}
-          onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = "#f5d78c"; }}
-          onMouseLeave={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = "#d4a843"; }}
-        >
-          {loading ? "Salvando..." : "Salvar alterações"}
-        </button>
-      </div>
-      <style>{`
-        .profile-money-field {
-          display: grid;
-          grid-template-columns: 58px minmax(0, 1fr);
-          min-height: 46px;
-          border: 1px solid #2a2a2a;
-          border-radius: 8px;
-          background: #0d0d0d;
-          overflow: hidden;
-        }
-        .profile-money-field > span {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-right: 1px solid rgba(212,168,67,0.25);
-          color: ${GOLD};
-          font-size: 14px;
-          font-weight: 900;
-          user-select: none;
-        }
-        .profile-money-field input {
-          width: 100%;
-          min-width: 0;
-          border: 0;
-          border-radius: 0;
-          background: transparent;
-          color: #fff;
-          padding: 11px 14px;
-          font-size: 14px;
-          outline: none;
-          box-shadow: none;
-        }
-        .profile-money-field:focus-within {
-          border-color: ${GOLD};
-          box-shadow: 0 0 0 3px rgba(212,168,67,0.14);
-        }
-        .profile-whatsapp-field {
-          display: grid;
-          grid-template-columns: 64px minmax(0, 1fr);
-          min-height: 46px;
-          border: 1px solid #2a2a2a;
-          border-radius: 8px;
-          background: #0d0d0d;
-          overflow: hidden;
-        }
-        .profile-whatsapp-prefix {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          border-right: 1px solid rgba(212,168,67,0.25);
-          color: ${GOLD};
-          font-size: 11px;
-          user-select: none;
-          gap: 1px;
-        }
-        .profile-whatsapp-prefix strong {
-          font-size: 12px;
-          font-weight: 800;
-        }
-        .profile-whatsapp-field input {
-          width: 100%;
-          min-width: 0;
-          border: 0;
-          border-radius: 0;
-          background: transparent;
-          color: #fff;
-          padding: 11px 14px;
-          font-size: 14px;
-          outline: none;
-          box-shadow: none;
-        }
-        .profile-whatsapp-field:focus-within {
-          border-color: ${GOLD};
-          box-shadow: 0 0 0 3px rgba(212,168,67,0.14);
-        }
-      `}</style>
+      <button onClick={handleSave} disabled={loading} className="premium-button" style={{ width: "100%" }}>
+        <Save size={18} />
+        {loading ? "Salvando..." : "Salvar alterações"}
+      </button>
     </div>
   );
 }
