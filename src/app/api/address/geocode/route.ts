@@ -54,21 +54,46 @@ export async function GET(req: NextRequest) {
 
   const latlng = searchParams.get("latlng")?.trim();
   if (latlng) {
-    const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
-    url.searchParams.set("latlng", latlng);
-    url.searchParams.set("language", "pt-BR");
-    url.searchParams.set("key", apiKey);
-    const res = await fetch(url, { headers: { "Referer": appUrl } });
-    if (!res.ok) return NextResponse.json({ error: "Erro ao geocodificar localização." }, { status: 502 });
-    const data = await res.json();
-    const result = data.results?.[0];
-    if (!result) return NextResponse.json({ error: "Cidade não encontrada." }, { status: 404 });
-    const components = result.address_components ?? [];
-    return NextResponse.json({
-      provider: "google",
-      city: pickAddressPart(components, "administrative_area_level_2"),
-      state: pickAddressPart(components, "administrative_area_level_1", true),
-    });
+    const [latStr, lngStr] = latlng.split(",");
+
+    // PRIMARY: BigDataCloud (free, no API key required)
+    try {
+      const bdcRes = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latStr}&longitude=${lngStr}&localityLanguage=pt`,
+        { headers: { "Referer": appUrl } },
+      );
+      if (bdcRes.ok) {
+        const bdc = await bdcRes.json() as { city?: string; locality?: string; principalSubdivisionCode?: string };
+        const city = bdc.city || bdc.locality;
+        const state = (bdc.principalSubdivisionCode ?? "").replace("BR-", "");
+        if (city) {
+          return NextResponse.json({ provider: "bigdatacloud", city, state });
+        }
+      }
+    } catch { /* fallback below */ }
+
+    // FALLBACK: Google Geocoding API
+    if (apiKey) {
+      const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
+      url.searchParams.set("latlng", latlng);
+      url.searchParams.set("language", "pt-BR");
+      url.searchParams.set("key", apiKey);
+      const res = await fetch(url, { headers: { "Referer": appUrl } });
+      if (res.ok) {
+        const data = await res.json() as { results?: { address_components: AddressComponent[] }[] };
+        const result = data.results?.[0];
+        if (result) {
+          const components = result.address_components ?? [];
+          return NextResponse.json({
+            provider: "google",
+            city: pickAddressPart(components, "administrative_area_level_2"),
+            state: pickAddressPart(components, "administrative_area_level_1", true),
+          });
+        }
+      }
+    }
+
+    return NextResponse.json({ error: "Cidade não encontrada." }, { status: 404 });
   }
 
   if (!address) return NextResponse.json({ error: "Informe placeId, latlng ou address." }, { status: 400 });
