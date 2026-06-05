@@ -140,7 +140,8 @@ export async function GET(req: NextRequest) {
   const now       = new Date();
   await refreshExpiredProfessionalTimers(now);
 
-  const where: Prisma.ProfessionalWhereInput = { status: "ACTIVE", verified: true };
+  // Apenas status ACTIVE é obrigatório. "verified" é badge visual, não bloqueio de visibilidade.
+  const where: Prisma.ProfessionalWhereInput = { status: "ACTIVE" };
   const andFilters: Prisma.ProfessionalWhereInput[] = [
     { OR: [{ pauseUntil: null }, { pauseUntil: { lt: now } }] },
   ];
@@ -208,6 +209,9 @@ export async function GET(req: NextRequest) {
     }),
     prisma.professional.count({ where }),
   ]);
+
+  console.log("[CLIENT_SEARCH] filters", { search, city, state, category, sortBy, page, limit });
+  console.log("[CLIENT_SEARCH] professionals found", professionals.length, "/ total", total);
 
   // WhatsApp na listagem exige beneficio pago ativo e respeita a privacidade manual.
   const safeList = professionals.map(({ hidePhone, listingPhoneUntil, ...p }) => ({

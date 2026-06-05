@@ -10,7 +10,6 @@ import {
   Bell,
   ChevronRight,
   CircleHelp,
-  Compass,
   Clock3,
   CreditCard,
   Heart,
@@ -413,7 +412,7 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 export function ClientBottomNav() {
   const pathname = usePathname();
   const items = [
-    { href: "/dashboard/acompanhantes", label: "Explorar", icon: <Compass className="h-[23px] w-[23px]" /> },
+    { href: "/dashboard/acompanhantes", label: "Acompanhantes", icon: <Users className="h-[23px] w-[23px]" /> },
     { href: "/dashboard/shots", label: "Shots", icon: <Video className="h-[23px] w-[23px]" /> },
     { href: "/dashboard/favoritos", label: "Listas", icon: <Heart className="h-[23px] w-[23px]" /> },
     { href: "/dashboard", label: "Painel", icon: <LayoutDashboard className="h-[23px] w-[23px]" /> },
