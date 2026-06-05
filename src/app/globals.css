@@ -247,7 +247,7 @@ svg {
   isolation: isolate;
   min-height: 100dvh;
   overflow-x: hidden;
-  background: var(--client-bg);
+  background: #050505;
   color: var(--client-text);
 }
 
@@ -258,12 +258,9 @@ svg {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 20% 10%, rgba(214, 168, 58, 0.16), transparent 32%),
-    radial-gradient(circle at 85% 35%, rgba(214, 168, 58, 0.10), transparent 34%),
-    #050505;
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center top;
+    radial-gradient(circle at 20% 10%, rgba(214, 168, 58, 0.22), transparent 32%),
+    radial-gradient(circle at 85% 35%, rgba(214, 168, 58, 0.14), transparent 34%),
+    url('/brand/client-area-bg.jpg') center top / cover no-repeat;
 }
 
 .client-premium::after {
@@ -271,7 +268,8 @@ svg {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background: linear-gradient(180deg, rgba(5, 5, 5, 0), #050505 76%);
+  background:
+    linear-gradient(180deg, rgba(5, 5, 5, 0.55) 0%, rgba(5, 5, 5, 0.72) 50%, #050505 88%);
   pointer-events: none;
 }
 
@@ -2577,7 +2575,6 @@ body[data-client-explore="true"] .client-premium .client-bottom-nav a[href="/das
 body[data-client-dashboard="true"],
 body[data-client-dashboard="true"] .client-premium,
 .client-dashboard-shell {
-  background: #050505 !important;
   color: #ffffff;
 }
 
@@ -2609,13 +2606,13 @@ body[data-client-dashboard="true"] .client-premium,
 
 .client-dashboard-shell::before {
   background:
-    radial-gradient(circle at 20% 10%, rgba(214, 168, 58, 0.18), transparent 35%),
-    radial-gradient(circle at 80% 40%, rgba(214, 168, 58, 0.10), transparent 35%),
-    #050505 !important;
+    radial-gradient(circle at 20% 10%, rgba(214, 168, 58, 0.22), transparent 35%),
+    radial-gradient(circle at 80% 40%, rgba(214, 168, 58, 0.14), transparent 35%),
+    url('/brand/client-area-bg.jpg') center top / cover no-repeat !important;
 }
 
 .client-dashboard-shell::after {
-  background: linear-gradient(180deg, rgba(5, 5, 5, 0), #050505 72%) !important;
+  background: linear-gradient(180deg, rgba(5, 5, 5, 0.55) 0%, rgba(5, 5, 5, 0.72) 50%, #050505 88%) !important;
 }
 
 .client-dashboard-shell > header {
