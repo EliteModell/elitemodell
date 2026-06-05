@@ -8,17 +8,16 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import { ClientSensitiveAction } from "@/components/client-area/ClientSensitiveGate";
+import CitySelectorScreen from "@/components/client-area/CitySelectorScreen";
 import {
   BadgeCheck,
   Camera,
   ChevronDown,
   ChevronRight,
-  Crown,
-  Diamond,
   Grid2X2,
   Heart,
-  LockKeyhole,
   MapPin,
+  Navigation2,
   Phone,
   Search,
   ShieldCheck,
@@ -27,6 +26,8 @@ import {
   VenusAndMars,
   X,
 } from "lucide-react";
+
+const CITY_STORAGE_KEY = "em_client_city";
 
 type Professional = {
   id: string;
@@ -44,12 +45,6 @@ type Professional = {
   verified: boolean;
   featured: boolean;
   photos: { id: string; url: string; cover: boolean }[];
-};
-
-type Suggestion = {
-  placeId: string;
-  mainText: string;
-  secondaryText: string;
 };
 
 const CATEGORIES = [
@@ -93,7 +88,6 @@ function ProfessionalCard({ p }: { p: Professional }) {
     setSavingFavorite(true);
     const nextSaved = !saved;
     setSaved(nextSaved);
-
     try {
       const response = await fetch("/api/favorites/professionals", {
         method: nextSaved ? "POST" : "DELETE",
@@ -264,18 +258,6 @@ function FilterDrawer({
           </div>
 
           <div>
-            <p className="client-filter-label">Mídia disponível</p>
-            <div className="client-filter-options">
-              {["Com fotos", "Com vídeos", "Com shots"].map((label) => (
-                <button key={label} type="button" className="client-filter-option disabled" disabled>
-                  {label}
-                  <span>Em breve</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
             <p className="client-filter-label">Verificação</p>
             <div className="client-filter-toggle-row">
               <div className="min-w-0">
@@ -292,21 +274,12 @@ function FilterDrawer({
                 <span />
               </button>
             </div>
-            <div className="client-filter-options mt-3">
-              {["Perfil com documento confirmado", "Perfil com foto verificada"].map((label) => (
-                <button key={label} type="button" className="client-filter-option disabled" disabled>
-                  {label}
-                  <span>Em breve</span>
-                </button>
-              ))}
-            </div>
           </div>
 
           {[
             ["Disponibilidade", ["Disponível agora", "Atendimento hoje", "Online recentemente"]],
             ["Atendimento", ["Com local", "Atende em hotel", "Atende em domicílio", "Viagem / deslocamento"]],
             ["Faixa de preço", ["Até R$ 200", "R$ 200 a R$ 400", "R$ 400+"]],
-            ["Características", ["Novas na plataforma", "Mais curtidas", "Perfil premium", "Com descrição completa"]],
           ].map(([title, options]) => (
             <div key={String(title)}>
               <p className="client-filter-label">{String(title)}</p>
@@ -343,22 +316,43 @@ const SORT_LABELS: Record<string, string> = {
 };
 
 function EmptyState({
+  city,
   hasFilters,
   activeCategory,
   sortBy,
   onClear,
-  onExploreCity,
+  onChangeCity,
 }: {
+  city: string;
   hasFilters: boolean;
   activeCategory: string;
   sortBy: string;
   onClear: () => void;
-  onExploreCity: () => void;
+  onChangeCity: () => void;
 }) {
   const activeTags = [
     activeCategory ? CATEGORIES.find((c) => c.value === activeCategory)?.label : null,
     sortBy !== "rating" ? SORT_LABELS[sortBy] : null,
   ].filter(Boolean) as string[];
+
+  if (!city) {
+    return (
+      <section className="client-empty mb-16 mt-1 pb-36 pt-12">
+        <div className="flex flex-col items-center px-6 text-center">
+          <div className="grid h-[68px] w-[68px] place-items-center rounded-[16px] border border-[#d4a843]/26 bg-[#d4a843]/12 text-[#f5d78c]">
+            <MapPin className="h-8 w-8" />
+          </div>
+          <p className="mt-6 text-[11px] font-black uppercase text-[#f5d78c]/82">Localização</p>
+          <h2 className="mt-2 max-w-[330px] text-[28px] font-black leading-tight text-[#f5f0e4]">
+            Selecione uma cidade para ver os perfis
+          </h2>
+          <p className="mt-4 max-w-[300px] text-[15px] leading-7 text-[#f5f0e4]/56">
+            Use o botão acima para escolher uma cidade ou usar sua localização.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="client-empty mb-16 mt-1 overflow-hidden pb-36 pt-12">
@@ -369,8 +363,8 @@ function EmptyState({
         <p className="mt-6 text-[11px] font-black uppercase text-[#f5d78c]/82">
           {hasFilters ? "Sem resultado" : "Perfis verificados"}
         </p>
-        <h2 className="mt-2 max-w-[330px] text-[30px] font-black leading-tight text-[#f5f0e4]">
-          {hasFilters ? "Nenhum perfil encontrado" : "Escolha uma cidade para ver os perfis"}
+        <h2 className="mt-2 max-w-[330px] text-[28px] font-black leading-tight text-[#f5f0e4]">
+          {hasFilters ? `Nenhum perfil encontrado em ${city}` : `Sem perfis em ${city} ainda`}
         </h2>
         {activeTags.length > 0 && (
           <div className="mt-3 flex flex-wrap justify-center gap-1.5">
@@ -384,313 +378,35 @@ function EmptyState({
             ))}
           </div>
         )}
-        <p className="mt-4 max-w-[320px] text-[15px] leading-7 text-[#f5f0e4]/56">
+        <p className="mt-4 max-w-[300px] text-[15px] leading-7 text-[#f5f0e4]/56">
           {hasFilters
             ? "Tente remover alguns filtros ou buscar por outra cidade."
-            : "Quando houver perfis ativos e verificados, eles aparecem aqui com foto, cidade e contato."}
+            : "Tente buscar em uma cidade próxima ou volte mais tarde."}
         </p>
         <div className="mt-8 flex w-full max-w-[330px] flex-col gap-3">
-          <button
-            type="button"
-            onClick={hasFilters ? onClear : onExploreCity}
-            className="client-primary-button flex min-h-0 items-center justify-center gap-2 py-3.5 text-[15px] font-black"
-          >
-            {hasFilters ? "Limpar filtros" : "Explorar cidades"}
-            <ChevronRight className="h-4 w-4" />
-          </button>
           {hasFilters && (
             <button
               type="button"
-              onClick={onExploreCity}
-              className="client-secondary-button flex min-h-0 items-center justify-center gap-2 py-3.5 text-[15px] font-black"
+              onClick={onClear}
+              className="client-primary-button flex min-h-0 items-center justify-center gap-2 py-3.5 text-[15px] font-black"
             >
-              <MapPin className="h-4 w-4" />
-              Trocar cidade
+              Limpar filtros
+              <ChevronRight className="h-4 w-4" />
             </button>
           )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ExploreSafetyCard() {
-  return (
-    <section className="client-explore-safety">
-      <div>
-        <span>
-          <ShieldCheck />
-        </span>
-        <div>
-          <h3>Ambiente seguro e verificado</h3>
-          <p>Seus dados estão protegidos.</p>
-        </div>
-      </div>
-      <div>
-        <span>
-          <LockKeyhole />
-        </span>
-        <div>
-          <h3>Privacidade garantida</h3>
-          <p>Informações 100% seguras.</p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CitySelectionScreen({
-  onClose,
-  onSelectCity,
-}: {
-  onClose: () => void;
-  onSelectCity: (city: string) => void;
-}) {
-  const [input, setInput] = useState("");
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
-  const [checking, setChecking] = useState(false);
-  const [noResults, setNoResults] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  useEffect(() => {
-    const focusTimer = setTimeout(() => inputRef.current?.focus(), 140);
-    return () => clearTimeout(focusTimer);
-  }, []);
-
-  useEffect(() => {
-    clearTimeout(debounceRef.current);
-
-    if (input.length < 3) {
-      return;
-    }
-
-    debounceRef.current = setTimeout(async () => {
-      setLoadingSuggestions(true);
-      try {
-        const res = await fetch(`/api/address/search?input=${encodeURIComponent(input)}`);
-        const data = (await res.json()) as { suggestions?: Suggestion[] };
-        setSuggestions(data.suggestions ?? []);
-      } catch {
-        setSuggestions([]);
-      } finally {
-        setLoadingSuggestions(false);
-      }
-    }, 350);
-
-    return () => clearTimeout(debounceRef.current);
-  }, [input]);
-
-  async function handleSelect(suggestion: Suggestion) {
-    const selectedCity = suggestion.mainText;
-    setChecking(true);
-    setNoResults(null);
-
-    try {
-      const res = await fetch(`/api/professionals?city=${encodeURIComponent(selectedCity)}&limit=1`);
-      const data = (await res.json()) as { total?: number };
-
-      if ((data.total ?? 0) > 0) {
-        onSelectCity(selectedCity);
-      } else {
-        setNoResults(selectedCity);
-      }
-    } catch {
-      onSelectCity(selectedCity);
-    } finally {
-      setChecking(false);
-    }
-  }
-
-  function reset() {
-    setInput("");
-    setSuggestions([]);
-    setNoResults(null);
-    setTimeout(() => inputRef.current?.focus(), 80);
-  }
-
-  function handleCityFocus() {
-    setTimeout(() => {
-      inputRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }, 250);
-  }
-
-  const busy = loadingSuggestions || checking;
-  const visibleSuggestions = input.length >= 3 ? suggestions : [];
-
-  return (
-    <div className="client-city-select">
-      <div className="client-city-bg" />
-
-      <div className="client-city-wrap">
-        <header className="client-city-header">
-          <span className="client-city-logo">
-            <span className="client-city-logo-gold">elite</span>
-            <span className="client-city-logo-white">modell</span>
-            <span className="ml-1 text-[#facc15]">✦</span>
-          </span>
           <button
             type="button"
-            onClick={onClose}
-            className="client-city-close"
-            aria-label="Fechar"
+            onClick={onChangeCity}
+            className="client-secondary-button flex min-h-0 items-center justify-center gap-2 py-3.5 text-[15px] font-black"
           >
-            <X />
+            <MapPin className="h-4 w-4" />
+            Buscar outra cidade
           </button>
-        </header>
-
-        <section className="client-city-hero">
-          <Image
-            src="/brand/elite-modell%20gps.png"
-            alt=""
-            width={640}
-            height={520}
-            priority
-            sizes="(max-width: 430px) 100vw, 320px"
-            className="client-city-hero-image"
-          />
-
-          <p className="client-city-kicker">EXPLORAR PERFIS</p>
-          <h1 className="client-city-title">
-            Selecionar<br />cidade <span className="text-[#facc15]">✦</span>
-          </h1>
-          <p className="client-city-subtitle">
-            Escolha uma cidade para ver<br />os perfis disponíveis
-          </p>
-        </section>
-
-        <section className="client-city-search-section">
-          <div className="client-city-search">
-            <div className="client-city-search-icon">
-              <MapPin />
-            </div>
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                setNoResults(null);
-              }}
-              placeholder="Digite 3 ou mais caracteres"
-              className="client-city-input"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-              onFocus={handleCityFocus}
-            />
-            <div className="client-city-search-action">
-              {busy ? (
-                <div className="client-city-spinner" />
-              ) : input ? (
-                <button
-                  type="button"
-                  onClick={reset}
-                  className="client-city-clear"
-                  aria-label="Limpar busca"
-                >
-                  <X />
-                </button>
-              ) : (
-                <Search />
-              )}
-            </div>
-          </div>
-        </section>
-
-        <main className="client-city-main">
-          {noResults && !checking && (
-            <div className="client-city-empty">
-              <p>Em breve</p>
-              <h2>
-                Terá acompanhantes<br />em {noResults}
-              </h2>
-              <button
-                type="button"
-                onClick={reset}
-              >
-                <Search />
-                Buscar outra cidade
-              </button>
-            </div>
-          )}
-
-          {!noResults && !busy && visibleSuggestions.length > 0 && (
-            <ul className="client-city-suggestions" role="listbox">
-              {visibleSuggestions.map((s, i) => (
-                <li key={s.placeId} role="option" aria-selected={false}>
-                  <button
-                    type="button"
-                    onClick={() => void handleSelect(s)}
-                    style={{ borderBottom: i < visibleSuggestions.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}
-                  >
-                    <span className="client-city-suggestion-icon">
-                      <MapPin />
-                    </span>
-                    <span>
-                      <strong>{s.mainText}</strong>
-                      {s.secondaryText && <small>{s.secondaryText}</small>}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {!noResults && !busy && visibleSuggestions.length === 0 && (
-            <div className="space-y-[44px]">
-              <div className="flex items-center gap-5 rounded-[18px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.32)] sm:p-7">
-                <div className="grid h-[82px] w-[82px] shrink-0 place-items-center rounded-[17px] bg-[#17130c]/88">
-                  <Diamond className="h-12 w-12 text-[#facc15]" strokeWidth={1.7} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-[21px] font-black leading-tight text-[#facc15] sm:text-[24px]">Encontre perfis exclusivos</h2>
-                  <p className="mt-3 text-[15px] leading-[1.55] text-[#fffaf0]/60 sm:text-[18px]">
-                    Explore modelos e talentos na sua cidade com recursos premium.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="hidden min-h-[58px] shrink-0 items-center gap-3 rounded-[12px] border border-[#facc15]/55 bg-[linear-gradient(135deg,rgba(250,204,21,0.34),rgba(104,74,18,0.78))] px-7 text-[16px] font-black text-[#facc15] shadow-[0_0_34px_rgba(250,204,21,0.14)] transition hover:brightness-110 active:scale-95 sm:flex"
-                >
-                  Seja Premium
-                  <Crown className="h-5 w-5 fill-[#facc15]/30" />
-                </button>
-              </div>
-              <div className="space-y-8 px-4">
-                <div className="flex items-center gap-5">
-                  <div className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-[16px] bg-[#17130c]/88 text-[#facc15]">
-                    <ShieldCheck className="h-7 w-7" />
-                  </div>
-                  <div>
-                    <h3 className="text-[18px] font-black text-[#fffaf0]">Ambiente seguro e verificado</h3>
-                    <p className="mt-2 text-[16px] leading-snug text-[#fffaf0]/58">Seus dados estão protegidos conosco.</p>
-                  </div>
-                </div>
-                <div className="h-px bg-white/10" />
-                <div className="flex items-center gap-5">
-                  <div className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-[16px] bg-[#17130c]/88 text-[#facc15]">
-                    <LockKeyhole className="h-7 w-7" />
-                  </div>
-                  <div>
-                    <h3 className="text-[18px] font-black text-[#fffaf0]">Privacidade garantida</h3>
-                    <p className="mt-2 text-[16px] leading-snug text-[#fffaf0]/58">Informações 100% seguras.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </main>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
-
-void CitySelectionScreen;
 
 export default function AcompanhantesPage() {
   const searchParams = useSearchParams();
@@ -698,31 +414,82 @@ export default function AcompanhantesPage() {
   const appliedInitial = useRef(false);
 
   const [professionals, setProfessionals] = useState<Professional[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
 
   const [city, setCity] = useState(initialCity);
-  const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("rating");
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState("");
+  const [showCitySheet, setShowCitySheet] = useState(false);
+  const [geolocating, setGeolocating] = useState(false);
+
+  // Load saved city from localStorage on mount
+  useEffect(() => {
+    if (!initialCity) {
+      try {
+        const saved = localStorage.getItem(CITY_STORAGE_KEY);
+        if (saved) setCity(saved);
+      } catch { /* localStorage unavailable */ }
+    }
+    appliedInitial.current = true;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (appliedInitial.current) {
       setCity(initialCity);
     }
-    appliedInitial.current = true;
   }, [initialCity]);
+
+  function handleCitySelect(selectedCity: string) {
+    setCity(selectedCity);
+    setShowCitySheet(false);
+    try {
+      localStorage.setItem(CITY_STORAGE_KEY, selectedCity);
+    } catch { /* localStorage unavailable */ }
+  }
+
+  function handleGeolocate() {
+    if (!navigator.geolocation) {
+      setShowCitySheet(true);
+      return;
+    }
+
+    setGeolocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(`/api/address/geocode?latlng=${latitude},${longitude}`);
+          const data = (await res.json()) as { city?: string };
+          if (data.city) {
+            handleCitySelect(data.city);
+          } else {
+            setShowCitySheet(true);
+          }
+        } catch {
+          setShowCitySheet(true);
+        } finally {
+          setGeolocating(false);
+        }
+      },
+      () => {
+        setGeolocating(false);
+        setShowCitySheet(true);
+      },
+      { timeout: 10000, maximumAge: 60000 },
+    );
+  }
 
   const fetchMore = useCallback(async () => {
     const nextPage = page + 1;
     setLoading(true);
     try {
       const qs = new URLSearchParams();
-      if (search) qs.set("search", search);
       if (activeCategory) qs.set("category", activeCategory);
       if (city) qs.set("city", city);
       if (sortBy) qs.set("sortBy", sortBy);
@@ -740,12 +507,13 @@ export default function AcompanhantesPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, activeCategory, city, sortBy, onlyVerified, page]);
+  }, [activeCategory, city, sortBy, onlyVerified, page]);
 
   useEffect(() => {
     const controller = new AbortController();
+
     async function load() {
-      if (!city && !search && !activeCategory && !onlyVerified && sortBy === "rating") {
+      if (!city) {
         setProfessionals([]);
         setTotal(0);
         setHasMore(false);
@@ -757,9 +525,8 @@ export default function AcompanhantesPage() {
       setLoading(true);
       try {
         const qs = new URLSearchParams();
-        if (search) qs.set("search", search);
         if (activeCategory) qs.set("category", activeCategory);
-        if (city) qs.set("city", city);
+        qs.set("city", city);
         if (sortBy) qs.set("sortBy", sortBy);
         if (onlyVerified) qs.set("verified", "true");
         qs.set("page", "1");
@@ -777,9 +544,10 @@ export default function AcompanhantesPage() {
         if (!controller.signal.aborted) setLoading(false);
       }
     }
+
     void load();
     return () => controller.abort();
-  }, [search, activeCategory, city, sortBy, onlyVerified]);
+  }, [activeCategory, city, sortBy, onlyVerified]);
 
   useEffect(() => {
     if (filterOpen) {
@@ -787,7 +555,6 @@ export default function AcompanhantesPage() {
     } else {
       delete document.body.dataset.clientFiltersOpen;
     }
-
     return () => {
       delete document.body.dataset.clientFiltersOpen;
     };
@@ -800,41 +567,55 @@ export default function AcompanhantesPage() {
     };
   }, []);
 
-  const hasFilters = Boolean(search || activeCategory || city || onlyVerified || sortBy !== "rating");
+  const hasFilters = Boolean(activeCategory || onlyVerified || sortBy !== "rating");
 
   function clearFilters() {
-    setSearch("");
     setActiveCategory("");
-    setCity("");
     setOnlyVerified(false);
     setSortBy("rating");
   }
 
-  function focusCity() {
-    document.querySelector<HTMLInputElement>('[data-client-city-filter="true"]')?.focus();
-  }
-
   const activeFilterLabels = [
-    search ? `Busca: ${search}` : null,
     activeCategory ? CATEGORIES.find((c) => c.value === activeCategory)?.label : null,
-    city ? city : null,
     sortBy !== "rating" ? SORT_LABELS[sortBy] : null,
     onlyVerified ? "Verificadas" : null,
   ].filter(Boolean) as string[];
 
   return (
     <>
+      {/* City selector overlay */}
+      {showCitySheet && (
+        <CitySelectorScreen
+          onClose={() => setShowCitySheet(false)}
+          onSelectCity={handleCitySelect}
+        />
+      )}
+
       <section className="client-explore-home">
+        {/* Header */}
         <div>
           <p className="text-[14px] font-bold uppercase tracking-wide text-[#f5c242]">EXPLORAR PERFIS</p>
           <h1 className="mt-2 text-[40px] font-black leading-[1.04] tracking-[-0.03em] text-white">
-            Perfis <span className="text-[#f5c242]">verificados</span><br />perto de você
+            {city ? (
+              <>
+                Acompanhantes{" "}
+                <span className="text-[#f5c242]">em {city}</span>
+              </>
+            ) : (
+              <>
+                Perfis <span className="text-[#f5c242]">verificados</span>
+                <br />perto de você
+              </>
+            )}
           </h1>
           <p className="mt-2 max-w-[360px] text-[15px] leading-6 text-[#9ca3af]">
-            Encontre acompanhantes verificados na sua cidade com segurança e discrição.
+            {city
+              ? "Perfis verificados disponíveis na sua região."
+              : "Encontre acompanhantes verificados na sua cidade com segurança e discrição."}
           </p>
         </div>
 
+        {/* Hero image */}
         <div className="relative mx-[-8px] mt-6 h-80 overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#0f1012] shadow-[0_25px_80px_rgba(0,0,0,0.40)]">
           <Image
             src="/brand/elite%20modell%20explorar.png"
@@ -847,61 +628,52 @@ export default function AcompanhantesPage() {
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.08)_0%,rgba(0,0,0,0.18)_44%,rgba(0,0,0,0.82)_100%)]" />
         </div>
 
+        {/* City / search card */}
         <div className="relative z-10 -mt-6 rounded-[28px] border border-white/[0.10] bg-white/[0.055] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.38)] backdrop-blur-xl">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="text-[15px] font-black uppercase text-[#f5c242]">BUSCA</h2>
-            <button
-              type="button"
-              onClick={() => setFilterOpen((current) => !current)}
-              className="flex min-h-9 shrink-0 items-center gap-2 rounded-full bg-[#1f2227] px-4 text-[13px] font-semibold text-white transition hover:bg-[#2a2d33] active:scale-[0.985]"
-            >
-              Filtros avançados
-              <ChevronDown className={`h-4 w-4 transition-transform ${filterOpen ? "rotate-180" : ""}`} />
-            </button>
+            <h2 className="text-[15px] font-black uppercase text-[#f5c242]">CIDADE</h2>
+            {city && (
+              <button
+                type="button"
+                onClick={() => setFilterOpen((v) => !v)}
+                className="flex min-h-9 shrink-0 items-center gap-2 rounded-full bg-[#1f2227] px-4 text-[13px] font-semibold text-white transition hover:bg-[#2a2d33] active:scale-[0.985]"
+              >
+                Filtros
+                <ChevronDown className={`h-4 w-4 transition-transform ${filterOpen ? "rotate-180" : ""}`} />
+              </button>
+            )}
           </div>
 
-          <div className="space-y-3">
-            <label className="block">
-              <span className="client-explore-field-label">Cidade</span>
-              <div className="flex min-h-[54px] items-center gap-3 rounded-[18px] border border-white/[0.10] bg-[#111318] px-4 shadow-[0_0_26px_rgba(245,194,66,0.04)] transition focus-within:border-[#f5c242] focus-within:shadow-[0_0_0_3px_rgba(245,194,66,0.12)]">
-                <MapPin className="h-5 w-5 shrink-0 text-[#f5c242]" />
-                <input
-                  type="text"
-                  placeholder="Digite a cidade"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="min-w-0 flex-1 bg-transparent text-[16px] font-semibold text-white outline-none placeholder:text-white/38"
-                  data-client-city-filter="true"
-                />
-              </div>
-            </label>
+          {/* City selector button */}
+          <button
+            type="button"
+            onClick={() => setShowCitySheet(true)}
+            className="flex w-full items-center gap-3 rounded-[18px] border border-white/[0.10] bg-[#111318] px-4 py-4 text-left transition active:bg-[#181c23]"
+          >
+            <MapPin className="h-5 w-5 shrink-0 text-[#f5c242]" />
+            <span className={`flex-1 text-[16px] font-semibold ${city ? "text-white" : "text-white/38"}`}>
+              {city || "Selecione uma cidade"}
+            </span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-white/28" />
+          </button>
 
-            <label className="block">
-              <span className="client-explore-field-label">O que você procura?</span>
-              <div className="flex min-h-[54px] items-center gap-3 rounded-[18px] border border-white/[0.10] bg-[#111318] px-4 shadow-[0_0_26px_rgba(245,194,66,0.04)] transition focus-within:border-[#f5c242] focus-within:shadow-[0_0_0_3px_rgba(245,194,66,0.12)]">
-                <Search className="h-5 w-5 shrink-0 text-[#f5c242]" />
-                <input
-                  type="text"
-                  placeholder="Ex.: loira, morena, universitária..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="min-w-0 flex-1 bg-transparent text-[16px] font-semibold text-white outline-none placeholder:text-white/38"
-                />
-                {search && (
-                  <button
-                    type="button"
-                    onClick={() => setSearch("")}
-                    className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-white/70 transition active:scale-95"
-                    aria-label="Limpar busca"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            </label>
-          </div>
+          {/* Geolocation button */}
+          <button
+            type="button"
+            onClick={handleGeolocate}
+            disabled={geolocating}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-[14px] border border-[#d4a843]/28 bg-[#d4a843]/10 py-3 text-[13px] font-bold text-[#f5d78c] transition active:scale-[0.98] disabled:opacity-60"
+          >
+            {geolocating ? (
+              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#f5d78c]/30 border-t-[#f5d78c]" />
+            ) : (
+              <Navigation2 className="h-3.5 w-3.5" />
+            )}
+            {geolocating ? "Buscando localização..." : "Usar minha localização"}
+          </button>
         </div>
 
+        {/* Categories */}
         <div className="mt-6">
           <p className="mb-3 text-[15px] font-black uppercase text-[#f5c242]">CATEGORIA</p>
           <div className="category-scroll">
@@ -909,9 +681,7 @@ export default function AcompanhantesPage() {
               <button
                 key={c.value}
                 type="button"
-                onClick={() => {
-                  setActiveCategory(c.value);
-                }}
+                onClick={() => setActiveCategory(c.value)}
                 aria-pressed={activeCategory === c.value}
                 className={`category-button ${activeCategory === c.value ? "active" : ""}`}
               >
@@ -922,32 +692,36 @@ export default function AcompanhantesPage() {
           </div>
         </div>
 
-          {hasFilters && (
-            <div className="mt-4 rounded-[18px] border border-[#f5c242]/18 bg-[#f5c242]/10 px-4 py-3">
-              <div className="flex items-center justify-between gap-3">
-                <span className="min-w-0 text-[13px] font-semibold text-white/72">
-                  Busca personalizada ativa
-                </span>
-                <button type="button" onClick={clearFilters} className="shrink-0 text-[13px] font-black text-[#f5c242]">
-                  Limpar
-                </button>
-              </div>
-              {activeFilterLabels.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {activeFilterLabels.map((label) => (
-                    <span key={label} className="rounded-full border border-[#f5c242]/18 bg-black/20 px-2.5 py-1 text-[11px] font-bold text-[#f5f0e4]/72">
-                      {label}
-                    </span>
-                  ))}
-                </div>
-              )}
+        {/* Active filter tags */}
+        {hasFilters && (
+          <div className="mt-4 rounded-[18px] border border-[#f5c242]/18 bg-[#f5c242]/10 px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <span className="min-w-0 text-[13px] font-semibold text-white/72">
+                Filtros ativos
+              </span>
+              <button type="button" onClick={clearFilters} className="shrink-0 text-[13px] font-black text-[#f5c242]">
+                Limpar
+              </button>
             </div>
-          )}
+            {activeFilterLabels.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {activeFilterLabels.map((label) => (
+                  <span key={label} className="rounded-full border border-[#f5c242]/18 bg-black/20 px-2.5 py-1 text-[11px] font-bold text-[#f5f0e4]/72">
+                    {label}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
-      {!loading && professionals.length > 0 && (
+      {/* Results count */}
+      {!loading && professionals.length > 0 && city && (
         <div className="flex items-center justify-between px-4 pb-2">
-          <p className="text-[13px] text-[#f5f0e4]/48">{total} perfis encontrados</p>
+          <p className="text-[13px] text-[#f5f0e4]/48">
+            {total} {total === 1 ? "perfil encontrado" : "perfis encontrados"} em {city}
+          </p>
           {hasFilters && (
             <button type="button" onClick={clearFilters} className="text-[12px] font-semibold text-[#f5d78c]">
               Limpar filtros
@@ -970,10 +744,14 @@ export default function AcompanhantesPage() {
         {loading && professionals.length === 0 ? (
           Array.from({ length: 3 }).map((_, i) => <ProfileCardSkeleton key={i} />)
         ) : professionals.length === 0 ? (
-          <>
-            <EmptyState hasFilters={hasFilters} activeCategory={activeCategory} sortBy={sortBy} onClear={clearFilters} onExploreCity={focusCity} />
-            <ExploreSafetyCard />
-          </>
+          <EmptyState
+            city={city}
+            hasFilters={hasFilters}
+            activeCategory={activeCategory}
+            sortBy={sortBy}
+            onClear={clearFilters}
+            onChangeCity={() => setShowCitySheet(true)}
+          />
         ) : (
           <>
             {professionals.map((p) => (
@@ -986,12 +764,12 @@ export default function AcompanhantesPage() {
                 onClick={() => void fetchMore()}
                 className="client-secondary-button w-full py-3 text-[14px] font-semibold"
               >
-                Ver mais
+                Ver mais perfis
               </button>
             )}
             {!hasMore && professionals.length > 4 && (
               <p className="pb-2 text-center text-[12px] text-[#f5f0e4]/28">
-                Voce viu todos os perfis disponiveis
+                Você viu todos os perfis disponíveis em {city}
               </p>
             )}
           </>

@@ -52,7 +52,26 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  if (!address) return NextResponse.json({ error: "Informe placeId ou address." }, { status: 400 });
+  const latlng = searchParams.get("latlng")?.trim();
+  if (latlng) {
+    const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
+    url.searchParams.set("latlng", latlng);
+    url.searchParams.set("language", "pt-BR");
+    url.searchParams.set("key", apiKey);
+    const res = await fetch(url, { headers: { "Referer": appUrl } });
+    if (!res.ok) return NextResponse.json({ error: "Erro ao geocodificar localização." }, { status: 502 });
+    const data = await res.json();
+    const result = data.results?.[0];
+    if (!result) return NextResponse.json({ error: "Cidade não encontrada." }, { status: 404 });
+    const components = result.address_components ?? [];
+    return NextResponse.json({
+      provider: "google",
+      city: pickAddressPart(components, "administrative_area_level_2"),
+      state: pickAddressPart(components, "administrative_area_level_1", true),
+    });
+  }
+
+  if (!address) return NextResponse.json({ error: "Informe placeId, latlng ou address." }, { status: 400 });
 
   const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
   url.searchParams.set("address", address);

@@ -4,12 +4,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Crown, Diamond, LockKeyhole, MapPin, Search, ShieldCheck, X } from "lucide-react";
+import { Crown, Diamond, LockKeyhole, MapPin, Navigation2, Search, ShieldCheck, X } from "lucide-react";
 
 type Suggestion = {
   placeId: string;
   mainText: string;
   secondaryText: string;
+};
+
+type GeoResult = {
+  city?: string;
+  state?: string;
 };
 
 export default function CitySelectorScreen({
@@ -24,6 +29,8 @@ export default function CitySelectorScreen({
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [checking, setChecking] = useState(false);
   const [noResults, setNoResults] = useState<string | null>(null);
+  const [geolocating, setGeolocating] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -38,7 +45,7 @@ export default function CitySelectorScreen({
   useEffect(() => {
     clearTimeout(debounceRef.current);
 
-    if (input.length < 3) {
+    if (input.length < 2) {
       setSuggestions([]);
       setLoadingSuggestions(false);
       return;
@@ -55,19 +62,55 @@ export default function CitySelectorScreen({
       } finally {
         setLoadingSuggestions(false);
       }
-    }, 350);
+    }, 250);
 
     return () => clearTimeout(debounceRef.current);
   }, [input]);
 
   async function handleSelect(suggestion: Suggestion) {
-    const selectedCity = suggestion.secondaryText
-      ? `${suggestion.mainText}, ${suggestion.secondaryText.split(",")[0]}`
-      : suggestion.mainText;
+    const selectedCity = suggestion.mainText;
     setChecking(true);
     setNoResults(null);
     onSelectCity(selectedCity);
     setChecking(false);
+  }
+
+  function handleGeolocate() {
+    if (!navigator.geolocation) {
+      setGeoError("Localização não disponível neste dispositivo. Digite sua cidade abaixo.");
+      return;
+    }
+
+    setGeolocating(true);
+    setGeoError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(`/api/address/geocode?latlng=${latitude},${longitude}`);
+          const data = (await res.json()) as GeoResult;
+          if (data.city) {
+            onSelectCity(data.city);
+          } else {
+            setGeoError("Não conseguimos identificar sua cidade. Digite manualmente abaixo.");
+          }
+        } catch {
+          setGeoError("Erro ao obter localização. Digite sua cidade abaixo.");
+        } finally {
+          setGeolocating(false);
+        }
+      },
+      (err) => {
+        setGeolocating(false);
+        if (err.code === 1) {
+          setGeoError("Permissão de localização negada. Digite sua cidade abaixo.");
+        } else {
+          setGeoError("Não conseguimos sua localização. Digite sua cidade abaixo.");
+        }
+      },
+      { timeout: 10000, maximumAge: 60000 },
+    );
   }
 
   function reset() {
@@ -79,14 +122,12 @@ export default function CitySelectorScreen({
 
   function handleCityFocus() {
     setTimeout(() => {
-      inputRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
+      inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 250);
   }
 
   const busy = loadingSuggestions || checking;
+  const visibleSuggestions = input.length >= 2 ? suggestions : [];
 
   return (
     <div className="client-city-select">
@@ -107,10 +148,10 @@ export default function CitySelectorScreen({
         <section className="client-city-hero">
           <p className="client-city-kicker">EXPLORAR PERFIS</p>
           <h1 className="client-city-title">
-            Selecionar<br />cidade <span>✦</span>
+            Escolha sua<br />cidade <span>✦</span>
           </h1>
           <p className="client-city-subtitle">
-            Escolha uma cidade para ver<br />os perfis disponíveis
+            Use sua localização ou<br />digite a cidade para buscar perfis
           </p>
           <Image
             src="/brand/elite-modell%20gps.png"
@@ -121,6 +162,35 @@ export default function CitySelectorScreen({
             sizes="(max-width: 430px) 100vw, 320px"
             className="client-city-hero-image"
           />
+        </section>
+
+        {/* Geolocation button */}
+        <section className="px-4 pb-2">
+          <button
+            type="button"
+            onClick={handleGeolocate}
+            disabled={geolocating}
+            className="flex w-full items-center justify-center gap-2.5 rounded-[14px] border border-[#d4a843]/36 bg-[#d4a843]/14 py-4 text-[14px] font-bold text-[#f5d78c] transition active:scale-[0.98] disabled:opacity-60"
+          >
+            {geolocating ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#f5d78c]/30 border-t-[#f5d78c]" />
+            ) : (
+              <Navigation2 className="h-4 w-4" />
+            )}
+            {geolocating ? "Buscando sua localização..." : "Usar minha localização"}
+          </button>
+
+          {geoError && (
+            <p className="mt-2.5 rounded-[10px] bg-[#f87171]/10 px-3 py-2 text-center text-[12px] text-[#f87171]">
+              {geoError}
+            </p>
+          )}
+
+          <div className="mt-4 flex items-center gap-3">
+            <div className="h-px flex-1 bg-white/10" />
+            <span className="text-[11px] font-bold uppercase tracking-widest text-[#f5f0e4]/36">ou</span>
+            <div className="h-px flex-1 bg-white/10" />
+          </div>
         </section>
 
         <section className="client-city-search-section">
@@ -136,7 +206,7 @@ export default function CitySelectorScreen({
                 setInput(e.target.value);
                 setNoResults(null);
               }}
-              placeholder="Digite 3 ou mais caracteres"
+              placeholder="Digite sua cidade..."
               className="client-city-input"
               autoComplete="off"
               autoCorrect="off"
@@ -171,14 +241,14 @@ export default function CitySelectorScreen({
             </div>
           )}
 
-          {!noResults && !busy && suggestions.length > 0 && (
+          {!noResults && !busy && visibleSuggestions.length > 0 && (
             <ul className="client-city-suggestions" role="listbox">
-              {suggestions.map((s, i) => (
+              {visibleSuggestions.map((s, i) => (
                 <li key={s.placeId} role="option" aria-selected={false}>
                   <button
                     type="button"
                     onClick={() => void handleSelect(s)}
-                    style={{ borderBottom: i < suggestions.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}
+                    style={{ borderBottom: i < visibleSuggestions.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}
                   >
                     <span className="client-city-suggestion-icon">
                       <MapPin />
@@ -193,7 +263,15 @@ export default function CitySelectorScreen({
             </ul>
           )}
 
-          {!noResults && !busy && suggestions.length === 0 && (
+          {!noResults && !busy && visibleSuggestions.length === 0 && input.length >= 2 && (
+            <div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
+              <Search className="h-8 w-8 text-[#f5f0e4]/28" />
+              <p className="text-[14px] text-[#f5f0e4]/50">Nenhuma sugestão para &ldquo;{input}&rdquo;</p>
+              <p className="text-[12px] text-[#f5f0e4]/36">Tente escrever com mais letras ou verifique o nome.</p>
+            </div>
+          )}
+
+          {!noResults && !busy && visibleSuggestions.length === 0 && input.length < 2 && (
             <div className="space-y-[44px]">
               <div className="flex items-center gap-5 rounded-[18px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.32)] sm:p-7">
                 <div className="grid h-[82px] w-[82px] shrink-0 place-items-center rounded-[17px] bg-[#17130c]/88">
@@ -202,7 +280,7 @@ export default function CitySelectorScreen({
                 <div className="min-w-0 flex-1">
                   <h2 className="text-[21px] font-black leading-tight text-[#facc15] sm:text-[24px]">Encontre perfis exclusivos</h2>
                   <p className="mt-3 text-[15px] leading-[1.55] text-[#fffaf0]/60 sm:text-[18px]">
-                    Explore modelos e talentos na sua cidade com recursos premium.
+                    Explore acompanhantes na sua cidade com segurança e discrição.
                   </p>
                 </div>
                 <button
