@@ -1,6 +1,20 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
+const DEFAULT_ADMIN_EMAILS = ["brunorochalp3@gmail.com"];
+
+function adminMasterEmails() {
+  return (process.env.ADMIN_MASTER_EMAILS ?? DEFAULT_ADMIN_EMAILS.join(","))
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function isAdminToken(token: { role?: string; email?: unknown }) {
+  if (token.role === "ADMIN") return true;
+  return typeof token.email === "string" && adminMasterEmails().includes(token.email.toLowerCase());
+}
+
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isApiRoute = pathname.startsWith("/api/");
@@ -60,6 +74,7 @@ export async function proxy(request: NextRequest) {
 
   const tokenWithRole = token as typeof token & {
     role?: string;
+    email?: string;
     isProfessional?: boolean;
     accountType?: string;
     activeProfileType?: string;
@@ -73,9 +88,10 @@ export async function proxy(request: NextRequest) {
     tokenWithRole.accountType === "model" ||
     tokenWithRole.accountType === "professional" ||
     availableProfiles.includes("PROFESSIONAL");
+  const isAdmin = isAdminToken(tokenWithRole);
 
   const homeForToken = () => {
-    if (tokenWithRole.role === "ADMIN") return "/admin";
+    if (isAdmin) return "/admin";
     if (tokenWithRole.activeProfileType === "CLIENTE") return "/dashboard";
     if (tokenWithRole.activeProfileType === "PROFESSIONAL") return "/profissional";
     if (tokenWithRole.activeProfileType === "HOST") return "/anfitriao";
@@ -87,32 +103,32 @@ export async function proxy(request: NextRequest) {
   };
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
-    if (tokenWithRole.role !== "ADMIN") return forbidden(homeForToken());
+    if (!isAdmin) return forbidden(homeForToken());
   }
 
   if (pathname.startsWith("/dashboard") || pathname.startsWith("/cliente") || pathname.startsWith("/painel/cliente")) {
-    if (tokenWithRole.role !== "ADMIN" && !hasClientProfile) return forbidden(homeForToken());
+    if (!isAdmin && !hasClientProfile) return forbidden(homeForToken());
   }
 
   if (pathname.startsWith("/painel/acompanhante")) {
-    if (!tokenWithRole.isProfessional && tokenWithRole.role !== "ADMIN") return forbidden(homeForToken());
+    if (!tokenWithRole.isProfessional && !isAdmin) return forbidden(homeForToken());
   }
 
   if (pathname.startsWith("/painel/anfitriao")) {
-    if (tokenWithRole.role !== "ADMIN" && !isHostAccount) return forbidden(homeForToken());
+    if (!isAdmin && !isHostAccount) return forbidden(homeForToken());
   }
 
   if (pathname.startsWith("/anfitriao") || pathname.startsWith("/api/anfitriao")) {
-    if (tokenWithRole.role !== "ADMIN" && !isHostAccount) return forbidden(homeForToken());
+    if (!isAdmin && !isHostAccount) return forbidden(homeForToken());
   }
 
   if (pathname === "/profissional/novo") {
-    if (!isProfessionalAccount && tokenWithRole.role !== "ADMIN") return forbidden(homeForToken());
+    if (!isProfessionalAccount && !isAdmin) return forbidden(homeForToken());
     return NextResponse.next();
   }
 
   if (pathname.startsWith("/profissional") || pathname.startsWith("/api/profissional")) {
-    if (!tokenWithRole.isProfessional && tokenWithRole.role !== "ADMIN") return forbidden(homeForToken());
+    if (!tokenWithRole.isProfessional && !isAdmin) return forbidden(homeForToken());
   }
 
   return NextResponse.next();

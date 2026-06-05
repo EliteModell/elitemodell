@@ -70,10 +70,14 @@ export const ADMIN_ROLE_PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
 };
 
 function adminMasterEmails() {
-  return (process.env.ADMIN_MASTER_EMAILS ?? "")
+  return (process.env.ADMIN_MASTER_EMAILS ?? "brunorochalp3@gmail.com")
     .split(",")
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);
+}
+
+function isAdminEmail(email?: string | null) {
+  return !!email && adminMasterEmails().includes(email.toLowerCase());
 }
 
 export function resolveAdminRole(email?: string | null): AdminRole {
@@ -90,7 +94,10 @@ export function hasAdminPermission(role: AdminRole, permission: AdminPermission)
 
 export async function requireAdmin(permission?: AdminPermission) {
   const session = await getServerSession(authOptions);
-  if (session?.user?.role !== "ADMIN") redirect(ACCOUNT_ROUTES.painelCliente);
+  if (!session?.user) redirect(ACCOUNT_ROUTES.painelCliente);
+  if (session.user.role !== "ADMIN" && !isAdminEmail(session.user.email)) {
+    redirect(ACCOUNT_ROUTES.painelCliente);
+  }
 
   const adminRole = resolveAdminRole(session.user.email);
   if (permission && !hasAdminPermission(adminRole, permission)) {

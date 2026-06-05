@@ -1,6 +1,20 @@
 import { getToken } from "next-auth/jwt";
 import { type NextRequest, NextResponse } from "next/server";
 
+const DEFAULT_ADMIN_EMAILS = ["brunorochalp3@gmail.com"];
+
+function adminMasterEmails() {
+  return (process.env.ADMIN_MASTER_EMAILS ?? DEFAULT_ADMIN_EMAILS.join(","))
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function isAdminToken(token: { role?: unknown; email?: unknown }) {
+  if (token.role === "ADMIN") return true;
+  return typeof token.email === "string" && adminMasterEmails().includes(token.email.toLowerCase());
+}
+
 // Rotas que exigem autenticação — sem exceção
 const PROTECTED_PREFIXES = [
   "/dashboard",
@@ -66,7 +80,7 @@ export async function middleware(req: NextRequest) {
 
   // /admin/* exige role ADMIN — redireciona para dashboard em caso de acesso indevido
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
-    if (token.role !== "ADMIN") {
+    if (!isAdminToken(token)) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
   }
