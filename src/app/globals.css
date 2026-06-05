@@ -2003,9 +2003,15 @@ body[data-client-explore="true"] .client-premium {
   color: #ffffff;
 }
 
-body[data-client-explore="true"] .client-premium::before,
+body[data-client-explore="true"] .client-premium::before {
+  background:
+    radial-gradient(circle at 20% 10%, rgba(214, 168, 58, 0.22), transparent 32%),
+    radial-gradient(circle at 85% 35%, rgba(214, 168, 58, 0.14), transparent 34%),
+    url('/brand/client-area-bg.jpg') center top / cover no-repeat !important;
+}
+
 body[data-client-explore="true"] .client-premium::after {
-  background: #050505 !important;
+  background: linear-gradient(180deg, rgba(5, 5, 5, 0.15) 0%, rgba(5, 5, 5, 0.42) 55%, rgba(5, 5, 5, 0.88) 88%) !important;
 }
 
 body[data-client-explore="true"] .client-shell-content {
@@ -2902,12 +2908,15 @@ body[data-client-dashboard="true"] .client-premium,
   color: #ffffff;
 }
 
-.client-lists-shell::before,
-.client-lists-shell::after {
+.client-lists-shell::before {
   background:
-    radial-gradient(circle at 76% 18%, rgba(245, 184, 59, 0.13), transparent 28%),
-    radial-gradient(circle at 8% 40%, rgba(214, 168, 58, 0.08), transparent 32%),
-    linear-gradient(180deg, #050505 0%, #070707 44%, #030303 100%) !important;
+    radial-gradient(circle at 76% 18%, rgba(245, 184, 59, 0.18), transparent 28%),
+    radial-gradient(circle at 8% 40%, rgba(214, 168, 58, 0.12), transparent 32%),
+    url('/brand/client-area-bg.jpg') center top / cover no-repeat !important;
+}
+
+.client-lists-shell::after {
+  background: linear-gradient(180deg, rgba(5, 5, 5, 0.15) 0%, rgba(5, 5, 5, 0.42) 55%, rgba(5, 5, 5, 0.88) 88%) !important;
 }
 
 .client-lists-shell > header {
@@ -3353,13 +3362,13 @@ body[data-client-dashboard="true"] .client-premium,
 
 .client-shots-shell::before {
   background:
-    radial-gradient(circle at 12% 14%, rgba(214, 168, 58, 0.14), transparent 32%),
-    radial-gradient(circle at 84% 32%, rgba(245, 184, 59, 0.10), transparent 34%),
-    #050505 !important;
+    radial-gradient(circle at 12% 14%, rgba(214, 168, 58, 0.18), transparent 32%),
+    radial-gradient(circle at 84% 32%, rgba(245, 184, 59, 0.12), transparent 34%),
+    url('/brand/client-area-bg.jpg') center top / cover no-repeat !important;
 }
 
 .client-shots-shell::after {
-  background: linear-gradient(180deg, rgba(5, 5, 5, 0), #050505 72%) !important;
+  background: linear-gradient(180deg, rgba(5, 5, 5, 0.15) 0%, rgba(5, 5, 5, 0.42) 55%, rgba(5, 5, 5, 0.88) 88%) !important;
 }
 
 .client-shots-shell > header {
