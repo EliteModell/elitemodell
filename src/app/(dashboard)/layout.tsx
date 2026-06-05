@@ -72,8 +72,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (isPublicPropertyDraft && status !== "authenticated") {
     return (
       <div className="min-h-screen overflow-x-hidden bg-[#050505] text-white">
-        <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,168,67,0.10),transparent_34%)]" />
-        <main className="relative min-h-screen px-4 py-5 sm:px-6 sm:py-7">
+        <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,168,67,0.10),transparent_34%)]" />
+        <main className="relative z-10 min-h-screen px-4 py-5 sm:px-6 sm:py-7">
           {children}
         </main>
       </div>
@@ -86,12 +86,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className={roleAreaClass ? `${roleAreaClass}-shell min-h-screen overflow-x-hidden bg-[#050506] text-white` : "min-h-screen overflow-x-hidden bg-[#050506] text-white"}>
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,168,67,0.10),transparent_34%)]" />
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,168,67,0.10),transparent_34%)]" />
       {isProfessionalArea ? <ProfessionalPremiumStyles /> : null}
 
       {isProfessionalOnboarding ? null : <DashSidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />}
 
-      <div className={layoutClass}>
+      <div className={`${layoutClass} z-10`}>
         {showProfessionalChrome ? (
           <ProfessionalTopHeader onMenuClick={() => setSidebarOpen(true)} />
         ) : isProfessionalOnboarding ? null : (

@@ -3,8 +3,9 @@
 /* eslint-disable @next/next/no-img-element -- Avatar/profile image can come from uploaded Supabase URLs. */
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import toast from "react-hot-toast";
-import { BadgeCheck, Eye, MapPin, Save, ShieldCheck, UserRound } from "lucide-react";
+import { BadgeCheck, CalendarDays, Camera, CirclePlay, Eye, Images, MapPin, Save, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import {
   PremiumHeroCard,
   PremiumSection,
@@ -180,9 +181,9 @@ export default function EditarPerfilPage() {
         }),
       });
       if (!res.ok) throw new Error("Failed to update profile");
-      toast.success("Perfil atualizado com sucesso!");
+      toast.success("Seu perfil foi atualizado.");
     } catch {
-      toast.error("Não foi possível salvar o perfil.");
+      toast.error("Não foi possível concluir agora. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -207,6 +208,62 @@ export default function EditarPerfilPage() {
     ? Math.round((profileSignals.filter((item) => item.done).length / profileSignals.length) * 100)
     : 0;
   const statusBadges = profileSignals.filter((item) => !item.done);
+  const lowerSections = [
+    {
+      eyebrow: "Mídia principal",
+      title: "Foto de perfil e capa",
+      description: "Revise as imagens que aparecem primeiro no seu anúncio.",
+      href: "/profissional/fotos",
+      action: "Editar fotos",
+      icon: Camera,
+      chips: ["Foto de perfil", "Foto de capa"],
+    },
+    {
+      eyebrow: "Galeria",
+      title: "Galeria",
+      description: "Organize fotos recentes para transmitir mais confiança e melhorar a apresentação.",
+      href: "/profissional/fotos",
+      action: "Gerenciar galeria",
+      icon: Images,
+      chips: ["Fotos recentes", "Ordem da galeria", "Capa"],
+    },
+    {
+      eyebrow: "Vídeos e stories",
+      title: "Vídeos e stories",
+      description: "Conteúdos recentes ajudam clientes a conhecerem melhor seu perfil.",
+      href: "/profissional/postar",
+      action: "Postar conteúdo",
+      icon: CirclePlay,
+      chips: ["Vídeo", "Stories", "Conteúdo recente"],
+    },
+    {
+      eyebrow: "Agenda",
+      title: "Agenda",
+      description: "Mantenha dias e horários disponíveis para reduzir atrito no contato.",
+      href: "/profissional/agenda",
+      action: "Atualizar agenda",
+      icon: CalendarDays,
+      chips: ["Dias", "Horários", "Disponibilidade"],
+    },
+    {
+      eyebrow: "Verificação",
+      title: "Verificação",
+      description: verified ? "Sua verificação está aprovada. Mantenha os dados alinhados ao perfil." : "Acompanhe sua análise para liberar sinais de confiança.",
+      href: "/profissional/analise",
+      action: verified ? "Ver status" : "Acompanhar análise",
+      icon: ShieldCheck,
+      chips: [verified ? "Aprovada" : "Em análise", "Documento", "Segurança"],
+    },
+    {
+      eyebrow: "Visibilidade",
+      title: "Visibilidade",
+      description: "Controle como o perfil aparece para clientes e quais recursos comerciais estão ativos.",
+      href: "/profissional/configuracoes",
+      action: "Configurar",
+      icon: Sparkles,
+      chips: [statusLabel(profileStatus), "Privacidade", "Boost"],
+    },
+  ];
 
   return (
     <div className="professional-premium-page premium-form">
@@ -318,6 +375,34 @@ export default function EditarPerfilPage() {
           </div>
         </div>
       </PremiumSection>
+
+      <div className="premium-grid">
+        {lowerSections.map((section) => {
+          const Icon = section.icon;
+          return (
+            <PremiumSection key={section.title} eyebrow={section.eyebrow} title={section.title} description={section.description}>
+              <div style={{ display: "flex", gap: 16, alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: 14, alignItems: "flex-start", minWidth: 0 }}>
+                    <span className="premium-icon-orb" style={{ width: 58, height: 58, flex: "0 0 auto" }}>
+                      <Icon />
+                    </span>
+                    <div style={{ minWidth: 0 }}>
+                      <h3 className="premium-card-title">{section.title}</h3>
+                      <div className="premium-chip-row" style={{ marginTop: 12 }}>
+                        {section.chips.map((chip) => (
+                          <span key={chip} className="premium-chip">{chip}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <Link href={section.href} className="premium-button-secondary">
+                    {section.action}
+                  </Link>
+              </div>
+            </PremiumSection>
+          );
+        })}
+      </div>
 
       <button onClick={handleSave} disabled={loading} className="premium-button" style={{ width: "100%" }}>
         <Save size={18} />

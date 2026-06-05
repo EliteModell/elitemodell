@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, ReactNode } from "react";
 import toast from "react-hot-toast";
-import { CalendarDays, Camera, FileVideo, ImageIcon, Images, Loader2, Play, UploadCloud, UserRound } from "lucide-react";
+import { CalendarDays, Camera, CheckCircle2, FileVideo, ImageIcon, Images, Loader2, Play, UploadCloud, UserRound } from "lucide-react";
 import {
   PremiumActionCard,
   PremiumHeroCard,
@@ -155,12 +155,13 @@ export function ProfessionalPostClient() {
         <QuickContentCard href="/profissional/fotos" icon={<UserRound />} badge="Imagem principal" title="Foto de perfil" description="Adicione ou troque a imagem principal do seu perfil." buttonLabel="Editar foto" />
         <QuickContentCard href="/profissional/fotos" icon={<ImageIcon />} badge="Topo do anúncio" title="Foto de capa" description="Escolha uma imagem de destaque para o topo do seu anúncio." buttonLabel="Editar capa" />
         <QuickContentCard href="/profissional/fotos" icon={<Images />} badge="Portfólio" title="Galeria de fotos" description="Publique fotos recentes para aumentar confiança e conversão." buttonLabel="Postar fotos" />
+        <QuickContentCard href="#video-apresentacao" icon={<FileVideo />} badge="Apresentação" title="Vídeo de apresentação" description="Envie um vídeo curto para deixar o perfil mais completo." buttonLabel="Selecionar vídeo" />
         <QuickContentCard href="/profissional/stories" icon={<Camera />} badge="Conteúdo rápido" title="Stories" description="Publique conteúdos rápidos que aparecem para clientes." buttonLabel="Postar story" />
         <QuickContentCard href="/profissional/agenda" icon={<CalendarDays />} badge="Disponibilidade" title="Agenda" description="Mantenha seus horários e disponibilidade atualizados." buttonLabel="Atualizar agenda" />
       </div>
 
       <PremiumSection eyebrow="Apresentação" title="Vídeo de apresentação" description="Adicione um vídeo curto para apresentar melhor seu perfil.">
-        <section className="premium-card" style={{ padding: 18 }}>
+        <section id="video-apresentacao" className="premium-upload-zone" style={{ padding: 18, textAlign: "left" }}>
           <input ref={videoInputRef} type="file" accept="video/mp4,video/webm,video/quicktime" hidden onChange={handleVideoInput} />
           <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 260px) minmax(0, 1fr)", gap: 18, alignItems: "center" }}>
             <div style={{ aspectRatio: "9 / 16", borderRadius: 24, overflow: "hidden", border: "1px solid var(--elite-border-soft)", background: "rgba(255,255,255,0.035)", display: "grid", placeItems: "center" }}>
@@ -174,6 +175,16 @@ export function ProfessionalPostClient() {
             </div>
             <div>
               <span className="premium-badge">{videoStatusLabel(videoStatus)}</span>
+              {pendingVideo ? (
+                <p style={{ margin: "12px 0 0", color: "var(--elite-gold-light)", lineHeight: 1.6, fontSize: 14, fontWeight: 800 }}>
+                  Preview pronto. Confira o vídeo antes de enviar.
+                </p>
+              ) : videoUrl ? (
+                <p style={{ margin: "12px 0 0", color: "var(--elite-success)", lineHeight: 1.6, fontSize: 14, fontWeight: 800 }}>
+                  <CheckCircle2 size={16} style={{ display: "inline", marginRight: 6, verticalAlign: "-3px" }} />
+                  Seu vídeo foi enviado.
+                </p>
+              ) : null}
               <p style={{ margin: "12px 0 0", color: "var(--elite-text-muted)", lineHeight: 1.65, fontSize: 14 }}>
                 Escolha um vídeo MP4, WebM ou MOV. Ele será mostrado no perfil quando estiver liberado para clientes.
               </p>

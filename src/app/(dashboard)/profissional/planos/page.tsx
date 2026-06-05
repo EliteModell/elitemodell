@@ -6,7 +6,6 @@ import {
   ArrowUpRight,
   BadgeCheck,
   Check,
-  Clock,
   Copy,
   Crown,
   Diamond,
@@ -857,21 +856,27 @@ export default function PlanosPage() {
       <section className="advantages-section" aria-labelledby="advantages-title">
         <p className="eyebrow">Mais vantagens</p>
         <h2 id="advantages-title">Recursos que fortalecem sua apresentação</h2>
+        <p className="advantages-description">Benefícios extras ajudam seu perfil a aparecer melhor e transmitir mais confiança para clientes.</p>
         <div className="advantages-grid">
           {[
-            { label: "Prioridade no atendimento", icon: Clock },
-            { label: "Mais destaque na listagem", icon: Sparkles },
-            { label: "Mais chances de contato", icon: MessageCircle },
-            { label: "Perfil com aparência mais completa", icon: ImageIcon },
-            { label: "Recursos extras de anúncio", icon: Trophy },
-            { label: "Controle de visibilidade", icon: ShieldCheck },
-            { label: "Melhor apresentação para clientes", icon: ArrowUpRight },
-          ].map(({ label, icon: AdvantageIcon }) => {
+            { title: "Mais destaque na listagem", description: "Ajuda o perfil a aparecer com mais presença na cidade.", icon: Sparkles, badge: "Visibilidade" },
+            { title: "Recursos extras de anúncio", description: "Libera sinais comerciais para fortalecer seu anúncio.", icon: Trophy, badge: "Extra" },
+            { title: "Melhor apresentação para clientes", description: "Deixa informações, fotos e contatos mais fáceis de comparar.", icon: ArrowUpRight, badge: "Confiança" },
+            { title: "Galeria premium", description: "Valoriza fotos recentes e melhora a percepção do perfil.", icon: ImageIcon, badge: "Mídia" },
+            { title: "Stories e vídeos", description: "Conteúdo recente aumenta interesse e aproxima clientes.", icon: Star, badge: "Conteúdo" },
+            { title: "Telefone na listagem", description: "Facilita contato direto quando o recurso está ativo.", icon: Phone, badge: "Contato" },
+            { title: "Impulsionamento", description: "Aumenta temporariamente sua presença em momentos estratégicos.", icon: Zap, badge: "Boost" },
+            { title: "Suporte prioritário", description: "Atendimento mais ágil para dúvidas sobre planos e recursos.", icon: ShieldCheck, badge: "Suporte" },
+          ].map(({ title, description, icon: AdvantageIcon, badge }) => {
             return (
-              <div key={label}>
-                <AdvantageIcon size={19} />
-                <span>{label}</span>
-              </div>
+              <article key={title}>
+                <span className="advantage-icon"><AdvantageIcon size={19} /></span>
+                <span className="advantage-copy">
+                  <strong>{title}</strong>
+                  <small>{description}</small>
+                </span>
+                <b>{badge}</b>
+              </article>
             );
           })}
         </div>
@@ -879,7 +884,7 @@ export default function PlanosPage() {
 
       <section className="faq-section" aria-labelledby="faq-title">
         <p className="eyebrow">Dúvidas frequentes</p>
-        <h2 id="faq-title">Ainda tem dúvidas?</h2>
+        <h2 id="faq-title">Dúvidas frequentes</h2>
         <div className="faq-list">
           {FAQ.map((item, index) => (
             <details key={item.question} open={index === 0}>
@@ -894,8 +899,17 @@ export default function PlanosPage() {
         .plans-page {
           width: min(100%, 1120px);
           margin: 0 auto;
-          padding: 8px 0 40px;
+          padding: 8px 0 calc(120px + env(safe-area-inset-bottom));
           color: #f8fafc;
+          position: relative;
+          isolation: isolate;
+          overflow-x: clip;
+        }
+        .plans-page > section,
+        .plans-page > div,
+        .plans-page > .sales-section {
+          position: relative;
+          z-index: 1;
         }
         .eyebrow {
           margin: 0 0 8px;
@@ -906,6 +920,8 @@ export default function PlanosPage() {
           text-transform: uppercase;
         }
         .plans-hero {
+          position: relative;
+          overflow: hidden;
           min-height: 308px;
           display: grid;
           grid-template-columns: minmax(0, 1fr) minmax(250px, 0.62fr);
@@ -925,6 +941,7 @@ export default function PlanosPage() {
           background: radial-gradient(ellipse at center, rgba(245,215,140,0.24), rgba(212,168,67,0.10) 42%, transparent 72%);
           filter: blur(4px);
           pointer-events: none;
+          z-index: 0;
         }
         .plans-hero-copy {
           position: relative;
@@ -953,6 +970,18 @@ export default function PlanosPage() {
           z-index: 1;
           min-width: 0;
         }
+        .plans-hero > *,
+        .plans-benefit-card > *,
+        .showcase-plan-card > *,
+        .secure-strip > *,
+        .product-card > *,
+        .points-panel > *,
+        .info-grid article > *,
+        .advantages-section > *,
+        .faq-section > * {
+          position: relative;
+          z-index: 1;
+        }
         .plans-hero-art .premium-illustration {
           min-height: 244px;
         }
@@ -962,6 +991,9 @@ export default function PlanosPage() {
           margin-bottom: 18px;
         }
         .plans-benefit-card {
+          position: relative;
+          overflow: hidden;
+          isolation: isolate;
           min-height: 112px;
           display: grid;
           grid-template-columns: 112px minmax(0, 1fr) auto;
@@ -1045,6 +1077,8 @@ export default function PlanosPage() {
         }
         .showcase-plan-card {
           position: relative;
+          overflow: hidden;
+          isolation: isolate;
           min-height: 430px;
           display: flex;
           flex-direction: column;
@@ -1172,6 +1206,9 @@ export default function PlanosPage() {
           box-shadow: 0 16px 36px rgba(212,168,67,0.24);
         }
         .secure-strip {
+          position: relative;
+          overflow: hidden;
+          isolation: isolate;
           min-height: 78px;
           display: grid;
           grid-template-columns: auto minmax(0, 1fr) auto;
@@ -1269,8 +1306,7 @@ export default function PlanosPage() {
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 12px;
         }
-        .hero-summary div,
-        .advantages-grid div {
+        .hero-summary div {
           display: flex;
           align-items: center;
           gap: 10px;
@@ -1285,7 +1321,6 @@ export default function PlanosPage() {
           line-height: 1.25;
         }
         .hero-summary svg,
-        .advantages-grid svg,
         .info-grid svg {
           color: #f5d78c;
           flex: 0 0 auto;
@@ -1380,6 +1415,7 @@ export default function PlanosPage() {
         .points-panel {
           position: relative;
           overflow: hidden;
+          isolation: isolate;
           border: 1px solid rgba(212,168,67,0.22);
           border-radius: 8px;
           background: linear-gradient(145deg, rgba(22,22,22,0.98), rgba(7,7,8,0.98));
@@ -1393,6 +1429,8 @@ export default function PlanosPage() {
           inset: 0 0 auto;
           height: 3px;
           background: linear-gradient(90deg, transparent, rgba(212,168,67,0.72), transparent);
+          pointer-events: none;
+          z-index: 0;
         }
         .hero-product {
           background: linear-gradient(135deg, rgba(38,32,18,0.98), rgba(7,7,8,0.98) 56%);
@@ -1641,6 +1679,9 @@ export default function PlanosPage() {
         .info-grid article,
         .advantages-section,
         .faq-section {
+          position: relative;
+          overflow: hidden;
+          isolation: isolate;
           border: 1px solid rgba(212,168,67,0.18);
           border-radius: 8px;
           background: rgba(255,255,255,0.035);
@@ -1652,30 +1693,99 @@ export default function PlanosPage() {
           gap: 12px;
           margin-top: 16px;
         }
+        .advantages-description {
+          max-width: 720px;
+          margin: 10px 0 0;
+          color: #aeb6c2;
+          font-size: 14px;
+          line-height: 1.62;
+        }
+        .advantages-grid article {
+          min-height: 168px;
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr);
+          gap: 13px;
+          align-content: start;
+          border: 1px solid rgba(212,168,67,0.20);
+          border-radius: 18px;
+          background:
+            radial-gradient(circle at top right, rgba(212,168,67,0.10), transparent 44%),
+            linear-gradient(145deg, rgba(22,22,22,0.96), rgba(8,8,8,0.98));
+          padding: 16px;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+        .advantage-icon {
+          width: 42px;
+          height: 42px;
+          display: grid;
+          place-items: center;
+          border-radius: 999px;
+          border: 1px solid rgba(245,215,140,0.32);
+          background: rgba(212,168,67,0.12);
+          color: #f5d78c;
+        }
+        .advantage-copy {
+          min-width: 0;
+        }
+        .advantage-copy strong {
+          display: block;
+          color: #fff;
+          font-size: 14px;
+          line-height: 1.2;
+        }
+        .advantage-copy small {
+          display: block;
+          margin-top: 7px;
+          color: #aeb6c2;
+          font-size: 12px;
+          line-height: 1.5;
+          font-weight: 650;
+        }
+        .advantages-grid article b {
+          grid-column: 1 / -1;
+          width: fit-content;
+          align-self: end;
+          border: 1px solid rgba(214,168,67,0.35);
+          border-radius: 999px;
+          background: rgba(214,168,67,0.12);
+          color: #f5d78c;
+          padding: 7px 10px;
+          font-size: 10px;
+          font-weight: 950;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+        }
         .faq-list {
           display: grid;
           gap: 10px;
           margin-top: 16px;
         }
         .faq-list details {
-          border: 1px solid rgba(212,168,67,0.16);
-          border-radius: 8px;
-          background: rgba(0,0,0,0.24);
-          padding: 14px;
+          border: 1px solid rgba(212,168,67,0.22);
+          border-radius: 18px;
+          background:
+            radial-gradient(circle at top right, rgba(212,168,67,0.08), transparent 48%),
+            rgba(0,0,0,0.24);
+          padding: 16px;
+          overflow: hidden;
         }
         .faq-list summary {
           display: flex;
           align-items: center;
-          gap: 9px;
+          gap: 10px;
           color: #fff;
           font-weight: 900;
           cursor: pointer;
+          line-height: 1.35;
+        }
+        .faq-list summary::marker {
+          color: #f5d78c;
         }
         .faq-list p {
-          margin: 10px 0 0;
+          margin: 12px 0 0;
           color: #aeb6c2;
-          font-size: 13px;
-          line-height: 1.6;
+          font-size: 14px;
+          line-height: 1.65;
         }
         .plans-modal {
           position: fixed;
@@ -1925,7 +2035,7 @@ export default function PlanosPage() {
         }
         @media (max-width: 620px) {
           .plans-page {
-            padding-bottom: 28px;
+            padding-bottom: calc(120px + env(safe-area-inset-bottom));
           }
           .plans-hero-copy h1 {
             font-size: 42px;

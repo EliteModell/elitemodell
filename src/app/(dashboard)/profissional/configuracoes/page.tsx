@@ -45,7 +45,7 @@ export default function ProfissionalConfiguracoesPage() {
         setPauseReason(data.professional?.pauseReason ?? "");
       })
       .catch(() => {
-        toast.error("Não foi possível carregar as configurações.");
+        toast.error("Não foi possível carregar suas configurações agora.");
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -56,7 +56,7 @@ export default function ProfissionalConfiguracoesPage() {
     };
   }, []);
 
-  async function save(payload: Record<string, unknown>, success = "Configuração salva.") {
+  async function save(payload: Record<string, unknown>, success = "Sua configuração foi salva.") {
     setSaving(true);
     try {
       const res = await fetch("/api/professional/settings", {
@@ -69,7 +69,7 @@ export default function ProfissionalConfiguracoesPage() {
       setSettings(data.professional);
       toast.success(success);
     } catch {
-      toast.error("Não foi possível salvar agora.");
+      toast.error("Não foi possível concluir agora. Tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -93,9 +93,9 @@ export default function ProfissionalConfiguracoesPage() {
       if (!res.ok) throw new Error();
       const data: { url?: string | null } = await res.json();
       if (!data.url) throw new Error();
-      await save({ presentationVideoUrl: data.url }, "Vídeo enviado para análise.");
+      await save({ presentationVideoUrl: data.url }, "Seu vídeo foi enviado para análise.");
     } catch {
-      toast.error("Não foi possível enviar o vídeo.");
+      toast.error("Não foi possível concluir agora. Tente novamente.");
     } finally {
       setUploadingVideo(false);
       if (fileRef.current) fileRef.current.value = "";

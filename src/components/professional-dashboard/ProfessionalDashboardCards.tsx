@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import {
+  BadgeCheck,
   CalendarClock,
   CalendarDays,
   Camera,
@@ -13,7 +14,7 @@ import {
   EyeOff,
   FileVideo,
   Gauge,
-  Globe2,
+  ImageIcon,
   ImagePlus,
   ListChecks,
   Lock,
@@ -21,8 +22,10 @@ import {
   PhoneOff,
   ShieldCheck,
   Sparkles,
+  Star,
   Trophy,
   UserRound,
+  Zap,
 } from "lucide-react";
 import { EmptyState } from "@/components/professional-dashboard/EmptyState";
 import { StatusBadge } from "@/components/professional-dashboard/StatusBadge";
@@ -86,8 +89,8 @@ export function ProfessionalMainCard({
   const greeting = new Date().getHours() >= 18 ? "Boa noite" : new Date().getHours() >= 12 ? "Boa tarde" : "Bom dia";
 
   return (
-    <section className="overflow-hidden rounded-[8px] border border-[#d4a843]/22 bg-[linear-gradient(150deg,rgba(22,22,24,0.98),rgba(7,7,8,0.98))] shadow-[0_28px_90px_rgba(0,0,0,0.34)]">
-      <div className="border-b border-white/10 bg-[#d4a843]/[0.055] px-4 py-3 sm:px-5">
+    <section className="premium-lower-card p-0">
+      <div className="border-b border-[#d4a843]/18 bg-[#d4a843]/[0.055] px-4 py-3 sm:px-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#d4a843]">Meu perfil profissional</p>
           <StatusBadge status={status} />
@@ -96,7 +99,7 @@ export function ProfessionalMainCard({
 
       <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="flex flex-col gap-4 sm:flex-row">
-          <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-[8px] border border-[#d4a843]/30 bg-black/40 sm:h-32 sm:w-32">
+          <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-[24px] border border-[#d4a843]/35 bg-black/40 shadow-[0_16px_42px_rgba(0,0,0,0.36)] sm:h-32 sm:w-32">
             {image ? (
               <img src={image} alt={displayName} className="h-full w-full object-cover" />
             ) : (
@@ -117,26 +120,26 @@ export function ProfessionalMainCard({
                 {online ? "Online" : "Offline"}
               </span>
               {verified ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#d4a843]/10 px-2.5 py-1 text-xs font-black text-[#f5d78c]">
-                  <ShieldCheck className="h-3.5 w-3.5" />
+                <span className="inline-flex items-center gap-1 rounded-full border border-[#d4a843]/28 bg-[#d4a843]/10 px-2.5 py-1 text-xs font-black text-[#f5d78c]">
+                  <BadgeCheck className="h-3.5 w-3.5" />
                   Verificada
                 </span>
               ) : null}
             </div>
-            <div className="mt-3 grid gap-2 text-sm text-white/58">
-              <span className="inline-flex items-center gap-2">
+            <div className="mt-4 grid gap-2.5 text-sm text-white/58">
+              <span className="inline-flex items-center gap-2 rounded-[14px] border border-white/10 bg-white/[0.035] px-3 py-2">
                 <MapPin className="h-4 w-4 text-[#d4a843]" />
                 {city && state ? `${city}, ${state}` : "Localização não informada"}
               </span>
-              <span className="inline-flex items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-[14px] border border-white/10 bg-white/[0.035] px-3 py-2">
                 <Crown className="h-4 w-4 text-[#d4a843]" />
                 {planName} {planExpiresAt ? `até ${formatDate(planExpiresAt)}` : ""}
               </span>
-              <span className="inline-flex items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-[14px] border border-white/10 bg-white/[0.035] px-3 py-2">
                 <Trophy className="h-4 w-4 text-[#d4a843]" />
                 {rankingPosition ? `${rankingPosition}ª posição na cidade` : "Posição ainda não disponível"}
               </span>
-              <span className="inline-flex items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-[14px] border border-white/10 bg-white/[0.035] px-3 py-2">
                 <ShieldCheck className="h-4 w-4 text-[#d4a843]" />
                 Código de segurança: {securityCode ?? "não disponível"}
               </span>
@@ -144,32 +147,42 @@ export function ProfessionalMainCard({
           </div>
         </div>
 
-        <div className="grid content-between gap-4 rounded-[8px] border border-white/10 bg-black/20 p-4">
+        <div className="grid content-between gap-4 rounded-[22px] border border-[#d4a843]/20 bg-black/24 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
           <div>
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <span className="text-xs font-black uppercase tracking-[0.18em] text-white/42">Completude</span>
-              <span className="text-sm font-black text-[#f5d78c]">{completeness}%</span>
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-[#d4a843]">Completude do perfil</span>
+                <h3 className="mt-1 text-lg font-black leading-tight text-white">Perfil {completeness}% completo</h3>
+              </div>
+              <span className="rounded-full border border-[#d4a843]/32 bg-[#d4a843]/12 px-3 py-1 text-sm font-black text-[#f5d78c]">{completeness}%</span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full rounded-full bg-[linear-gradient(90deg,#d4a843,#f5d78c)]" style={{ width: `${completeness}%` }} />
+            <div className="h-3 overflow-hidden rounded-full border border-[#d4a843]/18 bg-white/10 p-[2px]">
+              <div className="h-full rounded-full bg-[linear-gradient(90deg,#d4a843,#f5d78c)] shadow-[0_0_18px_rgba(214,168,58,0.36)]" style={{ width: `${completeness}%` }} />
             </div>
-            <p className="mt-2 text-xs leading-5 text-white/42">
+            <p className="mt-3 text-sm leading-6 text-white/55">
               {missingItems.length > 0
                 ? `Falta ${missingItems.slice(0, 3).join(", ")}${missingItems.length > 3 ? " e outros ajustes" : ""}.`
                 : "Perfil completo e pronto para performar melhor na listagem."}
             </p>
+            {missingItems.length > 0 ? (
+              <div className="premium-chip-row mt-3">
+                {missingItems.slice(0, 4).map((item) => (
+                  <span key={item} className="premium-chip">{item}</span>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-            <Link href={`/profissionais/${slug}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] border border-white/12 px-3 text-sm font-black text-white/72 no-underline transition hover:border-[#d4a843]/35 hover:text-[#f5d78c]">
+            <Link href={`/profissionais/${slug}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[16px] border border-[#d4a843]/24 bg-white/[0.025] px-3 text-sm font-black text-white/72 no-underline transition hover:border-[#d4a843]/45 hover:text-[#f5d78c]">
               <Eye className="h-4 w-4" />
               Ver perfil
             </Link>
-            <Link href="/profissional/perfil" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] border border-white/12 px-3 text-sm font-black text-white/72 no-underline transition hover:border-[#d4a843]/35 hover:text-[#f5d78c]">
+            <Link href="/profissional/perfil" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[16px] border border-[#d4a843]/24 bg-white/[0.025] px-3 text-sm font-black text-white/72 no-underline transition hover:border-[#d4a843]/45 hover:text-[#f5d78c]">
               <Gauge className="h-4 w-4" />
               Editar
             </Link>
-            <Link href="/profissional/planos" className="professional-primary-action inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#d4a843] px-3 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">
+            <Link href="/profissional/planos" className="professional-primary-action inline-flex min-h-11 items-center justify-center gap-2 rounded-[16px] bg-[#d4a843] px-3 text-sm font-black text-[#080704] no-underline shadow-[0_14px_34px_rgba(214,168,58,0.18)] transition hover:bg-[#f5d78c]">
               <Sparkles className="h-4 w-4" />
               {planExpiresAt ? "Renovar" : "Comprar plano"}
             </Link>
@@ -184,7 +197,7 @@ export function RankingCard({ city, position }: { city: string | null; position:
   const tips = ["Completar perfil", "Manter fotos recentes", "Postar vídeos/stories", "Atualizar agenda", "Receber boas avaliações", "Manter plano ativo", "Comprar destaque/boost"];
 
   return (
-    <section className="rounded-[8px] border border-[#d4a843]/20 bg-[linear-gradient(180deg,rgba(18,18,20,0.98),rgba(8,8,9,0.98))] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.28)] sm:p-5">
+    <section className="premium-lower-card p-4 sm:p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d4a843]">Ranking e listagem</p>
@@ -202,8 +215,10 @@ export function RankingCard({ city, position }: { city: string | null; position:
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-7">
         {tips.map((tip) => (
-          <div key={tip} className="flex min-h-16 items-center gap-2 rounded-[8px] border border-white/10 bg-white/[0.035] p-2 text-xs font-bold leading-5 text-white/62">
-            <Check className="h-4 w-4 shrink-0 text-[#d4a843]" />
+          <div key={tip} className="flex min-h-20 items-center gap-3 rounded-[16px] border border-[#d4a843]/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.045),rgba(214,168,58,0.025))] p-3 text-xs font-black leading-5 text-white/70">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[#d4a843]/28 bg-[#d4a843]/10">
+              <Check className="h-4 w-4 text-[#f5d78c]" />
+            </span>
             {tip}
           </div>
         ))}
@@ -258,33 +273,39 @@ export function PlanResourcesCard({
   hasActivePlan: boolean;
 }) {
   return (
-    <section className="rounded-[8px] border border-[#d4a843]/20 bg-[linear-gradient(180deg,rgba(18,18,20,0.98),rgba(8,8,9,0.98))] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.28)] sm:p-5">
+    <section className="premium-lower-card p-4 sm:p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d4a843]">Meus planos e recursos</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d4a843]">Recursos do perfil</p>
           <h2 className="mt-1 text-xl font-black text-white">{hasActivePlan ? planName : "Seu perfil está no modo básico"}</h2>
           <p className="mt-2 text-sm leading-6 text-white/55">
-            {hasActivePlan ? `Status: ${statusLabel}. Vencimento: ${formatDate(expiresAt)}.` : "Assine um plano para ganhar mais visibilidade na listagem."}
+            {hasActivePlan ? `Status: ${statusLabel}. Vencimento: ${formatDate(expiresAt)}.` : "Controle os recursos que aumentam sua visibilidade e melhoram sua apresentaÃ§Ã£o para clientes."}
           </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-3 lg:w-[420px]">
-          <Link href="/profissional/planos" className="professional-primary-action inline-flex min-h-11 items-center justify-center rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">{hasActivePlan ? "Renovar plano" : "Conhecer planos"}</Link>
-          <Link href="/profissional/planos" className="inline-flex min-h-11 items-center justify-center rounded-[8px] border border-white/12 px-4 text-sm font-black text-white/70 no-underline transition hover:border-[#d4a843]/35 hover:text-[#f5d78c]">Comprar destaque</Link>
-          <Link href="/profissional/planos" className="inline-flex min-h-11 items-center justify-center rounded-[8px] border border-white/12 px-4 text-sm font-black text-white/70 no-underline transition hover:border-[#d4a843]/35 hover:text-[#f5d78c]">Ver planos</Link>
+          <Link href="/profissional/planos" className="professional-primary-action inline-flex min-h-11 items-center justify-center rounded-[16px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">{hasActivePlan ? "Renovar plano" : "Conhecer planos"}</Link>
+          <Link href="/profissional/planos" className="inline-flex min-h-11 items-center justify-center rounded-[16px] border border-[#d4a843]/24 bg-white/[0.025] px-4 text-sm font-black text-white/70 no-underline transition hover:border-[#d4a843]/45 hover:text-[#f5d78c]">Comprar destaque</Link>
+          <Link href="/profissional/planos" className="inline-flex min-h-11 items-center justify-center rounded-[16px] border border-[#d4a843]/24 bg-white/[0.025] px-4 text-sm font-black text-white/70 no-underline transition hover:border-[#d4a843]/45 hover:text-[#f5d78c]">Ver planos</Link>
         </div>
       </div>
       <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {resources.map((resource) => (
-          <div key={resource.label} className="rounded-[8px] border border-white/10 bg-white/[0.035] p-3">
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <span className="text-sm font-black text-white">{resource.label}</span>
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] ${resource.active ? "bg-emerald-400/10 text-emerald-200" : "bg-white/[0.06] text-white/38"}`}>
-                {resource.active ? "Ativo" : "Inativo"}
-              </span>
+        {resources.map((resource) => {
+          const recommended = !resource.active && ["premium", "Destaque", "Impulsionamento", "Galeria", "Stories"].some((term) => resource.label.includes(term));
+          return (
+            <div key={resource.label} className="rounded-[18px] border border-[#d4a843]/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.045),rgba(214,168,58,0.025))] p-4">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] border border-[#d4a843]/24 bg-[#d4a843]/10 text-[#f5d78c]">
+                  {resource.label.includes("premium") ? <Crown className="h-4 w-4" /> : resource.label.includes("Destaque") ? <Star className="h-4 w-4" /> : resource.label.includes("telefone") ? <PhoneOff className="h-4 w-4" /> : resource.label.includes("Galeria") ? <ImageIcon className="h-4 w-4" /> : resource.label.includes("Stories") ? <FileVideo className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+                </span>
+                <span className={resource.active ? "premium-status-badge active" : recommended ? "premium-status-badge recommended" : "premium-status-badge inactive"}>
+                  {resource.active ? "ATIVO" : recommended ? "RECOMENDADO" : "INATIVO"}
+                </span>
+              </div>
+              <h3 className="text-sm font-black text-white">{resource.label}</h3>
+              <p className="mt-2 text-xs leading-5 text-white/50">{resource.description}</p>
             </div>
-            <p className="text-xs leading-5 text-white/45">{resource.description}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
@@ -304,35 +325,35 @@ export function PrivacyBoostCard({
   boostActive: boolean;
 }) {
   const options = [
-    { label: "Pausar perfil temporariamente", active: isPaused, description: "Quando pausado, o perfil deixa de aparecer na busca pública pelo período escolhido.", icon: EyeOff },
+    { label: "Pausar perfil temporariamente", active: isPaused || !isVisible, description: "Quando pausado, o perfil deixa de aparecer na busca pública pelo período escolhido.", icon: EyeOff },
     { label: "Ocultar idade", active: hideAge, description: "A idade não aparece publicamente quando este controle está ativo.", icon: Lock },
     { label: "Ocultar telefone", active: hidePhone, description: "Seu telefone não aparece publicamente, mas clientes ainda podem entrar em contato pelos canais permitidos.", icon: PhoneOff },
-    { label: "Exibição na listagem", active: isVisible, description: "Controla se o perfil aparece para clientes na cidade e nos filtros públicos.", icon: Globe2 },
-    { label: "Boost por período", active: boostActive, description: "Impulsionamento preparado por diária ou período, conforme regra comercial ativa.", icon: Sparkles },
+    { label: "Impulsionamento", active: boostActive, description: "Aumenta temporariamente sua presença para clientes.", icon: Zap },
   ];
 
   return (
-    <section className="rounded-[8px] border border-[#d4a843]/20 bg-[linear-gradient(180deg,rgba(18,18,20,0.98),rgba(8,8,9,0.98))] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.28)] sm:p-5">
+    <section className="premium-lower-card p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d4a843]">Privacidade e boost</p>
           <h2 className="mt-1 text-xl font-black text-white">Controle sua presença pública</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">Gerencie privacidade, impulsionamento e recursos de visibilidade do seu perfil.</p>
         </div>
-        <Link href="/profissional/configuracoes" className="professional-primary-action inline-flex min-h-11 items-center justify-center rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">Configurar</Link>
+        <Link href="/profissional/configuracoes" className="professional-primary-action inline-flex min-h-11 items-center justify-center rounded-[16px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f5d78c]">Configurar</Link>
       </div>
-      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {options.map((option) => {
           const Icon = option.icon;
           return (
-            <div key={option.label} className="rounded-[8px] border border-white/10 bg-white/[0.035] p-3">
-              <div className="mb-3 flex items-center gap-2">
-                <div className="grid h-8 w-8 place-items-center rounded-[8px] bg-[#d4a843]/10 text-[#f5d78c]">
+            <div key={option.label} className="rounded-[18px] border border-[#d4a843]/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.045),rgba(214,168,58,0.025))] p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="grid h-10 w-10 place-items-center rounded-[14px] border border-[#d4a843]/24 bg-[#d4a843]/10 text-[#f5d78c]">
                   <Icon className="h-4 w-4" />
                 </div>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] ${option.active ? "bg-emerald-400/10 text-emerald-200" : "bg-white/[0.06] text-white/38"}`}>{option.active ? "Ativo" : "Inativo"}</span>
+                <span className={option.active ? "premium-status-badge active" : "premium-status-badge inactive"}>{option.active ? "ATIVO" : "INATIVO"}</span>
               </div>
               <h3 className="text-sm font-black text-white">{option.label}</h3>
-              <p className="mt-1 text-xs leading-5 text-white/45">{option.description}</p>
+              <p className="mt-2 text-xs leading-5 text-white/50">{option.description}</p>
             </div>
           );
         })}

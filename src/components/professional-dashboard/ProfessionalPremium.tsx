@@ -88,6 +88,7 @@ export function ProfessionalPremiumStyles() {
       .premium-profile-row {
         position: relative;
         overflow: hidden;
+        isolation: isolate;
         border: 1px solid var(--elite-border);
         border-radius: 24px;
         background:
@@ -111,6 +112,18 @@ export function ProfessionalPremiumStyles() {
         height: 1px;
         background: linear-gradient(90deg, transparent, rgba(245,212,107,0.72), transparent);
         pointer-events: none;
+        z-index: 0;
+      }
+
+      .premium-card > *,
+      .premium-hero > *,
+      .premium-action-card > *,
+      .premium-section-card > *,
+      .premium-plan-card > *,
+      .premium-upload-zone > *,
+      .premium-profile-row > * {
+        position: relative;
+        z-index: 1;
       }
 
       .premium-hero {
@@ -736,8 +749,92 @@ export function ProfessionalPremiumStyles() {
         text-transform: uppercase;
       }
 
+      .premium-status-badge {
+        width: fit-content;
+        max-width: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        border-radius: 999px;
+        padding: 7px 10px;
+        font-size: 10px;
+        line-height: 1;
+        font-weight: 950;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .premium-status-badge.active {
+        border: 1px solid rgba(117,217,154,0.35);
+        background: rgba(117,217,154,0.12);
+        color: var(--elite-success);
+      }
+
+      .premium-status-badge.inactive {
+        border: 1px solid rgba(255,255,255,0.10);
+        background: rgba(255,255,255,0.06);
+        color: #9b9b9b;
+      }
+
+      .premium-status-badge.recommended {
+        border: 1px solid rgba(214,168,58,0.35);
+        background: rgba(214,168,58,0.12);
+        color: var(--elite-gold-light);
+      }
+
       .premium-section-card {
         padding: 22px;
+      }
+
+      .premium-section-header {
+        margin-bottom: 16px;
+      }
+
+      .premium-section-eyebrow {
+        margin: 0 0 8px;
+        color: var(--elite-gold);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .premium-section-description {
+        margin: 10px 0 0;
+        color: var(--elite-text-muted);
+        font-size: 15px;
+        line-height: 1.55;
+      }
+
+      .premium-lower-card {
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+        border-radius: 22px;
+        border: 1px solid rgba(214,168,58,0.28);
+        background:
+          radial-gradient(circle at top right, rgba(214,168,58,0.10), transparent 38%),
+          linear-gradient(145deg, rgba(20,20,20,0.96), rgba(7,7,7,0.98));
+        box-shadow:
+          0 12px 32px rgba(0,0,0,0.38),
+          inset 0 1px 0 rgba(255,255,255,0.04);
+      }
+
+      .premium-lower-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto;
+        height: 1px;
+        pointer-events: none;
+        z-index: 0;
+        background: linear-gradient(90deg, transparent, rgba(245,212,107,0.52), transparent);
+      }
+
+      .premium-lower-card > * {
+        position: relative;
+        z-index: 1;
       }
 
       .premium-section-title {
@@ -747,6 +844,36 @@ export function ProfessionalPremiumStyles() {
         font-size: clamp(30px, 7vw, 44px);
         font-weight: 600;
         line-height: 1.04;
+      }
+
+      .premium-card-title {
+        margin: 0;
+        color: #fff;
+        font-size: 20px;
+        line-height: 1.14;
+        font-weight: 950;
+        letter-spacing: 0;
+      }
+
+      .premium-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .premium-chip {
+        display: inline-flex;
+        min-height: 32px;
+        align-items: center;
+        gap: 7px;
+        border: 1px solid rgba(214,168,58,0.22);
+        border-radius: 999px;
+        background: rgba(255,255,255,0.045);
+        color: #d8d8d8;
+        padding: 7px 10px;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.1;
       }
 
       .premium-grid {
@@ -769,7 +896,9 @@ export function ProfessionalPremiumStyles() {
         gap: 12px;
         border: 1px solid var(--elite-border-soft);
         border-radius: 16px;
-        background: rgba(255,255,255,0.035);
+        background:
+          radial-gradient(circle at top right, rgba(214,168,58,0.08), transparent 48%),
+          rgba(255,255,255,0.035);
         padding: 14px 16px;
         color: #d8d8d8;
         font-size: 15px;

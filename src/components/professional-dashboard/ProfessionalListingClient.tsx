@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { CalendarDays, Check, CirclePlay, ImagePlus, Sparkles, Star, Trophy, Video } from "lucide-react";
 import {
-  PremiumActionCard,
-  PremiumChecklistItem,
   PremiumHeroCard,
   PremiumMetricCard,
   PremiumSection,
@@ -35,13 +34,19 @@ function rankingTitle(label: string, cityLabel: string) {
 
 export function ProfessionalListingClient({ data }: { data: ProfessionalListingViewData }) {
   const checklist = [
-    "Completar perfil",
-    "Manter fotos recentes",
-    "Postar vídeos/stories",
-    "Atualizar agenda",
-    "Receber boas avaliações",
-    "Manter plano ativo",
-    "Comprar destaque/boost",
+    { label: "Completar perfil", description: "Dados, descrição, contatos e fotos principais.", icon: Check, done: data.tips.find((item) => item.label === "Completar perfil")?.done ?? false },
+    { label: "Manter fotos recentes", description: "Galeria atualizada aumenta confiança.", icon: ImagePlus, done: data.tips.find((item) => item.label === "Adicionar fotos recentes")?.done ?? false },
+    { label: "Postar vídeos/stories", description: "Conteúdo novo deixa o perfil mais ativo.", icon: CirclePlay, done: false },
+    { label: "Atualizar agenda", description: "Disponibilidade clara reduz atrito.", icon: CalendarDays, done: data.tips.find((item) => item.label === "Manter agenda ativa")?.done ?? false },
+    { label: "Receber boas avaliações", description: "Reputação ajuda clientes a decidirem.", icon: Star, done: Number(data.ratingLabel.replace(",", ".")) >= 4.5 },
+    { label: "Manter plano ativo", description: "Plano ativo melhora presença comercial.", icon: Trophy, done: data.planLabel !== "Básico" },
+    { label: "Comprar destaque/boost", description: "Impulsos ajudam em horários estratégicos.", icon: Sparkles, done: data.isHighlighted },
+  ];
+  const contentActions = [
+    { href: "/profissional/fotos", icon: ImagePlus, title: "Postar foto", description: "Adicione fotos recentes à sua galeria." },
+    { href: "/profissional/postar", icon: Video, title: "Postar vídeo", description: "Publique um vídeo curto de apresentação." },
+    { href: "/profissional/stories", icon: CirclePlay, title: "Postar story", description: "Atualize clientes com conteúdo temporário." },
+    { href: "/profissional/agenda", icon: CalendarDays, title: "Atualizar agenda", description: "Mantenha horários e disponibilidade em dia." },
   ];
 
   return (
@@ -66,9 +71,23 @@ export function ProfessionalListingClient({ data }: { data: ProfessionalListingV
 
       <PremiumSection eyebrow="Minha listagem" title="Minha listagem">
         <div className="premium-grid premium-grid-2">
-          {checklist.map((item) => (
-            <PremiumChecklistItem key={item} label={item} />
-          ))}
+          {checklist.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.label} className="premium-check-card" style={{ alignItems: "flex-start" }}>
+                <span style={{ width: 34, height: 34, borderRadius: 999, display: "grid", placeItems: "center", flex: "0 0 auto", border: "1px solid rgba(214,168,58,0.28)", background: "rgba(214,168,58,0.10)" }}>
+                  <Icon size={17} />
+                </span>
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: "block", color: "#fff", fontSize: 15, fontWeight: 900 }}>{item.label}</span>
+                  <span style={{ display: "block", marginTop: 4, color: "var(--elite-text-muted)", fontSize: 12, lineHeight: 1.45 }}>{item.description}</span>
+                </span>
+                <span className={item.done ? "premium-status-badge active" : "premium-status-badge recommended"} style={{ marginLeft: "auto" }}>
+                  {item.done ? "OK" : "Ajustar"}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </PremiumSection>
 
@@ -78,10 +97,18 @@ export function ProfessionalListingClient({ data }: { data: ProfessionalListingV
         description="Perfis com fotos recentes, vídeos e agenda atualizada tendem a receber mais visualizações."
       >
         <div className="premium-grid premium-grid-2">
-          <PremiumActionCard href="/profissional/fotos" icon="image" title="Postar foto" description="Adicione fotos recentes à sua galeria." buttonLabel="Abrir" />
-          <PremiumActionCard href="/profissional/postar" icon="video" title="Postar vídeo" description="Vídeos aumentam a confiança e o engajamento." buttonLabel="Abrir" />
-          <PremiumActionCard href="/profissional/stories" icon="story" title="Postar story" description="Publique conteúdo rápido e temporário." buttonLabel="Abrir" />
-          <PremiumActionCard href="/profissional/agenda" icon="calendar" title="Atualizar agenda" description="Mantenha horários e disponibilidade em dia." buttonLabel="Abrir" />
+          {contentActions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <Link key={action.href} href={action.href} className="premium-upload-zone" style={{ minHeight: 190, display: "grid", placeItems: "center", textDecoration: "none", color: "inherit" }}>
+                <span className="premium-icon-orb">
+                  <Icon />
+                </span>
+                <span style={{ display: "block", marginTop: 12, color: "#fff", fontSize: 18, fontWeight: 950 }}>{action.title}</span>
+                <span style={{ display: "block", maxWidth: 260, margin: "8px auto 0", color: "var(--elite-text-muted)", fontSize: 13, lineHeight: 1.5 }}>{action.description}</span>
+              </Link>
+            );
+          })}
         </div>
       </PremiumSection>
     </div>
