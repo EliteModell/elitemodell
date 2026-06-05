@@ -269,7 +269,7 @@ svg {
   inset: 0;
   z-index: 0;
   background:
-    linear-gradient(180deg, rgba(5, 5, 5, 0.55) 0%, rgba(5, 5, 5, 0.72) 50%, #050505 88%);
+    linear-gradient(180deg, rgba(5, 5, 5, 0.15) 0%, rgba(5, 5, 5, 0.42) 55%, rgba(5, 5, 5, 0.88) 88%);
   pointer-events: none;
 }
 
@@ -2612,7 +2612,7 @@ body[data-client-dashboard="true"] .client-premium,
 }
 
 .client-dashboard-shell::after {
-  background: linear-gradient(180deg, rgba(5, 5, 5, 0.55) 0%, rgba(5, 5, 5, 0.72) 50%, #050505 88%) !important;
+  background: linear-gradient(180deg, rgba(5, 5, 5, 0.15) 0%, rgba(5, 5, 5, 0.42) 55%, rgba(5, 5, 5, 0.88) 88%) !important;
 }
 
 .client-dashboard-shell > header {
