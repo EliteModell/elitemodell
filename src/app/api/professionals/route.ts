@@ -106,8 +106,7 @@ const createSchema = z.object({
   if (data.paymentMethods.length === 0) addIssue(["paymentMethods"], "Informe uma forma de pagamento.");
   if (!data.whatsapp || data.whatsapp.replace(/\D/g, "").length < 10) addIssue(["whatsapp"], "WhatsApp inválido.");
   if (!data.image) addIssue(["image"], "Foto principal obrigatória.");
-  if (!data.docType || !data.docFrenteUrl || !data.docVersoUrl) addIssue(["docType"], "Documento completo obrigatório.");
-  if (!data.verificationUrl && !data.kycSessionId) addIssue(["verificationUrl"], "Biometria ou verificação facial obrigatória.");
+  if (!data.kycSessionId) addIssue(["kycSessionId"], "Verificação de identidade obrigatória.");
 });
 
 function slugify(text: string) {

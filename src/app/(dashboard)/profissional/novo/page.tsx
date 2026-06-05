@@ -69,7 +69,7 @@ const CATEGORIAS = [
   ["TRANS", "Trans"],
 ];
 
-const STEPS = ["Dados", "Aparência", "Atendimento", "Serviços", "Valores", "Contato", "Fotos", "Documentos", "Biometria"];
+const STEPS = ["Dados", "Aparência", "Atendimento", "Serviços", "Valores", "Contato", "Fotos", "Verificação", "Enviar"];
 const DRAFT_KEY = "elitemodell_professional_onboarding_v1";
 const IMAGE_ACCEPT = "image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,.heic,.heif";
 const IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif"]);
@@ -803,8 +803,6 @@ export default function ProfissionalNovoPage() {
         phone: form.phone, whatsapp: form.whatsapp, instagram: form.instagram, website: form.website,
         image: form.mainPhotoUrl || undefined,
         galleryUrls: form.galleryUrls,
-        docType: form.docType,
-        docFrenteUrl: form.docFrenteUrl, docVersoUrl: form.docVersoUrl,
         verificationUrl: form.verificationUrl,
         verificationType: form.verificationType,
         verificationCode: generateVerificationCode(),
@@ -870,11 +868,7 @@ export default function ProfissionalNovoPage() {
       if (form.mainPhotoUrl.startsWith("blob:")) return "A foto está sendo processada, aguarde um momento.";
       if (!form.mainPhotoUrl || !REMOTE_IMAGE_RE.test(form.mainPhotoUrl)) return "Selecione e envie a foto principal do perfil para continuar.";
     }
-    if (targetStep === 7) {
-      if (!form.docType) return "Selecione o tipo de documento.";
-      if (!form.docFrenteUrl || !form.docVersoUrl) return "Envie frente e verso do documento.";
-    }
-    if (targetStep === 8 && !form.kycSessionId) return "Inicie a validação facial para continuar.";
+    if (targetStep === 8 && !form.kycSessionId) return "Inicie a verificação de identidade para continuar.";
     return null;
   }
 
@@ -1321,62 +1315,68 @@ export default function ProfissionalNovoPage() {
       )}
 
       {/* ══════════════════════════════════════════════
-          ETAPA 8 — DOCUMENTOS (privado)
+          ETAPA 8 — VERIFICAÇÃO DE IDENTIDADE
       ══════════════════════════════════════════════ */}
       {step === 7 && (
         <div>
-          <div style={{ background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "14px 18px", marginBottom: 24, display: "flex", gap: 12, alignItems: "flex-start" }}>
-            <span style={{ fontSize: 20, flexShrink: 0 }}>🔒</span>
-            <div>
-              <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Seus documentos são 100% privados</p>
-              <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", lineHeight: 1.65 }}>
-                As fotos do documento são armazenadas com criptografia e acessadas apenas pela equipe de verificação. Clientes nunca verão seus documentos. A análise leva até <strong>3 dias úteis</strong>.
-              </p>
+          <Section
+            title="Verificação de identidade"
+            desc="Para manter a segurança da plataforma, sua identidade será verificada por um processo seguro com documento e reconhecimento facial."
+          >
+            {/* Card de privacidade */}
+            <div style={{ display: "flex", gap: 14, alignItems: "flex-start", background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 12, padding: "16px 18px", marginBottom: 24 }}>
+              <span style={{ fontSize: 22, flexShrink: 0, marginTop: 1 }}>🛡️</span>
+              <div>
+                <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "#22c55e" }}>Seus dados são protegidos</p>
+                <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", lineHeight: 1.65 }}>
+                  Clientes nunca verão seus documentos. A verificação é usada apenas para análise de segurança da plataforma.
+                </p>
+              </div>
             </div>
-          </div>
 
-          <Section title="Tipo de documento">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {DOCS_ACEITOS.map((d) => (
-                <button key={d} type="button" onClick={() => set("docType", d)}
-                  style={{ padding: "11px 14px", borderRadius: 10, cursor: "pointer", fontWeight: 600, fontSize: 13, textAlign: "left",
-                    border: `1.5px solid ${form.docType === d ? GOLD : "#1e293b"}`,
-                    background: form.docType === d ? GOLD_DIM : "#0b1420",
-                    color: form.docType === d ? "#f1f5f9" : "#475569" }}>
-                  {d}
-                </button>
-              ))}
-            </div>
-            <p style={{ fontSize: 11, color: "#334155", marginTop: 10, lineHeight: 1.6 }}>
-              Documento com foto, expedido há menos de 10 anos, contendo: nome completo, nome da mãe e data de nascimento.
-            </p>
-          </Section>
+            {/* Botão de verificação */}
+            <button
+              type="button"
+              onClick={startFaceBiometry}
+              disabled={personaButtonDisabled}
+              style={{
+                width: "100%", padding: "14px 16px", borderRadius: 12, border: "none",
+                background: personaUnavailable ? "#334155" : GOLD,
+                color: personaUnavailable ? "#94a3b8" : "#060e1b",
+                fontSize: 15, fontWeight: 800,
+                cursor: personaButtonDisabled ? "not-allowed" : "pointer",
+                marginBottom: 14,
+              }}
+            >
+              {uploadingIdx === 100
+                ? "Iniciando verificação..."
+                : personaUnavailable
+                  ? "Verificação indisponível no momento"
+                  : form.kycSessionId
+                    ? form.kycStatus === "APPROVED" ? "✓ Verificação aprovada" : "Continuar verificação"
+                    : "Iniciar verificação"}
+            </button>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
-            <UploadZone label="Frente do documento *" accept={IMAGE_ACCEPT}
-              preview={form.docFrenteUrl || null}
-              loading={uploadingIdx === 90}
-              onFile={(f) => handleDocUpload(f, "frente")} />
-            <UploadZone label="Verso do documento *" accept={IMAGE_ACCEPT}
-              preview={form.docVersoUrl || null}
-              loading={uploadingIdx === 91}
-              onFile={(f) => handleDocUpload(f, "verso")} />
-          </div>
+            {/* Status da verificação */}
+            {form.kycSessionId && (
+              <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 14, fontWeight: 700, fontSize: 13,
+                background: form.kycStatus === "APPROVED" ? "rgba(34,197,94,0.10)" : GOLD_DIM,
+                border: `1px solid ${form.kycStatus === "APPROVED" ? "rgba(34,197,94,0.3)" : GOLD_MID}`,
+                color: form.kycStatus === "APPROVED" ? "#22c55e" : GOLD,
+              }}>
+                {form.kycStatus === "APPROVED"
+                  ? "Verificação aprovada"
+                  : form.kycStatus === "NEEDS_REVIEW"
+                    ? "Verificação precisa de atenção"
+                    : "Verificação em análise"}
+              </div>
+            )}
 
-          <Section title="Requisitos do documento">
-            <ul style={{ margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6 }}>
-              {[
-                "Deve estar legível, sem cortes ou borrões",
-                "Foto colorida (não aceito preto e branco)",
-                "Emitido há menos de 10 anos",
-                "Contém nome completo + nome da mãe + data de nascimento",
-                "Documentos vencidos não são aceitos",
-              ].map((r) => (
-                <li key={r} style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5 }}>
-                  <span style={{ color: GOLD, marginRight: 4 }}>✦</span>{r}
-                </li>
-              ))}
-            </ul>
+            {personaUnavailable && (
+              <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(234,179,8,0.10)", border: "1px solid rgba(234,179,8,0.25)", color: "#facc15", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>
+                {personaAvailability.message ?? "A verificação automática está temporariamente indisponível. Tente novamente em alguns minutos."}
+              </div>
+            )}
           </Section>
         </div>
       )}
@@ -1442,8 +1442,7 @@ export default function ProfissionalNovoPage() {
                 ["Cidade", `${form.city}${form.state ? ", " + form.state : ""}` || "—"],
                 ["Foto principal", form.mainPhotoUrl ? "✓ Enviada" : "Não enviada"],
                 ["Fotos na galeria", `${form.galleryUrls.length} foto(s)`],
-                ["Documento", form.docFrenteUrl ? "✓ Enviado" : "Não enviado"],
-                ["Verificação facial", form.verificationUrl ? "✓ Iniciada" : "Não iniciada"],
+                ["Verificação", form.kycSessionId ? "✓ Concluída" : "Não iniciada"],
                 ["WhatsApp", form.whatsapp || "—"],
               ].map(([label, value]) => (
                 <div key={label} style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 8, padding: "10px 12px" }}>

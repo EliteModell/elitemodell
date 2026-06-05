@@ -21,9 +21,9 @@ const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
 const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
 const PENDING_REGISTRATION_KEY = "elitemodell_pending_registration";
 const PENDING_REGISTRATION_COOKIE = "elitemodell_pending_registration";
-const CALLBACK_TIMEOUT_MS = 15000;
-const NEXTAUTH_SIGNIN_TIMEOUT_MS = 25000;
-const CALLBACK_SLOW_MESSAGE_MS = 3200;
+const CALLBACK_TIMEOUT_MS = 5000;
+const NEXTAUTH_SIGNIN_TIMEOUT_MS = 8000;
+const CALLBACK_SLOW_MESSAGE_MS = 1200;
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
 
@@ -486,7 +486,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
   );
 }
 
-function waitForSession(timeoutMs = 8000): Promise<string> {
+function waitForSession(timeoutMs = 3000): Promise<string> {
   return new Promise((resolve, reject) => {
     let settled = false;
 
@@ -522,7 +522,9 @@ function AuthCallbackContent() {
 
   useEffect(() => {
     let active = true;
-    const returnUrl = safeInternalPath(searchParams.get("returnUrl") ?? searchParams.get("redirectTo"));
+    const rawReturnParam = searchParams.get("returnUrl") ?? searchParams.get("redirectTo");
+    const returnUrl = safeInternalPath(rawReturnParam);
+    const hasExplicitReturnUrl = Boolean(rawReturnParam && returnUrl);
     const pendingRegistration = parsePendingRegistration(readPendingRegistrationRaw());
     const explicitIntent = searchParams.get("intent");
     const hasProfessionalSignupIntent =
@@ -601,13 +603,17 @@ function AuthCallbackContent() {
       clearRoleIntentStorage();
       clearPendingRegistrationStorage();
 
+      // Fast path: se há returnUrl explícita e não é um novo cadastro, redirecionar
+      // direto sem buscar /api/users/me (economiza 300–800ms por login).
       const targetPath = fallbackRegistration && effectiveRoleIntent
         ? await resolveWithTimeout(getPostLoginPath(effectiveRoleIntent), getRegistrationPath(fallbackRegistration))
         : fallbackRegistration
           ? getRegistrationPath(fallbackRegistration)
-          : effectiveRoleIntent
-            ? await resolveWithTimeout(getPostLoginPath(effectiveRoleIntent), fallbackPathForRoleIntent(effectiveRoleIntent))
-            : returnUrl ?? await resolveWithTimeout(getPostLoginPath(effectiveRoleIntent), ACCOUNT_ROUTES.dashboardCliente);
+          : hasExplicitReturnUrl && returnUrl
+            ? returnUrl
+            : effectiveRoleIntent
+              ? await resolveWithTimeout(getPostLoginPath(effectiveRoleIntent), fallbackPathForRoleIntent(effectiveRoleIntent))
+              : returnUrl ?? await resolveWithTimeout(getPostLoginPath(undefined), ACCOUNT_ROUTES.dashboardCliente);
 
       if (!active) return;
       window.clearTimeout(slowMessageTimer);
@@ -615,7 +621,7 @@ function AuthCallbackContent() {
       setMessage("Acesso confirmado. Redirecionando...");
       window.setTimeout(() => {
         window.location.replace(targetPath);
-      }, 600);
+      }, 200);
     }
 
     finishAuth().catch(async (err) => {
