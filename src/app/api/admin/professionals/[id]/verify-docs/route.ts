@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { logProfessionalApproved, logProfessionalRejected } from "@/lib/audit";
 import { getClientIP } from "@/lib/security";
+import { professionalApprovalAccessData } from "@/lib/professional-access";
 
 /**
  * POST /api/admin/professionals/[id]/verify-docs - Aprovar/Rejeitar documentos
@@ -41,15 +42,19 @@ export async function POST(
     let updated;
 
     if (action === "APPROVE") {
-      updated = await prisma.professional.update({
-        where: { id: professionalId },
-        data: {
-          docStatus: "APPROVED",
-          verifStatus: "APPROVED",
-          kycStatus: "APPROVED",
-          status: "ACTIVE",
-          verified: true,
-        },
+      updated = await prisma.$transaction(async (tx) => {
+        const accessData = await professionalApprovalAccessData(tx, professional);
+        return tx.professional.update({
+          where: { id: professionalId },
+          data: {
+            docStatus: "APPROVED",
+            verifStatus: "APPROVED",
+            kycStatus: "APPROVED",
+            status: "ACTIVE",
+            verified: true,
+            ...accessData,
+          },
+        });
       });
 
       await logProfessionalApproved(

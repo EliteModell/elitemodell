@@ -9,6 +9,14 @@ import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { canCreatePropertyUseRequest } from "@/lib/property-access";
 import { sanitizeInput } from "@/lib/security";
+import { getClientIP } from "@/lib/security";
+import { calculateBookingAmounts, toCents, fromCents } from "@/lib/money";
+import {
+  CHECKOUT_LEGAL_KEYS,
+  latestLegalDocumentVersions,
+  recordUserAcceptances,
+} from "@/lib/legal-acceptance";
+import { createHash } from "crypto";
 
 const createSchema = z.object({
   propertyId: z.string().cuid(),
@@ -18,6 +26,8 @@ const createSchema = z.object({
   paymentMethod: z.string(),
   couponCode: z.string().optional(),
   notes: z.string().optional(),
+  acceptedBookingTerms: z.literal(true),
+  acceptedRefundPolicy: z.literal(true),
 });
 
 function isHostSession(session: { user: { accountType?: string | null; availableProfiles?: string[] | null } }) {
@@ -109,52 +119,165 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Local já possui solicitação confirmada neste período." }, { status: 409 });
     }
 
-    let discount = 0;
+    let discountCents = 0;
     if (data.couponCode) {
       const coupon = await prisma.coupon.findUnique({ where: { code: data.couponCode } });
-      const subtotal = nights * property.pricePerNight;
+      const subtotalCents = nights * toCents(property.pricePerNight);
+      const subtotal = fromCents(subtotalCents);
       const couponExpired = coupon?.expiresAt ? coupon.expiresAt < new Date() : false;
       const couponLimitReached = coupon?.maxUses ? coupon.usedCount >= coupon.maxUses : false;
       const couponBelowMinimum = coupon?.minBooking ? subtotal < coupon.minBooking : false;
 
       if (coupon && coupon.active && !couponExpired && !couponLimitReached && !couponBelowMinimum) {
-        discount = coupon.type === "PERCENTAGE" ? subtotal * (coupon.value / 100) : coupon.value;
+        discountCents = coupon.type === "PERCENTAGE"
+          ? Math.round((subtotalCents * coupon.value) / 100)
+          : toCents(coupon.value);
+        discountCents = Math.min(discountCents, subtotalCents);
       } else {
         return NextResponse.json({ error: "Cupom inválido ou expirado." }, { status: 400 });
       }
     }
 
-    const subtotal = nights * property.pricePerNight;
-    const serviceFee = subtotal * 0.1;
-    const totalPrice = subtotal + property.cleaningFee + serviceFee - discount;
-
-    const booking = await prisma.booking.create({
-      data: {
-        propertyId: data.propertyId,
-        guestId: session.user.id,
-        checkIn,
-        checkOut,
-        guests: data.guests,
-        nights,
-        pricePerNight: property.pricePerNight,
-        cleaningFee: property.cleaningFee,
-        serviceFee,
-        discount,
-        totalPrice,
-        paymentMethod: data.paymentMethod,
-        couponCode: data.couponCode,
-        notes: data.notes ? sanitizeInput(data.notes) : undefined,
-        status: property.instantBook ? "CONFIRMED" : "PENDING",
-        hostPayout: totalPrice * 0.9,
+    const bookingPolicy = await prisma.platformSettings.findUnique({
+      where: { id: "default" },
+      select: {
+        bookingServiceFeeBps: true,
+        bookingPayoutDelayHours: true,
+        bookingPayoutReleaseEvent: true,
+        bookingContestationHours: true,
       },
     });
+    const serviceFeeBasisPoints = bookingPolicy?.bookingServiceFeeBps ?? 1_000;
+    const {
+      subtotalCents,
+      cleaningFeeCents,
+      totalPriceCents,
+      serviceFeeCents,
+      hostPayoutCents,
+    } = calculateBookingAmounts({
+      nights,
+      pricePerNightCents: toCents(property.pricePerNight),
+      cleaningFeeCents: toCents(property.cleaningFee),
+      discountCents,
+      serviceFeeBasisPoints,
+    });
+    const disclosure = JSON.stringify({
+      version: "booking-checkout-2026-06-10",
+      propertyId: property.id,
+      checkIn: checkIn.toISOString(),
+      checkOut: checkOut.toISOString(),
+      subtotalCents,
+      cleaningFeeCents,
+      discountCents,
+      totalPriceCents,
+      serviceFeeCents,
+      hostPayoutCents,
+      serviceFeeBasisPoints,
+      cancellation: "Solicitacoes seguem a politica exibida no checkout e a legislacao aplicavel.",
+      noShow: "No-show e divergencias exigem analise; nao ha decisao financeira automatica.",
+      dispute: "Em disputa, o repasse pode ser retido ate conclusao da analise.",
+      payout: "Repasse bloqueado ate aprovacao do modelo comercial, politica de cancelamento, homologacao da integracao e conclusao dos testes financeiros.",
+    });
+    const disclosureHash = createHash("sha256").update(disclosure).digest("hex");
 
-    if (data.couponCode && discount > 0) {
-      await prisma.coupon.update({
-        where: { code: data.couponCode },
-        data: { usedCount: { increment: 1 } },
+    const booking = await prisma.$transaction(async (tx) => {
+      const legalVersions = await latestLegalDocumentVersions(CHECKOUT_LEGAL_KEYS, tx);
+      const checkoutVersion = legalVersions.get("checkout-notice") ?? legalVersions.get("payments-policy");
+      const refundVersion = legalVersions.get("refund-policy");
+      await recordUserAcceptances({
+        tx,
+        userId: session.user.id,
+        userCategory: session.user.accountType,
+        documentKeys: CHECKOUT_LEGAL_KEYS,
+        source: "booking-create",
+        acceptanceType: "CHECKOUT",
+        req,
       });
-    }
+      const created = await tx.booking.create({
+        data: {
+          propertyId: data.propertyId,
+          guestId: session.user.id,
+          checkIn,
+          checkOut,
+          guests: data.guests,
+          nights,
+          pricePerNight: property.pricePerNight,
+          cleaningFee: fromCents(cleaningFeeCents),
+          serviceFee: fromCents(serviceFeeCents),
+          discount: fromCents(discountCents),
+          totalPrice: fromCents(totalPriceCents),
+          subtotalCents,
+          cleaningFeeCents,
+          serviceFeeCents,
+          discountCents,
+          totalPriceCents,
+          hostPayoutCents,
+          paymentMethod: data.paymentMethod,
+          couponCode: data.couponCode,
+          notes: data.notes ? sanitizeInput(data.notes) : undefined,
+          status: property.instantBook ? "CONFIRMED" : "PENDING",
+          hostPayout: fromCents(hostPayoutCents),
+          checkInStatus: "NOT_CONFIRMED",
+          payoutBlocked: true,
+          payoutBlockedReason: "Modelo comercial, politica de cancelamento, integracao de repasse e testes ainda pendentes de aprovacao/homologacao.",
+          contestationDeadline: bookingPolicy?.bookingContestationHours
+            ? new Date(checkOut.getTime() + bookingPolicy.bookingContestationHours * 60 * 60 * 1000)
+            : null,
+          termsVersionId: checkoutVersion?.id ?? "booking-checkout-2026-06-10",
+          refundPolicyVersionId: refundVersion?.id ?? "refund-policy-proposal-2026-06-10",
+          acceptedAt: new Date(),
+          acceptanceIp: getClientIP(req),
+          acceptanceUserAgent: req.headers.get("user-agent")?.slice(0, 300) ?? null,
+        },
+      });
+      await tx.checkoutAcceptance.create({
+        data: {
+          userId: session.user.id,
+          productId: `booking:${created.id}`,
+          productName: `Reserva ${property.title}`,
+          dailyPrice: property.pricePerNight,
+          totalPrice: fromCents(totalPriceCents),
+          durationDays: nights,
+          startsAt: checkIn,
+          expectedEndsAt: checkOut,
+          termsVersionId: checkoutVersion?.id ?? null,
+          refundPolicyVersionId: refundVersion?.id ?? null,
+          termsHash: checkoutVersion?.contentHash ?? disclosureHash,
+          refundPolicyHash: refundVersion?.contentHash ?? disclosureHash,
+          ipAddress: getClientIP(req),
+          userAgent: req.headers.get("user-agent")?.slice(0, 300) ?? null,
+          route: new URL(req.url).pathname,
+          language: "pt-BR",
+          acceptanceType: "CHECKOUT",
+          required: true,
+        },
+      });
+      await tx.bookingFinancialEvent.create({
+        data: {
+          bookingId: created.id,
+          type: "BOOKING_CREATED",
+          status: "PENDING_PAYMENT",
+          grossCents: totalPriceCents,
+          platformFeeCents: serviceFeeCents,
+          hostNetCents: hostPayoutCents,
+          metadata: {
+            disclosureHash,
+            paymentMethod: data.paymentMethod,
+            proposalStatus: "PENDING_PARTNER_AND_LEGAL_APPROVAL",
+            serviceFeeBasisPoints,
+            payoutReleaseEvent: bookingPolicy?.bookingPayoutReleaseEvent ?? "CHECK_IN_CONFIRMED",
+            payoutDelayHours: bookingPolicy?.bookingPayoutDelayHours ?? 24,
+          },
+        },
+      });
+      if (data.couponCode && discountCents > 0) {
+        await tx.coupon.update({
+          where: { code: data.couponCode },
+          data: { usedCount: { increment: 1 } },
+        });
+      }
+      return created;
+    });
 
     return NextResponse.json(booking, { status: 201 });
   } catch (err) {

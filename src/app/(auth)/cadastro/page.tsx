@@ -334,6 +334,7 @@ export default function CadastroPage() {
     category: "" as Category | "",
     lgpdConsent: false,
     termsConsent: false,
+    ageConfirmed: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [birthParts, setBirthParts] = useState<Record<BirthPart, string>>({
@@ -437,6 +438,7 @@ export default function CadastroPage() {
           birthDate: current.birthDate || savedBirthDate,
           termsConsent: current.termsConsent || Boolean(user.termsConsent),
           lgpdConsent: current.lgpdConsent || Boolean(user.lgpdConsent),
+          ageConfirmed: current.ageConfirmed || Boolean(savedBirthDate),
           category: current.category || savedCategory,
         }));
 
@@ -540,6 +542,8 @@ export default function CadastroPage() {
     if (!form.termsConsent) newErrors.termsConsent = "Você deve aceitar os Termos de Uso";
     if (!form.lgpdConsent) newErrors.lgpdConsent = "Você deve aceitar a Política de Privacidade";
 
+    if (!form.ageConfirmed) newErrors.ageConfirmed = "Confirme que voce e maior de 18 anos";
+
     setErrors(newErrors);
     const isValid = Object.keys(newErrors).length === 0;
 
@@ -565,6 +569,7 @@ export default function CadastroPage() {
       birthDate: form.birthDate,
       lgpdConsent: form.lgpdConsent,
       termsConsent: form.termsConsent,
+      ageConfirmed: form.ageConfirmed,
       name: form.name,
     };
     return captchaToken ? { ...payload, captchaToken } : payload;
@@ -793,6 +798,7 @@ export default function CadastroPage() {
         birthDate: form.birthDate,
         lgpdConsent: true,
         termsConsent: true,
+        ageConfirmed: form.ageConfirmed,
       });
 
       if (form.accountType === "PROFESSIONAL") {
@@ -1054,6 +1060,14 @@ export default function CadastroPage() {
               </span>
             </label>
           </div>
+          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#64748b", fontSize: 12, lineHeight: 1.5, marginTop: 12 }}>
+            <input type="checkbox" checked={form.ageConfirmed} onChange={(e) => setForm({ ...form, ageConfirmed: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
+            <span>
+              Confirmo que sou maior de 18 anos e li a <Link href="/documentos/adult-declaration" style={{ color: GOLD, textDecoration: "none" }}>Confirmacao de Maioridade</Link>.
+              {errors.ageConfirmed && <span data-auth-required-error="true" style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.ageConfirmed}</span>}
+            </span>
+          </label>
+
           <button
             type="button"
             onClick={handleContinueExistingAccount}
@@ -1158,6 +1172,14 @@ export default function CadastroPage() {
           <span>
             Li e aceito a <Link href="/privacy" style={{ color: GOLD, textDecoration: "none" }}>Política de Privacidade</Link>.
             {errors.lgpdConsent && <span data-auth-required-error="true" style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.lgpdConsent}</span>}
+          </span>
+        </label>
+
+        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
+          <input type="checkbox" checked={form.ageConfirmed} onChange={(e) => setForm({ ...form, ageConfirmed: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
+          <span>
+            Confirmo que sou maior de 18 anos e li a <Link href="/documentos/adult-declaration" style={{ color: GOLD, textDecoration: "none" }}>Confirmacao de Maioridade</Link>.
+            {errors.ageConfirmed && <span data-auth-required-error="true" style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.ageConfirmed}</span>}
           </span>
         </label>
 

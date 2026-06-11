@@ -88,6 +88,9 @@ function modalMessage(type: string, value?: number | null, needsRegistration?: b
 }
 
 export async function POST(req: NextRequest) {
+  if (req.cookies.get("elite_cookie_consent")?.value !== "all") {
+    return NextResponse.json({ error: "Autorize cookies de campanha para participar da roleta." }, { status: 403 });
+  }
   const startedAt = Date.now();
   const rid = requestId(req);
   const session = hasSessionCookie(req)

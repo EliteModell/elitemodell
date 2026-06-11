@@ -2,36 +2,33 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import AgeGateLoader from "@/components/AgeGateLoader";
+import CookiePreferences from "@/components/privacy/CookiePreferences";
 
 const siteUrl = "https://www.elitemodell.com.br";
-const brandDescription =
-  "Elite Modell é uma plataforma premium para conectar pessoas, profissionais, locais reservados e oportunidades com discrição, segurança e elegância.";
+const publicBrandDescription =
+  "Elite Modell e uma plataforma de acesso restrito para adultos, com foco em privacidade, seguranca e verificacao de contas.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   applicationName: "Elite Modell",
   title: {
-    default: "Elite Modell | Plataforma Premium e Discreta",
+    default: "Elite Modell | Acesso Restrito",
     template: "%s | Elite Modell",
   },
-  description: brandDescription,
+  description: publicBrandDescription,
   keywords: [
     "Elite Modell",
     "elite modell",
-    "plataforma premium",
-    "acompanhantes verificadas",
-    "profissionais verificados",
-    "locais reservados",
-    "quartos discretos",
-    "atendimento reservado",
+    "acesso restrito",
+    "maioridade",
+    "verificacao de conta",
     "privacidade",
-    "luxo discreto",
-    "dark luxury",
+    "seguranca",
   ],
   authors: [{ name: "Elite Modell" }],
   creator: "Elite Modell",
   publisher: "Elite Modell",
-  category: "premium marketplace",
+  category: "restricted access",
   alternates: {
     canonical: siteUrl,
   },
@@ -55,37 +52,31 @@ export const metadata: Metadata = {
     telephone: false,
   },
   robots: {
-    index: true,
-    follow: true,
+    index: false,
+    follow: false,
+    nocache: true,
+    noimageindex: true,
     googleBot: {
-      index: true,
-      follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-      "max-video-preview": -1,
+      index: false,
+      follow: false,
+      noimageindex: true,
+      "max-image-preview": "none",
+      "max-snippet": 0,
+      "max-video-preview": 0,
     },
   },
   openGraph: {
-    title: "Elite Modell | Plataforma Premium e Discreta",
-    description: brandDescription,
+    title: "Elite Modell | Acesso Restrito",
+    description: publicBrandDescription,
     url: siteUrl,
     siteName: "Elite Modell",
     locale: "pt_BR",
     type: "website",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Elite Modell - conectando pessoas, locais e oportunidades",
-      },
-    ],
   },
   twitter: {
-    card: "summary_large_image",
-    title: "Elite Modell | Plataforma Premium e Discreta",
-    description: brandDescription,
-    images: ["/og-image.png"],
+    card: "summary",
+    title: "Elite Modell | Acesso Restrito",
+    description: publicBrandDescription,
   },
   other: {
     "theme-color": "#050505",
@@ -110,8 +101,7 @@ export default function RootLayout({
     name: "Elite Modell",
     url: siteUrl,
     logo: `${siteUrl}/icon.png`,
-    image: `${siteUrl}/og-image.png`,
-    description: brandDescription,
+    description: publicBrandDescription,
     brand: {
       "@type": "Brand",
       name: "Elite Modell",
@@ -137,6 +127,7 @@ export default function RootLayout({
         />
         <Providers>
           <AgeGateLoader />
+          <CookiePreferences />
           {children}
         </Providers>
       </body>

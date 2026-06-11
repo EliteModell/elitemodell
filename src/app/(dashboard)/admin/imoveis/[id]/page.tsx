@@ -330,7 +330,7 @@ export default async function AdminImovelDetalhesPage({
                     <tr key={audit.id}>
                       <td style={tdStyle}>{audit.timestamp.toLocaleString("pt-BR")}</td>
                       <td style={tdStyle}>{audit.action}</td>
-                      <td style={tdStyle}>{audit.admin.name ?? audit.admin.email ?? audit.adminId}</td>
+                      <td style={tdStyle}>{audit.admin?.name ?? audit.admin?.email ?? audit.actorIdentifier ?? audit.adminId ?? "Administrador removido"}</td>
                       <td style={tdStyle}>{audit.reason ?? "-"}</td>
                     </tr>
                   )) : (

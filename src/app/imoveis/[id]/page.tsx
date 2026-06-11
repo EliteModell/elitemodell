@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import PublicReportButton from "@/components/moderation/PublicReportButton";
 import { Star } from "lucide-react";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
@@ -358,6 +359,9 @@ export default function PropertyDetailPage() {
   return (
     <div style={{ background: INK, minHeight: "100vh", color: TEXT }}>
       <Navbar />
+      <div style={{ position: "fixed", right: 18, bottom: 18, zIndex: 90, background: "rgba(8,8,10,.92)", border: "1px solid rgba(239,68,68,.35)", borderRadius: 8, padding: "10px 12px" }}>
+        <PublicReportButton targetType="PROPERTY" targetId={p.id} />
+      </div>
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "96px 24px 60px" }}>
         <div style={{ display: "flex", gap: 8, fontSize: 13, color: MUTED, marginBottom: 20, alignItems: "center" }}>

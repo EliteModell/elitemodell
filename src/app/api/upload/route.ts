@@ -2,15 +2,11 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { createClient } from "@supabase/supabase-js";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
-import { moderateImage, scanFileForVirus } from "@/lib/moderation";
 import { prisma } from "@/lib/prisma";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { KYC_LEGAL_KEYS, PUBLICATION_LEGAL_KEYS, recordUserAcceptances } from "@/lib/legal-acceptance";
+import { requiresContentAuthorizationDeclaration } from "@/lib/legal-document-catalog";
+import { processUploadAsset, quarantineUpload } from "@/lib/upload-quarantine";
 
 // Tipos MIME permitidos por contexto. Alguns celulares enviam fotos validas com
 // MIME vazio ou application/octet-stream; nesses casos a assinatura binaria decide.
@@ -73,28 +69,32 @@ async function detectFileKind(file: File): Promise<FileKind | null> {
 
 // Mapeamento folder → bucket + configurações
 function resolveBucket(folder: string): {
-  bucket: string;
   isPrivate: boolean;
   maxBytes: number;
   allowedTypes: string[];
 } {
   if (folder.startsWith("verificacao")) {
-    return { bucket: "documentos", isPrivate: true,  maxBytes: 50 * 1024 * 1024, allowedTypes: ALLOWED_VIDEO };
+    return { isPrivate: true,  maxBytes: 50 * 1024 * 1024, allowedTypes: ALLOWED_VIDEO };
   }
   if (folder.startsWith("documentos")) {
-    return { bucket: "documentos", isPrivate: true,  maxBytes: 10 * 1024 * 1024, allowedTypes: ALLOWED_DOC   };
+    return { isPrivate: true,  maxBytes: 10 * 1024 * 1024, allowedTypes: ALLOWED_DOC   };
   }
   if (folder.startsWith("properties")) {
-    return { bucket: "properties", isPrivate: false, maxBytes: 20 * 1024 * 1024, allowedTypes: ALLOWED_IMAGE };
+    return { isPrivate: false, maxBytes: 20 * 1024 * 1024, allowedTypes: ALLOWED_IMAGE };
   }
   if (folder.startsWith("profiles")) {
-    return { bucket: "profiles",   isPrivate: false, maxBytes: 20 * 1024 * 1024, allowedTypes: ALLOWED_IMAGE };
+    return { isPrivate: false, maxBytes: 20 * 1024 * 1024, allowedTypes: ALLOWED_IMAGE };
   }
   if (folder.startsWith("profile-videos")) {
-    return { bucket: "profiles",   isPrivate: false, maxBytes: 50 * 1024 * 1024, allowedTypes: ALLOWED_VIDEO };
+    return { isPrivate: false, maxBytes: 50 * 1024 * 1024, allowedTypes: ALLOWED_VIDEO };
   }
-  // stories (legado + novos)
-  return   { bucket: "stories",    isPrivate: false, maxBytes: 50 * 1024 * 1024, allowedTypes: ALLOWED_VIDEO };
+  return { isPrivate: false, maxBytes: 50 * 1024 * 1024, allowedTypes: ALLOWED_VIDEO };
+}
+
+function legalKeysForUpload(folder: string) {
+  return folder.startsWith("documentos") || folder.startsWith("verificacao")
+    ? KYC_LEGAL_KEYS
+    : PUBLICATION_LEGAL_KEYS;
 }
 
 export async function POST(req: NextRequest) {
@@ -137,10 +137,17 @@ export async function POST(req: NextRequest) {
   }
 
   const formData = await req.formData();
+  const contentDeclarationAccepted = formData.get("contentDeclarationAccepted") === "true";
+  if (requiresContentAuthorizationDeclaration(folder) && !contentDeclarationAccepted) {
+    return NextResponse.json(
+      { error: "Confirme a declaracao de autoria e autorizacao antes do upload." },
+      { status: 400 },
+    );
+  }
   const file = formData.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "Nenhum arquivo enviado." }, { status: 400 });
 
-  const { bucket, isPrivate, maxBytes, allowedTypes } = resolveBucket(folder);
+  const { isPrivate, maxBytes, allowedTypes } = resolveBucket(folder);
 
   const detectedKind = await detectFileKind(file);
   const effectiveMime = detectedKind?.mime ?? file.type;
@@ -153,7 +160,6 @@ export async function POST(req: NextRequest) {
       declaredType: file.type || null,
       detectedType: detectedKind?.mime ?? null,
       size: file.size,
-      originalName: file.name || null,
     });
     return NextResponse.json(
       { error: `Tipo de arquivo não permitido: ${file.type || "desconhecido"}. Aceitos: ${allowedTypes.join(", ")}` },
@@ -173,7 +179,6 @@ export async function POST(req: NextRequest) {
       folder,
       declaredType: file.type || null,
       size: file.size,
-      originalName: file.name || null,
     });
     return NextResponse.json({ error: "Arquivo rejeitado: assinatura binaria nao corresponde ao tipo informado." }, { status: 400 });
   }
@@ -182,61 +187,110 @@ export async function POST(req: NextRequest) {
   const propertyId = folder.startsWith("properties/")
     ? folder.split("/").filter(Boolean)[1]
     : null;
-  const filename = `${Date.now()}-${globalThis.crypto.randomUUID()}.${ext}`;
-  const path = propertyId
-    ? `properties/${session.user.id}/${propertyId}/${filename}`
-    : `${folder}/${session.user.id}/${filename}`;
   const buffer = Buffer.from(await file.arrayBuffer());
-
-  const virusScan = await scanFileForVirus(buffer, file.name || filename);
-  if (!virusScan.safe) {
-    console.warn("[upload] arquivo bloqueado pela varredura", {
-      bucket,
-      folder,
-      type: file.type,
-      reason: virusScan.reason,
+  try {
+    const storageFolder = propertyId
+      ? `properties/${propertyId}`
+      : folder;
+    const quarantined = await quarantineUpload({
+      userId: session.user.id,
+      originalName: file.name || `upload.${ext}`,
+      folder: storageFolder,
+      category: detectedKind.category,
+      declaredMimeType: file.type || null,
+      detectedMimeType: effectiveMime,
+      extension: ext,
+      buffer,
     });
-    return NextResponse.json(
-      { error: "Arquivo bloqueado pela verificacao de seguranca." },
-      { status: 422 }
-    );
-  }
-
-  const { error } = await supabase.storage
-    .from(bucket)
-    .upload(path, buffer, { contentType: effectiveMime, upsert: false });
-
-  if (error) {
-    console.error(`[upload] bucket=${bucket} path=${path} err=${error.message}`);
-    return NextResponse.json({ error: "Erro ao salvar arquivo. Tente novamente." }, { status: 500 });
-  }
-
-  // Documentos privados: retorna apenas o path (URL gerada via signed URL na hora de exibir)
-  if (isPrivate) {
-    return NextResponse.json({ path, url: null, type: detectedKind.category === "video" ? "video" : "image" });
-  }
-
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-  if (detectedKind.category === "image") {
-    const moderation = await moderateImage(data.publicUrl);
-    if (!moderation.safe) {
-      await supabase.storage.from(bucket).remove([path]).catch(() => undefined);
-      console.warn("[upload] imagem bloqueada pela moderacao", {
-        bucket,
-        folder,
-        type: effectiveMime,
-        reason: moderation.reason,
+    const processed = await processUploadAsset(quarantined.id, buffer);
+    const type = detectedKind.category === "video" ? "video" : "image";
+    if (processed.status !== "REJECTED") {
+      await recordUserAcceptances({
+        userId: session.user.id,
+        userCategory: session.user.accountType,
+        documentKeys: legalKeysForUpload(folder),
+        source: "upload",
+        acceptanceType: "CONTENT_UPLOAD",
+        req,
       });
+      if (requiresContentAuthorizationDeclaration(folder)) {
+        await prisma.contentDeclaration.create({
+          data: {
+            userId: session.user.id,
+            storageBucket: processed.approvedBucket ?? processed.quarantineBucket,
+            storagePath: processed.approvedPath ?? processed.quarantinePath,
+            fileHash: processed.fileHash,
+            declarationKey: "content-authorization-declaration",
+            version: "0.4-ready-for-legal-review",
+            statements: {
+              authorIsAdult: true,
+              authorizedPublication: true,
+              noMinors: true,
+              noExploitationCoercionOrTrafficking: true,
+              noUnauthorizedThirdPartyImage: true,
+              contentPolicyAccepted: true,
+            },
+            ipAddress: requestIp,
+            userAgent: req.headers.get("user-agent")?.slice(0, 300) ?? null,
+          },
+        }).catch((error) => {
+          console.error("[upload] falha ao registrar declaracao de conteudo", {
+            assetId: processed.id,
+            userId: session.user.id,
+            error,
+          });
+        });
+      }
+    }
+
+    if (processed.status === "APPROVED" && processed.controlledUrl) {
+      if (isPrivate) {
+        return NextResponse.json({
+          assetId: processed.id,
+          path: `asset:${processed.id}`,
+          url: null,
+          status: processed.status,
+          type,
+        });
+      }
+      return NextResponse.json({
+        assetId: processed.id,
+        path: `asset:${processed.id}`,
+        url: new URL(processed.controlledUrl, req.url).toString(),
+        status: processed.status,
+        type,
+      });
+    }
+
+    if (processed.status === "REJECTED") {
       return NextResponse.json(
-        { error: "Imagem bloqueada pela verificacao de seguranca." },
-        { status: 422 }
+        {
+          assetId: processed.id,
+          status: processed.status,
+          error: "Arquivo rejeitado pela verificacao de seguranca.",
+        },
+        { status: 422 },
       );
     }
-  }
 
-  return NextResponse.json({
-    url:  data.publicUrl,
-    path,
-    type: detectedKind.category === "video" ? "video" : "image",
-  });
+    return NextResponse.json(
+      {
+        assetId: processed.id,
+        path: isPrivate ? `asset:${processed.id}` : null,
+        url: null,
+        status: processed.status,
+        malwareStatus: processed.malwareStatus,
+        moderationStatus: processed.moderationStatus,
+        type,
+        message: "Arquivo mantido em quarentena e aguardando revisao.",
+      },
+      { status: 202 },
+    );
+  } catch (cause) {
+    console.error("[upload] falha no fluxo de quarentena", cause);
+    return NextResponse.json(
+      { error: "Nao foi possivel processar o arquivo com seguranca." },
+      { status: 500 },
+    );
+  }
 }

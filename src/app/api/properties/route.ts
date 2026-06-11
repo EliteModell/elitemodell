@@ -5,7 +5,9 @@ import { z } from "zod";
 import { Prisma, PropertyType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { ageGateCacheHeaders, stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
 import { canViewApprovedProperties } from "@/lib/property-access";
+import { assertApprovedMediaUrls } from "@/lib/approved-media";
 
 const createSchema = z.object({
   title: z.string().min(5),
@@ -33,7 +35,7 @@ const createSchema = z.object({
   allowSmoking: z.boolean().default(false),
   allowParties: z.boolean().default(false),
   amenities: z.array(z.string()).default([]),
-  photos: z.array(z.string()).default([]),
+  photos: z.array(z.string().url()).default([]),
 }).superRefine((data, ctx) => {
   const addIssue = (path: string[], message: string) => ctx.addIssue({ code: "custom", path, message });
   if (data.photos.length === 0) addIssue(["photos"], "Envie pelo menos uma foto do espaço.");
@@ -42,8 +44,17 @@ const createSchema = z.object({
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!(await canViewApprovedProperties(session?.user))) {
-    return NextResponse.json({ error: "Locais disponíveis apenas para profissionais aprovadas." }, { status: 403 });
+  if (!session?.user?.id || (session.user.role !== "ADMIN" && !session.user.adultVerified)) {
+    return NextResponse.json(
+      { error: "Verificacao de maioridade obrigatoria." },
+      { status: 403, headers: ageGateCacheHeaders() },
+    );
+  }
+  if (!(await canViewApprovedProperties(session.user))) {
+    return NextResponse.json(
+      { error: "Locais disponiveis apenas para contas autorizadas." },
+      { status: 403, headers: ageGateCacheHeaders() },
+    );
   }
 
   const { searchParams } = new URL(req.url);
@@ -93,12 +104,21 @@ export async function GET(req: NextRequest) {
   const publicProperties = properties.map((property) => {
     const { hostId, ...safe } = property;
     void hostId;
-    return safe;
+    return {
+      ...safe,
+      photos: safe.photos
+        .map((photo) => ({ ...photo, url: stripLegacyPublicStorageUrl(photo.url) }))
+        .filter((photo): photo is typeof photo & { url: string } => Boolean(photo.url)),
+      host: {
+        ...safe.host,
+        image: stripLegacyPublicStorageUrl(safe.host.image),
+      },
+    };
   });
 
   return NextResponse.json(
     { properties: publicProperties, total, page, pages: Math.ceil(total / limit) },
-    { headers: { "Cache-Control": "private, max-age=30" } },
+    { headers: ageGateCacheHeaders() },
   );
 }
 
@@ -118,6 +138,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const data = createSchema.parse(body);
     const { amenities, photos, ...propertyData } = data;
+    await assertApprovedMediaUrls({
+      urls: photos,
+      requestUrl: req.url,
+      ownerId: session.user.id,
+      allowedFolderPrefixes: ["properties"],
+    });
 
     const property = await prisma.$transaction(async (tx) => {
       if (currentUser?.role !== "ADMIN" && currentUser?.accountType !== "host") {
@@ -150,6 +176,9 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues }, { status: 400 });
+    }
+    if (err instanceof Error && err.message.toLowerCase().includes("midia")) {
+      return NextResponse.json({ error: err.message }, { status: 409 });
     }
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });
   }

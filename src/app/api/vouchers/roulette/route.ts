@@ -33,6 +33,9 @@ function hasSessionCookie(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  if (req.cookies.get("elite_cookie_consent")?.value !== "all") {
+    return NextResponse.json({ active: false, canSpin: false, consentRequired: true, prizes: [] });
+  }
   const session = hasSessionCookie(req)
     ? await withTimeout(getServerSession(authOptions).catch(() => null), SESSION_TIMEOUT_MS, null)
     : null;

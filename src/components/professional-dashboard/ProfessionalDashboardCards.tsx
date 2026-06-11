@@ -194,7 +194,7 @@ export function ProfessionalMainCard({
 }
 
 export function RankingCard({ city, position }: { city: string | null; position: number | null }) {
-  const tips = ["Completar perfil", "Manter fotos recentes", "Postar vídeos/stories", "Atualizar agenda", "Receber boas avaliações", "Manter plano ativo", "Comprar destaque/boost"];
+  const tips = ["Completar perfil", "Manter fotos recentes", "Postar vídeos/stories", "Atualizar agenda", "Receber boas avaliações", "Comprar destaque opcional", "Impulsionar opcionalmente"];
 
   return (
     <section className="premium-lower-card p-4 sm:p-5">

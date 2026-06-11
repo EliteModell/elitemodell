@@ -17,7 +17,7 @@ export async function GET(
     where: { id },
     include: {
       property: { include: { photos: { take: 1 } } },
-      payment:  true,
+      payments: { orderBy: { createdAt: "desc" }, take: 10 },
     },
   });
 

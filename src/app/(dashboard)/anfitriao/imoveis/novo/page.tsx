@@ -387,6 +387,7 @@ export default function NovoImovelPage() {
   const [hydrated, setHydrated] = useState(false);
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [contentDeclarationAccepted, setContentDeclarationAccepted] = useState(false);
   const progress = ((step + 1) / stepTitles.length) * 100;
   const uploadedPhotos = form.photos.filter(isUploaded);
 
@@ -468,7 +469,7 @@ export default function NovoImovelPage() {
     if (target === 5) return form.bathrooms > 0 && form.maxModels > 0;
     if (target === 6 && form.amenities.length === 0) return false;
     if (target === 7 && form.safetyItems.length === 0) return false;
-    if (target === 10) return uploadedPhotos.length >= 5 && form.photos.every((photo) => photo.status !== "uploading");
+    if (target === 10) return contentDeclarationAccepted && uploadedPhotos.length >= 5 && form.photos.every((photo) => photo.status !== "uploading");
     if (target === 11) return form.title.trim().length >= 5 && form.title.trim().length <= 50;
     if (target === 12) return form.description.trim().length >= 30;
     if (target === 14) return Boolean(form.availabilityMode && (form.availabilityMode !== "Dias específicos" || form.days.length > 0));
@@ -507,6 +508,11 @@ export default function NovoImovelPage() {
         continue;
       }
 
+      if (!contentDeclarationAccepted) {
+        toast.error("Confirme a declaracao de autoria e autorizacao das fotos antes do upload.");
+        return;
+      }
+
       const id = createDraftId();
       const preview = URL.createObjectURL(original);
       setForm((current) => ({
@@ -528,9 +534,18 @@ export default function NovoImovelPage() {
         const file = await compressImage(original);
         const fd = new FormData();
         fd.append("file", file);
+        fd.append("contentDeclarationAccepted", "true");
         const res = await fetch(`/api/upload?folder=properties/${form.draftId}`, { method: "POST", body: fd });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data.url) throw new Error(typeof data.error === "string" ? data.error : "Falha no upload da foto.");
+        if (!res.ok || !data.url) {
+          throw new Error(
+            typeof data.error === "string"
+              ? data.error
+              : typeof data.message === "string"
+                ? data.message
+                : "Falha no upload da foto.",
+          );
+        }
         setForm((current) => ({
           ...current,
           photos: current.photos.map((photo) => photo.id === id ? { ...photo, url: data.url, status: "uploaded" } : photo),
@@ -638,9 +653,18 @@ export default function NovoImovelPage() {
         const file = await dataUrlToFile(photo.url, photo.name || `foto-${order + 1}.jpg`);
         const fd = new FormData();
         fd.append("file", file);
+        fd.append("contentDeclarationAccepted", "true");
         const res = await fetch(`/api/upload?folder=properties/${form.draftId}`, { method: "POST", body: fd });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data.url) throw new Error(typeof data.error === "string" ? data.error : "Falha no upload da foto.");
+        if (!res.ok || !data.url) {
+          throw new Error(
+            typeof data.error === "string"
+              ? data.error
+              : typeof data.message === "string"
+                ? data.message
+                : "Falha no upload da foto.",
+          );
+        }
         submittedPhotos.push(data.url);
       }
 
@@ -848,6 +872,17 @@ export default function NovoImovelPage() {
         {step === 10 && (
           <>
             <StepTitle title="Adicione fotos do local" helper="Você precisa adicionar no mínimo 5 fotos para continuar. Mostre os ambientes principais com boa iluminação." />
+            <label className="privacy-note" style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <input
+                type="checkbox"
+                checked={contentDeclarationAccepted}
+                onChange={(event) => setContentDeclarationAccepted(event.target.checked)}
+                style={{ marginTop: 3, accentColor: GOLD }}
+              />
+              <span>
+                Confirmo que tenho direito de publicar estas fotos do local e que elas nao exibem pessoas, menores, imagem de terceiros sem autorizacao ou conteudo proibido.
+              </span>
+            </label>
             <label className="upload-box">
               <ImagePlus size={34} />
               <strong>Adicionar fotos</strong>

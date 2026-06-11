@@ -30,6 +30,7 @@ const schema = z.object({
   lgpdConsent: z.boolean().default(false),
   ageConfirmed: z.boolean().default(false),
   ownershipConfirmed: z.boolean().default(false),
+  marketingConsent: z.boolean().default(false),
 });
 
 export async function POST(req: NextRequest) {
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (body.accountType !== "client" && (!body.ageConfirmed || !body.ownershipConfirmed)) {
+    if (!body.ageConfirmed || (body.accountType !== "client" && !body.ownershipConfirmed)) {
       return NextResponse.json(
         { error: "Confirme os requisitos obrigatorios do cadastro antes de receber o codigo." },
         { status: 400 }

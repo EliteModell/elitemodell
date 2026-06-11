@@ -4,8 +4,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
-import { getAsaasConfig, getAsaasPayment, isAsaasFailedStatus, isAsaasPaidStatus } from "@/lib/asaas";
-import { applyPaidPaymentEffects } from "@/lib/payment-effects";
+import { getAsaasConfig, getAsaasPayment, type AsaasPayment } from "@/lib/asaas";
+import { syncAsaasPaymentSnapshot } from "@/lib/payment-operations";
 import { prisma } from "@/lib/prisma";
 import { claimWebhookEvent, markWebhookEventDone, markWebhookEventFailed } from "@/lib/webhook-idempotency";
 
@@ -71,21 +71,29 @@ export async function handleAsaasWebhook(req: NextRequest): Promise<NextResponse
     eventId,
     eventType: payload.event ?? null,
     resourceId: providerPaymentId,
-    payload: payload as Prisma.InputJsonObject,
+    payload: {
+      id: payload.id ?? null,
+      event: payload.event ?? null,
+      payment: {
+        id: incomingPayment.id ?? null,
+        status: incomingPayment.status ?? null,
+        externalReference: incomingPayment.externalReference ?? null,
+        value: incomingPayment.value ?? null,
+      },
+    } as Prisma.InputJsonObject,
   });
   if (!claim.claimed) {
     return NextResponse.json({ ok: true, duplicate: true });
   }
 
   const asaas = getAsaasConfig();
-  let providerPayment = incomingPayment;
+  let providerPayment: AsaasPayment = { ...incomingPayment, id: providerPaymentId };
 
   try {
     if (asaas.configured) {
       providerPayment = await getAsaasPayment(providerPaymentId);
     }
 
-    const status = providerPayment.status;
     const externalReference =
       providerPayment.externalReference ?? incomingPayment?.externalReference ?? null;
 
@@ -104,34 +112,14 @@ export async function handleAsaasWebhook(req: NextRequest): Promise<NextResponse
       return NextResponse.json({ ok: true });
     }
 
+    if (!asaas.configured && (payload.event === "PAYMENT_RECEIVED" || payload.event === "PAYMENT_CONFIRMED")) {
+      providerPayment = { ...providerPayment, status: "CONFIRMED" };
+    }
     await prisma.payment.update({
       where: { id: localPayment.id },
-      data: {
-        provider: "asaas",
-        providerPaymentId,
-        stripePaymentId: providerPaymentId,
-        invoiceUrl: providerPayment.invoiceUrl ?? localPayment.invoiceUrl,
-        boletoUrl: providerPayment.bankSlipUrl ?? localPayment.boletoUrl,
-      },
-      select: { id: true },
+      data: { provider: "asaas", providerPaymentId, stripePaymentId: providerPaymentId },
     });
-
-    const trustedPaidStatus = isAsaasPaidStatus(status);
-    const devEventPaid = !asaas.configured && (payload.event === "PAYMENT_RECEIVED" || payload.event === "PAYMENT_CONFIRMED");
-
-    if (trustedPaidStatus || devEventPaid) {
-      await applyPaidPaymentEffects(localPayment.id);
-    } else if (
-      isAsaasFailedStatus(status) ||
-      payload.event === "PAYMENT_REFUNDED" ||
-      payload.event === "PAYMENT_DELETED" ||
-      payload.event === "PAYMENT_OVERDUE"
-    ) {
-      await prisma.payment.updateMany({
-        where: { id: localPayment.id, status: { not: "PAID" } },
-        data: { status: status === "REFUNDED" ? "REFUNDED" : "FAILED" },
-      });
-    }
+    await syncAsaasPaymentSnapshot(localPayment.id, providerPayment);
 
     await markWebhookEventDone("asaas", eventId);
     return NextResponse.json({ ok: true });

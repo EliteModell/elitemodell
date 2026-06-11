@@ -1,31 +1,30 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
+import { ageGateCacheHeaders, isAgeRestrictedPath } from "@/lib/age-gate-policy";
 
-const DEFAULT_ADMIN_EMAILS = ["brunorochalp3@gmail.com"];
-
-function adminMasterEmails() {
-  return (process.env.ADMIN_MASTER_EMAILS ?? DEFAULT_ADMIN_EMAILS.join(","))
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
+function isAdminToken(token: { role?: string }) {
+  return token.role === "ADMIN";
 }
 
-function isAdminToken(token: { role?: string; email?: unknown }) {
-  if (token.role === "ADMIN") return true;
-  return typeof token.email === "string" && adminMasterEmails().includes(token.email.toLowerCase());
+function withAgeGateHeaders(response: NextResponse) {
+  const headers = ageGateCacheHeaders();
+  for (const [key, value] of Object.entries(headers)) {
+    response.headers.set(key, value);
+  }
+  return response;
 }
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isApiRoute = pathname.startsWith("/api/");
   const unauthorized = () => isApiRoute
-    ? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    ? withAgeGateHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }))
     : NextResponse.redirect(new URL("/login", request.url));
   const forbidden = (target = "/dashboard") => isApiRoute
-    ? NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    ? withAgeGateHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }))
     : NextResponse.redirect(new URL(target, request.url));
 
-  if (/\.(?:avif|gif|ico|jpg|jpeg|png|svg|webp|txt|xml|json)$/i.test(pathname)) {
+  if (/\.(?:avif|gif|ico|jpg|jpeg|png|svg|webp)$/i.test(pathname)) {
     return NextResponse.next();
   }
 
@@ -43,21 +42,16 @@ export async function proxy(request: NextRequest) {
     "/anfitriao/login",
     "/anfitriao/imoveis/novo",
     "/auth/callback",
-    "/buscar",
-    "/imoveis",
-    "/profissionais",
+    "/verificacao-idade",
     "/terms",
     "/privacy",
+    "/politica-conteudo",
+    "/documentos",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/manifest.webmanifest",
     "/api/auth",
   ];
-
-  const publicGetApiRoutes = ["/api/professionals", "/api/properties"];
-  if (
-    request.method === "GET" &&
-    publicGetApiRoutes.some((route) => pathname === route || pathname.startsWith(route + "/"))
-  ) {
-    return NextResponse.next();
-  }
 
   const isPublic = publicRoutes.some(
     (route) => pathname === route || pathname.startsWith(route + "/")
@@ -65,12 +59,21 @@ export async function proxy(request: NextRequest) {
 
   if (isPublic) return NextResponse.next();
 
+  const isSensitivePublicContent = isAgeRestrictedPath(pathname);
+
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
   });
 
-  if (!token) return unauthorized();
+  if (!token) {
+    if (isSensitivePublicContent) {
+      return isApiRoute
+        ? withAgeGateHeaders(NextResponse.json({ error: "Verificacao de maioridade obrigatoria." }, { status: 403 }))
+        : withAgeGateHeaders(NextResponse.redirect(new URL("/verificacao-idade", request.url)));
+    }
+    return unauthorized();
+  }
 
   const tokenWithRole = token as typeof token & {
     role?: string;
@@ -79,6 +82,7 @@ export async function proxy(request: NextRequest) {
     accountType?: string;
     activeProfileType?: string;
     availableProfiles?: string[];
+    adultVerified?: boolean;
   };
   const availableProfiles = tokenWithRole.availableProfiles ?? [];
   const hasClientProfile = availableProfiles.length === 0 || availableProfiles.includes("CLIENTE");
@@ -89,6 +93,9 @@ export async function proxy(request: NextRequest) {
     tokenWithRole.accountType === "professional" ||
     availableProfiles.includes("PROFESSIONAL");
   const isAdmin = isAdminToken(tokenWithRole);
+  if (isSensitivePublicContent && !tokenWithRole.adultVerified && !isAdmin) {
+    return forbidden("/dashboard/verificacao-idade");
+  }
 
   const homeForToken = () => {
     if (isAdmin) return "/admin";
@@ -136,6 +143,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|public|.*\\.(?:avif|gif|ico|jpg|jpeg|png|svg|webp|txt|xml|json)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|public|.*\\.(?:avif|gif|ico|jpg|jpeg|png|svg|webp)$).*)",
   ],
 };

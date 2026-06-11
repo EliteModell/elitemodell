@@ -27,6 +27,7 @@ type Stage = "loading" | "waiting" | "paid" | "failed";
 const POLL_INTERVAL = 6000;
 
 export default function PixPaymentModal({ planId, creditAmount, bookingId, amount, onClose, onSuccess }: Props) {
+  const checkoutTokenRef = useRef(crypto.randomUUID());
   const [stage, setStage] = useState<Stage>("loading");
   const [pix, setPix] = useState<PixData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +44,7 @@ export default function PixPaymentModal({ planId, creditAmount, bookingId, amoun
         if (planId) body.planId = planId;
         if (creditAmount) body.creditAmount = creditAmount;
         if (bookingId) body.bookingId = bookingId;
+        body.checkoutToken = checkoutTokenRef.current;
 
         const res = await fetch("/api/payments/pix", {
           method: "POST",
@@ -83,6 +85,7 @@ export default function PixPaymentModal({ planId, creditAmount, bookingId, amoun
   }, [planId, creditAmount, bookingId, attempt]);
 
   function retryCreatePayment() {
+    checkoutTokenRef.current = crypto.randomUUID();
     setPix(null);
     setError(null);
     setStage("loading");
@@ -100,10 +103,14 @@ export default function PixPaymentModal({ planId, creditAmount, bookingId, amoun
         if (!res.ok || !mountedRef.current) return;
         const data = await res.json();
 
-        if (data.status === "PAID") {
+        if (data.status === "PAID" && data.benefitStatus === "APPLIED") {
           if (pollRef.current) clearInterval(pollRef.current);
           setStage("paid");
-        } else if (data.status === "FAILED" || data.status === "REFUNDED") {
+        } else if (data.status === "PAID" && data.benefitStatus === "FAILED") {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setStage("failed");
+          setError("Pagamento confirmado, mas o beneficio ainda nao foi ativado. O suporte pode conciliar pelo numero do pagamento.");
+        } else if (["FAILED", "REFUNDED", "CANCELLED", "EXPIRED", "CHARGEBACK"].includes(data.status)) {
           if (pollRef.current) clearInterval(pollRef.current);
           setStage("failed");
           setError("Pagamento não confirmado. Tente novamente.");

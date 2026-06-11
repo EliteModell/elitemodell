@@ -624,13 +624,20 @@ export default function ProfissionalNovoPage() {
   async function uploadFile(file: File, folder: string): Promise<string> {
     const fd = new FormData();
     fd.append("file", file);
+    if (["profiles", "profile-videos", "stories", "properties"].some((prefix) => folder.startsWith(prefix))) {
+      fd.append("contentDeclarationAccepted", "true");
+    }
     const res = await fetch(`/api/upload?folder=${folder}`, { method: "POST", body: fd });
     if (!res.ok) {
       const d = await res.json();
       throw new Error(d.error ?? "Erro no upload");
     }
     const d = await res.json();
-    return d.url ?? d.path;
+    const uploaded = d.url ?? d.path;
+    if (!uploaded) {
+      throw new Error(d.message ?? "Arquivo mantido em quarentena para revisão.");
+    }
+    return uploaded;
   }
 
   /* upload da foto principal */

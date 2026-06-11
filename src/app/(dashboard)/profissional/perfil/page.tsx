@@ -118,7 +118,6 @@ export default function EditarPerfilPage() {
         const hasStories = (data.stories?.length ?? 0) > 0;
         const hasAgenda = Boolean(professional.schedule?.some((day) => day.available));
         const hasVerification = Boolean(professional.verified || professional.kycStatus === "APPROVED" || professional.docStatus === "APPROVED" || professional.verifStatus === "APPROVED");
-        const hasPlan = Boolean(data.premiumUntil && new Date(data.premiumUntil) > new Date());
         setProfileSlug(professional.slug);
         setProfileImage(data.image ?? null);
         setProfileStatus(professional.status ?? null);
@@ -132,7 +131,6 @@ export default function EditarPerfilPage() {
           { label: "Agenda", done: hasAgenda, status: hasAgenda ? "completo" : "pendente" },
           { label: "Descrição", done: Boolean(professional.bio && professional.bio.trim().length >= 80), status: professional.bio && professional.bio.trim().length >= 80 ? "completo" : "pendente" },
           { label: "Verificação", done: hasVerification, status: hasVerification ? "completo" : "pendente" },
-          { label: "Plano ativo", done: hasPlan, status: hasPlan ? "completo" : "recomendado" },
         ]);
         setForm({
           displayName: professional.displayName ?? "",

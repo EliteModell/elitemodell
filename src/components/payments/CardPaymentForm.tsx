@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CheckCircle, CreditCard, Loader, XCircle } from "lucide-react";
 import { createPortal } from "react-dom";
 
@@ -54,6 +54,7 @@ const labelStyle = {
 };
 
 export default function CardPaymentForm({ planId, creditAmount, bookingId, amount, onClose, onSuccess }: Props) {
+  const checkoutTokenRef = useRef(crypto.randomUUID());
   const [stage, setStage] = useState<Stage>("form");
   const [error, setError] = useState<string | null>(null);
   const [brand, setBrand] = useState<string | null>(null);
@@ -86,6 +87,7 @@ export default function CardPaymentForm({ planId, creditAmount, bookingId, amoun
         postalCode: cep,
         addressNumber,
       },
+      checkoutToken: checkoutTokenRef.current,
     };
     if (planId) body.planId = planId;
     if (creditAmount) body.creditAmount = creditAmount;
@@ -105,8 +107,13 @@ export default function CardPaymentForm({ planId, creditAmount, bookingId, amoun
         return;
       }
 
-      setBrand(data.brand ?? null);
-      setStage("paid");
+      if (data.status === "PAID" && data.benefitStatus === "APPLIED") {
+        setBrand(data.brand ?? null);
+        setStage("paid");
+      } else {
+        setError("Pagamento enviado ao Asaas e ainda nao confirmado. Consulte o historico antes de tentar novamente.");
+        setStage("failed");
+      }
     } catch {
       setError("Erro de conexão. Tente novamente.");
       setStage("failed");
@@ -288,7 +295,11 @@ export default function CardPaymentForm({ planId, creditAmount, bookingId, amoun
             <div className="mt-2 flex w-full flex-col gap-3">
               <button
                 type="button"
-                onClick={() => { setStage("form"); setError(null); }}
+                onClick={() => {
+                  checkoutTokenRef.current = crypto.randomUUID();
+                  setStage("form");
+                  setError(null);
+                }}
                 className="client-primary-button py-4 text-[15px] font-black"
               >
                 Tentar novamente

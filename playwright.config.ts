@@ -34,6 +34,36 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "money-rounding",
+      testMatch: "**/money-rounding.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "booking-policy",
+      testMatch: "**/booking-policy.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "provider-adapters",
+      testMatch: "**/provider-adapters.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "professional-validation",
+      testMatch: "**/professional-validation.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "legal-security",
+      testMatch: "**/legal-security.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "legal-document-catalog",
+      testMatch: "**/legal-document-catalog.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "mock-session",
       testMatch: "**/client-area-audit.spec.ts",
       use: { browserName: "chromium" },

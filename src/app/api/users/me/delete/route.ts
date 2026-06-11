@@ -1,79 +1,145 @@
 export const dynamic = "force-dynamic";
 
+import { createHash, randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { buildDeletionPlan, processDataDeletionJob } from "@/lib/data-deletion-worker";
 
 const schema = z.object({
   confirmation: z.literal("EXCLUIR MINHA CONTA"),
+  mode: z.enum(["SIMULATE", "EXECUTE"]).default("EXECUTE"),
 });
+
+function protocol() {
+  return `LGPD-${new Date().getFullYear()}-${randomBytes(6).toString("hex").toUpperCase()}`;
+}
+
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
+  const [plan, jobs] = await Promise.all([
+    buildDeletionPlan(session.user.id),
+    prisma.dataDeletionJob.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: {
+        items: {
+          orderBy: { createdAt: "asc" },
+          select: { itemKey: true, status: true, attempts: true, error: true, completedAt: true },
+        },
+      },
+    }),
+  ]);
+  return NextResponse.json({ plan, jobs }, { headers: { "Cache-Control": "private, no-store" } });
+}
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
-  }
+  if (!session?.user?.id) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
 
   try {
-    const body = schema.parse(await req.json());
-    void body; // validação já garante o valor correto
+    const input = schema.parse(await req.json());
+    const plan = await buildDeletionPlan(session.user.id);
 
-    const userId = session.user.id;
+    if (input.mode === "SIMULATE") {
+      const job = await prisma.dataDeletionJob.create({
+        data: {
+          userId: session.user.id,
+          status: "PENDING",
+          mode: "SIMULATE",
+          scope: JSON.parse(JSON.stringify(plan)),
+          preservation: JSON.parse(JSON.stringify(plan.preserve)),
+        },
+      });
+      const simulated = await processDataDeletionJob(job.id);
+      return NextResponse.json({
+        ok: true,
+        mode: "SIMULATE",
+        jobId: simulated.id,
+        status: simulated.status,
+        plan,
+        receiptHash: simulated.receiptHash,
+      });
+    }
 
-    // Verificar se há pagamentos pendentes antes de excluir
-    const pendingPayments = await prisma.payment.count({
-      where: { userId, status: "PENDING" },
+    const existing = await prisma.dataDeletionJob.findFirst({
+      where: {
+        userId: session.user.id,
+        mode: "EXECUTE",
+        status: { in: ["PENDING", "PROCESSING", "RETRY", "LEGAL_HOLD"] },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    if (existing) {
+      return NextResponse.json({
+        ok: true,
+        completed: false,
+        jobId: existing.id,
+        status: existing.status,
+        receiptHash: existing.receiptHash,
+        message: "Ja existe uma solicitacao de exclusao em processamento.",
+      }, { status: 202 });
+    }
+
+    const requestProtocol = protocol();
+    const receiptHash = createHash("sha256")
+      .update(`${requestProtocol}:${session.user.id}:${new Date().toISOString()}`)
+      .digest("hex");
+
+    const queued = await prisma.$transaction(async (tx) => {
+      const created = await tx.privacyRequest.create({
+        data: {
+          protocol: requestProtocol,
+          userId: session.user.id,
+          type: "DELETION",
+          status: "RECEIVED",
+          details: "Solicitacao de exclusao iniciada pelo titular.",
+          receiptHash,
+          events: { create: { type: "REQUEST_RECEIVED", notes: "Aguardando classificacao de dados e processamento assincrono." } },
+        },
+      });
+      const job = await tx.dataDeletionJob.create({
+        data: {
+          userId: session.user.id,
+          privacyRequestId: created.id,
+          status: "PENDING",
+          mode: "EXECUTE",
+          scope: JSON.parse(JSON.stringify(plan)),
+          preservation: JSON.parse(JSON.stringify(plan.preserve)),
+          receiptHash,
+        },
+      });
+      await tx.session.deleteMany({ where: { userId: session.user.id } });
+      await tx.user.update({
+        where: { id: session.user.id },
+        data: {
+          blocked: true,
+          blockedAt: new Date(),
+          blockReason: "Exclusao LGPD aguardando processamento.",
+        },
+      });
+      return { request: created, job };
     });
 
-    if (pendingPayments > 0) {
-      return NextResponse.json(
-        { error: "Você tem pagamentos pendentes. Aguarde a conclusão antes de excluir a conta." },
-        { status: 400 }
-      );
+    return NextResponse.json({
+      ok: true,
+      completed: false,
+      jobId: queued.job.id,
+      status: queued.job.status,
+      protocol: queued.request.protocol,
+      receiptHash,
+      plan,
+      message: "Solicitacao registrada. A conta foi bloqueada operacionalmente e o processamento assincrono preservara apenas dados legalmente necessarios.",
+    }, { status: 202 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Digite exatamente EXCLUIR MINHA CONTA para confirmar." }, { status: 400 });
     }
-
-    // Anonimizar dados pessoais conforme LGPD — não deletar registros financeiros
-    const anonymizedEmail = `deleted_${userId}@excluido.elitemodell.local`;
-
-    await prisma.$transaction([
-      // Anonimiza o usuário
-      prisma.user.update({
-        where: { id: userId },
-        data: {
-          name: "Conta excluída",
-          email: anonymizedEmail,
-          phone: null,
-          image: null,
-          document: null,
-          birthDate: null,
-          city: null,
-          state: null,
-          blocked: true,
-          blockReason: "Conta excluída pelo próprio usuário (LGPD)",
-          blockedAt: new Date(),
-        },
-      }),
-      // Remove sessões ativas
-      prisma.session.deleteMany({ where: { userId } }),
-      // Remove verificações de telefone
-      prisma.phoneVerificationCode.deleteMany({ where: { userId } }),
-      // Remove notificações
-      prisma.notification.deleteMany({ where: { userId } }),
-      // Remove favoritos
-      prisma.favorite.deleteMany({ where: { userId } }),
-    ]);
-
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Digite exatamente EXCLUIR MINHA CONTA para confirmar." },
-        { status: 400 }
-      );
-    }
-    console.error("[delete-account]", err);
-    return NextResponse.json({ error: "Erro interno." }, { status: 500 });
+    console.error("[delete-account] falha ao registrar solicitacao");
+    return NextResponse.json({ error: "Nao foi possivel registrar a solicitacao." }, { status: 500 });
   }
 }

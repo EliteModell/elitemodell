@@ -10,6 +10,7 @@
  */
 
 import { test, expect, type Page, type Route } from "@playwright/test";
+import { installMockSessionCookie } from "./helpers/mock-auth";
 
 /* ─── Sessão mock (NextAuth) ────────────────────────────────────────────────── */
 const MOCK_SESSION = {
@@ -22,11 +23,28 @@ const MOCK_SESSION = {
     accountType: "client",
     clientStatus: null,
     isProfessional: false,
+    activeProfileType: "CLIENTE",
+    availableProfiles: ["CLIENTE"],
+    adultVerified: true,
+    needsConsent: false,
   },
   expires: new Date(Date.now() + 86_400_000).toISOString(),
 };
 
 async function mockAuth(page: Page) {
+  await page.addInitScript(() => {
+    sessionStorage.setItem("elite_modell_adult_consent_session", "accepted");
+    sessionStorage.setItem("elite_modell_adult_consent_at", new Date().toISOString());
+    localStorage.setItem("elite_modell_ageConsentAccepted", "true");
+    localStorage.setItem("elite_modell_ageConsentAcceptedAt", new Date().toISOString());
+  });
+  await installMockSessionCookie(page.context(), {
+    ...MOCK_SESSION.user,
+    activeProfileType: "CLIENTE",
+    availableProfiles: ["CLIENTE"],
+    adultVerified: true,
+    needsConsent: false,
+  });
   await page.route("**/api/auth/session", (route: Route) => {
     route.fulfill({
       status: 200,

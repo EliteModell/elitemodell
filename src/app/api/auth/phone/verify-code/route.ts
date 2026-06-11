@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { recordConsentPreference, recordUserAcceptances, registrationDocumentKeys } from "@/lib/legal-acceptance";
 import { checkRateLimitAsync } from "@/lib/rate-limit";
 import { getClientIP } from "@/lib/security";
 import {
@@ -30,6 +31,7 @@ const schema = z.object({
   lgpdConsent: z.boolean().optional(),
   ageConfirmed: z.boolean().optional(),
   ownershipConfirmed: z.boolean().optional(),
+  marketingConsent: z.boolean().optional(),
 });
 
 type VerifiedConsent = {
@@ -38,6 +40,33 @@ type VerifiedConsent = {
   ageConfirmed: boolean;
   ownershipConfirmed: boolean;
 };
+
+async function recordPhoneLegalTrace(user: { id: string; accountType?: string | null }, req: NextRequest, marketingConsent?: boolean) {
+  await recordUserAcceptances({
+    userId: user.id,
+    userCategory: user.accountType,
+    documentKeys: registrationDocumentKeys(user.accountType),
+    source: "phone-verify",
+    acceptanceType: "REGISTRATION",
+    req,
+  });
+  await recordConsentPreference({
+    userId: user.id,
+    purpose: "PRIVACY_POLICY",
+    granted: true,
+    source: "phone-verify",
+    req,
+  });
+  if (typeof marketingConsent === "boolean") {
+    await recordConsentPreference({
+      userId: user.id,
+      purpose: "MARKETING",
+      granted: marketingConsent,
+      source: "phone-verify",
+      req,
+    });
+  }
+}
 
 async function verifyFirebasePhoneIdToken(idToken: string, expectedPhone: string) {
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
@@ -176,7 +205,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      if (body.accountType !== "client" && (!consent.ageConfirmed || !consent.ownershipConfirmed)) {
+      if (!consent.ageConfirmed || (body.accountType !== "client" && !consent.ownershipConfirmed)) {
         return NextResponse.json(
           { error: "Confirmacoes obrigatorias ausentes. Solicite um novo codigo." },
           { status: 400 }
@@ -189,6 +218,7 @@ export async function POST(req: NextRequest) {
         accountType: body.accountType,
         consent,
       });
+      await recordPhoneLegalTrace(user, req, body.marketingConsent);
 
       return NextResponse.json({
         ok: true,
@@ -258,7 +288,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (body.accountType !== "client" && (!verification.ageConfirmed || !verification.ownershipConfirmed)) {
+    if (!verification.ageConfirmed || (body.accountType !== "client" && !verification.ownershipConfirmed)) {
       return NextResponse.json(
         { error: "Confirmacoes obrigatorias ausentes. Solicite um novo codigo." },
         { status: 400 }
@@ -276,6 +306,7 @@ export async function POST(req: NextRequest) {
       },
       verificationId: verification.id,
     });
+    await recordPhoneLegalTrace(user, req, body.marketingConsent);
 
     return NextResponse.json({
       ok: true,

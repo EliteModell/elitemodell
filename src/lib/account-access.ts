@@ -12,6 +12,7 @@ import {
   isProfessionalCategory,
   postLoginPathFromUser,
 } from "@/lib/account-routes";
+import { resolveProfessionalAccess } from "@/lib/professional-access";
 
 export async function getCurrentAccountAccess() {
   const session = await getServerSession(authOptions);
@@ -24,9 +25,19 @@ export async function getCurrentAccountAccess() {
       role: true,
       accountType: true,
       category: true,
+      premiumUntil: true,
       clientProfile: { select: { id: true } },
       hostProfile: { select: { id: true } },
-      professional: { select: { id: true, status: true, rejectReason: true } },
+      professional: {
+        select: {
+          id: true,
+          status: true,
+          rejectReason: true,
+          accessGrandfathered: true,
+          freeAccessStartedAt: true,
+          freeAccessEndsAt: true,
+        },
+      },
       properties: {
         select: { id: true, title: true, status: true },
         orderBy: { createdAt: "desc" },
@@ -40,6 +51,13 @@ export async function getCurrentAccountAccess() {
   const isCompanionIntent = user.accountType === "model" || isProfessionalCategory(user.category);
   const companionStatus = user.professional?.status ?? null;
   const hostStatus = getHostRegistrationStatus(user);
+  const professionalAccess = user.professional
+    ? resolveProfessionalAccess(
+        user.professional,
+        user,
+        companionStatus === "ACTIVE" || companionStatus === "PAUSED",
+      )
+    : null;
 
   return {
     user,
@@ -49,6 +67,7 @@ export async function getCurrentAccountAccess() {
     hasCompanionRequest: Boolean(user.professional || isCompanionIntent),
     companionApproved: companionStatus === "ACTIVE" || companionStatus === "PAUSED",
     companionInReview: Boolean(companionStatus && companionStatus !== "ACTIVE" && companionStatus !== "PAUSED"),
+    professionalAccess,
     hostStatus,
     hasHostRequest: Boolean(user.hostProfile) || user.properties.length > 0,
     hasHostIntent: (Boolean(user.hostProfile) || isHostAccountType(user.accountType)) && !isCompanionIntent,
@@ -70,13 +89,16 @@ export async function requireClientPanel() {
   return requireAuthenticatedAccount();
 }
 
-export async function requireCompanionPanel() {
+export async function requireCompanionPanel(options: { allowExpired?: boolean } = {}) {
   const access = await requireAuthenticatedAccount();
   if (access.isAdmin) return access;
   if (!access.companionApproved) {
     if (!access.user.professional) redirect(ACCOUNT_ROUTES.onboardingAcompanhante);
     if (access.hasCompanionRequest) redirect(ACCOUNT_ROUTES.verificacaoAcompanhante);
     redirect(ACCOUNT_ROUTES.cadastroAcompanhante);
+  }
+  if (access.professionalAccess?.kind === "EXPIRED" && !options.allowExpired) {
+    redirect("/profissional/planos?acesso=expirado");
   }
   return access;
 }

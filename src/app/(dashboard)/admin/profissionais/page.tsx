@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
 import { personaProviderLabel } from "@/lib/persona";
+import { professionalApprovalAccessData } from "@/lib/professional-access";
 import { AdminHeader, AdminPanel, AdminTable, StatusPill, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
@@ -62,15 +63,38 @@ async function reviewProfessional(formData: FormData) {
   }
 
   const data =
-    action === "approve"
-      ? { status: "ACTIVE" as const, verified: true, docStatus: "APPROVED", verifStatus: "APPROVED", kycStatus: "APPROVED", rejectReason: null }
-      : action === "resume"
+    action === "resume"
         ? { status: "ACTIVE" as const, pauseStartedAt: null, pauseUntil: null, pauseReason: null }
       : action === "suspend"
         ? { status: "SUSPENDED" as const, verified: false, rejectReason: reason }
         : { status: "REJECTED" as const, verified: false, docStatus: "REJECTED", verifStatus: "REJECTED", kycStatus: "REJECTED", rejectReason: reason };
 
-  const professional = await prisma.professional.update({ where: { id }, data, select: { id: true, userId: true } });
+  const professional = action === "approve"
+    ? await prisma.$transaction(async (tx) => {
+        const current = await tx.professional.findUniqueOrThrow({
+          where: { id },
+          select: {
+            accessGrandfathered: true,
+            freeAccessStartedAt: true,
+            freeAccessEndsAt: true,
+          },
+        });
+        const accessData = await professionalApprovalAccessData(tx, current);
+        return tx.professional.update({
+          where: { id },
+          data: {
+            status: "ACTIVE",
+            verified: true,
+            docStatus: "APPROVED",
+            verifStatus: "APPROVED",
+            kycStatus: "APPROVED",
+            rejectReason: null,
+            ...accessData,
+          },
+          select: { id: true, userId: true },
+        });
+      })
+    : await prisma.professional.update({ where: { id }, data, select: { id: true, userId: true } });
   if (action === "block") {
     await prisma.user.update({ where: { id: professional.userId }, data: { blocked: true, blockReason: reason, blockedAt: new Date() } });
   }
@@ -122,6 +146,9 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
       boostActive: true,
       boostUntil: true,
       boostSource: true,
+      freeAccessStartedAt: true,
+      freeAccessEndsAt: true,
+      accessGrandfathered: true,
       presentationVideoUrl: true,
       presentationVideoStatus: true,
       presentationVideoRejectReason: true,
@@ -187,6 +214,11 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                   Telefone listagem: {pro.listingPhoneUntil && pro.listingPhoneUntil > new Date() ? `ativo até ${pro.listingPhoneUntil.toLocaleDateString("pt-BR")}` : "sem benefício ativo"}<br />
                   Métricas: {pro.profileViews} views, {pro.contactClicks} contatos, nota {pro.rating.toFixed(1)} ({pro.totalReviews})<br />
                   Boost: {pro.boostActive ? `ativo até ${pro.boostUntil ? pro.boostUntil.toLocaleDateString("pt-BR") : "data não informada"}` : "inativo"}<br />
+                  Acesso: {pro.accessGrandfathered
+                    ? "legado, sem bloqueio"
+                    : pro.freeAccessEndsAt
+                      ? `gratuito até ${pro.freeAccessEndsAt.toLocaleDateString("pt-BR")}`
+                      : "inicia na aprovação"}<br />
                   Enviado em {pro.createdAt.toLocaleDateString("pt-BR")}
                 </td>
                 <td style={tdStyle}>

@@ -20,6 +20,7 @@ type StoredConsent = {
   lgpdConsent?: boolean;
   ageConfirmed?: boolean;
   ownershipConfirmed?: boolean;
+  marketingConsent?: boolean;
 };
 
 let firebaseConfirmationResult: ConfirmationResult | null = null;
@@ -358,9 +359,10 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [terms, setTerms] = useState(false);
+  const [privacyRead, setPrivacyRead] = useState(false);
   const [adult, setAdult] = useState(false);
   const [ownProfile, setOwnProfile] = useState(false);
-  const [promo, setPromo] = useState(true);
+  const [promo, setPromo] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [otpStatus, setOtpStatus] = useState<OtpStatus>("idle");
@@ -382,8 +384,10 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
     const hydrate = window.setTimeout(() => {
       setPhone(maskPhone(urlPhone ?? saved ?? ""));
       setTerms(Boolean(savedConsent.termsConsent));
+      setPrivacyRead(Boolean(savedConsent.lgpdConsent));
       setAdult(Boolean(savedConsent.ageConfirmed));
       setOwnProfile(Boolean(savedConsent.ownershipConfirmed));
+      setPromo(Boolean(savedConsent.marketingConsent));
     }, 0);
     return () => window.clearTimeout(hydrate);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -407,17 +411,18 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
     const saved = readStoredConsent();
     return {
       termsConsent: terms || Boolean(saved.termsConsent),
-      lgpdConsent: terms || Boolean(saved.lgpdConsent),
-      ageConfirmed: isClient ? false : adult || Boolean(saved.ageConfirmed),
+      lgpdConsent: privacyRead || Boolean(saved.lgpdConsent),
+      ageConfirmed: adult || Boolean(saved.ageConfirmed),
       ownershipConfirmed: isClient ? false : ownProfile || Boolean(saved.ownershipConfirmed),
+      marketingConsent: isClient ? false : promo || Boolean(saved.marketingConsent),
     };
   }
 
   const canSubmit = useMemo(() => {
     if (!isValidPhone(phone) || loading) return false;
-    if (isClient) return terms;
-    return terms && adult && ownProfile;
-  }, [adult, isClient, loading, ownProfile, phone, terms]);
+    if (isClient) return terms && privacyRead && adult;
+    return terms && privacyRead && adult && ownProfile;
+  }, [adult, isClient, loading, ownProfile, phone, privacyRead, terms]);
   const themedCheckStyle = isPremium ? { ...checkStyle, color: "#b8b8b8" } : checkStyle;
   const themedLinkStyle = isPremium ? { ...linkStyle, color: "#f5d77a" } : linkStyle;
 
@@ -475,7 +480,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) {
-      toast.error(isClient ? "Informe o telefone e aceite os termos." : "Complete as confirmacoes obrigatorias.");
+      toast.error(isClient ? "Informe o telefone e confirme termos, privacidade e maioridade." : "Complete as confirmacoes obrigatorias.");
       return;
     }
     if (await sendCode()) {
@@ -639,7 +644,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
           {!isClient && (
             <label style={{ ...themedCheckStyle, marginTop: 24 }}>
               <input type="checkbox" checked={promo} onChange={(e) => setPromo(e.target.checked)} style={nativeCheckStyle} />
-              Aceito receber informações sobre meu cadastro.
+              Aceito receber novidades, promoções e comunicações de marketing.
             </label>
           )}
 
@@ -655,20 +660,23 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
 
           <label style={{ ...themedCheckStyle, marginTop: 28, fontSize: isClient ? 18 : 16, fontWeight: isClient ? 900 : 500, color: isPremium ? "#b8b8b8" : INK }}>
             <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} style={nativeCheckStyle} />
-            <span>Li e aceito os <Link href="/terms" style={themedLinkStyle}>Termos de Uso</Link> e a <Link href="/privacy" style={themedLinkStyle}>Política de Privacidade</Link>.</span>
+            <span>Li e aceito os <Link href="/terms" style={themedLinkStyle}>Termos de Uso</Link>.</span>
           </label>
 
+          <label style={{ ...themedCheckStyle, marginTop: 14, fontSize: isClient ? 18 : 16, fontWeight: isClient ? 900 : 500, color: isPremium ? "#b8b8b8" : INK }}>
+            <input type="checkbox" checked={privacyRead} onChange={(e) => setPrivacyRead(e.target.checked)} style={nativeCheckStyle} />
+            <span>Li a <Link href="/privacy" style={themedLinkStyle}>Política de Privacidade</Link>.</span>
+          </label>
+
+          <label style={themedCheckStyle}>
+            <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} style={nativeCheckStyle} />
+            <span>Confirmo que sou maior de 18 anos e li a <Link href="/documentos/adult-declaration" style={themedLinkStyle}>Confirmacao de Maioridade</Link>.</span>
+          </label>
           {!isClient && (
-            <>
-              <label style={themedCheckStyle}>
-                <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} style={nativeCheckStyle} />
-                Confirmo que sou maior de 18 anos.
-              </label>
-              <label style={themedCheckStyle}>
-                <input type="checkbox" checked={ownProfile} onChange={(e) => setOwnProfile(e.target.checked)} style={nativeCheckStyle} />
-                {text.ownershipLabel}
-              </label>
-            </>
+            <label style={themedCheckStyle}>
+              <input type="checkbox" checked={ownProfile} onChange={(e) => setOwnProfile(e.target.checked)} style={nativeCheckStyle} />
+              {text.ownershipLabel}
+            </label>
           )}
 
           <StatusMessage status={otpStatus} message={statusMessage} premium={isPremium} />

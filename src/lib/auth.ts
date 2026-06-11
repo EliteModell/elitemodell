@@ -358,7 +358,7 @@ export const authOptions: NextAuthOptions = {
               lgpdConsent: true,
               termsConsent: true,
               birthDate: true,
-              professional: { select: { id: true, status: true } },
+              professional: { select: { id: true, status: true, verified: true, kycStatus: true } },
               properties: { select: { status: true } },
               blocked: true,
             },
@@ -375,6 +375,10 @@ export const authOptions: NextAuthOptions = {
             token.accountType = dbUser.accountType;
             token.clientStatus = dbUser.clientStatus;
             token.professionalStatus = dbUser.professional?.status ?? null;
+            token.adultVerified =
+              dbUser.clientStatus === "VERIFIED" ||
+              Boolean(dbUser.professional?.verified && dbUser.professional?.kycStatus === "APPROVED") ||
+              dbUser.role === "ADMIN";
             token.availableProfiles = deriveAvailableProfiles(dbUser);
             token.isProfessional = !!dbUser.professional || token.availableProfiles.includes("PROFESSIONAL");
             token.needsConsent = !dbUser.lgpdConsent || !dbUser.termsConsent || !dbUser.birthDate;
@@ -404,6 +408,7 @@ export const authOptions: NextAuthOptions = {
         session.user.hostStatus = token.hostStatus as string | undefined;
         session.user.activeProfileType = token.activeProfileType as string | undefined;
         session.user.availableProfiles = token.availableProfiles as string[] | undefined;
+        session.user.adultVerified = token.adultVerified ?? false;
       }
       return session;
     },

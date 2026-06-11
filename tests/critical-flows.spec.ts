@@ -7,6 +7,7 @@
  */
 
 import { test, expect, type Page, type Route } from "@playwright/test";
+import { installMockSessionCookie } from "./helpers/mock-auth";
 
 /* ─── Mocks ──────────────────────────────────────────────────────────────── */
 
@@ -21,6 +22,9 @@ const MOCK_CLIENT_SESSION = {
     clientStatus: "UNVERIFIED",
     isProfessional: false,
     needsConsent: false,
+    activeProfileType: "CLIENTE",
+    availableProfiles: ["CLIENTE"],
+    adultVerified: true,
   },
   expires: new Date(Date.now() + 86_400_000).toISOString(),
 };
@@ -33,6 +37,12 @@ const MOCK_WALLET = {
 };
 
 async function mockAuth(page: Page) {
+  await installMockSessionCookie(page.context(), {
+    ...MOCK_CLIENT_SESSION.user,
+    activeProfileType: "CLIENTE",
+    availableProfiles: ["CLIENTE"],
+    adultVerified: true,
+  });
   await page.route("**/api/auth/session", (route: Route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(MOCK_CLIENT_SESSION) })
   );
@@ -67,10 +77,10 @@ async function gotoWithMock(page: Page, path: string) {
 }
 
 async function expectCadastroChoiceOptions(page: Page) {
-  const body = (await page.textContent("body"))?.toLowerCase() ?? "";
-  expect(body).toContain("cliente");
-  expect(body).toContain("profissional");
-  expect(body).toContain("anfitri");
+  const body = page.locator("body");
+  await expect(body).toContainText(/cliente/i);
+  await expect(body).toContainText(/profissional/i);
+  await expect(body).toContainText(/anfitri/i);
 }
 
 async function seedHostDraft(page: Page) {

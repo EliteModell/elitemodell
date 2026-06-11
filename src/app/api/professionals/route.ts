@@ -5,8 +5,11 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { ageGateCacheHeaders, stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
 import { MANUAL_PENDING_STATUS, PERSONA_PENDING_STATUS } from "@/lib/persona";
 import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
+import { activeProfessionalAccessWhere } from "@/lib/professional-access";
+import { createProfessionalSchema } from "@/lib/professional-profile-schema";
 
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
@@ -15,99 +18,6 @@ function normalizePhone(raw: string): string {
   }
   return digits.slice(0, 11);
 }
-
-const createSchema = z.object({
-  displayName:     z.string().min(2),
-  bio:             z.string().optional().default(""),
-  city:            z.string().min(2),
-  state:           z.string().min(2),
-  bairro:          z.string().optional(),
-
-  // Contato
-  phone:           z.string().optional(),
-  whatsapp:        z.string().optional(),
-  instagram:       z.string().optional(),
-  website:         z.string().optional(),
-
-  // Preços
-  priceMin:        z.number().positive().optional(),
-  priceMax:        z.number().positive().optional(),
-  pricePerHour:    z.number().positive().optional(),
-  price30min:      z.number().positive().optional(),
-  price2h:         z.number().positive().optional(),
-  priceOvernight:  z.number().positive().optional(),
-  priceWebcam:     z.number().positive().optional(),
-  paymentMethods:  z.array(z.string()).optional().default([]),
-
-  // Perfil físico
-  escortCategory:  z.string().optional(),
-  birthDate:       z.string().optional(),
-  height:          z.number().optional(),
-  weight:          z.number().optional(),
-  hairColor:       z.string().optional(),
-  eyeColor:        z.string().optional(),
-  ethnicity:       z.string().optional(),
-  signo:           z.string().optional(),
-  hasTattoos:      z.boolean().optional().default(false),
-  hasPiercing:     z.boolean().optional().default(false),
-  hasSilicone:     z.boolean().optional().default(false),
-  isDepilada:      z.boolean().optional().default(true),
-  depilationStyle: z.string().optional(),
-  bodyType:        z.string().optional(),
-
-  // Atendimento
-  attendanceTypes: z.array(z.string()).optional().default([]),
-  servesGenders:   z.array(z.string()).optional().default([]),
-  idiomas:         z.array(z.string()).optional().default([]),
-  diasDisponiveis: z.array(z.string()).optional().default([]),
-  horarioInicio:   z.string().optional(),
-  horarioFim:      z.string().optional(),
-
-  // Serviços (obrigatório pelo menos 1)
-  specialties:     z.array(z.string()).optional().default([]),
-  services:        z.array(z.string()).optional().default([]),
-  fetishes:        z.array(z.string()).optional().default([]),
-
-  // Fotos
-  image:           z.string().optional(),
-  galleryUrls:     z.array(z.string()).optional().default([]),
-
-  // Verificação de documentos
-  docType:         z.string().optional(),
-  docFrenteUrl:    z.string().optional(),
-  docVersoUrl:     z.string().optional(),
-  docStatus:       z.string().optional().default("PENDING"),
-  verifStatus:     z.string().optional().default("PENDING"),
-  verificationUrl: z.string().optional(),
-  verificationType:z.string().optional(),
-  verificationCode:z.string().optional(),
-  kycProvider:     z.string().optional(),
-  kycSessionId:    z.string().optional(),
-  kycStatus:       z.string().optional(),
-}).superRefine((data, ctx) => {
-  const addIssue = (path: string[], message: string) => {
-    ctx.addIssue({ code: "custom", path, message });
-  };
-
-  if (!["MULHER", "HOMEM", "TRANS"].includes(data.escortCategory ?? "")) {
-    addIssue(["escortCategory"], "Categoria invalida.");
-  }
-  if ((data.bio ?? "").trim().length < 80) {
-    addIssue(["bio"], "A biografia deve ter pelo menos 80 caracteres.");
-  }
-  if (!data.birthDate) addIssue(["birthDate"], "Data de nascimento obrigatória.");
-  if (data.attendanceTypes.length === 0) addIssue(["attendanceTypes"], "Informe o tipo de atendimento.");
-  if (data.servesGenders.length === 0) addIssue(["servesGenders"], "Informe quem atende.");
-  if (data.diasDisponiveis.length === 0) addIssue(["diasDisponiveis"], "Informe os dias disponiveis.");
-  if (data.services.length === 0) addIssue(["services"], "Informe pelo menos um servico.");
-  if (!data.pricePerHour && !data.price30min && !data.price2h && !data.priceOvernight && !data.priceWebcam) {
-    addIssue(["pricePerHour"], "Informe pelo menos um valor.");
-  }
-  if (data.paymentMethods.length === 0) addIssue(["paymentMethods"], "Informe uma forma de pagamento.");
-  if (!data.whatsapp || data.whatsapp.replace(/\D/g, "").length < 10) addIssue(["whatsapp"], "WhatsApp inválido.");
-  if (!data.image) addIssue(["image"], "Foto principal obrigatória.");
-  if (!data.kycSessionId) addIssue(["kycSessionId"], "Verificação de identidade obrigatória.");
-});
 
 function slugify(text: string) {
   return text
@@ -123,6 +33,14 @@ function removeDiacritics(text: string) {
 }
 
 export async function GET(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id || (session.user.role !== "ADMIN" && !session.user.adultVerified)) {
+    return NextResponse.json(
+      { error: "Verificacao de maioridade obrigatoria." },
+      { status: 403, headers: ageGateCacheHeaders() },
+    );
+  }
+
   const { searchParams } = new URL(req.url);
   const search    = searchParams.get("search");
   const specialty = searchParams.get("specialty");
@@ -143,6 +61,7 @@ export async function GET(req: NextRequest) {
   const where: Prisma.ProfessionalWhereInput = { status: "ACTIVE" };
   const andFilters: Prisma.ProfessionalWhereInput[] = [
     { OR: [{ pauseUntil: null }, { pauseUntil: { lt: now } }] },
+    activeProfessionalAccessWhere(now),
   ];
 
   if (search) {
@@ -215,12 +134,20 @@ export async function GET(req: NextRequest) {
   // WhatsApp na listagem exige beneficio pago ativo e respeita a privacidade manual.
   const safeList = professionals.map(({ hidePhone, listingPhoneUntil, ...p }) => ({
     ...p,
+    image: stripLegacyPublicStorageUrl(p.image),
+    user: {
+      ...p.user,
+      image: stripLegacyPublicStorageUrl(p.user?.image),
+    },
+    photos: p.photos
+      .map((photo) => ({ ...photo, url: stripLegacyPublicStorageUrl(photo.url) }))
+      .filter((photo): photo is typeof photo & { url: string } => Boolean(photo.url)),
     whatsapp: !hidePhone && listingPhoneUntil && listingPhoneUntil > now ? p.whatsapp : null,
   }));
 
   return NextResponse.json(
     { professionals: safeList, total, page, pages: Math.ceil(total / limit) },
-    { headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120" } },
+    { headers: ageGateCacheHeaders() },
   );
 }
 
@@ -249,7 +176,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const data = createSchema.parse(body);
+    const data = createProfessionalSchema.parse(body);
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -309,6 +236,7 @@ export async function POST(req: NextRequest) {
       data: {
         ...professionalData,
         userId:    session.user.id,
+        accessGrandfathered: false,
         specialties: {
           create: allSpecialties.map((name) => ({ name })),
         },

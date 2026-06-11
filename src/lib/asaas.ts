@@ -16,7 +16,12 @@ export type AsaasPayment = {
   bankSlipUrl?: string | null;
   externalReference?: string | null;
   value?: number;
+  netValue?: number;
+  refundedValue?: number;
   billingType?: string;
+  dueDate?: string;
+  paymentDate?: string | null;
+  confirmedDate?: string | null;
 };
 
 export type AsaasPixQrCode = {
@@ -161,12 +166,44 @@ export async function getAsaasPayment(paymentId: string) {
   });
 }
 
+export async function cancelAsaasPayment(paymentId: string) {
+  return asaasRequest<AsaasPayment>(`/payments/${encodeURIComponent(paymentId)}`, {
+    method: "DELETE",
+  });
+}
+
+export async function refundAsaasPayment(paymentId: string, input?: { value?: number; description?: string }) {
+  return asaasRequest<AsaasPayment>(`/payments/${encodeURIComponent(paymentId)}/refund`, {
+    method: "POST",
+    body: JSON.stringify({
+      value: input?.value,
+      description: input?.description,
+    }),
+  });
+}
+
 export function isAsaasPaidStatus(status?: string | null) {
   return status === "RECEIVED" || status === "CONFIRMED";
 }
 
 export function isAsaasFailedStatus(status?: string | null) {
   return status === "REFUNDED" || status === "OVERDUE" || status === "DELETED";
+}
+
+export function sanitizeAsaasPayment(payment: AsaasPayment) {
+  return {
+    id: payment.id,
+    status: payment.status ?? null,
+    value: payment.value ?? null,
+    netValue: payment.netValue ?? null,
+    refundedValue: payment.refundedValue ?? null,
+    billingType: payment.billingType ?? null,
+    externalReference: payment.externalReference ?? null,
+    dueDate: payment.dueDate ?? null,
+    paymentDate: payment.paymentDate ?? null,
+    confirmedDate: payment.confirmedDate ?? null,
+    invoiceUrl: payment.invoiceUrl ?? null,
+  };
 }
 
 export type AsaasCardPaymentResult = {

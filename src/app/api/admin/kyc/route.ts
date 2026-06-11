@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authorizeAdminRequest } from "@/lib/admin-access";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { getClientIP } from "@/lib/security";
@@ -10,10 +9,8 @@ export const dynamic = "force-dynamic";
 // PATCH /api/admin/kyc — aprovar ou rejeitar verificação de cliente
 // Body: { userId, action: "approve" | "reject", reason?: string }
 export async function PATCH(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
-  }
+  const access = await authorizeAdminRequest("kyc:review");
+  if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
 
   const body = await req.json().catch(() => ({}));
   const { userId, action, reason } = body as {
@@ -38,7 +35,7 @@ export async function PATCH(req: NextRequest) {
   });
 
   await logAudit({
-    adminId: session.user.id,
+    adminId: access.session.user.id,
     action: action === "approve" ? "USER_VERIFIED" : "PROFESSIONAL_REJECTED",
     targetType: "USER",
     targetId: userId,
@@ -51,10 +48,8 @@ export async function PATCH(req: NextRequest) {
 
 // GET /api/admin/kyc?status=PENDING_REVIEW — listar usuários aguardando verificação
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
-  }
+  const access = await authorizeAdminRequest("kyc:review");
+  if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") ?? "PENDING_REVIEW";

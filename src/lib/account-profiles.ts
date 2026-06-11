@@ -134,6 +134,7 @@ export async function ensureProfileForIntent(userId: string, intent: EntryAccoun
         escortCategory: normalizedCategory ?? user.category ?? undefined,
         status: "DRAFT",
         verified: false,
+        accessGrandfathered: false,
         paymentMethods: [],
         attendanceTypes: [],
         servesGenders: [],

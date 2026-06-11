@@ -8,6 +8,11 @@ import { verifyCaptcha } from "@/lib/captcha";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import { ensureProfileForIntent } from "@/lib/account-profiles";
+import {
+  recordConsentPreference,
+  recordUserAcceptances,
+  registrationDocumentKeys,
+} from "@/lib/legal-acceptance";
 import type { EntryAccountRole } from "@/lib/account-routes";
 
 const schema = z.object({
@@ -17,6 +22,7 @@ const schema = z.object({
   birthDate: z.string().optional(),
   lgpdConsent: z.boolean().default(false),
   termsConsent: z.boolean().default(false),
+  ageConfirmed: z.boolean().default(false),
   captchaToken: z.string().optional(),
 });
 
@@ -58,7 +64,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { accessToken, accountType, category, birthDate, lgpdConsent, termsConsent, captchaToken } = schema.parse(body);
+    const { accessToken, accountType, category, birthDate, lgpdConsent, termsConsent, ageConfirmed, captchaToken } = schema.parse(body);
     const profileIntent = roleIntentFor(accountType);
     const targetAccountType = publicAccountType(accountType);
     const headerCaptchaToken = req.headers.get("x-captcha-token");
@@ -133,6 +139,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Você deve ter 18 anos ou mais para se registrar." }, { status: 400 });
     }
 
+    if (!ageConfirmed) {
+      return NextResponse.json({ error: "Confirme que voce e maior de 18 anos para se registrar." }, { status: 400 });
+    }
+
     if (!(lgpdConsent || existing?.lgpdConsent) || !(termsConsent || existing?.termsConsent)) {
       return NextResponse.json({ error: "Você deve aceitar os Termos de Uso e a Política de Privacidade." }, { status: 400 });
     }
@@ -156,6 +166,21 @@ export async function POST(req: NextRequest) {
       });
 
       await ensureProfileForIntent(user.id, profileIntent, category);
+      await recordUserAcceptances({
+        userId: user.id,
+        userCategory: user.accountType,
+        documentKeys: registrationDocumentKeys(user.accountType),
+        source: "auth-register",
+        acceptanceType: "REGISTRATION",
+        req,
+      });
+      await recordConsentPreference({
+        userId: user.id,
+        purpose: "PRIVACY_POLICY",
+        granted: true,
+        source: "auth-register",
+        req,
+      });
       return NextResponse.json(user, { status: 200 });
     }
 
@@ -182,6 +207,21 @@ export async function POST(req: NextRequest) {
     });
 
     await ensureProfileForIntent(user.id, profileIntent, category);
+    await recordUserAcceptances({
+      userId: user.id,
+      userCategory: user.accountType,
+      documentKeys: registrationDocumentKeys(user.accountType),
+      source: "auth-register",
+      acceptanceType: "REGISTRATION",
+      req,
+    });
+    await recordConsentPreference({
+      userId: user.id,
+      purpose: "PRIVACY_POLICY",
+      granted: true,
+      source: "auth-register",
+      req,
+    });
     return NextResponse.json(user, { status: 201 });
   } catch (err) {
     if (err instanceof z.ZodError) {

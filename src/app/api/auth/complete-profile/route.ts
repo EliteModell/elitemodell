@@ -6,11 +6,13 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { validateBirthDate } from "@/lib/age-validation";
+import { recordConsentPreference, recordUserAcceptances, registrationDocumentKeys } from "@/lib/legal-acceptance";
 
 const schema = z.object({
   birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   lgpdConsent: z.boolean(),
   termsConsent: z.boolean(),
+  ageConfirmed: z.boolean(),
 });
 
 export async function POST(req: NextRequest) {
@@ -25,6 +27,13 @@ export async function POST(req: NextRequest) {
     if (!body.lgpdConsent || !body.termsConsent) {
       return NextResponse.json(
         { error: "Você deve aceitar os Termos de Uso e a Política de Privacidade para continuar." },
+        { status: 400 }
+      );
+    }
+
+    if (!body.ageConfirmed) {
+      return NextResponse.json(
+        { error: "Confirme que voce e maior de 18 anos para continuar." },
         { status: 400 }
       );
     }
@@ -44,7 +53,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await prisma.user.update({
+    const user = await prisma.user.update({
       where: { id: session.user.id },
       data: {
         birthDate: new Date(`${body.birthDate}T00:00:00.000Z`),
@@ -52,7 +61,22 @@ export async function POST(req: NextRequest) {
         termsConsent: true,
         consentDate: new Date(),
       },
-      select: { id: true },
+      select: { id: true, accountType: true },
+    });
+    await recordUserAcceptances({
+      userId: user.id,
+      userCategory: user.accountType,
+      documentKeys: registrationDocumentKeys(user.accountType),
+      source: "complete-profile",
+      acceptanceType: "REGISTRATION",
+      req,
+    });
+    await recordConsentPreference({
+      userId: user.id,
+      purpose: "PRIVACY_POLICY",
+      granted: true,
+      source: "complete-profile",
+      req,
     });
 
     return NextResponse.json({ ok: true });

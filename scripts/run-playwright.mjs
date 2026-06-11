@@ -1,7 +1,11 @@
 import { spawn } from "node:child_process";
 import process from "node:process";
+import "dotenv/config";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
+const parsedBaseURL = new URL(baseURL);
+const serverPort =
+  parsedBaseURL.port || (parsedBaseURL.protocol === "https:" ? "443" : "80");
 const isWindows = process.platform === "win32";
 
 function sleep(ms) {
@@ -29,7 +33,11 @@ async function waitForServer(timeoutMs = 120_000) {
 function spawnProcess(command, args) {
   return spawn(command, args, {
     stdio: "inherit",
-    env: { ...process.env, PLAYWRIGHT_BASE_URL: baseURL },
+    env: {
+      ...process.env,
+      NEXTAUTH_URL: baseURL,
+      PLAYWRIGHT_BASE_URL: baseURL,
+    },
     windowsHide: true,
   });
 }
@@ -57,7 +65,14 @@ async function main() {
   const alreadyRunning = await isServerReady();
 
   if (!alreadyRunning) {
-    server = spawnProcess("node", ["./node_modules/next/dist/bin/next", "start", "-H", "127.0.0.1"]);
+    server = spawnProcess("node", [
+      "./node_modules/next/dist/bin/next",
+      "start",
+      "-H",
+      parsedBaseURL.hostname,
+      "-p",
+      serverPort,
+    ]);
     await waitForServer();
   }
 

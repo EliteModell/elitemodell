@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { ageGateCacheHeaders } from "@/lib/age-gate-policy";
 import { enforceRateLimit, sanitizeInput } from "@/lib/security";
 
 const createSchema = z.object({
@@ -15,10 +16,21 @@ const createSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id || (session.user.role !== "ADMIN" && !session.user.adultVerified)) {
+    return NextResponse.json(
+      { error: "Verificacao de maioridade obrigatoria." },
+      { status: 403, headers: ageGateCacheHeaders() },
+    );
+  }
+
   const { searchParams } = new URL(req.url);
   const professionalId = searchParams.get("professionalId");
   if (!professionalId) {
-    return NextResponse.json({ error: "professionalId obrigatorio." }, { status: 400 });
+    return NextResponse.json(
+      { error: "professionalId obrigatorio." },
+      { status: 400, headers: ageGateCacheHeaders() },
+    );
   }
 
   const reviews = await prisma.professionalReview.findMany({
@@ -30,7 +42,7 @@ export async function GET(req: NextRequest) {
     take: 50,
   });
 
-  return NextResponse.json(reviews);
+  return NextResponse.json(reviews, { headers: ageGateCacheHeaders() });
 }
 
 export async function POST(req: NextRequest) {

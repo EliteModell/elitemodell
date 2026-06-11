@@ -74,6 +74,7 @@ export function ProfessionalStoriesClient() {
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [contentDeclarationAccepted, setContentDeclarationAccepted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -126,14 +127,24 @@ export function ProfessionalStoriesClient() {
       toast.error("Escolha uma imagem ou vídeo válido.");
       return;
     }
+    if (!contentDeclarationAccepted) {
+      toast.error("Confirme a declaracao de autoria e autorizacao antes de publicar.");
+      return;
+    }
     setPublishing(true);
     try {
       const body = new FormData();
       body.append("file", pending.file);
+      body.append("contentDeclarationAccepted", "true");
       const uploadRes = await fetch("/api/upload?folder=stories", { method: "POST", body });
       const uploaded = await uploadRes.json().catch(() => ({}));
       if (!uploadRes.ok || !uploaded.url) {
-        throw new Error(friendlyUploadError(typeof uploaded.error === "string" ? uploaded.error : ""));
+        const detail = typeof uploaded.error === "string"
+          ? uploaded.error
+          : typeof uploaded.message === "string"
+            ? uploaded.message
+            : "";
+        throw new Error(friendlyUploadError(detail));
       }
 
       const storyRes = await fetch("/api/stories", {
@@ -147,6 +158,7 @@ export function ProfessionalStoriesClient() {
       setStories((current) => [story as StoryItem, ...current]);
       URL.revokeObjectURL(pending.preview);
       setPending(null);
+      setContentDeclarationAccepted(false);
       toast.success("Story publicado com sucesso.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível publicar agora. Tente novamente.");
@@ -200,6 +212,17 @@ export function ProfessionalStoriesClient() {
               <p style={{ margin: "10px 0 0", color: "var(--elite-text-muted)", lineHeight: 1.65, fontSize: 14 }}>
                 Stories ativos aparecem para clientes na área de conteúdo recente. Vídeos devem ser curtos para carregar bem no celular.
               </p>
+              <label style={{ display: "flex", gap: 10, alignItems: "flex-start", marginTop: 14, color: "var(--elite-text-muted)", fontSize: 13, lineHeight: 1.5 }}>
+                <input
+                  type="checkbox"
+                  checked={contentDeclarationAccepted}
+                  onChange={(event) => setContentDeclarationAccepted(event.target.checked)}
+                  style={{ marginTop: 3, accentColor: "var(--elite-gold)" }}
+                />
+                <span>
+                  Confirmo que sou autora ou tenho autorizacao para publicar esta midia, que nao envolve menores, exploracao, coercao, trafico, imagem de terceiros sem autorizacao ou conteudo proibido.
+                </span>
+              </label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 18 }}>
                 <button type="button" onClick={() => inputRef.current?.click()} disabled={publishing} className="premium-button-secondary">
                   <Camera size={17} />

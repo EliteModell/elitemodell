@@ -2,13 +2,21 @@
 // Dados do cartão transitam apenas por HTTPS — nunca são persistidos.
 export const dynamic = "force-dynamic";
 
+import { createHash } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
-import { createAsaasCardPayment, createAsaasCustomer, getAsaasConfig } from "@/lib/asaas";
+import { createAsaasCardPayment, createAsaasCustomer, getAsaasConfig, getAsaasPayment } from "@/lib/asaas";
 import { applyPaidPaymentEffects } from "@/lib/payment-effects";
 import { prisma } from "@/lib/prisma";
+import { toCents } from "@/lib/money";
+import { syncAsaasPaymentSnapshot } from "@/lib/payment-operations";
+import {
+  CHECKOUT_LEGAL_KEYS,
+  latestLegalDocumentVersions,
+  recordUserAcceptances,
+} from "@/lib/legal-acceptance";
 
 const schema = z
   .object({
@@ -16,6 +24,7 @@ const schema = z
     planId: z.enum(["elite-premium-monthly"]).optional(),
     creditAmount: z.number().positive().max(5000).optional(),
     description: z.string().optional(),
+    checkoutToken: z.string().uuid(),
     card: z.object({
       holderName: z.string().min(2),
       number: z.string().min(15).max(19),
@@ -110,19 +119,91 @@ export async function POST(req: NextRequest) {
     "127.0.0.1";
 
   // Cria registro local antes de chamar Asaas (rollback em caso de falha)
+  const externalReference = data.bookingId
+    ? `booking-card:${data.bookingId}:${data.checkoutToken}`
+    : data.creditAmount
+      ? `credits-card:${user.id}:${data.checkoutToken}`
+      : `client-premium-card:${data.planId}:${user.id}:${data.checkoutToken}`;
+  const existingPayment = await prisma.payment.findUnique({ where: { externalReference } });
+  if (existingPayment && existingPayment.userId === user.id) {
+    let current = existingPayment;
+    if (current.providerPaymentId) {
+      const remote = await getAsaasPayment(current.providerPaymentId);
+      current = await syncAsaasPaymentSnapshot(current.id, remote);
+    }
+    return NextResponse.json({
+      paymentId: current.providerPaymentId,
+      localPaymentId: current.id,
+      provider: current.provider,
+      status: current.status,
+      benefitStatus: current.benefitStatus,
+      amount: current.amount,
+      reused: true,
+    });
+  }
+
   const localPayment = await prisma.payment.create({
     data: {
       bookingId,
       userId: user.id,
       amount,
+      amountCents: toCents(amount),
       method: "credit_card",
       provider: "asaas",
       status: "PENDING",
-      externalReference: `asaas-card-${user.id}-${Date.now()}`,
+      externalReference,
       creditAmount,
       premiumUntil,
     },
   });
+  const legalVersions = await latestLegalDocumentVersions(CHECKOUT_LEGAL_KEYS);
+  const checkoutVersion = legalVersions.get("checkout-notice") ?? legalVersions.get("payments-policy");
+  const refundVersion = legalVersions.get("refund-policy");
+  await recordUserAcceptances({
+    userId: user.id,
+    userCategory: session.user.accountType,
+    documentKeys: CHECKOUT_LEGAL_KEYS,
+    source: "payments-card",
+    acceptanceType: "CHECKOUT",
+    req,
+  });
+  if (bookingId) {
+    await prisma.checkoutAcceptance.updateMany({
+      where: { productId: `booking:${bookingId}`, paymentId: null },
+      data: { paymentId: localPayment.id },
+    });
+  } else {
+    const disclosure = [
+      data.planId ? "client-plan" : "credits",
+      data.planId ?? "credits",
+      amount.toFixed(2),
+      creditAmount ?? "",
+      premiumUntil?.toISOString() ?? "",
+      localPayment.externalReference ?? localPayment.id,
+    ].join("|");
+    await prisma.checkoutAcceptance.create({
+      data: {
+        userId: user.id,
+        paymentId: localPayment.id,
+        productId: data.planId ?? `credits:${localPayment.id}`,
+        productName: description,
+        totalPrice: amount,
+        termsVersionId: checkoutVersion?.id ?? null,
+        refundPolicyVersionId: refundVersion?.id ?? null,
+        termsHash: checkoutVersion?.contentHash ?? createHash("sha256").update(`checkout:${disclosure}`).digest("hex"),
+        refundPolicyHash: refundVersion?.contentHash ?? createHash("sha256").update(`refund:${disclosure}`).digest("hex"),
+        ipAddress: remoteIp,
+        userAgent: req.headers.get("user-agent")?.slice(0, 300) ?? null,
+        sessionId: req.cookies.get("next-auth.session-token")?.value
+          ? createHash("sha256").update(req.cookies.get("next-auth.session-token")!.value).digest("hex")
+          : null,
+        route: new URL(req.url).pathname,
+        language: "pt-BR",
+        acceptanceType: "CHECKOUT",
+        required: true,
+      },
+    });
+  }
 
   try {
     const customer = await createAsaasCustomer({
@@ -168,6 +249,8 @@ export async function POST(req: NextRequest) {
         providerPaymentId: asaasPayment.id,
         stripePaymentId: asaasPayment.id,
         invoiceUrl: asaasPayment.invoiceUrl ?? null,
+        providerStatus: asaasPayment.status ?? "PENDING",
+        providerUpdatedAt: new Date(),
       },
       select: { id: true },
     });
@@ -183,12 +266,14 @@ export async function POST(req: NextRequest) {
     if (asaasPayment.status === "CONFIRMED" || asaasPayment.status === "RECEIVED") {
       await applyPaidPaymentEffects(localPayment.id);
     }
+    const finalPayment = await prisma.payment.findUniqueOrThrow({ where: { id: localPayment.id } });
 
     return NextResponse.json({
       paymentId: asaasPayment.id,
       localPaymentId: localPayment.id,
       provider: "asaas",
-      status: asaasPayment.status ?? "PENDING",
+      status: finalPayment.status,
+      benefitStatus: finalPayment.benefitStatus,
       brand: asaasPayment.creditCardBrand ?? null,
       last4: asaasPayment.creditCardNumber?.slice(-4) ?? null,
       amount,

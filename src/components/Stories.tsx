@@ -82,9 +82,14 @@ export default function Stories() {
     try {
       const fd = new FormData();
       fd.append("file", file);
+      fd.append("contentDeclarationAccepted", "true");
       const up = await fetch("/api/upload", { method: "POST", body: fd });
-      if (!up.ok) { alert("Erro no upload. Configure o Cloudinary no .env"); return; }
-      const { url, type, thumbnail } = await up.json();
+      const uploaded = await up.json().catch(() => ({}));
+      if (!up.ok || !uploaded.url) {
+        alert(uploaded.error || uploaded.message || "Arquivo aguardando revisão.");
+        return;
+      }
+      const { url, type, thumbnail } = uploaded;
       await fetch("/api/stories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mediaUrl: url, mediaType: type, thumbnail }) });
       await carregar();
     } catch { alert("Erro ao publicar story."); }

@@ -1,6 +1,18 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+const privateNoStoreHeaders = [
+  { key: "Cache-Control", value: "private, no-cache, no-store, max-age=0, must-revalidate" },
+  { key: "Pragma", value: "no-cache" },
+  { key: "Expires", value: "0" },
+];
+
+const ageRestrictedHeaders = [
+  ...privateNoStoreHeaders,
+  { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive, nosnippet, noimageindex" },
+  { key: "Referrer-Policy", value: "no-referrer" },
+];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["mercadopago"],
@@ -18,28 +30,26 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/profissional/:path*",
-        headers: [
-          { key: "Cache-Control", value: "private, no-cache, no-store, max-age=0, must-revalidate" },
-          { key: "Pragma", value: "no-cache" },
-          { key: "Expires", value: "0" },
-        ],
+        headers: privateNoStoreHeaders,
       },
       {
         source: "/painel/:path*",
-        headers: [
-          { key: "Cache-Control", value: "private, no-cache, no-store, max-age=0, must-revalidate" },
-          { key: "Pragma", value: "no-cache" },
-          { key: "Expires", value: "0" },
-        ],
+        headers: privateNoStoreHeaders,
       },
       {
         source: "/dashboard/:path*",
-        headers: [
-          { key: "Cache-Control", value: "private, no-cache, no-store, max-age=0, must-revalidate" },
-          { key: "Pragma", value: "no-cache" },
-          { key: "Expires", value: "0" },
-        ],
+        headers: privateNoStoreHeaders,
       },
+      { source: "/buscar/:path*", headers: ageRestrictedHeaders },
+      { source: "/profissionais/:path*", headers: ageRestrictedHeaders },
+      { source: "/imoveis/:path*", headers: ageRestrictedHeaders },
+      { source: "/api/media/:path*", headers: ageRestrictedHeaders },
+      { source: "/api/professionals/:path*", headers: ageRestrictedHeaders },
+      { source: "/api/properties/:path*", headers: ageRestrictedHeaders },
+      { source: "/api/reviews/:path*", headers: ageRestrictedHeaders },
+      { source: "/api/stories/:path*", headers: ageRestrictedHeaders },
+      { source: "/robots.txt", headers: ageRestrictedHeaders },
+      { source: "/sitemap.xml", headers: ageRestrictedHeaders },
       {
         source: "/(.*)",
         headers: [
@@ -90,6 +100,7 @@ const nextConfig: NextConfig = {
     ];
   },
   experimental: {
+    webpackBuildWorker: true,
     webpackMemoryOptimizations: true,
   },
   images: {
@@ -109,13 +120,26 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+const sentryEnabled = Boolean(
+  process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN,
+);
+
+const sentryConfig = withSentryConfig(nextConfig, {
   // Só faz upload de source maps se SENTRY_AUTH_TOKEN estiver configurado
   silent: !process.env.SENTRY_AUTH_TOKEN,
-  disableLogger: true,
-  automaticVercelMonitors: false,
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+  webpack: {
+    treeshake: {
+      removeDebugLogging: true,
+    },
+    automaticVercelMonitors: false,
+  },
   // Não quebra o build se o Sentry não estiver configurado
   authToken: process.env.SENTRY_AUTH_TOKEN,
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
 });
+
+export default sentryEnabled ? sentryConfig : nextConfig;

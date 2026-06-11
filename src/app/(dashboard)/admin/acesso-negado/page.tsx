@@ -7,7 +7,7 @@ export default function AdminAcessoNegadoPage() {
       <AdminHeader title="Acesso negado" subtitle="Seu usuário é administrador, mas não possui permissão para esta área operacional." />
       <AdminPanel>
         <p style={{ color: "#94a3b8", margin: "0 0 16px" }}>
-          Para liberar funções críticas como funcionários e configurações sensíveis, configure `ADMIN_MASTER_EMAILS` no ambiente com o e-mail do administrador principal.
+          Seu papel administrativo persistente nao possui permissao para esta funcao. Solicite a um ADMIN_MASTER que revise sua atribuicao.
         </p>
         <Link href="/admin" style={{ ...buttonStyle, textDecoration: "none" }}>Voltar ao dashboard</Link>
       </AdminPanel>

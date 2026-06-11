@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/Navbar";
+import PublicReportButton from "@/components/moderation/PublicReportButton";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 const GOLD = "#d4a843";
@@ -320,6 +321,9 @@ export default function ProfissionalProfilePage() {
   return (
     <div style={{ background: "#060e1b", minHeight: "100vh", color: "#f1f5f9", paddingBottom: 72 }}>
       <Navbar />
+      <div style={{ position: "fixed", right: 18, bottom: 18, zIndex: 90, background: "rgba(8,8,10,.92)", border: "1px solid rgba(239,68,68,.35)", borderRadius: 8, padding: "10px 12px" }}>
+        <PublicReportButton targetType="PROFESSIONAL" targetId={pro.id} />
+      </div>
 
       {/* COVER com nome overlay */}
       <div style={{ paddingTop: 64 }}>

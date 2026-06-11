@@ -6,6 +6,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
+import { assertApprovedMediaUrls } from "@/lib/approved-media";
 
 const MAX_PAUSE_DAYS = Number(process.env.PROFESSIONAL_MAX_PAUSE_DAYS ?? 60);
 
@@ -17,10 +18,6 @@ const settingsSchema = z.object({
     enabled: z.boolean(),
     days: z.number().int().min(1).max(MAX_PAUSE_DAYS).optional(),
     reason: z.string().max(240).optional(),
-  }).optional(),
-  boost: z.object({
-    enabled: z.boolean(),
-    days: z.number().int().min(1).max(30).optional(),
   }).optional(),
   presentationVideoUrl: z.string().url().nullable().optional(),
   removePresentationVideo: z.boolean().optional(),
@@ -94,26 +91,19 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
-    if (body.boost) {
-      if (body.boost.enabled) {
-        const days = body.boost.days ?? 1;
-        data.boostActive = true;
-        data.boostStartedAt = now;
-        data.boostUntil = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
-        data.boostSource = "manual_pending_billing";
-      } else {
-        data.boostActive = false;
-        data.boostStartedAt = null;
-        data.boostUntil = null;
-        data.boostSource = null;
-      }
-    }
-
     if (body.removePresentationVideo) {
       data.presentationVideoUrl = null;
       data.presentationVideoStatus = "NONE";
       data.presentationVideoRejectReason = null;
     } else if (body.presentationVideoUrl !== undefined) {
+      if (body.presentationVideoUrl) {
+        await assertApprovedMediaUrls({
+          urls: [body.presentationVideoUrl],
+          requestUrl: req.url,
+          ownerId: session.user.id,
+          allowedFolderPrefixes: ["profile-videos"],
+        });
+      }
       data.presentationVideoUrl = body.presentationVideoUrl;
       data.presentationVideoStatus = body.presentationVideoUrl ? "PENDING" : "NONE";
       data.presentationVideoRejectReason = null;
@@ -156,6 +146,9 @@ export async function PATCH(req: NextRequest) {
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues }, { status: 400 });
+    }
+    if (err instanceof Error && err.message.toLowerCase().includes("midia")) {
+      return NextResponse.json({ error: err.message }, { status: 409 });
     }
     console.error("[professional/settings]", err);
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });

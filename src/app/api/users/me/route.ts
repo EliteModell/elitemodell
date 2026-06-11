@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { getHostRegistrationStatus, postLoginPathFromUser } from "@/lib/account-routes";
 import { deriveAvailableProfiles } from "@/lib/account-profiles";
+import { assertApprovedMediaUrls } from "@/lib/approved-media";
 
 const updateSchema = z.object({
   name: z.string().min(2).optional(),
@@ -114,6 +115,14 @@ export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
     const data = updateSchema.parse(body);
+    if (data.image) {
+      await assertApprovedMediaUrls({
+        urls: [data.image],
+        requestUrl: req.url,
+        ownerId: session.user.id,
+        allowedFolderPrefixes: ["profiles"],
+      });
+    }
     if (data.phone) {
       const current = await prisma.user.findUnique({
         where: { id: session.user.id },
@@ -139,6 +148,9 @@ export async function PATCH(req: NextRequest) {
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues }, { status: 400 });
+    }
+    if (err instanceof Error && err.message.toLowerCase().includes("midia")) {
+      return NextResponse.json({ error: err.message }, { status: 409 });
     }
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });
   }
