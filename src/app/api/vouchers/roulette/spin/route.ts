@@ -1,20 +1,22 @@
 export const dynamic = "force-dynamic";
-export const maxDuration = 15;
+export const maxDuration = 30;
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import type { VoucherPrize } from "@prisma/client";
-import { randomInt } from "node:crypto";
+import { Prisma, type VoucherPrize } from "@prisma/client";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
+  consumeDailyStock,
   createVoucherFromSpin,
+  eligiblePrizes,
   getVoucherSettings,
   getIp,
   hasPromotionAuthorization,
   newPendingToken,
   newVisitorId,
+  pickPrize,
   publicPrize,
   ROULETTE_PROMOTION_POLICY_KEY,
   rouletteSpinIdentityWhere,
@@ -61,7 +63,7 @@ function hasSessionCookie(req: NextRequest) {
 }
 
 function identityLockId(s: string): bigint {
-  // djb2 hash mantido em 32 bits — usado como chave para pg_advisory_xact_lock
+  // djb2 hash mantido em 32 bits para uso como chave do advisory lock do PostgreSQL.
   let h = 5381;
   for (let i = 0; i < s.length; i++) {
     h = ((h << 5) + h) ^ s.charCodeAt(i);
@@ -70,17 +72,40 @@ function identityLockId(s: string): bigint {
   return BigInt(h);
 }
 
-function pickFastPrize(prizes: VoucherPrize[]) {
-  const active = prizes.filter((item) => item.active && (item.currentProbability || item.probability) > 0);
-  const total = active.reduce((sum, item) => sum + (item.currentProbability || item.probability), 0);
-  if (total <= 0) return active[0] ?? null;
-  let cursor = 0;
-  const roll = (randomInt(0, 1_000_000_000) / 1_000_000_000) * total;
-  for (const prize of active) {
-    cursor += prize.currentProbability || prize.probability;
-    if (roll <= cursor) return prize;
-  }
-  return active[active.length - 1] ?? null;
+type SpinWithPrizeAndVouchers = Prisma.VoucherSpinGetPayload<{
+  include: { prize: true; vouchers: true };
+}>;
+
+function existingSpinResult(
+  existing: SpinWithPrizeAndVouchers,
+  prizes: VoucherPrize[],
+  sessionUserId: string | null,
+) {
+  if (!existing.prize) return null;
+  const prizeIndex = prizes.findIndex((item) => item.id === existing.prizeId);
+  const voucher = existing.vouchers[0] ?? null;
+  const value = existing.voucherValue ?? existing.prize.value ?? 0;
+  const needsGuestClaim = Boolean(
+    existing.result === "VOUCHER" &&
+    value < 100 &&
+    !sessionUserId &&
+    !voucher?.recipientPhone &&
+    !existing.recipientPhone
+  );
+  const needsRegistration = Boolean(
+    existing.result === "VOUCHER" &&
+    value === 100 &&
+    !sessionUserId
+  );
+
+  return {
+    spin: existing,
+    prize: existing.prize,
+    prizeIndex,
+    voucher,
+    needsGuestClaim,
+    needsRegistration,
+  };
 }
 
 function modalMessage(type: string, value?: number | null, needsRegistration?: boolean, prizeName?: string | null) {
@@ -142,23 +167,26 @@ export async function POST(req: NextRequest) {
     where: { idempotencyKey: scopedIdempotencyKey },
     include: { prize: true, vouchers: true },
   });
-  if (existing?.prize) {
+  if (existing) {
     const prizes = await prisma.voucherPrize.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] });
-    const prizeIndex = prizes.findIndex((item) => item.id === existing.prizeId);
-    const voucher = existing.vouchers[0] ?? null;
-    const value = existing.voucherValue ?? existing.prize.value ?? 0;
-    const needsIdentification = Boolean(existing.result === "VOUCHER" && value < 100 && !sessionUserId && !voucher?.recipientPhone && !existing.recipientPhone);
-    const needsRegistration = Boolean(voucher?.status === "AWAITING_REGISTRATION" && !needsIdentification);
-    return NextResponse.json({
-      spinId: existing.id,
-      prize: publicPrize(existing.prize, Math.max(0, prizeIndex)),
-      result: existing.result,
-      message: modalMessage(existing.result, existing.prize.value, needsRegistration, existing.prize.name),
-      needsIdentification,
-      needsRegistration,
-      pendingToken: existing.pendingToken,
-      voucher,
-    });
+    const priorResult = existingSpinResult(existing, prizes, sessionUserId);
+    if (priorResult) {
+      return NextResponse.json({
+        spinId: priorResult.spin.id,
+        prize: publicPrize(priorResult.prize, Math.max(0, priorResult.prizeIndex)),
+        result: priorResult.spin.result,
+        message: modalMessage(
+          priorResult.spin.result,
+          priorResult.prize.value,
+          priorResult.needsRegistration,
+          priorResult.prize.name,
+        ),
+        needsIdentification: priorResult.needsGuestClaim,
+        needsRegistration: priorResult.needsRegistration,
+        pendingToken: priorResult.spin.pendingToken,
+        voucher: priorResult.voucher,
+      });
+    }
   }
 
   const user = sessionUserId
@@ -169,50 +197,66 @@ export async function POST(req: NextRequest) {
 
   const limit = sessionUserId ? settings.dailySpinLimit : settings.guestDailySpinLimit;
 
-  // Busca prêmios fora da transação (leitura, sem impacto em concorrência)
-  const prizes = await prisma.voucherPrize.findMany({
-    where: { active: true },
-    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-  });
-  const prize = pickFastPrize(prizes);
-  if (!prize) {
-    logSpin("error", "no_active_prize", { requestId: rid, durationMs: Date.now() - startedAt });
-    return NextResponse.json({ error: "Não foi possível girar agora. Tente novamente.", requestId: rid }, { status: 503 });
-  }
-
-  const prizeIndex = prizes.findIndex((item) => item.id === prize.id);
-  const normalizedResult = prize.type === "PAID_VOUCHER" ? "VOUCHER" : prize.type;
-  const isVoucher = normalizedResult === "VOUCHER" && Boolean(prize.value && prize.value > 0);
-  const value = prize.value ?? null;
-  const isVoucher100Guest = isVoucher && value === 100 && !sessionUserId;
-  const needsGuestClaim = isVoucher && !sessionUserId && value !== 100;
-  const pendingToken = needsGuestClaim || isVoucher100Guest ? newPendingToken() : null;
-  const pendingExpiresAt = needsGuestClaim
-    ? new Date(Date.now() + settings.pendingClaimMinutes * 60 * 1000)
-    : isVoucher100Guest
-      ? new Date(Date.now() + settings.registrationClaimHours * 60 * 60 * 1000)
-      : null;
-
   let result;
   try {
-    // Transação com advisory lock: garante que a verificação de limite e a criação do spin
-    // sejam atômicas — dois requests simultâneos do mesmo usuário não passam ambos.
-    const spin = await prisma.$transaction(async (tx) => {
-      const lockId = identityLockId(sessionUserId ?? visitorId ?? ipAddress ?? "anon");
+    result = await prisma.$transaction(async (tx) => {
+      const lockIdentity = sessionUserId ?? ipAddress ?? visitorId ?? "anon";
+      const lockId = identityLockId(lockIdentity);
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${lockId})`;
 
-      const [spinsCountToday, tomorrowSpin] = await Promise.all([
+      const [concurrentExisting, spinsCountToday, tomorrowSpin, prizes] = await Promise.all([
+        tx.voucherSpin.findUnique({
+          where: { idempotencyKey: scopedIdempotencyKey },
+          include: { prize: true, vouchers: true },
+        }),
         tx.voucherSpin.count({ where: { ...identityWhere, createdAt: { gte: start, lt: end } } }),
         tx.voucherSpin.findFirst({
           where: { ...identityWhere, result: "TRY_TOMORROW", createdAt: { gte: start, lt: end } },
           select: { id: true },
         }),
+        tx.voucherPrize.findMany({
+          where: { active: true },
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        }),
       ]);
+
+      if (concurrentExisting) {
+        const priorResult = existingSpinResult(concurrentExisting, prizes, sessionUserId);
+        if (priorResult) return priorResult;
+      }
 
       if (tomorrowSpin || spinsCountToday >= limit) {
         const limitErr = new Error("LIMIT_REACHED") as Error & { blockedUntil: string };
         limitErr.blockedUntil = end.toISOString();
         throw limitErr;
+      }
+
+      const now = new Date();
+      const { prizes: candidates, stats } = await eligiblePrizes({
+        tx,
+        prizes,
+        settings,
+        identity,
+        now,
+      });
+      const prize = pickPrize(candidates);
+      if (!prize) throw new Error("NO_ELIGIBLE_PRIZE");
+
+      const prizeIndex = prizes.findIndex((item) => item.id === prize.id);
+      const normalizedResult = prize.type === "PAID_VOUCHER" ? "VOUCHER" : prize.type;
+      const isVoucher = normalizedResult === "VOUCHER" && Boolean(prize.value && prize.value > 0);
+      const value = prize.value ?? null;
+      const isVoucher100Guest = isVoucher && value === 100 && !sessionUserId;
+      const needsGuestClaim = isVoucher && !sessionUserId && value !== 100;
+      const pendingToken = needsGuestClaim || isVoucher100Guest ? newPendingToken() : null;
+      const pendingExpiresAt = needsGuestClaim
+        ? new Date(now.getTime() + settings.pendingClaimMinutes * 60 * 1000)
+        : isVoucher100Guest
+          ? new Date(now.getTime() + settings.registrationClaimHours * 60 * 60 * 1000)
+          : null;
+
+      if (isVoucher) {
+        await consumeDailyStock({ tx, prize, stats });
       }
 
       const createdSpin = await tx.voucherSpin.create({
@@ -224,6 +268,7 @@ export async function POST(req: NextRequest) {
           voucherValue: value,
           ipAddress,
           userAgent,
+          whatsapp: identity.whatsapp,
           idempotencyKey: scopedIdempotencyKey,
           pendingToken,
           pendingExpiresAt,
@@ -249,16 +294,37 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      return createdSpin;
-    }, { timeout: 10_000 });
+      let voucher = null;
+      let spin = createdSpin;
+      if (isVoucher && sessionUserId) {
+        voucher = await createVoucherFromSpin({
+          tx,
+          spin,
+          prize,
+          settings,
+          clientId: sessionUserId,
+          visitorId,
+          now,
+        });
+        spin = await tx.voucherSpin.update({
+          where: { id: spin.id },
+          data: { claimedAt: now },
+        });
+      }
 
-    let voucher = null;
-    if (isVoucher && sessionUserId) {
-      voucher = await createVoucherFromSpin({ spin, prize, settings, clientId: sessionUserId, visitorId });
-      await prisma.voucherSpin.update({ where: { id: spin.id }, data: { claimedAt: new Date() } });
-    }
-
-    result = { spin, prize, prizeIndex, voucher, needsGuestClaim, needsRegistration: isVoucher100Guest };
+      return {
+        spin,
+        prize,
+        prizeIndex,
+        voucher,
+        needsGuestClaim,
+        needsRegistration: isVoucher100Guest,
+      };
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      maxWait: 10_000,
+      timeout: 20_000,
+    });
   } catch (err) {
     if (err instanceof Error && err.message === "LIMIT_REACHED") {
       const blockedUntil = (err as Error & { blockedUntil?: string }).blockedUntil ?? end.toISOString();

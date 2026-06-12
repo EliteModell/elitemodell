@@ -311,6 +311,7 @@ export function rouletteSpinIdentityWhere(identity: VoucherIdentity): Prisma.Vou
   if (identity.clientId) or.push({ clientId: identity.clientId });
   if (userOr.length) or.push({ client: { is: { OR: userOr } } });
   if (identity.visitorId) or.push({ visitorId: identity.visitorId });
+  if (identity.ipAddress) or.push({ ipAddress: identity.ipAddress });
 
   return or.length ? { OR: or } : {};
 }
