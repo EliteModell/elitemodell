@@ -4,6 +4,7 @@ export const maxDuration = 15;
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import type { VoucherPrize } from "@prisma/client";
+import { randomInt } from "node:crypto";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -11,17 +12,25 @@ import {
   createVoucherFromSpin,
   getVoucherSettings,
   getIp,
+  hasPromotionAuthorization,
   newPendingToken,
   newVisitorId,
   publicPrize,
+  ROULETTE_PROMOTION_POLICY_KEY,
   rouletteSpinIdentityWhere,
   todayRange,
   userVoucherIdentity,
   VOUCHER_VISITOR_COOKIE,
 } from "@/lib/voucher-roulette";
+import {
+  latestLegalDocumentVersions,
+  recordUserAcceptances,
+  ROULETTE_PROMOTION_LEGAL_KEYS,
+} from "@/lib/legal-acceptance";
 
 const schema = z.object({
   idempotencyKey: z.string().min(8).max(120),
+  acceptedPolicy: z.literal(true),
 });
 
 const SESSION_TIMEOUT_MS = 700;
@@ -66,7 +75,7 @@ function pickFastPrize(prizes: VoucherPrize[]) {
   const total = active.reduce((sum, item) => sum + (item.currentProbability || item.probability), 0);
   if (total <= 0) return active[0] ?? null;
   let cursor = 0;
-  const roll = Math.random() * total;
+  const roll = (randomInt(0, 1_000_000_000) / 1_000_000_000) * total;
   for (const prize of active) {
     cursor += prize.currentProbability || prize.probability;
     if (roll <= cursor) return prize;
@@ -88,7 +97,7 @@ function modalMessage(type: string, value?: number | null, needsRegistration?: b
 }
 
 export async function POST(req: NextRequest) {
-  if (req.cookies.get("elite_cookie_consent")?.value !== "all") {
+  if (!["all", "marketing"].includes(req.cookies.get("elite_cookie_consent")?.value ?? "")) {
     return NextResponse.json({ error: "Autorize cookies de campanha para participar da roleta." }, { status: 403 });
   }
   const startedAt = Date.now();
@@ -103,9 +112,23 @@ export async function POST(req: NextRequest) {
   }
   const body = parsed.data;
   const settings = await getVoucherSettings();
-  if (!settings.active) {
+  if (!settings.active || !hasPromotionAuthorization(settings)) {
     logSpin("warn", "inactive_campaign", { requestId: rid, durationMs: Date.now() - startedAt });
     return NextResponse.json({ error: "A roleta está temporariamente indisponível." }, { status: 403 });
+  }
+  const policyVersions = await latestLegalDocumentVersions(
+    ROULETTE_PROMOTION_LEGAL_KEYS,
+  );
+  const policyVersion = policyVersions.get(ROULETTE_PROMOTION_POLICY_KEY);
+  if (!policyVersion) {
+    logSpin("warn", "legal_policy_unavailable", {
+      requestId: rid,
+      durationMs: Date.now() - startedAt,
+    });
+    return NextResponse.json(
+      { error: "A política vigente da campanha está indisponível." },
+      { status: 503 },
+    );
   }
 
   const visitorId = req.cookies.get(VOUCHER_VISITOR_COOKIE)?.value ?? newVisitorId();
@@ -192,7 +215,7 @@ export async function POST(req: NextRequest) {
         throw limitErr;
       }
 
-      return tx.voucherSpin.create({
+      const createdSpin = await tx.voucherSpin.create({
         data: {
           clientId: sessionUserId,
           visitorId,
@@ -204,8 +227,29 @@ export async function POST(req: NextRequest) {
           idempotencyKey: scopedIdempotencyKey,
           pendingToken,
           pendingExpiresAt,
+          legalPolicyKey: policyVersion.document.key,
+          legalPolicyVersion: policyVersion.version,
+          legalPolicyHash: policyVersion.contentHash,
+          legalPolicyAcceptedAt: new Date(),
         },
       });
+
+      if (sessionUserId) {
+        await recordUserAcceptances({
+          tx,
+          userId: sessionUserId,
+          documentKeys: ROULETTE_PROMOTION_LEGAL_KEYS,
+          userCategory: "CLIENT",
+          source: "VOUCHER_ROULETTE",
+          req,
+          route: "/api/vouchers/roulette/spin",
+          acceptanceType: "PROMOTION",
+          required: true,
+          throwOnError: true,
+        });
+      }
+
+      return createdSpin;
     }, { timeout: 10_000 });
 
     let voucher = null;

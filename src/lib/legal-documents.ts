@@ -3,6 +3,7 @@ import "server-only";
 import { createHash } from "crypto";
 import { PRIVACY_MODERATION_APPOINTMENT_MINUTE } from "@/lib/internal-governance-minutes";
 import { CURRENT_LEGAL_REVIEW_STATUS, LEGAL_CHANNELS } from "@/lib/legal-document-catalog";
+import { ROULETTE_PROMOTION_POLICY } from "@/lib/roulette-promotion-policy";
 
 export const LEGAL_DOCUMENT_DEFINITIONS = [
   ["terms-general", "Termos de Uso Gerais", "TERMS", "ALL", false],
@@ -17,6 +18,13 @@ export const LEGAL_DOCUMENT_DEFINITIONS = [
   ["moderation-reporting-policy", "Politica de Moderacao e Denuncia", "MODERATION", "ALL", false],
   ["adult-safety-policy", "Politica de Maioridade e Protecao contra Exploracao", "SAFETY", "ALL", false],
   ["fraud-prevention-policy", "Politica de Prevencao a Fraudes", "FRAUD", "ALL", false],
+  [
+    ROULETTE_PROMOTION_POLICY.key,
+    ROULETTE_PROMOTION_POLICY.title,
+    ROULETTE_PROMOTION_POLICY.type,
+    ROULETTE_PROMOTION_POLICY.audience,
+    ROULETTE_PROMOTION_POLICY.internal,
+  ],
   ["payments-policy", "Politica de Pagamentos", "PAYMENTS", "ALL", false],
   ["boost-terms", "Termos dos Destaques", "BOOSTS", "PROFESSIONAL", false],
   ["refund-policy", "Politica de Cancelamento e Reembolso", "REFUNDS", "ALL", false],
@@ -136,6 +144,10 @@ O canal corporativo publico, o ato formal, o cargo, o substituto e a aprovacao d
 }
 
 export function draftContent(key: string, name: string, audience: string) {
+  if (key === ROULETTE_PROMOTION_POLICY.key) {
+    return ROULETTE_PROMOTION_POLICY.content;
+  }
+
   if (key === PRIVACY_MODERATION_APPOINTMENT_MINUTE.key) {
     return PRIVACY_MODERATION_APPOINTMENT_MINUTE.content;
   }
@@ -189,18 +201,34 @@ ${proposalAppendix(key)}
 }
 
 export function draftVersion(key: string) {
+  if (key === ROULETTE_PROMOTION_POLICY.key) {
+    return ROULETTE_PROMOTION_POLICY.version;
+  }
+
   return key === PRIVACY_MODERATION_APPOINTMENT_MINUTE.key
     ? PRIVACY_MODERATION_APPOINTMENT_MINUTE.version
     : "0.4-ready-for-legal-review";
 }
 
 export function draftPendingFields(key: string) {
+  if (key === ROULETTE_PROMOTION_POLICY.key) {
+    return [
+      "LEGAL_RATIFICATION_PENDING",
+      "COMPANY_FINAL_APPROVAL_PENDING",
+      "PROMOTION_AUTHORIZATION_REFERENCE_PENDING",
+    ];
+  }
+
   return key === PRIVACY_MODERATION_APPOINTMENT_MINUTE.key
     ? [...PRIVACY_MODERATION_APPOINTMENT_MINUTE.pendingFields]
     : [...legalPendingFields(), ...PUBLICATION_APPROVAL_BLOCKERS];
 }
 
 export function draftChangeSummary(key: string) {
+  if (key === ROULETTE_PROMOTION_POLICY.key) {
+    return "Versao operacional V1 da Politica da Roleta Promocional, com elegibilidade, limites, premiacao, fraude, auditoria, validade e aceite versionado.";
+  }
+
   return key === PRIVACY_MODERATION_APPOINTMENT_MINUTE.key
     ? PRIVACY_MODERATION_APPOINTMENT_MINUTE.changeSummary
     : "Definicoes operacionais, matriz de autoridade e propostas financeiras; requer aprovacao dos socios e revisao juridica.";

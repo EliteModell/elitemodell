@@ -51,6 +51,7 @@ export const LEGAL_DOCUMENT_CATALOG = [
   { key: "moderation-reporting-policy", title: "Politica de Moderacao e Denuncia", audience: "Todos", publicDocument: true, placement: ["rodape", "cliente", "profissional"] },
   { key: "adult-safety-policy", title: "Politica de Maioridade e Protecao contra Exploracao", audience: "Todos", publicDocument: true, placement: ["rodape", "cadastro-login", "upload"] },
   { key: "fraud-prevention-policy", title: "Politica de Prevencao a Fraudes", audience: "Todos", publicDocument: true, placement: ["checkout", "admin-juridico"] },
+  { key: "roleta-promocional-policy", title: "Politica da Roleta Promocional", audience: "Participantes da roleta", publicDocument: true, placement: ["rodape", "cliente", "roleta-promocional", "admin-juridico"] },
   { key: "payments-policy", title: "Politica de Pagamentos", audience: "Todos", publicDocument: true, placement: ["cliente", "anfitriao", "checkout"] },
   { key: "boost-terms", title: "Termos dos Destaques", audience: "Profissional", publicDocument: true, placement: ["profissional"] },
   { key: "refund-policy", title: "Politica de Cancelamento e Reembolso", audience: "Todos", publicDocument: true, placement: ["cliente", "anfitriao", "checkout"] },
@@ -79,6 +80,8 @@ export const PUBLIC_FOOTER_LEGAL_LINKS = [
   { label: "Regras da Comunidade", href: "/documentos/community-rules", key: "community-rules" },
   { label: "Politica de Conteudo", href: "/politica-conteudo", key: "content-policy" },
   { label: "Moderacao e Denuncia", href: "/documentos/moderation-reporting-policy", key: "moderation-reporting-policy" },
+  { label: "Maioridade e Protecao", href: "/documentos/adult-safety-policy", key: "adult-safety-policy" },
+  { label: "Roleta Promocional", href: "/documentos/roleta-promocional-policy", key: "roleta-promocional-policy" },
   { label: "Confirmacao de Maioridade", href: "/documentos/adult-declaration", key: "adult-declaration" },
 ] as const;
 
@@ -97,6 +100,7 @@ export const ROLE_LEGAL_DOCUMENT_PLACEMENTS = {
   ],
   anfitriao: ["terms-hosts", "payments-policy", "refund-policy"],
   checkout: ["checkout-notice", "payments-policy", "refund-policy"],
+  roletaPromocional: ["roleta-promocional-policy"],
   upload: ["content-policy", "content-publication-notice", "content-authorization-declaration", "adult-safety-policy"],
   adminJuridico: LEGAL_DOCUMENT_CATALOG.map((document) => document.key),
 } as const;

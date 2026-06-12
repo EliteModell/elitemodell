@@ -4,16 +4,16 @@ Data: 11 de junho de 2026
 Empresa: ELITE MODEL LTDA
 CNPJ: 66.807.135/0001-71
 Marca: Elite Modell
-Status: RASCUNHO PARA REVISAO JURIDICA - NAO PUBLICAR
+Status: PUBLICACAO OPERACIONAL AUTORIZADA - RATIFICACAO JURIDICA FORMAL PENDENTE
 
 ## Regras desta etapa
 
-- Nao publicar como juridico final.
-- Nao marcar como aprovado.
-- Nao fazer deploy sem autorizacao.
-- Nao aplicar migrations.
-- Manter status `READY_FOR_LEGAL_REVIEW` ou `LEGAL_REVIEW_REQUESTED`.
-- Bloquear `PUBLISHED` sem versao, hash, vigencia, revisao juridica e aprovacao empresarial.
+- Publicar somente como versao operacional autorizada pela empresa.
+- Usar `OPERATIONAL_PUBLISHED_PENDING_LEGAL_RATIFICATION` nos documentos publicos.
+- Manter documentos internos em `DRAFT_INTERNAL`.
+- Nao usar `LEGAL_APPROVED`, `COMPANY_APPROVED`, `PUBLISHED` ou `PUBLISHED_FINAL`.
+- Preservar versoes e aceites antigos.
+- Registrar ratificacao ou assinatura futura em nova versao ou no historico juridico.
 
 ## Rodape publico
 
@@ -25,6 +25,7 @@ Status: RASCUNHO PARA REVISAO JURIDICA - NAO PUBLICAR
 | Regras da Comunidade | Preparado |
 | Politica de Conteudo | Preparado |
 | Politica de Moderacao e Denuncia | Preparado |
+| Politica da Roleta Promocional | Preparado |
 | Canal de Privacidade | Preparado |
 | Canal de Seguranca/Denuncias | Preparado |
 | Confirmacao de Maioridade | Preparado |
@@ -39,7 +40,7 @@ Status: RASCUNHO PARA REVISAO JURIDICA - NAO PUBLICAR
 | Aviso resumido de cadastro | Preparado por rota tecnica |
 | Checkboxes desmarcados por padrao | Preparado |
 | Marketing opcional | Mantido opcional |
-| Aceite versionado com IP/user-agent/data/rota/versao/hash | Preparado via `recordUserAcceptances`; grava somente versao `PUBLISHED` e vigente |
+| Aceite versionado com IP/user-agent/data/rota/versao/hash | Implementado via `recordUserAcceptances`; grava versao publica operacional ou publicada e vigente |
 
 ## Cliente
 
@@ -71,11 +72,11 @@ Status: RASCUNHO PARA REVISAO JURIDICA - NAO PUBLICAR
 | Termos para Anfitrioes | Rota tecnica preparada |
 | Politica de Pagamentos | Preparada |
 | Politica de Reembolso | Preparada |
-| Taxa 10% | Exibida como regra proposta |
-| Repasse 90% | Exibido como regra proposta |
-| No-show | Proposto; validar com advogada |
-| Reserva/check-in | Preparado parcialmente |
-| Aceite versionado | Preparado no backend de reserva |
+| Taxa 10% | Regra operacional definida |
+| Repasse 90% | Regra operacional definida |
+| No-show | Regra operacional documentada |
+| Reserva/check-in | Implementado no fluxo de reserva |
+| Aceite versionado | Implementado no backend de reserva |
 
 ## Checkout
 
@@ -101,17 +102,30 @@ Status: RASCUNHO PARA REVISAO JURIDICA - NAO PUBLICAR
 | Checkbox obrigatorio | Implementado nos fluxos principais |
 | Bloqueio sem aceite | Implementado na API |
 
+## Roleta promocional
+
+| Item | Status |
+|---|---|
+| Politica da Roleta Promocional V1 | Preparada |
+| Elegibilidade e limite de participacoes | Definidos |
+| Premios, validade, cupons, creditos e vouchers | Definidos |
+| Prevencao a fraude e cancelamento | Definidos |
+| Auditoria de resultado, versao e hash | Implementada no giro |
+| Aceite eletronico antes da participacao | Implementado |
+| Bloqueio sem politica vigente | Implementado |
+| Bloqueio sem referencia de autorizacao promocional | Implementado |
+
 ## Admin > Juridico
 
 | Item | Status |
 |---|---|
-| Listar 31 minutas | Preparado |
+| Listar 32 minutas | Preparado |
 | Status | Preparado |
 | Versao | Preparado |
 | Hash | Preparado |
 | Historico basico | Preparado |
 | Pendencias | Preparado |
-| Botao publicar | Existe, mas bloqueado pelas regras |
+| Botao publicar operacional | Implementado com auditoria e status operacional |
 | Botao despublicar | Existe para versoes publicadas |
 | Aprovacao operacional | Nome exibido |
 | Aprovacao empresarial | Nome exibido; fluxo formal ainda pendente |
@@ -136,4 +150,4 @@ Status: RASCUNHO PARA REVISAO JURIDICA - NAO PUBLICAR
 
 ## Conclusao
 
-Checklist preparado para homologacao tecnica e revisao da advogada. Nao publicar como documento juridico final antes de aprovacao formal.
+Implementacao operacional autorizada para producao. A plataforma nao apresenta os documentos como parecer juridico final; a ratificacao formal da advogada e a aprovacao empresarial final permanecem registraveis em nova versao ou no historico juridico.

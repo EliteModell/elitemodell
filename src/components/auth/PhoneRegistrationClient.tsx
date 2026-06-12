@@ -660,7 +660,10 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
 
           <label style={{ ...themedCheckStyle, marginTop: 28, fontSize: isClient ? 18 : 16, fontWeight: isClient ? 900 : 500, color: isPremium ? "#b8b8b8" : INK }}>
             <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} style={nativeCheckStyle} />
-            <span>Li e aceito os <Link href="/terms" style={themedLinkStyle}>Termos de Uso</Link>.</span>
+            <span>
+              Li e aceito os <Link href="/terms" style={themedLinkStyle}>Termos de Uso</Link> e li o{" "}
+              <Link href="/documentos/registration-short-notice" style={themedLinkStyle}>Aviso Resumido de Cadastro</Link>.
+            </span>
           </label>
 
           <label style={{ ...themedCheckStyle, marginTop: 14, fontSize: isClient ? 18 : 16, fontWeight: isClient ? 900 : 500, color: isPremium ? "#b8b8b8" : INK }}>

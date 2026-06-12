@@ -10,15 +10,27 @@ import { PrismaClient } from "@prisma/client";
 const OPERATIONAL_STATUS =
   "OPERATIONAL_PUBLISHED_PENDING_LEGAL_RATIFICATION";
 const INTERNAL_STATUS = "DRAFT_INTERNAL";
-const VERSION = "1.0-operational-2026-06-11";
+const VERSION =
+  process.env.LEGAL_DOCUMENT_VERSION ?? "1.0-operational-2026-06-11";
 const SOURCE_PATH = path.join(
   process.cwd(),
   "docs",
-  "PACOTE_COMPLETO_31_MINUTAS_PARA_REVISAO_E_ASSINATURA_2026-06-11.md",
+  "PACOTE_FINAL_PUBLICACAO_ELITEMODELL_V1_2026-06-11.md",
 );
 const OPERATIONAL_PUBLISHER = "BRUNO MORAES DA ROCHA";
 const LEGAL_REPRESENTATIVE = "Larissa de Campos Lacerda Souza";
 const EFFECTIVE_AT = new Date("2026-06-11T12:00:00.000Z");
+const DRY_RUN = process.env.LEGAL_PUBLISH_DRY_RUN === "1";
+const DATABASE_SCHEMA =
+  new URL(process.env.DATABASE_URL ?? "").searchParams.get("schema") ??
+  "public";
+const PRODUCTION_CONFIRMED =
+  process.env.LEGAL_PUBLISH_CONFIRM_PRODUCTION === "1";
+const ALLOWED_SCHEMAS = new Set(["public", "homolog_legal_20260611"]);
+const AUDIT_TARGET =
+  DATABASE_SCHEMA === "public"
+    ? "production-legal-publication-2026-06-11"
+    : "operational-legal-publication-2026-06-11";
 
 const prisma = new PrismaClient();
 
@@ -33,87 +45,215 @@ function metadataValue(content, label) {
   return match?.[1]?.replace(/`/g, "").trim() ?? "";
 }
 
-function isInternal(content) {
-  return /Documento público ou interno:\*\*\s*interno/i.test(content);
-}
-
-function normalizeContent(content, internal) {
-  const status = internal
-    ? "DOCUMENTO INTERNO - PENDENTE DE RATIFICAÇÃO JURÍDICA FINAL"
-    : "VERSÃO OPERACIONAL DA EMPRESA - PENDENTE DE RATIFICAÇÃO JURÍDICA FINAL";
-  return content
-    .replace(
-      /^\*\*Status:\*\*\s*.+$/gim,
-      `**Status:** ${status}`,
+function audienceForKey(key) {
+  if (key === "terms-clients") return "Cliente";
+  if (
+    ["terms-professionals", "boost-terms", "professional-free-period"].includes(
+      key,
     )
-    .replace(
-      /^Status:\s*.+$/gim,
-      `Status: ${status}`,
-    )
-    .trim();
+  ) {
+    return "Profissional";
+  }
+  if (key === "terms-hosts") return "Anfitriao";
+  if (
+    [
+      "identity-biometric-policy",
+      "biometric-notice",
+      "document-upload-notice",
+    ].includes(key)
+  ) {
+    return "Anunciante";
+  }
+  if (
+    [
+      "content-authorization-declaration",
+      "content-publication-notice",
+    ].includes(key)
+  ) {
+    return "Publicador";
+  }
+  if (key === "checkout-notice") return "Comprador";
+  if (key === "roleta-promocional-policy") {
+    return "Participantes da roleta";
+  }
+  if (
+    [
+      "incident-response-plan",
+      "access-control-policy",
+      "information-security-policy",
+      "admin-moderator-policy",
+      "operator-agreement-template",
+      "privacy-officer-appointment-act",
+    ].includes(key)
+  ) {
+    return "Interno";
+  }
+  return "Todos";
 }
 
 function parseDocuments(markdown) {
-  const headingPattern = /^##\s+(\d+)\.\s+(.+)$/gm;
-  const headings = [...markdown.matchAll(headingPattern)];
+  const headings = [...markdown.matchAll(/^##\s+(\d+)\.\s+(.+)$/gm)];
+  const controlMatch = /^## Controle da vers.*$/m.exec(markdown);
 
   return headings.map((heading, index) => {
     const start = heading.index;
-    const end = headings[index + 1]?.index ?? markdown.indexOf(
-      "\n## Checklist final para a advogada",
-      start,
-    );
-    const rawContent = markdown.slice(start, end > start ? end : undefined).trim();
-    const key = metadataValue(rawContent, "Chave técnica");
-    const audience = metadataValue(rawContent, "Público");
-    const internal = isInternal(rawContent);
-
-    if (!key || !audience) {
-      throw new Error(`Metadados incompletos na minuta ${heading[1]}`);
+    const end =
+      headings[index + 1]?.index ??
+      (controlMatch?.index && controlMatch.index > start
+        ? controlMatch.index
+        : markdown.length);
+    const rawContent = markdown.slice(start, end).trim();
+    const key = metadataValue(rawContent, "Chave");
+    const visibility = metadataValue(rawContent, "Documento");
+    if (!key || !visibility) {
+      throw new Error(`Metadados incompletos na minuta ${heading[1]}.`);
     }
 
     return {
       order: Number(heading[1]),
       key,
       title: heading[2].trim(),
-      audience,
-      internal,
-      content: normalizeContent(rawContent, internal),
+      audience: audienceForKey(key),
+      internal: visibility.toLowerCase() === "interno",
+      content: rawContent,
     };
   });
 }
 
 function documentType(key) {
-  if (key.includes("privacy") || key.includes("data-subject")) return "PRIVACY";
+  if (key.includes("roleta-promocional")) return "PROMOTION";
+  if (key.includes("privacy") || key.includes("data-subject")) {
+    return "PRIVACY";
+  }
   if (key.includes("cookie")) return "COOKIES";
   if (key.includes("payment") || key.includes("checkout")) return "PAYMENTS";
   if (key.includes("refund")) return "REFUNDS";
   if (key.includes("content")) return "CONTENT";
-  if (key.includes("moderation") || key.includes("community")) return "MODERATION";
-  if (key.includes("biometric") || key.includes("identity") || key.includes("document")) return "KYC";
+  if (key.includes("moderation") || key.includes("community")) {
+    return "MODERATION";
+  }
+  if (
+    key.includes("biometric") ||
+    key.includes("identity") ||
+    key.includes("document")
+  ) {
+    return "KYC";
+  }
   if (key.includes("adult")) return "SAFETY";
-  if (key.includes("security") || key.includes("incident") || key.includes("access-control")) return "SECURITY";
+  if (
+    key.includes("security") ||
+    key.includes("incident") ||
+    key.includes("access-control")
+  ) {
+    return "SECURITY";
+  }
   return "TERMS";
 }
 
 function applicableChannel(key) {
-  if (key.includes("privacy") || key.includes("data-subject") || key.includes("retention")) {
+  if (
+    key.includes("privacy") ||
+    key.includes("data-subject") ||
+    key.includes("retention")
+  ) {
     return "privacidade@elitemodell.com.br";
   }
-  if (key.includes("payment") || key.includes("checkout") || key.includes("refund")) {
+  if (
+    key.includes("payment") ||
+    key.includes("checkout") ||
+    key.includes("refund")
+  ) {
     return "financeiro@elitemodell.com.br";
   }
-  if (key.includes("security") || key.includes("incident") || key.includes("moderation")) {
+  if (
+    key.includes("security") ||
+    key.includes("incident") ||
+    key.includes("moderation")
+  ) {
     return "seguranca@elitemodell.com.br";
   }
   return "suporte@elitemodell.com.br";
 }
 
+function versionData(entry) {
+  return {
+    content: entry.content,
+    contentHash: contentHash(entry.content),
+    changeSummary: entry.internal
+      ? "Minuta interna completa preparada para ratificacao juridica."
+      : "Versao operacional da empresa, pendente de ratificacao juridica final.",
+    status: entry.internal ? INTERNAL_STATUS : OPERATIONAL_STATUS,
+    pendingFields: entry.internal
+      ? ["LEGAL_RATIFICATION_PENDING", "SIGNATURE_PENDING"]
+      : ["LEGAL_RATIFICATION_PENDING", "COMPANY_FINAL_APPROVAL_PENDING"],
+    requiresNewAcceptance: !entry.internal,
+    publishedAt: entry.internal ? null : EFFECTIVE_AT,
+    effectiveAt: entry.internal ? null : EFFECTIVE_AT,
+    approvedAt: null,
+    approverId: null,
+    legalReviewerName: null,
+    legalReviewNote: null,
+    legalReviewReference: null,
+    operationalPublisherName: entry.internal ? null : OPERATIONAL_PUBLISHER,
+    legalRepresentativeName: LEGAL_REPRESENTATIVE,
+    applicableChannel: applicableChannel(entry.key),
+    operationalPublicationNote: entry.internal
+      ? "Uso interno. Nao expor ao publico."
+      : "Publicacao operacional autorizada para producao. A ratificacao ou assinatura juridica formal podera ser registrada em nova versao.",
+  };
+}
+
+function validatePackage(documents) {
+  if (documents.length !== 32) {
+    throw new Error(`Esperadas 32 minutas, encontradas ${documents.length}.`);
+  }
+  const uniqueKeys = new Set(documents.map((document) => document.key));
+  const publicDocuments = documents.filter((document) => !document.internal);
+  const internalDocuments = documents.filter((document) => document.internal);
+  if (uniqueKeys.size !== documents.length) {
+    throw new Error("O pacote final contem chaves juridicas duplicadas.");
+  }
+  if (publicDocuments.length !== 26 || internalDocuments.length !== 6) {
+    throw new Error(
+      `Esperados 26 documentos publicos e 6 internos; encontrados ${publicDocuments.length}/${internalDocuments.length}.`,
+    );
+  }
+  return { publicDocuments, internalDocuments };
+}
+
 async function main() {
+  if (!ALLOWED_SCHEMAS.has(DATABASE_SCHEMA)) {
+    throw new Error(`Publicacao juridica recusada no schema ${DATABASE_SCHEMA}.`);
+  }
+  if (!DRY_RUN && DATABASE_SCHEMA === "public" && !PRODUCTION_CONFIRMED) {
+    throw new Error(
+      "Publicacao no schema public exige LEGAL_PUBLISH_CONFIRM_PRODUCTION=1.",
+    );
+  }
+
   const markdown = await fs.readFile(SOURCE_PATH, "utf8");
   const documents = parseDocuments(markdown);
-  if (documents.length !== 31) {
-    throw new Error(`Esperadas 31 minutas, encontradas ${documents.length}`);
+  const { publicDocuments, internalDocuments } = validatePackage(documents);
+
+  if (DRY_RUN) {
+    console.log(
+      JSON.stringify(
+        {
+          dryRun: true,
+          schema: DATABASE_SCHEMA,
+          source: SOURCE_PATH,
+          version: VERSION,
+          status: OPERATIONAL_STATUS,
+          documents: documents.length,
+          publicDocuments: publicDocuments.length,
+          internalDocuments: internalDocuments.length,
+          keys: documents.map((document) => document.key),
+        },
+        null,
+        2,
+      ),
+    );
+    return;
   }
 
   await prisma.$transaction(async (tx) => {
@@ -135,7 +275,8 @@ async function main() {
         },
       });
 
-      await tx.legalDocumentVersion.upsert({
+      const expected = versionData(entry);
+      const existing = await tx.legalDocumentVersion.findUnique({
         where: {
           documentId_language_version: {
             documentId: document.id,
@@ -143,77 +284,55 @@ async function main() {
             version: VERSION,
           },
         },
-        create: {
-          documentId: document.id,
-          language: "pt-BR",
-          version: VERSION,
-          content: entry.content,
-          contentHash: contentHash(entry.content),
-          changeSummary: entry.internal
-            ? "Minuta interna completa preparada para ratificação jurídica."
-            : "Versão operacional da empresa, pendente de ratificação jurídica final.",
-          status: entry.internal ? INTERNAL_STATUS : OPERATIONAL_STATUS,
-          pendingFields: entry.internal
-            ? ["LEGAL_RATIFICATION_PENDING", "SIGNATURE_PENDING"]
-            : ["LEGAL_RATIFICATION_PENDING", "COMPANY_FINAL_APPROVAL_PENDING"],
-          requiresNewAcceptance: !entry.internal,
-          publishedAt: entry.internal ? null : EFFECTIVE_AT,
-          effectiveAt: entry.internal ? null : EFFECTIVE_AT,
-          approvedAt: null,
-          legalReviewerName: null,
-          legalReviewNote: null,
-          legalReviewReference: null,
-          operationalPublisherName: entry.internal ? null : OPERATIONAL_PUBLISHER,
-          legalRepresentativeName: LEGAL_REPRESENTATIVE,
-          applicableChannel: applicableChannel(entry.key),
-          operationalPublicationNote: entry.internal
-            ? "Uso interno. Não expor ao público."
-            : "Publicação operacional da empresa para homologação técnica; não representa aprovação da advogada.",
-        },
-        update: {
-          content: entry.content,
-          contentHash: contentHash(entry.content),
-          changeSummary: entry.internal
-            ? "Minuta interna completa preparada para ratificação jurídica."
-            : "Versão operacional da empresa, pendente de ratificação jurídica final.",
-          status: entry.internal ? INTERNAL_STATUS : OPERATIONAL_STATUS,
-          pendingFields: entry.internal
-            ? ["LEGAL_RATIFICATION_PENDING", "SIGNATURE_PENDING"]
-            : ["LEGAL_RATIFICATION_PENDING", "COMPANY_FINAL_APPROVAL_PENDING"],
-          requiresNewAcceptance: !entry.internal,
-          publishedAt: entry.internal ? null : EFFECTIVE_AT,
-          effectiveAt: entry.internal ? null : EFFECTIVE_AT,
-          approvedAt: null,
-          approverId: null,
-          legalReviewerName: null,
-          legalReviewNote: null,
-          legalReviewReference: null,
-          operationalPublisherName: entry.internal ? null : OPERATIONAL_PUBLISHER,
-          legalRepresentativeName: LEGAL_REPRESENTATIVE,
-          applicableChannel: applicableChannel(entry.key),
-          operationalPublicationNote: entry.internal
-            ? "Uso interno. Não expor ao público."
-            : "Publicação operacional da empresa para homologação técnica; não representa aprovação da advogada.",
+      });
+
+      if (!existing) {
+        await tx.legalDocumentVersion.create({
+          data: {
+            documentId: document.id,
+            language: "pt-BR",
+            version: VERSION,
+            ...expected,
+          },
+        });
+      } else if (entry.internal) {
+        await tx.legalDocumentVersion.update({
+          where: { id: existing.id },
+          data: expected,
+        });
+      } else if (
+        existing.contentHash !== expected.contentHash ||
+        existing.status !== expected.status
+      ) {
+        throw new Error(
+          `A versao publica imutavel ${entry.key}/${VERSION} diverge do pacote final. Gere uma nova versao.`,
+        );
+      }
+    }
+
+    const existingAudit = await tx.auditLog.findFirst({
+      where: { targetId: AUDIT_TARGET, action: "SETTINGS_CHANGED" },
+      select: { id: true },
+    });
+    if (!existingAudit) {
+      await tx.auditLog.create({
+        data: {
+          actorIdentifier: OPERATIONAL_PUBLISHER,
+          action: "SETTINGS_CHANGED",
+          targetType: "SYSTEM",
+          targetId: AUDIT_TARGET,
+          reason:
+            "Publicacao operacional autorizada: 26 documentos publicos e 6 documentos internos.",
+          changes: {
+            status: OPERATIONAL_STATUS,
+            publicDocuments: 26,
+            internalDocuments: 6,
+            version: VERSION,
+            schema: DATABASE_SCHEMA,
+          },
         },
       });
     }
-
-    await tx.auditLog.create({
-      data: {
-        actorIdentifier: OPERATIONAL_PUBLISHER,
-        action: "SETTINGS_CHANGED",
-        targetType: "SYSTEM",
-        targetId: "operational-legal-publication-2026-06-11",
-        reason:
-          "Persistência idempotente das 31 minutas: 25 públicas operacionais e 6 internas.",
-        changes: {
-          status: OPERATIONAL_STATUS,
-          publicDocuments: 25,
-          internalDocuments: 6,
-          version: VERSION,
-        },
-      },
-    });
   });
 
   const grouped = await prisma.legalDocumentVersion.groupBy({
@@ -221,8 +340,18 @@ async function main() {
     where: { version: VERSION },
     _count: { _all: true },
   });
-  const count = await prisma.legalDocument.count();
-  console.log(JSON.stringify({ documents: count, version: VERSION, grouped }, null, 2));
+  console.log(
+    JSON.stringify(
+      {
+        schema: DATABASE_SCHEMA,
+        documents: await prisma.legalDocument.count(),
+        version: VERSION,
+        grouped,
+      },
+      null,
+      2,
+    ),
+  );
 }
 
 main()

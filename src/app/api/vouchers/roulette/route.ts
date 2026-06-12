@@ -7,14 +7,21 @@ import {
   activePrizes,
   getVoucherSettings,
   getIp,
+  hasPromotionAuthorization,
   newVisitorId,
   publicPrize,
+  ROULETTE_PROMOTION_POLICY_KEY,
   rouletteSpinIdentityWhere,
   todayRange,
   userVoucherIdentity,
   VOUCHER_VISITOR_COOKIE,
 } from "@/lib/voucher-roulette";
 import { prisma } from "@/lib/prisma";
+import {
+  latestLegalDocumentVersions,
+  ROULETTE_PROMOTION_LEGAL_KEYS,
+} from "@/lib/legal-acceptance";
+import { legalDocumentRoute } from "@/lib/legal-document-catalog";
 
 const SESSION_TIMEOUT_MS = 700;
 
@@ -33,13 +40,27 @@ function hasSessionCookie(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  if (req.cookies.get("elite_cookie_consent")?.value !== "all") {
+  if (!["all", "marketing"].includes(req.cookies.get("elite_cookie_consent")?.value ?? "")) {
     return NextResponse.json({ active: false, canSpin: false, consentRequired: true, prizes: [] });
   }
   const session = hasSessionCookie(req)
     ? await withTimeout(getServerSession(authOptions).catch(() => null), SESSION_TIMEOUT_MS, null)
     : null;
   const settings = await getVoucherSettings();
+  const policyVersions = settings.active && hasPromotionAuthorization(settings)
+    ? await latestLegalDocumentVersions(ROULETTE_PROMOTION_LEGAL_KEYS)
+    : new Map();
+  const policyVersion = policyVersions.get(ROULETTE_PROMOTION_POLICY_KEY);
+
+  if (!settings.active || !hasPromotionAuthorization(settings) || !policyVersion) {
+    return NextResponse.json({
+      active: false,
+      canSpin: false,
+      legalPolicyUnavailable: settings.active && !policyVersion,
+      authorizationUnavailable: settings.active && !hasPromotionAuthorization(settings),
+      prizes: [],
+    });
+  }
 
   const visitorId = req.cookies.get(VOUCHER_VISITOR_COOKIE)?.value ?? newVisitorId();
   const ipAddress = getIp(req.headers);
@@ -86,13 +107,21 @@ export async function GET(req: NextRequest) {
 
   const canSpin = settings.active && !tryTomorrowSpin && spinsToday < limit;
   const response = NextResponse.json({
-    active: settings.active,
+    active: true,
     canSpin,
     spinsToday,
     dailyLimit: limit,
     blockedUntil: tryTomorrowSpin || spinsToday >= limit ? end.toISOString() : null,
     visitorId,
     prizes: prizes.map(publicPrize),
+    policy: {
+      key: policyVersion.document.key,
+      title: policyVersion.document.name,
+      href: legalDocumentRoute(policyVersion.document.key),
+      version: policyVersion.version,
+      hash: policyVersion.contentHash,
+      authorizationReference: settings.promotionAuthorizationReference,
+    },
   });
   response.cookies.set(VOUCHER_VISITOR_COOKIE, visitorId, {
     path: "/",

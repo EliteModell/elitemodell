@@ -57,7 +57,8 @@ export async function OperationalLegalDocumentPage({ documentKey }: { documentKe
           {version ? (
             <>
               <Notice title="Transparencia da versao">
-                Esta e uma versao operacional publicada pela empresa para reger o uso da plataforma durante a homologacao.
+                Esta e uma versao operacional publicada pela empresa para reger o uso da plataforma enquanto aguarda
+                ratificacao juridica formal.
                 Ela ainda depende de revisao ou ratificacao juridica final e podera ser substituida por nova versao, com
                 preservacao do historico e dos aceites anteriores.
               </Notice>

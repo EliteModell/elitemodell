@@ -32,11 +32,23 @@ export const REGISTRATION_LEGAL_KEYS = [
   "terms-general",
   "privacy-policy",
   "adult-declaration",
+  "registration-short-notice",
 ] as const;
 
-export const ADVERTISER_REGISTRATION_LEGAL_KEYS = [
+export const CLIENT_REGISTRATION_LEGAL_KEYS = [
+  ...REGISTRATION_LEGAL_KEYS,
+  "terms-clients",
+] as const;
+
+export const PROFESSIONAL_REGISTRATION_LEGAL_KEYS = [
   ...REGISTRATION_LEGAL_KEYS,
   "terms-professionals",
+  "adult-safety-policy",
+] as const;
+
+export const HOST_REGISTRATION_LEGAL_KEYS = [
+  ...REGISTRATION_LEGAL_KEYS,
+  "terms-hosts",
   "adult-safety-policy",
 ] as const;
 
@@ -62,6 +74,10 @@ export const PROFESSIONAL_CHECKOUT_LEGAL_KEYS = [
   "boost-terms",
   "payments-policy",
   "refund-policy",
+] as const;
+
+export const ROULETTE_PROMOTION_LEGAL_KEYS = [
+  "roleta-promocional-policy",
 ] as const;
 
 function requestMetadata(req?: RequestLike): RequestMetadata {
@@ -94,9 +110,9 @@ function normalizeUserCategory(value?: string | null) {
 
 export function registrationDocumentKeys(accountType?: string | null) {
   const normalized = normalizeUserCategory(accountType);
-  return normalized === "PROFESSIONAL" || normalized === "HOST"
-    ? ADVERTISER_REGISTRATION_LEGAL_KEYS
-    : REGISTRATION_LEGAL_KEYS;
+  if (normalized === "PROFESSIONAL") return PROFESSIONAL_REGISTRATION_LEGAL_KEYS;
+  if (normalized === "HOST") return HOST_REGISTRATION_LEGAL_KEYS;
+  return CLIENT_REGISTRATION_LEGAL_KEYS;
 }
 
 export async function latestLegalDocumentVersions(
@@ -155,6 +171,7 @@ export async function recordUserAcceptances(input: {
   action?: string;
   acceptanceType?: string;
   required?: boolean;
+  throwOnError?: boolean;
 }) {
   const tx = input.tx ?? prisma;
   const metadata = requestMetadata(input.req);
@@ -169,6 +186,11 @@ export async function recordUserAcceptances(input: {
   try {
     const versions = await latestLegalDocumentVersions(keys, tx, language);
     const missing = keys.filter((key) => !versions.has(key));
+    if (input.throwOnError && missing.length > 0) {
+      throw new Error(
+        `Versoes juridicas vigentes ausentes: ${missing.join(", ")}`,
+      );
+    }
     const records = Array.from(versions.values()).map((version) =>
       tx.userAcceptance.create({
         data: {
@@ -200,6 +222,7 @@ export async function recordUserAcceptances(input: {
       keys,
       error,
     });
+    if (input.throwOnError) throw error;
     return { recorded: 0, missing: keys, failed: true };
   }
 }

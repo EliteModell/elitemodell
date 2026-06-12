@@ -1081,6 +1081,7 @@ model ProfessionalReview {
 model VoucherSettings {
   id                                  String   @id @default("default")
   active                              Boolean  @default(true)
+  promotionAuthorizationReference     String?
   dailySpinLimit                      Int      @default(1)
   guestDailySpinLimit                 Int      @default(1)
   pendingClaimMinutes                 Int      @default(30)
@@ -1168,22 +1169,26 @@ model VoucherDailyStock {
 }
 
 model VoucherSpin {
-  id               String    @id @default(cuid())
-  clientId         String?
-  visitorId        String?
-  prizeId          String?
-  result           String
-  voucherValue     Float?
-  whatsapp         String?
-  ipAddress        String?
-  userAgent        String?   @db.Text
-  idempotencyKey   String    @unique
-  pendingToken     String?   @unique
-  pendingExpiresAt DateTime?
-  claimedAt        DateTime?
-  recipientName    String?
-  recipientPhone   String?
-  createdAt        DateTime  @default(now())
+  id                    String    @id @default(cuid())
+  clientId              String?
+  visitorId             String?
+  prizeId               String?
+  result                String
+  voucherValue          Float?
+  whatsapp              String?
+  ipAddress             String?
+  userAgent             String?   @db.Text
+  idempotencyKey        String    @unique
+  pendingToken          String?   @unique
+  pendingExpiresAt      DateTime?
+  claimedAt             DateTime?
+  recipientName         String?
+  recipientPhone        String?
+  legalPolicyKey        String?
+  legalPolicyVersion    String?
+  legalPolicyHash       String?
+  legalPolicyAcceptedAt DateTime?
+  createdAt             DateTime  @default(now())
 
   client   User?           @relation("VoucherSpinClient", fields: [clientId], references: [id], onDelete: SetNull)
   prize    VoucherPrize?   @relation(fields: [prizeId], references: [id], onDelete: SetNull)
@@ -1196,6 +1201,7 @@ model VoucherSpin {
   @@index([visitorId, result, createdAt])
   @@index([ipAddress, result, createdAt])
   @@index([result, createdAt])
+  @@index([legalPolicyHash, createdAt])
   @@index([createdAt])
 }
 

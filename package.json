@@ -11,6 +11,7 @@
     "test": "node scripts/run-playwright.mjs",
     "test:report": "playwright show-report",
     "package:lawyer": "node scripts/generate-lawyer-package.mjs",
+    "package:operational-final": "node scripts/generate-final-operational-package.mjs",
     "legal:publish-operational": "node scripts/publish-operational-legal-documents.mjs",
     "db:generate": "prisma generate",
     "db:validate": "prisma validate",

@@ -20,6 +20,14 @@ type RouletteConfig = {
   canSpin: boolean;
   blockedUntil: string | null;
   prizes: Prize[];
+  policy: {
+    key: string;
+    title: string;
+    href: string;
+    version: string;
+    hash: string;
+    authorizationReference: string;
+  };
 };
 
 type SpinResult = {
@@ -133,6 +141,7 @@ export default function VoucherRouletteModal() {
   const [name, setName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [claiming, setClaiming] = useState(false);
+  const [acceptedPolicy, setAcceptedPolicy] = useState(false);
 
   const wheelRef = useRef<HTMLImageElement>(null);
   const rotationRef = useRef(0);
@@ -397,7 +406,10 @@ export default function VoucherRouletteModal() {
       const res = await fetch("/api/vouchers/roulette/spin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idempotencyKey: idempotencyRef.current }),
+        body: JSON.stringify({
+          idempotencyKey: idempotencyRef.current,
+          acceptedPolicy,
+        }),
         signal: controller.signal,
       });
       if (timeoutId !== null) window.clearTimeout(timeoutId);
@@ -521,17 +533,34 @@ export default function VoucherRouletteModal() {
           type="button"
           className="vm-spin-btn"
           onClick={spin}
-          disabled={spinning || Boolean(result)}
+          disabled={spinning || Boolean(result) || !acceptedPolicy}
         >
           {fetching ? "Preparando..." : spinning ? "Girando..." : "GIRAR AGORA"}
         </button>
+        <label className="vm-policy-acceptance">
+          <input
+            type="checkbox"
+            checked={acceptedPolicy}
+            onChange={(event) => setAcceptedPolicy(event.target.checked)}
+            disabled={spinning || Boolean(result)}
+          />
+          <span>
+            Li e aceito a{" "}
+            <Link href={config.policy.href} target="_blank">
+              {config.policy.title}
+            </Link>
+            .
+          </span>
+        </label>
         {fetching && slowPreparing && (
           <p className="vm-prepare-note" role="status">
             Preparando seu giro com segurança...
           </p>
         )}
 
-        <p className="vm-footnote">Descontos promocionais para uso interno na plataforma.</p>
+        <p className="vm-footnote">
+          Versão {config.policy.version} · Autorização {config.policy.authorizationReference}
+        </p>
       </div>
 
       {/* ── Result overlay ── */}
@@ -815,6 +844,30 @@ export default function VoucherRouletteModal() {
         .vm-spin-btn:not(:disabled):hover { opacity: .9; }
         .vm-spin-btn:not(:disabled):active { transform: scale(.97); }
         .vm-spin-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+        .vm-policy-acceptance {
+          width: min(100%, 320px);
+          margin-top: 12px;
+          display: flex;
+          align-items: flex-start;
+          gap: 9px;
+          color: rgba(255,255,255,.76);
+          font-size: 12px;
+          line-height: 1.45;
+          text-align: left;
+        }
+        .vm-policy-acceptance input {
+          width: 16px;
+          height: 16px;
+          margin: 1px 0 0;
+          accent-color: ${GOLD};
+          flex: 0 0 auto;
+        }
+        .vm-policy-acceptance a {
+          color: #f5d78c;
+          font-weight: 800;
+          text-underline-offset: 2px;
+        }
 
         .vm-prepare-note {
           margin: 8px 0 0;

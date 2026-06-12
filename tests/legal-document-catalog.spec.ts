@@ -8,9 +8,10 @@ import {
   requiresContentAuthorizationDeclaration,
   ROLE_LEGAL_DOCUMENT_PLACEMENTS,
 } from "../src/lib/legal-document-catalog";
+import { ROULETTE_PROMOTION_POLICY } from "../src/lib/roulette-promotion-policy";
 
-test("catalogo possui 31 minutas e status operacionais exigidos", () => {
-  expect(LEGAL_DOCUMENT_CATALOG).toHaveLength(31);
+test("catalogo possui 32 minutas e status operacionais exigidos", () => {
+  expect(LEGAL_DOCUMENT_CATALOG).toHaveLength(32);
   expect(LEGAL_DOCUMENT_STATUSES).toEqual([
     "DRAFT_INTERNAL",
     "READY_FOR_LEGAL_REVIEW",
@@ -32,7 +33,9 @@ test("rodape e colocacoes por papel contem documentos obrigatorios", () => {
     "community-rules",
     "content-policy",
     "moderation-reporting-policy",
+    "adult-safety-policy",
     "adult-declaration",
+    "roleta-promocional-policy",
   ]));
   expect(ROLE_LEGAL_DOCUMENT_PLACEMENTS.cadastroLogin).toEqual(expect.arrayContaining([
     "terms-general",
@@ -45,6 +48,9 @@ test("rodape e colocacoes por papel contem documentos obrigatorios", () => {
     "payments-policy",
     "refund-policy",
   ]));
+  expect(ROLE_LEGAL_DOCUMENT_PLACEMENTS.roletaPromocional).toEqual([
+    "roleta-promocional-policy",
+  ]);
 });
 
 test("aceites versionados incluem cadastro, checkout e upload de conteudo", () => {
@@ -130,4 +136,28 @@ test("upload publico exige declaracao de autoria", () => {
   expect(requiresContentAuthorizationDeclaration("properties/clx")).toBe(true);
   expect(requiresContentAuthorizationDeclaration("documentos/clx")).toBe(false);
   expect(requiresContentAuthorizationDeclaration("verificacao/clx")).toBe(false);
+});
+
+test("politica da roleta cobre operacao, fraude, premios e aceite versionado", () => {
+  expect(ROULETTE_PROMOTION_POLICY.key).toBe("roleta-promocional-policy");
+  expect(ROULETTE_PROMOTION_POLICY.version).toBe(
+    "1.0-operational-2026-06-11",
+  );
+  expect(ROULETTE_PROMOTION_POLICY.content).toContain(
+    "uma participação por dia",
+  );
+  expect(ROULETTE_PROMOTION_POLICY.content).toContain(
+    "cupons, créditos, vouchers",
+  );
+  expect(ROULETTE_PROMOTION_POLICY.content).toContain(
+    "prevenção a fraude",
+  );
+  expect(ROULETTE_PROMOTION_POLICY.content).toContain(
+    "versão, o hash do conteúdo",
+  );
+  expect(ROULETTE_PROMOTION_POLICY.content).toContain(
+    "autorização do órgão competente",
+  );
+  expect(ROULETTE_PROMOTION_POLICY.content).not.toContain("LEGAL_APPROVED");
+  expect(ROULETTE_PROMOTION_POLICY.content).not.toContain("PUBLISHED");
 });

@@ -6,6 +6,7 @@ export const VOUCHER_VISITOR_COOKIE = "elite_voucher_visitor";
 export const VOUCHER_MODAL_SESSION_KEY = "elite_voucher_modal_closed";
 export const VOUCHER_MONTHLY_LIMIT = 3000;
 export const VOUCHER_DAILY_LIMIT = 100;
+export const ROULETTE_PROMOTION_POLICY_KEY = "roleta-promocional-policy";
 
 export const VOUCHER_STATUS_LABEL: Record<string, string> = {
   AVAILABLE: "Disponível",
@@ -26,6 +27,12 @@ export type VoucherIdentity = {
   email?: string | null;
   document?: string | null;
 };
+
+export function hasPromotionAuthorization(
+  settings: Pick<VoucherSettings, "promotionAuthorizationReference">,
+) {
+  return Boolean(settings.promotionAuthorizationReference?.trim());
+}
 
 const BUDGET_STATUSES = ["AVAILABLE", "USED", "EXPIRED", "AWAITING_REGISTRATION"];
 const ACTIVE_VOUCHER_STATUSES = ["AVAILABLE", "AWAITING_REGISTRATION"];
