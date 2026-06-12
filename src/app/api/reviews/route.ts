@@ -6,6 +6,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { ageGateCacheHeaders } from "@/lib/age-gate-policy";
+import { publicCacheHeaders } from "@/lib/public-professional-profile";
 import { enforceRateLimit, sanitizeInput } from "@/lib/security";
 
 const createSchema = z.object({
@@ -16,14 +17,6 @@ const createSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id || (session.user.role !== "ADMIN" && !session.user.adultVerified)) {
-    return NextResponse.json(
-      { error: "Verificacao de maioridade obrigatoria." },
-      { status: 403, headers: ageGateCacheHeaders() },
-    );
-  }
-
   const { searchParams } = new URL(req.url);
   const professionalId = searchParams.get("professionalId");
   if (!professionalId) {
@@ -31,6 +24,24 @@ export async function GET(req: NextRequest) {
       { error: "professionalId obrigatorio." },
       { status: 400, headers: ageGateCacheHeaders() },
     );
+  }
+
+  if (searchParams.get("eligibility") === "1") {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Nao autorizado." }, { status: 401, headers: ageGateCacheHeaders() });
+    }
+    const appointment = await prisma.appointment.findFirst({
+      where: {
+        professionalId,
+        clientId: session.user.id,
+        status: "COMPLETED",
+        review: null,
+      },
+      orderBy: { date: "desc" },
+      select: { id: true, date: true },
+    });
+    return NextResponse.json({ eligible: Boolean(appointment), appointment }, { headers: ageGateCacheHeaders() });
   }
 
   const reviews = await prisma.professionalReview.findMany({
@@ -42,7 +53,7 @@ export async function GET(req: NextRequest) {
     take: 50,
   });
 
-  return NextResponse.json(reviews, { headers: ageGateCacheHeaders() });
+  return NextResponse.json(reviews, { headers: publicCacheHeaders() });
 }
 
 export async function POST(req: NextRequest) {

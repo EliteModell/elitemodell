@@ -57,32 +57,38 @@ test.describe("juridico e seguranca - visitante", () => {
     expect(dimensions.text).toContain("maioridade");
   });
 
-  test("APIs publicas sensiveis exigem sessao com maioridade", async ({ request }) => {
-    const responses = await Promise.all([
+  test("descoberta publica permite leitura anonima e preserva gravacoes autenticadas", async ({ request }) => {
+    const publicResponses = await Promise.all([
       request.get("/api/professionals"),
       request.get("/api/professionals/slug-publico"),
       request.get("/api/stories"),
       request.get("/api/reviews?professionalId=clx0000000000000000000000"),
-      request.get("/api/media/clx0000000000000000000000"),
-      request.get("/api/properties"),
     ]);
 
-    for (const response of responses) {
-      expect([401, 403]).toContain(response.status());
-      expect(response.headers()["cache-control"] ?? "").toContain("no-store");
+    for (const response of publicResponses) {
+      expect([200, 404]).toContain(response.status());
       const body = await response.text();
       expect(body).not.toContain("storage/v1/object/public");
-      expect(body).not.toContain("professionals");
-      expect(body).not.toContain("properties");
     }
+
+    const [privateMedia, properties, favorite, review] = await Promise.all([
+      request.get("/api/media/clx0000000000000000000000"),
+      request.get("/api/properties"),
+      request.post("/api/favorites/professionals", { data: { professionalId: "clx0000000000000000000000" } }),
+      request.post("/api/reviews", { data: {} }),
+    ]);
+    expect(privateMedia.status()).toBe(404);
+    expect([401, 403]).toContain(properties.status());
+    expect(favorite.status()).toBe(401);
+    expect(review.status()).toBe(401);
   });
 
-  test("paginas de perfil/listagem redirecionam visitante para barreira etaria", async ({ page }) => {
+  test("paginas de perfil e listagem ficam acessiveis ao visitante", async ({ page }) => {
     await page.goto("/profissionais/perfil-publico", { waitUntil: "domcontentloaded" });
-    expect(page.url()).toContain("/verificacao-idade");
+    expect(page.url()).toContain("/profissionais/perfil-publico");
 
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
-    expect(page.url()).toContain("/verificacao-idade");
+    expect(page.url()).toContain("/buscar");
   });
 
   test("robots e sitemap nao indexam conteudo adulto ou minutas juridicas", async ({ request }) => {

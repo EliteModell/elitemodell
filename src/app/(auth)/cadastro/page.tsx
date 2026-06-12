@@ -324,6 +324,7 @@ export default function CadastroPage() {
   const [hydrated, setHydrated] = useState(false);
   const [accountTypeSelected, setAccountTypeSelected] = useState(false);
   const [continueIntent, setContinueIntent] = useState<EntryAccountRole | null>(null);
+  const [requestedReturnUrl, setRequestedReturnUrl] = useState<string | null>(null);
   const [step, setStep] = useState<Step>("form");
   const [form, setForm] = useState({
     name: "",
@@ -355,12 +356,17 @@ export default function CadastroPage() {
     const legacyClientEmail = params.get("legacy") === "cliente";
     const tipo = normalizeCadastroTipo(params.get("tipo"));
     const nextIntent = normalizeEntryRole(params.get("continue")) ?? normalizeEntryRole(params.get("role"));
+    const rawReturnUrl = params.get("returnUrl");
+    const safeReturnUrl = rawReturnUrl?.startsWith("/") && !rawReturnUrl.startsWith("//")
+      ? rawReturnUrl
+      : null;
     const shouldResumeRoomDraft = draft === "quarto" || draft === "imovel";
     const isFreshCadastroEntry = !tipo && !nextIntent && !draft;
 
     window.setTimeout(() => {
       setHydrated(true);
       setContinueIntent(nextIntent);
+      setRequestedReturnUrl(safeReturnUrl);
       if (isFreshCadastroEntry) {
         clearCadastroIntentState();
         setAccountTypeSelected(false);
@@ -661,7 +667,7 @@ export default function CadastroPage() {
     if (form.accountType === "PROPERTY_HOST") {
       return ACCOUNT_ROUTES.onboardingAnfitriao;
     }
-    return ACCOUNT_ROUTES.mainClientFeed;
+    return requestedReturnUrl ?? ACCOUNT_ROUTES.mainClientFeed;
   }
 
   async function resolvedNextPathAfterAuth() {

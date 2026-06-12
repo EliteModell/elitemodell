@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { parseProfessionalPlanReference } from "@/lib/professional-plans";
+import { getProfessionalPlanPriority, parseProfessionalPlanReference } from "@/lib/professional-plans";
 import { toCents } from "@/lib/money";
 
 export async function applyPaidPaymentEffects(paymentId: string) {
@@ -86,8 +86,12 @@ export async function applyPaidPaymentEffects(paymentId: string) {
             boostSource?: string | null;
             hideAge?: boolean;
             listingPhoneUntil?: Date | null;
+            activePlanId?: string | null;
+            planPriority?: number;
           } = {};
 
+          update.activePlanId = professionalPlan.plan.id;
+          update.planPriority = getProfessionalPlanPriority(professionalPlan.plan.id);
           if (professionalPlan.plan.benefits.featured) update.featured = true;
           if (professionalPlan.plan.benefits.hideAge) update.hideAge = true;
           if (professionalPlan.plan.benefits.showPhone && payment.premiumUntil) {
@@ -208,7 +212,7 @@ export async function reversePaidPaymentEffects(paymentId: string) {
     if (payment.userId && professionalPlan) {
       const professional = await tx.professional.findUnique({
         where: { userId: payment.userId },
-        select: { id: true, boostSource: true, boostUntil: true, listingPhoneUntil: true },
+        select: { id: true, boostSource: true, boostUntil: true, listingPhoneUntil: true, activePlanId: true },
       });
       if (professional) {
         await tx.professional.update({
@@ -219,6 +223,9 @@ export async function reversePaidPaymentEffects(paymentId: string) {
               : {}),
             ...(payment.premiumUntil && professional.listingPhoneUntil && professional.listingPhoneUntil <= payment.premiumUntil
               ? { listingPhoneUntil: null }
+              : {}),
+            ...(professional.activePlanId === professionalPlan.plan.id
+              ? { activePlanId: null, planPriority: 0 }
               : {}),
           },
         });

@@ -1,6 +1,9 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 
 type AddressComponent = {
   longText?: string;
@@ -19,15 +22,29 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const placeId = searchParams.get("placeId")?.trim();
   const address = searchParams.get("address")?.trim();
+  const latlng = searchParams.get("latlng")?.trim();
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-
-  if (!apiKey) {
-    return NextResponse.json({ error: "GOOGLE_MAPS_API_KEY não configurada." }, { status: 501 });
+  if (!latlng) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
+    }
+  } else {
+    const limited = await enforceRateLimitAsync(
+      `reverse-geocode:${getClientIP(req)}`,
+      20,
+      60 * 60 * 1000,
+      "Muitas consultas de localizacao.",
+    );
+    if (limited) return limited;
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://elitemodell.com.br";
 
   if (placeId) {
+    if (!apiKey) {
+      return NextResponse.json({ error: "GOOGLE_MAPS_API_KEY não configurada." }, { status: 501 });
+    }
     const res = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`, {
       headers: {
         "X-Goog-Api-Key": apiKey,
@@ -52,7 +69,6 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const latlng = searchParams.get("latlng")?.trim();
   if (latlng) {
     const [latStr, lngStr] = latlng.split(",");
 
@@ -97,6 +113,9 @@ export async function GET(req: NextRequest) {
   }
 
   if (!address) return NextResponse.json({ error: "Informe placeId, latlng ou address." }, { status: 400 });
+  if (!apiKey) {
+    return NextResponse.json({ error: "GOOGLE_MAPS_API_KEY não configurada." }, { status: 501 });
+  }
 
   const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
   url.searchParams.set("address", address);

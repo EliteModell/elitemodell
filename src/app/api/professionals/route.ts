@@ -5,11 +5,18 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import { ageGateCacheHeaders, stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
+import { stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
 import { MANUAL_PENDING_STATUS, PERSONA_PENDING_STATUS } from "@/lib/persona";
 import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
 import { activeProfessionalAccessWhere } from "@/lib/professional-access";
 import { createProfessionalSchema } from "@/lib/professional-profile-schema";
+import { assertApprovedMediaUrls } from "@/lib/approved-media";
+import {
+  calculateAge,
+  canonicalProfessionalPhotos,
+  isProfessionalOnline,
+  publicCacheHeaders,
+} from "@/lib/public-professional-profile";
 
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
@@ -33,14 +40,6 @@ function removeDiacritics(text: string) {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id || (session.user.role !== "ADMIN" && !session.user.adultVerified)) {
-    return NextResponse.json(
-      { error: "Verificacao de maioridade obrigatoria." },
-      { status: 403, headers: ageGateCacheHeaders() },
-    );
-  }
-
   const { searchParams } = new URL(req.url);
   const search    = searchParams.get("search");
   const specialty = searchParams.get("specialty");
@@ -87,15 +86,23 @@ export async function GET(req: NextRequest) {
   }
   if (category) where.escortCategory = category.toUpperCase();
   if (priceMax) where.priceMin = { lte: Number(priceMax) };
-  if (specialty) where.specialties = { some: { name: { contains: specialty, mode: "insensitive" } } };
+  if (specialty) {
+    andFilters.push({
+      OR: [
+        { specialties: { some: { name: { contains: specialty, mode: "insensitive" } } } },
+        { services: { has: specialty } },
+      ],
+    });
+  }
   if (andFilters.length > 0) where.AND = andFilters;
 
   const orderBy: Prisma.ProfessionalOrderByWithRelationInput[] =
-    sortBy === "price_asc"  ? [{ boostActive: "desc" }, { priceMin: "asc" }] :
-    sortBy === "price_desc" ? [{ boostActive: "desc" }, { priceMin: "desc" }] :
-    sortBy === "reviews"    ? [{ boostActive: "desc" }, { totalReviews: "desc" }] :
-    sortBy === "recent"     ? [{ boostActive: "desc" }, { createdAt: "desc" }] :
-    [{ boostActive: "desc" }, { featured: "desc" }, { rating: "desc" }];
+    sortBy === "price_asc"  ? [{ boostActive: "desc" }, { planPriority: "desc" }, { priceMin: "asc" }] :
+    sortBy === "price_desc" ? [{ boostActive: "desc" }, { planPriority: "desc" }, { priceMin: "desc" }] :
+    sortBy === "reviews"    ? [{ boostActive: "desc" }, { planPriority: "desc" }, { totalReviews: "desc" }] :
+    sortBy === "recent"     ? [{ boostActive: "desc" }, { planPriority: "desc" }, { createdAt: "desc" }] :
+    sortBy === "online"     ? [{ boostActive: "desc" }, { planPriority: "desc" }, { lastOnlineAt: "desc" }, { rating: "desc" }] :
+    [{ boostActive: "desc" }, { planPriority: "desc" }, { featured: "desc" }, { rating: "desc" }, { totalReviews: "desc" }];
 
   const [professionals, total] = await Promise.all([
     prisma.professional.findMany({
@@ -105,8 +112,9 @@ export async function GET(req: NextRequest) {
       take: limit,
       select: {
         id: true, slug: true, displayName: true,
+        bio: true,
         city: true, state: true, bairro: true,
-        image: true,
+        image: true, galleryUrls: true,
         escortCategory: true, birthDate: true,
         height: true, weight: true, hairColor: true, eyeColor: true, ethnicity: true,
         hasTattoos: true, hasSilicone: true,
@@ -116,12 +124,15 @@ export async function GET(req: NextRequest) {
         listingPhoneUntil: true,
         priceMin: true, pricePerHour: true, price30min: true,
         attendanceTypes: true, servesGenders: true,
+        services: true,
         rating: true, totalReviews: true, totalAppointments: true,
         verified: true, featured: true,
         boostActive: true, boostUntil: true,
+        activePlanId: true, planPriority: true,
+        onlineVisible: true, lastOnlineAt: true,
         profileViews: true, contactClicks: true,
-        user: { select: { image: true } },
-        photos:     { where: { cover: true }, take: 1 },
+        user: { select: { image: true, premiumUntil: true } },
+        photos: { orderBy: { order: "asc" } },
         specialties: true,
       },
     }),
@@ -132,22 +143,38 @@ export async function GET(req: NextRequest) {
   console.log("[CLIENT_SEARCH] professionals found", professionals.length, "/ total", total);
 
   // WhatsApp na listagem exige beneficio pago ativo e respeita a privacidade manual.
-  const safeList = professionals.map(({ hidePhone, listingPhoneUntil, ...p }) => ({
-    ...p,
-    image: stripLegacyPublicStorageUrl(p.image),
-    user: {
-      ...p.user,
-      image: stripLegacyPublicStorageUrl(p.user?.image),
-    },
-    photos: p.photos
-      .map((photo) => ({ ...photo, url: stripLegacyPublicStorageUrl(photo.url) }))
-      .filter((photo): photo is typeof photo & { url: string } => Boolean(photo.url)),
-    whatsapp: !hidePhone && listingPhoneUntil && listingPhoneUntil > now ? p.whatsapp : null,
-  }));
+  const safeList = professionals.map(({
+    hidePhone,
+    listingPhoneUntil,
+    galleryUrls,
+    birthDate,
+    hideAge,
+    onlineVisible,
+    lastOnlineAt,
+    activePlanId,
+    planPriority,
+    ...p
+  }) => {
+    const photos = canonicalProfessionalPhotos({ photos: p.photos, image: p.image, galleryUrls });
+    const premiumActive = Boolean(p.user.premiumUntil && p.user.premiumUntil > now);
+    return {
+      ...p,
+      image: photos.find((photo) => photo.cover)?.url ?? photos[0]?.url ?? null,
+      avatar: stripLegacyPublicStorageUrl(p.user.image),
+      user: { image: stripLegacyPublicStorageUrl(p.user.image) },
+      photos,
+      age: hideAge ? null : calculateAge(birthDate, now),
+      online: isProfessionalOnline(lastOnlineAt, onlineVisible, now),
+      sponsored: p.boostActive && (!p.boostUntil || p.boostUntil > now),
+      plan: premiumActive ? activePlanId : null,
+      planPriority: premiumActive ? planPriority : 0,
+      whatsapp: !hidePhone && listingPhoneUntil && listingPhoneUntil > now ? p.whatsapp : null,
+    };
+  });
 
   return NextResponse.json(
     { professionals: safeList, total, page, pages: Math.ceil(total / limit) },
-    { headers: ageGateCacheHeaders() },
+    { headers: publicCacheHeaders() },
   );
 }
 
@@ -183,7 +210,13 @@ export async function POST(req: NextRequest) {
       select: { category: true },
     });
 
-    const { specialties, services, phone, whatsapp, ...profileData } = data;
+    const { specialties, services, phone, whatsapp, image, galleryUrls, ...profileData } = data;
+    await assertApprovedMediaUrls({
+      urls: [image, ...galleryUrls].filter((url): url is string => Boolean(url)),
+      requestUrl: req.url,
+      ownerId: session.user.id,
+      allowedFolderPrefixes: ["profiles"],
+    });
     const hasManualMedia =
       Boolean(profileData.verificationUrl) &&
       profileData.kycProvider !== "PERSONA";
@@ -206,6 +239,8 @@ export async function POST(req: NextRequest) {
 
     const professionalData = {
       ...profileData,
+      image: null,
+      galleryUrls: [],
       phone:     phone ? normalizePhone(phone) : undefined,
       whatsapp:  whatsapp ? normalizePhone(whatsapp) : undefined,
       kycProvider: normalizedKycProvider,
@@ -219,6 +254,9 @@ export async function POST(req: NextRequest) {
       docStatus:  profileData.docFrenteUrl ? "PENDING" : "NOT_SENT",
       verifStatus: profileData.verificationUrl || profileData.kycSessionId ? "PENDING" : "NOT_SENT",
     };
+    const initialPhotos = [image, ...galleryUrls]
+      .filter((url): url is string => Boolean(url))
+      .filter((url, index, values) => values.indexOf(url) === index);
 
     const professional = existing
       ? await prisma.professional.update({
@@ -228,6 +266,10 @@ export async function POST(req: NextRequest) {
           specialties: {
             deleteMany: {},
             create: allSpecialties.map((name) => ({ name })),
+          },
+          photos: {
+            deleteMany: {},
+            create: initialPhotos.map((url, order) => ({ url, order, cover: order === 0 })),
           },
         },
         include: { specialties: true },
@@ -239,6 +281,9 @@ export async function POST(req: NextRequest) {
         accessGrandfathered: false,
         specialties: {
           create: allSpecialties.map((name) => ({ name })),
+        },
+        photos: {
+          create: initialPhotos.map((url, order) => ({ url, order, cover: order === 0 })),
         },
       },
       include: { specialties: true },

@@ -15,8 +15,8 @@ const reasons = [
   ["OTHER", "Outro"],
 ] as const;
 
-export default function PublicReportButton({ targetType, targetId }: { targetType: "PROFESSIONAL" | "PROPERTY" | "PHOTO" | "VIDEO" | "STORY" | "CONTENT"; targetId: string }) {
-  const [open, setOpen] = useState(false);
+export default function PublicReportButton({ targetType, targetId, initialOpen = false }: { targetType: "PROFESSIONAL" | "PROPERTY" | "PHOTO" | "VIDEO" | "STORY" | "CONTENT"; targetId: string; initialOpen?: boolean }) {
+  const [open, setOpen] = useState(initialOpen);
   const [reason, setReason] = useState<(typeof reasons)[number][0]>("POSSIBLE_MINOR");
   const [description, setDescription] = useState("");
   const [result, setResult] = useState("");

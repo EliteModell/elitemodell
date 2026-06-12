@@ -54,6 +54,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "public-professional-profile",
+      testMatch: "**/public-professional-profile.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "legal-security",
       testMatch: "**/legal-security.spec.ts",
       use: { browserName: "chromium" },

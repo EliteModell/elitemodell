@@ -16,12 +16,27 @@ type ProfileForm = {
   bio: string;
   city: string;
   state: string;
+  bairro: string;
   phone: string;
   whatsapp: string;
   instagram: string;
   website: string;
   priceMin: string;
   priceMax: string;
+  pricePerHour: string;
+  paymentMethods: string;
+  attendanceTypes: string;
+  servesGenders: string;
+  idiomas: string;
+  diasDisponiveis: string;
+  horarioInicio: string;
+  horarioFim: string;
+  services: string;
+  servicesNotOffered: string;
+  amenities: string;
+  serviceCities: string;
+  approximateLocation: string;
+  onlineVisible: boolean;
 };
 
 type MeResponse = {
@@ -34,6 +49,7 @@ type MeResponse = {
     bio: string;
     city: string;
     state: string;
+    bairro?: string | null;
     status?: string | null;
     verified?: boolean | null;
     kycStatus?: string | null;
@@ -51,6 +67,20 @@ type MeResponse = {
     website?: string | null;
     priceMin?: number | null;
     priceMax?: number | null;
+    pricePerHour?: number | null;
+    paymentMethods?: string[];
+    attendanceTypes?: string[];
+    servesGenders?: string[];
+    idiomas?: string[];
+    diasDisponiveis?: string[];
+    horarioInicio?: string | null;
+    horarioFim?: string | null;
+    services?: string[];
+    servicesNotOffered?: string[];
+    amenities?: string[];
+    serviceCities?: string[];
+    approximateLocation?: string | null;
+    onlineVisible?: boolean;
   } | null;
 };
 
@@ -65,18 +95,37 @@ const emptyForm: ProfileForm = {
   bio: "",
   city: "",
   state: "",
+  bairro: "",
   phone: "",
   whatsapp: "",
   instagram: "",
   website: "",
   priceMin: "",
   priceMax: "",
+  pricePerHour: "",
+  paymentMethods: "",
+  attendanceTypes: "",
+  servesGenders: "",
+  idiomas: "",
+  diasDisponiveis: "",
+  horarioInicio: "08:00",
+  horarioFim: "22:00",
+  services: "",
+  servicesNotOffered: "",
+  amenities: "",
+  serviceCities: "",
+  approximateLocation: "",
+  onlineVisible: true,
 };
 
 function parseMoneyValue(value: string) {
   const normalized = value.replace(/\./g, "").replace(",", ".");
   const parsed = Number(normalized);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function parseList(value: string) {
+  return Array.from(new Set(value.split(",").map((item) => item.trim()).filter(Boolean)));
 }
 
 function statusLabel(status?: string | null) {
@@ -137,12 +186,27 @@ export default function EditarPerfilPage() {
           bio: professional.bio ?? "",
           city: professional.city ?? "",
           state: professional.state ?? "",
+          bairro: professional.bairro ?? "",
           phone: professional.phone ?? "",
           whatsapp: professional.whatsapp ?? "",
           instagram: professional.instagram ?? "",
           website: professional.website ?? "",
           priceMin: professional.priceMin ? String(professional.priceMin) : "",
           priceMax: professional.priceMax ? String(professional.priceMax) : "",
+          pricePerHour: professional.pricePerHour ? String(professional.pricePerHour) : "",
+          paymentMethods: (professional.paymentMethods ?? []).join(", "),
+          attendanceTypes: (professional.attendanceTypes ?? []).join(", "),
+          servesGenders: (professional.servesGenders ?? []).join(", "),
+          idiomas: (professional.idiomas ?? []).join(", "),
+          diasDisponiveis: (professional.diasDisponiveis ?? []).join(", "),
+          horarioInicio: professional.horarioInicio ?? "08:00",
+          horarioFim: professional.horarioFim ?? "22:00",
+          services: (professional.services ?? []).join(", "),
+          servicesNotOffered: (professional.servicesNotOffered ?? []).join(", "),
+          amenities: (professional.amenities ?? []).join(", "),
+          serviceCities: (professional.serviceCities ?? []).join(", "),
+          approximateLocation: professional.approximateLocation ?? "",
+          onlineVisible: professional.onlineVisible !== false,
         });
       } catch {
         if (!controller.signal.aborted) setError("Não foi possível carregar seu perfil agora.");
@@ -170,12 +234,27 @@ export default function EditarPerfilPage() {
           bio: form.bio,
           city: form.city,
           state: form.state,
+          bairro: form.bairro || undefined,
           phone: form.phone || undefined,
           whatsapp: form.whatsapp || undefined,
           instagram: form.instagram || undefined,
           website: form.website || undefined,
           priceMin: parseMoneyValue(form.priceMin),
           priceMax: parseMoneyValue(form.priceMax),
+          pricePerHour: parseMoneyValue(form.pricePerHour),
+          paymentMethods: parseList(form.paymentMethods),
+          attendanceTypes: parseList(form.attendanceTypes),
+          servesGenders: parseList(form.servesGenders),
+          idiomas: parseList(form.idiomas),
+          diasDisponiveis: parseList(form.diasDisponiveis),
+          horarioInicio: form.horarioInicio,
+          horarioFim: form.horarioFim,
+          services: parseList(form.services),
+          servicesNotOffered: parseList(form.servicesNotOffered),
+          amenities: parseList(form.amenities),
+          serviceCities: parseList(form.serviceCities),
+          approximateLocation: form.approximateLocation || null,
+          onlineVisible: form.onlineVisible,
         }),
       });
       if (!res.ok) throw new Error("Failed to update profile");
@@ -341,6 +420,10 @@ export default function EditarPerfilPage() {
             <input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
           </div>
           <div>
+            <label>Bairro</label>
+            <input value={form.bairro} onChange={(e) => setForm({ ...form, bairro: e.target.value })} />
+          </div>
+          <div>
             <label>WhatsApp</label>
             <input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} />
           </div>
@@ -371,7 +454,68 @@ export default function EditarPerfilPage() {
             <label>Preço máximo</label>
             <input inputMode="decimal" value={form.priceMax} onChange={(e) => setForm({ ...form, priceMax: e.target.value.replace(/[^\d,.]/g, "") })} />
           </div>
+          <div>
+            <label>Valor por hora</label>
+            <input inputMode="decimal" value={form.pricePerHour} onChange={(e) => setForm({ ...form, pricePerHour: e.target.value.replace(/[^\d,.]/g, "") })} />
+          </div>
         </div>
+      </PremiumSection>
+
+      <PremiumSection eyebrow="Anúncio público" title="Atendimento e serviços" description="Estes dados alimentam automaticamente Home, cidade, busca e perfil público. Separe vários itens com vírgulas.">
+        <div className="premium-grid premium-grid-2">
+          <div>
+            <label>Tipos de atendimento</label>
+            <input value={form.attendanceTypes} onChange={(e) => setForm({ ...form, attendanceTypes: e.target.value })} placeholder="Com local, Hotel, Atendimento virtual" />
+          </div>
+          <div>
+            <label>Atende</label>
+            <input value={form.servesGenders} onChange={(e) => setForm({ ...form, servesGenders: e.target.value })} placeholder="Homens, Mulheres, Casais" />
+          </div>
+          <div>
+            <label>Serviços oferecidos</label>
+            <input value={form.services} onChange={(e) => setForm({ ...form, services: e.target.value })} />
+          </div>
+          <div>
+            <label>Serviços não oferecidos</label>
+            <input value={form.servicesNotOffered} onChange={(e) => setForm({ ...form, servicesNotOffered: e.target.value })} />
+          </div>
+          <div>
+            <label>Comodidades</label>
+            <input value={form.amenities} onChange={(e) => setForm({ ...form, amenities: e.target.value })} placeholder="Estacionamento, Ar-condicionado" />
+          </div>
+          <div>
+            <label>Cidades atendidas</label>
+            <input value={form.serviceCities} onChange={(e) => setForm({ ...form, serviceCities: e.target.value })} />
+          </div>
+          <div>
+            <label>Localização aproximada</label>
+            <input value={form.approximateLocation} onChange={(e) => setForm({ ...form, approximateLocation: e.target.value })} placeholder="Região central, próximo ao bairro..." />
+          </div>
+          <div>
+            <label>Formas de pagamento</label>
+            <input value={form.paymentMethods} onChange={(e) => setForm({ ...form, paymentMethods: e.target.value })} placeholder="Pix, Dinheiro, Cartão" />
+          </div>
+          <div>
+            <label>Idiomas</label>
+            <input value={form.idiomas} onChange={(e) => setForm({ ...form, idiomas: e.target.value })} />
+          </div>
+          <div>
+            <label>Dias disponíveis</label>
+            <input value={form.diasDisponiveis} onChange={(e) => setForm({ ...form, diasDisponiveis: e.target.value })} />
+          </div>
+          <div>
+            <label>Início do atendimento</label>
+            <input type="time" value={form.horarioInicio} onChange={(e) => setForm({ ...form, horarioInicio: e.target.value })} />
+          </div>
+          <div>
+            <label>Fim do atendimento</label>
+            <input type="time" value={form.horarioFim} onChange={(e) => setForm({ ...form, horarioFim: e.target.value })} />
+          </div>
+        </div>
+        <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 18 }}>
+          <input type="checkbox" checked={form.onlineVisible} onChange={(e) => setForm({ ...form, onlineVisible: e.target.checked })} />
+          Exibir meu status online quando eu estiver usando a área profissional
+        </label>
       </PremiumSection>
 
       <div className="premium-grid">

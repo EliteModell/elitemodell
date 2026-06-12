@@ -6,11 +6,20 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ageGateCacheHeaders, stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
 import { enforceRateLimit } from "@/lib/security";
+import { publicCacheHeaders } from "@/lib/public-professional-profile";
+import { publicProfessionalWhere } from "@/lib/public-professional-access";
 
 type StoryGroupResponse = {
   userId: string;
+  professionalId: string;
+  slug: string;
   nome: string;
   foto: string | null;
+  city: string;
+  state: string;
+  verified: boolean;
+  sponsored: boolean;
+  planPriority: number;
   stories: Array<{
     id: string;
     mediaUrl: string;
@@ -65,17 +74,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ stories: safeStories }, { headers: ageGateCacheHeaders() });
   }
 
-  if (!session?.user?.id || !session.user.adultVerified) {
-    return NextResponse.json(
-      { error: "Verificacao de maioridade obrigatoria." },
-      { status: 403, headers: ageGateCacheHeaders() },
-    );
-  }
+  const city = url.searchParams.get("city");
+  const state = url.searchParams.get("state");
+  const professionalWhere = publicProfessionalWhere(now);
 
   const stories = await prisma.story.findMany({
     where: {
       expiresAt: { gt: now },
-      user: { professional: { status: "ACTIVE", verified: true, OR: [{ pauseUntil: null }, { pauseUntil: { lt: now } }] } },
+      user: {
+        professional: {
+          is: {
+            ...professionalWhere,
+            verified: true,
+            ...(city ? { city: { contains: city, mode: "insensitive" } } : {}),
+            ...(state ? { state: { equals: state.toUpperCase(), mode: "insensitive" } } : {}),
+          },
+        },
+      },
     },
     include: {
       user: {
@@ -83,7 +98,22 @@ export async function GET(req: NextRequest) {
           id: true,
           name: true,
           image: true,
-          professional: { select: { displayName: true, photos: { where: { cover: true }, take: 1 } } },
+          premiumUntil: true,
+          professional: {
+            select: {
+              id: true,
+              slug: true,
+              displayName: true,
+              city: true,
+              state: true,
+              verified: true,
+              image: true,
+              boostActive: true,
+              boostUntil: true,
+              planPriority: true,
+              photos: { where: { cover: true }, take: 1 },
+            },
+          },
         },
       },
     },
@@ -95,13 +125,25 @@ export async function GET(req: NextRequest) {
     stories.reduce<Record<string, StoryGroupResponse>>((acc, story) => {
       const mediaUrl = stripLegacyPublicStorageUrl(story.mediaUrl);
       if (!mediaUrl) return acc;
+      const professional = story.user.professional;
+      if (!professional) return acc;
       if (!acc[story.userId]) {
+        const sponsored = professional.boostActive && (!professional.boostUntil || professional.boostUntil > now);
+        const premiumActive = Boolean(story.user.premiumUntil && story.user.premiumUntil > now);
         acc[story.userId] = {
           userId: story.userId,
-          nome: story.user.professional?.displayName ?? story.user.name ?? "Usuaria",
+          professionalId: professional.id,
+          slug: professional.slug,
+          nome: professional.displayName ?? story.user.name ?? "Usuaria",
           foto: stripLegacyPublicStorageUrl(story.user.image) ??
-            stripLegacyPublicStorageUrl(story.user.professional?.photos?.[0]?.url) ??
+            stripLegacyPublicStorageUrl(professional.photos?.[0]?.url) ??
+            stripLegacyPublicStorageUrl(professional.image) ??
             null,
+          city: professional.city,
+          state: professional.state,
+          verified: professional.verified,
+          sponsored,
+          planPriority: premiumActive ? professional.planPriority : 0,
           stories: [],
         };
       }
@@ -115,9 +157,13 @@ export async function GET(req: NextRequest) {
       });
       return acc;
     }, {})
+  ).sort((a, b) =>
+    Number(b.sponsored) - Number(a.sponsored) ||
+    b.planPriority - a.planPriority ||
+    (b.stories[0]?.createdAt.getTime() ?? 0) - (a.stories[0]?.createdAt.getTime() ?? 0)
   );
 
-  return NextResponse.json(grouped, { headers: ageGateCacheHeaders() });
+  return NextResponse.json(grouped, { headers: publicCacheHeaders() });
 }
 
 export async function POST(req: NextRequest) {

@@ -143,6 +143,19 @@ export function getProfessionalPlan(planId: string) {
   return PROFESSIONAL_PLANS.find((plan) => plan.id === planId) ?? null;
 }
 
+export function getProfessionalPlanPriority(planId: string) {
+  return {
+    diamante: 600,
+    ouro: 500,
+    prata: 400,
+    bronze: 300,
+    "one-hour-top": 700,
+    pontos: 200,
+    telefone: 100,
+    "idade-oculta": 100,
+  }[planId] ?? 0;
+}
+
 export function getProfessionalPlanPrice(planId: string, priceKey: string, pointsQuantity?: unknown) {
   const plan = getProfessionalPlan(planId);
   if (!plan) return null;

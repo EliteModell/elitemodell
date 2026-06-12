@@ -47,10 +47,19 @@ export async function proxy(request: NextRequest) {
     "/privacy",
     "/politica-conteudo",
     "/documentos",
+    "/buscar",
+    "/profissionais",
+    "/cidade",
     "/robots.txt",
     "/sitemap.xml",
     "/manifest.webmanifest",
     "/api/auth",
+    "/api/professionals",
+    "/api/stories",
+    "/api/reviews",
+    "/api/media",
+    "/api/moderation/report",
+    "/api/address/geocode",
   ];
 
   const isPublic = publicRoutes.some(

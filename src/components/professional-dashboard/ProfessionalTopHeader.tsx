@@ -58,6 +58,22 @@ export function ProfessionalTopHeader({ onMenuClick }: { onMenuClick: () => void
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    if (!inProfessionalArea) return;
+    const updatePresence = () => {
+      if (document.visibilityState === "visible") {
+        void fetch("/api/professional/presence", { method: "POST", keepalive: true }).catch(() => undefined);
+      }
+    };
+    updatePresence();
+    const interval = window.setInterval(updatePresence, 5 * 60 * 1000);
+    document.addEventListener("visibilitychange", updatePresence);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", updatePresence);
+    };
+  }, [inProfessionalArea]);
+
   const location = profile?.city && profile.state ? `${profile.city}, ${profile.state}` : profile?.email ?? "Conta profissional";
 
   return (

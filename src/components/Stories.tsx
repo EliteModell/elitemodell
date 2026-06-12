@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 
 type StoryItem = { id: string; mediaUrl: string; mediaType: string; thumbnail: string | null; views: number; createdAt: string };
-type StoryGroup = { userId: string; nome: string; foto: string | null; stories: StoryItem[]; visto?: boolean };
+type StoryGroup = { userId: string; slug: string; nome: string; foto: string | null; stories: StoryItem[]; visto?: boolean };
 
 export default function Stories() {
   const { data: session } = useSession();
@@ -188,6 +188,9 @@ export default function Stories() {
             <div style={{ position: "absolute", bottom: 14, left: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 4 }}>
               <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>👁 {story.views} visualizações</span>
             </div>
+            <a href={`/profissionais/${aberto.grupo.slug}`} style={{ position: "absolute", right: 14, bottom: 12, zIndex: 3, borderRadius: 999, background: "#d4a843", color: "#060e1b", padding: "7px 12px", textDecoration: "none", fontSize: 11, fontWeight: 900 }}>
+              Ver perfil
+            </a>
           </div>
         </div>
       )}

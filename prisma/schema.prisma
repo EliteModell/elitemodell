@@ -756,8 +756,12 @@ model Professional {
   horarioFim      String?
 
   // Serviços
-  services String[]
-  fetishes String[]
+  services            String[]
+  servicesNotOffered  String[] @default([])
+  fetishes            String[]
+  amenities           String[] @default([])
+  serviceCities       String[] @default([])
+  approximateLocation String?
 
   // Fotos
   image                         String?
@@ -794,6 +798,10 @@ model Professional {
   boostStartedAt      DateTime?
   boostUntil          DateTime?
   boostSource         String?
+  activePlanId        String?
+  planPriority        Int                @default(0)
+  onlineVisible       Boolean            @default(true)
+  lastOnlineAt        DateTime?
   profileViews        Int                @default(0)
   contactClicks       Int                @default(0)
   rating              Float              @default(0)
@@ -816,6 +824,8 @@ model Professional {
   @@index([status, featured, rating, totalReviews, createdAt])
   @@index([status, accessGrandfathered, freeAccessEndsAt])
   @@index([status, boostActive, boostUntil])
+  @@index([status, planPriority, featured, rating])
+  @@index([status, lastOnlineAt])
   @@index([status, listingPhoneUntil])
   @@index([status, city])
   @@index([status, escortCategory])

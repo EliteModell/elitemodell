@@ -21,6 +21,7 @@ type ApiProfessional = {
   verified: boolean;
   featured: boolean;
   specialties: { id: string; name: string }[];
+  services?: string[];
   photos: { id: string; url: string; cover: boolean }[];
   galleryUrls?: string[];
   user?: { image: string | null };
@@ -315,7 +316,7 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
   const photoCount = (pro.galleryUrls?.length ?? 0) + (pro.photos?.length ?? 0);
   const coverPhoto = pro.photos?.find((p) => p.cover)?.url ?? pro.image;
   const profilePhoto = pro.user?.image ?? null;
-  const specialtyNames = pro.specialties.map((s) => s.name);
+  const specialtyNames = Array.from(new Set([...(pro.services ?? []), ...pro.specialties.map((s) => s.name)]));
 
   return (
     <Link href={`/profissionais/${pro.slug}`} style={{ textDecoration: "none", display: "block" }}>

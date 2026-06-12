@@ -9,17 +9,16 @@ import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
 import { resolveProfessionalAccess } from "@/lib/professional-access";
 import { assertApprovedMediaUrls } from "@/lib/approved-media";
 import { ageGateCacheHeaders, stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
+import {
+  calculateAge,
+  canonicalProfessionalPhotos,
+  isProfessionalOnline,
+  publicCacheHeaders,
+} from "@/lib/public-professional-profile";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id || (session.user.role !== "ADMIN" && !session.user.adultVerified)) {
-    return NextResponse.json(
-      { error: "Verificacao de maioridade obrigatoria." },
-      { status: 403, headers: ageGateCacheHeaders() },
-    );
-  }
-
   await refreshExpiredProfessionalTimers();
   const professional = await prisma.professional.findUnique({
     where: { slug },
@@ -64,7 +63,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       horarioInicio: true,
       horarioFim: true,
       services: true,
+      servicesNotOffered: true,
       fetishes: true,
+      amenities: true,
+      serviceCities: true,
+      approximateLocation: true,
       image: true,
       galleryUrls: true,
       presentationVideoUrl: true,
@@ -80,13 +83,29 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       pauseReason: true,
       boostActive: true,
       boostUntil: true,
+      activePlanId: true,
+      planPriority: true,
+      onlineVisible: true,
+      lastOnlineAt: true,
       profileViews: true,
       contactClicks: true,
       rating: true,
       totalReviews: true,
       totalAppointments: true,
       createdAt: true,
-      user: { select: { name: true, image: true, createdAt: true, premiumUntil: true } },
+      user: {
+        select: {
+          name: true,
+          image: true,
+          createdAt: true,
+          premiumUntil: true,
+          stories: {
+            where: { expiresAt: { gt: new Date() } },
+            orderBy: { createdAt: "desc" },
+            select: { id: true, mediaUrl: true, mediaType: true, thumbnail: true, views: true, createdAt: true },
+          },
+        },
+      },
       photos: { orderBy: { order: "asc" } },
       specialties: true,
       schedule: { orderBy: { dayOfWeek: "asc" } },
@@ -120,19 +139,34 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
     );
   }
 
+  const photos = canonicalProfessionalPhotos({
+    photos: professional.photos,
+    image: professional.image,
+    galleryUrls: professional.galleryUrls,
+  });
+  const premiumActive = Boolean(professional.user.premiumUntil && professional.user.premiumUntil > new Date());
   const publicProfessional: Record<string, unknown> = {
     ...professional,
     user: {
       ...professional.user,
       image: stripLegacyPublicStorageUrl(professional.user.image),
     },
-    image: stripLegacyPublicStorageUrl(professional.image),
-    galleryUrls: professional.galleryUrls
-      .map((url) => stripLegacyPublicStorageUrl(url))
-      .filter((url): url is string => Boolean(url)),
-    photos: professional.photos
-      .map((photo) => ({ ...photo, url: stripLegacyPublicStorageUrl(photo.url) }))
-      .filter((photo): photo is typeof photo & { url: string } => Boolean(photo.url)),
+    image: photos.find((photo) => photo.cover)?.url ?? photos[0]?.url ?? null,
+    galleryUrls: photos.filter((photo) => !photo.cover).map((photo) => photo.url),
+    photos,
+    avatar: stripLegacyPublicStorageUrl(professional.user.image),
+    stories: professional.user.stories
+      .map((story) => ({
+        ...story,
+        mediaUrl: stripLegacyPublicStorageUrl(story.mediaUrl),
+        thumbnail: stripLegacyPublicStorageUrl(story.thumbnail),
+      }))
+      .filter((story): story is typeof story & { mediaUrl: string } => Boolean(story.mediaUrl)),
+    online: isProfessionalOnline(professional.lastOnlineAt, professional.onlineVisible),
+    age: professional.hideAge && !canViewDraft ? null : calculateAge(professional.birthDate),
+    sponsored: professional.boostActive && (!professional.boostUntil || professional.boostUntil > new Date()),
+    plan: premiumActive ? professional.activePlanId : null,
+    planPriority: premiumActive ? professional.planPriority : 0,
     phone: professional.hidePhone && !canViewDraft ? null : professional.phone,
     whatsapp: professional.hidePhone && !canViewDraft ? null : professional.whatsapp,
     birthDate: professional.hideAge && !canViewDraft ? null : professional.birthDate,
@@ -145,10 +179,17 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
   delete publicProfessional.accessGrandfathered;
   delete publicProfessional.freeAccessStartedAt;
   delete publicProfessional.freeAccessEndsAt;
+  delete publicProfessional.lastOnlineAt;
+  delete publicProfessional.onlineVisible;
+  delete publicProfessional.activePlanId;
+  delete publicProfessional.presentationVideoRejectReason;
+  delete publicProfessional.pauseReason;
+  if (!canViewDraft) delete publicProfessional.birthDate;
   const publicUser = publicProfessional.user as Record<string, unknown>;
   delete publicUser.premiumUntil;
+  delete publicUser.stories;
   return NextResponse.json(publicProfessional, {
-    headers: ageGateCacheHeaders(),
+    headers: canViewDraft ? ageGateCacheHeaders() : publicCacheHeaders(),
   });
 }
 
@@ -166,12 +207,18 @@ const updateSchema = z.object({
   bio: z.string().min(20).optional(),
   city: z.string().min(2).optional(),
   state: z.string().min(2).optional(),
+  bairro: z.string().max(120).optional(),
   phone: z.string().optional(),
   whatsapp: z.string().optional(),
   instagram: z.string().optional(),
   website: z.string().optional(),
   priceMin: z.number().positive().optional(),
   priceMax: z.number().positive().optional(),
+  pricePerHour: z.number().positive().optional(),
+  price30min: z.number().positive().optional(),
+  price2h: z.number().positive().optional(),
+  priceOvernight: z.number().positive().optional(),
+  priceWebcam: z.number().positive().optional(),
   image: z.string().url().nullable().optional(),
   galleryUrls: z.array(z.string().url()).max(12).optional(),
   photos: z.array(z.object({
@@ -181,6 +228,19 @@ const updateSchema = z.object({
     caption: z.string().max(160).nullable().optional(),
   })).max(12).optional(),
   specialties: z.array(z.string()).optional(),
+  services: z.array(z.string()).optional(),
+  servicesNotOffered: z.array(z.string()).optional(),
+  amenities: z.array(z.string()).optional(),
+  serviceCities: z.array(z.string()).optional(),
+  approximateLocation: z.string().max(160).nullable().optional(),
+  paymentMethods: z.array(z.string()).optional(),
+  attendanceTypes: z.array(z.string()).optional(),
+  servesGenders: z.array(z.string()).optional(),
+  idiomas: z.array(z.string()).optional(),
+  diasDisponiveis: z.array(z.string()).optional(),
+  horarioInicio: z.string().optional(),
+  horarioFim: z.string().optional(),
+  onlineVisible: z.boolean().optional(),
   hidePhone: z.boolean().optional(),
   hideAge: z.boolean().optional(),
   presentationVideoUrl: z.string().url().nullable().optional(),
@@ -228,10 +288,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
     };
 
     if (normalizedPhotos) {
-      updateData.image = coverPhoto?.url ?? null;
-      updateData.galleryUrls = normalizedPhotos
-        .filter((photo) => photo.url !== coverPhoto?.url)
-        .map((photo) => photo.url);
+      updateData.image = null;
+      updateData.galleryUrls = [];
     }
 
     if (presentationVideoUrl !== undefined) {

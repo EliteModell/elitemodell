@@ -1,12 +1,6 @@
 export const AGE_RESTRICTED_PATH_PREFIXES = [
-  "/buscar",
-  "/profissionais",
   "/imoveis",
-  "/api/media",
-  "/api/professionals",
   "/api/properties",
-  "/api/reviews",
-  "/api/stories",
 ] as const;
 
 export const AGE_GATE_CACHE_HEADERS: Record<string, string> = {
