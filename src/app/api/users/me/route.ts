@@ -44,6 +44,7 @@ export async function GET() {
           docStatus: true,
           verifStatus: true,
           displayName: true,
+          escortCategory: true,
           bio: true,
           city: true,
           state: true,

@@ -159,16 +159,27 @@ export default function VoucherRouletteModal() {
   useEffect(() => {
     if (sessionStorage.getItem(CLOSED_KEY)) return;
     let active = true;
-    fetch("/api/vouchers/roulette", { cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: RouletteConfig | null) => {
-        if (!active || !data?.active || !data.canSpin || data.prizes.length < 2) return;
-        setConfig(data);
-        window.setTimeout(() => setOpen(true), 700);
-      })
-      .catch(() => undefined);
+    let openTimer: number | null = null;
+
+    function loadRoulette() {
+      fetch("/api/vouchers/roulette", { cache: "no-store" })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data: RouletteConfig | null) => {
+          if (!active || !data?.active || !data.canSpin || data.prizes.length < 2) return;
+          setConfig(data);
+          if (openTimer !== null) window.clearTimeout(openTimer);
+          openTimer = window.setTimeout(() => setOpen(true), 700);
+        })
+        .catch(() => undefined);
+    }
+
+    loadRoulette();
+    window.addEventListener("elite-cookie-consent", loadRoulette);
+
     return () => {
       active = false;
+      if (openTimer !== null) window.clearTimeout(openTimer);
+      window.removeEventListener("elite-cookie-consent", loadRoulette);
     };
   }, []);
 

@@ -83,6 +83,79 @@ test.describe("juridico e seguranca - visitante", () => {
     expect(review.status()).toBe(401);
   });
 
+  test("configuracao da roleta e publica, mas respeita consentimento e travas operacionais", async ({ request }) => {
+    const withoutConsent = await request.get("/api/vouchers/roulette");
+    expect(withoutConsent.status()).toBe(200);
+    expect(await withoutConsent.json()).toMatchObject({
+      active: false,
+      canSpin: false,
+      consentRequired: true,
+    });
+
+    const withConsent = await request.get("/api/vouchers/roulette", {
+      headers: { Cookie: "elite_cookie_consent=marketing" },
+    });
+    expect(withConsent.status()).toBe(200);
+    const body = await withConsent.json();
+    expect(body.error).not.toBe("Unauthorized");
+    expect(typeof body.active).toBe("boolean");
+    expect(typeof body.canSpin).toBe("boolean");
+  });
+
+  test("roleta reage ao consentimento de campanha sem recarregar a busca", async ({ page }) => {
+    let configRequests = 0;
+    await page.route("**/api/vouchers/roulette", async (route) => {
+      configRequests += 1;
+      const hasConsent = (await route.request().allHeaders()).cookie?.includes("elite_cookie_consent=marketing");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(hasConsent
+          ? {
+              active: true,
+              canSpin: true,
+              blockedUntil: null,
+              prizes: [
+                { id: "one", index: 0, name: "Voucher", type: "VOUCHER", value: 5, requiresPayment: false, paymentAmount: null },
+                { id: "two", index: 1, name: "Tente novamente", type: "TRY_AGAIN", value: null, requiresPayment: false, paymentAmount: null },
+              ],
+              policy: {
+                key: "roleta-promocional-policy",
+                title: "Politica da Roleta Promocional",
+                href: "/documentos/roleta-promocional-policy",
+                version: "1.0",
+                hash: "test",
+                authorizationReference: "TEST",
+              },
+            }
+          : { active: false, canSpin: false, consentRequired: true, prizes: [] }),
+      });
+    });
+
+    await page.goto("/buscar", { waitUntil: "domcontentloaded" });
+    await expect.poll(() => configRequests).toBeGreaterThanOrEqual(1);
+    await page.evaluate(() => {
+      document.cookie = "elite_cookie_consent=marketing; Path=/; SameSite=Lax";
+      window.dispatchEvent(new CustomEvent("elite-cookie-consent", {
+        detail: { value: "marketing", choices: { marketing: true } },
+      }));
+    });
+
+    await expect(page.getByRole("dialog", { name: "Roleta Premiada" })).toBeVisible();
+    expect(configRequests).toBeGreaterThanOrEqual(2);
+  });
+
+  test("rodape usa os cinco icones sociais no lugar de letras", async ({ page }) => {
+    await page.goto("/buscar", { waitUntil: "domcontentloaded" });
+    const footer = page.locator("footer");
+
+    for (const label of ["Instagram", "WhatsApp", "TikTok", "YouTube", "Telegram"]) {
+      const social = footer.getByLabel(label);
+      await expect(social).toHaveCount(1);
+      await expect(social.locator("svg")).toHaveCount(1);
+    }
+  });
+
   test("paginas de perfil e listagem ficam acessiveis ao visitante", async ({ page }) => {
     await page.goto("/profissionais/perfil-publico", { waitUntil: "domcontentloaded" });
     expect(page.url()).toContain("/profissionais/perfil-publico");

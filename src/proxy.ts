@@ -58,6 +58,7 @@ export async function proxy(request: NextRequest) {
     "/api/stories",
     "/api/reviews",
     "/api/media",
+    "/api/vouchers/roulette",
     "/api/moderation/report",
     "/api/address/geocode",
   ];

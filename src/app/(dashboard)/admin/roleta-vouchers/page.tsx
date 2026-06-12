@@ -273,7 +273,7 @@ export default async function AdminRoletaVouchersPage({ searchParams }: { search
           Política da Roleta Promocional versionada e vigente.
         </p>
         <form action={updateSettings} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, alignItems: "end" }}>
-          <label style={labelStyle}>Roleta ativa<input name="active" type="checkbox" defaultChecked={settings?.active ?? true} style={checkStyle} /></label>
+          <label style={labelStyle}>Roleta ativa<input name="active" type="checkbox" defaultChecked={settings?.active ?? false} style={checkStyle} /></label>
           <label style={labelStyle}>Referência da autorização promocional<input name="promotionAuthorizationReference" defaultValue={settings?.promotionAuthorizationReference ?? ""} placeholder="Certificado/processo SPA-MF" style={inputStyle} /></label>
           <label style={labelStyle}>Orçamento ativo<input name="budgetActive" type="checkbox" defaultChecked={stats.budget.active} style={checkStyle} /></label>
           <label style={labelStyle}>Orçamento mensal<input name="monthlyBudgetLimit" defaultValue={stats.budget.monthlyLimit} style={inputStyle} /></label>

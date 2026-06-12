@@ -185,7 +185,7 @@ export async function updateExpiredVouchers(now = new Date(), tx?: Prisma.Transa
   await db(tx).voucherDailyStock.updateMany({
     where: {
       date: { lt: todayStart },
-      active: true,
+      active: false,
       remainingBudget: { gt: 0 },
     },
     data: {

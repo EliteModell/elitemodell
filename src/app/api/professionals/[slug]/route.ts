@@ -204,6 +204,7 @@ function normalizePhone(raw: string): string {
 
 const updateSchema = z.object({
   displayName: z.string().min(2).optional(),
+  escortCategory: z.enum(["MULHER", "TRANS", "HOMEM"]).optional(),
   bio: z.string().min(20).optional(),
   city: z.string().min(2).optional(),
   state: z.string().min(2).optional(),
@@ -260,7 +261,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
   try {
     const body = await req.json();
     const data = updateSchema.parse(body);
-    const { specialties, presentationVideoUrl, phone, whatsapp, photos, ...profileData } = data;
+    const { specialties, presentationVideoUrl, phone, whatsapp, photos, escortCategory, ...profileData } = data;
     await assertApprovedMediaUrls({
       urls: [
         ...(data.image ? [data.image] : []),
@@ -285,6 +286,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
       ...profileData,
       ...(phone !== undefined && { phone: phone ? normalizePhone(phone) : null }),
       ...(whatsapp !== undefined && { whatsapp: whatsapp ? normalizePhone(whatsapp) : null }),
+      ...(escortCategory !== undefined && { escortCategory }),
     };
 
     if (normalizedPhotos) {
@@ -317,6 +319,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
           specialties: {
             deleteMany: {},
             create: specialties.map((name) => ({ name })),
+          },
+        }),
+        ...(escortCategory !== undefined && {
+          user: {
+            update: { category: escortCategory },
           },
         }),
       },

@@ -13,6 +13,7 @@ import {
 
 type ProfileForm = {
   displayName: string;
+  escortCategory: "" | "MULHER" | "TRANS" | "HOMEM";
   bio: string;
   city: string;
   state: string;
@@ -46,6 +47,7 @@ type MeResponse = {
   professional?: {
     slug: string;
     displayName: string;
+    escortCategory?: "MULHER" | "TRANS" | "HOMEM" | null;
     bio: string;
     city: string;
     state: string;
@@ -92,6 +94,7 @@ type ProfileSignal = {
 
 const emptyForm: ProfileForm = {
   displayName: "",
+  escortCategory: "",
   bio: "",
   city: "",
   state: "",
@@ -183,6 +186,7 @@ export default function EditarPerfilPage() {
         ]);
         setForm({
           displayName: professional.displayName ?? "",
+          escortCategory: professional.escortCategory ?? "",
           bio: professional.bio ?? "",
           city: professional.city ?? "",
           state: professional.state ?? "",
@@ -231,6 +235,7 @@ export default function EditarPerfilPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           displayName: form.displayName,
+          escortCategory: form.escortCategory || undefined,
           bio: form.bio,
           city: form.city,
           state: form.state,
@@ -410,6 +415,18 @@ export default function EditarPerfilPage() {
           <div>
             <label>Nome profissional</label>
             <input value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} />
+          </div>
+          <div>
+            <label>Categoria pública</label>
+            <select
+              value={form.escortCategory}
+              onChange={(e) => setForm({ ...form, escortCategory: e.target.value as ProfileForm["escortCategory"] })}
+            >
+              <option value="">Selecione</option>
+              <option value="MULHER">Mulheres</option>
+              <option value="TRANS">Trans</option>
+              <option value="HOMEM">Homens</option>
+            </select>
           </div>
           <div>
             <label>Cidade</label>
