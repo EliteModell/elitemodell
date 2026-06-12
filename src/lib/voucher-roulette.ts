@@ -553,6 +553,9 @@ function identityOr(identity: VoucherIdentity, target: "spin" | "voucher" = "spi
 
   if (identity.clientId) or.push({ clientId: identity.clientId } as never);
   if (identity.visitorId) or.push({ visitorId: identity.visitorId } as never);
+  if (target === "spin" && identity.ipAddress) {
+    or.push({ ipAddress: identity.ipAddress } as never);
+  }
   if (phone) {
     if (target === "spin") or.push({ OR: [{ whatsapp: phone }, { recipientPhone: phone }] } as never);
     else or.push({ OR: [{ whatsapp: phone }, { recipientPhone: phone }] } as never);

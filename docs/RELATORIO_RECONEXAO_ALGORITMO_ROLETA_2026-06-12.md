@@ -17,8 +17,8 @@ Nenhuma campanha foi ativada e nenhuma referencia promocional foi criada.
 - Limite diario, rechecagem de idempotencia, selecao, consumo, giro e emissao
   autenticada executados na mesma transacao serializavel.
 - Mantido `pg_advisory_xact_lock` para concorrencia.
-- Restaurada a identidade por IP para impedir novo giro mediante troca do cookie
-  de visitante.
+- Restaurada a identidade por IP para impedir novo giro e contorno do cooldown
+  mediante troca do cookie de visitante.
 - Telefone normalizado registrado no giro quando disponivel, preservando as
   verificacoes antifraude existentes.
 - Emissao de voucher para usuario autenticado tornou-se atomica com o giro.

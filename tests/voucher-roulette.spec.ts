@@ -14,6 +14,10 @@ const routeSource = readFileSync(
   join(process.cwd(), "src/app/api/vouchers/roulette/spin/route.ts"),
   "utf8",
 );
+const algorithmSource = readFileSync(
+  join(process.cwd(), "src/lib/voucher-roulette.ts"),
+  "utf8",
+);
 
 function prize(overrides: Partial<PrizeWithChance>): PrizeWithChance {
   return {
@@ -82,6 +86,9 @@ test.describe("algoritmo operacional da roleta", () => {
         { ipAddress: "203.0.113.10" },
       ],
     });
+    expect(algorithmSource).toContain(
+      'if (target === "spin" && identity.ipAddress)',
+    );
   });
 
   test("endpoint usa apenas a cadeia avancada dentro da transacao", () => {
