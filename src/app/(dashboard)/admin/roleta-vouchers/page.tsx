@@ -50,7 +50,7 @@ async function updateSettings(formData: FormData) {
     formData.get("promotionAuthorizationReference") ?? "",
   ).trim() || null;
   const requestedActive = formData.get("active") === "on";
-  const active = requestedActive && Boolean(promotionAuthorizationReference);
+  const active = requestedActive;
 
   await prisma.$transaction([
     prisma.voucherSettings.upsert({
@@ -111,7 +111,7 @@ async function updateSettings(formData: FormData) {
     targetType: "SYSTEM",
     targetId: "voucher-roulette",
     reason: requestedActive && !promotionAuthorizationReference
-      ? "Roleta mantida inativa por ausencia de referencia de autorizacao promocional"
+      ? "Roleta ativada sem referencia promocional por decisao administrativa aprovada em reuniao interna"
       : "Orcamento e configuracao da roleta atualizados",
   });
   revalidatePath("/admin/roleta-vouchers");
@@ -269,12 +269,13 @@ export default async function AdminRoletaVouchersPage({ searchParams }: { search
 
       <AdminPanel>
         <p style={{ marginTop: 0, color: settings?.promotionAuthorizationReference ? "#86efac" : "#fbbf24" }}>
-          A roleta somente pode ficar ativa com uma referência de autorização promocional registrada e com a
-          Política da Roleta Promocional versionada e vigente.
+          {settings?.promotionAuthorizationReference
+            ? "Referência promocional informativa cadastrada. A operação ainda depende de política vigente, pelo menos dois prêmios ativos, orçamento e estoque disponíveis."
+            : "Roleta sem referência promocional cadastrada. O campo é opcional e informativo; a ativação sem referência foi aprovada por decisão administrativa em reunião interna e será registrada na auditoria."}
         </p>
         <form action={updateSettings} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, alignItems: "end" }}>
           <label style={labelStyle}>Roleta ativa<input name="active" type="checkbox" defaultChecked={settings?.active ?? false} style={checkStyle} /></label>
-          <label style={labelStyle}>Referência da autorização promocional<input name="promotionAuthorizationReference" defaultValue={settings?.promotionAuthorizationReference ?? ""} placeholder="Certificado/processo SPA-MF" style={inputStyle} /></label>
+          <label style={labelStyle}>Referência promocional (opcional)<input name="promotionAuthorizationReference" defaultValue={settings?.promotionAuthorizationReference ?? ""} placeholder="Certificado/processo, se houver" style={inputStyle} /></label>
           <label style={labelStyle}>Orçamento ativo<input name="budgetActive" type="checkbox" defaultChecked={stats.budget.active} style={checkStyle} /></label>
           <label style={labelStyle}>Orçamento mensal<input name="monthlyBudgetLimit" defaultValue={stats.budget.monthlyLimit} style={inputStyle} /></label>
           <label style={labelStyle}>Orçamento diário base<input name="dailyBudgetLimit" defaultValue={stats.budget.dailyLimit} style={inputStyle} /></label>

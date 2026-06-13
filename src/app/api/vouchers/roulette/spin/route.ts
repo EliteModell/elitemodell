@@ -13,12 +13,12 @@ import {
   eligiblePrizes,
   getVoucherSettings,
   getIp,
-  hasPromotionAuthorization,
   newPendingToken,
   newVisitorId,
   pickPrize,
   publicPrize,
   ROULETTE_PROMOTION_POLICY_KEY,
+  rouletteCampaignAvailability,
   rouletteSpinIdentityWhere,
   todayRange,
   userVoucherIdentity,
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
   }
   const body = parsed.data;
   const settings = await getVoucherSettings();
-  if (!settings.active || !hasPromotionAuthorization(settings)) {
+  if (!settings.active) {
     logSpin("warn", "inactive_campaign", { requestId: rid, durationMs: Date.now() - startedAt });
     return NextResponse.json({ error: "A roleta está temporariamente indisponível." }, { status: 403 });
   }
@@ -239,6 +239,17 @@ export async function POST(req: NextRequest) {
         identity,
         now,
       });
+      const availability = rouletteCampaignAvailability({
+        settingsActive: settings.active,
+        activePrizeCount: prizes.length,
+        budgetActive: stats.budget.active,
+        monthlyRemaining: stats.monthlyRemaining,
+        dailyRemaining: stats.dailyRemaining,
+        stockRemainingBudget: stats.dailyStockRemainingBudget,
+      });
+      if (!availability.active) {
+        throw new Error(`CAMPAIGN_UNAVAILABLE:${availability.reason}`);
+      }
       const prize = pickPrize(candidates);
       if (!prize) throw new Error("NO_ELIGIBLE_PRIZE");
 
@@ -337,6 +348,21 @@ export async function POST(req: NextRequest) {
         blockedUntil,
       });
       return NextResponse.json({ error: "Você já participou desta campanha", blockedUntil }, { status: 409 });
+    }
+    if (err instanceof Error && err.message.startsWith("CAMPAIGN_UNAVAILABLE:")) {
+      const unavailableReason = err.message.split(":")[1] ?? "UNAVAILABLE";
+      logSpin("warn", "campaign_unavailable", {
+        requestId: rid,
+        durationMs: Date.now() - startedAt,
+        unavailableReason,
+      });
+      return NextResponse.json(
+        {
+          error: "A roleta está temporariamente indisponível.",
+          unavailableReason,
+        },
+        { status: 403 },
+      );
     }
     const safeError = err instanceof Error ? err.message : "Erro desconhecido";
     logSpin("error", "transaction_failed", {

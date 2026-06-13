@@ -31,6 +31,9 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw<{ id: string }[]>`
+      SELECT "id" FROM "VoucherSpin" WHERE "id" = ${data.spinId} FOR UPDATE
+    `;
     const spin = await tx.voucherSpin.findUnique({
       where: { id: data.spinId },
       include: { prize: true, vouchers: true },

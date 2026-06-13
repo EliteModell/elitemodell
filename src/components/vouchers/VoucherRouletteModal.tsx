@@ -26,7 +26,7 @@ type RouletteConfig = {
     href: string;
     version: string;
     hash: string;
-    authorizationReference: string;
+    authorizationReference: string | null;
   };
 };
 
@@ -637,7 +637,10 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
         )}
 
         <p className="vm-footnote">
-          Versão {config.policy.version} · Autorização {config.policy.authorizationReference}
+          Versão {config.policy.version}
+          {config.policy.authorizationReference
+            ? ` · Referência ${config.policy.authorizationReference}`
+            : ""}
         </p>
       </div>
 

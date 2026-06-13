@@ -5,12 +5,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import {
   activePrizes,
+  ensureDailyPrizeStock,
+  getBudgetStats,
   getVoucherSettings,
   getIp,
-  hasPromotionAuthorization,
   newVisitorId,
   publicPrize,
   ROULETTE_PROMOTION_POLICY_KEY,
+  rouletteCampaignAvailability,
   rouletteSpinIdentityWhere,
   todayRange,
   userVoucherIdentity,
@@ -47,17 +49,43 @@ export async function GET(req: NextRequest) {
     ? await withTimeout(getServerSession(authOptions).catch(() => null), SESSION_TIMEOUT_MS, null)
     : null;
   const settings = await getVoucherSettings();
-  const policyVersions = settings.active && hasPromotionAuthorization(settings)
+  const policyVersions = settings.active
     ? await latestLegalDocumentVersions(ROULETTE_PROMOTION_LEGAL_KEYS)
     : new Map();
   const policyVersion = policyVersions.get(ROULETTE_PROMOTION_POLICY_KEY);
 
-  if (!settings.active || !hasPromotionAuthorization(settings) || !policyVersion) {
+  if (!settings.active || !policyVersion) {
     return NextResponse.json({
       active: false,
       canSpin: false,
       legalPolicyUnavailable: settings.active && !policyVersion,
-      authorizationUnavailable: settings.active && !hasPromotionAuthorization(settings),
+      prizes: [],
+    });
+  }
+
+  const [prizes, initialStats] = await Promise.all([
+    activePrizes(),
+    getBudgetStats(),
+  ]);
+  const dailyStock = await ensureDailyPrizeStock({
+    settings,
+    stats: initialStats,
+  });
+  const availability = rouletteCampaignAvailability({
+    settingsActive: settings.active,
+    activePrizeCount: prizes.length,
+    budgetActive: initialStats.budget.active,
+    monthlyRemaining: initialStats.monthlyRemaining,
+    dailyRemaining: initialStats.dailyRemaining,
+    stockRemainingBudget: dailyStock
+      .filter((stock) => stock.active)
+      .reduce((sum, stock) => sum + stock.remainingBudget, 0),
+  });
+  if (!availability.active) {
+    return NextResponse.json({
+      active: false,
+      canSpin: false,
+      unavailableReason: availability.reason,
       prizes: [],
     });
   }
@@ -82,14 +110,11 @@ export async function GET(req: NextRequest) {
   const identityWhere = rouletteSpinIdentityWhere(identity);
 
   const limit = sessionUserId ? settings.dailySpinLimit : settings.guestDailySpinLimit;
-  const [firstSpinToday, prizes] = await Promise.all([
-    prisma.voucherSpin.findFirst({
-      where: { ...identityWhere, createdAt: { gte: start, lt: end } },
-      select: { id: true, result: true },
-      orderBy: { createdAt: "desc" },
-    }),
-    activePrizes(),
-  ]);
+  const firstSpinToday = await prisma.voucherSpin.findFirst({
+    where: { ...identityWhere, createdAt: { gte: start, lt: end } },
+    select: { id: true, result: true },
+    orderBy: { createdAt: "desc" },
+  });
 
   let spinsToday = firstSpinToday ? 1 : 0;
   let tryTomorrowSpin = firstSpinToday?.result === "TRY_TOMORROW" ? firstSpinToday : null;

@@ -28,10 +28,37 @@ export type VoucherIdentity = {
   document?: string | null;
 };
 
-export function hasPromotionAuthorization(
-  settings: Pick<VoucherSettings, "promotionAuthorizationReference">,
-) {
-  return Boolean(settings.promotionAuthorizationReference?.trim());
+export type RouletteAvailabilityReason =
+  | "INACTIVE"
+  | "INSUFFICIENT_ACTIVE_PRIZES"
+  | "BUDGET_INACTIVE"
+  | "MONTHLY_BUDGET_EXHAUSTED"
+  | "DAILY_BUDGET_EXHAUSTED"
+  | "STOCK_EXHAUSTED";
+
+export function rouletteCampaignAvailability(input: {
+  settingsActive: boolean;
+  activePrizeCount: number;
+  budgetActive: boolean;
+  monthlyRemaining: number;
+  dailyRemaining: number;
+  stockRemainingBudget: number;
+}): { active: boolean; reason: RouletteAvailabilityReason | null } {
+  if (!input.settingsActive) return { active: false, reason: "INACTIVE" };
+  if (input.activePrizeCount < 2) {
+    return { active: false, reason: "INSUFFICIENT_ACTIVE_PRIZES" };
+  }
+  if (!input.budgetActive) return { active: false, reason: "BUDGET_INACTIVE" };
+  if (input.monthlyRemaining <= 0) {
+    return { active: false, reason: "MONTHLY_BUDGET_EXHAUSTED" };
+  }
+  if (input.dailyRemaining <= 0) {
+    return { active: false, reason: "DAILY_BUDGET_EXHAUSTED" };
+  }
+  if (input.stockRemainingBudget <= 0) {
+    return { active: false, reason: "STOCK_EXHAUSTED" };
+  }
+  return { active: true, reason: null };
 }
 
 const BUDGET_STATUSES = ["AVAILABLE", "USED", "EXPIRED", "AWAITING_REGISTRATION"];
@@ -368,15 +395,22 @@ export async function getBudgetStats(now = new Date(), tx?: Prisma.TransactionCl
     status: { in: BUDGET_STATUSES },
   };
 
-  const [monthAgg, todayAgg, issued, used, expired, awaitingRegistration, spinsToday, winnersToday, stockRows] = await Promise.all([
-    database.clientVoucher.aggregate({
-      where: { ...budgetWhere, createdAt: { gte: monthStart, lt: monthEnd } },
-      _sum: { value: true },
-      _count: { _all: true },
+  const [monthCommitted, todayCommitted, issued, used, expired, awaitingRegistration, spinsToday, winnersToday, stockRows] = await Promise.all([
+    database.voucherSpin.aggregate({
+      where: {
+        result: "VOUCHER",
+        voucherValue: { gt: 0 },
+        createdAt: { gte: monthStart, lt: monthEnd },
+      },
+      _sum: { voucherValue: true },
     }),
-    database.clientVoucher.aggregate({
-      where: { ...budgetWhere, createdAt: { gte: todayStart, lt: tomorrowStart } },
-      _sum: { value: true },
+    database.voucherSpin.aggregate({
+      where: {
+        result: "VOUCHER",
+        voucherValue: { gt: 0 },
+        createdAt: { gte: todayStart, lt: tomorrowStart },
+      },
+      _sum: { voucherValue: true },
     }),
     database.clientVoucher.count({ where: { ...budgetWhere, createdAt: { gte: monthStart, lt: monthEnd } } }),
     database.clientVoucher.count({ where: { ...budgetWhere, status: "USED", createdAt: { gte: monthStart, lt: monthEnd } } }),
@@ -387,8 +421,8 @@ export async function getBudgetStats(now = new Date(), tx?: Prisma.TransactionCl
     database.voucherDailyStock.findMany({ where: { date: todayStart } }),
   ]);
 
-  const monthlyUsed = monthAgg._sum.value ?? 0;
-  const dailyUsed = todayAgg._sum.value ?? 0;
+  const monthlyUsed = monthCommitted._sum.voucherValue ?? 0;
+  const dailyUsed = todayCommitted._sum.voucherValue ?? 0;
   const monthlyRemaining = Math.max(0, budget.monthlyLimit - monthlyUsed);
   const dailyAllowance = Math.max(0, Math.min(budget.dailyLimit, monthlyRemaining + dailyUsed));
   const dailyRemaining = Math.max(0, Math.min(monthlyRemaining, budget.dailyLimit - dailyUsed));
@@ -468,6 +502,14 @@ export async function ensureDailyPrizeStock(input?: {
   const stats = input?.stats ?? await getBudgetStats(now, input?.tx);
   const { start: todayStart } = todayRange(now);
 
+  if (!stats.budget.active || stats.monthlyRemaining <= 0 || stats.dailyRemaining <= 0) {
+    await tx.voucherDailyStock.updateMany({
+      where: { date: todayStart, active: true },
+      data: { active: false },
+    });
+    return [];
+  }
+
   await tx.voucherDailyStock.updateMany({
     where: {
       date: { lt: todayStart },
@@ -485,7 +527,22 @@ export async function ensureDailyPrizeStock(input?: {
     orderBy: [{ prizeValue: "asc" }, { createdAt: "asc" }],
     include: { prize: true },
   });
-  if (existing.length) return existing;
+  if (existing.length) {
+    await tx.voucherDailyStock.updateMany({
+      where: {
+        date: todayStart,
+        active: false,
+        remainingQuantity: { gt: 0 },
+        remainingBudget: { gt: 0 },
+      },
+      data: { active: true },
+    });
+    return tx.voucherDailyStock.findMany({
+      where: { date: todayStart },
+      orderBy: [{ prizeValue: "asc" }, { createdAt: "asc" }],
+      include: { prize: true },
+    });
+  }
 
   const prizes = await tx.voucherPrize.findMany({
     where: { active: true, type: { in: ["VOUCHER", "PAID_VOUCHER"] }, value: { gt: 0 } },

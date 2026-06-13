@@ -3,8 +3,9 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { PrizeWithChance } from "../src/lib/voucher-roulette";
 import {
-  hasPromotionAuthorization,
+  consumeDailyStock,
   pickPrize,
+  rouletteCampaignAvailability,
   rouletteSpinIdentityWhere,
   VOUCHER_DAILY_LIMIT,
   VOUCHER_MONTHLY_LIMIT,
@@ -16,6 +17,22 @@ const routeSource = readFileSync(
 );
 const algorithmSource = readFileSync(
   join(process.cwd(), "src/lib/voucher-roulette.ts"),
+  "utf8",
+);
+const publicRouteSource = readFileSync(
+  join(process.cwd(), "src/app/api/vouchers/roulette/route.ts"),
+  "utf8",
+);
+const claimRouteSource = readFileSync(
+  join(process.cwd(), "src/app/api/vouchers/roulette/claim/route.ts"),
+  "utf8",
+);
+const adminSource = readFileSync(
+  join(process.cwd(), "src/app/(dashboard)/admin/roleta-vouchers/page.tsx"),
+  "utf8",
+);
+const prismaSchemaSource = readFileSync(
+  join(process.cwd(), "prisma/schema.prisma"),
   "utf8",
 );
 const modalSource = readFileSync(
@@ -60,10 +77,40 @@ test.describe("algoritmo operacional da roleta", () => {
     expect(VOUCHER_DAILY_LIMIT).toBe(100);
   });
 
-  test("exige referencia promocional nao vazia", () => {
-    expect(hasPromotionAuthorization({ promotionAuthorizationReference: null })).toBe(false);
-    expect(hasPromotionAuthorization({ promotionAuthorizationReference: "   " })).toBe(false);
-    expect(hasPromotionAuthorization({ promotionAuthorizationReference: "processo-real-cadastrado" })).toBe(true);
+  test("referencia promocional e opcional e informativa", () => {
+    expect(adminSource).toContain(
+      "const active = requestedActive",
+    );
+    expect(adminSource).toContain(
+      "Roleta ativada sem referencia promocional por decisao administrativa aprovada em reuniao interna",
+    );
+    expect(prismaSchemaSource).toMatch(
+      /model VoucherSettings[\s\S]*active\s+Boolean\s+@default\(true\)[\s\S]*promotionAuthorizationReference\s+String\?/,
+    );
+    expect(routeSource).not.toContain("hasPromotionAuthorization");
+    expect(publicRouteSource).not.toContain("hasPromotionAuthorization");
+  });
+
+  test("so fica operacional com ativacao, dois premios, orcamento e estoque", () => {
+    const ready = {
+      settingsActive: true,
+      activePrizeCount: 2,
+      budgetActive: true,
+      monthlyRemaining: VOUCHER_MONTHLY_LIMIT,
+      dailyRemaining: VOUCHER_DAILY_LIMIT,
+      stockRemainingBudget: VOUCHER_DAILY_LIMIT,
+    };
+
+    expect(rouletteCampaignAvailability(ready)).toEqual({
+      active: true,
+      reason: null,
+    });
+    expect(rouletteCampaignAvailability({ ...ready, settingsActive: false }).reason).toBe("INACTIVE");
+    expect(rouletteCampaignAvailability({ ...ready, activePrizeCount: 1 }).reason).toBe("INSUFFICIENT_ACTIVE_PRIZES");
+    expect(rouletteCampaignAvailability({ ...ready, budgetActive: false }).reason).toBe("BUDGET_INACTIVE");
+    expect(rouletteCampaignAvailability({ ...ready, monthlyRemaining: 0 }).reason).toBe("MONTHLY_BUDGET_EXHAUSTED");
+    expect(rouletteCampaignAvailability({ ...ready, dailyRemaining: 0 }).reason).toBe("DAILY_BUDGET_EXHAUSTED");
+    expect(rouletteCampaignAvailability({ ...ready, stockRemainingBudget: 0 }).reason).toBe("STOCK_EXHAUSTED");
   });
 
   test("nao sorteia premio com probabilidade efetiva zero", () => {
@@ -127,11 +174,136 @@ test.describe("algoritmo operacional da roleta", () => {
     expect(spinCreation).toBeGreaterThan(stockConsumption);
   });
 
-  test("endpoint permanece bloqueado sem ativacao e autorizacao", () => {
-    const guard = "if (!settings.active || !hasPromotionAuthorization(settings))";
+  test("endpoint bloqueia campanha inativa sem consultar referencia promocional", () => {
+    const guard = "if (!settings.active)";
     expect(routeSource).toContain(guard);
+    expect(routeSource).not.toContain("promotionAuthorizationReference");
+    expect(routeSource).not.toContain("hasPromotionAuthorization");
     expect(routeSource.indexOf(guard)).toBeLessThan(
       routeSource.indexOf("result = await prisma.$transaction"),
+    );
+  });
+
+  test("orcamento considera todo premio comprometido no giro, mesmo antes do resgate", () => {
+    expect(algorithmSource).toContain("database.voucherSpin.aggregate({");
+    expect(algorithmSource).toContain('result: "VOUCHER"');
+    expect(algorithmSource).toContain("_sum: { voucherValue: true }");
+    expect(algorithmSource).toContain(
+      "const monthlyUsed = monthCommitted._sum.voucherValue ?? 0",
+    );
+    expect(algorithmSource).toContain(
+      "const dailyUsed = todayCommitted._sum.voucherValue ?? 0",
+    );
+    expect(algorithmSource).toContain(
+      "Math.max(0, budget.monthlyLimit - monthlyUsed)",
+    );
+    expect(algorithmSource).toContain(
+      "Math.max(0, Math.min(monthlyRemaining, budget.dailyLimit - dailyUsed))",
+    );
+  });
+
+  test("estoque e decrementado condicionalmente e nunca pode ficar negativo", async () => {
+    let stockWhere: Record<string, unknown> | null = null;
+    let stockData: Record<string, unknown> | null = null;
+    let budgetUpdates = 0;
+    const tx = {
+      voucherDailyStock: {
+        updateMany: async (args: { where: Record<string, unknown>; data: Record<string, unknown> }) => {
+          stockWhere = args.where;
+          stockData = args.data;
+          return { count: 1 };
+        },
+      },
+      voucherBudget: {
+        update: async () => {
+          budgetUpdates += 1;
+          return {};
+        },
+      },
+    };
+    const winningPrize = prize({
+      id: "voucher-10",
+      type: "VOUCHER",
+      value: 10,
+      dailyStock: {
+        id: "stock-10",
+        remainingQuantity: 1,
+        remainingBudget: 10,
+      } as PrizeWithChance["dailyStock"],
+    });
+
+    await consumeDailyStock({
+      tx: tx as never,
+      prize: winningPrize,
+      stats: { budget: { id: "budget-current" } } as never,
+    });
+
+    expect(stockWhere).toMatchObject({
+      id: "stock-10",
+      active: true,
+      remainingQuantity: { gt: 0 },
+      remainingBudget: { gte: 10 },
+    });
+    expect(stockData).toMatchObject({
+      remainingQuantity: { decrement: 1 },
+      usedQuantity: { increment: 1 },
+      usedBudget: { increment: 10 },
+      remainingBudget: { decrement: 10 },
+    });
+    expect(budgetUpdates).toBe(1);
+  });
+
+  test("falha atomicamente quando outro giro consumir o ultimo estoque", async () => {
+    let budgetUpdates = 0;
+    const tx = {
+      voucherDailyStock: {
+        updateMany: async () => ({ count: 0 }),
+      },
+      voucherBudget: {
+        update: async () => {
+          budgetUpdates += 1;
+          return {};
+        },
+      },
+    };
+    const winningPrize = prize({
+      type: "VOUCHER",
+      value: 10,
+      dailyStock: {
+        id: "stock-empty",
+        remainingQuantity: 1,
+        remainingBudget: 10,
+      } as PrizeWithChance["dailyStock"],
+    });
+
+    await expect(consumeDailyStock({
+      tx: tx as never,
+      prize: winningPrize,
+      stats: { budget: { id: "budget-current" } } as never,
+    })).rejects.toThrow("estoque");
+    expect(budgetUpdates).toBe(0);
+  });
+
+  test("resgate bloqueia o giro antes de verificar ou criar voucher duplicado", () => {
+    const lock = claimRouteSource.indexOf('FROM "VoucherSpin"');
+    const loadSpin = claimRouteSource.indexOf("tx.voucherSpin.findUnique");
+    const createVoucher = claimRouteSource.indexOf("createVoucherFromSpin({");
+
+    expect(claimRouteSource).toContain("FOR UPDATE");
+    expect(lock).toBeGreaterThan(0);
+    expect(loadSpin).toBeGreaterThan(lock);
+    expect(createVoucher).toBeGreaterThan(loadSpin);
+  });
+
+  test("api publica mostra apenas campanha operacional e oculta as demais", () => {
+    expect(publicRouteSource).toContain("rouletteCampaignAvailability({");
+    expect(publicRouteSource).toContain("activePrizeCount: prizes.length");
+    expect(publicRouteSource).toContain("stockRemainingBudget:");
+    expect(publicRouteSource).toContain("if (!availability.active)");
+    expect(publicRouteSource).toContain("active: false");
+    expect(publicRouteSource).toContain("active: true");
+    expect(publicRouteSource).toContain(
+      "authorizationReference: settings.promotionAuthorizationReference",
     );
   });
 
@@ -142,5 +314,11 @@ test.describe("algoritmo operacional da roleta", () => {
       modalSource.indexOf('fetch("/api/vouchers/roulette/spin"'),
     );
     expect(modalSource).toContain("não registra giro, não consome estoque e não emite voucher");
+  });
+
+  test("modal omite referencia opcional quando ela nao estiver preenchida", () => {
+    expect(modalSource).toContain("authorizationReference: string | null");
+    expect(modalSource).toContain("config.policy.authorizationReference");
+    expect(modalSource).toContain('? ` · Referência ${config.policy.authorizationReference}`');
   });
 });
