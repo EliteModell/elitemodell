@@ -7,6 +7,8 @@ import { useSession } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 import PublicReportButton from "@/components/moderation/PublicReportButton";
 import ActionAuthModal from "@/components/auth/ActionAuthModal";
+import PremiumUpsellModal from "@/components/premium/PremiumUpsellModal";
+import ProfessionalContactAction from "@/components/professionals/ProfessionalContactAction";
 import ReviewForm from "@/components/ReviewForm";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
@@ -31,6 +33,8 @@ type ApiProfessional = {
   whatsapp?: string | null;
   instagram?: string | null;
   hidePhone?: boolean;
+  contactVisibility?: "PUBLIC" | "LOGGED_IN" | "PREMIUM";
+  contactAvailable?: boolean;
   priceMin?: number | null;
   pricePerHour?: number | null;
   price30min?: number | null;
@@ -65,6 +69,8 @@ type ApiProfessional = {
   approximateLocation?: string | null;
   presentationVideoUrl?: string | null;
   presentationVideoStatus?: string | null;
+  hasPremiumVideo?: boolean;
+  hasMoreReviews?: boolean;
   verified: boolean;
   featured: boolean;
   boostActive?: boolean;
@@ -101,12 +107,6 @@ type AvailableVoucher = {
   requiresPayment: boolean;
   paymentStatus: string;
 };
-
-function buildWaLink(raw: string): string {
-  const digits = raw.replace(/\D/g, "");
-  const withDDI = digits.startsWith("55") && digits.length >= 12 ? digits : `55${digits}`;
-  return `https://wa.me/${withDDI}?text=${encodeURIComponent("Olá, vi seu perfil na Elite Modell e gostaria de mais informações.")}`;
-}
 
 function calcAge(birthDate?: string | null): number | null {
   if (!birthDate) return null;
@@ -148,6 +148,10 @@ export default function ProfissionalProfilePage() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [eligibleAppointmentId, setEligibleAppointmentId] = useState<string | null | undefined>(undefined);
   const [reportOpen, setReportOpen] = useState(false);
+  const [premiumOpen, setPremiumOpen] = useState(false);
+  const [premiumFeature, setPremiumFeature] = useState("recursos exclusivos");
+  const [premiumVideoUrl, setPremiumVideoUrl] = useState<string | null>(null);
+  const [premiumReviews, setPremiumReviews] = useState<ApiProfessional["reviews"] | null>(null);
   const resumedActionRef = useRef<string | null>(null);
 
   const [galeriaFiltro, setGaleriaFiltro] = useState<GaleriaFiltro>("todas");
@@ -250,6 +254,23 @@ export default function ProfissionalProfilePage() {
     load();
     return () => controller.abort();
   }, [slug]);
+
+  useEffect(() => {
+    if (authStatus !== "authenticated" || !pro) return;
+    const controller = new AbortController();
+    void fetch(`/api/professionals/${slug}/premium-content`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (!data || controller.signal.aborted) return;
+        setPremiumVideoUrl(data.presentationVideoUrl ?? null);
+        setPremiumReviews(Array.isArray(data.reviews) ? data.reviews : null);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [authStatus, pro, slug]);
 
   useEffect(() => {
     const action = searchParams.get("action");
@@ -403,7 +424,7 @@ export default function ProfissionalProfilePage() {
   }));
 
   // Reviews
-  const reviews = (pro.reviews ?? []).map((r) => ({
+  const reviews = (premiumReviews ?? pro.reviews ?? []).map((r) => ({
     author: r.author?.name ?? "Anônimo",
     rating: r.rating,
     comment: r.comment ?? "",
@@ -615,19 +636,33 @@ export default function ProfissionalProfilePage() {
           )}
 
           {/* Verificação */}
-          {pro.presentationVideoUrl && (
+          {(premiumVideoUrl || pro.presentationVideoUrl) && (
             <div style={{ marginBottom: 24 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "#f1f5f9", fontFamily: PLAYFAIR }}>Video de apresentacao</span>
               </div>
               <video
-                src={pro.presentationVideoUrl}
+                src={premiumVideoUrl ?? pro.presentationVideoUrl ?? undefined}
                 controls
                 preload="metadata"
                 style={{ width: "100%", maxHeight: 420, borderRadius: 14, border: `1px solid ${GOLD_MID}`, background: "#050506" }}
               />
             </div>
+          )}
+          {!premiumVideoUrl && !pro.presentationVideoUrl && pro.hasPremiumVideo && (
+            <button
+              type="button"
+              onClick={() => {
+                setPremiumFeature("o vídeo exclusivo desta profissional");
+                setPremiumOpen(true);
+              }}
+              style={{ width: "100%", marginBottom: 24, padding: 22, borderRadius: 16, border: `1px solid ${GOLD_MID}`, background: "radial-gradient(circle at 50% 0%,rgba(212,168,67,.16),transparent 55%),#0b1420", color: "#f5d78c", cursor: "pointer", textAlign: "left" }}
+            >
+              <span style={{ display: "block", color: GOLD, fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>Conteúdo Premium</span>
+              <strong style={{ display: "block", marginTop: 8, color: "#f1f5f9", fontSize: 18, fontFamily: PLAYFAIR }}>Vídeo exclusivo disponível</strong>
+              <span style={{ display: "block", marginTop: 7, color: "#64748b", fontSize: 13 }}>Toque para conhecer os planos e desbloquear este conteúdo.</span>
+            </button>
           )}
 
           {pro.verificationUrl && (
@@ -858,6 +893,19 @@ export default function ProfissionalProfilePage() {
             )}
           </div>
 
+          {!premiumReviews && pro.hasMoreReviews && (
+            <button
+              type="button"
+              onClick={() => {
+                setPremiumFeature("todas as avaliações");
+                setPremiumOpen(true);
+              }}
+              style={{ width: "100%", minHeight: 48, margin: "-6px 0 20px", borderRadius: 12, border: `1px solid ${GOLD_MID}`, background: GOLD_DIM, color: "#f5d78c", fontWeight: 900, cursor: "pointer" }}
+            >
+              Ver todas as {pro.totalReviews} avaliações com Premium
+            </button>
+          )}
+
           <div style={{ background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "18px 16px", textAlign: "center", marginBottom: 32 }}>
             <p style={{ fontSize: 14, fontWeight: 700, color: "#f1f5f9", margin: "0 0 6px", fontFamily: PLAYFAIR }}>Foi atendido por {pro.displayName}?</p>
             <p style={{ fontSize: 12, color: "#475569", margin: "0 0 14px" }}>Deixe sua avaliação gratuita</p>
@@ -1050,6 +1098,12 @@ export default function ProfissionalProfilePage() {
         returnTo={actionReturnUrl(authIntent ?? "favorite")}
         onClose={() => setAuthIntent(null)}
       />
+      <PremiumUpsellModal
+        open={premiumOpen}
+        onClose={() => setPremiumOpen(false)}
+        featureLabel={premiumFeature}
+        returnTo={`/profissionais/${slug}`}
+      />
 
       {/* CTA FIXO */}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 55, background: "rgba(6,14,27,0.98)", backdropFilter: "blur(12px)", borderTop: `1px solid ${GOLD_DIM}`, padding: "10px 16px calc(10px + env(safe-area-inset-bottom))", display: "flex", gap: 10, alignItems: "center" }}>
@@ -1068,20 +1122,19 @@ export default function ProfissionalProfilePage() {
         >
           Agendar
         </button>
-        {pro.whatsapp ? (
-          <a href={buildWaLink(pro.whatsapp)} target="_blank" rel="noopener noreferrer" onClick={trackContactClick}
-            style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 10px", background: "rgba(212,168,67,0.12)", color: GOLD, border: `1px solid ${GOLD_MID}`, borderRadius: 10, fontSize: 14, fontWeight: 800, textDecoration: "none", fontFamily: PLAYFAIR }}>
-            <svg width="19" height="19" viewBox="0 0 24 24" fill={GOLD}>
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-            </svg>
-            WhatsApp
-          </a>
-        ) : (
-          <button type="button" onClick={trackContactClick}
-            style={{ flex: 1, padding: "12px", background: "rgba(212,168,67,0.12)", color: "#f5d78c", border: `1px solid ${GOLD_MID}`, borderRadius: 10, fontSize: 14, fontWeight: 800, fontFamily: PLAYFAIR }}>
-            Contato indisponível no momento
-          </button>
-        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <ProfessionalContactAction
+            slug={slug}
+            visibility={pro.contactVisibility ?? "PUBLIC"}
+            initialWhatsapp={pro.whatsapp}
+            initialPhone={pro.phone}
+            contactAvailable={pro.contactAvailable}
+            returnTo={`/profissionais/${slug}`}
+            label="WhatsApp"
+            compact
+            onContact={trackContactClick}
+          />
+        </div>
       </div>
 
       {/* Lightbox */}

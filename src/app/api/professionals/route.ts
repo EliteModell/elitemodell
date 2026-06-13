@@ -11,6 +11,7 @@ import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
 import { activeProfessionalAccessWhere } from "@/lib/professional-access";
 import { createProfessionalSchema } from "@/lib/professional-profile-schema";
 import { assertApprovedMediaUrls } from "@/lib/approved-media";
+import { normalizeContactVisibility } from "@/lib/professional-contact";
 import {
   calculateAge,
   canonicalProfessionalPhotos,
@@ -119,9 +120,10 @@ export async function GET(req: NextRequest) {
         height: true, weight: true, hairColor: true, eyeColor: true, ethnicity: true,
         hasTattoos: true, hasSilicone: true,
         hideAge: true,
+        phone: true,
         whatsapp: true,
         hidePhone: true,
-        listingPhoneUntil: true,
+        contactVisibility: true,
         priceMin: true, pricePerHour: true, price30min: true,
         attendanceTypes: true, servesGenders: true,
         services: true,
@@ -142,10 +144,9 @@ export async function GET(req: NextRequest) {
   console.log("[CLIENT_SEARCH] filters", { search, city, state, category, sortBy, page, limit });
   console.log("[CLIENT_SEARCH] professionals found", professionals.length, "/ total", total);
 
-  // WhatsApp na listagem exige beneficio pago ativo e respeita a privacidade manual.
   const safeList = professionals.map(({
     hidePhone,
-    listingPhoneUntil,
+    contactVisibility,
     galleryUrls,
     birthDate,
     hideAge,
@@ -157,6 +158,7 @@ export async function GET(req: NextRequest) {
   }) => {
     const photos = canonicalProfessionalPhotos({ photos: p.photos, image: p.image, galleryUrls });
     const premiumActive = Boolean(p.user.premiumUntil && p.user.premiumUntil > now);
+    const normalizedContactVisibility = normalizeContactVisibility(contactVisibility, hidePhone);
     return {
       ...p,
       image: photos.find((photo) => photo.cover)?.url ?? photos[0]?.url ?? null,
@@ -168,7 +170,10 @@ export async function GET(req: NextRequest) {
       sponsored: p.boostActive && (!p.boostUntil || p.boostUntil > now),
       plan: premiumActive ? activePlanId : null,
       planPriority: premiumActive ? planPriority : 0,
-      whatsapp: !hidePhone && listingPhoneUntil && listingPhoneUntil > now ? p.whatsapp : null,
+      contactVisibility: normalizedContactVisibility,
+      contactAvailable: Boolean(p.whatsapp || p.phone),
+      phone: normalizedContactVisibility === "PUBLIC" ? p.phone : null,
+      whatsapp: normalizedContactVisibility === "PUBLIC" ? p.whatsapp : null,
     };
   });
 

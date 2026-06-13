@@ -124,15 +124,20 @@ export async function syncAsaasPaymentSnapshot(paymentId: string, remote: AsaasP
 
   if (nextStatus === "PAID") {
     await applyPaidPaymentEffects(current.id);
-  } else if (nextStatus === "REFUNDED") {
+  } else if (nextStatus === "REFUNDED" || nextStatus === "CHARGEBACK") {
     await reversePaidPaymentEffects(current.id);
-  } else if (current.bookingId && ["CANCELLED", "EXPIRED", "CHARGEBACK"].includes(nextStatus)) {
+    if (current.bookingId && nextStatus === "CHARGEBACK") {
+      await prisma.booking.update({
+        where: { id: current.bookingId },
+        data: { paymentStatus: nextStatus, disputeStatus: "OPEN" },
+      });
+    }
+  } else if (current.bookingId && ["CANCELLED", "EXPIRED"].includes(nextStatus)) {
     await prisma.booking.update({
       where: { id: current.bookingId },
       data: {
         paymentStatus: nextStatus,
         ...(nextStatus === "CANCELLED" ? { status: "CANCELLED", cancelledAt: new Date() } : {}),
-        ...(nextStatus === "CHARGEBACK" ? { disputeStatus: "OPEN" } : {}),
       },
     });
   }

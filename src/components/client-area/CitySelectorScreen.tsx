@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Crown, Diamond, LockKeyhole, MapPin, Navigation2, Search, ShieldCheck, X } from "lucide-react";
+import PremiumUpsellModal from "@/components/premium/PremiumUpsellModal";
 
 type Suggestion = {
   placeId: string;
@@ -31,6 +32,7 @@ export default function CitySelectorScreen({
   const [noResults, setNoResults] = useState<string | null>(null);
   const [geolocating, setGeolocating] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
+  const [premiumOpen, setPremiumOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -130,7 +132,8 @@ export default function CitySelectorScreen({
   const visibleSuggestions = input.length >= 2 ? suggestions : [];
 
   return (
-    <div className="client-city-select">
+    <>
+      <div className="client-city-select">
       <div className="client-city-bg" />
 
       <div className="client-city-wrap">
@@ -273,7 +276,7 @@ export default function CitySelectorScreen({
 
           {!noResults && !busy && visibleSuggestions.length === 0 && input.length < 2 && (
             <div className="space-y-[44px]">
-              <div className="flex items-center gap-5 rounded-[18px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.32)] sm:p-7">
+              <div className="flex flex-wrap items-center gap-5 rounded-[18px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.32)] sm:flex-nowrap sm:p-7">
                 <div className="grid h-[82px] w-[82px] shrink-0 place-items-center rounded-[17px] bg-[#17130c]/88">
                   <Diamond className="h-12 w-12 text-[#facc15]" strokeWidth={1.7} />
                 </div>
@@ -285,7 +288,8 @@ export default function CitySelectorScreen({
                 </div>
                 <button
                   type="button"
-                  className="hidden min-h-[58px] shrink-0 items-center gap-3 rounded-[12px] border border-[#facc15]/55 bg-[linear-gradient(135deg,rgba(250,204,21,0.34),rgba(104,74,18,0.78))] px-7 text-[16px] font-black text-[#facc15] shadow-[0_0_34px_rgba(250,204,21,0.14)] transition hover:brightness-110 active:scale-95 sm:flex"
+                  onClick={() => setPremiumOpen(true)}
+                  className="flex min-h-[54px] w-full shrink-0 items-center justify-center gap-3 rounded-[12px] border border-[#facc15]/55 bg-[linear-gradient(135deg,rgba(250,204,21,0.34),rgba(104,74,18,0.78))] px-7 text-[16px] font-black text-[#facc15] shadow-[0_0_34px_rgba(250,204,21,0.14)] transition hover:brightness-110 active:scale-95 sm:min-h-[58px] sm:w-auto"
                 >
                   Seja Premium
                   <Crown className="h-5 w-5 fill-[#facc15]/30" />
@@ -315,7 +319,14 @@ export default function CitySelectorScreen({
             </div>
           )}
         </main>
+        </div>
       </div>
-    </div>
+      <PremiumUpsellModal
+        open={premiumOpen}
+        onClose={() => setPremiumOpen(false)}
+        featureLabel="os benefícios da área de clientes Premium"
+        returnTo="/dashboard/acompanhantes"
+      />
+    </>
   );
 }

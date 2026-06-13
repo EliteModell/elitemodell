@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { Clock, Crown, Diamond, LockKeyhole, MapPin, Search, ShieldCheck, X } from "lucide-react";
+import PremiumUpsellModal from "@/components/premium/PremiumUpsellModal";
 
 type Suggestion = {
   placeId: string;
@@ -25,6 +26,7 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [checking, setChecking] = useState(false);
   const [noResults, setNoResults] = useState<string | null>(null);
+  const [premiumOpen, setPremiumOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -99,10 +101,11 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
   const busy = loadingSuggestions || checking;
 
   return (
-    <div
-      className="fixed inset-0 z-[200] overflow-y-auto overscroll-contain bg-[#030405] text-white"
-      style={{ animation: "premiumFadeUp 200ms ease-out both" }}
-    >
+    <>
+      <div
+        className="fixed inset-0 z-[200] overflow-y-auto overscroll-contain bg-[#030405] text-white"
+        style={{ animation: "premiumFadeUp 200ms ease-out both" }}
+      >
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_75%_28%,rgba(250,204,21,0.10),transparent_32%),linear-gradient(180deg,#050505_0%,#030405_56%,#050505_100%)]" />
 
       <div className="relative mx-auto flex min-h-dvh max-w-[820px] flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+38px)] pt-[calc(env(safe-area-inset-top)+22px)] sm:px-8">
@@ -231,7 +234,7 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
 
           {!noResults && !busy && suggestions.length === 0 && (
             <div className="space-y-[44px]">
-              <PremiumInvite />
+              <PremiumInvite onClick={() => setPremiumOpen(true)} />
               <div className="space-y-8 px-4">
                 <TrustLine
                   icon={<ShieldCheck className="h-7 w-7" />}
@@ -251,14 +254,21 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
             </div>
           )}
         </main>
+        </div>
       </div>
-    </div>
+      <PremiumUpsellModal
+        open={premiumOpen}
+        onClose={() => setPremiumOpen(false)}
+        featureLabel="os benefícios da área de clientes Premium"
+        returnTo="/dashboard/acompanhantes"
+      />
+    </>
   );
 }
 
-function PremiumInvite() {
+function PremiumInvite({ onClick }: { onClick: () => void }) {
   return (
-    <div className="flex items-center gap-5 rounded-[18px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.32)] sm:p-7">
+    <div className="flex flex-wrap items-center gap-5 rounded-[18px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.32)] sm:flex-nowrap sm:p-7">
       <div className="grid h-[82px] w-[82px] shrink-0 place-items-center rounded-[17px] bg-[#17130c]/88">
         <Diamond className="h-12 w-12 text-[#facc15]" strokeWidth={1.7} />
       </div>
@@ -270,7 +280,8 @@ function PremiumInvite() {
       </div>
       <button
         type="button"
-        className="hidden min-h-[58px] shrink-0 items-center gap-3 rounded-[12px] border border-[#facc15]/55 bg-[linear-gradient(135deg,rgba(250,204,21,0.34),rgba(104,74,18,0.78))] px-7 text-[16px] font-black text-[#facc15] shadow-[0_0_34px_rgba(250,204,21,0.14)] transition hover:brightness-110 active:scale-95 sm:flex"
+        onClick={onClick}
+        className="flex min-h-[54px] w-full shrink-0 items-center justify-center gap-3 rounded-[12px] border border-[#facc15]/55 bg-[linear-gradient(135deg,rgba(250,204,21,0.34),rgba(104,74,18,0.78))] px-7 text-[16px] font-black text-[#facc15] shadow-[0_0_34px_rgba(250,204,21,0.14)] transition hover:brightness-110 active:scale-95 sm:min-h-[58px] sm:w-auto"
       >
         Seja Premium
         <Crown className="h-5 w-5 fill-[#facc15]/30" />

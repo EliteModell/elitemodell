@@ -59,6 +59,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "premium-upsell",
+      testMatch: "**/premium-upsell.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "legal-security",
       testMatch: "**/legal-security.spec.ts",
       use: { browserName: "chromium" },

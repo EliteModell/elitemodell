@@ -9,6 +9,7 @@ type Settings = {
   slug: string;
   status: string;
   hidePhone: boolean;
+  contactVisibility: "PUBLIC" | "LOGGED_IN" | "PREMIUM";
   hideAge: boolean;
   voucherSettings?: { acceptsVouchers: boolean } | null;
   pauseUntil?: string | null;
@@ -128,13 +129,49 @@ export default function ProfissionalConfiguracoesPage() {
       <div style={{ display: "grid", gap: 16 }}>
         <section style={card}>
           <h2 style={{ color: "#fff", fontSize: 17, margin: "0 0 12px" }}>Privacidade do perfil público</h2>
-          <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "12px 0", borderBottom: "1px solid #1e1e1e" }}>
-            <span>
-              <strong style={{ color: "#eee" }}>Ocultar telefone/WhatsApp</strong>
-              <p style={{ ...muted, margin: "4px 0 0" }}>Clientes veem contato indisponível e devem solicitar pela plataforma.</p>
-            </span>
-            <input type="checkbox" checked={settings.hidePhone} disabled={saving} onChange={(event) => save({ hidePhone: event.target.checked })} />
-          </label>
+          <p style={{ ...muted, margin: "0 0 12px" }}>Escolha quem poderá abrir seus botões de telefone e WhatsApp.</p>
+          <div style={{ display: "grid", gap: 8, paddingBottom: 14, borderBottom: "1px solid #1e1e1e" }}>
+            {([
+              ["PUBLIC", "Público para todos", "Visitantes podem acessar o contato sem criar conta."],
+              ["LOGGED_IN", "Somente usuários logados", "O contato é liberado depois do login."],
+              ["PREMIUM", "Somente clientes Premium", "O contato vira um benefício exclusivo do plano Premium."],
+            ] as const).map(([value, label, description]) => (
+              <label
+                key={value}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 10,
+                  padding: 12,
+                  borderRadius: 12,
+                  border: settings.contactVisibility === value
+                    ? "1px solid rgba(212,168,67,.5)"
+                    : "1px solid #252525",
+                  background: settings.contactVisibility === value
+                    ? "rgba(212,168,67,.08)"
+                    : "#0d0d0d",
+                  cursor: saving ? "wait" : "pointer",
+                }}
+              >
+                <input
+                  type="radio"
+                  name="contactVisibility"
+                  value={value}
+                  checked={settings.contactVisibility === value}
+                  disabled={saving}
+                  onChange={() => save(
+                    { contactVisibility: value },
+                    "Visibilidade do contato atualizada.",
+                  )}
+                  style={{ marginTop: 3, accentColor: "#d4a843" }}
+                />
+                <span>
+                  <strong style={{ color: "#eee" }}>{label}</strong>
+                  <span style={{ ...muted, display: "block", marginTop: 3 }}>{description}</span>
+                </span>
+              </label>
+            ))}
+          </div>
           <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "12px 0 0" }}>
             <span>
               <strong style={{ color: "#eee" }}>Ocultar idade</strong>

@@ -180,43 +180,44 @@ model User {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  accounts               Account[]
-  sessions               Session[]
-  properties             Property[]
-  bookingsAsGuest        Booking[]                   @relation("GuestBookings")
-  reviews                Review[]
-  sentMessages           Message[]                   @relation("SentMessages")
-  favorites              Favorite[]
-  referrals              Referral[]                  @relation("ReferrerUser")
-  referredBy             Referral?                   @relation("ReferredUser")
-  hostProfile            HostProfile?
-  clientProfile          ClientProfile?
-  notifications          Notification[]
-  professional           Professional?
-  clientAppointments     Appointment[]               @relation("ClientAppointments")
-  proReviews             ProfessionalReview[]        @relation("ProReviewAuthor")
-  proReviewDisputes      ProfessionalReviewDispute[] @relation("ProReviewDisputeAuthor")
-  stories                Story[]
-  reportsCreated         Report[]                    @relation("ReportAuthor")
-  auditLogsCreated       AuditLog[]                  @relation("AuditAdmin")
-  adminAssignments       AdminRoleAssignment[]       @relation("AdminRoleUser")
-  adminRolesGranted      AdminRoleAssignment[]       @relation("AdminRoleGrantedBy")
-  adminMfaEnrollment     AdminMfaEnrollment?
-  adminMfaSessions       AdminMfaSession[]
-  legalVersionsAuthored  LegalDocumentVersion[]      @relation("LegalVersionAuthor")
-  legalVersionsApproved  LegalDocumentVersion[]      @relation("LegalVersionApprover")
-  acceptances            UserAcceptance[]
-  consentPreferences     ConsentPreference[]
-  privacyRequests        PrivacyRequest[]
-  contentDeclarations    ContentDeclaration[]
-  checkoutAcceptances    CheckoutAcceptance[]
-  deletionJobs           DataDeletionJob[]
-  phoneVerificationCodes PhoneVerificationCode[]
-  payments               Payment[]
-  voucherSpins           VoucherSpin[]               @relation("VoucherSpinClient")
-  clientVouchers         ClientVoucher[]             @relation("ClientVouchers")
-  uploadedAssets         UploadAsset[]               @relation("UploadOwner")
-  reviewedAssets         UploadAsset[]               @relation("UploadReviewer")
+  accounts                Account[]
+  sessions                Session[]
+  properties              Property[]
+  bookingsAsGuest         Booking[]                   @relation("GuestBookings")
+  reviews                 Review[]
+  sentMessages            Message[]                   @relation("SentMessages")
+  favorites               Favorite[]
+  referrals               Referral[]                  @relation("ReferrerUser")
+  referredBy              Referral?                   @relation("ReferredUser")
+  hostProfile             HostProfile?
+  clientProfile           ClientProfile?
+  notifications           Notification[]
+  professional            Professional?
+  clientAppointments      Appointment[]               @relation("ClientAppointments")
+  proReviews              ProfessionalReview[]        @relation("ProReviewAuthor")
+  proReviewDisputes       ProfessionalReviewDispute[] @relation("ProReviewDisputeAuthor")
+  stories                 Story[]
+  reportsCreated          Report[]                    @relation("ReportAuthor")
+  auditLogsCreated        AuditLog[]                  @relation("AuditAdmin")
+  adminAssignments        AdminRoleAssignment[]       @relation("AdminRoleUser")
+  adminRolesGranted       AdminRoleAssignment[]       @relation("AdminRoleGrantedBy")
+  adminMfaEnrollment      AdminMfaEnrollment?
+  adminMfaSessions        AdminMfaSession[]
+  legalVersionsAuthored   LegalDocumentVersion[]      @relation("LegalVersionAuthor")
+  legalVersionsApproved   LegalDocumentVersion[]      @relation("LegalVersionApprover")
+  acceptances             UserAcceptance[]
+  consentPreferences      ConsentPreference[]
+  privacyRequests         PrivacyRequest[]
+  contentDeclarations     ContentDeclaration[]
+  checkoutAcceptances     CheckoutAcceptance[]
+  deletionJobs            DataDeletionJob[]
+  phoneVerificationCodes  PhoneVerificationCode[]
+  payments                Payment[]
+  claimedPremiumPurchases PremiumPurchaseIntent[]     @relation("PremiumPurchaseClaimedBy")
+  voucherSpins            VoucherSpin[]               @relation("VoucherSpinClient")
+  clientVouchers          ClientVoucher[]             @relation("ClientVouchers")
+  uploadedAssets          UploadAsset[]               @relation("UploadOwner")
+  reviewedAssets          UploadAsset[]               @relation("UploadReviewer")
 
   @@index([phone])
   @@index([accountType])
@@ -517,15 +518,62 @@ model Payment {
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
 
-  booking             Booking?             @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  user                User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking             Booking?               @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user                User?                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   voucherUnlocks      ClientVoucher[]
   checkoutAcceptances CheckoutAcceptance[]
   operations          PaymentOperation[]
+  premiumPurchase     PremiumPurchaseIntent?
 
   @@index([userId, status])
   @@index([bookingId, createdAt])
   @@index([provider, providerPaymentId])
+}
+
+model PremiumPurchaseIntent {
+  id                     String    @id @default(cuid())
+  paymentId              String    @unique
+  planId                 String
+  status                 String    @default("PAYMENT_PENDING")
+  claimTokenHash         String    @unique
+  purchaserName          String
+  purchaserEmail         String
+  purchaserPhone         String?
+  purchaserDocumentHash  String
+  purchaserDocumentLast4 String
+  ipAddress              String?
+  userAgent              String?   @db.Text
+  termsVersionId         String?
+  refundPolicyVersionId  String?
+  termsHash              String
+  refundPolicyHash       String
+  acceptedAt             DateTime
+  paidAt                 DateTime?
+  claimedAt              DateTime?
+  claimedByUserId        String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  payment   Payment                @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  claimedBy User?                  @relation("PremiumPurchaseClaimedBy", fields: [claimedByUserId], references: [id], onDelete: SetNull)
+  events    PremiumPurchaseEvent[]
+
+  @@index([purchaserEmail, status, createdAt])
+  @@index([claimedByUserId, status])
+  @@index([status, createdAt])
+}
+
+model PremiumPurchaseEvent {
+  id        String   @id @default(cuid())
+  intentId  String
+  type      String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  intent PremiumPurchaseIntent @relation(fields: [intentId], references: [id], onDelete: Cascade)
+
+  @@index([intentId, createdAt])
+  @@index([type, createdAt])
 }
 
 model PaymentOperation {
@@ -718,6 +766,7 @@ model Professional {
   instagram         String?
   website           String?
   hidePhone         Boolean   @default(false)
+  contactVisibility String    @default("PUBLIC")
   listingPhoneUntil DateTime?
 
   // Preços

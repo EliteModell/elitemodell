@@ -8,18 +8,13 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FiltersModal from "@/components/FiltersModal";
 import VoucherRouletteModal from "@/components/vouchers/VoucherRouletteModal";
+import ProfessionalContactAction from "@/components/professionals/ProfessionalContactAction";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
 const GOLD_MID = "rgba(212,168,67,0.28)";
 const PLAYFAIR = "var(--font-playfair), serif";
-
-function buildWaLink(raw: string): string {
-  const digits = raw.replace(/\D/g, "");
-  const withDDI = digits.startsWith("55") && digits.length >= 12 ? digits : `55${digits}`;
-  return `https://wa.me/${withDDI}?text=${encodeURIComponent("Olá, vi seu perfil na Elite Modell e gostaria de mais informações.")}`;
-}
 
 type MainTab = "acompanhantes" | "imoveis";
 type SubTab = "mulheres" | "trans" | "homens";
@@ -49,7 +44,10 @@ type CardPerfil = {
   attendanceTypes: string[];
   servicos: string[];
   bio: string;
+  phone: string | null;
   whatsapp: string | null;
+  contactVisibility: "PUBLIC" | "LOGGED_IN" | "PREMIUM";
+  contactAvailable: boolean;
   verified: boolean;
   sponsored: boolean;
 };
@@ -282,7 +280,10 @@ function BuscarContent() {
           services?: string[];
           bio?: string;
           photos?: Array<{ url: string }>;
+          phone?: string | null;
           whatsapp?: string | null;
+          contactVisibility?: "PUBLIC" | "LOGGED_IN" | "PREMIUM";
+          contactAvailable?: boolean;
           online?: boolean;
           verified?: boolean;
           sponsored?: boolean;
@@ -301,7 +302,10 @@ function BuscarContent() {
           attendanceTypes: p.attendanceTypes ?? [],
           servicos: Array.from(new Set([...(p.services ?? []), ...(p.specialties ?? []).map((s) => s.name)])),
           bio: p.bio ?? "",
+          phone: p.phone ?? null,
           whatsapp: p.whatsapp ?? null,
+          contactVisibility: p.contactVisibility ?? "PUBLIC",
+          contactAvailable: Boolean(p.contactAvailable),
           verified: Boolean(p.verified),
           sponsored: Boolean(p.sponsored),
         }));
@@ -888,7 +892,10 @@ function BuscarContent() {
         )}
       </div>
 
-      <VoucherRouletteModal />
+      <VoucherRouletteModal
+        key={params.get("demonstrarRoleta") === "1" ? "roulette-demo" : "roulette-live"}
+        demoMode={params.get("demonstrarRoleta") === "1"}
+      />
       <Footer />
     </div>
   );
@@ -1010,14 +1017,6 @@ function StoriesStrip({ stories }: { stories: StoryGroup[] }) {
   );
 }
 
-function WhatsAppIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-    </svg>
-  );
-}
-
 function ProfileCard({ profile }: { profile: CardPerfil }) {
   return (
     <div className="perfil-card">
@@ -1075,13 +1074,13 @@ function ProfileCard({ profile }: { profile: CardPerfil }) {
             )}
           </div>
 
-          <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: profile.whatsapp ? 10 : 0 }}>
+          <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: profile.contactAvailable ? 10 : 0 }}>
             {profile.servicos.slice(0, 3).map((service) => (
               <span key={service} style={{ fontSize: 10, background: GOLD_DIM, border: "1px solid rgba(212,168,67,0.15)", color: "#94a3b8", padding: "3px 8px", borderRadius: 10 }}>{service}</span>
             ))}
           </div>
 
-          {!profile.whatsapp && (
+          {!profile.contactAvailable && (
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, color: GOLD, fontSize: 12, fontWeight: 700, fontFamily: PLAYFAIR }}>
               Ver perfil <span aria-hidden="true">→</span>
             </div>
@@ -1089,33 +1088,18 @@ function ProfileCard({ profile }: { profile: CardPerfil }) {
         </div>
       </Link>
 
-      {/* Botão WhatsApp — fora do Link para não criar <a> dentro de <a> */}
-      {profile.whatsapp && (
+      {/* Ação de contato fica fora do Link para não criar elementos interativos aninhados. */}
+      {profile.contactAvailable && (
         <div style={{ padding: "0 16px 14px" }}>
-          <a
-            href={buildWaLink(profile.whatsapp)}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              width: "100%",
-              padding: "10px 14px",
-              background: GOLD,
-              color: "#060e1b",
-              borderRadius: 10,
-              fontSize: 13,
-              fontWeight: 800,
-              textDecoration: "none",
-              fontFamily: PLAYFAIR,
-              boxSizing: "border-box",
-            }}
-          >
-            <WhatsAppIcon />
-            Chamar no WhatsApp
-          </a>
+          <ProfessionalContactAction
+            slug={profile.slug}
+            visibility={profile.contactVisibility}
+            initialWhatsapp={profile.whatsapp}
+            initialPhone={profile.phone}
+            contactAvailable={profile.contactAvailable}
+            returnTo={`/profissionais/${profile.slug}`}
+            compact
+          />
         </div>
       )}
     </div>

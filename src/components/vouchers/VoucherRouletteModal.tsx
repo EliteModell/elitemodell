@@ -41,6 +41,10 @@ type SpinResult = {
   voucher?: { id: string; code: string; value: number; status: string; requiresPayment: boolean } | null;
 };
 
+type Props = {
+  demoMode?: boolean;
+};
+
 const CLOSED_KEY = "elite_voucher_modal_closed";
 const GOLD = "#d4a843";
 const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.webp?v=20260601-spin-audio";
@@ -49,6 +53,30 @@ const SPIN_DURATION_MS = 4000;   // duração fixa do giro visual (ms)
 const RESULT_REVEAL_DELAY_MS = 1000; // pausa após parar para mostrar onde caiu
 const SLOW_PREPARE_MS = 180;
 const SPIN_API_TIMEOUT_MS = 8000;
+const DEMO_PRIZES: Prize[] = Array.from({ length: 10 }, (_, index) => ({
+  id: `demo-${index}`,
+  index,
+  name: index % 2 === 0 ? `R$ ${[5, 10, 20, 50, 100][index / 2]} OFF` : "Tente novamente",
+  type: index % 2 === 0 ? "VOUCHER" : "TRY_AGAIN",
+  value: index % 2 === 0 ? [5, 10, 20, 50, 100][index / 2] : null,
+  requiresPayment: false,
+  paymentAmount: null,
+}));
+
+const DEMO_CONFIG: RouletteConfig = {
+  active: true,
+  canSpin: true,
+  blockedUntil: null,
+  prizes: DEMO_PRIZES,
+  policy: {
+    key: "roulette-promotion-policy",
+    title: "Política da Roleta Promocional",
+    href: "/documentos/roulette-promotion-policy",
+    version: "DEMONSTRACAO",
+    hash: "demonstracao-sem-premiacao",
+    authorizationReference: "DEMONSTRACAO_SEM_PREMIACAO",
+  },
+};
 
 function randomKey() {
   const bytes = new Uint8Array(16);
@@ -95,6 +123,14 @@ function resolveVisualIndex(result: SpinResult) {
 }
 
 function getResultView(result: SpinResult) {
+  if (result.result === "DEMO") {
+    return {
+      Icon: Sparkles,
+      tone: "again" as const,
+      title: "Demonstração concluída",
+      subtitle: "Nenhum prêmio, voucher ou participação real foi gerado.",
+    };
+  }
   if (result.result === "ERROR") {
     return {
       Icon: Sparkles,
@@ -129,9 +165,11 @@ function getResultView(result: SpinResult) {
   };
 }
 
-export default function VoucherRouletteModal() {
-  const [config, setConfig] = useState<RouletteConfig | null>(null);
-  const [open, setOpen] = useState(false);
+export default function VoucherRouletteModal({ demoMode = false }: Props) {
+  const [config, setConfig] = useState<RouletteConfig | null>(
+    demoMode ? DEMO_CONFIG : null,
+  );
+  const [open, setOpen] = useState(demoMode);
   const [spinning, setSpinning] = useState(false);
   const [fetching, setFetching] = useState(false); // aguardando resposta da API
   const [showResult, setShowResult] = useState(false);
@@ -157,6 +195,7 @@ export default function VoucherRouletteModal() {
   const preloadedWheelRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
+    if (demoMode) return;
     if (sessionStorage.getItem(CLOSED_KEY)) return;
     let active = true;
     let openTimer: number | null = null;
@@ -181,7 +220,7 @@ export default function VoucherRouletteModal() {
       if (openTimer !== null) window.clearTimeout(openTimer);
       window.removeEventListener("elite-cookie-consent", loadRoulette);
     };
-  }, []);
+  }, [demoMode]);
 
   useEffect(() => {
     if (!open) return;
@@ -206,7 +245,7 @@ export default function VoucherRouletteModal() {
   }, [open]);
 
   function close() {
-    sessionStorage.setItem(CLOSED_KEY, "1");
+    if (!demoMode) sessionStorage.setItem(CLOSED_KEY, "1");
     clearSlowPrepareTimer();
     stopWheelMotion();
     stopSpinSound();
@@ -407,6 +446,27 @@ export default function VoucherRouletteModal() {
       slowPrepareTimerRef.current = null;
     }, SLOW_PREPARE_MS);
 
+    if (demoMode) {
+      await delay(450);
+      clearSlowPrepareTimer();
+      setFetching(false);
+      const visualIndex = Math.floor(Math.random() * 10);
+      await animateWheelToSegment(visualIndex, SPIN_DURATION_MS);
+      stopSpinSound();
+      setWinningIndex(visualIndex);
+      await delay(RESULT_REVEAL_DELAY_MS);
+      setResult({
+        spinId: "demo",
+        prize: DEMO_PRIZES[visualIndex],
+        result: "DEMO",
+        message: "Demonstração visual sem premiação.",
+        needsIdentification: false,
+      });
+      setShowResult(true);
+      setSpinning(false);
+      return;
+    }
+
     let timeoutId: number | null = null;
 
     try {
@@ -516,6 +576,7 @@ export default function VoucherRouletteModal() {
           <span>elite</span>modell
         </p>
         <h2 className="vm-title">ROLETA PREMIADA</h2>
+        {demoMode && <p className="vm-demo-badge">MODO DEMONSTRAÇÃO · SEM PRÊMIO REAL</p>}
         <p className="vm-sub">Gire a roleta e descubra seu desconto especial para usar na plataforma.</p>
 
         {/* Wheel section — pointer + ring are siblings; pointer overlaps ring top via negative margin */}
@@ -544,25 +605,31 @@ export default function VoucherRouletteModal() {
           type="button"
           className="vm-spin-btn"
           onClick={spin}
-          disabled={spinning || Boolean(result) || !acceptedPolicy}
+          disabled={spinning || Boolean(result) || (!demoMode && !acceptedPolicy)}
         >
           {fetching ? "Preparando..." : spinning ? "Girando..." : "GIRAR AGORA"}
         </button>
-        <label className="vm-policy-acceptance">
-          <input
-            type="checkbox"
-            checked={acceptedPolicy}
-            onChange={(event) => setAcceptedPolicy(event.target.checked)}
-            disabled={spinning || Boolean(result)}
-          />
-          <span>
-            Li e aceito a{" "}
-            <Link href={config.policy.href} target="_blank">
-              {config.policy.title}
-            </Link>
-            .
-          </span>
-        </label>
+        {demoMode ? (
+          <p className="vm-demo-note">
+            Esta visualização não registra giro, não consome estoque e não emite voucher.
+          </p>
+        ) : (
+          <label className="vm-policy-acceptance">
+            <input
+              type="checkbox"
+              checked={acceptedPolicy}
+              onChange={(event) => setAcceptedPolicy(event.target.checked)}
+              disabled={spinning || Boolean(result)}
+            />
+            <span>
+              Li e aceito a{" "}
+              <Link href={config.policy.href} target="_blank">
+                {config.policy.title}
+              </Link>
+              .
+            </span>
+          </label>
+        )}
         {fetching && slowPreparing && (
           <p className="vm-prepare-note" role="status">
             Preparando seu giro com segurança...
@@ -855,6 +922,26 @@ export default function VoucherRouletteModal() {
         .vm-spin-btn:not(:disabled):hover { opacity: .9; }
         .vm-spin-btn:not(:disabled):active { transform: scale(.97); }
         .vm-spin-btn:disabled { opacity: .6; cursor: not-allowed; }
+        .vm-demo-badge {
+          width: fit-content;
+          margin: 8px auto 4px;
+          padding: 6px 10px;
+          border: 1px solid rgba(245,215,140,.4);
+          border-radius: 999px;
+          background: rgba(212,168,67,.12);
+          color: #f5d78c;
+          font-size: 10px;
+          font-weight: 900;
+          letter-spacing: .1em;
+        }
+        .vm-demo-note {
+          margin: 12px auto 0;
+          max-width: 420px;
+          color: rgba(255,255,255,.58);
+          font-size: 12px;
+          line-height: 1.55;
+          text-align: center;
+        }
 
         .vm-policy-acceptance {
           width: min(100%, 320px);

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getProfessionalPlanPriority, parseProfessionalPlanReference } from "@/lib/professional-plans";
 import { toCents } from "@/lib/money";
+import { getPremiumUpsellPlan, premiumUpsellUntil } from "@/lib/client-plans";
 
 export async function applyPaidPaymentEffects(paymentId: string) {
   try {
@@ -20,13 +21,53 @@ export async function applyPaidPaymentEffects(paymentId: string) {
         return { applied: false, reason: "payment_not_eligible" as const };
       }
 
+      const premiumIntent = await tx.premiumPurchaseIntent.findUnique({
+        where: { paymentId: payment.id },
+        select: { id: true, planId: true, claimedByUserId: true },
+      });
+      const effectivePremiumUntil = premiumIntent
+        ? premiumUpsellUntil(getPremiumUpsellPlan(premiumIntent.planId as Parameters<typeof getPremiumUpsellPlan>[0]), payment.paidAt ?? new Date())
+        : payment.premiumUntil;
+      if (payment.premiumUntil && !payment.userId && premiumIntent) {
+        if (payment.benefitStatus === "AWAITING_CLAIM") {
+          return { applied: false, reason: "awaiting_claim" as const };
+        }
+        const paidAt = payment.paidAt ?? new Date();
+        await tx.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: "PAID",
+            paidAt,
+            benefitStatus: "AWAITING_CLAIM",
+            benefitError: null,
+            premiumUntil: effectivePremiumUntil,
+          },
+        });
+        await tx.premiumPurchaseIntent.update({
+          where: { id: premiumIntent.id },
+          data: {
+            status: "PAID_AWAITING_ACCOUNT",
+            paidAt,
+          },
+        });
+        await tx.premiumPurchaseEvent.create({
+          data: {
+            intentId: premiumIntent.id,
+            type: "PAYMENT_CONFIRMED_AWAITING_ACCOUNT",
+            metadata: { paymentId: payment.id },
+          },
+        });
+        return { applied: false, reason: "awaiting_claim" as const };
+      }
+
       const claimed = await tx.payment.updateMany({
-        where: { id: payment.id, benefitStatus: { in: ["PENDING", "FAILED"] } },
+        where: { id: payment.id, benefitStatus: { in: ["PENDING", "FAILED", "AWAITING_CLAIM"] } },
         data: {
           status: "PAID",
           paidAt: payment.paidAt ?? new Date(),
           benefitStatus: "PROCESSING",
           benefitError: null,
+          ...(premiumIntent ? { premiumUntil: effectivePremiumUntil } : {}),
         },
       });
       if (!claimed.count) return { applied: false, reason: "already_processing" as const };
@@ -57,7 +98,7 @@ export async function applyPaidPaymentEffects(paymentId: string) {
         });
       }
 
-      if (payment.userId && payment.premiumUntil) {
+      if (payment.userId && effectivePremiumUntil) {
         const user = await tx.user.findUnique({
           where: { id: payment.userId },
           select: { premiumUntil: true },
@@ -65,7 +106,7 @@ export async function applyPaidPaymentEffects(paymentId: string) {
         const current = user?.premiumUntil?.getTime() ?? 0;
         await tx.user.update({
           where: { id: payment.userId },
-          data: { premiumUntil: new Date(Math.max(current, payment.premiumUntil.getTime())) },
+          data: { premiumUntil: new Date(Math.max(current, effectivePremiumUntil.getTime())) },
           select: { id: true },
         });
       }
@@ -137,6 +178,28 @@ export async function applyPaidPaymentEffects(paymentId: string) {
           benefitError: null,
         },
       });
+      if (premiumIntent) {
+        await tx.premiumPurchaseIntent.update({
+          where: { id: premiumIntent.id },
+          data: {
+            status: "ACTIVE",
+            paidAt: payment.paidAt ?? new Date(),
+            claimedAt: payment.userId ? new Date() : undefined,
+            claimedByUserId: payment.userId ?? premiumIntent.claimedByUserId,
+          },
+        });
+        await tx.premiumPurchaseEvent.create({
+          data: {
+            intentId: premiumIntent.id,
+            type: "PREMIUM_ACCESS_APPLIED",
+            metadata: {
+              paymentId: payment.id,
+              userId: payment.userId,
+              premiumUntil: effectivePremiumUntil?.toISOString() ?? null,
+            },
+          },
+        });
+      }
       return { applied: true, reason: "paid" as const };
     });
   } catch (cause) {
@@ -206,6 +269,24 @@ export async function reversePaidPaymentEffects(paymentId: string) {
           data: { premiumUntil: null },
         });
       }
+    }
+
+    const premiumIntent = await tx.premiumPurchaseIntent.findUnique({
+      where: { paymentId: payment.id },
+      select: { id: true },
+    });
+    if (premiumIntent) {
+      await tx.premiumPurchaseIntent.update({
+        where: { id: premiumIntent.id },
+        data: { status: payment.status === "CHARGEBACK" ? "CHARGEBACK" : "REFUNDED" },
+      });
+      await tx.premiumPurchaseEvent.create({
+        data: {
+          intentId: premiumIntent.id,
+          type: "PREMIUM_ACCESS_REVERSED",
+          metadata: { paymentId: payment.id, paymentStatus: payment.status },
+        },
+      });
     }
 
     const professionalPlan = parseProfessionalPlanReference(payment.externalReference);

@@ -15,6 +15,7 @@ import {
   isProfessionalOnline,
   publicCacheHeaders,
 } from "@/lib/public-professional-profile";
+import { normalizeContactVisibility } from "@/lib/professional-contact";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -36,6 +37,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       instagram: true,
       website: true,
       hidePhone: true,
+      contactVisibility: true,
       priceMin: true,
       priceMax: true,
       pricePerHour: true,
@@ -113,7 +115,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
         where: { hidden: false },
         include: { author: { select: { name: true, image: true } } },
         orderBy: { createdAt: "desc" },
-        take: 20,
+        take: 2,
       },
     },
   });
@@ -145,6 +147,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
     galleryUrls: professional.galleryUrls,
   });
   const premiumActive = Boolean(professional.user.premiumUntil && professional.user.premiumUntil > new Date());
+  const contactVisibility = normalizeContactVisibility(
+    professional.contactVisibility,
+    professional.hidePhone,
+  );
+  const publicContact = canViewDraft || contactVisibility === "PUBLIC";
+  const hasPremiumVideo =
+    professional.presentationVideoStatus === "APPROVED" &&
+    Boolean(stripLegacyPublicStorageUrl(professional.presentationVideoUrl));
   const publicProfessional: Record<string, unknown> = {
     ...professional,
     user: {
@@ -167,13 +177,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
     sponsored: professional.boostActive && (!professional.boostUntil || professional.boostUntil > new Date()),
     plan: premiumActive ? professional.activePlanId : null,
     planPriority: premiumActive ? professional.planPriority : 0,
-    phone: professional.hidePhone && !canViewDraft ? null : professional.phone,
-    whatsapp: professional.hidePhone && !canViewDraft ? null : professional.whatsapp,
+    contactVisibility,
+    contactAvailable: Boolean(professional.phone || professional.whatsapp),
+    phone: publicContact ? professional.phone : null,
+    whatsapp: publicContact ? professional.whatsapp : null,
     birthDate: professional.hideAge && !canViewDraft ? null : professional.birthDate,
-    presentationVideoUrl:
-      professional.presentationVideoStatus === "APPROVED" || canViewDraft
-        ? stripLegacyPublicStorageUrl(professional.presentationVideoUrl)
-        : null,
+    presentationVideoUrl: canViewDraft
+      ? stripLegacyPublicStorageUrl(professional.presentationVideoUrl)
+      : null,
+    hasPremiumVideo,
+    hasMoreReviews: professional.totalReviews > professional.reviews.length,
   };
   delete publicProfessional.userId;
   delete publicProfessional.accessGrandfathered;

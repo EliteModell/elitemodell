@@ -18,6 +18,10 @@ const algorithmSource = readFileSync(
   join(process.cwd(), "src/lib/voucher-roulette.ts"),
   "utf8",
 );
+const modalSource = readFileSync(
+  join(process.cwd(), "src/components/vouchers/VoucherRouletteModal.tsx"),
+  "utf8",
+);
 
 function prize(overrides: Partial<PrizeWithChance>): PrizeWithChance {
   return {
@@ -129,5 +133,14 @@ test.describe("algoritmo operacional da roleta", () => {
     expect(routeSource.indexOf(guard)).toBeLessThan(
       routeSource.indexOf("result = await prisma.$transaction"),
     );
+  });
+
+  test("demonstracao visual nao chama giro real nem emite voucher", () => {
+    expect(modalSource).toContain("MODO DEMONSTRAÇÃO · SEM PRÊMIO REAL");
+    expect(modalSource).toContain("if (demoMode)");
+    expect(modalSource.indexOf("if (demoMode)")).toBeLessThan(
+      modalSource.indexOf('fetch("/api/vouchers/roulette/spin"'),
+    );
+    expect(modalSource).toContain("não registra giro, não consome estoque e não emite voucher");
   });
 });

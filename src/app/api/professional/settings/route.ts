@@ -7,11 +7,13 @@ import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
 import { assertApprovedMediaUrls } from "@/lib/approved-media";
+import { PROFESSIONAL_CONTACT_VISIBILITIES } from "@/lib/professional-contact";
 
 const MAX_PAUSE_DAYS = Number(process.env.PROFESSIONAL_MAX_PAUSE_DAYS ?? 60);
 
 const settingsSchema = z.object({
   hidePhone: z.boolean().optional(),
+  contactVisibility: z.enum(PROFESSIONAL_CONTACT_VISIBILITIES).optional(),
   hideAge: z.boolean().optional(),
   acceptsVouchers: z.boolean().optional(),
   pause: z.object({
@@ -32,6 +34,7 @@ async function currentProfessional(userId: string) {
       status: true,
       verified: true,
       hidePhone: true,
+      contactVisibility: true,
       listingPhoneUntil: true,
       hideAge: true,
       voucherSettings: { select: { acceptsVouchers: true } },
@@ -73,7 +76,13 @@ export async function PATCH(req: NextRequest) {
     const now = new Date();
     const data: Record<string, unknown> = {};
 
-    if (body.hidePhone !== undefined) data.hidePhone = body.hidePhone;
+    if (body.contactVisibility !== undefined) {
+      data.contactVisibility = body.contactVisibility;
+      data.hidePhone = body.contactVisibility !== "PUBLIC";
+    } else if (body.hidePhone !== undefined) {
+      data.hidePhone = body.hidePhone;
+      data.contactVisibility = body.hidePhone ? "PREMIUM" : "PUBLIC";
+    }
     if (body.hideAge !== undefined) data.hideAge = body.hideAge;
 
     if (body.pause) {
@@ -117,6 +126,7 @@ export async function PATCH(req: NextRequest) {
         slug: true,
         status: true,
         hidePhone: true,
+        contactVisibility: true,
         listingPhoneUntil: true,
         hideAge: true,
         voucherSettings: { select: { acceptsVouchers: true } },
