@@ -3,14 +3,17 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 import PublicReportButton from "@/components/moderation/PublicReportButton";
-import ActionAuthModal from "@/components/auth/ActionAuthModal";
-import PremiumUpsellModal from "@/components/premium/PremiumUpsellModal";
 import ProfessionalContactAction from "@/components/professionals/ProfessionalContactAction";
-import ReviewForm from "@/components/ReviewForm";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import styles from "./profile.module.css";
+
+const ActionAuthModal = dynamic(() => import("@/components/auth/ActionAuthModal"));
+const PremiumUpsellModal = dynamic(() => import("@/components/premium/PremiumUpsellModal"));
+const ReviewForm = dynamic(() => import("@/components/ReviewForm"));
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
@@ -225,10 +228,14 @@ export default function ProfissionalProfilePage() {
   useEffect(() => {
     const controller = new AbortController();
 
-    async function load() {
+    async function loadProfile() {
       setLoading(true);
+      setNotFound(false);
       try {
-        const res = await fetch(`/api/professionals/${slug}`, { signal: controller.signal });
+        const res = await fetch(`/api/professionals/${slug}`, {
+          signal: controller.signal,
+          cache: "default",
+        });
         if (res.status === 404) { setNotFound(true); return; }
         if (!res.ok) throw new Error();
         const data: ApiProfessional = await res.json();
@@ -238,22 +245,35 @@ export default function ProfissionalProfilePage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ eventType: "profile_view" }),
         }).catch(() => undefined);
-
-        // Busca perfis similares na mesma cidade
-        const simRes = await fetch(`/api/professionals?city=${encodeURIComponent(data.city)}&sortBy=rating&limit=4`, { signal: controller.signal });
-        if (simRes.ok) {
-          const simData = await simRes.json();
-          setSimilar((simData.professionals ?? []).filter((p: SimilarPro) => p.id !== data.id).slice(0, 3));
-        }
       } catch {
         if (!controller.signal.aborted) setNotFound(true);
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
     }
-    load();
+    void loadProfile();
     return () => controller.abort();
   }, [slug]);
+
+  useEffect(() => {
+    if (!pro) return;
+    const controller = new AbortController();
+    void fetch(
+      `/api/professionals?city=${encodeURIComponent(pro.city)}&state=${encodeURIComponent(pro.state)}&sortBy=rating&limit=4`,
+      { signal: controller.signal, cache: "default" },
+    )
+      .then((response) => response.ok ? response.json() : { professionals: [] })
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        setSimilar(
+          (data.professionals ?? [])
+            .filter((professional: SimilarPro) => professional.id !== pro.id)
+            .slice(0, 3),
+        );
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [pro]);
 
   useEffect(() => {
     if (authStatus !== "authenticated" || !pro) return;
@@ -454,7 +474,7 @@ export default function ProfissionalProfilePage() {
 
       {/* COVER com nome overlay */}
       <div style={{ paddingTop: 64 }}>
-        <div style={{ height: 380, position: "relative", overflow: "hidden" }}>
+        <div className={styles.cover}>
           {coverImage ? (
             <Image
               src={coverImage}
@@ -469,11 +489,11 @@ export default function ProfissionalProfilePage() {
             <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #0b1420, #1a0a0a)" }} />
           )}
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(6,14,27,0.1) 0%, rgba(6,14,27,0.5) 45%, rgba(6,14,27,0.93) 100%)" }} />
-          <div style={{ position: "absolute", bottom: 20, left: 16 }}>
+          <div className={styles.coverIdentity}>
             <h1 style={{ fontSize: "clamp(34px, 9vw, 56px)", fontWeight: 700, color: "#f1f5f9", margin: 0, fontFamily: PLAYFAIR, letterSpacing: "-1px", lineHeight: 1, textShadow: "0 2px 16px rgba(0,0,0,0.6)" }}>
               {pro.displayName}
             </h1>
-            <p style={{ fontSize: 10, color: "rgba(212,168,67,0.8)", fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", margin: "7px 0 0" }}>
+            <p data-testid="profile-tier" style={{ fontSize: 10, color: "rgba(212,168,67,0.8)", fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", margin: "7px 0 0" }}>
               {pro.verified ? "Verificada · " : ""}Premium
             </p>
           </div>
@@ -481,14 +501,16 @@ export default function ProfissionalProfilePage() {
 
         {/* Avatar + badges */}
         <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 16px" }}>
-          <div style={{ display: "flex", gap: 14, alignItems: "center", marginTop: -48, marginBottom: 16 }}>
-            <div style={{ width: 88, height: 88, borderRadius: "50%", flexShrink: 0, border: `3px solid ${GOLD}`, overflow: "hidden", background: "#0b1420", boxShadow: `0 0 24px rgba(212,168,67,0.3)`, position: "relative", zIndex: 10 }}>
+          <div className={styles.profileSummary}>
+            <div data-testid="profile-avatar" className={styles.avatar} style={{ borderColor: GOLD }}>
               {profileImage ? (
                 <Image
                   src={profileImage}
                   alt={pro.displayName}
                   fill
                   sizes="88px"
+                  quality={62}
+                  loading="eager"
                   style={{ objectFit: "cover", objectPosition: "top" }}
                 />
               ) : (
@@ -497,7 +519,7 @@ export default function ProfissionalProfilePage() {
                 </div>
               )}
             </div>
-            <div style={{ flex: 1, paddingTop: 52 }}>
+            <div className={styles.summaryDetails}>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
                 {pro.verified && <span style={{ padding: "3px 10px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 20, fontSize: 11, color: GOLD, fontWeight: 700 }}>✓ Verificada</span>}
                 {pro.featured && <span style={{ padding: "3px 10px", background: "rgba(204,0,0,0.15)", border: "1px solid rgba(204,0,0,0.3)", borderRadius: 20, fontSize: 11, color: "#cc0000", fontWeight: 700 }}>★ Destaque</span>}
@@ -554,7 +576,7 @@ export default function ProfissionalProfilePage() {
             <div style={{ display: "flex", gap: 10, overflowX: "auto", padding: "18px 0 4px" }}>
               {pro.stories.map((story) => (
                 <a key={story.id} href={story.mediaUrl} target="_blank" rel="noreferrer" style={{ position: "relative", width: 74, height: 100, flex: "0 0 auto", overflow: "hidden", borderRadius: 12, border: `2px solid ${GOLD}`, background: "#111" }}>
-                  <Image src={story.thumbnail ?? story.mediaUrl} alt={`Story de ${pro.displayName}`} fill sizes="74px" style={{ objectFit: "cover" }} />
+                  <Image src={story.thumbnail ?? story.mediaUrl} alt={`Story de ${pro.displayName}`} fill sizes="74px" quality={60} style={{ objectFit: "cover" }} />
                 </a>
               ))}
             </div>
@@ -621,6 +643,7 @@ export default function ProfissionalProfilePage() {
                     alt=""
                     fill
                     sizes="(max-width: 720px) 33vw, 220px"
+                    quality={60}
                     style={{ objectFit: "cover", objectPosition: "top" }}
                   />
                   <div style={{ position: "absolute", bottom: 5, right: 5, background: "rgba(6,14,27,0.85)", borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -933,6 +956,7 @@ export default function ProfissionalProfilePage() {
                           alt={p.displayName}
                           fill
                           sizes="140px"
+                          quality={60}
                           style={{ objectFit: "cover", objectPosition: "top" }}
                         />
                       ) : (
@@ -1092,18 +1116,22 @@ export default function ProfissionalProfilePage() {
         </div>
       ) : null}
 
-      <ActionAuthModal
-        open={Boolean(authIntent)}
-        actionLabel={authIntent === "review" ? "avaliar este perfil" : authIntent === "favorite" ? "salvar este perfil" : "enviar esta denúncia"}
-        returnTo={actionReturnUrl(authIntent ?? "favorite")}
-        onClose={() => setAuthIntent(null)}
-      />
-      <PremiumUpsellModal
-        open={premiumOpen}
-        onClose={() => setPremiumOpen(false)}
-        featureLabel={premiumFeature}
-        returnTo={`/profissionais/${slug}`}
-      />
+      {authIntent ? (
+        <ActionAuthModal
+          open
+          actionLabel={authIntent === "review" ? "avaliar este perfil" : authIntent === "favorite" ? "salvar este perfil" : "enviar esta denúncia"}
+          returnTo={actionReturnUrl(authIntent)}
+          onClose={() => setAuthIntent(null)}
+        />
+      ) : null}
+      {premiumOpen ? (
+        <PremiumUpsellModal
+          open
+          onClose={() => setPremiumOpen(false)}
+          featureLabel={premiumFeature}
+          returnTo={`/profissionais/${slug}`}
+        />
+      ) : null}
 
       {/* CTA FIXO */}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 55, background: "rgba(6,14,27,0.98)", backdropFilter: "blur(12px)", borderTop: `1px solid ${GOLD_DIM}`, padding: "10px 16px calc(10px + env(safe-area-inset-bottom))", display: "flex", gap: 10, alignItems: "center" }}>

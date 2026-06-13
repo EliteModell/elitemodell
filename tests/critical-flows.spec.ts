@@ -494,4 +494,145 @@ test.describe("Fluxo público — Buscar prazer", () => {
     await expect(page).toHaveURL(/cidade=Ita(%C3%BA|ú)na/i);
     await expect.poll(() => professionalRequests).toBeGreaterThan(0);
   });
+
+  test("localização aproximada normaliza Itauna e libera a busca", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "geolocation", {
+        configurable: true,
+        value: {
+          getCurrentPosition(success: PositionCallback) {
+            success({
+              coords: {
+                latitude: -20.0755,
+                longitude: -44.5764,
+                accuracy: 20,
+                altitude: null,
+                altitudeAccuracy: null,
+                heading: null,
+                speed: null,
+              },
+              timestamp: Date.now(),
+            } as GeolocationPosition);
+          },
+        },
+      });
+    });
+    await page.route("**/api/address/geocode**", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ provider: "test", city: "Itauna", state: "MG" }),
+      })
+    );
+    await page.route("**/api/professionals**", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ professionals: [], total: 0, pages: 0 }),
+      })
+    );
+    await page.route("**/api/stories**", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: "[]" })
+    );
+    await page.route("**/api/vouchers/roulette", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ active: false, canSpin: false, prizes: [] }),
+      })
+    );
+
+    await page.goto("/buscar?tab=acompanhantes&selecionarCidade=1", {
+      waitUntil: "domcontentloaded",
+    });
+    const submit = page.getByRole("button", { name: "Buscar acompanhantes" });
+    await expect(submit).toBeDisabled();
+    await page.getByRole("button", { name: "Usar minha localização aproximada" }).click();
+    await expect(page.getByText("Localização detectada: Itaúna, MG.")).toBeVisible();
+    await expect(submit).toBeEnabled();
+    await submit.click();
+    await expect(page).toHaveURL(/cidade=Ita(%C3%BA|ú)na.*estado=mg/i);
+  });
+});
+
+test.describe("Perfil público mobile", () => {
+  test("renderiza antes dos semelhantes e mantém selo separado do avatar", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.setViewportSize({ width: 360, height: 800 });
+    let similarRequestFinished = false;
+
+    await page.route("**/api/auth/session", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: "null" })
+    );
+    await page.route("**/api/professionals**", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname.endsWith("/track")) {
+        return route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+      }
+      if (url.pathname === "/api/professionals/teste-mobile") {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: "professional-mobile",
+            slug: "teste-mobile",
+            displayName: "Teste Profissional Elite",
+            bio: "Perfil público usado para validar carregamento e layout mobile.",
+            city: "Itaúna",
+            state: "MG",
+            bairro: "Centro",
+            image: null,
+            galleryUrls: [],
+            phone: null,
+            whatsapp: null,
+            contactVisibility: "PUBLIC",
+            contactAvailable: false,
+            priceMin: 100,
+            paymentMethods: [],
+            attendanceTypes: ["Local próprio"],
+            servesGenders: ["Homens"],
+            services: ["Companhia"],
+            servicesNotOffered: [],
+            amenities: [],
+            serviceCities: ["Itaúna"],
+            verified: true,
+            featured: true,
+            boostActive: false,
+            online: false,
+            sponsored: false,
+            profileViews: 19,
+            rating: 0,
+            totalReviews: 0,
+            specialties: [],
+            photos: [],
+            reviews: [],
+            stories: [],
+            createdAt: "2026-06-01T00:00:00.000Z",
+            user: { name: null, image: null, createdAt: "2026-06-01T00:00:00.000Z" },
+          }),
+        });
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      similarRequestFinished = true;
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ professionals: [], total: 0, pages: 0 }),
+      });
+    });
+
+    await page.goto("/profissionais/teste-mobile", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: "Teste Profissional Elite", exact: true })).toBeVisible({
+      timeout: 4000,
+    });
+    expect(similarRequestFinished).toBe(false);
+
+    const tierBox = await page.getByTestId("profile-tier").boundingBox();
+    const avatarBox = await page.getByTestId("profile-avatar").boundingBox();
+    expect(tierBox).not.toBeNull();
+    expect(avatarBox).not.toBeNull();
+    expect(avatarBox!.y).toBeGreaterThanOrEqual(tierBox!.y + tierBox!.height + 8);
+  });
 });

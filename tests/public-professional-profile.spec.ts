@@ -4,6 +4,11 @@ import {
   canonicalProfessionalPhotos,
   isProfessionalOnline,
 } from "../src/lib/public-professional-profile";
+import {
+  canonicalizeBrazilianLocation,
+  citySearchVariants,
+  nearestSupportedLocation,
+} from "../src/lib/brazilian-location";
 
 test.describe("contrato publico do perfil profissional", () => {
   test("usa ProfessionalPhoto como fonte canonica antes dos campos legados", () => {
@@ -32,5 +37,25 @@ test.describe("contrato publico do perfil profissional", () => {
   test("expoe idade calculada sem exigir data de nascimento no cliente", () => {
     expect(calculateAge("2000-06-13", new Date("2026-06-12T12:00:00.000Z"))).toBe(25);
     expect(calculateAge("2000-06-12", new Date("2026-06-12T12:00:00.000Z"))).toBe(26);
+  });
+
+  test("normaliza variantes de Itauna para a cidade canonica", () => {
+    expect(canonicalizeBrazilianLocation("Itauna", "MG")).toEqual({
+      city: "Itaúna",
+      state: "MG",
+    });
+    expect(canonicalizeBrazilianLocation("Itaúna, MG", null)).toEqual({
+      city: "Itaúna",
+      state: "MG",
+    });
+    expect(citySearchVariants("Itauna")).toContain("Itaúna");
+  });
+
+  test("usa a cidade suportada mais proxima como fallback controlado", () => {
+    expect(nearestSupportedLocation(-20.0755, -44.5764)).toEqual({
+      city: "Itaúna",
+      state: "MG",
+    });
+    expect(nearestSupportedLocation(0, 0)).toBeNull();
   });
 });

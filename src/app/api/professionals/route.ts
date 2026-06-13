@@ -18,6 +18,7 @@ import {
   isProfessionalOnline,
   publicCacheHeaders,
 } from "@/lib/public-professional-profile";
+import { citySearchVariants } from "@/lib/brazilian-location";
 
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
@@ -34,10 +35,6 @@ function slugify(text: string) {
     .replace(/\p{Diacritic}/gu, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-}
-
-function removeDiacritics(text: string) {
-  return text.normalize("NFD").replace(/\p{Diacritic}/gu, "");
 }
 
 export async function GET(req: NextRequest) {
@@ -72,7 +69,7 @@ export async function GET(req: NextRequest) {
     ];
   }
   if (city) {
-    const cityOptions = Array.from(new Set([city, removeDiacritics(city)]));
+    const cityOptions = citySearchVariants(city);
     andFilters.push({
       OR: cityOptions.map((name) => ({ city: { contains: name, mode: "insensitive" } })),
     });

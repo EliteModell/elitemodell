@@ -10,6 +10,10 @@ import FiltersModal from "@/components/FiltersModal";
 import VoucherRouletteModal from "@/components/vouchers/VoucherRouletteModal";
 import ProfessionalContactAction from "@/components/professionals/ProfessionalContactAction";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import {
+  canonicalizeBrazilianLocation,
+  SUPPORTED_PUBLIC_LOCATIONS,
+} from "@/lib/brazilian-location";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
@@ -98,28 +102,20 @@ const SORT_OPTIONS: Array<{ id: SortFilter; label: string }> = [
   { id: "recent", label: "Mais recentes" },
 ];
 
-const SUGGESTED_LOCATIONS: LocationChoice[] = [
-  cityChoice("São Paulo", "SP"),
-  cityChoice("Rio de Janeiro", "RJ"),
-  cityChoice("Brasília", "DF"),
-  cityChoice("Belo Horizonte", "MG"),
-  cityChoice("Itaúna", "MG"),
-  cityChoice("Divinópolis", "MG"),
-  cityChoice("Pará de Minas", "MG"),
-  cityChoice("Brumadinho", "MG"),
-  cityChoice("Igarapé", "MG"),
-  cityChoice("Mateus Leme", "MG"),
-  cityChoice("Juatuba", "MG"),
-  cityChoice("Formiga", "MG"),
-  cityChoice("Oliveira", "MG"),
-];
+const SUGGESTED_LOCATIONS: LocationChoice[] = SUPPORTED_PUBLIC_LOCATIONS.map(
+  (location) => cityChoice(location.city, location.state),
+);
 
 function cityChoice(city: string, state: string): LocationChoice {
+  const canonical = canonicalizeBrazilianLocation(city, state) ?? {
+    city: city.trim(),
+    state: state.trim().toUpperCase(),
+  };
   return {
-    city,
-    state,
-    label: `${city}, ${state}`,
-    slug: `${slugify(city)}-${state.toLowerCase()}`,
+    city: canonical.city,
+    state: canonical.state,
+    label: `${canonical.city}, ${canonical.state}`,
+    slug: `${slugify(canonical.city)}-${canonical.state.toLowerCase()}`,
   };
 }
 

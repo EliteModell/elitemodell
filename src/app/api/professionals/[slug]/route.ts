@@ -1,11 +1,11 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { getToken } from "next-auth/jwt";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
 import { resolveProfessionalAccess } from "@/lib/professional-access";
 import { assertApprovedMediaUrls } from "@/lib/approved-media";
 import { ageGateCacheHeaders, stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
@@ -17,11 +17,14 @@ import {
 } from "@/lib/public-professional-profile";
 import { normalizeContactVisibility } from "@/lib/professional-contact";
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const session = await getServerSession(authOptions);
-  await refreshExpiredProfessionalTimers();
-  const professional = await prisma.professional.findUnique({
+  const now = new Date();
+  const tokenPromise = getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+  }).catch(() => null);
+  const professionalPromise = prisma.professional.findUnique({
     where: { slug },
     select: {
       id: true,
@@ -35,11 +38,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       phone: true,
       whatsapp: true,
       instagram: true,
-      website: true,
       hidePhone: true,
       contactVisibility: true,
       priceMin: true,
-      priceMax: true,
       pricePerHour: true,
       price30min: true,
       price2h: true,
@@ -90,27 +91,25 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       onlineVisible: true,
       lastOnlineAt: true,
       profileViews: true,
-      contactClicks: true,
       rating: true,
       totalReviews: true,
-      totalAppointments: true,
       createdAt: true,
       user: {
         select: {
-          name: true,
           image: true,
-          createdAt: true,
           premiumUntil: true,
           stories: {
-            where: { expiresAt: { gt: new Date() } },
+            where: { expiresAt: { gt: now } },
             orderBy: { createdAt: "desc" },
             select: { id: true, mediaUrl: true, mediaType: true, thumbnail: true, views: true, createdAt: true },
           },
         },
       },
-      photos: { orderBy: { order: "asc" } },
-      specialties: true,
-      schedule: { orderBy: { dayOfWeek: "asc" } },
+      photos: {
+        orderBy: { order: "asc" },
+        select: { id: true, url: true, caption: true, cover: true, order: true },
+      },
+      specialties: { select: { id: true, name: true } },
       reviews: {
         where: { hidden: false },
         include: { author: { select: { name: true, image: true } } },
@@ -119,6 +118,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       },
     },
   });
+  const [token, professional] = await Promise.all([tokenPromise, professionalPromise]);
 
   if (!professional) {
     return NextResponse.json(
@@ -126,15 +126,21 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       { status: 404, headers: ageGateCacheHeaders() },
     );
   }
+  const viewerId = typeof token?.id === "string" ? token.id : token?.sub;
   const canViewDraft =
-    session?.user?.role === "ADMIN" || professional.userId === session?.user?.id;
-  const isPausedByDate = Boolean(professional.pauseUntil && professional.pauseUntil.getTime() > Date.now());
+    token?.role === "ADMIN" || professional.userId === viewerId;
+  const isPausedByDate = Boolean(professional.pauseUntil && professional.pauseUntil > now);
+  const pauseExpired =
+    professional.status === "PAUSED" &&
+    professional.verified &&
+    Boolean(professional.pauseUntil && professional.pauseUntil <= now);
+  const effectivelyActive = professional.status === "ACTIVE" || pauseExpired;
   const access = resolveProfessionalAccess(
     professional,
     professional.user,
     professional.status === "ACTIVE" || professional.status === "PAUSED",
   );
-  if ((professional.status !== "ACTIVE" || isPausedByDate || !access.canAppearInSearch) && !canViewDraft) {
+  if ((!effectivelyActive || isPausedByDate || !access.canAppearInSearch) && !canViewDraft) {
     return NextResponse.json(
       { error: "Profissional nao encontrado." },
       { status: 404, headers: ageGateCacheHeaders() },
@@ -146,7 +152,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
     image: professional.image,
     galleryUrls: professional.galleryUrls,
   });
-  const premiumActive = Boolean(professional.user.premiumUntil && professional.user.premiumUntil > new Date());
+  const premiumActive = Boolean(professional.user.premiumUntil && professional.user.premiumUntil > now);
   const contactVisibility = normalizeContactVisibility(
     professional.contactVisibility,
     professional.hidePhone,
@@ -174,7 +180,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       .filter((story): story is typeof story & { mediaUrl: string } => Boolean(story.mediaUrl)),
     online: isProfessionalOnline(professional.lastOnlineAt, professional.onlineVisible),
     age: professional.hideAge && !canViewDraft ? null : calculateAge(professional.birthDate),
-    sponsored: professional.boostActive && (!professional.boostUntil || professional.boostUntil > new Date()),
+    sponsored: professional.boostActive && (!professional.boostUntil || professional.boostUntil > now),
     plan: premiumActive ? professional.activePlanId : null,
     planPriority: premiumActive ? professional.planPriority : 0,
     contactVisibility,
