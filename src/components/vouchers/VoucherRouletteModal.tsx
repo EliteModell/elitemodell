@@ -41,6 +41,23 @@ type SpinResult = {
   voucher?: { id: string; code: string; value: number; status: string; requiresPayment: boolean } | null;
 };
 
+type SpinErrorResponse = {
+  error?: string;
+  code?: string;
+  requestId?: string;
+};
+
+class SpinRequestError extends Error {
+  constructor(
+    message: string,
+    public readonly code?: string,
+    public readonly requestId?: string,
+  ) {
+    super(message);
+    this.name = "SpinRequestError";
+  }
+}
+
 type Props = {
   demoMode?: boolean;
 };
@@ -52,7 +69,7 @@ const SEGMENT_ANGLE = 36; // 360 / 10 segments
 const SPIN_DURATION_MS = 4000;   // duração fixa do giro visual (ms)
 const RESULT_REVEAL_DELAY_MS = 1000; // pausa após parar para mostrar onde caiu
 const SLOW_PREPARE_MS = 180;
-const SPIN_API_TIMEOUT_MS = 8000;
+const SPIN_API_TIMEOUT_MS = 25000;
 const DEMO_PRIZES: Prize[] = Array.from({ length: 10 }, (_, index) => ({
   id: `demo-${index}`,
   index,
@@ -485,8 +502,20 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
       });
       if (timeoutId !== null) window.clearTimeout(timeoutId);
       timeoutId = null;
-      const data: SpinResult & { error?: string } = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Não foi possível girar agora.");
+      const data = await res.json().catch(() => null) as (SpinResult & SpinErrorResponse) | null;
+      if (!data) {
+        throw new SpinRequestError(
+          `O servidor retornou uma resposta inválida (HTTP ${res.status}).`,
+          "INVALID_SERVER_RESPONSE",
+        );
+      }
+      if (!res.ok) {
+        throw new SpinRequestError(
+          data.error ?? `O servidor recusou o giro (HTTP ${res.status}).`,
+          data.code,
+          data.requestId,
+        );
+      }
 
       clearSlowPrepareTimer();
       setFetching(false);
@@ -509,6 +538,8 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
       console.error("[voucher-roulette-modal] spin_failed", {
         name: err instanceof Error ? err.name : "UnknownError",
         message: err instanceof Error ? err.message : String(err),
+        code: err instanceof SpinRequestError ? err.code : undefined,
+        requestId: err instanceof SpinRequestError ? err.requestId : undefined,
         timeoutMs: SPIN_API_TIMEOUT_MS,
       });
       clearSlowPrepareTimer();
@@ -529,10 +560,10 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
         },
         result: "ERROR",
         message: err instanceof Error && err.name === "AbortError"
-          ? "Não foi possível preparar seu giro agora. Tente novamente."
+          ? "O servidor excedeu 25 segundos para preparar o giro. Tente novamente com a mesma participação."
           : err instanceof Error
             ? err.message
-            : "Não foi possível girar agora. Tente novamente.",
+            : "Falha desconhecida ao processar o giro.",
         needsIdentification: false,
       });
       setShowResult(true);
@@ -661,6 +692,21 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
               <h3 className="vm-prize-title">{resultView.title}</h3>
               <p className="vm-prize-sub">{resultView.subtitle}</p>
             </div>
+
+            {result.result === "ERROR" && (
+              <div className="vm-actions">
+                <button
+                  type="button"
+                  className="vm-btn-gold"
+                  onClick={() => {
+                    setResult(null);
+                    setShowResult(false);
+                  }}
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            )}
 
             {result.needsRegistration && (
               <div className="vm-actions">

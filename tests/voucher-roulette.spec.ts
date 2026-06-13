@@ -7,8 +7,11 @@ import {
   pickPrize,
   rouletteCampaignAvailability,
   rouletteSpinIdentityWhere,
+  monthRange,
+  todayRange,
   VOUCHER_DAILY_LIMIT,
   VOUCHER_MONTHLY_LIMIT,
+  weekRange,
 } from "../src/lib/voucher-roulette";
 
 const routeSource = readFileSync(
@@ -75,6 +78,26 @@ test.describe("algoritmo operacional da roleta", () => {
   test("mantem os tetos financeiros operacionais", () => {
     expect(VOUCHER_MONTHLY_LIMIT).toBe(3_000);
     expect(VOUCHER_DAILY_LIMIT).toBe(100);
+  });
+
+  test("periodos financeiros usam UTC em qualquer ambiente", () => {
+    const now = new Date("2026-06-13T02:30:00.000Z");
+
+    expect(todayRange(now)).toEqual({
+      start: new Date("2026-06-13T00:00:00.000Z"),
+      end: new Date("2026-06-14T00:00:00.000Z"),
+    });
+    expect(monthRange(now)).toMatchObject({
+      start: new Date("2026-06-01T00:00:00.000Z"),
+      end: new Date("2026-07-01T00:00:00.000Z"),
+      month: 6,
+      year: 2026,
+      dayOfMonth: 13,
+    });
+    expect(weekRange(now)).toEqual({
+      start: new Date("2026-06-08T00:00:00.000Z"),
+      end: new Date("2026-06-15T00:00:00.000Z"),
+    });
   });
 
   test("referencia promocional e opcional e informativa", () => {
@@ -172,6 +195,31 @@ test.describe("algoritmo operacional da roleta", () => {
     expect(eligibility).toBeGreaterThan(idempotencyRecheck);
     expect(stockConsumption).toBeGreaterThan(eligibility);
     expect(spinCreation).toBeGreaterThan(stockConsumption);
+  });
+
+  test("endpoint registra a validacao operacional com causa detalhada", () => {
+    expect(routeSource).toContain('"eligibility_evaluated"');
+    expect(routeSource).toContain("eligiblePrizeCount");
+    expect(routeSource).toContain("monthlyRemaining");
+    expect(routeSource).toContain("dailyRemaining");
+    expect(routeSource).toContain("stockRemainingBudget");
+    expect(routeSource).toContain("operational_validation_failed");
+    expect(routeSource).toContain("SPIN_TRANSACTION_TIMEOUT");
+    expect(routeSource).toContain("NO_ELIGIBLE_PRIZE");
+    expect(routeSource).toContain("DAILY_LIMIT_REACHED");
+  });
+
+  test("contagens de limite por premio sao agrupadas antes do sorteio", () => {
+    expect(algorithmSource).toContain('by: ["prizeId"]');
+    expect(algorithmSource).toContain("const monthUsageByPrize = usageMap(monthUsage)");
+    expect(algorithmSource).toContain("const dayUsageByPrize = usageMap(dayUsage)");
+    expect(algorithmSource).toContain("const weekUsageByPrize = usageMap(weekUsage)");
+
+    const eligibleLoop = algorithmSource.slice(
+      algorithmSource.indexOf("for (const prize of input.prizes)"),
+      algorithmSource.indexOf("const voucherOptions"),
+    );
+    expect(eligibleLoop).not.toContain("countPrizeVouchers(");
   });
 
   test("endpoint bloqueia campanha inativa sem consultar referencia promocional", () => {
@@ -320,5 +368,13 @@ test.describe("algoritmo operacional da roleta", () => {
     expect(modalSource).toContain("authorizationReference: string | null");
     expect(modalSource).toContain("config.policy.authorizationReference");
     expect(modalSource).toContain('? ` · Referência ${config.policy.authorizationReference}`');
+  });
+
+  test("modal aguarda a transacao e mostra timeout identificado", () => {
+    expect(modalSource).toContain("const SPIN_API_TIMEOUT_MS = 25000");
+    expect(modalSource).not.toContain("const SPIN_API_TIMEOUT_MS = 8000");
+    expect(modalSource).toContain("O servidor excedeu 25 segundos para preparar o giro");
+    expect(modalSource).toContain("class SpinRequestError");
+    expect(modalSource).toContain("Tentar novamente");
   });
 });

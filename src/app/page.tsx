@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 import { ChevronRight, Gem, Heart, HousePlus, LockKeyhole, ShieldCheck, Star, UserRoundPlus } from "@/components/HomeIcons";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -17,7 +16,7 @@ const PLAYFAIR = "var(--font-playfair), serif";
 const quickActions = [
   {
     label: "Busco prazer",
-    href: "/buscar?tab=acompanhantes",
+    href: "/buscar?tab=acompanhantes&selecionarCidade=1",
     text: "Explore perfis verificados sem cadastro obrigatório.",
     tag: "Cliente",
     badge: "Mais acessado",
@@ -53,8 +52,6 @@ const quickActions = [
 ];
 
 export default function HomePage() {
-  const { data: session } = useSession();
-
   return (
     <div className="home-shell">
       <Navbar />
@@ -103,16 +100,11 @@ export default function HomePage() {
           <div className="action-grid">
             {quickActions.map((item) => {
               const Icon = item.icon;
-              const href = item.primary
-                ? session?.user
-                  ? "/dashboard/acompanhantes"
-                  : item.href
-                : item.href;
 
               return (
                 <Link
                   key={item.label}
-                  href={href}
+                  href={item.href}
                   className={`action-tile${item.featured ? " professional-tile" : ""}${item.primary ? " client-tile" : ""}`}
                 >
                   <span className="action-tag">{item.tag}</span>

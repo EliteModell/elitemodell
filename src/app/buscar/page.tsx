@@ -191,7 +191,11 @@ function BuscarContent() {
   const [distance, setDistance] = useState<DistanceFilter>(() => getDistance(initialParams.get("distance")));
   const [sortBy, setSortBy] = useState<SortFilter>(() => getSort(initialParams.get("sort")));
   const [showFilters, setShowFilters] = useState(false);
-  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(
+    initialParams.get("selecionarCidade") === "1" &&
+    !getLocationFromParams(initialParams) &&
+    initialParams.get("virtual") !== "1",
+  );
   const [locationSearch, setLocationSearch] = useState("");
   const [locationDraft, setLocationDraft] = useState<LocationChoice | null>(null);
   const [draftVirtual, setDraftVirtual] = useState(false);
@@ -203,6 +207,10 @@ function BuscarContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const geoAutoAttemptedRef = useRef(false);
+  const locationSelectionRequired =
+    params.get("selecionarCidade") === "1" &&
+    !selectedLocation &&
+    !virtualOnly;
 
   useEffect(() => {
     const nextParams = new URLSearchParams(params.toString());
@@ -214,11 +222,19 @@ function BuscarContent() {
       setVirtualOnly(nextParams.get("virtual") === "1");
       setDistance(getDistance(nextParams.get("distance")));
       setSortBy(getSort(nextParams.get("sort")));
+      if (
+        nextParams.get("selecionarCidade") === "1" &&
+        !getLocationFromParams(nextParams) &&
+        nextParams.get("virtual") !== "1"
+      ) {
+        setShowLocationModal(true);
+      }
     }, 0);
     return () => window.clearTimeout(timer);
   }, [params]);
 
   useEffect(() => {
+    if (locationSelectionRequired) return;
     const controller = new AbortController();
     const query = new URLSearchParams();
     if (selectedLocation) {
@@ -235,10 +251,11 @@ function BuscarContent() {
         }
       });
     return () => controller.abort();
-  }, [selectedLocation]);
+  }, [locationSelectionRequired, selectedLocation]);
 
   useEffect(() => {
     if (mainTab !== "acompanhantes") return;
+    if (locationSelectionRequired) return;
 
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
@@ -325,7 +342,7 @@ function BuscarContent() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [busca, filtros, mainTab, selectedLocation, sortBy, subTab, virtualOnly]);
+  }, [busca, filtros, locationSelectionRequired, mainTab, selectedLocation, sortBy, subTab, virtualOnly]);
 
   function replaceQuery(updates: Record<string, string | null>) {
     const next = new URLSearchParams(params.toString());
@@ -387,6 +404,7 @@ function BuscarContent() {
       cidade: draftVirtual ? null : locationDraft?.city ?? null,
       estado: draftVirtual ? null : locationDraft?.state.toLowerCase() ?? null,
       virtual: draftVirtual ? "1" : null,
+      selecionarCidade: null,
     });
   }
 
@@ -461,6 +479,7 @@ function BuscarContent() {
               next.set("cidade", choice.city);
               next.set("estado", choice.state.toLowerCase());
               next.delete("virtual");
+              next.delete("selecionarCidade");
               router.replace(`/buscar?${next.toString()}`, { scroll: false });
             })
             .catch(() => undefined);
@@ -709,7 +728,13 @@ function BuscarContent() {
           locationSearch={locationSearch}
           locations={filteredLocations}
           onApply={applyLocationChoice}
-          onClose={() => setShowLocationModal(false)}
+          onClose={() => {
+            if (locationSelectionRequired) {
+              router.push("/");
+              return;
+            }
+            setShowLocationModal(false);
+          }}
           onGeo={useApproximateLocation}
           onSearch={setLocationSearch}
           onSelectCity={selectCity}
@@ -777,7 +802,7 @@ function BuscarContent() {
       </div>
 
       <div style={{ maxWidth: 1280, margin: "0 auto", padding: "24px 16px 56px" }}>
-        {mainTab === "acompanhantes" && (
+        {mainTab === "acompanhantes" && !locationSelectionRequired && (
           <>
             {stories.length > 0 && <StoriesStrip stories={stories} />}
 

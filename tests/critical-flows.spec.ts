@@ -431,3 +431,67 @@ test.describe("Segurança — Proteção de rotas", () => {
   }
 
 });
+
+test.describe("Fluxo público — Buscar prazer", () => {
+  test("CTA da Home abre a seleção de cidade antes da listagem", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.route("**/api/auth/session", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: "null" })
+    );
+    await page.route("**/api/professionals**", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ professionals: [], total: 0, pages: 1 }),
+      })
+    );
+    await page.route("**/api/stories**", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: "[]" })
+    );
+
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const cta = page.getByRole("link", { name: /Ver perfis agora/i });
+    await expect(cta).toHaveAttribute(
+      "href",
+      "/buscar?tab=acompanhantes&selecionarCidade=1",
+    );
+  });
+
+  test("não carrega perfis antes de selecionar cidade", async ({ page }) => {
+    await bypassAgeGate(page);
+    let professionalRequests = 0;
+    await page.route("**/api/professionals**", (route) => {
+      professionalRequests += 1;
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ professionals: [], total: 0, pages: 1 }),
+      });
+    });
+    await page.route("**/api/stories**", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: "[]" })
+    );
+    await page.route("**/api/vouchers/roulette", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ active: false, canSpin: false, prizes: [] }),
+      })
+    );
+
+    await page.goto(
+      "/buscar?tab=acompanhantes&selecionarCidade=1",
+      { waitUntil: "domcontentloaded" },
+    );
+    await expect(
+      page.getByRole("dialog", { name: "Selecionar localização" }),
+    ).toBeVisible();
+    await page.waitForTimeout(500);
+    expect(professionalRequests).toBe(0);
+
+    await page.getByRole("button", { name: "Itaúna, MG" }).click();
+    await page.getByRole("button", { name: "Buscar acompanhantes" }).click();
+    await expect(page).toHaveURL(/cidade=Ita(%C3%BA|ú)na/i);
+    await expect.poll(() => professionalRequests).toBeGreaterThan(0);
+  });
+});

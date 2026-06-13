@@ -18,6 +18,8 @@ import {
   pickPrize,
   publicPrize,
   ROULETTE_PROMOTION_POLICY_KEY,
+  RouletteOperationalError,
+  type RouletteAvailabilityReason,
   rouletteCampaignAvailability,
   rouletteSpinIdentityWhere,
   todayRange,
@@ -47,6 +49,15 @@ function logSpin(level: "info" | "warn" | "error", message: string, data: Record
   else if (level === "warn") console.warn(`[voucher-roulette-spin] ${message}`, payload);
   else console.info(`[voucher-roulette-spin] ${message}`, payload);
 }
+
+const CAMPAIGN_ERROR_MESSAGE: Record<RouletteAvailabilityReason, string> = {
+  INACTIVE: "A roleta está desativada.",
+  INSUFFICIENT_ACTIVE_PRIZES: "A roleta precisa de pelo menos dois prêmios ativos.",
+  BUDGET_INACTIVE: "O orçamento da roleta está desativado.",
+  MONTHLY_BUDGET_EXHAUSTED: "O orçamento mensal da roleta foi esgotado.",
+  DAILY_BUDGET_EXHAUSTED: "O orçamento diário da roleta foi esgotado.",
+  STOCK_EXHAUSTED: "O estoque diário de prêmios foi esgotado.",
+};
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T) {
   return Promise.race([
@@ -123,7 +134,13 @@ function modalMessage(type: string, value?: number | null, needsRegistration?: b
 
 export async function POST(req: NextRequest) {
   if (!["all", "marketing"].includes(req.cookies.get("elite_cookie_consent")?.value ?? "")) {
-    return NextResponse.json({ error: "Autorize cookies de campanha para participar da roleta." }, { status: 403 });
+    return NextResponse.json(
+      {
+        error: "Autorize cookies de campanha para participar da roleta.",
+        code: "CAMPAIGN_COOKIES_REQUIRED",
+      },
+      { status: 403 },
+    );
   }
   const startedAt = Date.now();
   const rid = requestId(req);
@@ -132,14 +149,32 @@ export async function POST(req: NextRequest) {
     : null;
   const parsed = schema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) {
-    logSpin("warn", "invalid_body", { requestId: rid, durationMs: Date.now() - startedAt });
-    return NextResponse.json({ error: "Não foi possível preparar seu giro. Atualize a página e tente novamente." }, { status: 400 });
+    logSpin("warn", "invalid_body", {
+      requestId: rid,
+      durationMs: Date.now() - startedAt,
+      fields: parsed.error.issues.map((issue) => issue.path.join(".") || "body"),
+    });
+    return NextResponse.json(
+      {
+        error: "A solicitação do giro está incompleta ou inválida.",
+        code: "INVALID_SPIN_REQUEST",
+        requestId: rid,
+      },
+      { status: 400 },
+    );
   }
   const body = parsed.data;
   const settings = await getVoucherSettings();
   if (!settings.active) {
     logSpin("warn", "inactive_campaign", { requestId: rid, durationMs: Date.now() - startedAt });
-    return NextResponse.json({ error: "A roleta está temporariamente indisponível." }, { status: 403 });
+    return NextResponse.json(
+      {
+        error: CAMPAIGN_ERROR_MESSAGE.INACTIVE,
+        code: "INACTIVE",
+        requestId: rid,
+      },
+      { status: 403 },
+    );
   }
   const policyVersions = await latestLegalDocumentVersions(
     ROULETTE_PROMOTION_LEGAL_KEYS,
@@ -151,7 +186,11 @@ export async function POST(req: NextRequest) {
       durationMs: Date.now() - startedAt,
     });
     return NextResponse.json(
-      { error: "A política vigente da campanha está indisponível." },
+      {
+        error: "A política vigente da campanha está indisponível.",
+        code: "LEGAL_POLICY_UNAVAILABLE",
+        requestId: rid,
+      },
       { status: 503 },
     );
   }
@@ -232,12 +271,27 @@ export async function POST(req: NextRequest) {
       }
 
       const now = new Date();
-      const { prizes: candidates, stats } = await eligiblePrizes({
+      const { prizes: candidates, stats, diagnostics } = await eligiblePrizes({
         tx,
         prizes,
         settings,
         identity,
         now,
+      });
+      logSpin("info", "eligibility_evaluated", {
+        requestId: rid,
+        durationMs: Date.now() - startedAt,
+        activePrizeCount: diagnostics.activePrizeCount,
+        eligiblePrizeCount: diagnostics.eligiblePrizeCount,
+        eligibleVoucherCount: diagnostics.eligibleVoucherCount,
+        recentVoucherWin: diagnostics.recentVoucherWin,
+        activeVoucher: diagnostics.activeVoucher,
+        hasVoucher100ThisMonth: diagnostics.hasVoucher100ThisMonth,
+        monthlyUsed: stats.monthlyUsed,
+        monthlyRemaining: stats.monthlyRemaining,
+        dailyUsed: stats.dailyUsed,
+        dailyRemaining: stats.dailyRemaining,
+        stockRemainingBudget: stats.dailyStockRemainingBudget,
       });
       const availability = rouletteCampaignAvailability({
         settingsActive: settings.active,
@@ -251,7 +305,12 @@ export async function POST(req: NextRequest) {
         throw new Error(`CAMPAIGN_UNAVAILABLE:${availability.reason}`);
       }
       const prize = pickPrize(candidates);
-      if (!prize) throw new Error("NO_ELIGIBLE_PRIZE");
+      if (!prize) {
+        throw new RouletteOperationalError(
+          "NO_ELIGIBLE_PRIZE",
+          "Nenhum prêmio elegível foi encontrado para este giro.",
+        );
+      }
 
       const prizeIndex = prizes.findIndex((item) => item.id === prize.id);
       const normalizedResult = prize.type === "PAID_VOUCHER" ? "VOUCHER" : prize.type;
@@ -347,10 +406,18 @@ export async function POST(req: NextRequest) {
         limit,
         blockedUntil,
       });
-      return NextResponse.json({ error: "Você já participou desta campanha", blockedUntil }, { status: 409 });
+      return NextResponse.json(
+        {
+          error: "Você já atingiu o limite diário de participações.",
+          code: "DAILY_LIMIT_REACHED",
+          blockedUntil,
+          requestId: rid,
+        },
+        { status: 409 },
+      );
     }
     if (err instanceof Error && err.message.startsWith("CAMPAIGN_UNAVAILABLE:")) {
-      const unavailableReason = err.message.split(":")[1] ?? "UNAVAILABLE";
+      const unavailableReason = (err.message.split(":")[1] ?? "INACTIVE") as RouletteAvailabilityReason;
       logSpin("warn", "campaign_unavailable", {
         requestId: rid,
         durationMs: Date.now() - startedAt,
@@ -358,23 +425,58 @@ export async function POST(req: NextRequest) {
       });
       return NextResponse.json(
         {
-          error: "A roleta está temporariamente indisponível.",
+          error: CAMPAIGN_ERROR_MESSAGE[unavailableReason] ?? "A campanha não está operacional.",
+          code: unavailableReason,
           unavailableReason,
+          requestId: rid,
         },
         { status: 403 },
       );
     }
+    if (err instanceof RouletteOperationalError) {
+      logSpin("warn", "operational_validation_failed", {
+        requestId: rid,
+        durationMs: Date.now() - startedAt,
+        code: err.code,
+        error: err.message,
+      });
+      return NextResponse.json(
+        {
+          error: err.message,
+          code: err.code,
+          requestId: rid,
+        },
+        { status: err.code === "PRIZE_STOCK_EXHAUSTED" ? 409 : 503 },
+      );
+    }
     const safeError = err instanceof Error ? err.message : "Erro desconhecido";
+    const prismaCode = typeof err === "object" && err && "code" in err
+      ? String((err as { code?: unknown }).code ?? "")
+      : null;
+    const errorCode = prismaCode === "P2028"
+      ? "SPIN_TRANSACTION_TIMEOUT"
+      : "SPIN_TRANSACTION_FAILED";
     logSpin("error", "transaction_failed", {
       requestId: rid,
       durationMs: Date.now() - startedAt,
+      code: errorCode,
+      prismaCode,
       error: safeError.slice(0, 240),
       hasSession: Boolean(sessionUserId),
       hasVisitorId: Boolean(visitorId),
       hasIp: Boolean(ipAddress),
       userAgent: userAgent?.slice(0, 160) ?? null,
     });
-    return NextResponse.json({ error: "Não foi possível girar agora. Tente novamente.", requestId: rid }, { status: 503 });
+    return NextResponse.json(
+      {
+        error: errorCode === "SPIN_TRANSACTION_TIMEOUT"
+          ? "O processamento do giro excedeu o tempo limite da transação."
+          : `Falha interna ao processar o giro. Código de suporte: ${rid}.`,
+        code: errorCode,
+        requestId: rid,
+      },
+      { status: 503 },
+    );
   }
 
   const response = NextResponse.json({

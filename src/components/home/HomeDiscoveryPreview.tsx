@@ -41,7 +41,7 @@ export default function HomeDiscoveryPreview() {
           <h2>Perfis e stories em destaque</h2>
           <p>Explore antes de criar uma conta. Entre apenas quando quiser salvar, avaliar ou conversar.</p>
         </div>
-        <Link href="/buscar?tab=acompanhantes">Ver todos</Link>
+        <Link href="/buscar?tab=acompanhantes&selecionarCidade=1">Ver todos</Link>
       </div>
 
       <Stories />
