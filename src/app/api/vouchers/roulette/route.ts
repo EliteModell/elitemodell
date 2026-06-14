@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 import {
   activePrizes,
   ensureDailyPrizeStock,
-  getBudgetStats,
+  getRouletteRuntimeSnapshot,
   getVoucherSettings,
   getIp,
   newVisitorId,
@@ -48,10 +48,19 @@ export async function GET(req: NextRequest) {
   const session = hasSessionCookie(req)
     ? await withTimeout(getServerSession(authOptions).catch(() => null), SESSION_TIMEOUT_MS, null)
     : null;
-  const settings = await getVoucherSettings();
-  const policyVersions = settings.active
-    ? await latestLegalDocumentVersions(ROULETTE_PROMOTION_LEGAL_KEYS)
-    : new Map();
+  const sessionUserId = session?.user?.id ?? null;
+  const [settings, policyVersions, prizes, runtime, user] = await Promise.all([
+    getVoucherSettings(),
+    latestLegalDocumentVersions(ROULETTE_PROMOTION_LEGAL_KEYS),
+    activePrizes(),
+    getRouletteRuntimeSnapshot(),
+    sessionUserId
+      ? prisma.user.findUnique({
+          where: { id: sessionUserId },
+          select: { id: true, phone: true, email: true, document: true },
+        })
+      : Promise.resolve(null),
+  ]);
   const policyVersion = policyVersions.get(ROULETTE_PROMOTION_POLICY_KEY);
 
   if (!settings.active || !policyVersion) {
@@ -63,20 +72,18 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const [prizes, initialStats] = await Promise.all([
-    activePrizes(),
-    getBudgetStats(),
-  ]);
   const dailyStock = await ensureDailyPrizeStock({
     settings,
-    stats: initialStats,
+    stats: runtime.stats,
+    existingStock: runtime.stock,
+    prizes,
   });
   const availability = rouletteCampaignAvailability({
     settingsActive: settings.active,
     activePrizeCount: prizes.length,
-    budgetActive: initialStats.budget.active,
-    monthlyRemaining: initialStats.monthlyRemaining,
-    dailyRemaining: initialStats.dailyRemaining,
+    budgetActive: runtime.stats.budget.active,
+    monthlyRemaining: runtime.stats.monthlyRemaining,
+    dailyRemaining: runtime.stats.dailyRemaining,
     stockRemainingBudget: dailyStock
       .filter((stock) => stock.active)
       .reduce((sum, stock) => sum + stock.remainingBudget, 0),
@@ -93,13 +100,6 @@ export async function GET(req: NextRequest) {
   const visitorId = req.cookies.get(VOUCHER_VISITOR_COOKIE)?.value ?? newVisitorId();
   const ipAddress = getIp(req.headers);
   const { start, end } = todayRange();
-  const sessionUserId = session?.user?.id ?? null;
-  const user = sessionUserId
-    ? await prisma.user.findUnique({
-        where: { id: sessionUserId },
-        select: { id: true, phone: true, email: true, document: true },
-      })
-    : null;
   const identity = userVoucherIdentity(user, {
     clientId: sessionUserId,
     visitorId,

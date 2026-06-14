@@ -176,7 +176,7 @@ test.describe("algoritmo operacional da roleta", () => {
     const transactionStart = routeSource.indexOf("result = await prisma.$transaction");
     const lock = routeSource.indexOf("pg_advisory_xact_lock", transactionStart);
     const idempotencyRecheck = routeSource.indexOf(
-      "tx.voucherSpin.findUnique",
+      "const spinChecks = await tx.voucherSpin.findMany",
       transactionStart,
     );
     const eligibility = routeSource.indexOf("eligiblePrizes({", transactionStart);
@@ -360,6 +360,9 @@ test.describe("algoritmo operacional da roleta", () => {
 
   test("api publica mostra apenas campanha operacional e oculta as demais", () => {
     expect(publicRouteSource).toContain("rouletteCampaignAvailability({");
+    expect(publicRouteSource).toContain("getRouletteRuntimeSnapshot()");
+    expect(publicRouteSource).not.toContain("getBudgetStats()");
+    expect(publicRouteSource).toContain("existingStock: runtime.stock");
     expect(publicRouteSource).toContain("activePrizeCount: prizes.length");
     expect(publicRouteSource).toContain("stockRemainingBudget:");
     expect(publicRouteSource).toContain("if (!availability.active)");

@@ -168,7 +168,32 @@ export async function POST(req: NextRequest) {
     );
   }
   const body = parsed.data;
-  const settings = await getVoucherSettings();
+  const visitorId = req.cookies.get(VOUCHER_VISITOR_COOKIE)?.value ?? newVisitorId();
+  const ipAddress = getIp(req.headers);
+  const userAgent = req.headers.get("user-agent");
+  const { start, end } = todayRange();
+  const sessionUserId = session?.user?.id ?? null;
+  const scopedIdempotencyKey = `${sessionUserId ?? visitorId}:${body.idempotencyKey}`;
+
+  const [settings, policyVersions, existing, user, currentBudget, prizes] = await Promise.all([
+    getVoucherSettings(),
+    latestLegalDocumentVersions(ROULETTE_PROMOTION_LEGAL_KEYS),
+    prisma.voucherSpin.findUnique({
+      where: { idempotencyKey: scopedIdempotencyKey },
+      include: { prize: true, vouchers: true },
+    }),
+    sessionUserId
+      ? prisma.user.findUnique({
+          where: { id: sessionUserId },
+          select: { id: true, phone: true, email: true, document: true },
+        })
+      : Promise.resolve(null),
+    getCurrentBudget(),
+    prisma.voucherPrize.findMany({
+      where: { active: true },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    }),
+  ]);
   if (!settings.active) {
     logSpin("warn", "inactive_campaign", { requestId: rid, durationMs: Date.now() - startedAt });
     return NextResponse.json(
@@ -180,9 +205,6 @@ export async function POST(req: NextRequest) {
       { status: 403 },
     );
   }
-  const policyVersions = await latestLegalDocumentVersions(
-    ROULETTE_PROMOTION_LEGAL_KEYS,
-  );
   const policyVersion = policyVersions.get(ROULETTE_PROMOTION_POLICY_KEY);
   if (!policyVersion) {
     logSpin("warn", "legal_policy_unavailable", {
@@ -199,28 +221,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const visitorId = req.cookies.get(VOUCHER_VISITOR_COOKIE)?.value ?? newVisitorId();
-  const ipAddress = getIp(req.headers);
-  const userAgent = req.headers.get("user-agent");
-  const { start, end } = todayRange();
-  const sessionUserId = session?.user?.id ?? null;
-  const scopedIdempotencyKey = `${sessionUserId ?? visitorId}:${body.idempotencyKey}`;
-
-  const [existing, user, currentBudget] = await Promise.all([
-    prisma.voucherSpin.findUnique({
-      where: { idempotencyKey: scopedIdempotencyKey },
-      include: { prize: true, vouchers: true },
-    }),
-    sessionUserId
-      ? prisma.user.findUnique({
-          where: { id: sessionUserId },
-          select: { id: true, phone: true, email: true, document: true },
-        })
-      : Promise.resolve(null),
-    getCurrentBudget(),
-  ]);
   if (existing) {
-    const prizes = await prisma.voucherPrize.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] });
     const priorResult = existingSpinResult(existing, prizes, sessionUserId);
     if (priorResult) {
       return NextResponse.json({
@@ -253,20 +254,21 @@ export async function POST(req: NextRequest) {
       const lockId = identityLockId(lockIdentity);
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${lockId})`;
 
-      const [concurrentExisting, todaySpins, prizes] = await Promise.all([
-        tx.voucherSpin.findUnique({
-          where: { idempotencyKey: scopedIdempotencyKey },
-          include: { prize: true, vouchers: true },
-        }),
-        tx.voucherSpin.findMany({
-          where: { ...identityWhere, createdAt: { gte: start, lt: end } },
-          select: { result: true },
-        }),
-        tx.voucherPrize.findMany({
-          where: { active: true },
-          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-        }),
-      ]);
+      const spinChecks = await tx.voucherSpin.findMany({
+        where: {
+          OR: [
+            { idempotencyKey: scopedIdempotencyKey },
+            { ...identityWhere, createdAt: { gte: start, lt: end } },
+          ],
+        },
+        include: { prize: true, vouchers: true },
+      });
+      const concurrentExisting = spinChecks.find(
+        (spin) => spin.idempotencyKey === scopedIdempotencyKey,
+      );
+      const todaySpins = spinChecks.filter(
+        (spin) => spin.createdAt >= start && spin.createdAt < end,
+      );
 
       if (concurrentExisting) {
         const priorResult = existingSpinResult(concurrentExisting, prizes, sessionUserId);

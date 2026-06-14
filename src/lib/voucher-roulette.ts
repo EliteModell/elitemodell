@@ -510,7 +510,7 @@ export async function getBudgetStats(now = new Date(), tx?: Prisma.TransactionCl
 
 async function getRouletteBudgetStats(
   now: Date,
-  tx: Prisma.TransactionClient,
+  tx: Prisma.TransactionClient | typeof prisma,
   currentBudget?: VoucherBudget,
   currentStock: VoucherDailyStock[] = [],
 ): Promise<RouletteBudgetStats> {
@@ -578,6 +578,19 @@ async function getRouletteBudgetStats(
       0,
     ),
   };
+}
+
+export async function getRouletteRuntimeSnapshot(now = new Date()) {
+  const { start: todayStart } = todayRange(now);
+  const [budget, stock] = await Promise.all([
+    getCurrentBudget(now),
+    prisma.voucherDailyStock.findMany({
+      where: { date: todayStart },
+      orderBy: [{ prizeValue: "asc" }, { createdAt: "asc" }],
+    }),
+  ]);
+  const stats = await getRouletteBudgetStats(now, prisma, budget, stock);
+  return { stats, stock };
 }
 
 type PrizeUsageSnapshot = {
