@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { ensureProfileForIntent } from "@/lib/account-profiles";
+import { prisma } from "@/lib/prisma";
 import {
   attachPendingProfessionalPhone,
   clearPendingProfessionalPhoneCookie,
@@ -26,6 +27,17 @@ export async function POST(req: NextRequest) {
 
   try {
     const pendingProfessionalPhone = await validatePendingProfessionalPhone(req, session.user.id);
+    if (!pendingProfessionalPhone) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { phoneVerified: true },
+      });
+      if (!user?.phoneVerified) {
+        throw new ProfessionalPhoneRegistrationError(
+          "Confirme seu telefone antes de continuar o cadastro de acompanhante.",
+        );
+      }
+    }
 
     await ensureProfileForIntent(session.user.id, "profissional", parsed.data.category);
     if (pendingProfessionalPhone) {

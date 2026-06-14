@@ -78,7 +78,7 @@ async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRol
     isProfessional;
 
   if (roleIntent === "profissional") {
-    if (!hasProfessionalAccess) return `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`;
+    if (!hasProfessionalAccess) return ACCOUNT_ROUTES.cadastroAcompanhante;
     return postLoginPathFromUser(user, roleIntent);
   }
 
@@ -542,7 +542,7 @@ function AuthCallbackContent() {
       Boolean(pendingRegistration) ||
       explicitIntent === "professional-signup";
     const retryTarget = isCadastroFlow && (roleIntent === "profissional" || returnUrl?.startsWith(ACCOUNT_ROUTES.onboardingAcompanhante))
-      ? `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`
+      ? ACCOUNT_ROUTES.cadastroAcompanhante
       : "/login";
     const retryHrefTimer = window.setTimeout(() => {
       if (active) setRetryHref(retryTarget);

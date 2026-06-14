@@ -124,7 +124,7 @@ export function roleForPhoneAccount(accountType: PhoneAccountType): "HOST" | "GU
 }
 
 export function nameForPhoneAccount(accountType: PhoneAccountType) {
-  if (accountType === "model") return "Cadastro profissional";
+  if (accountType === "model") return "Cadastro de acompanhante";
   if (accountType === "host") return "Anfitriao Elite Modell";
   return "Cliente Elite Modell";
 }

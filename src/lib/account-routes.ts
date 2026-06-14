@@ -8,7 +8,7 @@ export const ACCOUNT_ROUTES = {
   cadastroCliente: "/app/consumer/register",
   verificarTelefoneCliente: "/app/consumer/verify-phone",
   loginCliente: "/app/consumer/login",
-  cadastroAcompanhante: "/cadastro-modelo",
+  cadastroAcompanhante: "/cadastro/acompanhante",
   cadastroAnfitriao: "/cadastro-anfitriao",
   verificarTelefoneAnfitriao: "/cadastro-anfitriao/verificar-telefone",
   painelCliente: "/painel/cliente",

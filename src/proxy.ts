@@ -33,6 +33,7 @@ export async function proxy(request: NextRequest) {
     "/login",
     "/admin/login",
     "/cadastro",
+    "/cadastro/acompanhante",
     "/cadastro-modelo",
     "/cadastro-anfitriao",
     "/app/consumer/register",

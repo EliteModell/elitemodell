@@ -20,6 +20,7 @@ function shouldSkipGate(pathname: string | null) {
   return [
     "/profissional",
     "/modelo",
+    "/cadastro/acompanhante",
     "/cadastro-modelo",
     "/anfitriao",
     "/cadastro-anfitriao",

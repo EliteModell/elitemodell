@@ -79,7 +79,7 @@ async function gotoWithMock(page: Page, path: string) {
 async function expectCadastroChoiceOptions(page: Page) {
   const body = page.locator("body");
   await expect(body).toContainText(/cliente/i);
-  await expect(body).toContainText(/profissional/i);
+  await expect(body).toContainText(/acompanhante/i);
   await expect(body).toContainText(/anfitri/i);
 }
 
@@ -132,15 +132,22 @@ test.describe("Fluxo 1 — Cadastro", () => {
     await expectCadastroChoiceOptions(page);
   });
 
-  test("cliente e profissional podem trocar tipo antes de finalizar", async ({ page }) => {
+  test("cliente pode trocar tipo antes de finalizar", async ({ page }) => {
     await bypassAgeGate(page);
-    for (const label of ["Criar conta cliente", "Ativar perfil profissional"]) {
-      await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
-      await page.locator("button", { hasText: label }).first().click();
-      await expect(page.locator("button", { hasText: "Trocar tipo de cadastro" })).toBeVisible();
-      await page.locator("button", { hasText: "Trocar tipo de cadastro" }).click();
-      await expectCadastroChoiceOptions(page);
-    }
+    await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
+    await page.locator("button", { hasText: "Criar conta cliente" }).first().click();
+    await expect(page.locator("button", { hasText: "Trocar tipo de cadastro" })).toBeVisible();
+    await page.locator("button", { hasText: "Trocar tipo de cadastro" }).click();
+    await expectCadastroChoiceOptions(page);
+  });
+
+  test("opção de acompanhante inicia pelo telefone", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("link", { name: /Cadastre-se como acompanhante/ })).toHaveAttribute(
+      "href",
+      "/cadastro/acompanhante",
+    );
   });
 
   test("anfitriao iniciado nao prende o proximo clique em cadastrar", async ({ page }) => {
@@ -168,36 +175,39 @@ test.describe("Fluxo 1 — Cadastro", () => {
     expect(inputs).toBeGreaterThan(0);
   });
 
-  test("/cadastro-modelo (cadastro profissional) carrega sem 404", async ({ page }) => {
+  test("/cadastro/acompanhante carrega sem 404", async ({ page }) => {
+    await bypassAgeGate(page);
+    const resp = await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
+    expect(resp?.status()).not.toBe(404);
+  });
+
+  test("/cadastro/acompanhante exibe o início público do cadastro", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await expect(page.getByRole("heading", { name: "Cadastre-se grátis como acompanhante" })).toBeVisible();
+    await expect(page.getByLabel("Qual seu número de telefone?")).toBeVisible();
+    expect(page.url()).toMatch(/\/cadastro\/acompanhante/);
+  });
+
+  test("/cadastro-modelo legado continua sem 404", async ({ page }) => {
     await bypassAgeGate(page);
     const resp = await page.goto("/cadastro-modelo", { waitUntil: "domcontentloaded" });
     expect(resp?.status()).not.toBe(404);
   });
 
-  test("/cadastro-modelo exibe o início público do cadastro profissional", async ({ page }) => {
-    await bypassAgeGate(page);
-    await page.goto("/cadastro-modelo", { waitUntil: "domcontentloaded" });
-    await page.waitForLoadState("networkidle").catch(() => {});
-    await expect(page.getByRole("heading", { name: "Cadastre-se como profissional" })).toBeVisible();
-    await expect(page.getByLabel("Qual seu número de WhatsApp profissional?")).toBeVisible();
-    expect(page.url()).toMatch(/\/cadastro-modelo/);
-  });
-
-  test("CTA Sou profissional da Home inicia pelo WhatsApp", async ({ page }) => {
+  test("CTA Seja acompanhante da Home inicia pelo telefone", async ({ page }) => {
     await bypassAgeGate(page);
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    const professionalEntry = page.getByRole("link", { name: /Sou profissional/ });
-    await expect(professionalEntry).toHaveAttribute("href", "/cadastro-modelo");
+    const professionalEntry = page.getByRole("link", { name: /Seja acompanhante/ });
+    await expect(professionalEntry).toHaveAttribute("href", "/cadastro/acompanhante");
   });
 
-  test("/cadastro profissional logado nao exige anti-spam para continuar", async ({ page }) => {
+  test("/cadastro antigo de acompanhante redireciona para telefone", async ({ page }) => {
     await gotoWithMock(page, "/cadastro?tipo=acompanhante");
     await page.waitForLoadState("networkidle").catch(() => {});
-    const body = (await page.textContent("body"))?.toLowerCase() ?? "";
-    expect(body).toContain("continuar como profissional");
-    expect(body).toContain("ir para as fases do cadastro");
-    expect(body).not.toContain("anti-spam");
-    expect(body).not.toContain("captcha");
+    expect(page.url()).toMatch(/\/cadastro\/acompanhante/);
+    await expect(page.getByRole("heading", { name: "Cadastre-se grátis como acompanhante" })).toBeVisible();
   });
 
   test("/completar-cadastro carrega sem 404", async ({ page }) => {

@@ -355,6 +355,7 @@ export default function CadastroPage() {
     const draft = params.get("draft");
     const legacyClientEmail = params.get("legacy") === "cliente";
     const tipo = normalizeCadastroTipo(params.get("tipo"));
+    const phoneValidated = params.get("telefoneValidado") === "1";
     const nextIntent = normalizeEntryRole(params.get("continue")) ?? normalizeEntryRole(params.get("role"));
     const rawReturnUrl = params.get("returnUrl");
     const safeReturnUrl = rawReturnUrl?.startsWith("/") && !rawReturnUrl.startsWith("//")
@@ -382,6 +383,11 @@ export default function CadastroPage() {
 
       if (tipo === "anfitriao") {
         router.replace(ACCOUNT_ROUTES.onboardingAnfitriao);
+        return;
+      }
+
+      if (tipo === "acompanhante" && !legacyClientEmail && !phoneValidated) {
+        router.replace(ACCOUNT_ROUTES.cadastroAcompanhante);
         return;
       }
 
@@ -507,13 +513,13 @@ export default function CadastroPage() {
   ];
   const accountSubtitle =
     form.accountType === "PROFESSIONAL"
-      ? "Ativação profissional +18"
+      ? "Cadastro de acompanhante +18"
       : form.accountType === "PROPERTY_HOST"
         ? "Cadastro de imóvel +18"
         : "Conta cliente +18";
   const accountHint =
     form.accountType === "PROFESSIONAL"
-      ? "Depois da conta, você segue para a verificação e criação do perfil de anunciante."
+      ? "Depois da conta, você segue para dados do perfil, fotos, documentos, biometria e análise da equipe."
       : form.accountType === "PROPERTY_HOST"
         ? "Seu rascunho fica salvo. Depois da conta, você volta para publicar o imóvel."
         : "";
@@ -849,10 +855,11 @@ export default function CadastroPage() {
       },
       {
         tipo: "acompanhante",
-        eyebrow: "Perfil profissional",
+        eyebrow: "Acompanhante",
         title: "Quero anunciar como acompanhante",
-        desc: "Inicie a ativação profissional com maioridade, termos, documentos, fotos e análise da equipe.",
-        action: "Ativar perfil profissional",
+        desc: "Comece pelo telefone e siga para maioridade, termos, documentos, fotos e análise da equipe.",
+        action: "Cadastre-se como acompanhante",
+        directHref: ACCOUNT_ROUTES.cadastroAcompanhante,
       },
       {
         tipo: "anfitriao",
@@ -996,7 +1003,7 @@ export default function CadastroPage() {
       {isLoggedUpgradeFlow ? (
         <div style={{ marginBottom: 20, padding: 14, borderRadius: 8, border: "1px solid rgba(212,168,67,0.24)", background: "rgba(15,23,42,0.72)" }}>
           <p style={{ color: "#f1f5f9", fontSize: 14, fontWeight: 800, margin: "0 0 6px" }}>
-            Continuar como {form.accountType === "PROFESSIONAL" ? "profissional anunciante" : "anunciante de espaço"}
+            Continuar cadastro de {form.accountType === "PROFESSIONAL" ? "acompanhante" : "anunciante de espaço"}
           </p>
           <p style={{ color: "#64748b", fontSize: 12, lineHeight: 1.5, margin: "0 0 12px" }}>
             Você já está logado. Vamos atualizar sua conta e abrir as etapas do cadastro.

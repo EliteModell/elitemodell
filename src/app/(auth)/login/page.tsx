@@ -79,7 +79,7 @@ async function getPostLoginPath(returnUrl: string | null, roleIntent: ReturnType
     user?.accountType === "professional" ||
     PROFESSIONAL_CATEGORIES.includes(user?.category ?? "");
   if (roleIntent === "profissional" && !hasProfessionalAccess) {
-    return `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`;
+    return ACCOUNT_ROUTES.cadastroAcompanhante;
   }
   if (roleIntent) return postLoginPathFromUser(user, roleIntent);
   if (!user?.lgpdConsent || !user?.termsConsent || !user?.birthDate) return "/completar-cadastro";
@@ -129,7 +129,7 @@ function LoginContent() {
   const roleIntent = normalizeEntryRole(searchParams.get("role")) ?? inferRoleIntentFromReturnUrl(returnUrl);
   const signupHref =
     roleIntent === "profissional"
-      ? `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`
+      ? ACCOUNT_ROUTES.cadastroAcompanhante
       : roleIntent === "anfitriao"
         ? ACCOUNT_ROUTES.onboardingAnfitriao
         : roleIntent === "cliente"
@@ -331,7 +331,7 @@ function LoginContent() {
 
       <section className="visibility-section">
         <h2>Aumente sua visibilidade</h2>
-        <Link href={ACCOUNT_ROUTES.cadastroAcompanhante} className="secondary-cta">Ativar perfil profissional</Link>
+        <Link href={ACCOUNT_ROUTES.cadastroAcompanhante} className="secondary-cta">Cadastre-se como acompanhante</Link>
         <Link href={ACCOUNT_ROUTES.cadastroAnfitriao} className="outline-cta">Cadastrar local reservado</Link>
       </section>
 

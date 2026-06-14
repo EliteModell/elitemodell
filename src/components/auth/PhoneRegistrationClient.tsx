@@ -40,7 +40,7 @@ const CONSENT_STORAGE_KEY: Record<FlowMode, string> = {
 };
 const REGISTER_ROUTE: Record<FlowMode, string> = {
   client: "/app/consumer/register",
-  model: "/cadastro-modelo",
+  model: "/cadastro/acompanhante",
   host: "/cadastro-anfitriao",
 };
 const VERIFY_ROUTE: Record<FlowMode, string> = {
@@ -79,7 +79,7 @@ const copy: Record<FlowMode, {
     loginHref: "/modelo/login",
     loginLabel: "Já tenho conta",
     ownershipLabel: "Confirmo que estou criando meu próprio perfil.",
-    verifyBack: "/cadastro-modelo",
+    verifyBack: "/cadastro/acompanhante",
   },
   host: {
     title: "Vamos verificar o seu telefone",
@@ -694,7 +694,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
         </p>
         {isClient && (
           <p style={{ textAlign: "center", margin: "28px 0", fontSize: 17, color: "#39454c" }}>
-            Quer anunciar? <Link href="/cadastro-modelo" style={linkStyle}>Cadastre-se como acompanhante</Link> ou <Link href="/cadastro-anfitriao" style={linkStyle}>anfitrião</Link>.
+            Quer anunciar? <Link href="/cadastro/acompanhante" style={linkStyle}>Cadastre-se como acompanhante</Link> ou <Link href="/cadastro-anfitriao" style={linkStyle}>anfitrião</Link>.
           </p>
         )}
       </section>

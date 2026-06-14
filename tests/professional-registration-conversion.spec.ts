@@ -6,7 +6,7 @@ import {
 } from "../src/lib/phone-otp";
 
 test("rota profissional pública sempre começa na landing", () => {
-  expect(cadastroHrefForRole("profissional")).toBe("/cadastro-modelo");
+  expect(cadastroHrefForRole("profissional")).toBe("/cadastro/acompanhante");
 });
 
 test("pré-validação do telefone usa token assinado e rejeita adulteração", () => {
@@ -26,24 +26,22 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("apresenta conversão original e validação por canal", async ({ page }) => {
-  await page.goto("/cadastro-modelo", { waitUntil: "domcontentloaded" });
+  await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
 
-  await expect(page.getByRole("heading", { name: "Cadastre-se como profissional" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cadastre-se grátis como acompanhante" })).toBeVisible();
   await expect(page.getByText("Cadastro gratuito", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Perfil verificado" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Quanto você pode faturar?" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Dúvidas frequentes" })).toBeVisible();
   await expect(page.locator("body")).not.toContainText("fatalmodel");
 
-  await page.getByLabel("Qual seu número de WhatsApp profissional?").fill("31999999999");
-  await page.getByLabel("Confirmo que tenho 18 anos ou mais.").check();
-  await page.getByLabel("Confirmo que o perfil será criado para mim.").check();
-  await page.getByLabel(/Li e aceito os Termos de Uso/).check();
-  await page.getByLabel(/Li a Política de Privacidade/).check();
+  await expect(page.getByRole("button", { name: "Continuar" })).toBeDisabled();
+  await page.getByLabel("Qual seu número de telefone?").fill("31999999999");
+  await page.getByLabel(/Ao continuar, confirmo que tenho 18 anos ou mais/).check();
   await page.getByRole("button", { name: "Continuar" }).click();
 
   await expect(
-    page.getByRole("heading", { name: "Escolha o método de validação do seu telefone" }),
+    page.getByRole("heading", { name: "Valide seu telefone para continuar" }),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: /Receber código via WhatsApp/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Receber código via SMS/ })).toBeVisible();
@@ -59,12 +57,9 @@ test("envia a escolha de WhatsApp ao endpoint de OTP", async ({ page }) => {
       body: JSON.stringify({ ok: true, resendInSeconds: 60 }),
     });
   });
-  await page.goto("/cadastro-modelo", { waitUntil: "domcontentloaded" });
-  await page.getByLabel("Qual seu número de WhatsApp profissional?").fill("31999999999");
-  await page.getByLabel("Confirmo que tenho 18 anos ou mais.").check();
-  await page.getByLabel("Confirmo que o perfil será criado para mim.").check();
-  await page.getByLabel(/Li e aceito os Termos de Uso/).check();
-  await page.getByLabel(/Li a Política de Privacidade/).check();
+  await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
+  await page.getByLabel("Qual seu número de telefone?").fill("31999999999");
+  await page.getByLabel(/Ao continuar, confirmo que tenho 18 anos ou mais/).check();
   await page.getByRole("button", { name: "Continuar" }).click();
   await page.getByRole("button", { name: /Receber código via WhatsApp/ }).click();
 
@@ -105,20 +100,17 @@ test("após validar o código abre a ativação profissional completa", async ({
       }),
     });
   });
-  await page.goto("/cadastro-modelo", { waitUntil: "domcontentloaded" });
+  await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
 
-  await page.getByLabel("Qual seu número de WhatsApp profissional?").fill("31999999999");
-  await page.getByLabel("Confirmo que tenho 18 anos ou mais.").check();
-  await page.getByLabel("Confirmo que o perfil será criado para mim.").check();
-  await page.getByLabel(/Li e aceito os Termos de Uso/).check();
-  await page.getByLabel(/Li a Política de Privacidade/).check();
+  await page.getByLabel("Qual seu número de telefone?").fill("31999999999");
+  await page.getByLabel(/Ao continuar, confirmo que tenho 18 anos ou mais/).check();
   await page.getByRole("button", { name: "Continuar" }).first().click();
   await page.getByRole("button", { name: /Receber código via WhatsApp/ }).click();
   await page.getByLabel("Código de 6 dígitos").fill("123456");
   await page.getByRole("button", { name: "Validar e continuar" }).click();
 
   await page.waitForURL(/\/cadastro\?tipo=acompanhante&telefoneValidado=1/);
-  await expect(page.getByText("Ativação profissional +18", { exact: true })).toBeVisible();
+  await expect(page.getByText("Cadastro de acompanhante +18", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Cadastrar com Google" })).toBeVisible();
   await expect(page.getByPlaceholder("seu@email.com")).toBeVisible();
   await expect(page.getByText("Data de nascimento", { exact: true })).toBeVisible();
@@ -126,7 +118,7 @@ test("após validar o código abre a ativação profissional completa", async ({
 
 test("não cria rolagem horizontal no mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/cadastro-modelo", { waitUntil: "domcontentloaded" });
+  await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
 
   const dimensions = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,

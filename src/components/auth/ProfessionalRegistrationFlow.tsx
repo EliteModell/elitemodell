@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -26,6 +25,7 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 import styles from "./ProfessionalRegistrationFlow.module.css";
+import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 type RegistrationStage = "phone" | "verification";
 type VerificationChannel = "whatsapp" | "sms";
@@ -103,7 +103,7 @@ const faqs = [
   {
     question: "Como funciona o cadastro?",
     answer:
-      "Você confirma seu telefone, cria sua conta e completa o perfil profissional com suas próprias informações. Antes da publicação, os dados obrigatórios e as etapas de verificação são conferidos.",
+      "Você confirma seu telefone, cria sua conta e completa o perfil de acompanhante com suas próprias informações. Antes da publicação, documentos, fotos, biometria e dados obrigatórios passam por análise.",
   },
   {
     question: "Quanto custa anunciar?",
@@ -123,7 +123,7 @@ const faqs = [
   {
     question: "Como funciona a verificação?",
     answer:
-      "A plataforma pode solicitar confirmação de telefone, identidade, maioridade e titularidade do perfil. Os dados são tratados conforme a Política de Privacidade.",
+      "A publicação exige confirmação de telefone, identidade, maioridade, titularidade do perfil, fotos reais e biometria facial. Os dados são tratados conforme a Política de Privacidade.",
   },
   {
     question: "Preciso ter experiência?",
@@ -189,6 +189,7 @@ export function ProfessionalRegistrationFlow({
     consents.ownershipConfirmed &&
     consents.termsConsent &&
     consents.lgpdConsent;
+  const canContinueFromPhone = isValidBrazilianPhone(phone) && mandatoryConsentsAccepted;
 
   const progress = stage === "phone" ? 1 : 2;
 
@@ -236,6 +237,16 @@ export function ProfessionalRegistrationFlow({
   function persistRegistrationData() {
     window.sessionStorage.setItem(PHONE_STORAGE_KEY, onlyDigits(phone));
     window.sessionStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(consents));
+  }
+
+  function setMandatoryConsent(accepted: boolean) {
+    setConsents((current) => ({
+      ...current,
+      ageConfirmed: accepted,
+      ownershipConfirmed: accepted,
+      termsConsent: accepted,
+      lgpdConsent: accepted,
+    }));
   }
 
   function continueToVerification() {
@@ -338,7 +349,7 @@ export function ProfessionalRegistrationFlow({
 
   if (!hydrated) {
     return (
-      <main className={styles.loadingPage} aria-label="Carregando cadastro profissional">
+      <main className={styles.loadingPage} aria-label="Carregando cadastro de acompanhante">
         <div className={styles.loadingHeader} />
         <div className={styles.loadingHero}>
           <div className={styles.loadingImage} />
@@ -357,6 +368,10 @@ export function ProfessionalRegistrationFlow({
   return (
     <main className={styles.page}>
       <header className={styles.header}>
+        <Link className={styles.backHome} href="/">
+          <ChevronLeft size={18} aria-hidden="true" />
+          Voltar
+        </Link>
         <Link className={styles.brand} href="/" aria-label="Elite Modell - página inicial">
           <span className={styles.brandStar} aria-hidden="true">
             ✦
@@ -370,7 +385,7 @@ export function ProfessionalRegistrationFlow({
 
       <div className={styles.progressWrap} aria-label={`Etapa ${progress} de 3`}>
         <div className={styles.progressMeta}>
-          <span>Cadastro profissional</span>
+          <span>Cadastro de acompanhante</span>
           <span>Etapa {progress} de 3</span>
         </div>
         <div className={styles.progressTrack}>
@@ -381,35 +396,38 @@ export function ProfessionalRegistrationFlow({
       {stage === "phone" && (
         <section className={styles.phoneStage} aria-labelledby="professional-register-title">
           <div className={styles.heroVisual}>
-            <Image
-              src="/images/professional-registration/elite-professional-hero-v1.png"
-              alt="Profissional adulta administrando seu perfil pelo celular em ambiente sofisticado"
-              fill
-              priority
-              sizes="(max-width: 900px) 100vw, 50vw"
-              className={styles.heroImage}
-            />
+            <div className={styles.heroGlow} aria-hidden="true" />
             <div className={styles.heroOverlay} />
+            <div className={styles.heroCard}>
+              <span>Elite Modell</span>
+              <strong>Anuncie com segurança</strong>
+              <p>Controle seu perfil e acompanhe sua verificação em cada etapa.</p>
+            </div>
+            <div className={styles.heroSteps} aria-label="Etapas do cadastro">
+              <span>Telefone</span>
+              <span>Código</span>
+              <span>Cadastro completo</span>
+            </div>
             <div className={styles.heroMessage}>
               <span>Seu perfil, suas escolhas</span>
-              <strong>Presença profissional com identidade e controle.</strong>
+              <strong>Entrada simples para criar seu anúncio com discrição.</strong>
             </div>
           </div>
 
           <div className={styles.phoneContent}>
             <span className={styles.eyebrow}>
               <Sparkles size={16} aria-hidden="true" />
-              Espaço profissional Elite Modell
+              Entrada de acompanhante Elite Modell
             </span>
             <h1 id="professional-register-title" ref={headingRef} tabIndex={-1}>
-              Cadastre-se como profissional
+              Cadastre-se grátis como acompanhante
             </h1>
             <p className={styles.lead}>
-              Crie seu perfil, defina seus valores e seja encontrada por clientes da sua região.
+              Anuncie com segurança, controle seu perfil e acompanhe sua verificação.
             </p>
 
             <div className={styles.formCard}>
-              <label htmlFor="professional-phone">Qual seu número de WhatsApp profissional?</label>
+              <label htmlFor="professional-phone">Qual seu número de telefone?</label>
               <div className={styles.inputShell}>
                 <Phone size={20} aria-hidden="true" />
                 <span className={styles.countryCode}>+55</span>
@@ -418,100 +436,53 @@ export function ProfessionalRegistrationFlow({
                   type="tel"
                   inputMode="tel"
                   autoComplete="tel"
-                  placeholder="Digite seu WhatsApp profissional"
+                  placeholder="Digite seu telefone profissional"
                   value={formatPhone(phone)}
                   onChange={(event) => setPhone(onlyDigits(event.target.value))}
                   aria-describedby="phone-help"
                 />
               </div>
               <p id="phone-help" className={styles.inputHelp}>
-                Este número poderá ficar visível no seu perfil, conforme suas configurações.
+                Usaremos esse número para proteger sua conta e continuar seu cadastro.
               </p>
 
               <div className={styles.consentList}>
-                <label className={styles.checkRow}>
+                <label className={`${styles.checkRow} ${styles.primaryConsent}`}>
                   <input
                     type="checkbox"
-                    checked={consents.ageConfirmed}
-                    onChange={(event) =>
-                      setConsents((current) => ({
-                        ...current,
-                        ageConfirmed: event.target.checked,
-                      }))
-                    }
-                  />
-                  <span>Confirmo que tenho 18 anos ou mais.</span>
-                </label>
-                <label className={styles.checkRow}>
-                  <input
-                    type="checkbox"
-                    checked={consents.ownershipConfirmed}
-                    onChange={(event) =>
-                      setConsents((current) => ({
-                        ...current,
-                        ownershipConfirmed: event.target.checked,
-                      }))
-                    }
-                  />
-                  <span>Confirmo que o perfil será criado para mim.</span>
-                </label>
-                <label className={styles.checkRow}>
-                  <input
-                    type="checkbox"
-                    checked={consents.termsConsent}
-                    onChange={(event) =>
-                      setConsents((current) => ({
-                        ...current,
-                        termsConsent: event.target.checked,
-                      }))
-                    }
+                    checked={mandatoryConsentsAccepted}
+                    onChange={(event) => setMandatoryConsent(event.target.checked)}
                   />
                   <span>
-                    Li e aceito os{" "}
+                    Ao continuar, confirmo que tenho 18 anos ou mais, que o perfil será criado
+                    para mim e concordo com os{" "}
                     <Link href="/terms" target="_blank">
                       Termos de Uso
                     </Link>
-                    .
-                  </span>
-                </label>
-                <label className={styles.checkRow}>
-                  <input
-                    type="checkbox"
-                    checked={consents.lgpdConsent}
-                    onChange={(event) =>
-                      setConsents((current) => ({
-                        ...current,
-                        lgpdConsent: event.target.checked,
-                      }))
-                    }
-                  />
-                  <span>
-                    Li a{" "}
+                    ,{" "}
                     <Link href="/privacy" target="_blank">
                       Política de Privacidade
-                    </Link>
-                    .
+                    </Link>{" "}
+                    e regras de cadastro da Elite Modell.
                   </span>
-                </label>
-                <label className={styles.checkRow}>
-                  <input
-                    type="checkbox"
-                    checked={consents.marketingConsent}
-                    onChange={(event) =>
-                      setConsents((current) => ({
-                        ...current,
-                        marketingConsent: event.target.checked,
-                      }))
-                    }
-                  />
-                  <span>Quero receber novidades e orientações da plataforma. (Opcional)</span>
                 </label>
               </div>
 
-              <button className={styles.primaryButton} type="button" onClick={continueToVerification}>
+              <button
+                className={styles.primaryButton}
+                type="button"
+                disabled={!canContinueFromPhone}
+                onClick={continueToVerification}
+              >
                 Continuar
                 <ChevronRight size={20} aria-hidden="true" />
               </button>
+              <div className={styles.entryLinks}>
+                <Link href="/login">Já tenho conta</Link>
+                <Link href={ACCOUNT_ROUTES.cadastroCliente}>
+                  Quer contratar? Cadastre-se como cliente.
+                </Link>
+              </div>
             </div>
 
             <div className={styles.quickBenefits} aria-label="Benefícios do cadastro">
@@ -542,7 +513,7 @@ export function ProfessionalRegistrationFlow({
             <div className={styles.emptyVerification}>
               <Phone size={34} aria-hidden="true" />
               <h1 id="verification-title" ref={headingRef} tabIndex={-1}>
-                Confirme seu telefone profissional
+                Confirme seu telefone
               </h1>
               <p>
                 Para escolher WhatsApp ou SMS, informe primeiro o telefone e aceite os termos
@@ -559,7 +530,7 @@ export function ProfessionalRegistrationFlow({
                 Validação segura
               </span>
               <h1 id="verification-title" ref={headingRef} tabIndex={-1}>
-                Escolha o método de validação do seu telefone
+                Valide seu telefone para continuar
               </h1>
               <p>
                 Enviaremos um código de 6 dígitos para <strong>{formatPhone(phone)}</strong>.

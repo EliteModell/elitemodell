@@ -110,6 +110,11 @@ export async function POST(req: NextRequest) {
       targetAccountType === "model"
         ? await validatePendingProfessionalPhone(req, existing?.id)
         : null;
+    if (targetAccountType === "model" && !pendingProfessionalPhone && !existing?.phoneVerified) {
+      throw new ProfessionalPhoneRegistrationError(
+        "Confirme seu telefone antes de continuar o cadastro de acompanhante.",
+      );
+    }
     const shouldValidateCaptcha = !existing && !trustedOAuthProvider;
 
     if (shouldValidateCaptcha) {

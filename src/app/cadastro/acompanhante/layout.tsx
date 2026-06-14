@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Cadastro de acompanhante | Elite Modell",
+  title: "Cadastre-se como acompanhante | Elite Modell",
   description:
     "Cadastre-se como acompanhante na Elite Modell começando pela validação segura do telefone.",
   alternates: {
@@ -10,6 +10,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+export default function CadastroAcompanhanteLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return children;
 }
