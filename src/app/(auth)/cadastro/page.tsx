@@ -605,40 +605,6 @@ export default function CadastroPage() {
     }
   }
 
-  async function registerUser(accessToken: string, captchaToken?: string) {
-    const payload = registrationPayload(captchaToken);
-    console.info("[cadastro] enviando cadastro ao backend", {
-      accountType: payload.accountType,
-      category: payload.category ?? null,
-      hasBirthDate: Boolean(payload.birthDate),
-      hasTermsConsent: Boolean(payload.termsConsent),
-      hasLgpdConsent: Boolean(payload.lgpdConsent),
-      hasCaptchaToken: Boolean(captchaToken),
-      captchaTokenLength: captchaToken?.length ?? 0,
-      loggedUpgradeFlow: isLoggedUpgradeFlow,
-    });
-
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        accessToken,
-        ...payload,
-      }),
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      console.error("[cadastro] backend recusou cadastro", {
-        status: res.status,
-        error: typeof data.error === "string" ? data.error : data.error ? "erro estruturado" : "erro ausente",
-        hasCaptchaToken: Boolean(captchaToken),
-        captchaTokenLength: captchaToken?.length ?? 0,
-      });
-      throw new Error(typeof data.error === "string" ? data.error : "Erro ao criar conta.");
-    }
-  }
-
   async function postJsonOrThrow(path: string, body: Record<string, unknown>) {
     const res = await fetch(path, {
       method: "POST",
@@ -706,6 +672,27 @@ export default function CadastroPage() {
     return params.toString();
   }
 
+  async function sendEmailSignup(captchaToken?: string) {
+    const payload = registrationPayload(captchaToken);
+    const response = await fetch("/api/auth/email-signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        redirectTo: buildAuthCallbackUrl(callbackParams()),
+        ...payload,
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(typeof data.error === "string" ? data.error : "Nao foi possivel enviar o email.");
+    }
+
+    rememberPendingRegistration(payload);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validateRequiredForm(true)) return;
@@ -713,25 +700,8 @@ export default function CadastroPage() {
     setLoading(true);
     try {
       const captchaToken = await getCaptchaToken();
-      const { data, error } = await supabaseAuth.auth.signUp({
-        email: form.email.trim().toLowerCase(),
-        password: form.password,
-        options: {
-          emailRedirectTo: buildAuthCallbackUrl(callbackParams()),
-          data: registrationPayload(),
-        },
-      });
-      if (error) throw error;
-      if (data.session?.access_token) {
-        await registerUser(data.session.access_token, captchaToken);
-        const res = await signIn("supabase", nextAuthCadastroPayload(data.session.access_token));
-        if (res?.ok) {
-          router.push(await resolvedNextPathAfterAuth());
-          router.refresh();
-          return;
-        }
-      }
-      rememberPendingRegistration(registrationPayload(captchaToken));
+      await sendEmailSignup(captchaToken);
+      toast.success("Email de confirmacao enviado.");
       setStep("verify");
     } catch (err: unknown) {
       const authError = asAuthError(err);
@@ -760,6 +730,23 @@ export default function CadastroPage() {
         invalid_email: "Email inválido.",
       };
       toast.error(msg[authError.code ?? ""] ?? msg[authError.name ?? ""] ?? authError.message ?? "Erro ao criar conta.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResendVerificationEmail() {
+    if (!isValidEmail(form.email) || form.password.length < 6) {
+      toast.error("Volte ao cadastro e confira email e senha.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await sendEmailSignup();
+      toast.success("Email reenviado. Confira a caixa de entrada e o spam.");
+    } catch (err: unknown) {
+      toast.error(asAuthError(err).message ?? "Nao foi possivel reenviar o email.");
     } finally {
       setLoading(false);
     }
@@ -818,7 +805,12 @@ export default function CadastroPage() {
       } else {
         const { data } = await supabaseAuth.auth.getSession();
         const accessToken = data.session?.access_token;
-        if (accessToken) await registerUser(accessToken);
+        if (accessToken) {
+          await postJsonOrThrow("/api/auth/register", {
+            accessToken,
+            ...registrationPayload(),
+          });
+        }
       }
 
       const { data } = await supabaseAuth.auth.getSession();
@@ -942,6 +934,14 @@ export default function CadastroPage() {
         <p style={{ color: "#615b52", fontSize: 13, lineHeight: 1.6, margin: "0 0 32px" }}>Confirme o email para ativar sua conta. Depois volte aqui para entrar.</p>
         <button onClick={() => router.push(`${ACCOUNT_ROUTES.login}?role=cliente`)} style={{ width: "100%", padding: "13px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
           Ir para o login
+        </button>
+        <button
+          type="button"
+          onClick={handleResendVerificationEmail}
+          disabled={loading}
+          style={{ width: "100%", marginTop: 12, padding: "13px", background: "rgba(212,168,67,0.08)", color: GOLD, border: "1px solid rgba(212,168,67,0.3)", borderRadius: 8, fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}
+        >
+          {loading ? "Reenviando..." : "Reenviar email"}
         </button>
       </div>
       <AuthInfoFooter />
