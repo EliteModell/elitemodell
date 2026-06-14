@@ -23,16 +23,46 @@ type HookPayload = {
   };
 };
 
-const SUPABASE_URL = "https://jgvmpbrsxegwkrgjncsv.supabase.co";
+const DEFAULT_SITE_URL = "https://www.elitemodell.com.br";
 
-function confirmationUrl(tokenHash: string, type: string, redirectTo: string) {
-  return `${SUPABASE_URL}/auth/v1/verify?token=${tokenHash}&type=${type}&redirect_to=${encodeURIComponent(redirectTo)}`;
+function trimTrailingSlash(value: string) {
+  return value.replace(/\/+$/, "");
+}
+
+function getSupabaseAuthOrigin() {
+  const configured = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  if (!configured) {
+    throw new Error("NEXT_PUBLIC_SUPABASE_URL ausente para montar link de confirmacao.");
+  }
+  return trimTrailingSlash(configured);
+}
+
+function getPublicSiteUrl(payloadSiteUrl?: string) {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  return trimTrailingSlash(configured || payloadSiteUrl || DEFAULT_SITE_URL);
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function confirmationUrl(tokenHash: string, type: EmailActionType, redirectTo: string) {
+  const url = new URL(`${getSupabaseAuthOrigin()}/auth/v1/verify`);
+  url.searchParams.set("token_hash", tokenHash);
+  url.searchParams.set("type", type);
+  url.searchParams.set("redirect_to", redirectTo);
+  return url.toString();
 }
 
 function buildEmail(payload: HookPayload): { subject: string; html: string } | null {
   const { email_action_type, token_hash, token_hash_new, redirect_to, site_url } = payload.email_data;
-  const userEmail = payload.user.email;
-  const siteUrl = site_url || "https://www.elitemodell.com.br";
+  const userEmail = escapeHtml(payload.user.email);
+  const siteUrl = getPublicSiteUrl(site_url);
   const redirectTo = redirect_to || siteUrl;
 
   const base = `
@@ -53,7 +83,7 @@ function buildEmail(payload: HookPayload): { subject: string; html: string } | n
   `;
 
   const btn = (url: string, text: string) =>
-    `<a href="${url}" style="display:inline-block;margin-top:24px;padding:14px 28px;background:linear-gradient(135deg,#d4a843,#f5d78c,#d4a843);color:#0a0a0a;font-weight:700;font-size:15px;text-decoration:none;border-radius:8px">${text}</a>`;
+    `<a href="${escapeHtml(url)}" style="display:inline-block;margin-top:24px;padding:14px 28px;background:linear-gradient(135deg,#d4a843,#f5d78c,#d4a843);color:#0a0a0a;font-weight:700;font-size:15px;text-decoration:none;border-radius:8px">${escapeHtml(text)}</a>`;
 
   if (email_action_type === "signup") {
     const url = confirmationUrl(token_hash, "signup", redirectTo);
@@ -144,7 +174,7 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: `Elite Modell <noreply@elitemodell.com.br>`,
+        from: process.env.EMAIL_FROM?.trim() || `Elite Modell <noreply@elitemodell.com.br>`,
         to: [payload.user.email],
         subject: email.subject,
         html: email.html,
