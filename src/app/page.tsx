@@ -6,7 +6,6 @@ import { ChevronRight, Gem, Heart, HousePlus, LockKeyhole, ShieldCheck, Star, Us
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
-import HomeDiscoveryPreview from "@/components/home/HomeDiscoveryPreview";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
@@ -86,8 +85,6 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
-        <HomeDiscoveryPreview />
 
         <section className="quick-actions section-block">
           <div className="section-head">

@@ -455,6 +455,9 @@ test.describe("Fluxo público — Buscar prazer", () => {
       "href",
       "/buscar?tab=acompanhantes&selecionarCidade=1",
     );
+    await expect(
+      page.getByRole("heading", { name: "Perfis e stories em destaque" }),
+    ).toHaveCount(0);
   });
 
   test("não carrega perfis antes de selecionar cidade", async ({ page }) => {
