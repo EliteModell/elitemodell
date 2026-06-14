@@ -94,6 +94,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "professional-registration-conversion",
+      testMatch: "**/professional-registration-conversion.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "authenticated",
       testMatch: "**/client-area-authenticated.spec.ts",
       use: {

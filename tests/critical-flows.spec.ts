@@ -174,11 +174,13 @@ test.describe("Fluxo 1 — Cadastro", () => {
     expect(resp?.status()).not.toBe(404);
   });
 
-  test("/cadastro-modelo encaminha para onboarding profissional ou login", async ({ page }) => {
+  test("/cadastro-modelo exibe o início público do cadastro profissional", async ({ page }) => {
     await bypassAgeGate(page);
     await page.goto("/cadastro-modelo", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
-    expect(page.url()).toMatch(/\/(profissional\/novo|login)/);
+    await expect(page.getByRole("heading", { name: "Anuncie seu perfil profissional" })).toBeVisible();
+    await expect(page.getByLabel("Telefone profissional")).toBeVisible();
+    expect(page.url()).toMatch(/\/cadastro-modelo/);
   });
 
   test("/cadastro profissional logado nao exige anti-spam para continuar", async ({ page }) => {

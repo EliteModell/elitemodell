@@ -1,10 +1,5 @@
-import { Suspense } from "react";
-import { PhoneRegistrationClient } from "@/components/auth/PhoneRegistrationClient";
+import { ProfessionalRegistrationFlow } from "@/components/auth/ProfessionalRegistrationFlow";
 
-export default function ModelVerifyPhonePage() {
-  return (
-    <Suspense fallback={null}>
-      <PhoneRegistrationClient mode="model" screen="verify" />
-    </Suspense>
-  );
+export default function VerifyModelPhonePage() {
+  return <ProfessionalRegistrationFlow startAtVerification />;
 }

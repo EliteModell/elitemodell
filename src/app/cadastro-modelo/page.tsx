@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
-import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import { ProfessionalRegistrationFlow } from "@/components/auth/ProfessionalRegistrationFlow";
 
-export default function ModelRegisterPage() {
-  redirect(ACCOUNT_ROUTES.onboardingAcompanhante);
+export default function ModelRegistrationPage() {
+  return <ProfessionalRegistrationFlow />;
 }
