@@ -331,7 +331,7 @@ function LoginContent() {
 
       <section className="visibility-section">
         <h2>Aumente sua visibilidade</h2>
-        <Link href={`${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`} className="secondary-cta">Ativar perfil profissional</Link>
+        <Link href={ACCOUNT_ROUTES.cadastroAcompanhante} className="secondary-cta">Ativar perfil profissional</Link>
         <Link href={ACCOUNT_ROUTES.cadastroAnfitriao} className="outline-cta">Cadastrar local reservado</Link>
       </section>
 

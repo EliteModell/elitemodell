@@ -41,7 +41,7 @@ const quickActions = [
   },
   {
     label: "Sou profissional",
-    href: `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`,
+    href: ACCOUNT_ROUTES.cadastroAcompanhante,
     text: "Anunciar meu perfil",
     tag: "Modelo / acompanhante",
     cta: "Criar meu perfil",

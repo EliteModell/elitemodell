@@ -21,6 +21,7 @@ import {
   roleForPhoneAccount,
   timingSafeCodeCompare,
 } from "@/lib/phone-otp";
+import { setPendingProfessionalPhoneCookie } from "@/lib/professional-phone-registration";
 
 const schema = z.object({
   phone: z.string().min(10),
@@ -32,6 +33,7 @@ const schema = z.object({
   ageConfirmed: z.boolean().optional(),
   ownershipConfirmed: z.boolean().optional(),
   marketingConsent: z.boolean().optional(),
+  deferAccountCreation: z.boolean().default(false),
 });
 
 type VerifiedConsent = {
@@ -293,6 +295,23 @@ export async function POST(req: NextRequest) {
         { error: "Confirmacoes obrigatorias ausentes. Solicite um novo codigo." },
         { status: 400 }
       );
+    }
+
+    if (body.deferAccountCreation && body.accountType === "model") {
+      await prisma.phoneVerificationCode.update({
+        where: { id: verification.id },
+        data: { usedAt: new Date(), attempts: { increment: 1 } },
+      });
+
+      const response = NextResponse.json({
+        ok: true,
+        phone: formatBrazilianPhone(phone),
+        phoneVerified: true,
+        registrationPending: true,
+        redirectTo: "/cadastro?tipo=acompanhante&telefoneValidado=1",
+      });
+      setPendingProfessionalPhoneCookie(response, phone, verification.id);
+      return response;
     }
 
     const user = await persistVerifiedPhone({

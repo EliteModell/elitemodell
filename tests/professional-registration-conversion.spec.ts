@@ -1,4 +1,22 @@
 import { expect, test } from "@playwright/test";
+import { cadastroHrefForRole } from "../src/lib/account-routes";
+import {
+  createPendingProfessionalPhoneToken,
+  verifyPendingProfessionalPhoneToken,
+} from "../src/lib/phone-otp";
+
+test("rota profissional pública sempre começa na landing", () => {
+  expect(cadastroHrefForRole("profissional")).toBe("/cadastro-modelo");
+});
+
+test("pré-validação do telefone usa token assinado e rejeita adulteração", () => {
+  const token = createPendingProfessionalPhoneToken("31999999999", "verification-test");
+  expect(verifyPendingProfessionalPhoneToken(token)).toMatchObject({
+    phone: "31999999999",
+    verificationId: "verification-test",
+  });
+  expect(verifyPendingProfessionalPhoneToken(`${token}alterado`)).toBeNull();
+});
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -10,19 +28,23 @@ test.beforeEach(async ({ page }) => {
 test("apresenta conversão original e validação por canal", async ({ page }) => {
   await page.goto("/cadastro-modelo", { waitUntil: "domcontentloaded" });
 
-  await expect(page.getByRole("heading", { name: "Anuncie seu perfil profissional" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cadastre-se como profissional" })).toBeVisible();
   await expect(page.getByText("Cadastro gratuito", { exact: true })).toBeVisible();
-  await expect(page.getByText("Perfil verificado", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Perfil verificado" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Quanto você pode faturar?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dúvidas frequentes" })).toBeVisible();
   await expect(page.locator("body")).not.toContainText("fatalmodel");
 
-  await page.getByLabel("Telefone profissional").fill("31999999999");
+  await page.getByLabel("Qual seu número de WhatsApp profissional?").fill("31999999999");
   await page.getByLabel("Confirmo que tenho 18 anos ou mais.").check();
   await page.getByLabel("Confirmo que o perfil será criado para mim.").check();
   await page.getByLabel(/Li e aceito os Termos de Uso/).check();
   await page.getByLabel(/Li a Política de Privacidade/).check();
   await page.getByRole("button", { name: "Continuar" }).click();
 
-  await expect(page.getByRole("heading", { name: "Confirme seu telefone" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Escolha o método de validação do seu telefone" }),
+  ).toBeVisible();
   await expect(page.getByRole("button", { name: /Receber código via WhatsApp/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Receber código via SMS/ })).toBeVisible();
 });
@@ -38,7 +60,7 @@ test("envia a escolha de WhatsApp ao endpoint de OTP", async ({ page }) => {
     });
   });
   await page.goto("/cadastro-modelo", { waitUntil: "domcontentloaded" });
-  await page.getByLabel("Telefone profissional").fill("31999999999");
+  await page.getByLabel("Qual seu número de WhatsApp profissional?").fill("31999999999");
   await page.getByLabel("Confirmo que tenho 18 anos ou mais.").check();
   await page.getByLabel("Confirmo que o perfil será criado para mim.").check();
   await page.getByLabel(/Li e aceito os Termos de Uso/).check();
@@ -58,17 +80,48 @@ test("envia a escolha de WhatsApp ao endpoint de OTP", async ({ page }) => {
   });
 });
 
-test("exibe simulador, benefícios e FAQ após a validação", async ({ page }) => {
-  await page.addInitScript(() => {
-    sessionStorage.setItem("elitemodell.professional-registration.verified", "true");
+test("após validar o código abre a ativação profissional completa", async ({ page }) => {
+  await page.route("**/api/auth/phone/send-code", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, resendInSeconds: 60 }),
+    });
+  });
+  await page.route("**/api/auth/phone/verify-code", async (route) => {
+    expect(route.request().postDataJSON()).toMatchObject({
+      phone: "31999999999",
+      code: "123456",
+      accountType: "model",
+      deferAccountCreation: true,
+    });
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        registrationPending: true,
+        redirectTo: "/cadastro?tipo=acompanhante&telefoneValidado=1",
+      }),
+    });
   });
   await page.goto("/cadastro-modelo", { waitUntil: "domcontentloaded" });
 
-  await expect(page.getByRole("heading", { name: "Quanto você pode faturar?" })).toBeVisible();
-  await expect(page.getByText("Receita semanal", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Seu perfil do seu jeito" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Dúvidas frequentes" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Criar meu perfil profissional/ })).toBeVisible();
+  await page.getByLabel("Qual seu número de WhatsApp profissional?").fill("31999999999");
+  await page.getByLabel("Confirmo que tenho 18 anos ou mais.").check();
+  await page.getByLabel("Confirmo que o perfil será criado para mim.").check();
+  await page.getByLabel(/Li e aceito os Termos de Uso/).check();
+  await page.getByLabel(/Li a Política de Privacidade/).check();
+  await page.getByRole("button", { name: "Continuar" }).first().click();
+  await page.getByRole("button", { name: /Receber código via WhatsApp/ }).click();
+  await page.getByLabel("Código de 6 dígitos").fill("123456");
+  await page.getByRole("button", { name: "Validar e continuar" }).click();
+
+  await page.waitForURL(/\/cadastro\?tipo=acompanhante&telefoneValidado=1/);
+  await expect(page.getByText("Ativação profissional +18", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cadastrar com Google" })).toBeVisible();
+  await expect(page.getByPlaceholder("seu@email.com")).toBeVisible();
+  await expect(page.getByText("Data de nascimento", { exact: true })).toBeVisible();
 });
 
 test("não cria rolagem horizontal no mobile", async ({ page }) => {

@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   BadgeCheck,
@@ -19,19 +18,16 @@ import {
   LockKeyhole,
   MessageCircle,
   Phone,
-  ShieldCheck,
   SlidersHorizontal,
   Sparkles,
-  UserRoundCheck,
   WalletCards,
-  Zap,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 import styles from "./ProfessionalRegistrationFlow.module.css";
 
-type RegistrationStage = "phone" | "verification" | "experience";
+type RegistrationStage = "phone" | "verification";
 type VerificationChannel = "whatsapp" | "sms";
 
 type ConsentState = {
@@ -49,8 +45,9 @@ type SendCodeResponse = {
 };
 
 type VerifyCodeResponse = {
-  authToken?: string;
   error?: string;
+  registrationPending?: boolean;
+  redirectTo?: string;
 };
 
 type ProfessionalRegistrationFlowProps = {
@@ -59,7 +56,6 @@ type ProfessionalRegistrationFlowProps = {
 
 const PHONE_STORAGE_KEY = "elitemodell.professional-registration.phone";
 const CONSENT_STORAGE_KEY = "elitemodell.professional-registration.consents";
-const VERIFIED_STORAGE_KEY = "elitemodell.professional-registration.verified";
 const RESEND_SECONDS = 60;
 
 const initialConsent: ConsentState = {
@@ -72,14 +68,14 @@ const initialConsent: ConsentState = {
 
 const benefits = [
   {
-    title: "Você define seus horários",
-    description: "Organize sua disponibilidade e ajuste sua agenda quando precisar.",
-    icon: CalendarClock,
-  },
-  {
-    title: "Controle total do perfil",
+    title: "Controle do seu perfil",
     description: "Atualize fotos, apresentação, valores e informações em um único lugar.",
     icon: SlidersHorizontal,
+  },
+  {
+    title: "Horários flexíveis",
+    description: "Organize sua disponibilidade e ajuste sua agenda quando precisar.",
+    icon: CalendarClock,
   },
   {
     title: "Atendimento presencial ou virtual",
@@ -97,17 +93,7 @@ const benefits = [
     icon: Eye,
   },
   {
-    title: "Gerenciamento simplificado",
-    description: "Acompanhe seu perfil e suas oportunidades em um painel organizado.",
-    icon: Zap,
-  },
-  {
-    title: "Segurança da plataforma",
-    description: "Conte com controles de acesso, denúncia e proteção de dados.",
-    icon: ShieldCheck,
-  },
-  {
-    title: "Suporte especializado",
+    title: "Suporte da plataforma",
     description: "Receba orientação para usar os recursos e manter seu anúncio atualizado.",
     icon: Headphones,
   },
@@ -130,17 +116,7 @@ const faqs = [
       "Você informa no perfil as formas de pagamento aceitas. Quando houver um recurso de pagamento intermediado pela plataforma, as condições específicas serão exibidas antes do uso.",
   },
   {
-    question: "Posso definir meus próprios valores?",
-    answer:
-      "Sim. Você informa seus valores e pode atualizá-los pelo painel, sempre respeitando a legislação e as regras da plataforma.",
-  },
-  {
-    question: "Preciso de experiência?",
-    answer:
-      "Não existe exigência de tempo mínimo de experiência. É importante apresentar informações verdadeiras, compreender as regras e manter uma comunicação profissional.",
-  },
-  {
-    question: "Posso trabalhar em horários flexíveis?",
+    question: "Posso definir meus horários?",
     answer:
       "Sim. Você controla os horários informados no perfil e pode ajustar sua disponibilidade conforme sua rotina.",
   },
@@ -150,9 +126,9 @@ const faqs = [
       "A plataforma pode solicitar confirmação de telefone, identidade, maioridade e titularidade do perfil. Os dados são tratados conforme a Política de Privacidade.",
   },
   {
-    question: "Como aumentar minha visibilidade?",
+    question: "Preciso ter experiência?",
     answer:
-      "Mantenha o perfil completo e atualizado, use mídias de boa qualidade, responda com agilidade e consulte no painel os recursos de destaque disponíveis.",
+      "Não existe exigência de tempo mínimo de experiência. É importante apresentar informações verdadeiras, compreender as regras e manter uma comunicação profissional.",
   },
 ];
 
@@ -214,11 +190,7 @@ export function ProfessionalRegistrationFlow({
     consents.termsConsent &&
     consents.lgpdConsent;
 
-  const progress = useMemo(() => {
-    if (stage === "phone") return 1;
-    if (stage === "verification") return 2;
-    return 3;
-  }, [stage]);
+  const progress = stage === "phone" ? 1 : 2;
 
   useEffect(() => {
     let cancelled = false;
@@ -228,7 +200,6 @@ export function ProfessionalRegistrationFlow({
 
       const savedPhone = window.sessionStorage.getItem(PHONE_STORAGE_KEY);
       const savedConsents = window.sessionStorage.getItem(CONSENT_STORAGE_KEY);
-      const wasVerified = window.sessionStorage.getItem(VERIFIED_STORAGE_KEY) === "true";
 
       if (savedPhone) setPhone(savedPhone);
       if (savedConsents) {
@@ -238,7 +209,6 @@ export function ProfessionalRegistrationFlow({
           window.sessionStorage.removeItem(CONSENT_STORAGE_KEY);
         }
       }
-      if (wasVerified) setStage("experience");
       setHydrated(true);
     });
 
@@ -347,37 +317,23 @@ export function ProfessionalRegistrationFlow({
           phone: onlyDigits(phone),
           code,
           accountType: "model",
+          deferAccountCreation: true,
           ...consents,
         }),
       });
       const data = (await response.json()) as VerifyCodeResponse;
 
-      if (!response.ok || !data.authToken) {
+      if (!response.ok || !data.registrationPending) {
         throw new Error(data.error || "Código inválido ou expirado.");
       }
 
-      const signInResult = await signIn("phone-otp-token", {
-        token: data.authToken,
-        redirect: false,
-      });
-
-      if (signInResult?.error) {
-        throw new Error("Telefone confirmado, mas não foi possível iniciar sua sessão.");
-      }
-
-      window.sessionStorage.setItem(VERIFIED_STORAGE_KEY, "true");
-      setStage("experience");
-      router.refresh();
       toast.success("Telefone confirmado com segurança.");
+      router.replace(data.redirectTo || "/cadastro?tipo=acompanhante&telefoneValidado=1");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível validar o código.");
     } finally {
       setVerifyingCode(false);
     }
-  }
-
-  function createProfessionalProfile() {
-    router.push("/profissional/novo");
   }
 
   if (!hydrated) {
@@ -446,14 +402,14 @@ export function ProfessionalRegistrationFlow({
               Espaço profissional Elite Modell
             </span>
             <h1 id="professional-register-title" ref={headingRef} tabIndex={-1}>
-              Anuncie seu perfil profissional
+              Cadastre-se como profissional
             </h1>
             <p className={styles.lead}>
-              Receba clientes, gerencie sua agenda e tenha controle total do seu anúncio.
+              Crie seu perfil, defina seus valores e seja encontrada por clientes da sua região.
             </p>
 
             <div className={styles.formCard}>
-              <label htmlFor="professional-phone">Telefone profissional</label>
+              <label htmlFor="professional-phone">Qual seu número de WhatsApp profissional?</label>
               <div className={styles.inputShell}>
                 <Phone size={20} aria-hidden="true" />
                 <span className={styles.countryCode}>+55</span>
@@ -462,14 +418,14 @@ export function ProfessionalRegistrationFlow({
                   type="tel"
                   inputMode="tel"
                   autoComplete="tel"
-                  placeholder="(31) 99999-9999"
+                  placeholder="Digite seu WhatsApp profissional"
                   value={formatPhone(phone)}
                   onChange={(event) => setPhone(onlyDigits(event.target.value))}
                   aria-describedby="phone-help"
                 />
               </div>
               <p id="phone-help" className={styles.inputHelp}>
-                Usaremos o número para validar sua conta. Você controla a visibilidade no perfil.
+                Este número poderá ficar visível no seu perfil, conforme suas configurações.
               </p>
 
               <div className={styles.consentList}>
@@ -603,7 +559,7 @@ export function ProfessionalRegistrationFlow({
                 Validação segura
               </span>
               <h1 id="verification-title" ref={headingRef} tabIndex={-1}>
-                Confirme seu telefone
+                Escolha o método de validação do seu telefone
               </h1>
               <p>
                 Enviaremos um código de 6 dígitos para <strong>{formatPhone(phone)}</strong>.
@@ -688,22 +644,8 @@ export function ProfessionalRegistrationFlow({
         </section>
       )}
 
-      {stage === "experience" && (
+      {stage === "phone" && (
         <div className={styles.experienceStage}>
-          <section className={styles.welcomeSection} aria-labelledby="welcome-title">
-            <span className={styles.eyebrow}>
-              <BadgeCheck size={16} aria-hidden="true" />
-              Telefone confirmado
-            </span>
-            <h1 id="welcome-title" ref={headingRef} tabIndex={-1}>
-              Construa sua presença profissional
-            </h1>
-            <p>
-              Antes de completar seu perfil, conheça os recursos preparados para você planejar,
-              publicar e administrar seu anúncio.
-            </p>
-          </section>
-
           <section className={styles.simulatorSection} aria-labelledby="simulator-title">
             <div className={styles.sectionHeading}>
               <span className={styles.eyebrow}>
@@ -731,7 +673,7 @@ export function ProfessionalRegistrationFlow({
                 />
 
                 <label htmlFor="appointments-per-day">
-                  <span>Quantidade de atendimentos por dia</span>
+                  <span>Atendimentos por dia</span>
                   <strong>{appointmentsPerDay}</strong>
                 </label>
                 <input
@@ -769,7 +711,7 @@ export function ProfessionalRegistrationFlow({
                   <b>{formatCurrency(monthlyRevenue)}</b>
                 </div>
                 <p>
-                  Os valores são apenas estimativas e dependem da demanda, disponibilidade e região.
+                  Valores estimados. Ganhos dependem da região, demanda e disponibilidade.
                 </p>
               </div>
             </div>
@@ -820,25 +762,6 @@ export function ProfessionalRegistrationFlow({
             </div>
           </section>
 
-          <section className={styles.finalSection} aria-labelledby="final-title">
-            <div className={styles.finalIcon}>
-              <UserRoundCheck size={34} aria-hidden="true" />
-            </div>
-            <span className={styles.eyebrow}>Próximo passo</span>
-            <h2 id="final-title">Seu espaço profissional começa aqui</h2>
-            <p>
-              Complete as informações do perfil, envie suas mídias e acompanhe a verificação pelo
-              painel.
-            </p>
-            <button className={styles.finalButton} type="button" onClick={createProfessionalProfile}>
-              Criar meu perfil profissional
-              <ChevronRight size={21} aria-hidden="true" />
-            </button>
-            <span className={styles.secureNote}>
-              <ShieldCheck size={16} aria-hidden="true" />
-              Seus dados são tratados conforme a Política de Privacidade.
-            </span>
-          </section>
         </div>
       )}
 

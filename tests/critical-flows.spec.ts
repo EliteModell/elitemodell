@@ -178,9 +178,16 @@ test.describe("Fluxo 1 — Cadastro", () => {
     await bypassAgeGate(page);
     await page.goto("/cadastro-modelo", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
-    await expect(page.getByRole("heading", { name: "Anuncie seu perfil profissional" })).toBeVisible();
-    await expect(page.getByLabel("Telefone profissional")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Cadastre-se como profissional" })).toBeVisible();
+    await expect(page.getByLabel("Qual seu número de WhatsApp profissional?")).toBeVisible();
     expect(page.url()).toMatch(/\/cadastro-modelo/);
+  });
+
+  test("CTA Sou profissional da Home inicia pelo WhatsApp", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const professionalEntry = page.getByRole("link", { name: /Sou profissional/ });
+    await expect(professionalEntry).toHaveAttribute("href", "/cadastro-modelo");
   });
 
   test("/cadastro profissional logado nao exige anti-spam para continuar", async ({ page }) => {

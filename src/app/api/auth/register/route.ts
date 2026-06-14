@@ -14,6 +14,11 @@ import {
   registrationDocumentKeys,
 } from "@/lib/legal-acceptance";
 import type { EntryAccountRole } from "@/lib/account-routes";
+import {
+  clearPendingProfessionalPhoneCookie,
+  ProfessionalPhoneRegistrationError,
+  validatePendingProfessionalPhone,
+} from "@/lib/professional-phone-registration";
 
 const schema = z.object({
   accessToken: z.string(),
@@ -101,6 +106,10 @@ export async function POST(req: NextRequest) {
     }
 
     const existing = await prisma.user.findUnique({ where: { email } });
+    const pendingProfessionalPhone =
+      targetAccountType === "model"
+        ? await validatePendingProfessionalPhone(req, existing?.id)
+        : null;
     const shouldValidateCaptcha = !existing && !trustedOAuthProvider;
 
     if (shouldValidateCaptcha) {
@@ -161,6 +170,13 @@ export async function POST(req: NextRequest) {
           lgpdConsent: existing.lgpdConsent || lgpdConsent,
           termsConsent: existing.termsConsent || termsConsent,
           consentDate: existing.consentDate ?? new Date(),
+          ...(pendingProfessionalPhone
+            ? {
+                phone: pendingProfessionalPhone.phone,
+                phoneVerified: true,
+                phoneVerifiedAt: new Date(),
+              }
+            : {}),
         },
         select: { id: true, name: true, email: true, role: true, accountType: true },
       });
@@ -181,7 +197,9 @@ export async function POST(req: NextRequest) {
         source: "auth-register",
         req,
       });
-      return NextResponse.json(user, { status: 200 });
+      const response = NextResponse.json(user, { status: 200 });
+      if (pendingProfessionalPhone) clearPendingProfessionalPhoneCookie(response);
+      return response;
     }
 
     if (!birthDate) {
@@ -201,6 +219,13 @@ export async function POST(req: NextRequest) {
         lgpdConsent,
         termsConsent,
         consentDate: new Date(),
+        ...(pendingProfessionalPhone
+          ? {
+              phone: pendingProfessionalPhone.phone,
+              phoneVerified: true,
+              phoneVerifiedAt: new Date(),
+            }
+          : {}),
         clientProfile: { create: {} },
       },
       select: { id: true, name: true, email: true, role: true, accountType: true },
@@ -222,10 +247,15 @@ export async function POST(req: NextRequest) {
       source: "auth-register",
       req,
     });
-    return NextResponse.json(user, { status: 201 });
+    const response = NextResponse.json(user, { status: 201 });
+    if (pendingProfessionalPhone) clearPendingProfessionalPhoneCookie(response);
+    return response;
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues }, { status: 400 });
+    }
+    if (err instanceof ProfessionalPhoneRegistrationError) {
+      return NextResponse.json({ error: err.message }, { status: 409 });
     }
     console.error("[register]", err);
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });

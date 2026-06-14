@@ -8,7 +8,7 @@ export const ACCOUNT_ROUTES = {
   cadastroCliente: "/app/consumer/register",
   verificarTelefoneCliente: "/app/consumer/verify-phone",
   loginCliente: "/app/consumer/login",
-  cadastroAcompanhante: "/profissional/novo",
+  cadastroAcompanhante: "/cadastro-modelo",
   cadastroAnfitriao: "/cadastro-anfitriao",
   verificarTelefoneAnfitriao: "/cadastro-anfitriao/verificar-telefone",
   painelCliente: "/painel/cliente",
@@ -60,7 +60,7 @@ export function internalAccountTypeFromTipo(tipo: CadastroTipo): InternalAccount
 }
 
 export function cadastroHref(tipo: CadastroTipo) {
-  if (tipo === "acompanhante") return ACCOUNT_ROUTES.onboardingAcompanhante;
+  if (tipo === "acompanhante") return ACCOUNT_ROUTES.cadastroAcompanhante;
   if (tipo === "anfitriao") return ACCOUNT_ROUTES.onboardingAnfitriao;
   return ACCOUNT_ROUTES.cadastroCliente;
 }
@@ -110,7 +110,7 @@ export function loginHrefForRole(role: EntryAccountRole) {
 }
 
 export function cadastroHrefForRole(role: EntryAccountRole) {
-  if (role === "profissional") return `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`;
+  if (role === "profissional") return ACCOUNT_ROUTES.cadastroAcompanhante;
   if (role === "anfitriao") return ACCOUNT_ROUTES.onboardingAnfitriao;
   return `${ACCOUNT_ROUTES.cadastro}?tipo=cliente`;
 }
