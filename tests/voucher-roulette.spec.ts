@@ -209,17 +209,32 @@ test.describe("algoritmo operacional da roleta", () => {
     expect(routeSource).toContain("DAILY_LIMIT_REACHED");
   });
 
-  test("contagens de limite por premio sao agrupadas antes do sorteio", () => {
-    expect(algorithmSource).toContain('by: ["prizeId"]');
-    expect(algorithmSource).toContain("const monthUsageByPrize = usageMap(monthUsage)");
-    expect(algorithmSource).toContain("const dayUsageByPrize = usageMap(dayUsage)");
-    expect(algorithmSource).toContain("const weekUsageByPrize = usageMap(weekUsage)");
+  test("contagens de limite por premio usam uma unica leitura antes do sorteio", () => {
+    expect(algorithmSource).toContain("async function getPrizeUsageSnapshot");
+    expect(algorithmSource).toContain("select: { prizeId: true, createdAt: true }");
+    expect(algorithmSource).toContain("const usage = await getPrizeUsageSnapshot");
+    expect(algorithmSource).not.toContain('by: ["prizeId"]');
 
     const eligibleLoop = algorithmSource.slice(
       algorithmSource.indexOf("for (const prize of input.prizes)"),
       algorithmSource.indexOf("const voucherOptions"),
     );
     expect(eligibleLoop).not.toContain("countPrizeVouchers(");
+  });
+
+  test("caminho critico consolida orcamento, estoque e antifraude", () => {
+    expect(algorithmSource).toContain('AS "monthlyUsed"');
+    expect(algorithmSource).toContain('AS "dailyUsed"');
+    expect(algorithmSource).toContain("currentStock.reduce(");
+    expect(algorithmSource).toContain("existingStock: stocks");
+    expect(algorithmSource).toContain('by: ["voucherValue"]');
+    expect(algorithmSource).toContain('by: ["value", "status"]');
+
+    const eligible = algorithmSource.slice(
+      algorithmSource.indexOf("export async function eligiblePrizes"),
+      algorithmSource.indexOf("export function pickPrize"),
+    );
+    expect((eligible.match(/getRouletteBudgetStats\(/g) ?? [])).toHaveLength(1);
   });
 
   test("endpoint bloqueia campanha inativa sem consultar referencia promocional", () => {
@@ -373,6 +388,8 @@ test.describe("algoritmo operacional da roleta", () => {
   test("modal aguarda a transacao e mostra timeout identificado", () => {
     expect(modalSource).toContain("const SPIN_API_TIMEOUT_MS = 25000");
     expect(modalSource).not.toContain("const SPIN_API_TIMEOUT_MS = 8000");
+    expect(modalSource).toContain("const SPIN_DURATION_MS = 1800");
+    expect(modalSource).toContain("const RESULT_REVEAL_DELAY_MS = 450");
     expect(modalSource).toContain("O servidor excedeu 25 segundos para preparar o giro");
     expect(modalSource).toContain("class SpinRequestError");
     expect(modalSource).toContain("Tentar novamente");

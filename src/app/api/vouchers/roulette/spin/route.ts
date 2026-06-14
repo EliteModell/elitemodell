@@ -11,6 +11,7 @@ import {
   consumeDailyStock,
   createVoucherFromSpin,
   eligiblePrizes,
+  getCurrentBudget,
   getVoucherSettings,
   getIp,
   newPendingToken,
@@ -144,10 +145,13 @@ export async function POST(req: NextRequest) {
   }
   const startedAt = Date.now();
   const rid = requestId(req);
-  const session = hasSessionCookie(req)
-    ? await withTimeout(getServerSession(authOptions).catch(() => null), SESSION_TIMEOUT_MS, null)
-    : null;
-  const parsed = schema.safeParse(await req.json().catch(() => ({})));
+  const [session, requestBody] = await Promise.all([
+    hasSessionCookie(req)
+      ? withTimeout(getServerSession(authOptions).catch(() => null), SESSION_TIMEOUT_MS, null)
+      : Promise.resolve(null),
+    req.json().catch(() => ({})),
+  ]);
+  const parsed = schema.safeParse(requestBody);
   if (!parsed.success) {
     logSpin("warn", "invalid_body", {
       requestId: rid,
@@ -202,10 +206,19 @@ export async function POST(req: NextRequest) {
   const sessionUserId = session?.user?.id ?? null;
   const scopedIdempotencyKey = `${sessionUserId ?? visitorId}:${body.idempotencyKey}`;
 
-  const existing = await prisma.voucherSpin.findUnique({
-    where: { idempotencyKey: scopedIdempotencyKey },
-    include: { prize: true, vouchers: true },
-  });
+  const [existing, user, currentBudget] = await Promise.all([
+    prisma.voucherSpin.findUnique({
+      where: { idempotencyKey: scopedIdempotencyKey },
+      include: { prize: true, vouchers: true },
+    }),
+    sessionUserId
+      ? prisma.user.findUnique({
+          where: { id: sessionUserId },
+          select: { id: true, phone: true, email: true, document: true },
+        })
+      : Promise.resolve(null),
+    getCurrentBudget(),
+  ]);
   if (existing) {
     const prizes = await prisma.voucherPrize.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] });
     const priorResult = existingSpinResult(existing, prizes, sessionUserId);
@@ -228,9 +241,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const user = sessionUserId
-    ? await prisma.user.findUnique({ where: { id: sessionUserId }, select: { id: true, phone: true, email: true, document: true } })
-    : null;
   const identity = userVoucherIdentity(user, { clientId: sessionUserId, visitorId, ipAddress, userAgent });
   const identityWhere = rouletteSpinIdentityWhere(identity);
 
@@ -243,15 +253,14 @@ export async function POST(req: NextRequest) {
       const lockId = identityLockId(lockIdentity);
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${lockId})`;
 
-      const [concurrentExisting, spinsCountToday, tomorrowSpin, prizes] = await Promise.all([
+      const [concurrentExisting, todaySpins, prizes] = await Promise.all([
         tx.voucherSpin.findUnique({
           where: { idempotencyKey: scopedIdempotencyKey },
           include: { prize: true, vouchers: true },
         }),
-        tx.voucherSpin.count({ where: { ...identityWhere, createdAt: { gte: start, lt: end } } }),
-        tx.voucherSpin.findFirst({
-          where: { ...identityWhere, result: "TRY_TOMORROW", createdAt: { gte: start, lt: end } },
-          select: { id: true },
+        tx.voucherSpin.findMany({
+          where: { ...identityWhere, createdAt: { gte: start, lt: end } },
+          select: { result: true },
         }),
         tx.voucherPrize.findMany({
           where: { active: true },
@@ -264,23 +273,29 @@ export async function POST(req: NextRequest) {
         if (priorResult) return priorResult;
       }
 
-      if (tomorrowSpin || spinsCountToday >= limit) {
+      if (
+        todaySpins.some((spin) => spin.result === "TRY_TOMORROW") ||
+        todaySpins.length >= limit
+      ) {
         const limitErr = new Error("LIMIT_REACHED") as Error & { blockedUntil: string };
         limitErr.blockedUntil = end.toISOString();
         throw limitErr;
       }
 
       const now = new Date();
+      const eligibilityStartedAt = Date.now();
       const { prizes: candidates, stats, diagnostics } = await eligiblePrizes({
         tx,
         prizes,
         settings,
         identity,
         now,
+        budget: currentBudget,
       });
       logSpin("info", "eligibility_evaluated", {
         requestId: rid,
         durationMs: Date.now() - startedAt,
+        eligibilityDurationMs: Date.now() - eligibilityStartedAt,
         activePrizeCount: diagnostics.activePrizeCount,
         eligiblePrizeCount: diagnostics.eligiblePrizeCount,
         eligibleVoucherCount: diagnostics.eligibleVoucherCount,

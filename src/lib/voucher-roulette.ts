@@ -234,7 +234,13 @@ async function lockVoucherBudget(tx: Prisma.TransactionClient, budgetId: string)
 }
 
 async function lockDailyStockRows(tx: Prisma.TransactionClient, date: Date) {
-  await tx.$queryRaw<{ id: string }[]>`SELECT "id" FROM "VoucherDailyStock" WHERE "date" = ${date} FOR UPDATE`;
+  return tx.$queryRaw<VoucherDailyStock[]>`
+    SELECT *
+    FROM "VoucherDailyStock"
+    WHERE "date" = ${date}
+    ORDER BY "prizeValue" ASC, "createdAt" ASC
+    FOR UPDATE
+  `;
 }
 
 export async function updateExpiredVouchers(now = new Date(), tx?: Prisma.TransactionClient) {
@@ -506,47 +512,49 @@ async function getRouletteBudgetStats(
   now: Date,
   tx: Prisma.TransactionClient,
   currentBudget?: VoucherBudget,
+  currentStock: VoucherDailyStock[] = [],
 ): Promise<RouletteBudgetStats> {
   const budget = currentBudget ?? await getCurrentBudget(now, tx);
   const { start: monthStart, end: monthEnd } = monthRange(now);
   const { start: todayStart, end: tomorrowStart } = todayRange(now);
   const { start: weekStart, end: weekEnd } = weekRange(now);
 
-  const [monthCommitted, todayCommitted, spinsToday, winnersToday, stockRows] = await Promise.all([
-    tx.voucherSpin.aggregate({
-      where: {
-        result: "VOUCHER",
-        voucherValue: { gt: 0 },
-        createdAt: { gte: monthStart, lt: monthEnd },
-      },
-      _sum: { voucherValue: true },
-    }),
-    tx.voucherSpin.aggregate({
-      where: {
-        result: "VOUCHER",
-        voucherValue: { gt: 0 },
-        createdAt: { gte: todayStart, lt: tomorrowStart },
-      },
-      _sum: { voucherValue: true },
-    }),
-    tx.voucherSpin.count({
-      where: { createdAt: { gte: todayStart, lt: tomorrowStart } },
-    }),
-    tx.voucherSpin.count({
-      where: {
-        result: "VOUCHER",
-        voucherValue: { gt: 0 },
-        createdAt: { gte: todayStart, lt: tomorrowStart },
-      },
-    }),
-    tx.voucherDailyStock.findMany({
-      where: { date: todayStart },
-      select: { remainingBudget: true },
-    }),
-  ]);
+  const [aggregate] = await tx.$queryRaw<Array<{
+    monthlyUsed: number | null;
+    dailyUsed: number | null;
+    spinsToday: bigint;
+    winnersToday: bigint;
+  }>>`
+    SELECT
+      COALESCE(SUM("voucherValue") FILTER (
+        WHERE "result" = 'VOUCHER'
+          AND "voucherValue" > 0
+      ), 0)::double precision AS "monthlyUsed",
+      COALESCE(SUM("voucherValue") FILTER (
+        WHERE "result" = 'VOUCHER'
+          AND "voucherValue" > 0
+          AND "createdAt" >= ${todayStart}
+          AND "createdAt" < ${tomorrowStart}
+      ), 0)::double precision AS "dailyUsed",
+      COUNT(*) FILTER (
+        WHERE "createdAt" >= ${todayStart}
+          AND "createdAt" < ${tomorrowStart}
+      ) AS "spinsToday",
+      COUNT(*) FILTER (
+        WHERE "result" = 'VOUCHER'
+          AND "voucherValue" > 0
+          AND "createdAt" >= ${todayStart}
+          AND "createdAt" < ${tomorrowStart}
+      ) AS "winnersToday"
+    FROM "VoucherSpin"
+    WHERE "createdAt" >= ${monthStart}
+      AND "createdAt" < ${monthEnd}
+  `;
 
-  const monthlyUsed = monthCommitted._sum.voucherValue ?? 0;
-  const dailyUsed = todayCommitted._sum.voucherValue ?? 0;
+  const monthlyUsed = Number(aggregate?.monthlyUsed ?? 0);
+  const dailyUsed = Number(aggregate?.dailyUsed ?? 0);
+  const spinsToday = Number(aggregate?.spinsToday ?? 0);
+  const winnersToday = Number(aggregate?.winnersToday ?? 0);
   const monthlyRemaining = Math.max(0, budget.monthlyLimit - monthlyUsed);
   const dailyRemaining = Math.max(0, Math.min(monthlyRemaining, budget.dailyLimit - dailyUsed));
 
@@ -565,29 +573,72 @@ async function getRouletteBudgetStats(
     spinsToday,
     winnersToday,
     noPrizeToday: Math.max(0, spinsToday - winnersToday),
-    dailyStockRemainingBudget: stockRows.reduce(
+    dailyStockRemainingBudget: currentStock.reduce(
       (sum, stock) => sum + stock.remainingBudget,
       0,
     ),
   };
 }
 
-async function countPrizeVouchers(tx: Prisma.TransactionClient, prize: VoucherPrize, start: Date, end: Date) {
-  return tx.clientVoucher.count({
+type PrizeUsageSnapshot = {
+  month: Map<string, number>;
+  day: Map<string, number>;
+  week: Map<string, number>;
+};
+
+async function getPrizeUsageSnapshot(
+  tx: Prisma.TransactionClient,
+  prizeIds: string[],
+  stats: RouletteBudgetStats,
+): Promise<PrizeUsageSnapshot> {
+  const empty = {
+    month: new Map<string, number>(),
+    day: new Map<string, number>(),
+    week: new Map<string, number>(),
+  };
+  if (!prizeIds.length) return empty;
+
+  const rangeStart = stats.weekStart < stats.monthStart
+    ? stats.weekStart
+    : stats.monthStart;
+  const rangeEnd = stats.weekEnd > stats.monthEnd
+    ? stats.weekEnd
+    : stats.monthEnd;
+  const rows = await tx.clientVoucher.findMany({
     where: {
-      prizeId: prize.id,
+      prizeId: { in: prizeIds },
       status: { in: BUDGET_STATUSES },
-      createdAt: { gte: start, lt: end },
+      createdAt: { gte: rangeStart, lt: rangeEnd },
     },
+    select: { prizeId: true, createdAt: true },
   });
+
+  const increment = (map: Map<string, number>, prizeId: string) => {
+    map.set(prizeId, (map.get(prizeId) ?? 0) + 1);
+  };
+  for (const row of rows) {
+    if (!row.prizeId) continue;
+    if (row.createdAt >= stats.monthStart && row.createdAt < stats.monthEnd) {
+      increment(empty.month, row.prizeId);
+    }
+    if (row.createdAt >= stats.todayStart && row.createdAt < stats.tomorrowStart) {
+      increment(empty.day, row.prizeId);
+    }
+    if (row.createdAt >= stats.weekStart && row.createdAt < stats.weekEnd) {
+      increment(empty.week, row.prizeId);
+    }
+  }
+  return empty;
 }
 
-async function getRemainingQuantityLimit(tx: Prisma.TransactionClient, prize: VoucherPrize, stats: RouletteBudgetStats, now: Date) {
-  const [monthUsed, dayUsed, weekUsed] = await Promise.all([
-    countPrizeVouchers(tx, prize, stats.monthStart, stats.monthEnd),
-    countPrizeVouchers(tx, prize, stats.todayStart, stats.tomorrowStart),
-    countPrizeVouchers(tx, prize, stats.weekStart, stats.weekEnd),
-  ]);
+function getRemainingQuantityLimit(
+  prize: VoucherPrize,
+  usage: PrizeUsageSnapshot,
+  now: Date,
+) {
+  const monthUsed = usage.month.get(prize.id) ?? 0;
+  const dayUsed = usage.day.get(prize.id) ?? 0;
+  const weekUsed = usage.week.get(prize.id) ?? 0;
   const limits = [
     prize.monthlyQuantityLimit == null ? Number.POSITIVE_INFINITY : Math.max(0, prize.monthlyQuantityLimit - monthUsed),
     prize.dailyQuantityLimit == null ? Number.POSITIVE_INFINITY : Math.max(0, prize.dailyQuantityLimit - dayUsed),
@@ -603,6 +654,9 @@ export async function ensureDailyPrizeStock(input?: {
   settings?: VoucherSettings | null;
   stats?: RouletteBudgetStats;
   now?: Date;
+  existingStock?: VoucherDailyStock[];
+  prizes?: VoucherPrize[];
+  usage?: PrizeUsageSnapshot;
 }) {
   const now = input?.now ?? new Date();
   const tx = input?.tx ?? prisma;
@@ -618,6 +672,32 @@ export async function ensureDailyPrizeStock(input?: {
     return [];
   }
 
+  const existing = input?.existingStock ?? await tx.voucherDailyStock.findMany({
+    where: { date: todayStart },
+    orderBy: [{ prizeValue: "asc" }, { createdAt: "asc" }],
+  });
+  if (existing.length) {
+    const shouldReactivate = existing.some(
+      (stock) => !stock.active && stock.remainingQuantity > 0 && stock.remainingBudget > 0,
+    );
+    if (!shouldReactivate) return existing;
+
+    await tx.voucherDailyStock.updateMany({
+      where: {
+        date: todayStart,
+        active: false,
+        remainingQuantity: { gt: 0 },
+        remainingBudget: { gt: 0 },
+      },
+      data: { active: true },
+    });
+    return existing.map((stock) => (
+      !stock.active && stock.remainingQuantity > 0 && stock.remainingBudget > 0
+        ? { ...stock, active: true }
+        : stock
+    ));
+  }
+
   await tx.voucherDailyStock.updateMany({
     where: {
       date: { lt: todayStart },
@@ -630,40 +710,25 @@ export async function ensureDailyPrizeStock(input?: {
   });
   await tx.$executeRaw`UPDATE "VoucherDailyStock" SET "expiredBudget" = "remainingBudget", "remainingBudget" = 0, "remainingQuantity" = 0 WHERE "date" < ${todayStart} AND "expiredBudget" = 0 AND "remainingBudget" > 0`;
 
-  const existing = await tx.voucherDailyStock.findMany({
-    where: { date: todayStart },
-    orderBy: [{ prizeValue: "asc" }, { createdAt: "asc" }],
-    include: { prize: true },
-  });
-  if (existing.length) {
-    await tx.voucherDailyStock.updateMany({
-      where: {
-        date: todayStart,
-        active: false,
-        remainingQuantity: { gt: 0 },
-        remainingBudget: { gt: 0 },
-      },
-      data: { active: true },
+  const prizes = input?.prizes?.filter(
+    (prize) => prize.active && ["VOUCHER", "PAID_VOUCHER"].includes(prize.type) && (prize.value ?? 0) > 0,
+  ) ?? await tx.voucherPrize.findMany({
+      where: { active: true, type: { in: ["VOUCHER", "PAID_VOUCHER"] }, value: { gt: 0 } },
+      orderBy: [{ value: "asc" }, { sortOrder: "asc" }],
     });
-    return tx.voucherDailyStock.findMany({
-      where: { date: todayStart },
-      orderBy: [{ prizeValue: "asc" }, { createdAt: "asc" }],
-      include: { prize: true },
-    });
-  }
-
-  const prizes = await tx.voucherPrize.findMany({
-    where: { active: true, type: { in: ["VOUCHER", "PAID_VOUCHER"] }, value: { gt: 0 } },
-    orderBy: [{ value: "asc" }, { sortOrder: "asc" }],
-  });
+  const usage = input?.usage ?? await getPrizeUsageSnapshot(
+    tx,
+    prizes.map((prize) => prize.id),
+    stats,
+  );
   const byValue = new Map(prizes.map((prize) => [Math.round(prize.value ?? 0), prize]));
   let remainingBudget = Math.max(0, Math.min(settings?.dailyBudgetLimit ?? VOUCHER_DAILY_LIMIT, stats.budget.dailyLimit, stats.monthlyRemaining));
   const stockRows: Prisma.VoucherDailyStockCreateManyInput[] = [];
 
-  async function addStock(value: number, desiredQuantity: number) {
+  function addStock(value: number, desiredQuantity: number) {
     const prize = byValue.get(value);
     if (!prize || remainingBudget < value || desiredQuantity <= 0) return;
-    const remainingLimit = await getRemainingQuantityLimit(tx, prize, stats, now);
+    const remainingLimit = getRemainingQuantityLimit(prize, usage, now);
     const quantity = Math.max(0, Math.min(desiredQuantity, remainingLimit, Math.floor(remainingBudget / value)));
     if (!quantity) return;
     const budget = quantity * value;
@@ -688,16 +753,16 @@ export async function ensureDailyPrizeStock(input?: {
   }
 
   if (remainingBudget >= 100 && byValue.has(100) && isVoucher100Day(now)) {
-    await addStock(100, 1);
+    addStock(100, 1);
   } else {
     if (remainingBudget >= 50 && byValue.has(50) && isVoucher50Day(now)) {
-      await addStock(5, 4);
-      await addStock(10, 3);
-      await addStock(50, 1);
+      addStock(5, 4);
+      addStock(10, 3);
+      addStock(50, 1);
     } else {
-      await addStock(5, 10);
-      await addStock(10, 3);
-      await addStock(20, 1);
+      addStock(5, 10);
+      addStock(10, 3);
+      addStock(20, 1);
     }
   }
 
@@ -708,7 +773,6 @@ export async function ensureDailyPrizeStock(input?: {
   return tx.voucherDailyStock.findMany({
     where: { date: todayStart },
     orderBy: [{ prizeValue: "asc" }, { createdAt: "asc" }],
-    include: { prize: true },
   });
 }
 
@@ -728,38 +792,15 @@ function identityOr(identity: VoucherIdentity, target: "spin" | "voucher" = "spi
   return or;
 }
 
-async function hasRecentVoucherWin(tx: Prisma.TransactionClient, identity: VoucherIdentity, cooldownDays: number, now = new Date()) {
+async function getIdentityEligibility(
+  tx: Prisma.TransactionClient,
+  identity: VoucherIdentity,
+  cooldownDays: number,
+  stats: RouletteBudgetStats,
+  now: Date,
+) {
   const since = new Date(now);
   since.setDate(since.getDate() - Math.max(1, cooldownDays));
-  const or = identityOr(identity, "spin") as Prisma.VoucherSpinWhereInput[];
-  if (!or.length) return false;
-  const spin = await tx.voucherSpin.findFirst({
-    where: {
-      OR: or,
-      result: "VOUCHER",
-      voucherValue: { gt: 0 },
-      createdAt: { gte: since },
-    },
-    select: { id: true },
-  });
-  return Boolean(spin);
-}
-
-async function hasActiveVoucher(tx: Prisma.TransactionClient, identity: VoucherIdentity) {
-  const or = identityOr(identity, "voucher") as Prisma.ClientVoucherWhereInput[];
-  if (!or.length) return false;
-  const voucher = await tx.clientVoucher.findFirst({
-    where: {
-      OR: or,
-      status: { in: ACTIVE_VOUCHER_STATUSES },
-      expiresAt: { gt: new Date() },
-    },
-    select: { id: true },
-  });
-  return Boolean(voucher);
-}
-
-async function hasVoucher100ThisMonth(tx: Prisma.TransactionClient, identity: VoucherIdentity, stats: RouletteBudgetStats) {
   const spinOr = identityOr(identity, "spin") as Prisma.VoucherSpinWhereInput[];
   const voucherOr = identityOr(identity, "voucher") as Prisma.ClientVoucherWhereInput[];
   const phone = normalizeVoucherPhone(identity.whatsapp);
@@ -768,36 +809,72 @@ async function hasVoucher100ThisMonth(tx: Prisma.TransactionClient, identity: Vo
     ...(identity.document ? [{ document: identity.document }] : []),
     ...(phone ? [{ phone }] : []),
   ];
-  const [spin, voucher, voucherByUser] = await Promise.all([
-    spinOr.length ? tx.voucherSpin.findFirst({
+  const voucherIdentities: Prisma.ClientVoucherWhereInput[] = [
+    ...voucherOr,
+    ...(userOr.length ? [{ client: { is: { OR: userOr } } }] : []),
+  ];
+  const earliestSpinDate = since < stats.monthStart ? since : stats.monthStart;
+  const spinGroups = spinOr.length
+    ? await tx.voucherSpin.groupBy({
+      by: ["voucherValue"],
       where: {
         OR: spinOr,
         result: "VOUCHER",
-        voucherValue: 100,
-        createdAt: { gte: stats.monthStart, lt: stats.monthEnd },
+        voucherValue: { gt: 0 },
+        createdAt: { gte: earliestSpinDate, lt: stats.monthEnd },
       },
-      select: { id: true },
-    }) : null,
-    voucherOr.length ? tx.clientVoucher.findFirst({
+      _max: { createdAt: true },
+    })
+    : [];
+  const voucherGroups = voucherIdentities.length
+    ? await tx.clientVoucher.groupBy({
+      by: ["value", "status"],
       where: {
-        OR: voucherOr,
-        value: 100,
-        status: { in: BUDGET_STATUSES },
-        createdAt: { gte: stats.monthStart, lt: stats.monthEnd },
+        OR: voucherIdentities,
+        AND: [{
+          OR: [
+            {
+              status: { in: ACTIVE_VOUCHER_STATUSES },
+              expiresAt: { gt: now },
+            },
+            {
+              value: 100,
+              status: { in: BUDGET_STATUSES },
+              createdAt: { gte: stats.monthStart, lt: stats.monthEnd },
+            },
+          ],
+        }],
       },
-      select: { id: true },
-    }) : null,
-    userOr.length ? tx.clientVoucher.findFirst({
-      where: {
-        value: 100,
-        status: { in: BUDGET_STATUSES },
-        createdAt: { gte: stats.monthStart, lt: stats.monthEnd },
-        client: { is: { OR: userOr } },
-      },
-      select: { id: true },
-    }) : null,
-  ]);
-  return Boolean(spin || voucher || voucherByUser);
+      _max: { expiresAt: true, createdAt: true },
+    })
+    : [];
+
+  return {
+    recentVoucherWin: spinGroups.some(
+      (spin) => Boolean(spin._max.createdAt && spin._max.createdAt >= since),
+    ),
+    activeVoucher: voucherGroups.some(
+      (voucher) =>
+        ACTIVE_VOUCHER_STATUSES.includes(voucher.status) &&
+        Boolean(voucher._max.expiresAt && voucher._max.expiresAt > now),
+    ),
+    hasVoucher100ThisMonth:
+      spinGroups.some(
+        (spin) =>
+          spin.voucherValue === 100 &&
+          Boolean(spin._max.createdAt && spin._max.createdAt >= stats.monthStart),
+      ) ||
+      voucherGroups.some(
+        (voucher) =>
+          voucher.value === 100 &&
+          BUDGET_STATUSES.includes(voucher.status) &&
+          Boolean(
+            voucher._max.createdAt &&
+            voucher._max.createdAt >= stats.monthStart &&
+            voucher._max.createdAt < stats.monthEnd,
+          ),
+      ),
+  };
 }
 
 function adjustedProbability(prize: VoucherPrize, stats: RouletteBudgetStats, settings: VoucherSettings, stock?: VoucherDailyStock | null) {
@@ -843,69 +920,47 @@ export async function eligiblePrizes(input: {
   settings: VoucherSettings;
   identity: VoucherIdentity;
   now?: Date;
+  budget?: VoucherBudget;
 }) {
   const now = input.now ?? new Date();
-  const budget = await getCurrentBudget(now, input.tx);
+  const budget = input.budget ?? await getCurrentBudget(now, input.tx);
   await lockVoucherBudget(input.tx, budget.id);
-  let stats = await getRouletteBudgetStats(now, input.tx, budget);
-  const stocks = await ensureDailyPrizeStock({ tx: input.tx, settings: input.settings, stats, now });
-  await lockDailyStockRows(input.tx, stats.todayStart);
-  stats = await getRouletteBudgetStats(now, input.tx, budget);
-
-  const stockByPrize = new Map(stocks.map((stock) => [stock.prizeId, stock]));
+  const { start: todayStart } = todayRange(now);
+  let stocks = await lockDailyStockRows(input.tx, todayStart);
+  const stats = await getRouletteBudgetStats(now, input.tx, budget, stocks);
   const voucherPrizeIds = input.prizes
     .filter((prize) => prize.active && ["VOUCHER", "PAID_VOUCHER"].includes(prize.type))
     .map((prize) => prize.id);
-  const usageWhere = {
-    prizeId: { in: voucherPrizeIds },
-    status: { in: BUDGET_STATUSES },
-  };
-  const [
-    recentVoucherWin,
-    activeVoucher,
-    has100,
-    monthUsage,
-    dayUsage,
-    weekUsage,
-  ] = await Promise.all([
-    hasRecentVoucherWin(input.tx, input.identity, input.settings.voucherWinCooldownDays, now),
-    input.settings.blockMultipleActiveVouchers
-      ? hasActiveVoucher(input.tx, input.identity)
-      : Promise.resolve(false),
-    hasVoucher100ThisMonth(input.tx, input.identity, stats),
-    input.tx.clientVoucher.groupBy({
-      by: ["prizeId"],
-      where: {
-        ...usageWhere,
-        createdAt: { gte: stats.monthStart, lt: stats.monthEnd },
-      },
-      _count: { _all: true },
-    }),
-    input.tx.clientVoucher.groupBy({
-      by: ["prizeId"],
-      where: {
-        ...usageWhere,
-        createdAt: { gte: stats.todayStart, lt: stats.tomorrowStart },
-      },
-      _count: { _all: true },
-    }),
-    input.tx.clientVoucher.groupBy({
-      by: ["prizeId"],
-      where: {
-        ...usageWhere,
-        createdAt: { gte: stats.weekStart, lt: stats.weekEnd },
-      },
-      _count: { _all: true },
-    }),
-  ]);
-  const usageMap = (
-    rows: Array<{ prizeId: string | null; _count: { _all: number } }>,
-  ) => new Map(rows.flatMap((row) => (
-    row.prizeId ? [[row.prizeId, row._count._all] as const] : []
-  )));
-  const monthUsageByPrize = usageMap(monthUsage);
-  const dayUsageByPrize = usageMap(dayUsage);
-  const weekUsageByPrize = usageMap(weekUsage);
+  const usage = await getPrizeUsageSnapshot(input.tx, voucherPrizeIds, stats);
+  stocks = await ensureDailyPrizeStock({
+    tx: input.tx,
+    settings: input.settings,
+    stats,
+    now,
+    existingStock: stocks,
+    prizes: input.prizes,
+    usage,
+  });
+  if (!stocks.length) {
+    stocks = await lockDailyStockRows(input.tx, todayStart);
+  }
+  stats.dailyStockRemainingBudget = stocks.reduce(
+    (sum, stock) => sum + stock.remainingBudget,
+    0,
+  );
+  const identityEligibility = await getIdentityEligibility(
+    input.tx,
+    input.identity,
+    input.settings.voucherWinCooldownDays,
+    stats,
+    now,
+  );
+  const recentVoucherWin = identityEligibility.recentVoucherWin;
+  const activeVoucher = input.settings.blockMultipleActiveVouchers
+    ? identityEligibility.activeVoucher
+    : false;
+  const has100 = identityEligibility.hasVoucher100ThisMonth;
+  const stockByPrize = new Map(stocks.map((stock) => [stock.prizeId, stock]));
   const eligible: PrizeWithChance[] = [];
 
   for (const prize of input.prizes) {
@@ -923,9 +978,9 @@ export async function eligiblePrizes(input: {
     if (value === 100 && has100) continue;
 
     const stock = stockByPrize.get(prize.id) ?? null;
-    const monthUsed = monthUsageByPrize.get(prize.id) ?? 0;
-    const dayUsed = dayUsageByPrize.get(prize.id) ?? 0;
-    const weekUsed = weekUsageByPrize.get(prize.id) ?? 0;
+    const monthUsed = usage.month.get(prize.id) ?? 0;
+    const dayUsed = usage.day.get(prize.id) ?? 0;
+    const weekUsed = usage.week.get(prize.id) ?? 0;
     if (prize.monthlyQuantityLimit != null && monthUsed >= prize.monthlyQuantityLimit) continue;
     if (prize.dailyQuantityLimit != null && dayUsed >= prize.dailyQuantityLimit) continue;
     if (prize.weeklyQuantityLimit != null && weekUsed >= prize.weeklyQuantityLimit) continue;

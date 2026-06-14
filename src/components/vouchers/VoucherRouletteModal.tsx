@@ -66,8 +66,8 @@ const CLOSED_KEY = "elite_voucher_modal_closed";
 const GOLD = "#d4a843";
 const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.webp?v=20260601-spin-audio";
 const SEGMENT_ANGLE = 36; // 360 / 10 segments
-const SPIN_DURATION_MS = 4000;   // duração fixa do giro visual (ms)
-const RESULT_REVEAL_DELAY_MS = 1000; // pausa após parar para mostrar onde caiu
+const SPIN_DURATION_MS = 1800;
+const RESULT_REVEAL_DELAY_MS = 450;
 const SLOW_PREPARE_MS = 180;
 const SPIN_API_TIMEOUT_MS = 25000;
 const DEMO_PRIZES: Prize[] = Array.from({ length: 10 }, (_, index) => ({
@@ -521,10 +521,10 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
       setFetching(false);
       const visualIndex = resolveVisualIndex(data);
 
-      // 3. A API respondeu: agora sim desacelera por 4s até o prêmio sorteado.
+      // 3. A API respondeu: desacelera rapidamente até o prêmio sorteado.
       await animateWheelToSegment(visualIndex, SPIN_DURATION_MS);
 
-      // 4. Parou: encerra o som e mostra onde caiu por 1 segundo
+      // 4. Parou: encerra o som e deixa o segmento vencedor visível.
       stopSpinSound();
       setWinningIndex(visualIndex);
       await delay(RESULT_REVEAL_DELAY_MS);
