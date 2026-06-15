@@ -31,6 +31,8 @@ export async function proxy(request: NextRequest) {
   const publicRoutes = [
     "/",
     "/login",
+    "/esqueci-senha",
+    "/redefinir-senha",
     "/admin/login",
     "/cadastro",
     "/cadastro/acompanhante",

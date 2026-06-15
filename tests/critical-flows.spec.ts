@@ -368,6 +368,15 @@ test.describe("Fluxo 2 — Login e Autenticação", () => {
     await bypassAgeGate(page);
     const resp = await page.goto("/esqueci-senha", { waitUntil: "domcontentloaded" });
     expect(resp?.status()).not.toBe(404);
+    await expect(page.getByRole("button", { name: /enviar link de recuperacao/i })).toBeVisible();
+    await expect(page.locator('input[type="email"]')).toBeVisible();
+  });
+
+  test("/redefinir-senha carrega e mostra erro claro sem sessão", async ({ page }) => {
+    await bypassAgeGate(page);
+    const resp = await page.goto("/redefinir-senha", { waitUntil: "domcontentloaded" });
+    expect(resp?.status()).not.toBe(404);
+    await expect(page.getByText(/link expirado|sem sessao valida/i)).toBeVisible({ timeout: 7000 });
   });
 
 });

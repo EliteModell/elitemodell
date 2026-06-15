@@ -71,10 +71,30 @@ export async function ensureProfileForIntent(userId: string, intent: EntryAccoun
   const profileType = profileTypeFromIntent(intent);
 
   if (profileType === "CLIENTE") {
-    await prisma.clientProfile.upsert({
-      where: { userId },
-      create: { userId },
-      update: {},
+    await prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { role: true, accountType: true },
+      });
+
+      await tx.clientProfile.upsert({
+        where: { userId },
+        create: { userId },
+        update: {},
+      });
+
+      const shouldKeepCurrentPrimaryType =
+        user?.role === "ADMIN" ||
+        hasProfessionalAccountType(user?.accountType) ||
+        isHostAccountType(user?.accountType);
+
+      if (!shouldKeepCurrentPrimaryType) {
+        await tx.user.update({
+          where: { id: userId },
+          data: { role: "GUEST", accountType: "client" },
+          select: { id: true },
+        });
+      }
     });
     return profileType;
   }

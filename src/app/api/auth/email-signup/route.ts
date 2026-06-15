@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isAgeOfMajority } from "@/lib/age-validation";
-import { buildAuthEmail, sendAuthEmail, type AuthEmailActionType } from "@/lib/auth-email";
+import { buildAuthEmail, sendAuthEmail } from "@/lib/auth-email";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 
@@ -29,7 +29,17 @@ function publicErrorForSupabase(message?: string) {
   return "Nao foi possivel criar o cadastro agora.";
 }
 
-async function generateSignupOrMagicLink(input: z.infer<typeof schema>) {
+class EmailSignupError extends Error {
+  constructor(message: string, public status = 400, public code = "email_signup_failed") {
+    super(message);
+  }
+}
+
+function isAlreadyRegistered(message?: string) {
+  return /already|registered|exists|user/i.test(message ?? "");
+}
+
+async function generateSignupLink(input: z.infer<typeof schema>) {
   const supabase = createSupabaseServerClient();
   const metadata = {
     role: input.role,
@@ -54,28 +64,18 @@ async function generateSignupOrMagicLink(input: z.infer<typeof schema>) {
   });
 
   if (!signup.error) {
-    return { actionType: "signup" as AuthEmailActionType, data: signup.data };
+    return { actionType: "signup" as const, data: signup.data };
   }
 
-  const alreadyRegistered = /already|registered|exists|user/i.test(signup.error.message);
-  if (!alreadyRegistered) {
-    throw new Error(publicErrorForSupabase(signup.error.message));
+  if (isAlreadyRegistered(signup.error.message)) {
+    throw new EmailSignupError(
+      "Este email ja esta cadastrado. Entre com sua senha ou use Recuperar senha.",
+      409,
+      "user_already_exists"
+    );
   }
 
-  const magicLink = await supabase.auth.admin.generateLink({
-    type: "magiclink",
-    email: input.email,
-    options: {
-      redirectTo: input.redirectTo,
-      data: metadata,
-    },
-  });
-
-  if (magicLink.error) {
-    throw new Error(publicErrorForSupabase(magicLink.error.message));
-  }
-
-  return { actionType: "magiclink" as AuthEmailActionType, data: magicLink.data };
+  throw new EmailSignupError(publicErrorForSupabase(signup.error.message));
 }
 
 export async function POST(req: NextRequest) {
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Selecione a categoria do anuncio." }, { status: 400 });
     }
 
-    const generated = await generateSignupOrMagicLink({ ...body, email });
+    const generated = await generateSignupLink({ ...body, email });
     const properties = generated.data.properties;
     const tokenHash = properties?.hashed_token;
     if (!tokenHash) {
@@ -145,6 +145,14 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: "Dados invalidos." }, { status: 400 });
+    }
+    if (err instanceof EmailSignupError) {
+      console.info("[email-signup] cadastro recusado", {
+        code: err.code,
+        status: err.status,
+        requestIp,
+      });
+      return NextResponse.json({ error: err.message, code: err.code }, { status: err.status });
     }
     console.error("[email-signup]", err);
     return NextResponse.json(

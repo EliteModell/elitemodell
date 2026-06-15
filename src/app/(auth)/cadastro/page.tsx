@@ -687,7 +687,9 @@ export default function CadastroPage() {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(typeof data.error === "string" ? data.error : "Nao foi possivel enviar o email.");
+      const error = new Error(typeof data.error === "string" ? data.error : "Nao foi possivel enviar o email.") as Error & AuthError;
+      if (typeof data.code === "string") error.code = data.code;
+      throw error;
     }
 
     rememberPendingRegistration(payload);

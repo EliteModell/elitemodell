@@ -40,7 +40,7 @@ const blurGray = (e: React.FocusEvent<HTMLInputElement>) =>
   (e.target.style.borderColor = "#1e293b");
 
 const authMsg: Record<string, string> = {
-  invalid_credentials: "E-mail ou senha inválidos.",
+  invalid_credentials: "E-mail ou senha invalidos. Se voce confirmou pelo link e nao entra, use Recuperar senha.",
   user_not_found: "E-mail não cadastrado.",
   over_request_rate_limit: "Muitas tentativas. Tente mais tarde.",
 };
@@ -147,11 +147,12 @@ function LoginContent() {
     e.preventDefault();
     setLoading(true);
     try {
+      const email = form.email.trim().toLowerCase();
       const { data, error } = await supabaseAuth.auth.signInWithPassword({
-        email: form.email,
+        email,
         password: form.password,
       });
-      if (error || !data.session?.access_token) throw error ?? new Error("E-mail ou senha inválidos.");
+      if (error || !data.session?.access_token) throw error ?? new Error("E-mail ou senha invalidos.");
       const res = await signIn("supabase", { accessToken: data.session.access_token, roleIntent: roleIntent ?? "", redirect: false });
 
       if (res?.error) {

@@ -22,8 +22,8 @@ const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
 const PENDING_REGISTRATION_KEY = "elitemodell_pending_registration";
 const PENDING_REGISTRATION_COOKIE = "elitemodell_pending_registration";
 const CALLBACK_TIMEOUT_MS = 5000;
-const NEXTAUTH_SIGNIN_TIMEOUT_MS = 20000;
-const CALLBACK_SLOW_MESSAGE_MS = 1200;
+const NEXTAUTH_SIGNIN_TIMEOUT_MS = 10000;
+const CALLBACK_SLOW_MESSAGE_MS = 2000;
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
 
@@ -227,6 +227,18 @@ function roleIntentFromPending(pending: PendingRegistration | null) {
   if (pending?.accountType === "PROPERTY_HOST") return "anfitriao" as const;
   if (pending?.accountType === "GUEST") return "cliente" as const;
   return null;
+}
+
+function registrationFallbackForIntent(
+  pending: PendingRegistration | null,
+  roleIntent: ReturnType<typeof normalizeEntryRole>,
+  isCadastroFlow: boolean,
+) {
+  if (pending) return pending;
+  if (!isCadastroFlow) return null;
+  if (roleIntent === "profissional") return { accountType: "PROFESSIONAL" as const };
+  if (roleIntent === "anfitriao") return { accountType: "PROPERTY_HOST" as const };
+  return { accountType: "GUEST" as const };
 }
 
 function readPendingRegistrationRaw() {
@@ -576,9 +588,12 @@ function AuthCallbackContent() {
 
       if (active) setMessage("Configurando sua conta...");
 
-      const effectiveRoleIntent = roleIntent ?? roleIntentFromPending(pendingRegistration) ?? inferRoleIntentFromReturnUrl(returnUrl);
-      const fallbackRegistration = pendingRegistration
-        ?? (effectiveRoleIntent === "profissional" ? { accountType: "PROFESSIONAL" as const } : null);
+      const effectiveRoleIntent =
+        roleIntent ??
+        roleIntentFromPending(pendingRegistration) ??
+        inferRoleIntentFromReturnUrl(returnUrl) ??
+        (isCadastroFlow ? "cliente" as const : null);
+      const fallbackRegistration = registrationFallbackForIntent(pendingRegistration, effectiveRoleIntent, isCadastroFlow);
 
       if (active) setMessage("Criando sessao segura...");
       const res = await resolveSignInWithTimeout(signIn("supabase", {
@@ -596,7 +611,7 @@ function AuthCallbackContent() {
       }
 
       if (fallbackRegistration) {
-        if (active) setMessage("Preparando seu cadastro profissional...");
+        if (active) setMessage("Preparando sua conta...");
         await applyRegistrationFallback(fallbackRegistration, effectiveRoleIntent);
       }
 
@@ -631,10 +646,13 @@ function AuthCallbackContent() {
       const isCadastroError = retryTarget !== "/login";
       console.error(isCadastroError ? "[CALLBACK] Erro no cadastro Google:" : "[CALLBACK] Erro no login Google:", rawMsg);
       await clearInvalidAuthState();
+      const timedOut = /tempo limite|timeout|timed out/i.test(rawMsg);
       setMessage(isCadastroError
         ? "Não foi possível concluir o cadastro. Tente novamente ou use outro método."
         : "Não foi possível concluir o login. Tente novamente ou use outro método.");
-      setErrorDetail("Confira sua conexão e tente novamente. Se continuar, use outro método de acesso.");
+      setErrorDetail(timedOut
+        ? "A confirmacao demorou mais que o esperado. Abra o link novamente ou entre com email e senha."
+        : "O link pode ter expirado ou ja ter sido usado. Tente entrar com email e senha ou solicite um novo link.");
     });
 
     return () => {
