@@ -60,7 +60,22 @@ export function confirmationUrl(tokenHash: string, type: AuthEmailActionType, re
   return url.toString();
 }
 
-function actionUrl(_payload: AuthEmailPayload, tokenHash: string, type: AuthEmailActionType, redirectTo: string) {
+function actionLinkWithRedirect(actionLink: string, redirectTo: string) {
+  try {
+    const url = new URL(actionLink);
+    url.searchParams.set("redirect_to", redirectTo);
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function actionUrl(payload: AuthEmailPayload, tokenHash: string, type: AuthEmailActionType, redirectTo: string) {
+  if (payload.email_data.action_link) {
+    const actionLink = actionLinkWithRedirect(payload.email_data.action_link, redirectTo);
+    if (actionLink) return actionLink;
+  }
+
   return confirmationUrl(tokenHash, type, redirectTo);
 }
 
