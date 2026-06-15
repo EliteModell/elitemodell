@@ -10,10 +10,12 @@ import {
   OTP_MAX_ATTEMPTS,
   OTP_MAX_VERIFY_ATTEMPTS_PER_IP_WINDOW,
   OTP_MAX_VERIFY_ATTEMPTS_PER_PHONE_WINDOW,
+  OTP_TTL_MINUTES,
   PHONE_ACCOUNT_TYPES,
   createPhoneAuthToken,
   emailForPhone,
   formatBrazilianPhone,
+  hashOtpCode,
   isValidBrazilianMobilePhone,
   nameForPhoneAccount,
   normalizeBrazilianPhone,
@@ -214,13 +216,75 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      const phoneLimit = await checkRateLimitAsync(
+        `otp-verify-phone:${body.accountType}:${phone}`,
+        OTP_MAX_VERIFY_ATTEMPTS_PER_PHONE_WINDOW,
+        15 * 60 * 1000
+      );
+      const ipLimit = await checkRateLimitAsync(
+        `otp-verify-ip:${requestIp}`,
+        OTP_MAX_VERIFY_ATTEMPTS_PER_IP_WINDOW,
+        15 * 60 * 1000
+      );
+
+      if (!phoneLimit.allowed || !ipLimit.allowed) {
+        return NextResponse.json(
+          { error: "Muitas tentativas de verificacao. Solicite um novo codigo mais tarde." },
+          { status: 429 }
+        );
+      }
+
       await verifyFirebasePhoneIdToken(body.firebaseIdToken, phone);
+
+      if (body.deferAccountCreation && body.accountType === "model") {
+        const now = new Date();
+        const verification = await prisma.phoneVerificationCode.create({
+          data: {
+            phone,
+            accountType: body.accountType,
+            channel: "sms",
+            codeHash: hashOtpCode(phone, "firebase-phone-auth"),
+            expiresAt: new Date(now.getTime() + OTP_TTL_MINUTES * 60 * 1000),
+            attempts: 1,
+            sentAt: now,
+            usedAt: now,
+            deliveryProvider: "firebase-phone-auth",
+            requestIp,
+            termsConsent: consent.termsConsent,
+            lgpdConsent: consent.lgpdConsent,
+            ageConfirmed: consent.ageConfirmed,
+            ownershipConfirmed: consent.ownershipConfirmed,
+          },
+        });
+
+        console.info("[phone/verify-code] firebase_sms_verified", {
+          accountType: body.accountType,
+          deferAccountCreation: true,
+          provider: "firebase-phone-auth",
+        });
+
+        const response = NextResponse.json({
+          ok: true,
+          phone: formatBrazilianPhone(phone),
+          phoneVerified: true,
+          registrationPending: true,
+          redirectTo: "/cadastro?tipo=acompanhante&telefoneValidado=1",
+        });
+        setPendingProfessionalPhoneCookie(response, phone, verification.id);
+        return response;
+      }
+
       const user = await persistVerifiedPhone({
         phone,
         accountType: body.accountType,
         consent,
       });
       await recordPhoneLegalTrace(user, req, body.marketingConsent);
+      console.info("[phone/verify-code] firebase_sms_verified", {
+        accountType: body.accountType,
+        deferAccountCreation: false,
+        provider: "firebase-phone-auth",
+      });
 
       return NextResponse.json({
         ok: true,

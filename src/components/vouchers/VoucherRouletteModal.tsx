@@ -194,7 +194,7 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
   const [winningIndex, setWinningIndex] = useState<number | null>(null);
   const [slowPreparing, setSlowPreparing] = useState(false);
   const [name, setName] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
   const [claiming, setClaiming] = useState(false);
   const [acceptedPolicy, setAcceptedPolicy] = useState(false);
 
@@ -578,7 +578,7 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
       const res = await fetch("/api/vouchers/roulette/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ spinId: result.spinId, pendingToken: result.pendingToken, name, whatsapp }),
+        body: JSON.stringify({ spinId: result.spinId, pendingToken: result.pendingToken, name, phone: contactPhone }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Não foi possível salvar o voucher.");
@@ -725,7 +725,7 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
 
             {result.needsIdentification && (
               <div className="vm-actions">
-                <p className="vm-info">Informe seus dados para salvar o benefício.</p>
+                <p className="vm-info">Informe nome e telefone para salvar o benefício. A validação por WhatsApp está indisponível no momento.</p>
                 <input
                   className="vm-input"
                   value={name}
@@ -734,9 +734,9 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
                 />
                 <input
                   className="vm-input"
-                  value={whatsapp}
-                  onChange={(e) => setWhatsapp(e.target.value)}
-                  placeholder="WhatsApp com DDD"
+                  value={contactPhone}
+                  onChange={(e) => setContactPhone(e.target.value)}
+                  placeholder="Telefone com DDD"
                   inputMode="tel"
                 />
                 <button

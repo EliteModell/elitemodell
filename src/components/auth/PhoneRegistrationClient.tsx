@@ -23,8 +23,18 @@ type StoredConsent = {
   marketingConsent?: boolean;
 };
 
-let firebaseConfirmationResult: ConfirmationResult | null = null;
+type PhoneConfirmation = Pick<ConfirmationResult, "confirm">;
+
+let firebaseConfirmationResult: PhoneConfirmation | null = null;
 let firebaseRecaptchaVerifier: RecaptchaVerifier | null = null;
+
+declare global {
+  interface Window {
+    __elitePhoneAuthMock?: {
+      sendCode: (phone: string) => Promise<PhoneConfirmation>;
+    };
+  }
+}
 
 const GOLD = "#c9a84c";
 const INK = "#1f2a32";
@@ -442,20 +452,24 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
     setStatusMessage("Enviando código de verificação...");
 
     try {
-      const { RecaptchaVerifier: FirebaseRecaptchaVerifier } = await import("firebase/auth");
-      const auth = getFirebaseClientAuth();
+      if (window.__elitePhoneAuthMock?.sendCode) {
+        firebaseConfirmationResult = await window.__elitePhoneAuthMock.sendCode(e164BrazilianPhone(normalized));
+      } else {
+        const { RecaptchaVerifier: FirebaseRecaptchaVerifier } = await import("firebase/auth");
+        const auth = getFirebaseClientAuth();
 
-      firebaseRecaptchaVerifier?.clear();
-      firebaseRecaptchaVerifier = new FirebaseRecaptchaVerifier(auth, "firebase-phone-recaptcha", {
-        size: "invisible",
-        callback: () => undefined,
-      });
+        firebaseRecaptchaVerifier?.clear();
+        firebaseRecaptchaVerifier = new FirebaseRecaptchaVerifier(auth, "firebase-phone-recaptcha", {
+          size: "invisible",
+          callback: () => undefined,
+        });
 
-      firebaseConfirmationResult = await signInWithPhoneNumber(
-        auth,
-        e164BrazilianPhone(normalized),
-        firebaseRecaptchaVerifier,
-      );
+        firebaseConfirmationResult = await signInWithPhoneNumber(
+          auth,
+          e164BrazilianPhone(normalized),
+          firebaseRecaptchaVerifier,
+        );
+      }
 
       sessionStorage.setItem(storageKey, normalized);
       sessionStorage.setItem(consentKey, JSON.stringify(consent));

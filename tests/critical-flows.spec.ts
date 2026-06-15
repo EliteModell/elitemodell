@@ -175,6 +175,51 @@ test.describe("Fluxo 1 — Cadastro", () => {
     expect(inputs).toBeGreaterThan(0);
   });
 
+  test("cadastro cliente envia codigo por SMS via Firebase", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.addInitScript(() => {
+      const testWindow = window as unknown as {
+        __elitePhoneAuthMock?: {
+          sendCode: (phone: string) => Promise<{
+            confirm: () => Promise<{ user: { getIdToken: () => Promise<string> } }>;
+          }>;
+        };
+        __sentClientSmsTo?: string;
+      };
+      testWindow.__elitePhoneAuthMock = {
+        async sendCode(phone: string) {
+          testWindow.__sentClientSmsTo = phone;
+          return {
+            async confirm() {
+              return {
+                user: {
+                  async getIdToken() {
+                    return "firebase-client-token-for-tests";
+                  },
+                },
+              };
+            },
+          };
+        },
+      };
+    });
+
+    await page.goto("/app/consumer/register", { waitUntil: "domcontentloaded" });
+    await page.locator('input[autocomplete="tel"]').fill("31999999999");
+    await page.getByLabel(/Li e aceito os/).check();
+    await page.getByLabel(/Li a Política de Privacidade/).check();
+    await page.getByLabel(/Confirmo que sou maior de 18 anos/).check();
+    await page.getByRole("button", { name: /Enviar código via SMS/ }).click();
+
+    await page.waitForURL(/\/app\/consumer\/verify-phone/);
+    await expect(page.getByRole("heading", { name: /Digite o código enviado/ })).toBeVisible();
+    await expect
+      .poll(() =>
+        page.evaluate(() => (window as unknown as { __sentClientSmsTo?: string }).__sentClientSmsTo ?? null),
+      )
+      .toBe("+5531999999999");
+  });
+
   test("/cadastro/acompanhante carrega sem 404", async ({ page }) => {
     await bypassAgeGate(page);
     const resp = await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });

@@ -51,7 +51,7 @@ export function readPendingProfessionalPhone(req: NextRequest) {
   const pending = verifyPendingProfessionalPhoneToken(token);
   if (!pending) {
     throw new ProfessionalPhoneRegistrationError(
-      "A validação do telefone expirou. Confirme o WhatsApp novamente.",
+      "A validação do telefone expirou. Confirme o telefone por SMS novamente.",
     );
   }
 
@@ -76,7 +76,7 @@ export async function validatePendingProfessionalPhone(req: NextRequest, userId?
 
   if (!verification) {
     throw new ProfessionalPhoneRegistrationError(
-      "A validação do telefone expirou. Confirme o WhatsApp novamente.",
+      "A validação do telefone expirou. Confirme o telefone por SMS novamente.",
     );
   }
 
