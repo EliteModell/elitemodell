@@ -22,8 +22,9 @@ const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
 const PENDING_REGISTRATION_KEY = "elitemodell_pending_registration";
 const PENDING_REGISTRATION_COOKIE = "elitemodell_pending_registration";
 const CALLBACK_TIMEOUT_MS = 5000;
-const NEXTAUTH_SIGNIN_TIMEOUT_MS = 10000;
-const CALLBACK_SLOW_MESSAGE_MS = 2000;
+const NEXTAUTH_SIGNIN_TIMEOUT_MS = 45000;
+const CALLBACK_SLOW_MESSAGE_MS = 2500;
+const CALLBACK_STILL_WORKING_MESSAGE_MS = 9000;
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
 
@@ -107,6 +108,14 @@ function fallbackPathForRoleIntent(roleIntent?: ReturnType<typeof normalizeEntry
   if (roleIntent === "profissional") return ACCOUNT_ROUTES.onboardingAcompanhante;
   if (roleIntent === "anfitriao") return ACCOUNT_ROUTES.onboardingAnfitriao;
   return ACCOUNT_ROUTES.dashboardCliente;
+}
+
+function callbackRetryHref(roleIntent: ReturnType<typeof normalizeEntryRole>, returnUrl: string | null, isCadastroFlow: boolean) {
+  const params = new URLSearchParams();
+  if (isCadastroFlow) params.set("flow", "cadastro");
+  if (roleIntent) params.set("role", roleIntent);
+  if (returnUrl) params.set("returnUrl", returnUrl);
+  return `/auth/callback${params.toString() ? `?${params.toString()}` : ""}`;
 }
 
 function readCookie(name: string) {
@@ -562,6 +571,9 @@ function AuthCallbackContent() {
     const slowMessageTimer = window.setTimeout(() => {
       if (active) setMessage("Estamos finalizando seu acesso. Aguarde um instante.");
     }, CALLBACK_SLOW_MESSAGE_MS);
+    const stillWorkingTimer = window.setTimeout(() => {
+      if (active) setMessage("Ainda estamos criando sua sessao segura. No celular isso pode levar alguns segundos.");
+    }, CALLBACK_STILL_WORKING_MESSAGE_MS);
 
     async function finishAuth() {
       const code = searchParams.get("code");
@@ -632,6 +644,7 @@ function AuthCallbackContent() {
 
       if (!active) return;
       window.clearTimeout(slowMessageTimer);
+      window.clearTimeout(stillWorkingTimer);
       setSuccess(true);
       setMessage("Acesso confirmado. Redirecionando...");
       window.setTimeout(() => {
@@ -641,17 +654,27 @@ function AuthCallbackContent() {
 
     finishAuth().catch(async (err) => {
       window.clearTimeout(slowMessageTimer);
+      window.clearTimeout(stillWorkingTimer);
       if (!active) return;
       const rawMsg: string = err?.message ?? "Nao foi possivel finalizar o acesso.";
       const isCadastroError = retryTarget !== "/login";
       console.error(isCadastroError ? "[CALLBACK] Erro no cadastro Google:" : "[CALLBACK] Erro no login Google:", rawMsg);
-      await clearInvalidAuthState();
       const timedOut = /tempo limite|timeout|timed out/i.test(rawMsg);
-      setMessage(isCadastroError
-        ? "Não foi possível concluir o cadastro. Tente novamente ou use outro método."
-        : "Não foi possível concluir o login. Tente novamente ou use outro método.");
+      const retryRoleIntent = roleIntent ?? roleIntentFromPending(pendingRegistration) ?? inferRoleIntentFromReturnUrl(returnUrl) ?? "cliente";
+      const retryReturnUrl = returnUrl ?? fallbackPathForRoleIntent(retryRoleIntent);
+      const { data: currentSupabaseSession } = await supabaseAuth.auth.getSession().catch(() => ({ data: { session: null } }));
+      if (timedOut && currentSupabaseSession.session?.access_token) {
+        setRetryHref(callbackRetryHref(retryRoleIntent, retryReturnUrl, true));
+      } else {
+        await clearInvalidAuthState();
+      }
+      setMessage(timedOut
+        ? "Email confirmado. Falta finalizar sua sessao."
+        : isCadastroError
+          ? "Não foi possível concluir o cadastro. Tente novamente ou use outro método."
+          : "Não foi possível concluir o login. Tente novamente ou use outro método.");
       setErrorDetail(timedOut
-        ? "A confirmacao demorou mais que o esperado. Abra o link novamente ou entre com email e senha."
+        ? "A confirmacao foi feita, mas a sessao demorou mais que o esperado. Toque em Tentar novamente ou entre com email e senha."
         : "O link pode ter expirado ou ja ter sido usado. Tente entrar com email e senha ou solicite um novo link.");
     });
 
@@ -659,6 +682,7 @@ function AuthCallbackContent() {
       active = false;
       window.clearTimeout(retryHrefTimer);
       window.clearTimeout(slowMessageTimer);
+      window.clearTimeout(stillWorkingTimer);
     };
   }, [searchParams]);
 
