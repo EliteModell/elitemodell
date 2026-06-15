@@ -12,6 +12,7 @@ type PendingRegistration = {
   birthDate?: string;
   lgpdConsent?: boolean;
   termsConsent?: boolean;
+  ageConfirmed?: boolean;
   captchaToken?: string;
 };
 
@@ -176,6 +177,30 @@ function resolveWithTimeout<T>(promise: Promise<T>, fallback: T, ms = CALLBACK_T
   });
 }
 
+function sleep(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+async function waitForNextAuthSession(timeoutMs = 8000) {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch("/api/auth/session", { cache: "no-store" });
+      if (res.ok) {
+        const session = await res.json().catch(() => null);
+        if (session?.user?.email || session?.user?.id) return true;
+      }
+    } catch {
+      // Algumas WebViews mobile falham a primeira leitura logo apos set-cookie.
+    }
+
+    await sleep(300);
+  }
+
+  return false;
+}
+
 function resolveSignInWithTimeout(promise: ReturnType<typeof signIn>) {
   return resolveWithTimeout(
     promise,
@@ -276,6 +301,7 @@ function pendingRegistrationFromMetadata(metadata: unknown): PendingRegistration
     birthDate: typeof data.birthDate === "string" ? data.birthDate : undefined,
     lgpdConsent: booleanFromMetadata(data.lgpdConsent),
     termsConsent: booleanFromMetadata(data.termsConsent),
+    ageConfirmed: booleanFromMetadata(data.ageConfirmed),
   };
 }
 
@@ -343,6 +369,7 @@ async function applyRegistrationFallback(pending: PendingRegistration, roleInten
         birthDate: pending.birthDate,
         lgpdConsent: true,
         termsConsent: true,
+        ageConfirmed: pending.ageConfirmed ?? true,
       }),
     });
 
@@ -680,6 +707,12 @@ function AuthCallbackContent() {
       }));
       if (res?.error) {
         throw new Error(`NextAuth: ${res.error}`);
+      }
+
+      if (active) setMessage("Confirmando sessao segura...");
+      const hasNextAuthSession = await waitForNextAuthSession();
+      if (!hasNextAuthSession) {
+        throw new Error("NextAuth: Tempo limite ao confirmar a sessao segura.");
       }
 
       if (fallbackRegistration) {
