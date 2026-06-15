@@ -61,7 +61,7 @@ function inferRoleIntentFromReturnUrl(returnUrl: string | null) {
 const PROFESSIONAL_CATEGORIES = ["MULHER", "HOMEM", "TRANS"];
 
 async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRole>) {
-  const res = await fetch("/api/users/me", { cache: "no-store" });
+  const res = await fetch("/api/users/me", { cache: "no-store", credentials: "include" });
   if (!res.ok) return fallbackPathForRoleIntent(roleIntent);
 
   const user = await res.json();
@@ -186,7 +186,7 @@ async function waitForNextAuthSession(timeoutMs = 8000) {
 
   while (Date.now() < deadline) {
     try {
-      const res = await fetch("/api/auth/session", { cache: "no-store" });
+      const res = await fetch("/api/auth/session", { cache: "no-store", credentials: "include" });
       if (res.ok) {
         const session = await res.json().catch(() => null);
         if (session?.user?.email || session?.user?.id) return true;
@@ -365,6 +365,7 @@ async function applyRegistrationFallback(pending: PendingRegistration, roleInten
     const profileRes = await fetch("/api/auth/complete-profile", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({
         birthDate: pending.birthDate,
         lgpdConsent: true,
@@ -385,6 +386,7 @@ async function applyRegistrationFallback(pending: PendingRegistration, roleInten
     const activateRes = await fetch("/api/users/me/activate-professional", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ category: pending.category }),
     });
 
@@ -725,8 +727,10 @@ function AuthCallbackContent() {
 
       // Fast path: se há returnUrl explícita e não é um novo cadastro, redirecionar
       // direto sem buscar /api/users/me (economiza 300–800ms por login).
-      const targetPath = fallbackRegistration && effectiveRoleIntent
-        ? await resolveWithTimeout(getPostLoginPath(effectiveRoleIntent), getRegistrationPath(fallbackRegistration))
+      const targetPath = fallbackRegistration?.accountType === "GUEST"
+        ? returnUrl ?? ACCOUNT_ROUTES.mainClientFeed
+        : fallbackRegistration && effectiveRoleIntent
+          ? await resolveWithTimeout(getPostLoginPath(effectiveRoleIntent), getRegistrationPath(fallbackRegistration))
         : fallbackRegistration
           ? getRegistrationPath(fallbackRegistration)
           : hasExplicitReturnUrl && returnUrl
