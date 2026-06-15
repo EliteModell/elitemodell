@@ -126,6 +126,7 @@ export async function POST(req: NextRequest) {
         redirect_to: properties.redirect_to || body.redirectTo,
         email_action_type: generated.actionType,
         site_url: process.env.NEXT_PUBLIC_APP_URL || "https://www.elitemodell.com.br",
+        action_link: properties.action_link,
       },
     });
 

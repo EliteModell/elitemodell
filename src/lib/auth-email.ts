@@ -16,6 +16,7 @@ export type AuthEmailPayload = {
     redirect_to: string;
     email_action_type: AuthEmailActionType;
     site_url: string;
+    action_link?: string;
     token_new?: string;
     token_hash_new?: string;
   };
@@ -59,6 +60,10 @@ export function confirmationUrl(tokenHash: string, type: AuthEmailActionType, re
   return url.toString();
 }
 
+function actionUrl(payload: AuthEmailPayload, tokenHash: string, type: AuthEmailActionType, redirectTo: string) {
+  return payload.email_data.action_link || confirmationUrl(tokenHash, type, redirectTo);
+}
+
 export function buildAuthEmail(payload: AuthEmailPayload): AuthEmail | null {
   const { email_action_type, token_hash, token_hash_new, redirect_to, site_url } = payload.email_data;
   const userEmail = escapeHtml(payload.user.email);
@@ -86,7 +91,7 @@ export function buildAuthEmail(payload: AuthEmailPayload): AuthEmail | null {
     `<a href="${escapeHtml(url)}" style="display:inline-block;margin-top:24px;padding:14px 28px;background:linear-gradient(135deg,#d4a843,#f5d78c,#d4a843);color:#0a0a0a;font-weight:700;font-size:15px;text-decoration:none;border-radius:8px">${escapeHtml(text)}</a>`;
 
   if (email_action_type === "signup") {
-    const url = confirmationUrl(token_hash, "signup", redirectTo);
+    const url = actionUrl(payload, token_hash, "signup", redirectTo);
     return {
       subject: "Confirme seu cadastro - Elite Modell",
       html: base.replace("CONTENT", `
@@ -99,7 +104,7 @@ export function buildAuthEmail(payload: AuthEmailPayload): AuthEmail | null {
   }
 
   if (email_action_type === "recovery") {
-    const url = confirmationUrl(token_hash, "recovery", redirectTo);
+    const url = actionUrl(payload, token_hash, "recovery", redirectTo);
     return {
       subject: "Redefinir senha - Elite Modell",
       html: base.replace("CONTENT", `
@@ -112,7 +117,7 @@ export function buildAuthEmail(payload: AuthEmailPayload): AuthEmail | null {
   }
 
   if (email_action_type === "invite") {
-    const url = confirmationUrl(token_hash, "invite", redirectTo);
+    const url = actionUrl(payload, token_hash, "invite", redirectTo);
     return {
       subject: "Voce foi convidado - Elite Modell",
       html: base.replace("CONTENT", `
@@ -124,7 +129,7 @@ export function buildAuthEmail(payload: AuthEmailPayload): AuthEmail | null {
   }
 
   if (email_action_type === "email_change") {
-    const url = confirmationUrl(token_hash_new ?? token_hash, "email_change", redirectTo);
+    const url = actionUrl(payload, token_hash_new ?? token_hash, "email_change", redirectTo);
     return {
       subject: "Confirme seu novo e-mail - Elite Modell",
       html: base.replace("CONTENT", `
@@ -137,7 +142,7 @@ export function buildAuthEmail(payload: AuthEmailPayload): AuthEmail | null {
   }
 
   if (email_action_type === "magiclink") {
-    const url = confirmationUrl(token_hash, "magiclink", redirectTo);
+    const url = actionUrl(payload, token_hash, "magiclink", redirectTo);
     return {
       subject: "Seu link de acesso - Elite Modell",
       html: base.replace("CONTENT", `
