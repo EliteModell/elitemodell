@@ -60,8 +60,8 @@ export function confirmationUrl(tokenHash: string, type: AuthEmailActionType, re
   return url.toString();
 }
 
-function actionUrl(payload: AuthEmailPayload, tokenHash: string, type: AuthEmailActionType, redirectTo: string) {
-  return payload.email_data.action_link || confirmationUrl(tokenHash, type, redirectTo);
+function actionUrl(_payload: AuthEmailPayload, tokenHash: string, type: AuthEmailActionType, redirectTo: string) {
+  return confirmationUrl(tokenHash, type, redirectTo);
 }
 
 export function buildAuthEmail(payload: AuthEmailPayload): AuthEmail | null {

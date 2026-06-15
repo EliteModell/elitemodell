@@ -118,6 +118,13 @@ function callbackRetryHref(roleIntent: ReturnType<typeof normalizeEntryRole>, re
   return `/auth/callback${params.toString() ? `?${params.toString()}` : ""}`;
 }
 
+function loginRetryHref(roleIntent: ReturnType<typeof normalizeEntryRole>, returnUrl: string | null) {
+  const params = new URLSearchParams();
+  if (roleIntent) params.set("role", roleIntent);
+  if (returnUrl) params.set("returnUrl", returnUrl);
+  return `/login${params.toString() ? `?${params.toString()}` : ""}`;
+}
+
 function readCookie(name: string) {
   if (typeof document === "undefined") return null;
   const cookie = document.cookie
@@ -236,6 +243,49 @@ function roleIntentFromPending(pending: PendingRegistration | null) {
   if (pending?.accountType === "PROPERTY_HOST") return "anfitriao" as const;
   if (pending?.accountType === "GUEST") return "cliente" as const;
   return null;
+}
+
+function accountTypeFromMetadata(value: unknown): PendingRegistration["accountType"] | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toUpperCase();
+  if (["GUEST", "CLIENT", "CLIENTE"].includes(normalized)) return "GUEST";
+  if (["PROFESSIONAL", "MODEL", "MODELO", "ACOMPANHANTE"].includes(normalized)) return "PROFESSIONAL";
+  if (["PROPERTY_HOST", "HOST", "ANFITRIAO", "ANFITRIÃO", "IMOVEL", "IMÓVEL"].includes(normalized)) return "PROPERTY_HOST";
+  return null;
+}
+
+function professionalCategoryFromMetadata(value: unknown): PendingRegistration["category"] | undefined {
+  return typeof value === "string" && PROFESSIONAL_CATEGORIES.includes(value)
+    ? value as PendingRegistration["category"]
+    : undefined;
+}
+
+function booleanFromMetadata(value: unknown) {
+  return value === true || value === "true";
+}
+
+function pendingRegistrationFromMetadata(metadata: unknown): PendingRegistration | null {
+  if (!metadata || typeof metadata !== "object") return null;
+  const data = metadata as Record<string, unknown>;
+  const accountType = accountTypeFromMetadata(data.accountType ?? data.account_type);
+  if (!accountType) return null;
+
+  return {
+    accountType,
+    category: accountType === "PROFESSIONAL" ? professionalCategoryFromMetadata(data.category) : undefined,
+    birthDate: typeof data.birthDate === "string" ? data.birthDate : undefined,
+    lgpdConsent: booleanFromMetadata(data.lgpdConsent),
+    termsConsent: booleanFromMetadata(data.termsConsent),
+  };
+}
+
+async function pendingRegistrationFromSession(accessToken: string) {
+  const { data, error } = await supabaseAuth.auth.getUser(accessToken);
+  if (error) {
+    console.warn("[CALLBACK] Nao foi possivel ler metadata do usuario Supabase:", error.message);
+    return null;
+  }
+  return pendingRegistrationFromMetadata(data.user?.user_metadata);
 }
 
 function registrationFallbackForIntent(
@@ -562,9 +612,15 @@ function AuthCallbackContent() {
       searchParams.get("flow") === "cadastro" ||
       Boolean(pendingRegistration) ||
       explicitIntent === "professional-signup";
-    const retryTarget = isCadastroFlow && (roleIntent === "profissional" || returnUrl?.startsWith(ACCOUNT_ROUTES.onboardingAcompanhante))
+    const initialRetryRoleIntent =
+      roleIntent ??
+      roleIntentFromPending(pendingRegistration) ??
+      inferRoleIntentFromReturnUrl(returnUrl) ??
+      (isCadastroFlow ? "cliente" as const : null);
+    const initialRetryReturnUrl = returnUrl ?? (initialRetryRoleIntent ? fallbackPathForRoleIntent(initialRetryRoleIntent) : null);
+    const retryTarget = isCadastroFlow && (initialRetryRoleIntent === "profissional" || returnUrl?.startsWith(ACCOUNT_ROUTES.onboardingAcompanhante))
       ? ACCOUNT_ROUTES.cadastroAcompanhante
-      : "/login";
+      : loginRetryHref(initialRetryRoleIntent, initialRetryReturnUrl);
     const retryHrefTimer = window.setTimeout(() => {
       if (active) setRetryHref(retryTarget);
     }, 0);
@@ -600,23 +656,27 @@ function AuthCallbackContent() {
 
       if (active) setMessage("Configurando sua conta...");
 
+      const metadataRegistration = await pendingRegistrationFromSession(accessToken);
+      const effectivePendingRegistration = pendingRegistration ?? metadataRegistration;
+      const effectiveCadastroFlow = isCadastroFlow || Boolean(effectivePendingRegistration);
       const effectiveRoleIntent =
         roleIntent ??
-        roleIntentFromPending(pendingRegistration) ??
+        roleIntentFromPending(effectivePendingRegistration) ??
         inferRoleIntentFromReturnUrl(returnUrl) ??
-        (isCadastroFlow ? "cliente" as const : null);
-      const fallbackRegistration = registrationFallbackForIntent(pendingRegistration, effectiveRoleIntent, isCadastroFlow);
+        (effectiveCadastroFlow ? "cliente" as const : null);
+      const fallbackRegistration = registrationFallbackForIntent(effectivePendingRegistration, effectiveRoleIntent, effectiveCadastroFlow);
+      const registrationForCredentials = effectivePendingRegistration ?? fallbackRegistration;
 
       if (active) setMessage("Criando sessao segura...");
       const res = await resolveSignInWithTimeout(signIn("supabase", {
         accessToken,
         roleIntent: effectiveRoleIntent ?? "",
-        authFlow: (isCadastroFlow || fallbackRegistration) ? "cadastro" : "",
+        authFlow: (effectiveCadastroFlow || fallbackRegistration) ? "cadastro" : "",
         redirect: false,
-        ...(pendingRegistration?.category ? { category: pendingRegistration.category } : {}),
-        ...(pendingRegistration?.birthDate ? { birthDate: pendingRegistration.birthDate } : {}),
-        ...(pendingRegistration?.lgpdConsent ? { lgpdConsent: "true" } : {}),
-        ...(pendingRegistration?.termsConsent ? { termsConsent: "true" } : {}),
+        ...(registrationForCredentials?.category ? { category: registrationForCredentials.category } : {}),
+        ...(registrationForCredentials?.birthDate ? { birthDate: registrationForCredentials.birthDate } : {}),
+        ...(registrationForCredentials?.lgpdConsent ? { lgpdConsent: "true" } : {}),
+        ...(registrationForCredentials?.termsConsent ? { termsConsent: "true" } : {}),
       }));
       if (res?.error) {
         throw new Error(`NextAuth: ${res.error}`);
@@ -657,8 +717,8 @@ function AuthCallbackContent() {
       window.clearTimeout(stillWorkingTimer);
       if (!active) return;
       const rawMsg: string = err?.message ?? "Nao foi possivel finalizar o acesso.";
-      const isCadastroError = retryTarget !== "/login";
-      console.error(isCadastroError ? "[CALLBACK] Erro no cadastro Google:" : "[CALLBACK] Erro no login Google:", rawMsg);
+      const isCadastroError = isCadastroFlow;
+      console.error(isCadastroError ? "[CALLBACK] Erro no cadastro:" : "[CALLBACK] Erro no login:", rawMsg);
       const timedOut = /tempo limite|timeout|timed out/i.test(rawMsg);
       const retryRoleIntent = roleIntent ?? roleIntentFromPending(pendingRegistration) ?? inferRoleIntentFromReturnUrl(returnUrl) ?? "cliente";
       const retryReturnUrl = returnUrl ?? fallbackPathForRoleIntent(retryRoleIntent);
@@ -667,6 +727,7 @@ function AuthCallbackContent() {
         setRetryHref(callbackRetryHref(retryRoleIntent, retryReturnUrl, true));
       } else {
         await clearInvalidAuthState();
+        setRetryHref(loginRetryHref(retryRoleIntent, retryReturnUrl));
       }
       setMessage(timedOut
         ? "Email confirmado. Falta finalizar sua sessao."

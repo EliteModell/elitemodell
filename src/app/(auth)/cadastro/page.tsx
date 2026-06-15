@@ -28,6 +28,7 @@ const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
 const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
 const PENDING_REGISTRATION_KEY = "elitemodell_pending_registration";
 const PENDING_REGISTRATION_COOKIE = "elitemodell_pending_registration";
+const REGISTRATION_STATE_MAX_AGE_SECONDS = 60 * 60 * 24;
 type AuthError = { code?: string; name?: string; message?: string };
 
 const GOLD = "#d4a843";
@@ -80,14 +81,14 @@ function rememberPendingRegistration(payload: unknown) {
   const serialized = JSON.stringify(payload);
   safeSetStorage(sessionStorage, PENDING_REGISTRATION_KEY, serialized);
   safeSetStorage(localStorage, PENDING_REGISTRATION_KEY, serialized);
-  document.cookie = `${PENDING_REGISTRATION_COOKIE}=${encodeURIComponent(serialized)}; Max-Age=900; Path=/${cookieDomainAttribute()}; SameSite=Lax; Secure`;
+  document.cookie = `${PENDING_REGISTRATION_COOKIE}=${encodeURIComponent(serialized)}; Max-Age=${REGISTRATION_STATE_MAX_AGE_SECONDS}; Path=/${cookieDomainAttribute()}; SameSite=Lax; Secure`;
 }
 
 function rememberRoleIntent(intent: EntryAccountRole) {
   safeSetStorage(sessionStorage, ROLE_INTENT_KEY, intent);
   safeSetStorage(localStorage, ROLE_INTENT_KEY, intent);
 
-  document.cookie = `${ROLE_INTENT_COOKIE}=${encodeURIComponent(intent)}; Max-Age=900; Path=/${cookieDomainAttribute()}; SameSite=Lax; Secure`;
+  document.cookie = `${ROLE_INTENT_COOKIE}=${encodeURIComponent(intent)}; Max-Age=${REGISTRATION_STATE_MAX_AGE_SECONDS}; Path=/${cookieDomainAttribute()}; SameSite=Lax; Secure`;
 }
 
 function rememberCadastroOAuthState(payload: unknown, intent: EntryAccountRole) {
@@ -693,6 +694,7 @@ export default function CadastroPage() {
     }
 
     rememberPendingRegistration(payload);
+    rememberRoleIntent(roleIntent());
   }
 
   async function handleSubmit(e: React.FormEvent) {
