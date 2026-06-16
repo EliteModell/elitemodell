@@ -29,6 +29,12 @@ import toast from "react-hot-toast";
 import styles from "./ProfessionalRegistrationFlow.module.css";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { getFirebaseClientAuth } from "@/lib/firebase/client";
+import {
+  prepareFirebaseSmsAudit,
+  reportFirebaseSmsAccepted,
+  reportFirebaseSmsFailed,
+  type FirebaseSmsAudit,
+} from "@/lib/firebase-phone-audit-client";
 
 type RegistrationStage = "phone" | "verification";
 type VerificationChannel = "whatsapp" | "sms";
@@ -331,14 +337,26 @@ export function ProfessionalRegistrationFlow({
       return;
     }
 
+    const normalizedPhone = onlyDigits(phone);
+    let smsAudit: FirebaseSmsAudit | null = null;
+
     setSendingCode(true);
     try {
-      const normalizedPhone = onlyDigits(phone);
-
       if (window.__eliteProfessionalPhoneAuthMock?.sendCode) {
         firebaseProfessionalConfirmationResult =
           await window.__eliteProfessionalPhoneAuthMock.sendCode(e164BrazilianPhone(normalizedPhone));
       } else {
+        smsAudit = await prepareFirebaseSmsAudit({
+          phone: normalizedPhone,
+          accountType: "model",
+          consent: {
+            termsConsent: consents.termsConsent,
+            lgpdConsent: consents.lgpdConsent,
+            ageConfirmed: consents.ageConfirmed,
+            ownershipConfirmed: consents.ownershipConfirmed,
+          },
+        });
+
         const { RecaptchaVerifier: FirebaseRecaptchaVerifier } = await import("firebase/auth");
         const auth = getFirebaseClientAuth();
         auth.languageCode = "pt-BR";
@@ -355,6 +373,12 @@ export function ProfessionalRegistrationFlow({
           e164BrazilianPhone(normalizedPhone),
           firebaseProfessionalRecaptchaVerifier,
         );
+
+        void reportFirebaseSmsAccepted({
+          verificationId: smsAudit.verificationId,
+          phone: normalizedPhone,
+          accountType: "model",
+        });
       }
 
       console.info("[professional-registration] sms_code_sent", {
@@ -366,10 +390,18 @@ export function ProfessionalRegistrationFlow({
       setCodeSent(true);
       setCode("");
       setResendSeconds(RESEND_SECONDS);
-      toast.success("Código enviado por SMS.");
+      toast.success("SMS solicitado pelo Firebase. Pode levar ate 1 minuto para chegar.");
     } catch (error) {
       clearFirebaseRecaptcha();
       firebaseProfessionalConfirmationResult = null;
+      if (smsAudit) {
+        void reportFirebaseSmsFailed({
+          verificationId: smsAudit.verificationId,
+          phone: normalizedPhone,
+          accountType: "model",
+          error: error instanceof Error ? error.message : "Falha ao solicitar SMS no Firebase.",
+        });
+      }
       toast.error(firebasePhoneErrorMessage(error));
     } finally {
       setSendingCode(false);
@@ -640,7 +672,7 @@ export function ProfessionalRegistrationFlow({
                 <div className={styles.codeArea}>
                   <div className={styles.sentNotice}>
                     <Check size={18} aria-hidden="true" />
-                    Código enviado por SMS.
+                    Código solicitado por SMS. Pode levar ate 1 minuto para chegar.
                   </div>
                   <label htmlFor="verification-code">Código de 6 dígitos</label>
                   <input

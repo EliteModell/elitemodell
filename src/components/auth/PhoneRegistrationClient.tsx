@@ -10,6 +10,12 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { ArrowLeft, CheckCircle2, Info, Menu, Phone, ShieldCheck } from "lucide-react";
 import { getFirebaseClientAuth } from "@/lib/firebase/client";
+import {
+  prepareFirebaseSmsAudit,
+  reportFirebaseSmsAccepted,
+  reportFirebaseSmsFailed,
+  type FirebaseSmsAudit,
+} from "@/lib/firebase-phone-audit-client";
 
 type FlowMode = "client" | "model" | "host";
 type ScreenMode = "register" | "verify";
@@ -451,10 +457,23 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
     setOtpStatus("sending");
     setStatusMessage("Enviando código de verificação...");
 
+    let smsAudit: FirebaseSmsAudit | null = null;
+
     try {
       if (window.__elitePhoneAuthMock?.sendCode) {
         firebaseConfirmationResult = await window.__elitePhoneAuthMock.sendCode(e164BrazilianPhone(normalized));
       } else {
+        smsAudit = await prepareFirebaseSmsAudit({
+          phone: normalized,
+          accountType: mode,
+          consent: {
+            termsConsent: consent.termsConsent,
+            lgpdConsent: consent.lgpdConsent,
+            ageConfirmed: consent.ageConfirmed,
+            ownershipConfirmed: consent.ownershipConfirmed,
+          },
+        });
+
         const { RecaptchaVerifier: FirebaseRecaptchaVerifier } = await import("firebase/auth");
         const auth = getFirebaseClientAuth();
 
@@ -469,18 +488,32 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
           e164BrazilianPhone(normalized),
           firebaseRecaptchaVerifier,
         );
+
+        void reportFirebaseSmsAccepted({
+          verificationId: smsAudit.verificationId,
+          phone: normalized,
+          accountType: mode,
+        });
       }
 
       sessionStorage.setItem(storageKey, normalized);
       sessionStorage.setItem(consentKey, JSON.stringify(consent));
       setTimer(60);
       setOtpStatus("sent");
-      setStatusMessage("Código enviado. Verifique seu SMS.");
-      toast.success("Código enviado.");
+      setStatusMessage("Código solicitado por SMS. Pode levar ate 1 minuto para chegar.");
+      toast.success("SMS solicitado pelo Firebase.");
       return true;
     } catch (err) {
       firebaseRecaptchaVerifier?.clear();
       firebaseRecaptchaVerifier = null;
+      if (smsAudit) {
+        void reportFirebaseSmsFailed({
+          verificationId: smsAudit.verificationId,
+          phone: normalized,
+          accountType: mode,
+          error: err instanceof Error ? err.message : "Falha ao solicitar SMS no Firebase.",
+        });
+      }
       const message = err instanceof Error ? err.message : "Não foi possível enviar o código.";
       setOtpStatus("error");
       setStatusMessage(message);
@@ -699,7 +732,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
           <StatusMessage status={otpStatus} message={statusMessage} premium={isPremium} />
           <div style={{ height: 22 }} />
           <SubmitButton disabled={!canSubmit || loading} premium={isPremium}>
-            {otpStatus === "sending" ? "Enviando..." : otpStatus === "sent" ? "Código enviado" : text.submit}
+            {otpStatus === "sending" ? "Enviando..." : otpStatus === "sent" ? "Código solicitado" : text.submit}
           </SubmitButton>
         </form>
 
