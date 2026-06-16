@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import PremiumDashboardHome from "@/components/dashboard/PremiumDashboardHome";
 import { authOptions } from "@/lib/auth";
 import { getDashboardHomeData } from "@/lib/dashboard-data";
-import { ACCOUNT_ROUTES, getHostRegistrationStatus, hostPathForStatus } from "@/lib/account-routes";
+import { ACCOUNT_ROUTES, getHostRegistrationStatus, hostPathForStatus, shouldUseClientArea } from "@/lib/account-routes";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +25,7 @@ export default async function DashboardPage() {
       lgpdConsent: true,
       termsConsent: true,
       birthDate: true,
+      clientProfile: { select: { id: true } },
       professional: { select: { status: true } },
       properties: { select: { status: true } },
     },
@@ -35,7 +36,7 @@ export default async function DashboardPage() {
   }
 
   if (userType) {
-    if (session.user.activeProfileType === "CLIENTE") {
+    if (shouldUseClientArea({ activeProfileType: session.user.activeProfileType, clientProfile: userType.clientProfile })) {
       const data = await getDashboardHomeData(session.user.id);
       if (!data) redirect(ACCOUNT_ROUTES.login);
       return <PremiumDashboardHome data={data} clientStatus={session.user.clientStatus} />;

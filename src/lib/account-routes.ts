@@ -198,3 +198,11 @@ export function accountHomePathFromSession(sessionUser: {
   if (isHostAccountType(sessionUser.accountType)) return ACCOUNT_ROUTES.onboardingAnfitriao;
   return ACCOUNT_ROUTES.dashboardCliente;
 }
+
+export function shouldUseClientArea(account: {
+  activeProfileType?: string | null;
+  hasClientProfile?: boolean | null;
+  clientProfile?: unknown | null;
+} | null | undefined) {
+  return account?.activeProfileType === "CLIENTE" || Boolean(account?.hasClientProfile || account?.clientProfile);
+}

@@ -3,6 +3,7 @@ import {
   ACCOUNT_ROUTES,
   accountHomePathFromSession,
   postLoginPathFromUser,
+  shouldUseClientArea,
 } from "../src/lib/account-routes";
 
 test.describe("Rotas de conta", () => {
@@ -29,5 +30,11 @@ test.describe("Rotas de conta", () => {
         professionalStatus: "PENDING_REVIEW",
       }),
     ).toBe(ACCOUNT_ROUTES.dashboardCliente);
+  });
+
+  test("area cliente continua disponivel para conta mista com perfil cliente", () => {
+    expect(shouldUseClientArea({ activeProfileType: "CLIENTE", hasClientProfile: false })).toBe(true);
+    expect(shouldUseClientArea({ activeProfileType: "PROFESSIONAL", hasClientProfile: true })).toBe(true);
+    expect(shouldUseClientArea({ activeProfileType: "PROFESSIONAL", hasClientProfile: false })).toBe(false);
   });
 });

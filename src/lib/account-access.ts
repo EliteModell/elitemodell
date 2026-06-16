@@ -51,6 +51,8 @@ export async function getCurrentAccountAccess() {
   const isCompanionIntent = user.accountType === "model" || isProfessionalCategory(user.category);
   const companionStatus = user.professional?.status ?? null;
   const hostStatus = getHostRegistrationStatus(user);
+  const activeProfileType = session.user.activeProfileType ?? null;
+  const hasClientProfile = Boolean(user.clientProfile);
   const professionalAccess = user.professional
     ? resolveProfessionalAccess(
         user.professional,
@@ -61,6 +63,8 @@ export async function getCurrentAccountAccess() {
 
   return {
     user,
+    activeProfileType,
+    hasClientProfile,
     isAdmin,
     isCompanionIntent,
     companionStatus,
