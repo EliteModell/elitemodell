@@ -34,6 +34,11 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "account-routes",
+      testMatch: "**/account-routes.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "money-rounding",
       testMatch: "**/money-rounding.spec.ts",
       use: { browserName: "chromium" },

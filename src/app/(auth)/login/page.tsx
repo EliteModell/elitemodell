@@ -70,7 +70,10 @@ async function getPostLoginPath(returnUrl: string | null, roleIntent: ReturnType
   if (safeReturnUrl && !roleIntent) return safeReturnUrl;
   if (roleIntent === "anfitriao" && localStorage.getItem(PROPERTY_DRAFT_KEY)) return PROPERTY_DRAFT_FINAL_PATH;
 
-  const res = await fetch("/api/users/me");
+  const res = await fetch("/api/users/me", {
+    cache: "no-store",
+    credentials: "include",
+  });
   if (!res.ok) return fallbackPathForRoleIntent(roleIntent);
   const user = await res.json();
   const hasProfessionalAccess =

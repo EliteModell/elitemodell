@@ -134,9 +134,6 @@ export function postLoginPathFromUser(user: PostLoginUser | null | undefined, in
   const hostStatus = getHostRegistrationStatus(user);
 
   if (user.role === "ADMIN") return ACCOUNT_ROUTES.admin;
-  if (professionalStatus && professionalStatus !== "ACTIVE" && professionalStatus !== "PAUSED") {
-    return professionalStatus === "DRAFT" ? ACCOUNT_ROUTES.onboardingAcompanhante : ACCOUNT_ROUTES.analiseAcompanhante;
-  }
 
   if (intent === "cliente") return ACCOUNT_ROUTES.dashboardCliente;
 
@@ -148,6 +145,10 @@ export function postLoginPathFromUser(user: PostLoginUser | null | undefined, in
 
   if (intent === "anfitriao") {
     return hostPathForStatus(hostStatus);
+  }
+
+  if (professionalStatus && professionalStatus !== "ACTIVE" && professionalStatus !== "PAUSED") {
+    return professionalStatus === "DRAFT" ? ACCOUNT_ROUTES.onboardingAcompanhante : ACCOUNT_ROUTES.analiseAcompanhante;
   }
 
   if (professionalStatus === "ACTIVE" || professionalStatus === "PAUSED") return ACCOUNT_ROUTES.dashboardAcompanhante;
@@ -170,9 +171,6 @@ export function accountHomePathFromSession(sessionUser: {
 } | null | undefined) {
   if (!sessionUser) return ACCOUNT_ROUTES.dashboardCliente;
   if (sessionUser.role === "ADMIN") return ACCOUNT_ROUTES.admin;
-  if (sessionUser.professionalStatus && sessionUser.professionalStatus !== "ACTIVE" && sessionUser.professionalStatus !== "PAUSED") {
-    return sessionUser.professionalStatus === "DRAFT" ? ACCOUNT_ROUTES.onboardingAcompanhante : ACCOUNT_ROUTES.analiseAcompanhante;
-  }
   if (sessionUser.activeProfileType === "CLIENTE") return ACCOUNT_ROUTES.dashboardCliente;
   if (sessionUser.activeProfileType === "PROFESSIONAL") {
     if (sessionUser.professionalStatus === "ACTIVE" || sessionUser.professionalStatus === "PAUSED") {
@@ -185,6 +183,9 @@ export function accountHomePathFromSession(sessionUser: {
   }
   if (sessionUser.activeProfileType === "HOST") {
     return hostPathForStatus((sessionUser.hostStatus ?? "CADASTRO_INCOMPLETO") as HostRegistrationStatus);
+  }
+  if (sessionUser.professionalStatus && sessionUser.professionalStatus !== "ACTIVE" && sessionUser.professionalStatus !== "PAUSED") {
+    return sessionUser.professionalStatus === "DRAFT" ? ACCOUNT_ROUTES.onboardingAcompanhante : ACCOUNT_ROUTES.analiseAcompanhante;
   }
   if (sessionUser.isProfessional || sessionUser.accountType === "model" || sessionUser.accountType === "professional") {
     if (!sessionUser.professionalStatus || sessionUser.professionalStatus === "DRAFT") return ACCOUNT_ROUTES.onboardingAcompanhante;
