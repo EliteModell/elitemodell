@@ -66,7 +66,7 @@ const nextConfig: NextConfig = {
             value: [
               "default-src 'self'",
               // Next.js exige unsafe-inline/unsafe-eval para hidratação e estilos em runtime
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://maps.googleapis.com https://cdn.withpersona.com https://www.asaas.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://www.google.com https://www.recaptcha.net https://maps.googleapis.com https://cdn.withpersona.com https://www.asaas.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.withpersona.com",
               "font-src 'self' data: https://fonts.gstatic.com https://cdn.withpersona.com",
               // img-src amplo: Next Image usa blob e data URIs; imagens vêm de Supabase e CDNs
@@ -80,6 +80,8 @@ const nextConfig: NextConfig = {
                 "https://securetoken.googleapis.com",
                 "https://firebaseinstallations.googleapis.com",
                 "https://*.googleapis.com",
+                "https://www.google.com",
+                "https://www.recaptcha.net",
                 "https://api.withpersona.com",
                 "https://maps.googleapis.com",
                 "https://*.sentry.io",
@@ -87,8 +89,8 @@ const nextConfig: NextConfig = {
                 "https://api.asaas.com",
                 "https://www.asaas.com",
               ].join(" "),
-              // frame-src: Persona usa iframe para KYC
-              "frame-src 'self' https://withpersona.com https://cdn.withpersona.com",
+              // frame-src: Persona usa iframe para KYC; Firebase Phone Auth usa iframe + reCAPTCHA.
+              "frame-src 'self' https://withpersona.com https://cdn.withpersona.com https://elitemodell.firebaseapp.com https://*.firebaseapp.com https://www.google.com https://www.recaptcha.net https://recaptcha.google.com",
               "media-src 'self' blob: https://*.supabase.co",
               "worker-src 'self' blob:",
               "object-src 'none'",
