@@ -24,6 +24,14 @@ type AccountType = "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
 type Category = "MULHER" | "TRANS" | "HOMEM";
 type Step = "form" | "verify";
 type BirthPart = "day" | "month" | "year";
+type EmailSignupResponse = {
+  ok?: boolean;
+  email?: string;
+  actionType?: string;
+  draftSessionToken?: string;
+  continueTo?: string;
+  accountType?: AccountType;
+};
 const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
 const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
 const PENDING_REGISTRATION_KEY = "elitemodell_pending_registration";
@@ -704,7 +712,7 @@ export default function CadastroPage() {
         ...payload,
       }),
     });
-    const data = await response.json().catch(() => ({}));
+    const data = await response.json().catch(() => ({})) as EmailSignupResponse & { error?: string; code?: string };
 
     if (!response.ok) {
       const error = new Error(typeof data.error === "string" ? data.error : "Nao foi possivel enviar o email.") as Error & AuthError;
@@ -714,6 +722,7 @@ export default function CadastroPage() {
 
     rememberPendingRegistration(payload);
     rememberRoleIntent(roleIntent());
+    return { ...data, accountType: payload.accountType };
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -723,7 +732,20 @@ export default function CadastroPage() {
     setLoading(true);
     try {
       const captchaToken = await getCaptchaToken();
-      await sendEmailSignup(captchaToken);
+      const signup = await sendEmailSignup(captchaToken);
+      if (signup.accountType === "PROFESSIONAL" && signup.draftSessionToken) {
+        const res = await signIn("email-signup-draft", {
+          token: signup.draftSessionToken,
+          redirect: false,
+        });
+        if (!res?.error) {
+          toast.success("Conta criada. Confirme o email ate o envio final.");
+          router.push(signup.continueTo ?? ACCOUNT_ROUTES.onboardingAcompanhante);
+          router.refresh();
+          return;
+        }
+        console.warn("[cadastro] sessao de rascunho profissional recusada", res?.error);
+      }
       toast.success("Email de confirmacao enviado.");
       setStep("verify");
     } catch (err: unknown) {

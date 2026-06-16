@@ -150,15 +150,42 @@ test("após validar o código abre a ativação profissional completa", async ({
   }
 });
 
-test("cadastro profissional por email preserva login e retorno para onboarding", async ({ page }) => {
-  const captured: { signupPayload?: Record<string, unknown> } = {};
+test("cadastro profissional por email envia link e entra direto no onboarding em rascunho", async ({ page }) => {
+  const captured: { signupPayload?: Record<string, unknown>; nextAuthPayload?: string | null } = {};
 
   await page.route("**/api/auth/email-signup", async (route) => {
     captured.signupPayload = route.request().postDataJSON();
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ ok: true }),
+      body: JSON.stringify({
+        ok: true,
+        draftSessionToken: "draft-token-for-tests",
+        continueTo: "/profissional/novo",
+      }),
+    });
+  });
+  await page.route("**/api/auth/csrf**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ csrfToken: "csrf-token-for-tests" }),
+    });
+  });
+  await page.route("**/api/auth/callback/email-signup-draft**", async (route) => {
+    captured.nextAuthPayload = route.request().postData();
+    const url = new URL("/profissional/novo", route.request().url()).toString();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ url }),
+    });
+  });
+  await page.route("**/profissional/novo**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "text/html",
+      body: "<!doctype html><html><body><h1>Criar perfil de acompanhante</h1></body></html>",
     });
   });
 
@@ -176,8 +203,9 @@ test("cadastro profissional por email preserva login e retorno para onboarding",
   await page.getByLabel(/Confirmo que sou maior de 18 anos/).check();
   await page.getByRole("button", { name: "Criar conta" }).click();
 
-  await expect(page.getByRole("heading", { name: "Verifique seu email" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Entrar como acompanhante" })).toBeVisible();
+  await page.waitForURL(/\/profissional\/novo/);
+  await expect(page.getByRole("heading", { name: "Criar perfil de acompanhante" })).toBeVisible();
+  expect(captured.nextAuthPayload).toContain("draft-token-for-tests");
 
   expect(captured.signupPayload).toMatchObject({
     accountType: "PROFESSIONAL",
@@ -194,12 +222,6 @@ test("cadastro profissional por email preserva login e retorno para onboarding",
   expect(redirectTo.searchParams.get("flow")).toBe("cadastro");
   expect(redirectTo.searchParams.get("intent")).toBe("professional-signup");
   expect(redirectTo.searchParams.get("returnUrl")).toBe("/profissional/novo");
-
-  await page.getByRole("button", { name: "Entrar como acompanhante" }).click();
-  await page.waitForURL(/\/login\?/);
-  const loginUrl = new URL(page.url());
-  expect(loginUrl.searchParams.get("role")).toBe("profissional");
-  expect(loginUrl.searchParams.get("returnUrl")).toBe("/profissional/novo");
 });
 
 test("não cria rolagem horizontal no mobile", async ({ page }) => {

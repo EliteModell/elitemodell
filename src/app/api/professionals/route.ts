@@ -209,8 +209,18 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { category: true },
+      select: { category: true, email: true, emailVerified: true },
     });
+
+    if (!user?.emailVerified) {
+      return NextResponse.json(
+        {
+          error: `Confirme seu email${user?.email ? ` (${user.email})` : ""} antes de enviar o cadastro para analise.`,
+          code: "email_not_verified",
+        },
+        { status: 428 },
+      );
+    }
 
     const { specialties, services, phone, whatsapp, image, galleryUrls, ...profileData } = data;
     await assertApprovedMediaUrls({

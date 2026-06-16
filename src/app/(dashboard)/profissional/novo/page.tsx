@@ -387,6 +387,8 @@ export default function ProfissionalNovoPage() {
     checked: false,
     available: false,
   });
+  const [accountEmail, setAccountEmail] = useState<string | null>(null);
+  const [emailVerified, setEmailVerified] = useState<boolean | null>(null);
   const [birthDateLockedFromAccount, setBirthDateLockedFromAccount] = useState(false);
   const [birthParts, setBirthParts] = useState({ day: "", month: "", year: "" });
   const birthMonthRef = useRef<HTMLInputElement>(null);
@@ -505,6 +507,9 @@ export default function ProfissionalNovoPage() {
       if (!res.ok) return;
       const user = await res.json();
       if (!active) return;
+
+      setAccountEmail(user.email ?? null);
+      setEmailVerified(Boolean(user.emailVerified));
 
       if (user.professional?.status === "ACTIVE" || user.professional?.status === "PAUSED") {
         router.replace(ACCOUNT_ROUTES.dashboardAcompanhante);
@@ -779,6 +784,10 @@ export default function ProfissionalNovoPage() {
       toast.error(error);
       return;
     }
+    if (emailVerified === false) {
+      toast.error("Confirme seu email antes de enviar para analise. Voce pode continuar preenchendo o rascunho.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -919,6 +928,22 @@ export default function ProfissionalNovoPage() {
           Preencha com atenção. Seu perfil é revisado em até 3 dias úteis antes de aparecer publicamente.
         </p>
       </div>
+
+      {emailVerified === false && (
+        <div style={{
+          margin: "0 0 22px",
+          padding: "14px 16px",
+          borderRadius: 14,
+          border: "1px solid rgba(212,168,67,0.35)",
+          background: "rgba(212,168,67,0.10)",
+          color: "#f8e7b0",
+          fontSize: 12,
+          lineHeight: 1.6,
+        }}>
+          <strong style={{ display: "block", color: GOLD, marginBottom: 4 }}>Email pendente de confirmacao</strong>
+          Voce pode preencher as 9 etapas agora. Para enviar para analise, confirme o link enviado para {accountEmail ?? "seu email"}.
+        </div>
+      )}
 
       {/* ── Progresso ── */}
       <div style={{ marginBottom: 28 }}>
@@ -1481,9 +1506,9 @@ export default function ProfissionalNovoPage() {
             Continuar →
           </button>
         ) : (
-          <button onClick={submit} disabled={loading}
-            style={{ padding: "12px 32px", background: loading ? "#9e7b2a" : GOLD, border: "none", borderRadius: 10, color: "#060e1b", fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}>
-            {loading ? "Enviando..." : "Enviar para aprovação ✦"}
+          <button onClick={submit} disabled={loading || emailVerified === false}
+            style={{ padding: "12px 32px", background: loading || emailVerified === false ? "#9e7b2a" : GOLD, border: "none", borderRadius: 10, color: "#060e1b", fontSize: 14, fontWeight: 800, cursor: loading || emailVerified === false ? "not-allowed" : "pointer" }}>
+            {loading ? "Enviando..." : emailVerified === false ? "Confirme o email para enviar" : "Enviar para aprovação ✦"}
           </button>
         )}
       </div>
