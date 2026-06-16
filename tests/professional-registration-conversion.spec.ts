@@ -47,21 +47,33 @@ test("apresenta conversão original e validação por canal", async ({ page }) =
   await expect(page.getByRole("button", { name: /WhatsApp indisponível no momento/ })).toBeDisabled();
 });
 
-test("envia codigo profissional por SMS via endpoint interno", async ({ page }) => {
-  let sendPayload: Record<string, unknown> | null = null;
-  await page.route("**/api/auth/phone/send-code", async (route) => {
-    sendPayload = route.request().postDataJSON();
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        ok: true,
-        resendInSeconds: 60,
-        delivery: { provider: "twilio-verify", channel: "sms" },
-      }),
-    });
+test("envia codigo profissional por SMS via Firebase", async ({ page }) => {
+  await page.addInitScript(() => {
+    const testWindow = window as unknown as {
+      __eliteProfessionalPhoneAuthMock?: {
+        sendCode: (phone: string) => Promise<{
+          confirm: () => Promise<{ user: { getIdToken: () => Promise<string> } }>;
+        }>;
+      };
+      __sentProfessionalSmsTo?: string;
+    };
+    testWindow.__eliteProfessionalPhoneAuthMock = {
+      async sendCode(phone: string) {
+        testWindow.__sentProfessionalSmsTo = phone;
+        return {
+          async confirm() {
+            return {
+              user: {
+                async getIdToken() {
+                  return "firebase-professional-token-for-tests";
+                },
+              },
+            };
+          },
+        };
+      },
+    };
   });
-
   await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
   await page.getByLabel("Qual seu número de telefone?").fill("31999999999");
   await page.getByLabel(/Ao continuar, confirmo que tenho 18 anos ou mais/).check();
@@ -69,38 +81,46 @@ test("envia codigo profissional por SMS via endpoint interno", async ({ page }) 
   await page.getByRole("button", { name: /Receber código via SMS/ }).click();
 
   await expect(page.getByLabel("Código de 6 dígitos")).toBeVisible();
-  expect(sendPayload).toMatchObject({
-    phone: "31999999999",
-    accountType: "model",
-    channel: "sms",
-    termsConsent: true,
-    lgpdConsent: true,
-    ageConfirmed: true,
-    ownershipConfirmed: true,
-  });
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as unknown as { __sentProfessionalSmsTo?: string }).__sentProfessionalSmsTo ?? null),
+    )
+    .toBe("+5531999999999");
 });
 
 test("após validar o código abre a ativação profissional completa", async ({ page }) => {
-  await page.route("**/api/auth/phone/send-code", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        ok: true,
-        resendInSeconds: 60,
-        delivery: { provider: "twilio-verify", channel: "sms" },
-      }),
-    });
+  await page.addInitScript(() => {
+    const testWindow = window as unknown as {
+      __eliteProfessionalPhoneAuthMock?: {
+        sendCode: () => Promise<{
+          confirm: () => Promise<{ user: { getIdToken: () => Promise<string> } }>;
+        }>;
+      };
+    };
+    testWindow.__eliteProfessionalPhoneAuthMock = {
+      async sendCode() {
+        return {
+          async confirm() {
+            return {
+              user: {
+                async getIdToken() {
+                  return "firebase-professional-token-for-tests";
+                },
+              },
+            };
+          },
+        };
+      },
+    };
   });
   await page.route("**/api/auth/phone/verify-code", async (route) => {
-    const payload = route.request().postDataJSON();
-    expect(payload).toMatchObject({
+    expect(route.request().postDataJSON()).toMatchObject({
       phone: "31999999999",
       code: "123456",
       accountType: "model",
       deferAccountCreation: true,
+      firebaseIdToken: "firebase-professional-token-for-tests",
     });
-    expect(payload.firebaseIdToken).toBeUndefined();
     await route.fulfill({
       status: 200,
       contentType: "application/json",
