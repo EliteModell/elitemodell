@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { ConfirmationResult, RecaptchaVerifier } from "firebase/auth";
-import { signInWithPhoneNumber } from "firebase/auth";
 import {
   BadgeCheck,
   CalendarClock,
@@ -28,11 +26,9 @@ import toast from "react-hot-toast";
 
 import styles from "./ProfessionalRegistrationFlow.module.css";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
-import { getFirebaseClientAuth } from "@/lib/firebase/client";
 
 type RegistrationStage = "phone" | "verification";
 type VerificationChannel = "whatsapp" | "sms";
-type PhoneConfirmation = Pick<ConfirmationResult, "confirm">;
 
 type ConsentState = {
   ageConfirmed: boolean;
@@ -48,6 +44,15 @@ type VerifyCodeResponse = {
   redirectTo?: string;
 };
 
+type SendCodeResponse = {
+  error?: string;
+  resendInSeconds?: number;
+  delivery?: {
+    provider?: string;
+    channel?: VerificationChannel;
+  };
+};
+
 type ProfessionalRegistrationFlowProps = {
   startAtVerification?: boolean;
 };
@@ -55,18 +60,6 @@ type ProfessionalRegistrationFlowProps = {
 const PHONE_STORAGE_KEY = "elitemodell.professional-registration.phone";
 const CONSENT_STORAGE_KEY = "elitemodell.professional-registration.consents";
 const RESEND_SECONDS = 60;
-const FIREBASE_RECAPTCHA_ID = "firebase-professional-phone-recaptcha";
-
-let firebaseProfessionalConfirmationResult: PhoneConfirmation | null = null;
-let firebaseProfessionalRecaptchaVerifier: RecaptchaVerifier | null = null;
-
-declare global {
-  interface Window {
-    __eliteProfessionalPhoneAuthMock?: {
-      sendCode: (phone: string) => Promise<PhoneConfirmation>;
-    };
-  }
-}
 
 const initialConsent: ConsentState = {
   ageConfirmed: false,
@@ -171,15 +164,6 @@ function isValidBrazilianPhone(value: string) {
   return /^[1-9]{2}9\d{8}$/.test(digits);
 }
 
-function e164BrazilianPhone(value: string) {
-  return `+55${onlyDigits(value)}`;
-}
-
-function clearFirebaseRecaptcha() {
-  firebaseProfessionalRecaptchaVerifier?.clear();
-  firebaseProfessionalRecaptchaVerifier = null;
-}
-
 export function ProfessionalRegistrationFlow({
   startAtVerification = false,
 }: ProfessionalRegistrationFlowProps) {
@@ -253,13 +237,6 @@ export function ProfessionalRegistrationFlow({
     return () => window.clearInterval(timer);
   }, [resendSeconds]);
 
-  useEffect(() => {
-    return () => {
-      clearFirebaseRecaptcha();
-      firebaseProfessionalConfirmationResult = null;
-    };
-  }, []);
-
   function persistRegistrationData() {
     window.sessionStorage.setItem(PHONE_STORAGE_KEY, onlyDigits(phone));
     window.sessionStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(consents));
@@ -311,40 +288,36 @@ export function ProfessionalRegistrationFlow({
     setSendingCode(true);
     try {
       const normalizedPhone = onlyDigits(phone);
+      const response = await fetch("/api/auth/phone/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: normalizedPhone,
+          accountType: "model",
+          channel: "sms",
+          ...consents,
+        }),
+      });
+      const data = (await response.json().catch(() => ({}))) as SendCodeResponse;
 
-      if (window.__eliteProfessionalPhoneAuthMock?.sendCode) {
-        firebaseProfessionalConfirmationResult =
-          await window.__eliteProfessionalPhoneAuthMock.sendCode(e164BrazilianPhone(normalizedPhone));
-      } else {
-        const { RecaptchaVerifier: FirebaseRecaptchaVerifier } = await import("firebase/auth");
-        const auth = getFirebaseClientAuth();
-
-        clearFirebaseRecaptcha();
-        firebaseProfessionalRecaptchaVerifier = new FirebaseRecaptchaVerifier(auth, FIREBASE_RECAPTCHA_ID, {
-          size: "invisible",
-          callback: () => undefined,
-        });
-
-        firebaseProfessionalConfirmationResult = await signInWithPhoneNumber(
-          auth,
-          e164BrazilianPhone(normalizedPhone),
-          firebaseProfessionalRecaptchaVerifier,
-        );
+      if (!response.ok) {
+        if (typeof data.resendInSeconds === "number") {
+          setResendSeconds(Math.max(0, data.resendInSeconds));
+        }
+        throw new Error(data.error || "Não foi possível enviar o código por SMS.");
       }
 
       console.info("[professional-registration] sms_code_sent", {
-        provider: "firebase-phone-auth",
+        provider: data.delivery?.provider ?? "phone-otp",
         accountType: "model",
         channel: "sms",
       });
       setChannel("sms");
       setCodeSent(true);
       setCode("");
-      setResendSeconds(RESEND_SECONDS);
+      setResendSeconds(data.resendInSeconds ?? RESEND_SECONDS);
       toast.success("Código enviado por SMS.");
     } catch (error) {
-      clearFirebaseRecaptcha();
-      firebaseProfessionalConfirmationResult = null;
       toast.error(error instanceof Error ? error.message : "Não foi possível enviar o código.");
     } finally {
       setSendingCode(false);
@@ -359,12 +332,6 @@ export function ProfessionalRegistrationFlow({
 
     setVerifyingCode(true);
     try {
-      if (!firebaseProfessionalConfirmationResult) {
-        throw new Error("Sessão de SMS expirada. Solicite um novo código.");
-      }
-
-      const credential = await firebaseProfessionalConfirmationResult.confirm(code);
-      const firebaseIdToken = await credential.user.getIdToken();
       const response = await fetch("/api/auth/phone/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -373,7 +340,6 @@ export function ProfessionalRegistrationFlow({
           code,
           accountType: "model",
           deferAccountCreation: true,
-          firebaseIdToken,
           ...consents,
         }),
       });
@@ -384,8 +350,6 @@ export function ProfessionalRegistrationFlow({
       }
 
       toast.success("Telefone confirmado com segurança.");
-      clearFirebaseRecaptcha();
-      firebaseProfessionalConfirmationResult = null;
       router.replace(data.redirectTo || "/cadastro?tipo=acompanhante&telefoneValidado=1");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível validar o código.");
@@ -783,8 +747,6 @@ export function ProfessionalRegistrationFlow({
 
         </div>
       )}
-
-      <div id={FIREBASE_RECAPTCHA_ID} />
 
       <footer className={styles.footer}>
         <div>

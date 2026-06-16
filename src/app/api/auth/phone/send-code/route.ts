@@ -168,7 +168,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Dados invalidos." }, { status: 400 });
     }
     if (err instanceof OtpDeliveryConfigurationError) {
-      return NextResponse.json({ error: err.message }, { status: 503 });
+      console.error("[phone/send-code] otp_delivery_configuration", err.message);
+      return NextResponse.json(
+        { error: "Envio de SMS temporariamente indisponivel. Tente novamente em instantes." },
+        { status: 503 }
+      );
     }
     if (err instanceof OtpDeliveryProviderError) {
       return NextResponse.json({ error: err.message }, { status: 502 });
