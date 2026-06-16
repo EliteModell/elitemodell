@@ -145,6 +145,61 @@ test("após validar o código abre a ativação profissional completa", async ({
   await expect(page.getByRole("button", { name: "Cadastrar com Google" })).toBeVisible();
   await expect(page.getByPlaceholder("seu@email.com")).toBeVisible();
   await expect(page.getByText("Data de nascimento", { exact: true })).toBeVisible();
+  for (const step of ["Dados", "Aparência", "Atendimento", "Serviços", "Valores", "Contato", "Fotos", "Verificação", "Enviar"]) {
+    await expect(page.locator("body")).toContainText(step);
+  }
+});
+
+test("cadastro profissional por email preserva login e retorno para onboarding", async ({ page }) => {
+  const captured: { signupPayload?: Record<string, unknown> } = {};
+
+  await page.route("**/api/auth/email-signup", async (route) => {
+    captured.signupPayload = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+
+  await page.goto("/cadastro?tipo=acompanhante&telefoneValidado=1", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("button", { name: "Mulher" }).click();
+  await page.getByPlaceholder("Seu nome").fill("Cadastro Profissional Teste");
+  await page.getByPlaceholder("seu@email.com").fill("profissional-teste@elitemodell.local");
+  await page.getByPlaceholder("Mínimo 6 caracteres").fill("senha123");
+  await page.getByLabel("Dia de nascimento").fill("01");
+  await page.getByLabel("Mês de nascimento").fill("01");
+  await page.getByLabel("Ano de nascimento").fill("1995");
+  await page.getByLabel(/Termos de Uso/).check();
+  await page.getByLabel(/Política de Privacidade/).check();
+  await page.getByLabel(/Confirmo que sou maior de 18 anos/).check();
+  await page.getByRole("button", { name: "Criar conta" }).click();
+
+  await expect(page.getByRole("heading", { name: "Verifique seu email" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Entrar como acompanhante" })).toBeVisible();
+
+  expect(captured.signupPayload).toMatchObject({
+    accountType: "PROFESSIONAL",
+    category: "MULHER",
+    birthDate: "1995-01-01",
+    lgpdConsent: true,
+    termsConsent: true,
+    ageConfirmed: true,
+  });
+
+  const redirectTo = new URL(String(captured.signupPayload?.redirectTo));
+  expect(redirectTo.pathname).toBe("/auth/callback");
+  expect(redirectTo.searchParams.get("role")).toBe("profissional");
+  expect(redirectTo.searchParams.get("flow")).toBe("cadastro");
+  expect(redirectTo.searchParams.get("intent")).toBe("professional-signup");
+  expect(redirectTo.searchParams.get("returnUrl")).toBe("/profissional/novo");
+
+  await page.getByRole("button", { name: "Entrar como acompanhante" }).click();
+  await page.waitForURL(/\/login\?/);
+  const loginUrl = new URL(page.url());
+  expect(loginUrl.searchParams.get("role")).toBe("profissional");
+  expect(loginUrl.searchParams.get("returnUrl")).toBe("/profissional/novo");
 });
 
 test("não cria rolagem horizontal no mobile", async ({ page }) => {

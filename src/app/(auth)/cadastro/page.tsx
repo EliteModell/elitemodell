@@ -512,6 +512,17 @@ export default function CadastroPage() {
     { value: "HOMEM", label: "Homem" },
     { value: "TRANS", label: "Trans" },
   ];
+  const professionalOnboardingSteps = [
+    "Dados",
+    "Aparência",
+    "Atendimento",
+    "Serviços",
+    "Valores",
+    "Contato",
+    "Fotos",
+    "Verificação",
+    "Enviar",
+  ];
   const accountSubtitle =
     form.accountType === "PROFESSIONAL"
       ? "Cadastro de acompanhante +18"
@@ -520,7 +531,7 @@ export default function CadastroPage() {
         : "Conta cliente +18";
   const accountHint =
     form.accountType === "PROFESSIONAL"
-      ? "Depois da conta, você segue para dados do perfil, fotos, documentos, biometria e análise da equipe."
+      ? "Depois da conta, você segue para as 9 etapas: perfil, aparência, atendimento, serviços, valores, contato, fotos, verificação e envio para análise."
       : form.accountType === "PROPERTY_HOST"
         ? "Seu rascunho fica salvo. Depois da conta, você volta para publicar o imóvel."
         : "";
@@ -671,6 +682,14 @@ export default function CadastroPage() {
     });
     if (intent === "profissional") params.set("intent", "professional-signup");
     return params.toString();
+  }
+
+  function loginPathAfterEmailVerification() {
+    const params = new URLSearchParams({
+      role: roleIntent(),
+      returnUrl: nextPath(),
+    });
+    return `${ACCOUNT_ROUTES.login}?${params.toString()}`;
   }
 
   async function sendEmailSignup(captchaToken?: string) {
@@ -935,9 +954,13 @@ export default function CadastroPage() {
         <h2 style={{ color: "#f1f5f9", fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>Verifique seu email</h2>
         <p style={{ color: "#8d8578", fontSize: 14, lineHeight: 1.6, margin: "0 0 8px" }}>Enviamos uma verificação para</p>
         <p style={{ color: GOLD, fontSize: 15, fontWeight: 600, margin: "0 0 24px" }}>{form.email}</p>
-        <p style={{ color: "#615b52", fontSize: 13, lineHeight: 1.6, margin: "0 0 32px" }}>Confirme o email para ativar sua conta. Depois volte aqui para entrar.</p>
-        <button onClick={() => router.push(`${ACCOUNT_ROUTES.login}?role=cliente`)} style={{ width: "100%", padding: "13px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
-          Ir para o login
+        <p style={{ color: "#615b52", fontSize: 13, lineHeight: 1.6, margin: "0 0 32px" }}>
+          {form.accountType === "PROFESSIONAL"
+            ? "Confirme o email para ativar sua conta. Depois entre como acompanhante para continuar nas 9 etapas do cadastro."
+            : "Confirme o email para ativar sua conta. Depois volte aqui para entrar."}
+        </p>
+        <button onClick={() => router.push(loginPathAfterEmailVerification())} style={{ width: "100%", padding: "13px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
+          {form.accountType === "PROFESSIONAL" ? "Entrar como acompanhante" : "Ir para o login"}
         </button>
         <button
           type="button"
@@ -993,7 +1016,7 @@ export default function CadastroPage() {
           <div style={{ marginTop: 12, padding: 12, border: "1px solid rgba(212,168,67,0.18)", borderRadius: 8, background: "rgba(212,168,67,0.06)" }}>
             <p style={{ color: "#d4a843", fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", margin: "0 0 8px" }}>Fases do cadastro</p>
             <div style={{ display: "grid", gap: 6 }}>
-              {["Dados do perfil", "Fotos e valores", "Documentos", "Biometria", "Análise da equipe"].map((item, index) => (
+              {professionalOnboardingSteps.map((item, index) => (
                 <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, color: "#94a3b8", fontSize: 12 }}>
                   <span style={{ width: 18, height: 18, borderRadius: 999, border: "1px solid rgba(212,168,67,0.35)", color: "#f5d78c", display: "grid", placeItems: "center", fontSize: 10, fontWeight: 800 }}>{index + 1}</span>
                   {item}
