@@ -2,8 +2,7 @@ import type { MetadataRoute } from "next";
 
 const siteUrl = "https://elitemodell.com.br";
 
-export const dynamic = "force-static";
-export const revalidate = 60 * 60 * 24; // 24h
+export const revalidate = 86400; // 24h
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date().toISOString();
