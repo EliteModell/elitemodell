@@ -76,6 +76,7 @@ export default function ProfissionalFotosPage() {
   const [galleryPending, setGalleryPending] = useState<PendingFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [contentDeclarationAccepted, setContentDeclarationAccepted] = useState(false);
   const profileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -163,11 +164,19 @@ export default function ProfissionalFotosPage() {
   async function uploadImage(file: File) {
     if (!profileId) throw new Error("Perfil profissional não encontrado.");
     const formData = new FormData();
+    if (!contentDeclarationAccepted) throw new Error("Confirme a declaracao de autoria e autorizacao antes do upload.");
     formData.append("file", file);
+    formData.append("contentDeclarationAccepted", "true");
     const res = await fetch(`/api/upload?folder=profiles/${profileId}`, { method: "POST", body: formData });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.url) {
-      throw new Error(typeof data.error === "string" ? data.error : "Não foi possível enviar agora. Tente novamente.");
+      throw new Error(
+        typeof data.error === "string"
+          ? data.error
+          : typeof data.message === "string"
+            ? data.message
+            : "Não foi possível enviar agora. Tente novamente.",
+      );
     }
     return data.url as string;
   }
@@ -328,6 +337,20 @@ export default function ProfissionalFotosPage() {
         subtitle="Separe a imagem principal, a capa do anúncio e as fotos recentes que ajudam clientes a confiar no seu perfil."
         illustration="camera"
       />
+
+      <section className="premium-card" style={{ padding: 18, marginBottom: 18 }}>
+        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "var(--elite-text-muted)", fontSize: 13, lineHeight: 1.5 }}>
+          <input
+            type="checkbox"
+            checked={contentDeclarationAccepted}
+            onChange={(event) => setContentDeclarationAccepted(event.target.checked)}
+            style={{ marginTop: 3, accentColor: "var(--elite-gold)" }}
+          />
+          <span>
+            Confirmo que sou autora ou tenho autorizacao para publicar as midias enviadas, que nao envolvem menores, exploracao, coercao, trafico, imagem de terceiros sem autorizacao ou conteudo proibido.
+          </span>
+        </label>
+      </section>
 
       <PremiumSection eyebrow="Imagem principal" title="Foto de perfil" description="Essa é a imagem principal do seu perfil.">
         <MediaEditor

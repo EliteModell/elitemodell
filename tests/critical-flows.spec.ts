@@ -7,6 +7,7 @@
  */
 
 import { test, expect, type Page, type Route } from "@playwright/test";
+import { installMockSessionCookie } from "./helpers/mock-auth";
 
 /* ─── Mocks ──────────────────────────────────────────────────────────────── */
 
@@ -21,6 +22,9 @@ const MOCK_CLIENT_SESSION = {
     clientStatus: "UNVERIFIED",
     isProfessional: false,
     needsConsent: false,
+    activeProfileType: "CLIENTE",
+    availableProfiles: ["CLIENTE"],
+    adultVerified: true,
   },
   expires: new Date(Date.now() + 86_400_000).toISOString(),
 };
@@ -33,6 +37,12 @@ const MOCK_WALLET = {
 };
 
 async function mockAuth(page: Page) {
+  await installMockSessionCookie(page.context(), {
+    ...MOCK_CLIENT_SESSION.user,
+    activeProfileType: "CLIENTE",
+    availableProfiles: ["CLIENTE"],
+    adultVerified: true,
+  });
   await page.route("**/api/auth/session", (route: Route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(MOCK_CLIENT_SESSION) })
   );
@@ -67,10 +77,10 @@ async function gotoWithMock(page: Page, path: string) {
 }
 
 async function expectCadastroChoiceOptions(page: Page) {
-  const body = (await page.textContent("body"))?.toLowerCase() ?? "";
-  expect(body).toContain("cliente");
-  expect(body).toContain("profissional");
-  expect(body).toContain("anfitri");
+  const body = page.locator("body");
+  await expect(body).toContainText(/cliente/i);
+  await expect(body).toContainText(/acompanhante/i);
+  await expect(body).toContainText(/anfitri/i);
 }
 
 async function seedHostDraft(page: Page) {
@@ -122,15 +132,22 @@ test.describe("Fluxo 1 — Cadastro", () => {
     await expectCadastroChoiceOptions(page);
   });
 
-  test("cliente e profissional podem trocar tipo antes de finalizar", async ({ page }) => {
+  test("cliente pode trocar tipo antes de finalizar", async ({ page }) => {
     await bypassAgeGate(page);
-    for (const label of ["Criar conta cliente", "Ativar perfil profissional"]) {
-      await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
-      await page.locator("button", { hasText: label }).first().click();
-      await expect(page.locator("button", { hasText: "Trocar tipo de cadastro" })).toBeVisible();
-      await page.locator("button", { hasText: "Trocar tipo de cadastro" }).click();
-      await expectCadastroChoiceOptions(page);
-    }
+    await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
+    await page.locator("button", { hasText: "Criar conta cliente" }).first().click();
+    await expect(page.locator("button", { hasText: "Trocar tipo de cadastro" })).toBeVisible();
+    await page.locator("button", { hasText: "Trocar tipo de cadastro" }).click();
+    await expectCadastroChoiceOptions(page);
+  });
+
+  test("opção de acompanhante inicia pelo telefone", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("link", { name: /Cadastre-se como acompanhante/ })).toHaveAttribute(
+      "href",
+      "/cadastro/acompanhante",
+    );
   });
 
   test("anfitriao iniciado nao prende o proximo clique em cadastrar", async ({ page }) => {
@@ -158,27 +175,84 @@ test.describe("Fluxo 1 — Cadastro", () => {
     expect(inputs).toBeGreaterThan(0);
   });
 
-  test("/cadastro-modelo (cadastro profissional) carrega sem 404", async ({ page }) => {
+  test("cadastro cliente envia codigo por SMS via Firebase", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.addInitScript(() => {
+      const testWindow = window as unknown as {
+        __elitePhoneAuthMock?: {
+          sendCode: (phone: string) => Promise<{
+            confirm: () => Promise<{ user: { getIdToken: () => Promise<string> } }>;
+          }>;
+        };
+        __sentClientSmsTo?: string;
+      };
+      testWindow.__elitePhoneAuthMock = {
+        async sendCode(phone: string) {
+          testWindow.__sentClientSmsTo = phone;
+          return {
+            async confirm() {
+              return {
+                user: {
+                  async getIdToken() {
+                    return "firebase-client-token-for-tests";
+                  },
+                },
+              };
+            },
+          };
+        },
+      };
+    });
+
+    await page.goto("/app/consumer/register", { waitUntil: "domcontentloaded" });
+    await page.locator('input[autocomplete="tel"]').fill("31999999999");
+    await page.getByLabel(/Li e aceito os/).check();
+    await page.getByLabel(/Li a Política de Privacidade/).check();
+    await page.getByLabel(/Confirmo que sou maior de 18 anos/).check();
+    await page.getByRole("button", { name: /Enviar código via SMS/ }).click();
+
+    await page.waitForURL(/\/app\/consumer\/verify-phone/);
+    await expect(page.getByRole("heading", { name: /Digite o código enviado/ })).toBeVisible();
+    await expect
+      .poll(() =>
+        page.evaluate(() => (window as unknown as { __sentClientSmsTo?: string }).__sentClientSmsTo ?? null),
+      )
+      .toBe("+5531999999999");
+  });
+
+  test("/cadastro/acompanhante carrega sem 404", async ({ page }) => {
+    await bypassAgeGate(page);
+    const resp = await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
+    expect(resp?.status()).not.toBe(404);
+  });
+
+  test("/cadastro/acompanhante exibe o início público do cadastro", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await expect(page.getByRole("heading", { name: "Cadastre-se grátis como acompanhante" })).toBeVisible();
+    await expect(page.getByLabel("Qual seu número de telefone?")).toBeVisible();
+    expect(page.url()).toMatch(/\/cadastro\/acompanhante/);
+  });
+
+  test("/cadastro-modelo legado continua sem 404", async ({ page }) => {
     await bypassAgeGate(page);
     const resp = await page.goto("/cadastro-modelo", { waitUntil: "domcontentloaded" });
     expect(resp?.status()).not.toBe(404);
   });
 
-  test("/cadastro-modelo encaminha para onboarding profissional ou login", async ({ page }) => {
+  test("CTA Seja acompanhante da Home inicia pelo telefone", async ({ page }) => {
     await bypassAgeGate(page);
-    await page.goto("/cadastro-modelo", { waitUntil: "domcontentloaded" });
-    await page.waitForLoadState("networkidle").catch(() => {});
-    expect(page.url()).toMatch(/\/(profissional\/novo|login)/);
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const professionalEntry = page.getByRole("link", { name: /Seja acompanhante/ });
+    await expect(professionalEntry).toHaveAttribute("href", "/cadastro/acompanhante");
   });
 
-  test("/cadastro profissional logado nao exige anti-spam para continuar", async ({ page }) => {
+  test("/cadastro antigo de acompanhante redireciona para telefone", async ({ page }) => {
     await gotoWithMock(page, "/cadastro?tipo=acompanhante");
     await page.waitForLoadState("networkidle").catch(() => {});
-    const body = (await page.textContent("body"))?.toLowerCase() ?? "";
-    expect(body).toContain("continuar como profissional");
-    expect(body).toContain("ir para as fases do cadastro");
-    expect(body).not.toContain("anti-spam");
-    expect(body).not.toContain("captcha");
+    expect(page.url()).toMatch(/\/cadastro\/acompanhante/);
+    await expect(page.getByRole("heading", { name: "Cadastre-se grátis como acompanhante" })).toBeVisible();
   });
 
   test("/completar-cadastro carrega sem 404", async ({ page }) => {
@@ -294,6 +368,15 @@ test.describe("Fluxo 2 — Login e Autenticação", () => {
     await bypassAgeGate(page);
     const resp = await page.goto("/esqueci-senha", { waitUntil: "domcontentloaded" });
     expect(resp?.status()).not.toBe(404);
+    await expect(page.getByRole("button", { name: /enviar link de recuperacao/i })).toBeVisible();
+    await expect(page.locator('input[type="email"]')).toBeVisible();
+  });
+
+  test("/redefinir-senha carrega e mostra erro claro sem sessão", async ({ page }) => {
+    await bypassAgeGate(page);
+    const resp = await page.goto("/redefinir-senha", { waitUntil: "domcontentloaded" });
+    expect(resp?.status()).not.toBe(404);
+    await expect(page.getByText(/link expirado|sem sessao valida/i)).toBeVisible({ timeout: 7000 });
   });
 
 });
@@ -420,4 +503,212 @@ test.describe("Segurança — Proteção de rotas", () => {
     });
   }
 
+});
+
+test.describe("Fluxo público — Buscar prazer", () => {
+  test("CTA da Home abre a seleção de cidade antes da listagem", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.route("**/api/auth/session", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: "null" })
+    );
+    await page.route("**/api/professionals**", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ professionals: [], total: 0, pages: 1 }),
+      })
+    );
+    await page.route("**/api/stories**", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: "[]" })
+    );
+
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const cta = page.getByRole("link", { name: /Ver perfis agora/i });
+    await expect(cta).toHaveAttribute(
+      "href",
+      "/buscar?tab=acompanhantes&selecionarCidade=1",
+    );
+    await expect(
+      page.getByRole("heading", { name: "Perfis e stories em destaque" }),
+    ).toHaveCount(0);
+  });
+
+  test("não carrega perfis antes de selecionar cidade", async ({ page }) => {
+    await bypassAgeGate(page);
+    let professionalRequests = 0;
+    await page.route("**/api/professionals**", (route) => {
+      professionalRequests += 1;
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ professionals: [], total: 0, pages: 1 }),
+      });
+    });
+    await page.route("**/api/stories**", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: "[]" })
+    );
+    await page.route("**/api/vouchers/roulette", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ active: false, canSpin: false, prizes: [] }),
+      })
+    );
+
+    await page.goto(
+      "/buscar?tab=acompanhantes&selecionarCidade=1",
+      { waitUntil: "domcontentloaded" },
+    );
+    await expect(
+      page.getByRole("dialog", { name: "Selecionar localização" }),
+    ).toBeVisible();
+    await page.waitForTimeout(500);
+    expect(professionalRequests).toBe(0);
+
+    await page.getByRole("button", { name: "Itaúna, MG" }).click();
+    await page.getByRole("button", { name: "Buscar acompanhantes" }).click();
+    await expect(page).toHaveURL(/cidade=Ita(%C3%BA|ú)na/i);
+    await expect.poll(() => professionalRequests).toBeGreaterThan(0);
+  });
+
+  test("localização aproximada normaliza Itauna e libera a busca", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "geolocation", {
+        configurable: true,
+        value: {
+          getCurrentPosition(success: PositionCallback) {
+            success({
+              coords: {
+                latitude: -20.0755,
+                longitude: -44.5764,
+                accuracy: 20,
+                altitude: null,
+                altitudeAccuracy: null,
+                heading: null,
+                speed: null,
+              },
+              timestamp: Date.now(),
+            } as GeolocationPosition);
+          },
+        },
+      });
+    });
+    await page.route("**/api/address/geocode**", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ provider: "test", city: "Itauna", state: "MG" }),
+      })
+    );
+    await page.route("**/api/professionals**", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ professionals: [], total: 0, pages: 0 }),
+      })
+    );
+    await page.route("**/api/stories**", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: "[]" })
+    );
+    await page.route("**/api/vouchers/roulette", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ active: false, canSpin: false, prizes: [] }),
+      })
+    );
+
+    await page.goto("/buscar?tab=acompanhantes&selecionarCidade=1", {
+      waitUntil: "domcontentloaded",
+    });
+    const submit = page.getByRole("button", { name: "Buscar acompanhantes" });
+    await expect(submit).toBeDisabled();
+    await page.getByRole("button", { name: "Usar minha localização aproximada" }).click();
+    await expect(page.getByText("Localização detectada: Itaúna, MG.")).toBeVisible();
+    await expect(submit).toBeEnabled();
+    await submit.click();
+    await expect(page).toHaveURL(/cidade=Ita(%C3%BA|ú)na.*estado=mg/i);
+  });
+});
+
+test.describe("Perfil público mobile", () => {
+  test("renderiza antes dos semelhantes e mantém selo separado do avatar", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.setViewportSize({ width: 360, height: 800 });
+    let similarRequestFinished = false;
+
+    await page.route("**/api/auth/session", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: "null" })
+    );
+    await page.route("**/api/professionals**", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname.endsWith("/track")) {
+        return route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+      }
+      if (url.pathname === "/api/professionals/teste-mobile") {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: "professional-mobile",
+            slug: "teste-mobile",
+            displayName: "Teste Profissional Elite",
+            bio: "Perfil público usado para validar carregamento e layout mobile.",
+            city: "Itaúna",
+            state: "MG",
+            bairro: "Centro",
+            image: null,
+            galleryUrls: [],
+            phone: null,
+            whatsapp: null,
+            contactVisibility: "PUBLIC",
+            contactAvailable: false,
+            priceMin: 100,
+            paymentMethods: [],
+            attendanceTypes: ["Local próprio"],
+            servesGenders: ["Homens"],
+            services: ["Companhia"],
+            servicesNotOffered: [],
+            amenities: [],
+            serviceCities: ["Itaúna"],
+            verified: true,
+            featured: true,
+            boostActive: false,
+            online: false,
+            sponsored: false,
+            profileViews: 19,
+            rating: 0,
+            totalReviews: 0,
+            specialties: [],
+            photos: [],
+            reviews: [],
+            stories: [],
+            createdAt: "2026-06-01T00:00:00.000Z",
+            user: { name: null, image: null, createdAt: "2026-06-01T00:00:00.000Z" },
+          }),
+        });
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      similarRequestFinished = true;
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ professionals: [], total: 0, pages: 0 }),
+      });
+    });
+
+    await page.goto("/profissionais/teste-mobile", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: "Teste Profissional Elite", exact: true })).toBeVisible({
+      timeout: 4000,
+    });
+    expect(similarRequestFinished).toBe(false);
+
+    const tierBox = await page.getByTestId("profile-tier").boundingBox();
+    const avatarBox = await page.getByTestId("profile-avatar").boundingBox();
+    expect(tierBox).not.toBeNull();
+    expect(avatarBox).not.toBeNull();
+    expect(avatarBox!.y).toBeGreaterThanOrEqual(tierBox!.y + tierBox!.height + 8);
+  });
 });

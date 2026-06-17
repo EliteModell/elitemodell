@@ -11,18 +11,31 @@ async function updateHostBooking(formData: FormData, status: "CONFIRMED" | "REJE
   const access = await requireHostPanel();
   const booking = await prisma.booking.findFirst({
     where: access.isAdmin ? { id } : { id, property: { hostId: access.user.id } },
-    select: { id: true, status: true },
+    select: { id: true, status: true, paymentStatus: true, totalPriceCents: true, serviceFeeCents: true, hostPayoutCents: true },
   });
   if (!booking) return;
   if (status === "CONFIRMED" && booking.status !== "PENDING") return;
   if (status === "REJECTED" && booking.status !== "PENDING") return;
+  if (status === "REJECTED" && booking.paymentStatus === "PAID") return;
   if (status === "COMPLETED" && booking.status !== "CONFIRMED") return;
 
-  await prisma.booking.update({
-    where: { id: booking.id },
-    data: { status },
-    select: { id: true },
-  });
+  await prisma.$transaction([
+    prisma.booking.update({
+      where: { id: booking.id },
+      data: { status },
+      select: { id: true },
+    }),
+    prisma.bookingFinancialEvent.create({
+      data: {
+        bookingId: booking.id,
+        type: status === "CONFIRMED" ? "HOST_CONFIRMED" : status === "REJECTED" ? "HOST_REJECTED" : "STAY_COMPLETED",
+        status: "COMPLETED",
+        grossCents: booking.totalPriceCents,
+        platformFeeCents: booking.serviceFeeCents,
+        hostNetCents: booking.hostPayoutCents,
+      },
+    }),
+  ]);
 
   revalidatePath("/anfitriao");
   revalidatePath("/anfitriao/reservas");

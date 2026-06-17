@@ -3,16 +3,19 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { recordConsentPreference, recordUserAcceptances, registrationDocumentKeys } from "@/lib/legal-acceptance";
 import { checkRateLimitAsync } from "@/lib/rate-limit";
 import { getClientIP } from "@/lib/security";
 import {
   OTP_MAX_ATTEMPTS,
   OTP_MAX_VERIFY_ATTEMPTS_PER_IP_WINDOW,
   OTP_MAX_VERIFY_ATTEMPTS_PER_PHONE_WINDOW,
+  OTP_TTL_MINUTES,
   PHONE_ACCOUNT_TYPES,
   createPhoneAuthToken,
   emailForPhone,
   formatBrazilianPhone,
+  hashOtpCode,
   isValidBrazilianMobilePhone,
   nameForPhoneAccount,
   normalizeBrazilianPhone,
@@ -20,6 +23,7 @@ import {
   roleForPhoneAccount,
   timingSafeCodeCompare,
 } from "@/lib/phone-otp";
+import { setPendingProfessionalPhoneCookie } from "@/lib/professional-phone-registration";
 
 const schema = z.object({
   phone: z.string().min(10),
@@ -30,6 +34,8 @@ const schema = z.object({
   lgpdConsent: z.boolean().optional(),
   ageConfirmed: z.boolean().optional(),
   ownershipConfirmed: z.boolean().optional(),
+  marketingConsent: z.boolean().optional(),
+  deferAccountCreation: z.boolean().default(false),
 });
 
 type VerifiedConsent = {
@@ -38,6 +44,33 @@ type VerifiedConsent = {
   ageConfirmed: boolean;
   ownershipConfirmed: boolean;
 };
+
+async function recordPhoneLegalTrace(user: { id: string; accountType?: string | null }, req: NextRequest, marketingConsent?: boolean) {
+  await recordUserAcceptances({
+    userId: user.id,
+    userCategory: user.accountType,
+    documentKeys: registrationDocumentKeys(user.accountType),
+    source: "phone-verify",
+    acceptanceType: "REGISTRATION",
+    req,
+  });
+  await recordConsentPreference({
+    userId: user.id,
+    purpose: "PRIVACY_POLICY",
+    granted: true,
+    source: "phone-verify",
+    req,
+  });
+  if (typeof marketingConsent === "boolean") {
+    await recordConsentPreference({
+      userId: user.id,
+      purpose: "MARKETING",
+      granted: marketingConsent,
+      source: "phone-verify",
+      req,
+    });
+  }
+}
 
 async function verifyFirebasePhoneIdToken(idToken: string, expectedPhone: string) {
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
@@ -176,18 +209,81 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      if (body.accountType !== "client" && (!consent.ageConfirmed || !consent.ownershipConfirmed)) {
+      if (!consent.ageConfirmed || (body.accountType !== "client" && !consent.ownershipConfirmed)) {
         return NextResponse.json(
           { error: "Confirmacoes obrigatorias ausentes. Solicite um novo codigo." },
           { status: 400 }
         );
       }
 
+      const phoneLimit = await checkRateLimitAsync(
+        `otp-verify-phone:${body.accountType}:${phone}`,
+        OTP_MAX_VERIFY_ATTEMPTS_PER_PHONE_WINDOW,
+        15 * 60 * 1000
+      );
+      const ipLimit = await checkRateLimitAsync(
+        `otp-verify-ip:${requestIp}`,
+        OTP_MAX_VERIFY_ATTEMPTS_PER_IP_WINDOW,
+        15 * 60 * 1000
+      );
+
+      if (!phoneLimit.allowed || !ipLimit.allowed) {
+        return NextResponse.json(
+          { error: "Muitas tentativas de verificacao. Solicite um novo codigo mais tarde." },
+          { status: 429 }
+        );
+      }
+
       await verifyFirebasePhoneIdToken(body.firebaseIdToken, phone);
+
+      if (body.deferAccountCreation && body.accountType === "model") {
+        const now = new Date();
+        const verification = await prisma.phoneVerificationCode.create({
+          data: {
+            phone,
+            accountType: body.accountType,
+            channel: "sms",
+            codeHash: hashOtpCode(phone, "firebase-phone-auth"),
+            expiresAt: new Date(now.getTime() + OTP_TTL_MINUTES * 60 * 1000),
+            attempts: 1,
+            sentAt: now,
+            usedAt: now,
+            deliveryProvider: "firebase-phone-auth",
+            requestIp,
+            termsConsent: consent.termsConsent,
+            lgpdConsent: consent.lgpdConsent,
+            ageConfirmed: consent.ageConfirmed,
+            ownershipConfirmed: consent.ownershipConfirmed,
+          },
+        });
+
+        console.info("[phone/verify-code] firebase_sms_verified", {
+          accountType: body.accountType,
+          deferAccountCreation: true,
+          provider: "firebase-phone-auth",
+        });
+
+        const response = NextResponse.json({
+          ok: true,
+          phone: formatBrazilianPhone(phone),
+          phoneVerified: true,
+          registrationPending: true,
+          redirectTo: "/cadastro?tipo=acompanhante&telefoneValidado=1",
+        });
+        setPendingProfessionalPhoneCookie(response, phone, verification.id);
+        return response;
+      }
+
       const user = await persistVerifiedPhone({
         phone,
         accountType: body.accountType,
         consent,
+      });
+      await recordPhoneLegalTrace(user, req, body.marketingConsent);
+      console.info("[phone/verify-code] firebase_sms_verified", {
+        accountType: body.accountType,
+        deferAccountCreation: false,
+        provider: "firebase-phone-auth",
       });
 
       return NextResponse.json({
@@ -258,11 +354,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (body.accountType !== "client" && (!verification.ageConfirmed || !verification.ownershipConfirmed)) {
+    if (!verification.ageConfirmed || (body.accountType !== "client" && !verification.ownershipConfirmed)) {
       return NextResponse.json(
         { error: "Confirmacoes obrigatorias ausentes. Solicite um novo codigo." },
         { status: 400 }
       );
+    }
+
+    if (body.deferAccountCreation && body.accountType === "model") {
+      await prisma.phoneVerificationCode.update({
+        where: { id: verification.id },
+        data: { usedAt: new Date(), attempts: { increment: 1 } },
+      });
+
+      const response = NextResponse.json({
+        ok: true,
+        phone: formatBrazilianPhone(phone),
+        phoneVerified: true,
+        registrationPending: true,
+        redirectTo: "/cadastro?tipo=acompanhante&telefoneValidado=1",
+      });
+      setPendingProfessionalPhoneCookie(response, phone, verification.id);
+      return response;
     }
 
     const user = await persistVerifiedPhone({
@@ -276,6 +389,7 @@ export async function POST(req: NextRequest) {
       },
       verificationId: verification.id,
     });
+    await recordPhoneLegalTrace(user, req, body.marketingConsent);
 
     return NextResponse.json({
       ok: true,

@@ -10,6 +10,12 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { ArrowLeft, CheckCircle2, Info, Menu, Phone, ShieldCheck } from "lucide-react";
 import { getFirebaseClientAuth } from "@/lib/firebase/client";
+import {
+  prepareFirebaseSmsAudit,
+  reportFirebaseSmsAccepted,
+  reportFirebaseSmsFailed,
+  type FirebaseSmsAudit,
+} from "@/lib/firebase-phone-audit-client";
 
 type FlowMode = "client" | "model" | "host";
 type ScreenMode = "register" | "verify";
@@ -20,10 +26,21 @@ type StoredConsent = {
   lgpdConsent?: boolean;
   ageConfirmed?: boolean;
   ownershipConfirmed?: boolean;
+  marketingConsent?: boolean;
 };
 
-let firebaseConfirmationResult: ConfirmationResult | null = null;
+type PhoneConfirmation = Pick<ConfirmationResult, "confirm">;
+
+let firebaseConfirmationResult: PhoneConfirmation | null = null;
 let firebaseRecaptchaVerifier: RecaptchaVerifier | null = null;
+
+declare global {
+  interface Window {
+    __elitePhoneAuthMock?: {
+      sendCode: (phone: string) => Promise<PhoneConfirmation>;
+    };
+  }
+}
 
 const GOLD = "#c9a84c";
 const INK = "#1f2a32";
@@ -39,7 +56,7 @@ const CONSENT_STORAGE_KEY: Record<FlowMode, string> = {
 };
 const REGISTER_ROUTE: Record<FlowMode, string> = {
   client: "/app/consumer/register",
-  model: "/cadastro-modelo",
+  model: "/cadastro/acompanhante",
   host: "/cadastro-anfitriao",
 };
 const VERIFY_ROUTE: Record<FlowMode, string> = {
@@ -78,7 +95,7 @@ const copy: Record<FlowMode, {
     loginHref: "/modelo/login",
     loginLabel: "Já tenho conta",
     ownershipLabel: "Confirmo que estou criando meu próprio perfil.",
-    verifyBack: "/cadastro-modelo",
+    verifyBack: "/cadastro/acompanhante",
   },
   host: {
     title: "Vamos verificar o seu telefone",
@@ -358,9 +375,10 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [terms, setTerms] = useState(false);
+  const [privacyRead, setPrivacyRead] = useState(false);
   const [adult, setAdult] = useState(false);
   const [ownProfile, setOwnProfile] = useState(false);
-  const [promo, setPromo] = useState(true);
+  const [promo, setPromo] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [otpStatus, setOtpStatus] = useState<OtpStatus>("idle");
@@ -382,8 +400,10 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
     const hydrate = window.setTimeout(() => {
       setPhone(maskPhone(urlPhone ?? saved ?? ""));
       setTerms(Boolean(savedConsent.termsConsent));
+      setPrivacyRead(Boolean(savedConsent.lgpdConsent));
       setAdult(Boolean(savedConsent.ageConfirmed));
       setOwnProfile(Boolean(savedConsent.ownershipConfirmed));
+      setPromo(Boolean(savedConsent.marketingConsent));
     }, 0);
     return () => window.clearTimeout(hydrate);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -407,17 +427,18 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
     const saved = readStoredConsent();
     return {
       termsConsent: terms || Boolean(saved.termsConsent),
-      lgpdConsent: terms || Boolean(saved.lgpdConsent),
-      ageConfirmed: isClient ? false : adult || Boolean(saved.ageConfirmed),
+      lgpdConsent: privacyRead || Boolean(saved.lgpdConsent),
+      ageConfirmed: adult || Boolean(saved.ageConfirmed),
       ownershipConfirmed: isClient ? false : ownProfile || Boolean(saved.ownershipConfirmed),
+      marketingConsent: isClient ? false : promo || Boolean(saved.marketingConsent),
     };
   }
 
   const canSubmit = useMemo(() => {
     if (!isValidPhone(phone) || loading) return false;
-    if (isClient) return terms;
-    return terms && adult && ownProfile;
-  }, [adult, isClient, loading, ownProfile, phone, terms]);
+    if (isClient) return terms && privacyRead && adult;
+    return terms && privacyRead && adult && ownProfile;
+  }, [adult, isClient, loading, ownProfile, phone, privacyRead, terms]);
   const themedCheckStyle = isPremium ? { ...checkStyle, color: "#b8b8b8" } : checkStyle;
   const themedLinkStyle = isPremium ? { ...linkStyle, color: "#f5d77a" } : linkStyle;
 
@@ -436,32 +457,63 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
     setOtpStatus("sending");
     setStatusMessage("Enviando código de verificação...");
 
+    let smsAudit: FirebaseSmsAudit | null = null;
+
     try {
-      const { RecaptchaVerifier: FirebaseRecaptchaVerifier } = await import("firebase/auth");
-      const auth = getFirebaseClientAuth();
+      if (window.__elitePhoneAuthMock?.sendCode) {
+        firebaseConfirmationResult = await window.__elitePhoneAuthMock.sendCode(e164BrazilianPhone(normalized));
+      } else {
+        smsAudit = await prepareFirebaseSmsAudit({
+          phone: normalized,
+          accountType: mode,
+          consent: {
+            termsConsent: consent.termsConsent,
+            lgpdConsent: consent.lgpdConsent,
+            ageConfirmed: consent.ageConfirmed,
+            ownershipConfirmed: consent.ownershipConfirmed,
+          },
+        });
 
-      firebaseRecaptchaVerifier?.clear();
-      firebaseRecaptchaVerifier = new FirebaseRecaptchaVerifier(auth, "firebase-phone-recaptcha", {
-        size: "invisible",
-        callback: () => undefined,
-      });
+        const { RecaptchaVerifier: FirebaseRecaptchaVerifier } = await import("firebase/auth");
+        const auth = getFirebaseClientAuth();
 
-      firebaseConfirmationResult = await signInWithPhoneNumber(
-        auth,
-        e164BrazilianPhone(normalized),
-        firebaseRecaptchaVerifier,
-      );
+        firebaseRecaptchaVerifier?.clear();
+        firebaseRecaptchaVerifier = new FirebaseRecaptchaVerifier(auth, "firebase-phone-recaptcha", {
+          size: "invisible",
+          callback: () => undefined,
+        });
+
+        firebaseConfirmationResult = await signInWithPhoneNumber(
+          auth,
+          e164BrazilianPhone(normalized),
+          firebaseRecaptchaVerifier,
+        );
+
+        void reportFirebaseSmsAccepted({
+          verificationId: smsAudit.verificationId,
+          phone: normalized,
+          accountType: mode,
+        });
+      }
 
       sessionStorage.setItem(storageKey, normalized);
       sessionStorage.setItem(consentKey, JSON.stringify(consent));
       setTimer(60);
       setOtpStatus("sent");
-      setStatusMessage("Código enviado. Verifique seu SMS.");
-      toast.success("Código enviado.");
+      setStatusMessage("Código solicitado por SMS. Pode levar ate 1 minuto para chegar.");
+      toast.success("SMS solicitado pelo Firebase.");
       return true;
     } catch (err) {
       firebaseRecaptchaVerifier?.clear();
       firebaseRecaptchaVerifier = null;
+      if (smsAudit) {
+        void reportFirebaseSmsFailed({
+          verificationId: smsAudit.verificationId,
+          phone: normalized,
+          accountType: mode,
+          error: err instanceof Error ? err.message : "Falha ao solicitar SMS no Firebase.",
+        });
+      }
       const message = err instanceof Error ? err.message : "Não foi possível enviar o código.";
       setOtpStatus("error");
       setStatusMessage(message);
@@ -475,7 +527,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) {
-      toast.error(isClient ? "Informe o telefone e aceite os termos." : "Complete as confirmacoes obrigatorias.");
+      toast.error(isClient ? "Informe o telefone e confirme termos, privacidade e maioridade." : "Complete as confirmacoes obrigatorias.");
       return;
     }
     if (await sendCode()) {
@@ -639,7 +691,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
           {!isClient && (
             <label style={{ ...themedCheckStyle, marginTop: 24 }}>
               <input type="checkbox" checked={promo} onChange={(e) => setPromo(e.target.checked)} style={nativeCheckStyle} />
-              Aceito receber informações sobre meu cadastro.
+              Aceito receber novidades, promoções e comunicações de marketing.
             </label>
           )}
 
@@ -655,26 +707,32 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
 
           <label style={{ ...themedCheckStyle, marginTop: 28, fontSize: isClient ? 18 : 16, fontWeight: isClient ? 900 : 500, color: isPremium ? "#b8b8b8" : INK }}>
             <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} style={nativeCheckStyle} />
-            <span>Li e aceito os <Link href="/terms" style={themedLinkStyle}>Termos de Uso</Link> e a <Link href="/privacy" style={themedLinkStyle}>Política de Privacidade</Link>.</span>
+            <span>
+              Li e aceito os <Link href="/terms" style={themedLinkStyle}>Termos de Uso</Link> e li o{" "}
+              <Link href="/documentos/registration-short-notice" style={themedLinkStyle}>Aviso Resumido de Cadastro</Link>.
+            </span>
           </label>
 
+          <label style={{ ...themedCheckStyle, marginTop: 14, fontSize: isClient ? 18 : 16, fontWeight: isClient ? 900 : 500, color: isPremium ? "#b8b8b8" : INK }}>
+            <input type="checkbox" checked={privacyRead} onChange={(e) => setPrivacyRead(e.target.checked)} style={nativeCheckStyle} />
+            <span>Li a <Link href="/privacy" style={themedLinkStyle}>Política de Privacidade</Link>.</span>
+          </label>
+
+          <label style={themedCheckStyle}>
+            <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} style={nativeCheckStyle} />
+            <span>Confirmo que sou maior de 18 anos e li a <Link href="/documentos/adult-declaration" style={themedLinkStyle}>Confirmacao de Maioridade</Link>.</span>
+          </label>
           {!isClient && (
-            <>
-              <label style={themedCheckStyle}>
-                <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} style={nativeCheckStyle} />
-                Confirmo que sou maior de 18 anos.
-              </label>
-              <label style={themedCheckStyle}>
-                <input type="checkbox" checked={ownProfile} onChange={(e) => setOwnProfile(e.target.checked)} style={nativeCheckStyle} />
-                {text.ownershipLabel}
-              </label>
-            </>
+            <label style={themedCheckStyle}>
+              <input type="checkbox" checked={ownProfile} onChange={(e) => setOwnProfile(e.target.checked)} style={nativeCheckStyle} />
+              {text.ownershipLabel}
+            </label>
           )}
 
           <StatusMessage status={otpStatus} message={statusMessage} premium={isPremium} />
           <div style={{ height: 22 }} />
           <SubmitButton disabled={!canSubmit || loading} premium={isPremium}>
-            {otpStatus === "sending" ? "Enviando..." : otpStatus === "sent" ? "Código enviado" : text.submit}
+            {otpStatus === "sending" ? "Enviando..." : otpStatus === "sent" ? "Código solicitado" : text.submit}
           </SubmitButton>
         </form>
 
@@ -683,7 +741,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
         </p>
         {isClient && (
           <p style={{ textAlign: "center", margin: "28px 0", fontSize: 17, color: "#39454c" }}>
-            Quer anunciar? <Link href="/cadastro-modelo" style={linkStyle}>Cadastre-se como acompanhante</Link> ou <Link href="/cadastro-anfitriao" style={linkStyle}>anfitrião</Link>.
+            Quer anunciar? <Link href="/cadastro/acompanhante" style={linkStyle}>Cadastre-se como acompanhante</Link> ou <Link href="/cadastro-anfitriao" style={linkStyle}>anfitrião</Link>.
           </p>
         )}
       </section>

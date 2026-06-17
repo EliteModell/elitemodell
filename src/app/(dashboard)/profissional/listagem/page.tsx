@@ -59,10 +59,11 @@ export default async function ProfessionalListingPage() {
   const rankingIndex = cityRanking.findIndex((item) => item.id === professional.id);
   const rankingPosition = rankingIndex >= 0 ? rankingIndex + 1 : null;
   const hasActivePlan = Boolean(professional.user.premiumUntil && professional.user.premiumUntil > now);
+  const freeAccess = access.professionalAccess?.kind === "FREE_TRIAL";
   const isBoostActive = Boolean(professional.boostActive && (!professional.boostUntil || professional.boostUntil > now));
   const allPhotosCount = professional.photos.length || professional.galleryUrls.length + (professional.image ? 1 : 0);
   const cityLabel = professional.city && professional.state ? `${professional.city}, ${professional.state}` : "Cidade não informada";
-  const planLabel = hasActivePlan ? "Premium Elite" : "Básico";
+  const planLabel = hasActivePlan ? "Premium Elite" : freeAccess ? "Acesso gratuito" : "Básico";
   const services = (professional.services.length ? professional.services : ["Companhia", "Eventos sociais"]).slice(0, 2);
 
   const data: ProfessionalListingViewData = {
@@ -70,7 +71,11 @@ export default async function ProfessionalListingPage() {
     cityLabel,
     categoryLabel: categoryLabel(professional.escortCategory ?? access.user.category),
     planLabel,
-    planStatus: hasActivePlan ? `${planLabel} até ${formatDate(professional.user.premiumUntil)}` : "Modo básico",
+    planStatus: hasActivePlan
+      ? `${planLabel} até ${formatDate(professional.user.premiumUntil)}`
+      : freeAccess
+        ? `Gratuito até ${formatDate(access.professionalAccess?.freeTrialEndsAt)}`
+        : "Modo básico",
     listingStatus: statusLabel(professional.status),
     rankingLabel: rankingPosition ? `${rankingPosition}ª posição` : "Indisponível",
     publicProfileHref: `/profissionais/${professional.slug}`,
@@ -89,7 +94,7 @@ export default async function ProfessionalListingPage() {
       { label: "Adicionar fotos recentes", done: allPhotosCount >= 3 },
       { label: "Manter agenda ativa", done: professional.schedule.length > 0 || professional.diasDisponiveis.length > 0 },
       { label: "Completar valores e contatos", done: Boolean((professional.priceMin || professional.pricePerHour) && (professional.phone || professional.whatsapp)) },
-      { label: "Ativar plano ou destaque", done: hasActivePlan || professional.featured || isBoostActive },
+      { label: "Destaque opcional", done: professional.featured || isBoostActive },
     ],
   };
 

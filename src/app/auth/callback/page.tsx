@@ -12,6 +12,7 @@ type PendingRegistration = {
   birthDate?: string;
   lgpdConsent?: boolean;
   termsConsent?: boolean;
+  ageConfirmed?: boolean;
   captchaToken?: string;
 };
 
@@ -22,8 +23,9 @@ const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
 const PENDING_REGISTRATION_KEY = "elitemodell_pending_registration";
 const PENDING_REGISTRATION_COOKIE = "elitemodell_pending_registration";
 const CALLBACK_TIMEOUT_MS = 5000;
-const NEXTAUTH_SIGNIN_TIMEOUT_MS = 20000;
-const CALLBACK_SLOW_MESSAGE_MS = 1200;
+const NEXTAUTH_SIGNIN_TIMEOUT_MS = 45000;
+const CALLBACK_SLOW_MESSAGE_MS = 2500;
+const CALLBACK_STILL_WORKING_MESSAGE_MS = 9000;
 const GOLD = "#d4a843";
 const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
 
@@ -59,7 +61,7 @@ function inferRoleIntentFromReturnUrl(returnUrl: string | null) {
 const PROFESSIONAL_CATEGORIES = ["MULHER", "HOMEM", "TRANS"];
 
 async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRole>) {
-  const res = await fetch("/api/users/me", { cache: "no-store" });
+  const res = await fetch("/api/users/me", { cache: "no-store", credentials: "include" });
   if (!res.ok) return fallbackPathForRoleIntent(roleIntent);
 
   const user = await res.json();
@@ -78,7 +80,7 @@ async function getPostLoginPath(roleIntent?: ReturnType<typeof normalizeEntryRol
     isProfessional;
 
   if (roleIntent === "profissional") {
-    if (!hasProfessionalAccess) return `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`;
+    if (!hasProfessionalAccess) return ACCOUNT_ROUTES.cadastroAcompanhante;
     return postLoginPathFromUser(user, roleIntent);
   }
 
@@ -107,6 +109,21 @@ function fallbackPathForRoleIntent(roleIntent?: ReturnType<typeof normalizeEntry
   if (roleIntent === "profissional") return ACCOUNT_ROUTES.onboardingAcompanhante;
   if (roleIntent === "anfitriao") return ACCOUNT_ROUTES.onboardingAnfitriao;
   return ACCOUNT_ROUTES.dashboardCliente;
+}
+
+function callbackRetryHref(roleIntent: ReturnType<typeof normalizeEntryRole>, returnUrl: string | null, isCadastroFlow: boolean) {
+  const params = new URLSearchParams();
+  if (isCadastroFlow) params.set("flow", "cadastro");
+  if (roleIntent) params.set("role", roleIntent);
+  if (returnUrl) params.set("returnUrl", returnUrl);
+  return `/auth/callback${params.toString() ? `?${params.toString()}` : ""}`;
+}
+
+function loginRetryHref(roleIntent: ReturnType<typeof normalizeEntryRole>, returnUrl: string | null) {
+  const params = new URLSearchParams();
+  if (roleIntent) params.set("role", roleIntent);
+  if (returnUrl) params.set("returnUrl", returnUrl);
+  return `/login${params.toString() ? `?${params.toString()}` : ""}`;
 }
 
 function readCookie(name: string) {
@@ -158,6 +175,30 @@ function resolveWithTimeout<T>(promise: Promise<T>, fallback: T, ms = CALLBACK_T
         resolve(fallback);
       });
   });
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+async function waitForNextAuthSession(timeoutMs = 8000) {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch("/api/auth/session", { cache: "no-store", credentials: "include" });
+      if (res.ok) {
+        const session = await res.json().catch(() => null);
+        if (session?.user?.email || session?.user?.id) return true;
+      }
+    } catch {
+      // Algumas WebViews mobile falham a primeira leitura logo apos set-cookie.
+    }
+
+    await sleep(300);
+  }
+
+  return false;
 }
 
 function resolveSignInWithTimeout(promise: ReturnType<typeof signIn>) {
@@ -229,6 +270,62 @@ function roleIntentFromPending(pending: PendingRegistration | null) {
   return null;
 }
 
+function accountTypeFromMetadata(value: unknown): PendingRegistration["accountType"] | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toUpperCase();
+  if (["GUEST", "CLIENT", "CLIENTE"].includes(normalized)) return "GUEST";
+  if (["PROFESSIONAL", "MODEL", "MODELO", "ACOMPANHANTE"].includes(normalized)) return "PROFESSIONAL";
+  if (["PROPERTY_HOST", "HOST", "ANFITRIAO", "ANFITRIÃO", "IMOVEL", "IMÓVEL"].includes(normalized)) return "PROPERTY_HOST";
+  return null;
+}
+
+function professionalCategoryFromMetadata(value: unknown): PendingRegistration["category"] | undefined {
+  return typeof value === "string" && PROFESSIONAL_CATEGORIES.includes(value)
+    ? value as PendingRegistration["category"]
+    : undefined;
+}
+
+function booleanFromMetadata(value: unknown) {
+  return value === true || value === "true";
+}
+
+function pendingRegistrationFromMetadata(metadata: unknown): PendingRegistration | null {
+  if (!metadata || typeof metadata !== "object") return null;
+  const data = metadata as Record<string, unknown>;
+  const accountType = accountTypeFromMetadata(data.accountType ?? data.account_type);
+  if (!accountType) return null;
+
+  return {
+    accountType,
+    category: accountType === "PROFESSIONAL" ? professionalCategoryFromMetadata(data.category) : undefined,
+    birthDate: typeof data.birthDate === "string" ? data.birthDate : undefined,
+    lgpdConsent: booleanFromMetadata(data.lgpdConsent),
+    termsConsent: booleanFromMetadata(data.termsConsent),
+    ageConfirmed: booleanFromMetadata(data.ageConfirmed),
+  };
+}
+
+async function pendingRegistrationFromSession(accessToken: string) {
+  const { data, error } = await supabaseAuth.auth.getUser(accessToken);
+  if (error) {
+    console.warn("[CALLBACK] Nao foi possivel ler metadata do usuario Supabase:", error.message);
+    return null;
+  }
+  return pendingRegistrationFromMetadata(data.user?.user_metadata);
+}
+
+function registrationFallbackForIntent(
+  pending: PendingRegistration | null,
+  roleIntent: ReturnType<typeof normalizeEntryRole>,
+  isCadastroFlow: boolean,
+) {
+  if (pending) return pending;
+  if (!isCadastroFlow) return null;
+  if (roleIntent === "profissional") return { accountType: "PROFESSIONAL" as const };
+  if (roleIntent === "anfitriao") return { accountType: "PROPERTY_HOST" as const };
+  return { accountType: "GUEST" as const };
+}
+
 function readPendingRegistrationRaw() {
   return sessionStorage.getItem(PENDING_REGISTRATION_KEY)
     ?? localStorage.getItem(PENDING_REGISTRATION_KEY)
@@ -268,10 +365,12 @@ async function applyRegistrationFallback(pending: PendingRegistration, roleInten
     const profileRes = await fetch("/api/auth/complete-profile", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({
         birthDate: pending.birthDate,
         lgpdConsent: true,
         termsConsent: true,
+        ageConfirmed: pending.ageConfirmed ?? true,
       }),
     });
 
@@ -287,6 +386,7 @@ async function applyRegistrationFallback(pending: PendingRegistration, roleInten
     const activateRes = await fetch("/api/users/me/activate-professional", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ category: pending.category }),
     });
 
@@ -541,15 +641,24 @@ function AuthCallbackContent() {
       searchParams.get("flow") === "cadastro" ||
       Boolean(pendingRegistration) ||
       explicitIntent === "professional-signup";
-    const retryTarget = isCadastroFlow && (roleIntent === "profissional" || returnUrl?.startsWith(ACCOUNT_ROUTES.onboardingAcompanhante))
-      ? `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`
-      : "/login";
+    const initialRetryRoleIntent =
+      roleIntent ??
+      roleIntentFromPending(pendingRegistration) ??
+      inferRoleIntentFromReturnUrl(returnUrl) ??
+      (isCadastroFlow ? "cliente" as const : null);
+    const initialRetryReturnUrl = returnUrl ?? (initialRetryRoleIntent ? fallbackPathForRoleIntent(initialRetryRoleIntent) : null);
+    const retryTarget = isCadastroFlow && (initialRetryRoleIntent === "profissional" || returnUrl?.startsWith(ACCOUNT_ROUTES.onboardingAcompanhante))
+      ? ACCOUNT_ROUTES.cadastroAcompanhante
+      : loginRetryHref(initialRetryRoleIntent, initialRetryReturnUrl);
     const retryHrefTimer = window.setTimeout(() => {
       if (active) setRetryHref(retryTarget);
     }, 0);
     const slowMessageTimer = window.setTimeout(() => {
       if (active) setMessage("Estamos finalizando seu acesso. Aguarde um instante.");
     }, CALLBACK_SLOW_MESSAGE_MS);
+    const stillWorkingTimer = window.setTimeout(() => {
+      if (active) setMessage("Ainda estamos criando sua sessao segura. No celular isso pode levar alguns segundos.");
+    }, CALLBACK_STILL_WORKING_MESSAGE_MS);
 
     async function finishAuth() {
       const code = searchParams.get("code");
@@ -576,27 +685,40 @@ function AuthCallbackContent() {
 
       if (active) setMessage("Configurando sua conta...");
 
-      const effectiveRoleIntent = roleIntent ?? roleIntentFromPending(pendingRegistration) ?? inferRoleIntentFromReturnUrl(returnUrl);
-      const fallbackRegistration = pendingRegistration
-        ?? (effectiveRoleIntent === "profissional" ? { accountType: "PROFESSIONAL" as const } : null);
+      const metadataRegistration = await pendingRegistrationFromSession(accessToken);
+      const effectivePendingRegistration = pendingRegistration ?? metadataRegistration;
+      const effectiveCadastroFlow = isCadastroFlow || Boolean(effectivePendingRegistration);
+      const effectiveRoleIntent =
+        roleIntent ??
+        roleIntentFromPending(effectivePendingRegistration) ??
+        inferRoleIntentFromReturnUrl(returnUrl) ??
+        (effectiveCadastroFlow ? "cliente" as const : null);
+      const fallbackRegistration = registrationFallbackForIntent(effectivePendingRegistration, effectiveRoleIntent, effectiveCadastroFlow);
+      const registrationForCredentials = effectivePendingRegistration ?? fallbackRegistration;
 
       if (active) setMessage("Criando sessao segura...");
       const res = await resolveSignInWithTimeout(signIn("supabase", {
         accessToken,
         roleIntent: effectiveRoleIntent ?? "",
-        authFlow: (isCadastroFlow || fallbackRegistration) ? "cadastro" : "",
+        authFlow: (effectiveCadastroFlow || fallbackRegistration) ? "cadastro" : "",
         redirect: false,
-        ...(pendingRegistration?.category ? { category: pendingRegistration.category } : {}),
-        ...(pendingRegistration?.birthDate ? { birthDate: pendingRegistration.birthDate } : {}),
-        ...(pendingRegistration?.lgpdConsent ? { lgpdConsent: "true" } : {}),
-        ...(pendingRegistration?.termsConsent ? { termsConsent: "true" } : {}),
+        ...(registrationForCredentials?.category ? { category: registrationForCredentials.category } : {}),
+        ...(registrationForCredentials?.birthDate ? { birthDate: registrationForCredentials.birthDate } : {}),
+        ...(registrationForCredentials?.lgpdConsent ? { lgpdConsent: "true" } : {}),
+        ...(registrationForCredentials?.termsConsent ? { termsConsent: "true" } : {}),
       }));
       if (res?.error) {
         throw new Error(`NextAuth: ${res.error}`);
       }
 
+      if (active) setMessage("Confirmando sessao segura...");
+      const hasNextAuthSession = await waitForNextAuthSession();
+      if (!hasNextAuthSession) {
+        throw new Error("NextAuth: Tempo limite ao confirmar a sessao segura.");
+      }
+
       if (fallbackRegistration) {
-        if (active) setMessage("Preparando seu cadastro profissional...");
+        if (active) setMessage("Preparando sua conta...");
         await applyRegistrationFallback(fallbackRegistration, effectiveRoleIntent);
       }
 
@@ -605,8 +727,10 @@ function AuthCallbackContent() {
 
       // Fast path: se há returnUrl explícita e não é um novo cadastro, redirecionar
       // direto sem buscar /api/users/me (economiza 300–800ms por login).
-      const targetPath = fallbackRegistration && effectiveRoleIntent
-        ? await resolveWithTimeout(getPostLoginPath(effectiveRoleIntent), getRegistrationPath(fallbackRegistration))
+      const targetPath = fallbackRegistration?.accountType === "GUEST"
+        ? returnUrl ?? ACCOUNT_ROUTES.mainClientFeed
+        : fallbackRegistration && effectiveRoleIntent
+          ? await resolveWithTimeout(getPostLoginPath(effectiveRoleIntent), getRegistrationPath(fallbackRegistration))
         : fallbackRegistration
           ? getRegistrationPath(fallbackRegistration)
           : hasExplicitReturnUrl && returnUrl
@@ -617,6 +741,7 @@ function AuthCallbackContent() {
 
       if (!active) return;
       window.clearTimeout(slowMessageTimer);
+      window.clearTimeout(stillWorkingTimer);
       setSuccess(true);
       setMessage("Acesso confirmado. Redirecionando...");
       window.setTimeout(() => {
@@ -626,21 +751,36 @@ function AuthCallbackContent() {
 
     finishAuth().catch(async (err) => {
       window.clearTimeout(slowMessageTimer);
+      window.clearTimeout(stillWorkingTimer);
       if (!active) return;
       const rawMsg: string = err?.message ?? "Nao foi possivel finalizar o acesso.";
-      const isCadastroError = retryTarget !== "/login";
-      console.error(isCadastroError ? "[CALLBACK] Erro no cadastro Google:" : "[CALLBACK] Erro no login Google:", rawMsg);
-      await clearInvalidAuthState();
-      setMessage(isCadastroError
-        ? "Não foi possível concluir o cadastro. Tente novamente ou use outro método."
-        : "Não foi possível concluir o login. Tente novamente ou use outro método.");
-      setErrorDetail("Confira sua conexão e tente novamente. Se continuar, use outro método de acesso.");
+      const isCadastroError = isCadastroFlow;
+      console.error(isCadastroError ? "[CALLBACK] Erro no cadastro:" : "[CALLBACK] Erro no login:", rawMsg);
+      const timedOut = /tempo limite|timeout|timed out/i.test(rawMsg);
+      const retryRoleIntent = roleIntent ?? roleIntentFromPending(pendingRegistration) ?? inferRoleIntentFromReturnUrl(returnUrl) ?? "cliente";
+      const retryReturnUrl = returnUrl ?? fallbackPathForRoleIntent(retryRoleIntent);
+      const { data: currentSupabaseSession } = await supabaseAuth.auth.getSession().catch(() => ({ data: { session: null } }));
+      if (timedOut && currentSupabaseSession.session?.access_token) {
+        setRetryHref(callbackRetryHref(retryRoleIntent, retryReturnUrl, true));
+      } else {
+        await clearInvalidAuthState();
+        setRetryHref(loginRetryHref(retryRoleIntent, retryReturnUrl));
+      }
+      setMessage(timedOut
+        ? "Email confirmado. Falta finalizar sua sessao."
+        : isCadastroError
+          ? "Não foi possível concluir o cadastro. Tente novamente ou use outro método."
+          : "Não foi possível concluir o login. Tente novamente ou use outro método.");
+      setErrorDetail(timedOut
+        ? "A confirmacao foi feita, mas a sessao demorou mais que o esperado. Toque em Tentar novamente ou entre com email e senha."
+        : "O link pode ter expirado ou ja ter sido usado. Tente entrar com email e senha ou solicite um novo link.");
     });
 
     return () => {
       active = false;
       window.clearTimeout(retryHrefTimer);
       window.clearTimeout(slowMessageTimer);
+      window.clearTimeout(stillWorkingTimer);
     };
   }, [searchParams]);
 

@@ -66,6 +66,7 @@ export function ProfessionalPostClient() {
   const [videoStatus, setVideoStatus] = useState<string | null>(null);
   const [pendingVideo, setPendingVideo] = useState<PendingVideo | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [contentDeclarationAccepted, setContentDeclarationAccepted] = useState(false);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -114,14 +115,25 @@ export function ProfessionalPostClient() {
       toast.error("Escolha um vídeo válido.");
       return;
     }
+    if (!contentDeclarationAccepted) {
+      toast.error("Confirme a declaracao de autoria e autorizacao antes de enviar.");
+      return;
+    }
     setUploadingVideo(true);
     try {
       const body = new FormData();
       body.append("file", pendingVideo.file);
+      body.append("contentDeclarationAccepted", "true");
       const uploadRes = await fetch(`/api/upload?folder=profile-videos/${professionalId}`, { method: "POST", body });
       const uploaded = await uploadRes.json().catch(() => ({}));
       if (!uploadRes.ok || !uploaded.url) {
-        throw new Error(typeof uploaded.error === "string" ? uploaded.error : "Não foi possível enviar agora. Tente novamente.");
+        throw new Error(
+          typeof uploaded.error === "string"
+            ? uploaded.error
+            : typeof uploaded.message === "string"
+              ? uploaded.message
+              : "Não foi possível enviar agora. Tente novamente.",
+        );
       }
       const updateRes = await fetch(`/api/professionals/${professionalSlug}`, {
         method: "PATCH",
@@ -134,6 +146,7 @@ export function ProfessionalPostClient() {
       setVideoStatus("PENDING");
       URL.revokeObjectURL(pendingVideo.preview);
       setPendingVideo(null);
+      setContentDeclarationAccepted(false);
       toast.success("Vídeo enviado com sucesso.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível enviar agora. Tente novamente.");
@@ -188,6 +201,17 @@ export function ProfessionalPostClient() {
               <p style={{ margin: "12px 0 0", color: "var(--elite-text-muted)", lineHeight: 1.65, fontSize: 14 }}>
                 Escolha um vídeo MP4, WebM ou MOV. Ele será mostrado no perfil quando estiver liberado para clientes.
               </p>
+              <label style={{ display: "flex", gap: 10, alignItems: "flex-start", marginTop: 14, color: "var(--elite-text-muted)", fontSize: 13, lineHeight: 1.5 }}>
+                <input
+                  type="checkbox"
+                  checked={contentDeclarationAccepted}
+                  onChange={(event) => setContentDeclarationAccepted(event.target.checked)}
+                  style={{ marginTop: 3, accentColor: "var(--elite-gold)" }}
+                />
+                <span>
+                  Confirmo que sou autora ou tenho autorizacao para publicar este video, que nao envolve menores, exploracao, coercao, trafico, imagem de terceiros sem autorizacao ou conteudo proibido.
+                </span>
+              </label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 18 }}>
                 <button type="button" onClick={() => videoInputRef.current?.click()} disabled={uploadingVideo} className="premium-button-secondary">
                   <Play size={17} />

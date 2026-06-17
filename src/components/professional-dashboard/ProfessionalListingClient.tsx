@@ -39,7 +39,7 @@ export function ProfessionalListingClient({ data }: { data: ProfessionalListingV
     { label: "Postar vídeos/stories", description: "Conteúdo novo deixa o perfil mais ativo.", icon: CirclePlay, done: false },
     { label: "Atualizar agenda", description: "Disponibilidade clara reduz atrito.", icon: CalendarDays, done: data.tips.find((item) => item.label === "Manter agenda ativa")?.done ?? false },
     { label: "Receber boas avaliações", description: "Reputação ajuda clientes a decidirem.", icon: Star, done: Number(data.ratingLabel.replace(",", ".")) >= 4.5 },
-    { label: "Manter plano ativo", description: "Plano ativo melhora presença comercial.", icon: Trophy, done: data.planLabel !== "Básico" },
+    { label: "Usar destaques opcionais", description: "Destaques pagos podem ampliar a presença comercial, sem serem obrigatórios.", icon: Trophy, done: data.planLabel !== "Básico" },
     { label: "Comprar destaque/boost", description: "Impulsos ajudam em horários estratégicos.", icon: Sparkles, done: data.isHighlighted },
   ];
   const contentActions = [

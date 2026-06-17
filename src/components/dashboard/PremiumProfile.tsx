@@ -113,7 +113,15 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
         body: formData,
       });
       const payload = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(typeof payload.error === "string" ? payload.error : "Não foi possível salvar a foto.");
+      if (!res.ok || !payload.image) {
+        throw new Error(
+          typeof payload.error === "string"
+            ? payload.error
+            : typeof payload.message === "string"
+              ? payload.message
+              : "Não foi possível salvar a foto.",
+        );
+      }
 
       setProfile((current) => ({ ...current, image: payload.image }));
       toast.success("Foto atualizada.");

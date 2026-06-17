@@ -49,6 +49,8 @@ async function bypassAgeGate(context: BrowserContext) {
     sessionStorage.setItem("elite_modell_adult_consent_at", new Date().toISOString());
     localStorage.setItem("elite_modell_ageConsentAccepted", "true");
     localStorage.setItem("elite_modell_ageConsentAcceptedAt", new Date().toISOString());
+    localStorage.setItem("elite_cookie_consent", "necessary");
+    localStorage.setItem("em_client_city", "São Paulo");
   });
 }
 
@@ -133,8 +135,7 @@ test.describe("Sidebar — interação completa", () => {
     { label: "Perfil",            href: "/dashboard/perfil",          expectedPath: /\/dashboard\/perfil/ },
     { label: "Listas",            href: "/dashboard/favoritos",       expectedPath: /\/dashboard\/favoritos/ },
     { label: "Histórico",         href: "/dashboard/reservas",        expectedPath: /\/dashboard\/reservas/ },
-    // /profissionais é página pública com DB query real — timeout estendido
-    { label: "Acompanhantes",     href: "/profissionais",             expectedPath: /\/profissionais/, timeout: 20_000 },
+    { label: "Acompanhantes",     href: "/dashboard/acompanhantes",   expectedPath: /\/dashboard\/acompanhantes/, timeout: 20_000 },
     { label: "Seja Premium",      href: "/dashboard/planos",          expectedPath: /\/dashboard\/planos/ },
     { label: "Carteira",          href: "/dashboard/carteira",        expectedPath: /\/dashboard\/carteira/ },
     { label: "Configurações",     href: "/dashboard/configuracoes",   expectedPath: /\/dashboard\/configuracoes/ },
@@ -167,17 +168,17 @@ test.describe("Bottom nav — 4 tabs", () => {
   test.beforeEach(requireAuth);
 
   const tabs = [
-    { label: "Meu painel",    href: "/dashboard",                 pattern: /\/dashboard$/ },
     { label: "Acompanhantes", href: "/dashboard/acompanhantes",  pattern: /\/dashboard\/acompanhantes/ },
     { label: "Shots",         href: "/dashboard/shots",          pattern: /\/dashboard\/shots/ },
-    { label: "Avaliações",    href: "/dashboard/avaliacoes",     pattern: /\/dashboard\/avaliacoes/ },
+    { label: "Listas",        href: "/dashboard/favoritos",      pattern: /\/dashboard\/favoritos/ },
+    { label: "Painel",        href: "/dashboard",                 pattern: /\/dashboard$/ },
   ];
 
   for (const tab of tabs) {
     test(`tab "${tab.label}" navega para ${tab.href}`, async ({ page }) => {
       await gotoClientArea(page, "/dashboard");
 
-      const link = page.locator(`nav a[href="${tab.href}"]`).last();
+      const link = page.locator(`.client-bottom-nav a[href="${tab.href}"]`);
       await link.waitFor({ state: "visible", timeout: 8_000 });
       await link.click();
 
@@ -188,13 +189,11 @@ test.describe("Bottom nav — 4 tabs", () => {
     test(`tab "${tab.label}" fica ativo quando está na rota correta`, async ({ page }) => {
       await gotoClientArea(page, tab.href);
 
-      const link = page.locator(`nav a[href="${tab.href}"]`).last();
+      const link = page.locator(`.client-bottom-nav a[href="${tab.href}"]`);
       await link.waitFor({ state: "visible", timeout: 8_000 });
 
-      // O tab ativo tem a cor dourada (texto text-[#a9822d])
-      const color = await link.evaluate((el) => getComputedStyle(el).color);
-      // rgb(169, 130, 45) = #a9822d
-      expect(color).toMatch(/rgb\(169,\s*130,\s*45\)/);
+      const className = await link.getAttribute("class");
+      expect(className).toContain("bg-[#d4a843]/15");
     });
   }
 });
@@ -215,13 +214,11 @@ test.describe("Cards principais — botões e CTAs", () => {
     expect(page.url()).toContain("/dashboard/perfil");
   });
 
-  test("UserWelcomeCard → saldo navega para /dashboard/carteira", async ({ page }) => {
+  test("Carteira exige verificação para cliente E2E não verificado", async ({ page }) => {
     await gotoClientArea(page, "/dashboard");
-    const link = page.locator("main a[href='/dashboard/carteira']").first();
-    await link.waitFor({ state: "visible", timeout: 8_000 });
-    await link.click();
-    await page.waitForURL(/\/dashboard\/carteira/, { timeout: 8_000 });
-    expect(page.url()).toContain("/dashboard/carteira");
+    const gate = page.locator("main button", { hasText: /Carteira/i }).first();
+    await expect(gate).toBeVisible();
+    await expect(page.locator("main a[href='/dashboard/carteira']")).toHaveCount(0);
   });
 
   test("ListsSection → 'Mostrar todas' navega para /dashboard/favoritos", async ({ page }) => {
@@ -233,24 +230,20 @@ test.describe("Cards principais — botões e CTAs", () => {
     expect(page.url()).toContain("/dashboard/favoritos");
   });
 
-  test("ListsSection → 'Criar Lista' é um botão clicável (não morto)", async ({ page }) => {
+  test("ListsSection → 'Criar lista' navega para favoritos", async ({ page }) => {
     await gotoClientArea(page, "/dashboard");
-    const btn = page.locator("main button", { hasText: /Criar Lista/i }).first();
-    await btn.waitFor({ state: "visible", timeout: 8_000 });
-    await expect(btn).not.toBeDisabled();
-    await btn.click();
-    await page.waitForTimeout(400);
-    expect(page.url()).not.toContain("/login");
+    const link = page.locator("main a[href='/dashboard/favoritos']", { hasText: /Criar lista/i }).first();
+    await expect(link).toBeVisible();
+    await link.click();
+    await page.waitForURL(/\/dashboard\/favoritos/, { timeout: 8_000 });
   });
 
-  test("ReviewsSection → 'Avalie agora' navega para /profissionais", async ({ page }) => {
+  test("ReviewsSection → 'Explorar perfis' navega para acompanhantes", async ({ page }) => {
     await gotoClientArea(page, "/dashboard");
-    // Avalie agora está na ReviewsSection, que está dentro do main
-    const link = page.locator("main a[href='/profissionais']").first();
+    const link = page.locator("main a[href='/dashboard/acompanhantes']", { hasText: /Explorar perfis/i }).first();
     await link.waitFor({ state: "visible", timeout: 8_000 });
     await link.click();
-    await page.waitForURL(/\/profissionais/, { timeout: 10_000 });
-    expect(page.url()).toContain("/profissionais");
+    await page.waitForURL(/\/dashboard\/acompanhantes/, { timeout: 10_000 });
   });
 
   test("SafetyCard → 'Falar com atendimento' navega para /dashboard/atendimento", async ({ page }) => {
@@ -273,7 +266,7 @@ test.describe("Páginas secundárias — conteúdo real", () => {
 
   const pages: { path: string; mustContain: string }[] = [
     { path: "/dashboard/carteira",      mustContain: "saldo" },
-    { path: "/dashboard/planos",        mustContain: "planos" },
+    { path: "/dashboard/planos",        mustContain: "premium" },
     { path: "/dashboard/configuracoes", mustContain: "configura" },
     { path: "/dashboard/atendimento",   mustContain: "atendimento" },
     { path: "/dashboard/informacoes",   mustContain: "informa" },
@@ -324,19 +317,20 @@ test.describe("Acompanhantes — filtros e busca", () => {
     }
   });
 
-  test("campo de busca aceita texto", async ({ page }) => {
+  test("seletor de cidade aceita texto", async ({ page }) => {
     await gotoClientArea(page, "/dashboard/acompanhantes");
-    const input = page.locator('input[placeholder*="nome"]');
+    await page.getByRole("button", { name: /São Paulo/i }).click();
+    const input = page.locator('input[placeholder="Digite sua cidade..."]');
     await input.waitFor({ state: "visible", timeout: 5_000 });
-    await input.fill("São Paulo");
+    await input.fill("Rio de Janeiro");
     await page.waitForTimeout(300);
     const val = await input.inputValue();
-    expect(val).toBe("São Paulo");
+    expect(val).toBe("Rio de Janeiro");
   });
 
   test("botão de filtros abre bottom-sheet", async ({ page }) => {
     await gotoClientArea(page, "/dashboard/acompanhantes");
-    const filterBtn = page.locator('[aria-label="Filtros"]');
+    const filterBtn = page.getByRole("button", { name: /^Filtros$/ });
     await filterBtn.waitFor({ state: "visible", timeout: 5_000 });
     await filterBtn.click();
     // Bottom-sheet deve aparecer
@@ -366,7 +360,7 @@ test.describe("Bottom nav — não cobre conteúdo", () => {
       await page.waitForTimeout(200);
 
       // Mede bottom nav
-      const nav = page.locator("nav").filter({ hasText: "Meu painel" }).first();
+      const nav = page.locator(".client-bottom-nav");
       const navBox = await nav.boundingBox();
       if (!navBox) return; // nav não renderizou, skip implícito
 
@@ -433,10 +427,9 @@ test.describe("Botões — sem ação morta", () => {
     expect(page.url()).not.toContain("/login");
   });
 
-  test("Planos — botão 'Assinar agora' é clicável (não disabled)", async ({ page }) => {
+  test("Planos — botão 'Assine agora' é clicável (não disabled)", async ({ page }) => {
     await gotoClientArea(page, "/dashboard/planos");
-    // O plano atual tem "Plano atual" (disabled), o premium tem "Assinar agora"
-    const btn = page.locator("button", { hasText: /Assinar agora/i }).first();
+    const btn = page.locator("button", { hasText: /Assine agora/i }).first();
     await btn.waitFor({ state: "visible", timeout: 5_000 });
     await expect(btn).not.toBeDisabled();
   });

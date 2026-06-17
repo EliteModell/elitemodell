@@ -40,7 +40,7 @@ const blurGray = (e: React.FocusEvent<HTMLInputElement>) =>
   (e.target.style.borderColor = "#1e293b");
 
 const authMsg: Record<string, string> = {
-  invalid_credentials: "E-mail ou senha inválidos.",
+  invalid_credentials: "E-mail ou senha invalidos. Se voce confirmou pelo link e nao entra, use Recuperar senha.",
   user_not_found: "E-mail não cadastrado.",
   over_request_rate_limit: "Muitas tentativas. Tente mais tarde.",
 };
@@ -70,7 +70,10 @@ async function getPostLoginPath(returnUrl: string | null, roleIntent: ReturnType
   if (safeReturnUrl && !roleIntent) return safeReturnUrl;
   if (roleIntent === "anfitriao" && localStorage.getItem(PROPERTY_DRAFT_KEY)) return PROPERTY_DRAFT_FINAL_PATH;
 
-  const res = await fetch("/api/users/me");
+  const res = await fetch("/api/users/me", {
+    cache: "no-store",
+    credentials: "include",
+  });
   if (!res.ok) return fallbackPathForRoleIntent(roleIntent);
   const user = await res.json();
   const hasProfessionalAccess =
@@ -79,7 +82,7 @@ async function getPostLoginPath(returnUrl: string | null, roleIntent: ReturnType
     user?.accountType === "professional" ||
     PROFESSIONAL_CATEGORIES.includes(user?.category ?? "");
   if (roleIntent === "profissional" && !hasProfessionalAccess) {
-    return `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`;
+    return ACCOUNT_ROUTES.cadastroAcompanhante;
   }
   if (roleIntent) return postLoginPathFromUser(user, roleIntent);
   if (!user?.lgpdConsent || !user?.termsConsent || !user?.birthDate) return "/completar-cadastro";
@@ -129,7 +132,7 @@ function LoginContent() {
   const roleIntent = normalizeEntryRole(searchParams.get("role")) ?? inferRoleIntentFromReturnUrl(returnUrl);
   const signupHref =
     roleIntent === "profissional"
-      ? `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`
+      ? ACCOUNT_ROUTES.cadastroAcompanhante
       : roleIntent === "anfitriao"
         ? ACCOUNT_ROUTES.onboardingAnfitriao
         : roleIntent === "cliente"
@@ -147,11 +150,12 @@ function LoginContent() {
     e.preventDefault();
     setLoading(true);
     try {
+      const email = form.email.trim().toLowerCase();
       const { data, error } = await supabaseAuth.auth.signInWithPassword({
-        email: form.email,
+        email,
         password: form.password,
       });
-      if (error || !data.session?.access_token) throw error ?? new Error("E-mail ou senha inválidos.");
+      if (error || !data.session?.access_token) throw error ?? new Error("E-mail ou senha invalidos.");
       const res = await signIn("supabase", { accessToken: data.session.access_token, roleIntent: roleIntent ?? "", redirect: false });
 
       if (res?.error) {
@@ -331,7 +335,7 @@ function LoginContent() {
 
       <section className="visibility-section">
         <h2>Aumente sua visibilidade</h2>
-        <Link href={`${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`} className="secondary-cta">Ativar perfil profissional</Link>
+        <Link href={ACCOUNT_ROUTES.cadastroAcompanhante} className="secondary-cta">Cadastre-se como acompanhante</Link>
         <Link href={ACCOUNT_ROUTES.cadastroAnfitriao} className="outline-cta">Cadastrar local reservado</Link>
       </section>
 

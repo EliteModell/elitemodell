@@ -1,11 +1,19 @@
 "use client";
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/Navbar";
+import PublicReportButton from "@/components/moderation/PublicReportButton";
+import ProfessionalContactAction from "@/components/professionals/ProfessionalContactAction";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import styles from "./profile.module.css";
+
+const ActionAuthModal = dynamic(() => import("@/components/auth/ActionAuthModal"));
+const PremiumUpsellModal = dynamic(() => import("@/components/premium/PremiumUpsellModal"));
+const ReviewForm = dynamic(() => import("@/components/ReviewForm"));
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
@@ -28,8 +36,11 @@ type ApiProfessional = {
   whatsapp?: string | null;
   instagram?: string | null;
   hidePhone?: boolean;
+  contactVisibility?: "PUBLIC" | "LOGGED_IN" | "PREMIUM";
+  contactAvailable?: boolean;
   priceMin?: number | null;
   pricePerHour?: number | null;
+  price15min?: number | null;
   price30min?: number | null;
   price2h?: number | null;
   priceOvernight?: number | null;
@@ -37,6 +48,7 @@ type ApiProfessional = {
   paymentMethods?: string[];
   escortCategory?: string | null;
   birthDate?: string | null;
+  age?: number | null;
   hideAge?: boolean;
   height?: number | null;
   weight?: number | null;
@@ -54,13 +66,22 @@ type ApiProfessional = {
   horarioInicio?: string | null;
   horarioFim?: string | null;
   services?: string[];
+  servicesNotOffered?: string[];
   fetishes?: string[];
+  amenities?: string[];
+  serviceCities?: string[];
+  approximateLocation?: string | null;
   presentationVideoUrl?: string | null;
   presentationVideoStatus?: string | null;
+  hasPremiumVideo?: boolean;
+  hasMoreReviews?: boolean;
   verified: boolean;
   featured: boolean;
   boostActive?: boolean;
   boostUntil?: string | null;
+  online?: boolean;
+  sponsored?: boolean;
+  profileViews?: number;
   rating: number;
   totalReviews: number;
   specialties: { id: string; name: string }[];
@@ -70,6 +91,7 @@ type ApiProfessional = {
   verificationType?: string | null;
   createdAt: string;
   user?: { name: string | null; image: string | null; createdAt: string };
+  stories?: Array<{ id: string; mediaUrl: string; mediaType: string; thumbnail: string | null; views: number; createdAt: string }>;
 };
 
 type SimilarPro = {
@@ -90,12 +112,6 @@ type AvailableVoucher = {
   paymentStatus: string;
 };
 
-function buildWaLink(raw: string): string {
-  const digits = raw.replace(/\D/g, "");
-  const withDDI = digits.startsWith("55") && digits.length >= 12 ? digits : `55${digits}`;
-  return `https://wa.me/${withDDI}?text=${encodeURIComponent("Olá, vi seu perfil na Elite Modell e gostaria de mais informações.")}`;
-}
-
 function calcAge(birthDate?: string | null): number | null {
   if (!birthDate) return null;
   const today = new Date();
@@ -111,6 +127,8 @@ const DIAS_SEMANA = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"
 export default function ProfissionalProfilePage() {
   const params = useParams();
   const slug = params.slug as string;
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session, status: authStatus } = useSession();
 
   const [pro, setPro] = useState<ApiProfessional | null>(null);
@@ -128,6 +146,17 @@ export default function ProfissionalProfilePage() {
   const [selectedVoucherId, setSelectedVoucherId] = useState("");
   const [acceptsVouchers, setAcceptsVouchers] = useState<boolean | null>(null);
   const [voucherLoading, setVoucherLoading] = useState(false);
+  const [authIntent, setAuthIntent] = useState<"review" | "favorite" | "report" | null>(null);
+  const [favoriteSaved, setFavoriteSaved] = useState(false);
+  const [favoriteSaving, setFavoriteSaving] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [eligibleAppointmentId, setEligibleAppointmentId] = useState<string | null | undefined>(undefined);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [premiumOpen, setPremiumOpen] = useState(false);
+  const [premiumFeature, setPremiumFeature] = useState("recursos exclusivos");
+  const [premiumVideoUrl, setPremiumVideoUrl] = useState<string | null>(null);
+  const [premiumReviews, setPremiumReviews] = useState<ApiProfessional["reviews"] | null>(null);
+  const resumedActionRef = useRef<string | null>(null);
 
   const [galeriaFiltro, setGaleriaFiltro] = useState<GaleriaFiltro>("todas");
   const [photoOpen, setPhotoOpen] = useState<number | null>(null);
@@ -150,13 +179,64 @@ export default function ProfissionalProfilePage() {
     }).catch(() => undefined);
   }
 
+  function actionReturnUrl(action: "review" | "favorite" | "report") {
+    const hash = action === "review" ? "#avaliacoes" : "";
+    return `/profissionais/${slug}?action=${action}${hash}`;
+  }
+
+  function requireAccount(action: "review" | "favorite" | "report", run: () => void) {
+    if (authStatus === "authenticated") {
+      run();
+      return;
+    }
+    setAuthIntent(action);
+  }
+
+  async function beginFavorite() {
+    requireAccount("favorite", () => {
+      if (!pro || favoriteSaving) return;
+      setFavoriteSaving(true);
+      void fetch("/api/favorites/professionals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ professionalId: pro.id }),
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("favorite_failed");
+          setFavoriteSaved(true);
+        })
+        .catch(() => setFavoriteSaved(false))
+        .finally(() => setFavoriteSaving(false));
+    });
+  }
+
+  function beginReport() {
+    requireAccount("report", () => setReportOpen(true));
+  }
+
+  function beginReview() {
+    requireAccount("review", () => {
+      if (!pro) return;
+      setReviewOpen(true);
+      setEligibleAppointmentId(undefined);
+      void fetch(`/api/reviews?professionalId=${encodeURIComponent(pro.id)}&eligibility=1`, { cache: "no-store" })
+        .then((response) => response.ok ? response.json() : { eligible: false, appointment: null })
+        .then((data) => setEligibleAppointmentId(data.eligible ? data.appointment?.id ?? null : null))
+        .catch(() => setEligibleAppointmentId(null));
+    });
+  }
+
   useEffect(() => {
     const controller = new AbortController();
 
-    async function load() {
+    async function loadProfile() {
       setLoading(true);
+      setNotFound(false);
       try {
-        const res = await fetch(`/api/professionals/${slug}`, { signal: controller.signal });
+        const res = await fetch(`/api/professionals/${slug}`, {
+          signal: controller.signal,
+          cache: "default",
+        });
         if (res.status === 404) { setNotFound(true); return; }
         if (!res.ok) throw new Error();
         const data: ApiProfessional = await res.json();
@@ -166,22 +246,85 @@ export default function ProfissionalProfilePage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ eventType: "profile_view" }),
         }).catch(() => undefined);
-
-        // Busca perfis similares na mesma cidade
-        const simRes = await fetch(`/api/professionals?city=${encodeURIComponent(data.city)}&sortBy=rating&limit=4`, { signal: controller.signal });
-        if (simRes.ok) {
-          const simData = await simRes.json();
-          setSimilar((simData.professionals ?? []).filter((p: SimilarPro) => p.id !== data.id).slice(0, 3));
-        }
       } catch {
         if (!controller.signal.aborted) setNotFound(true);
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
     }
-    load();
+    void loadProfile();
     return () => controller.abort();
   }, [slug]);
+
+  useEffect(() => {
+    if (!pro) return;
+    const controller = new AbortController();
+    void fetch(
+      `/api/professionals?city=${encodeURIComponent(pro.city)}&state=${encodeURIComponent(pro.state)}&sortBy=rating&limit=4`,
+      { signal: controller.signal, cache: "default" },
+    )
+      .then((response) => response.ok ? response.json() : { professionals: [] })
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        setSimilar(
+          (data.professionals ?? [])
+            .filter((professional: SimilarPro) => professional.id !== pro.id)
+            .slice(0, 3),
+        );
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [pro]);
+
+  useEffect(() => {
+    if (authStatus !== "authenticated" || !pro) return;
+    const controller = new AbortController();
+    void fetch(`/api/professionals/${slug}/premium-content`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (!data || controller.signal.aborted) return;
+        setPremiumVideoUrl(data.presentationVideoUrl ?? null);
+        setPremiumReviews(Array.isArray(data.reviews) ? data.reviews : null);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [authStatus, pro, slug]);
+
+  useEffect(() => {
+    const action = searchParams.get("action");
+    if (authStatus !== "authenticated" || !pro || !action || resumedActionRef.current === action) return;
+    resumedActionRef.current = action;
+    const timer = window.setTimeout(() => {
+      if (action === "favorite") {
+        setFavoriteSaving(true);
+        void fetch("/api/favorites/professionals", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ professionalId: pro.id }),
+        })
+          .then((response) => {
+            if (!response.ok) throw new Error("favorite_failed");
+            setFavoriteSaved(true);
+          })
+          .catch(() => setFavoriteSaved(false))
+          .finally(() => setFavoriteSaving(false));
+      }
+      if (action === "review") {
+        setReviewOpen(true);
+        setEligibleAppointmentId(undefined);
+        void fetch(`/api/reviews?professionalId=${encodeURIComponent(pro.id)}&eligibility=1`, { cache: "no-store" })
+          .then((response) => response.ok ? response.json() : { eligible: false, appointment: null })
+          .then((data) => setEligibleAppointmentId(data.eligible ? data.appointment?.id ?? null : null))
+          .catch(() => setEligibleAppointmentId(null));
+      }
+      if (action === "report") setReportOpen(true);
+      router.replace(`/profissionais/${slug}`, { scroll: false });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [authStatus, pro, router, searchParams, slug]);
 
   useEffect(() => {
     if (!bookingOpen || authStatus !== "authenticated") return;
@@ -302,14 +445,14 @@ export default function ProfissionalProfilePage() {
   }));
 
   // Reviews
-  const reviews = (pro.reviews ?? []).map((r) => ({
+  const reviews = (premiumReviews ?? pro.reviews ?? []).map((r) => ({
     author: r.author?.name ?? "Anônimo",
     rating: r.rating,
     comment: r.comment ?? "",
     date: new Date(r.createdAt).toLocaleDateString("pt-BR", { month: "long", year: "numeric" }),
   }));
 
-  const idade = calcAge(pro.birthDate);
+  const idade = pro.age ?? calcAge(pro.birthDate);
   const preco = pro.priceMin ?? pro.pricePerHour;
   const memberYear = new Date(pro.createdAt).getFullYear();
   const bookingBasePrice = pro.pricePerHour ?? pro.priceMin ?? bookingDuration;
@@ -320,10 +463,19 @@ export default function ProfissionalProfilePage() {
   return (
     <div style={{ background: "#060e1b", minHeight: "100vh", color: "#f1f5f9", paddingBottom: 72 }}>
       <Navbar />
+      <div style={{ position: "fixed", right: 18, bottom: 82, zIndex: 90, background: "rgba(8,8,10,.92)", border: "1px solid rgba(239,68,68,.35)", borderRadius: 8, padding: "10px 12px" }}>
+        {authStatus === "authenticated" ? (
+          <PublicReportButton key={reportOpen ? "report-open" : "report-closed"} targetType="PROFESSIONAL" targetId={pro.id} initialOpen={reportOpen} />
+        ) : (
+          <button type="button" onClick={beginReport} style={{ border: 0, background: "transparent", color: "#fca5a5", textDecoration: "underline", fontWeight: 800, cursor: "pointer" }}>
+            Denunciar
+          </button>
+        )}
+      </div>
 
       {/* COVER com nome overlay */}
       <div style={{ paddingTop: 64 }}>
-        <div style={{ height: 380, position: "relative", overflow: "hidden" }}>
+        <div className={styles.cover}>
           {coverImage ? (
             <Image
               src={coverImage}
@@ -338,11 +490,11 @@ export default function ProfissionalProfilePage() {
             <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #0b1420, #1a0a0a)" }} />
           )}
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(6,14,27,0.1) 0%, rgba(6,14,27,0.5) 45%, rgba(6,14,27,0.93) 100%)" }} />
-          <div style={{ position: "absolute", bottom: 20, left: 16 }}>
+          <div className={styles.coverIdentity}>
             <h1 style={{ fontSize: "clamp(34px, 9vw, 56px)", fontWeight: 700, color: "#f1f5f9", margin: 0, fontFamily: PLAYFAIR, letterSpacing: "-1px", lineHeight: 1, textShadow: "0 2px 16px rgba(0,0,0,0.6)" }}>
               {pro.displayName}
             </h1>
-            <p style={{ fontSize: 10, color: "rgba(212,168,67,0.8)", fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", margin: "7px 0 0" }}>
+            <p data-testid="profile-tier" style={{ fontSize: 10, color: "rgba(212,168,67,0.8)", fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", margin: "7px 0 0" }}>
               {pro.verified ? "Verificada · " : ""}Premium
             </p>
           </div>
@@ -350,14 +502,16 @@ export default function ProfissionalProfilePage() {
 
         {/* Avatar + badges */}
         <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 16px" }}>
-          <div style={{ display: "flex", gap: 14, alignItems: "center", marginTop: -48, marginBottom: 16 }}>
-            <div style={{ width: 88, height: 88, borderRadius: "50%", flexShrink: 0, border: `3px solid ${GOLD}`, overflow: "hidden", background: "#0b1420", boxShadow: `0 0 24px rgba(212,168,67,0.3)`, position: "relative", zIndex: 10 }}>
+          <div className={styles.profileSummary}>
+            <div data-testid="profile-avatar" className={styles.avatar} style={{ borderColor: GOLD }}>
               {profileImage ? (
                 <Image
                   src={profileImage}
                   alt={pro.displayName}
                   fill
                   sizes="88px"
+                  quality={62}
+                  loading="eager"
                   style={{ objectFit: "cover", objectPosition: "top" }}
                 />
               ) : (
@@ -366,11 +520,15 @@ export default function ProfissionalProfilePage() {
                 </div>
               )}
             </div>
-            <div style={{ flex: 1, paddingTop: 52 }}>
+            <div className={styles.summaryDetails}>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
                 {pro.verified && <span style={{ padding: "3px 10px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 20, fontSize: 11, color: GOLD, fontWeight: 700 }}>✓ Verificada</span>}
                 {pro.featured && <span style={{ padding: "3px 10px", background: "rgba(204,0,0,0.15)", border: "1px solid rgba(204,0,0,0.3)", borderRadius: 20, fontSize: 11, color: "#cc0000", fontWeight: 700 }}>★ Destaque</span>}
                 {pro.boostActive && <span style={{ padding: "3px 10px", background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.28)", borderRadius: 20, fontSize: 11, color: "#22c55e", fontWeight: 700 }}>Impulsionado</span>}
+                <span style={{ padding: "3px 10px", background: pro.online ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,.04)", border: `1px solid ${pro.online ? "rgba(34,197,94,.28)" : "rgba(255,255,255,.08)"}`, borderRadius: 20, fontSize: 11, color: pro.online ? "#34d399" : "#64748b", fontWeight: 700 }}>{pro.online ? "Online agora" : "Offline"}</span>
+                <button type="button" onClick={() => void beginFavorite()} disabled={favoriteSaving} style={{ padding: "3px 10px", background: favoriteSaved ? GOLD : GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 20, fontSize: 11, color: favoriteSaved ? "#060e1b" : GOLD, fontWeight: 800, cursor: "pointer" }}>
+                  {favoriteSaved ? "Salvo" : favoriteSaving ? "Salvando..." : "Favoritar"}
+                </button>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", fontSize: 12, color: "#64748b", alignItems: "center" }}>
                 {idade && <><span>{idade} anos</span><span>·</span></>}
@@ -380,6 +538,7 @@ export default function ProfissionalProfilePage() {
                   <span style={{ color: "#f59e0b", fontWeight: 700 }}>{(pro.rating ?? 0).toFixed(1)}</span>
                   <span>({pro.totalReviews ?? 0})</span>
                 </span>
+                <span>·</span><span>{(pro.profileViews ?? 0).toLocaleString("pt-BR")} visualizações</span>
               </div>
             </div>
           </div>
@@ -414,6 +573,15 @@ export default function ProfissionalProfilePage() {
               <span key={s} style={{ padding: "4px 12px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 20, fontSize: 11, color: GOLD }}>{s}</span>
             ))}
           </div>
+          {pro.stories && pro.stories.length > 0 ? (
+            <div style={{ display: "flex", gap: 10, overflowX: "auto", padding: "18px 0 4px" }}>
+              {pro.stories.map((story) => (
+                <a key={story.id} href={story.mediaUrl} target="_blank" rel="noreferrer" style={{ position: "relative", width: 74, height: 100, flex: "0 0 auto", overflow: "hidden", borderRadius: 12, border: `2px solid ${GOLD}`, background: "#111" }}>
+                  <Image src={story.thumbnail ?? story.mediaUrl} alt={`Story de ${pro.displayName}`} fill sizes="74px" quality={60} style={{ objectFit: "cover" }} />
+                </a>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -476,6 +644,7 @@ export default function ProfissionalProfilePage() {
                     alt=""
                     fill
                     sizes="(max-width: 720px) 33vw, 220px"
+                    quality={60}
                     style={{ objectFit: "cover", objectPosition: "top" }}
                   />
                   <div style={{ position: "absolute", bottom: 5, right: 5, background: "rgba(6,14,27,0.85)", borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -491,19 +660,33 @@ export default function ProfissionalProfilePage() {
           )}
 
           {/* Verificação */}
-          {pro.presentationVideoUrl && (
+          {(premiumVideoUrl || pro.presentationVideoUrl) && (
             <div style={{ marginBottom: 24 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "#f1f5f9", fontFamily: PLAYFAIR }}>Video de apresentacao</span>
               </div>
               <video
-                src={pro.presentationVideoUrl}
+                src={premiumVideoUrl ?? pro.presentationVideoUrl ?? undefined}
                 controls
                 preload="metadata"
                 style={{ width: "100%", maxHeight: 420, borderRadius: 14, border: `1px solid ${GOLD_MID}`, background: "#050506" }}
               />
             </div>
+          )}
+          {!premiumVideoUrl && !pro.presentationVideoUrl && pro.hasPremiumVideo && (
+            <button
+              type="button"
+              onClick={() => {
+                setPremiumFeature("o vídeo exclusivo desta profissional");
+                setPremiumOpen(true);
+              }}
+              style={{ width: "100%", marginBottom: 24, padding: 22, borderRadius: 16, border: `1px solid ${GOLD_MID}`, background: "radial-gradient(circle at 50% 0%,rgba(212,168,67,.16),transparent 55%),#0b1420", color: "#f5d78c", cursor: "pointer", textAlign: "left" }}
+            >
+              <span style={{ display: "block", color: GOLD, fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>Conteúdo Premium</span>
+              <strong style={{ display: "block", marginTop: 8, color: "#f1f5f9", fontSize: 18, fontFamily: PLAYFAIR }}>Vídeo exclusivo disponível</strong>
+              <span style={{ display: "block", marginTop: 7, color: "#64748b", fontSize: 13 }}>Toque para conhecer os planos e desbloquear este conteúdo.</span>
+            </button>
           )}
 
           {pro.verificationUrl && (
@@ -530,9 +713,9 @@ export default function ProfissionalProfilePage() {
           )}
 
           <div style={{ marginBottom: 28 }}>
-            <button style={{ width: "100%", padding: "13px", background: "rgba(204,0,0,0.08)", border: "1px solid rgba(204,0,0,0.25)", borderRadius: 10, color: "#cc0000", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <button type="button" onClick={beginReport} style={{ width: "100%", padding: "13px", background: "rgba(204,0,0,0.08)", border: "1px solid rgba(204,0,0,0.25)", borderRadius: 10, color: "#cc0000", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              Denunciar anonimamente este perfil
+              Denunciar este perfil
             </button>
           </div>
         </div>
@@ -578,6 +761,23 @@ export default function ProfissionalProfilePage() {
                 )}
               </>
             )}
+            {pro.servicesNotOffered && pro.servicesNotOffered.length > 0 ? (
+              <div style={{ marginTop: 16 }}>
+                <h3 style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8", margin: "0 0 10px" }}>Serviços não oferecidos</h3>
+                <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                  {pro.servicesNotOffered.map((service) => (
+                    <span key={service} style={{ padding: "5px 10px", borderRadius: 999, border: "1px solid rgba(239,68,68,.22)", background: "rgba(239,68,68,.06)", color: "#fca5a5", fontSize: 11 }}>{service}</span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {(pro.amenities?.length || pro.serviceCities?.length || pro.approximateLocation) ? (
+              <div style={{ marginTop: 16, display: "grid", gap: 10, border: `1px solid ${GOLD_DIM}`, borderRadius: 10, padding: "14px 16px", background: "#0b1420" }}>
+                {pro.approximateLocation ? <p style={{ margin: 0, color: "#94a3b8", fontSize: 13 }}><strong style={{ color: "#f1f5f9" }}>Localização aproximada:</strong> {pro.approximateLocation}</p> : null}
+                {pro.amenities?.length ? <p style={{ margin: 0, color: "#94a3b8", fontSize: 13 }}><strong style={{ color: "#f1f5f9" }}>Comodidades:</strong> {pro.amenities.join(", ")}</p> : null}
+                {pro.serviceCities?.length ? <p style={{ margin: 0, color: "#94a3b8", fontSize: 13 }}><strong style={{ color: "#f1f5f9" }}>Cidades atendidas:</strong> {pro.serviceCities.join(", ")}</p> : null}
+              </div>
+            ) : null}
           </section>
 
           {/* Tabela de valores */}
@@ -588,6 +788,7 @@ export default function ProfissionalProfilePage() {
             </div>
             <div style={{ border: `1px solid ${GOLD_DIM}`, borderRadius: 12, overflow: "hidden" }}>
               {[
+                { label: "15 minutos", value: pro.price15min },
                 { label: "30 minutos", value: pro.price30min },
                 { label: "1 hora", value: pro.pricePerHour },
                 { label: "2 horas", value: pro.price2h },
@@ -717,12 +918,25 @@ export default function ProfissionalProfilePage() {
             )}
           </div>
 
+          {!premiumReviews && pro.hasMoreReviews && (
+            <button
+              type="button"
+              onClick={() => {
+                setPremiumFeature("todas as avaliações");
+                setPremiumOpen(true);
+              }}
+              style={{ width: "100%", minHeight: 48, margin: "-6px 0 20px", borderRadius: 12, border: `1px solid ${GOLD_MID}`, background: GOLD_DIM, color: "#f5d78c", fontWeight: 900, cursor: "pointer" }}
+            >
+              Ver todas as {pro.totalReviews} avaliações com Premium
+            </button>
+          )}
+
           <div style={{ background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "18px 16px", textAlign: "center", marginBottom: 32 }}>
             <p style={{ fontSize: 14, fontWeight: 700, color: "#f1f5f9", margin: "0 0 6px", fontFamily: PLAYFAIR }}>Foi atendido por {pro.displayName}?</p>
             <p style={{ fontSize: 12, color: "#475569", margin: "0 0 14px" }}>Deixe sua avaliação gratuita</p>
-            <Link href={ACCOUNT_ROUTES.login} style={{ display: "inline-block", padding: "10px 28px", background: GOLD, color: "#060e1b", borderRadius: 10, fontSize: 13, fontWeight: 800, textDecoration: "none", fontFamily: PLAYFAIR }}>
-              Entrar para avaliar
-            </Link>
+            <button type="button" onClick={beginReview} style={{ display: "inline-block", padding: "10px 28px", border: 0, background: GOLD, color: "#060e1b", borderRadius: 10, fontSize: 13, fontWeight: 800, fontFamily: PLAYFAIR, cursor: "pointer" }}>
+              Avaliar perfil
+            </button>
           </div>
         </div>
 
@@ -744,6 +958,7 @@ export default function ProfissionalProfilePage() {
                           alt={p.displayName}
                           fill
                           sizes="140px"
+                          quality={60}
                           style={{ objectFit: "cover", objectPosition: "top" }}
                         />
                       ) : (
@@ -879,6 +1094,47 @@ export default function ProfissionalProfilePage() {
         </div>
       ) : null}
 
+      {reviewOpen ? (
+        <div style={{ position: "fixed", inset: 0, zIndex: 920, background: "rgba(0,0,0,.84)", backdropFilter: "blur(14px)", display: "grid", placeItems: "center", padding: 16 }}>
+          <div style={{ width: "min(100%,560px)", border: `1px solid ${GOLD_MID}`, borderRadius: 16, background: "#070d17", padding: 18, maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 14 }}>
+              <div>
+                <p style={{ margin: 0, color: GOLD, fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>Avaliação verificada</p>
+                <h2 style={{ margin: "5px 0 0", color: "#f8fafc", fontFamily: PLAYFAIR }}>Avaliar {pro.displayName}</h2>
+              </div>
+              <button type="button" onClick={() => setReviewOpen(false)} style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "transparent", color: GOLD, cursor: "pointer" }}>×</button>
+            </div>
+            {eligibleAppointmentId === undefined ? (
+              <p style={{ color: "#94a3b8" }}>Verificando atendimentos concluídos...</p>
+            ) : eligibleAppointmentId ? (
+              <ReviewForm professionalId={pro.id} appointmentId={eligibleAppointmentId} onSubmitted={() => window.location.reload()} />
+            ) : (
+              <div style={{ border: `1px solid ${GOLD_DIM}`, borderRadius: 12, background: "#0b1420", padding: 16 }}>
+                <p style={{ margin: "0 0 8px", color: "#f8fafc", fontWeight: 800 }}>Avaliações são vinculadas a atendimentos reais.</p>
+                <p style={{ margin: 0, color: "#94a3b8", fontSize: 13, lineHeight: 1.6 }}>Quando um agendamento com esta profissional estiver concluído, a avaliação será liberada aqui automaticamente.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {authIntent ? (
+        <ActionAuthModal
+          open
+          actionLabel={authIntent === "review" ? "avaliar este perfil" : authIntent === "favorite" ? "salvar este perfil" : "enviar esta denúncia"}
+          returnTo={actionReturnUrl(authIntent)}
+          onClose={() => setAuthIntent(null)}
+        />
+      ) : null}
+      {premiumOpen ? (
+        <PremiumUpsellModal
+          open
+          onClose={() => setPremiumOpen(false)}
+          featureLabel={premiumFeature}
+          returnTo={`/profissionais/${slug}`}
+        />
+      ) : null}
+
       {/* CTA FIXO */}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 55, background: "rgba(6,14,27,0.98)", backdropFilter: "blur(12px)", borderTop: `1px solid ${GOLD_DIM}`, padding: "10px 16px calc(10px + env(safe-area-inset-bottom))", display: "flex", gap: 10, alignItems: "center" }}>
         <div style={{ flexShrink: 0 }}>
@@ -896,20 +1152,19 @@ export default function ProfissionalProfilePage() {
         >
           Agendar
         </button>
-        {pro.whatsapp ? (
-          <a href={buildWaLink(pro.whatsapp)} target="_blank" rel="noopener noreferrer" onClick={trackContactClick}
-            style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 10px", background: "rgba(212,168,67,0.12)", color: GOLD, border: `1px solid ${GOLD_MID}`, borderRadius: 10, fontSize: 14, fontWeight: 800, textDecoration: "none", fontFamily: PLAYFAIR }}>
-            <svg width="19" height="19" viewBox="0 0 24 24" fill={GOLD}>
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-            </svg>
-            WhatsApp
-          </a>
-        ) : (
-          <button type="button" onClick={trackContactClick}
-            style={{ flex: 1, padding: "12px", background: "rgba(212,168,67,0.12)", color: "#f5d78c", border: `1px solid ${GOLD_MID}`, borderRadius: 10, fontSize: 14, fontWeight: 800, fontFamily: PLAYFAIR }}>
-            Contato indisponível no momento
-          </button>
-        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <ProfessionalContactAction
+            slug={slug}
+            visibility={pro.contactVisibility ?? "PUBLIC"}
+            initialWhatsapp={pro.whatsapp}
+            initialPhone={pro.phone}
+            contactAvailable={pro.contactAvailable}
+            returnTo={`/profissionais/${slug}`}
+            label="WhatsApp"
+            compact
+            onContact={trackContactClick}
+          />
+        </div>
       </div>
 
       {/* Lightbox */}

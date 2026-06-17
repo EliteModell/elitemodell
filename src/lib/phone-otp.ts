@@ -80,6 +80,35 @@ export function verifyPhoneAuthToken(token: string) {
   return { userId, phone };
 }
 
+export function createPendingProfessionalPhoneToken(phone: string, verificationId: string) {
+  const expires = Date.now() + 24 * 60 * 60 * 1000;
+  const normalizedPhone = normalizeBrazilianPhone(phone);
+  const payload = `${normalizedPhone}.${verificationId}.${expires}`;
+  const signature = crypto.createHmac("sha256", otpSecret()).update(payload).digest("hex");
+  return `${payload}.${signature}`;
+}
+
+export function verifyPendingProfessionalPhoneToken(token: string) {
+  const parts = token.split(".");
+  if (parts.length !== 4) return null;
+
+  const [phone, verificationId, expiresRaw, signature] = parts;
+  const payload = `${phone}.${verificationId}.${expiresRaw}`;
+  const expected = crypto.createHmac("sha256", otpSecret()).update(payload).digest("hex");
+  const actual = Buffer.from(signature);
+  const safeExpected = Buffer.from(expected);
+
+  if (actual.length !== safeExpected.length || !crypto.timingSafeEqual(actual, safeExpected)) {
+    return null;
+  }
+
+  const expires = Number(expiresRaw);
+  if (!Number.isFinite(expires) || expires < Date.now()) return null;
+  if (!isValidBrazilianMobilePhone(phone) || !verificationId) return null;
+
+  return { phone, verificationId };
+}
+
 export function emailForPhone(phone: string, accountType: PhoneAccountType) {
   return `phone_${accountType}_${normalizeBrazilianPhone(phone)}@sms.elitemodell.local`;
 }
@@ -95,7 +124,7 @@ export function roleForPhoneAccount(accountType: PhoneAccountType): "HOST" | "GU
 }
 
 export function nameForPhoneAccount(accountType: PhoneAccountType) {
-  if (accountType === "model") return "Cadastro profissional";
+  if (accountType === "model") return "Cadastro de acompanhante";
   if (accountType === "host") return "Anfitriao Elite Modell";
   return "Cliente Elite Modell";
 }

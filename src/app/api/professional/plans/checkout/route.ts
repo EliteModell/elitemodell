@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "crypto";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
@@ -17,6 +18,13 @@ import {
   getProfessionalPlanPrice,
   professionalPlanReference,
 } from "@/lib/professional-plans";
+import { getClientIP } from "@/lib/security";
+import { toCents } from "@/lib/money";
+import {
+  PROFESSIONAL_CHECKOUT_LEGAL_KEYS,
+  latestLegalDocumentVersions,
+  recordUserAcceptances,
+} from "@/lib/legal-acceptance";
 
 const schema = z.object({
   planId: z.string().min(1),
@@ -33,6 +41,9 @@ const schema = z.object({
   pointsQuantity: z.number().int().min(10).max(15000).optional(),
   payerName: z.string().optional(),
   payerCpf: z.string().optional(),
+  reviewedPurchase: z.literal(true),
+  acceptedPolicies: z.literal(true),
+  checkoutToken: z.string().uuid(),
 });
 
 function nextDueDate() {
@@ -47,10 +58,9 @@ function logCheckoutError(err: unknown, context: Record<string, unknown>) {
           message: err.message,
           status: err.status,
           path: err.path,
-          details: err.details,
         }
       : err instanceof Error
-        ? { name: err.name, message: err.message, stack: err.stack }
+        ? { name: err.name, message: err.message }
         : err;
 
   console.error("[professional-plans-checkout]", {
@@ -99,7 +109,7 @@ export async function POST(req: NextRequest) {
         phone: true,
         document: true,
         premiumUntil: true,
-        professional: { select: { id: true, displayName: true } },
+        professional: { select: { id: true, displayName: true, freeAccessEndsAt: true } },
       },
     });
 
@@ -114,9 +124,11 @@ export async function POST(req: NextRequest) {
 
     const { plan, price } = resolved;
     const now = new Date();
+    const deferredDates = [user.premiumUntil, user.professional.freeAccessEndsAt]
+      .filter((date): date is Date => Boolean(date && date > now));
     const base =
-      data.activationMode === "depois" && user.premiumUntil && user.premiumUntil > now
-        ? user.premiumUntil
+      data.activationMode === "depois" && deferredDates.length
+        ? new Date(Math.max(...deferredDates.map((date) => date.getTime())))
         : now;
     const premiumUntil = addMs(base, price.durationMs);
     const externalReference = professionalPlanReference({
@@ -125,6 +137,7 @@ export async function POST(req: NextRequest) {
       activationMode: data.activationMode,
       userId: user.id,
       pointsQuantity: plan.id === "pontos" ? plan.points : undefined,
+      checkoutToken: data.checkoutToken,
     });
 
     const asaas = getAsaasConfig();
@@ -154,15 +167,93 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const existingPayment = await prisma.payment.findUnique({
+      where: { externalReference },
+    });
+    if (
+      existingPayment &&
+      existingPayment.userId === user.id &&
+      existingPayment.status === "PENDING" &&
+      existingPayment.pixCode
+    ) {
+      return NextResponse.json({
+        paymentId: existingPayment.providerPaymentId,
+        localPaymentId: existingPayment.id,
+        provider: existingPayment.provider,
+        status: existingPayment.providerStatus ?? existingPayment.status,
+        qrCode: existingPayment.pixCode,
+        qrCodeBase64: existingPayment.pixQrCodeBase64,
+        copyPaste: existingPayment.pixCode,
+        ticketUrl: existingPayment.invoiceUrl,
+        expiresAt: existingPayment.expiresAt?.toISOString() ?? null,
+        amount: existingPayment.amount,
+        planName: plan.name,
+        priceLabel: price.label,
+        reused: true,
+      });
+    }
+
     const localPayment = await prisma.payment.create({
       data: {
         userId: user.id,
         amount: Number(price.value.toFixed(2)),
+        amountCents: toCents(price.value),
         method: "pix",
         provider: "asaas",
         status: "PENDING",
         externalReference,
         premiumUntil,
+      },
+    });
+    const durationDays = price.durationMs
+      ? Math.max(1, Math.round(price.durationMs / (24 * 60 * 60 * 1000)))
+      : null;
+    const legalVersions = await latestLegalDocumentVersions(PROFESSIONAL_CHECKOUT_LEGAL_KEYS);
+    const boostVersion = legalVersions.get("boost-terms") ?? legalVersions.get("payments-policy");
+    const refundVersion = legalVersions.get("refund-policy");
+    await recordUserAcceptances({
+      userId: user.id,
+      userCategory: session.user.accountType,
+      documentKeys: PROFESSIONAL_CHECKOUT_LEGAL_KEYS,
+      source: "professional-plan-checkout",
+      acceptanceType: "CHECKOUT",
+      req,
+    });
+    const disclosure = [
+      plan.id,
+      price.key,
+      Number(price.value.toFixed(2)),
+      durationDays,
+      base.toISOString(),
+      premiumUntil.toISOString(),
+      "pagamento-unico-pix",
+      "sem-renovacao-automatica",
+      "sem-garantia-de-resultados",
+    ].join("|");
+    await prisma.checkoutAcceptance.create({
+      data: {
+        userId: user.id,
+        paymentId: localPayment.id,
+        productId: plan.id,
+        productName: plan.name,
+        dailyPrice: durationDays ? Number((price.value / durationDays).toFixed(2)) : null,
+        totalPrice: Number(price.value.toFixed(2)),
+        durationDays,
+        startsAt: base,
+        expectedEndsAt: premiumUntil,
+        termsVersionId: boostVersion?.id ?? null,
+        refundPolicyVersionId: refundVersion?.id ?? null,
+        termsHash: boostVersion?.contentHash ?? createHash("sha256").update(`boost-terms:${disclosure}`).digest("hex"),
+        refundPolicyHash: refundVersion?.contentHash ?? createHash("sha256").update(`refund-policy:${disclosure}`).digest("hex"),
+        ipAddress: getClientIP(req),
+        userAgent: req.headers.get("user-agent")?.slice(0, 300) ?? null,
+        sessionId: req.cookies.get("next-auth.session-token")?.value
+          ? createHash("sha256").update(req.cookies.get("next-auth.session-token")!.value).digest("hex")
+          : null,
+        route: new URL(req.url).pathname,
+        language: "pt-BR",
+        acceptanceType: "CHECKOUT",
+        required: true,
       },
     });
 
@@ -197,6 +288,9 @@ export async function POST(req: NextRequest) {
           pixQrCodeBase64: pix.encodedImage,
           invoiceUrl: asaasPayment.invoiceUrl ?? null,
           boletoUrl: asaasPayment.bankSlipUrl ?? null,
+          providerStatus: asaasPayment.status ?? "PENDING",
+          providerUpdatedAt: new Date(),
+          expiresAt: pix.expirationDate ? new Date(pix.expirationDate) : null,
         },
         select: { id: true },
       });

@@ -28,7 +28,7 @@ const sections = [
   {
     title: "Política de reembolso",
     summary:
-      "Créditos adquiridos têm validade de 12 meses. Solicitações de reembolso devem ser feitas em até 7 dias após a compra.",
+      "Regras definitivas de cancelamento e reembolso estão em revisão. Solicitações são analisadas administrativamente e qualquer reembolso aprovado deve ser confirmado pelo fornecedor de pagamento.",
     href: null,
   },
 ];

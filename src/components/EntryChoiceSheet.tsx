@@ -25,8 +25,8 @@ const options: Array<{
   },
   {
     role: "profissional",
-    title: "Profissional / Acompanhante",
-    description: "Quero criar meu perfil profissional e anunciar na plataforma.",
+    title: "Acompanhante",
+    description: "Quero anunciar meu perfil e acompanhar minha verificação.",
     icon: ShieldCheck,
   },
   {

@@ -17,6 +17,7 @@ const schema = z.object({
   spinId: z.string().cuid(),
   pendingToken: z.string().min(16),
   name: z.string().min(2).max(80).optional(),
+  phone: z.string().min(10).max(24).optional(),
   whatsapp: z.string().min(10).max(24).optional(),
 });
 
@@ -24,13 +25,17 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions).catch(() => null);
   const data = schema.parse(await req.json());
   const visitorId = req.cookies.get(VOUCHER_VISITOR_COOKIE)?.value ?? null;
-  const phone = data.whatsapp ? normalizeVoucherPhone(data.whatsapp) : null;
+  const rawPhone = data.phone ?? data.whatsapp;
+  const phone = rawPhone ? normalizeVoucherPhone(rawPhone) : null;
 
   if (!session?.user?.id && (!phone || !data.name)) {
-    return NextResponse.json({ error: "Informe nome e WhatsApp para salvar o voucher." }, { status: 400 });
+    return NextResponse.json({ error: "Informe nome e telefone para salvar o voucher." }, { status: 400 });
   }
 
   const result = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw<{ id: string }[]>`
+      SELECT "id" FROM "VoucherSpin" WHERE "id" = ${data.spinId} FOR UPDATE
+    `;
     const spin = await tx.voucherSpin.findUnique({
       where: { id: data.spinId },
       include: { prize: true, vouchers: true },
@@ -63,7 +68,7 @@ export async function POST(req: NextRequest) {
         },
         select: { id: true },
       });
-      if (activeVoucher) throw new Error("Este WhatsApp já possui um voucher ativo.");
+      if (activeVoucher) throw new Error("Este telefone já possui um voucher ativo.");
     }
 
     if (existingVoucher) {

@@ -1,27 +1,41 @@
 export const dynamic = "force-dynamic";
-export const maxDuration = 15;
+export const maxDuration = 30;
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import type { VoucherPrize } from "@prisma/client";
+import { Prisma, type VoucherPrize } from "@prisma/client";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
+  consumeDailyStock,
   createVoucherFromSpin,
+  eligiblePrizes,
+  getCurrentBudget,
   getVoucherSettings,
   getIp,
   newPendingToken,
   newVisitorId,
+  pickPrize,
   publicPrize,
+  ROULETTE_PROMOTION_POLICY_KEY,
+  RouletteOperationalError,
+  type RouletteAvailabilityReason,
+  rouletteCampaignAvailability,
   rouletteSpinIdentityWhere,
   todayRange,
   userVoucherIdentity,
   VOUCHER_VISITOR_COOKIE,
 } from "@/lib/voucher-roulette";
+import {
+  latestLegalDocumentVersions,
+  recordUserAcceptances,
+  ROULETTE_PROMOTION_LEGAL_KEYS,
+} from "@/lib/legal-acceptance";
 
 const schema = z.object({
   idempotencyKey: z.string().min(8).max(120),
+  acceptedPolicy: z.literal(true),
 });
 
 const SESSION_TIMEOUT_MS = 700;
@@ -36,6 +50,15 @@ function logSpin(level: "info" | "warn" | "error", message: string, data: Record
   else if (level === "warn") console.warn(`[voucher-roulette-spin] ${message}`, payload);
   else console.info(`[voucher-roulette-spin] ${message}`, payload);
 }
+
+const CAMPAIGN_ERROR_MESSAGE: Record<RouletteAvailabilityReason, string> = {
+  INACTIVE: "A roleta está desativada.",
+  INSUFFICIENT_ACTIVE_PRIZES: "A roleta precisa de pelo menos dois prêmios ativos.",
+  BUDGET_INACTIVE: "O orçamento da roleta está desativado.",
+  MONTHLY_BUDGET_EXHAUSTED: "O orçamento mensal da roleta foi esgotado.",
+  DAILY_BUDGET_EXHAUSTED: "O orçamento diário da roleta foi esgotado.",
+  STOCK_EXHAUSTED: "O estoque diário de prêmios foi esgotado.",
+};
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T) {
   return Promise.race([
@@ -52,7 +75,7 @@ function hasSessionCookie(req: NextRequest) {
 }
 
 function identityLockId(s: string): bigint {
-  // djb2 hash mantido em 32 bits — usado como chave para pg_advisory_xact_lock
+  // djb2 hash mantido em 32 bits para uso como chave do advisory lock do PostgreSQL.
   let h = 5381;
   for (let i = 0; i < s.length; i++) {
     h = ((h << 5) + h) ^ s.charCodeAt(i);
@@ -61,17 +84,40 @@ function identityLockId(s: string): bigint {
   return BigInt(h);
 }
 
-function pickFastPrize(prizes: VoucherPrize[]) {
-  const active = prizes.filter((item) => item.active && (item.currentProbability || item.probability) > 0);
-  const total = active.reduce((sum, item) => sum + (item.currentProbability || item.probability), 0);
-  if (total <= 0) return active[0] ?? null;
-  let cursor = 0;
-  const roll = Math.random() * total;
-  for (const prize of active) {
-    cursor += prize.currentProbability || prize.probability;
-    if (roll <= cursor) return prize;
-  }
-  return active[active.length - 1] ?? null;
+type SpinWithPrizeAndVouchers = Prisma.VoucherSpinGetPayload<{
+  include: { prize: true; vouchers: true };
+}>;
+
+function existingSpinResult(
+  existing: SpinWithPrizeAndVouchers,
+  prizes: VoucherPrize[],
+  sessionUserId: string | null,
+) {
+  if (!existing.prize) return null;
+  const prizeIndex = prizes.findIndex((item) => item.id === existing.prizeId);
+  const voucher = existing.vouchers[0] ?? null;
+  const value = existing.voucherValue ?? existing.prize.value ?? 0;
+  const needsGuestClaim = Boolean(
+    existing.result === "VOUCHER" &&
+    value < 100 &&
+    !sessionUserId &&
+    !voucher?.recipientPhone &&
+    !existing.recipientPhone
+  );
+  const needsRegistration = Boolean(
+    existing.result === "VOUCHER" &&
+    value === 100 &&
+    !sessionUserId
+  );
+
+  return {
+    spin: existing,
+    prize: existing.prize,
+    prizeIndex,
+    voucher,
+    needsGuestClaim,
+    needsRegistration,
+  };
 }
 
 function modalMessage(type: string, value?: number | null, needsRegistration?: boolean, prizeName?: string | null) {
@@ -88,23 +134,40 @@ function modalMessage(type: string, value?: number | null, needsRegistration?: b
 }
 
 export async function POST(req: NextRequest) {
+  if (!["all", "marketing"].includes(req.cookies.get("elite_cookie_consent")?.value ?? "")) {
+    return NextResponse.json(
+      {
+        error: "Autorize cookies de campanha para participar da roleta.",
+        code: "CAMPAIGN_COOKIES_REQUIRED",
+      },
+      { status: 403 },
+    );
+  }
   const startedAt = Date.now();
   const rid = requestId(req);
-  const session = hasSessionCookie(req)
-    ? await withTimeout(getServerSession(authOptions).catch(() => null), SESSION_TIMEOUT_MS, null)
-    : null;
-  const parsed = schema.safeParse(await req.json().catch(() => ({})));
+  const [session, requestBody] = await Promise.all([
+    hasSessionCookie(req)
+      ? withTimeout(getServerSession(authOptions).catch(() => null), SESSION_TIMEOUT_MS, null)
+      : Promise.resolve(null),
+    req.json().catch(() => ({})),
+  ]);
+  const parsed = schema.safeParse(requestBody);
   if (!parsed.success) {
-    logSpin("warn", "invalid_body", { requestId: rid, durationMs: Date.now() - startedAt });
-    return NextResponse.json({ error: "Não foi possível preparar seu giro. Atualize a página e tente novamente." }, { status: 400 });
+    logSpin("warn", "invalid_body", {
+      requestId: rid,
+      durationMs: Date.now() - startedAt,
+      fields: parsed.error.issues.map((issue) => issue.path.join(".") || "body"),
+    });
+    return NextResponse.json(
+      {
+        error: "A solicitação do giro está incompleta ou inválida.",
+        code: "INVALID_SPIN_REQUEST",
+        requestId: rid,
+      },
+      { status: 400 },
+    );
   }
   const body = parsed.data;
-  const settings = await getVoucherSettings();
-  if (!settings.active) {
-    logSpin("warn", "inactive_campaign", { requestId: rid, durationMs: Date.now() - startedAt });
-    return NextResponse.json({ error: "A roleta está temporariamente indisponível." }, { status: 403 });
-  }
-
   const visitorId = req.cookies.get(VOUCHER_VISITOR_COOKIE)?.value ?? newVisitorId();
   const ipAddress = getIp(req.headers);
   const userAgent = req.headers.get("user-agent");
@@ -112,84 +175,178 @@ export async function POST(req: NextRequest) {
   const sessionUserId = session?.user?.id ?? null;
   const scopedIdempotencyKey = `${sessionUserId ?? visitorId}:${body.idempotencyKey}`;
 
-  const existing = await prisma.voucherSpin.findUnique({
-    where: { idempotencyKey: scopedIdempotencyKey },
-    include: { prize: true, vouchers: true },
-  });
-  if (existing?.prize) {
-    const prizes = await prisma.voucherPrize.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] });
-    const prizeIndex = prizes.findIndex((item) => item.id === existing.prizeId);
-    const voucher = existing.vouchers[0] ?? null;
-    const value = existing.voucherValue ?? existing.prize.value ?? 0;
-    const needsIdentification = Boolean(existing.result === "VOUCHER" && value < 100 && !sessionUserId && !voucher?.recipientPhone && !existing.recipientPhone);
-    const needsRegistration = Boolean(voucher?.status === "AWAITING_REGISTRATION" && !needsIdentification);
-    return NextResponse.json({
-      spinId: existing.id,
-      prize: publicPrize(existing.prize, Math.max(0, prizeIndex)),
-      result: existing.result,
-      message: modalMessage(existing.result, existing.prize.value, needsRegistration, existing.prize.name),
-      needsIdentification,
-      needsRegistration,
-      pendingToken: existing.pendingToken,
-      voucher,
+  const [settings, policyVersions, existing, user, currentBudget, prizes] = await Promise.all([
+    getVoucherSettings(),
+    latestLegalDocumentVersions(ROULETTE_PROMOTION_LEGAL_KEYS),
+    prisma.voucherSpin.findUnique({
+      where: { idempotencyKey: scopedIdempotencyKey },
+      include: { prize: true, vouchers: true },
+    }),
+    sessionUserId
+      ? prisma.user.findUnique({
+          where: { id: sessionUserId },
+          select: { id: true, phone: true, email: true, document: true },
+        })
+      : Promise.resolve(null),
+    getCurrentBudget(),
+    prisma.voucherPrize.findMany({
+      where: { active: true },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    }),
+  ]);
+  if (!settings.active) {
+    logSpin("warn", "inactive_campaign", { requestId: rid, durationMs: Date.now() - startedAt });
+    return NextResponse.json(
+      {
+        error: CAMPAIGN_ERROR_MESSAGE.INACTIVE,
+        code: "INACTIVE",
+        requestId: rid,
+      },
+      { status: 403 },
+    );
+  }
+  const policyVersion = policyVersions.get(ROULETTE_PROMOTION_POLICY_KEY);
+  if (!policyVersion) {
+    logSpin("warn", "legal_policy_unavailable", {
+      requestId: rid,
+      durationMs: Date.now() - startedAt,
     });
+    return NextResponse.json(
+      {
+        error: "A política vigente da campanha está indisponível.",
+        code: "LEGAL_POLICY_UNAVAILABLE",
+        requestId: rid,
+      },
+      { status: 503 },
+    );
   }
 
-  const user = sessionUserId
-    ? await prisma.user.findUnique({ where: { id: sessionUserId }, select: { id: true, phone: true, email: true, document: true } })
-    : null;
+  if (existing) {
+    const priorResult = existingSpinResult(existing, prizes, sessionUserId);
+    if (priorResult) {
+      return NextResponse.json({
+        spinId: priorResult.spin.id,
+        prize: publicPrize(priorResult.prize, Math.max(0, priorResult.prizeIndex)),
+        result: priorResult.spin.result,
+        message: modalMessage(
+          priorResult.spin.result,
+          priorResult.prize.value,
+          priorResult.needsRegistration,
+          priorResult.prize.name,
+        ),
+        needsIdentification: priorResult.needsGuestClaim,
+        needsRegistration: priorResult.needsRegistration,
+        pendingToken: priorResult.spin.pendingToken,
+        voucher: priorResult.voucher,
+      });
+    }
+  }
+
   const identity = userVoucherIdentity(user, { clientId: sessionUserId, visitorId, ipAddress, userAgent });
   const identityWhere = rouletteSpinIdentityWhere(identity);
 
   const limit = sessionUserId ? settings.dailySpinLimit : settings.guestDailySpinLimit;
 
-  // Busca prêmios fora da transação (leitura, sem impacto em concorrência)
-  const prizes = await prisma.voucherPrize.findMany({
-    where: { active: true },
-    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-  });
-  const prize = pickFastPrize(prizes);
-  if (!prize) {
-    logSpin("error", "no_active_prize", { requestId: rid, durationMs: Date.now() - startedAt });
-    return NextResponse.json({ error: "Não foi possível girar agora. Tente novamente.", requestId: rid }, { status: 503 });
-  }
-
-  const prizeIndex = prizes.findIndex((item) => item.id === prize.id);
-  const normalizedResult = prize.type === "PAID_VOUCHER" ? "VOUCHER" : prize.type;
-  const isVoucher = normalizedResult === "VOUCHER" && Boolean(prize.value && prize.value > 0);
-  const value = prize.value ?? null;
-  const isVoucher100Guest = isVoucher && value === 100 && !sessionUserId;
-  const needsGuestClaim = isVoucher && !sessionUserId && value !== 100;
-  const pendingToken = needsGuestClaim || isVoucher100Guest ? newPendingToken() : null;
-  const pendingExpiresAt = needsGuestClaim
-    ? new Date(Date.now() + settings.pendingClaimMinutes * 60 * 1000)
-    : isVoucher100Guest
-      ? new Date(Date.now() + settings.registrationClaimHours * 60 * 60 * 1000)
-      : null;
-
   let result;
   try {
-    // Transação com advisory lock: garante que a verificação de limite e a criação do spin
-    // sejam atômicas — dois requests simultâneos do mesmo usuário não passam ambos.
-    const spin = await prisma.$transaction(async (tx) => {
-      const lockId = identityLockId(sessionUserId ?? visitorId ?? ipAddress ?? "anon");
+    result = await prisma.$transaction(async (tx) => {
+      const lockIdentity = sessionUserId ?? ipAddress ?? visitorId ?? "anon";
+      const lockId = identityLockId(lockIdentity);
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${lockId})`;
 
-      const [spinsCountToday, tomorrowSpin] = await Promise.all([
-        tx.voucherSpin.count({ where: { ...identityWhere, createdAt: { gte: start, lt: end } } }),
-        tx.voucherSpin.findFirst({
-          where: { ...identityWhere, result: "TRY_TOMORROW", createdAt: { gte: start, lt: end } },
-          select: { id: true },
-        }),
-      ]);
+      const spinChecks = await tx.voucherSpin.findMany({
+        where: {
+          OR: [
+            { idempotencyKey: scopedIdempotencyKey },
+            { ...identityWhere, createdAt: { gte: start, lt: end } },
+          ],
+        },
+        include: { prize: true, vouchers: true },
+      });
+      const concurrentExisting = spinChecks.find(
+        (spin) => spin.idempotencyKey === scopedIdempotencyKey,
+      );
+      const todaySpins = spinChecks.filter(
+        (spin) => spin.createdAt >= start && spin.createdAt < end,
+      );
 
-      if (tomorrowSpin || spinsCountToday >= limit) {
+      if (concurrentExisting) {
+        const priorResult = existingSpinResult(concurrentExisting, prizes, sessionUserId);
+        if (priorResult) return priorResult;
+      }
+
+      if (
+        todaySpins.some((spin) => spin.result === "TRY_TOMORROW") ||
+        todaySpins.length >= limit
+      ) {
         const limitErr = new Error("LIMIT_REACHED") as Error & { blockedUntil: string };
         limitErr.blockedUntil = end.toISOString();
         throw limitErr;
       }
 
-      return tx.voucherSpin.create({
+      const now = new Date();
+      const eligibilityStartedAt = Date.now();
+      const { prizes: candidates, stats, diagnostics } = await eligiblePrizes({
+        tx,
+        prizes,
+        settings,
+        identity,
+        now,
+        budget: currentBudget,
+      });
+      logSpin("info", "eligibility_evaluated", {
+        requestId: rid,
+        durationMs: Date.now() - startedAt,
+        eligibilityDurationMs: Date.now() - eligibilityStartedAt,
+        activePrizeCount: diagnostics.activePrizeCount,
+        eligiblePrizeCount: diagnostics.eligiblePrizeCount,
+        eligibleVoucherCount: diagnostics.eligibleVoucherCount,
+        recentVoucherWin: diagnostics.recentVoucherWin,
+        activeVoucher: diagnostics.activeVoucher,
+        hasVoucher100ThisMonth: diagnostics.hasVoucher100ThisMonth,
+        monthlyUsed: stats.monthlyUsed,
+        monthlyRemaining: stats.monthlyRemaining,
+        dailyUsed: stats.dailyUsed,
+        dailyRemaining: stats.dailyRemaining,
+        stockRemainingBudget: stats.dailyStockRemainingBudget,
+      });
+      const availability = rouletteCampaignAvailability({
+        settingsActive: settings.active,
+        activePrizeCount: prizes.length,
+        budgetActive: stats.budget.active,
+        monthlyRemaining: stats.monthlyRemaining,
+        dailyRemaining: stats.dailyRemaining,
+        stockRemainingBudget: stats.dailyStockRemainingBudget,
+      });
+      if (!availability.active) {
+        throw new Error(`CAMPAIGN_UNAVAILABLE:${availability.reason}`);
+      }
+      const prize = pickPrize(candidates);
+      if (!prize) {
+        throw new RouletteOperationalError(
+          "NO_ELIGIBLE_PRIZE",
+          "Nenhum prêmio elegível foi encontrado para este giro.",
+        );
+      }
+
+      const prizeIndex = prizes.findIndex((item) => item.id === prize.id);
+      const normalizedResult = prize.type === "PAID_VOUCHER" ? "VOUCHER" : prize.type;
+      const isVoucher = normalizedResult === "VOUCHER" && Boolean(prize.value && prize.value > 0);
+      const value = prize.value ?? null;
+      const isVoucher100Guest = isVoucher && value === 100 && !sessionUserId;
+      const needsGuestClaim = isVoucher && !sessionUserId && value !== 100;
+      const pendingToken = needsGuestClaim || isVoucher100Guest ? newPendingToken() : null;
+      const pendingExpiresAt = needsGuestClaim
+        ? new Date(now.getTime() + settings.pendingClaimMinutes * 60 * 1000)
+        : isVoucher100Guest
+          ? new Date(now.getTime() + settings.registrationClaimHours * 60 * 60 * 1000)
+          : null;
+
+      if (isVoucher) {
+        await consumeDailyStock({ tx, prize, stats });
+      }
+
+      const createdSpin = await tx.voucherSpin.create({
         data: {
           clientId: sessionUserId,
           visitorId,
@@ -198,20 +355,63 @@ export async function POST(req: NextRequest) {
           voucherValue: value,
           ipAddress,
           userAgent,
+          whatsapp: identity.whatsapp,
           idempotencyKey: scopedIdempotencyKey,
           pendingToken,
           pendingExpiresAt,
+          legalPolicyKey: policyVersion.document.key,
+          legalPolicyVersion: policyVersion.version,
+          legalPolicyHash: policyVersion.contentHash,
+          legalPolicyAcceptedAt: new Date(),
         },
       });
-    }, { timeout: 10_000 });
 
-    let voucher = null;
-    if (isVoucher && sessionUserId) {
-      voucher = await createVoucherFromSpin({ spin, prize, settings, clientId: sessionUserId, visitorId });
-      await prisma.voucherSpin.update({ where: { id: spin.id }, data: { claimedAt: new Date() } });
-    }
+      if (sessionUserId) {
+        await recordUserAcceptances({
+          tx,
+          userId: sessionUserId,
+          documentKeys: ROULETTE_PROMOTION_LEGAL_KEYS,
+          userCategory: "CLIENT",
+          source: "VOUCHER_ROULETTE",
+          req,
+          route: "/api/vouchers/roulette/spin",
+          acceptanceType: "PROMOTION",
+          required: true,
+          throwOnError: true,
+        });
+      }
 
-    result = { spin, prize, prizeIndex, voucher, needsGuestClaim, needsRegistration: isVoucher100Guest };
+      let voucher = null;
+      let spin = createdSpin;
+      if (isVoucher && sessionUserId) {
+        voucher = await createVoucherFromSpin({
+          tx,
+          spin,
+          prize,
+          settings,
+          clientId: sessionUserId,
+          visitorId,
+          now,
+        });
+        spin = await tx.voucherSpin.update({
+          where: { id: spin.id },
+          data: { claimedAt: now },
+        });
+      }
+
+      return {
+        spin,
+        prize,
+        prizeIndex,
+        voucher,
+        needsGuestClaim,
+        needsRegistration: isVoucher100Guest,
+      };
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      maxWait: 10_000,
+      timeout: 20_000,
+    });
   } catch (err) {
     if (err instanceof Error && err.message === "LIMIT_REACHED") {
       const blockedUntil = (err as Error & { blockedUntil?: string }).blockedUntil ?? end.toISOString();
@@ -223,19 +423,77 @@ export async function POST(req: NextRequest) {
         limit,
         blockedUntil,
       });
-      return NextResponse.json({ error: "Você já participou desta campanha", blockedUntil }, { status: 409 });
+      return NextResponse.json(
+        {
+          error: "Você já atingiu o limite diário de participações.",
+          code: "DAILY_LIMIT_REACHED",
+          blockedUntil,
+          requestId: rid,
+        },
+        { status: 409 },
+      );
+    }
+    if (err instanceof Error && err.message.startsWith("CAMPAIGN_UNAVAILABLE:")) {
+      const unavailableReason = (err.message.split(":")[1] ?? "INACTIVE") as RouletteAvailabilityReason;
+      logSpin("warn", "campaign_unavailable", {
+        requestId: rid,
+        durationMs: Date.now() - startedAt,
+        unavailableReason,
+      });
+      return NextResponse.json(
+        {
+          error: CAMPAIGN_ERROR_MESSAGE[unavailableReason] ?? "A campanha não está operacional.",
+          code: unavailableReason,
+          unavailableReason,
+          requestId: rid,
+        },
+        { status: 403 },
+      );
+    }
+    if (err instanceof RouletteOperationalError) {
+      logSpin("warn", "operational_validation_failed", {
+        requestId: rid,
+        durationMs: Date.now() - startedAt,
+        code: err.code,
+        error: err.message,
+      });
+      return NextResponse.json(
+        {
+          error: err.message,
+          code: err.code,
+          requestId: rid,
+        },
+        { status: err.code === "PRIZE_STOCK_EXHAUSTED" ? 409 : 503 },
+      );
     }
     const safeError = err instanceof Error ? err.message : "Erro desconhecido";
+    const prismaCode = typeof err === "object" && err && "code" in err
+      ? String((err as { code?: unknown }).code ?? "")
+      : null;
+    const errorCode = prismaCode === "P2028"
+      ? "SPIN_TRANSACTION_TIMEOUT"
+      : "SPIN_TRANSACTION_FAILED";
     logSpin("error", "transaction_failed", {
       requestId: rid,
       durationMs: Date.now() - startedAt,
+      code: errorCode,
+      prismaCode,
       error: safeError.slice(0, 240),
       hasSession: Boolean(sessionUserId),
       hasVisitorId: Boolean(visitorId),
       hasIp: Boolean(ipAddress),
       userAgent: userAgent?.slice(0, 160) ?? null,
     });
-    return NextResponse.json({ error: "Não foi possível girar agora. Tente novamente.", requestId: rid }, { status: 503 });
+    return NextResponse.json(
+      {
+        error: errorCode === "SPIN_TRANSACTION_TIMEOUT"
+          ? "O processamento do giro excedeu o tempo limite da transação."
+          : `Falha interna ao processar o giro. Código de suporte: ${rid}.`,
+        code: errorCode,
+        requestId: rid,
+      },
+      { status: 503 },
+    );
   }
 
   const response = NextResponse.json({

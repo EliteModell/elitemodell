@@ -51,7 +51,11 @@ enum BookingStatus {
 enum PaymentStatus {
   PENDING
   PAID
+  PARTIALLY_REFUNDED
   REFUNDED
+  CANCELLED
+  EXPIRED
+  CHARGEBACK
   FAILED
 }
 
@@ -128,35 +132,44 @@ enum ClientStatus {
   REJECTED
 }
 
+enum AdminRole {
+  ADMIN_MASTER
+  ADMIN_GERAL
+  MODERADOR_CADASTROS
+  MODERADOR_CONTEUDO
+  SUPORTE
+  FINANCEIRO
+}
+
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 model User {
-  id              String       @id @default(cuid())
-  name            String?
-  email           String       @unique
-  emailVerified   DateTime?
-  password        String?
-  image           String?
-  phone           String?
-  phoneVerified   Boolean      @default(false)
-  phoneVerifiedAt DateTime?
-  city            String?
-  state           String?
-  accountType     String       @default("client")
-  document        String?
-  birthDate       DateTime?
-  role            UserRole     @default(GUEST)
-  category        UserCategory?
-  verified        Boolean      @default(false)
-  credits         Float        @default(0)
-  premiumUntil    DateTime?
-  blocked         Boolean      @default(false)
-  blockReason     String?
-  blockedAt       DateTime?
-  lgpdConsent     Boolean      @default(false)
-  termsConsent    Boolean      @default(false)
-  consentDate     DateTime?
-  clientStatus    ClientStatus @default(UNVERIFIED)
+  id                 String        @id @default(cuid())
+  name               String?
+  email              String        @unique
+  emailVerified      DateTime?
+  password           String?
+  image              String?
+  phone              String?
+  phoneVerified      Boolean       @default(false)
+  phoneVerifiedAt    DateTime?
+  city               String?
+  state              String?
+  accountType        String        @default("client")
+  document           String?
+  birthDate          DateTime?
+  role               UserRole      @default(GUEST)
+  category           UserCategory?
+  verified           Boolean       @default(false)
+  credits            Float         @default(0)
+  premiumUntil       DateTime?
+  blocked            Boolean       @default(false)
+  blockReason        String?
+  blockedAt          DateTime?
+  lgpdConsent        Boolean       @default(false)
+  termsConsent       Boolean       @default(false)
+  consentDate        DateTime?
+  clientStatus       ClientStatus  @default(UNVERIFIED)
   kycSessionId       String?
   kycSubmittedAt     DateTime?
   kycReviewedAt      DateTime?
@@ -164,59 +177,74 @@ model User {
   kycIsSandbox       Boolean?
   kycChecksJson      Json?
   termsVersion       String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
-  accounts           Account[]
-  sessions           Session[]
-  properties         Property[]
-  bookingsAsGuest    Booking[]      @relation("GuestBookings")
-  reviews            Review[]
-  sentMessages       Message[]      @relation("SentMessages")
-  favorites          Favorite[]
-  referrals          Referral[]     @relation("ReferrerUser")
-  referredBy         Referral?      @relation("ReferredUser")
-  hostProfile        HostProfile?
-  clientProfile      ClientProfile?
-  notifications      Notification[]
-  professional       Professional?
-  clientAppointments Appointment[]  @relation("ClientAppointments")
-  proReviews         ProfessionalReview[] @relation("ProReviewAuthor")
-  proReviewDisputes  ProfessionalReviewDispute[] @relation("ProReviewDisputeAuthor")
-  stories            Story[]
-  reportsCreated     Report[]       @relation("ReportAuthor")
-  auditLogsCreated   AuditLog[]     @relation("AuditAdmin")
-  phoneVerificationCodes PhoneVerificationCode[]
-  payments           Payment[]
-  voucherSpins       VoucherSpin[]    @relation("VoucherSpinClient")
-  clientVouchers     ClientVoucher[]  @relation("ClientVouchers")
+  accounts                Account[]
+  sessions                Session[]
+  properties              Property[]
+  bookingsAsGuest         Booking[]                   @relation("GuestBookings")
+  reviews                 Review[]
+  sentMessages            Message[]                   @relation("SentMessages")
+  favorites               Favorite[]
+  referrals               Referral[]                  @relation("ReferrerUser")
+  referredBy              Referral?                   @relation("ReferredUser")
+  hostProfile             HostProfile?
+  clientProfile           ClientProfile?
+  notifications           Notification[]
+  professional            Professional?
+  clientAppointments      Appointment[]               @relation("ClientAppointments")
+  proReviews              ProfessionalReview[]        @relation("ProReviewAuthor")
+  proReviewDisputes       ProfessionalReviewDispute[] @relation("ProReviewDisputeAuthor")
+  stories                 Story[]
+  reportsCreated          Report[]                    @relation("ReportAuthor")
+  auditLogsCreated        AuditLog[]                  @relation("AuditAdmin")
+  adminAssignments        AdminRoleAssignment[]       @relation("AdminRoleUser")
+  adminRolesGranted       AdminRoleAssignment[]       @relation("AdminRoleGrantedBy")
+  adminMfaEnrollment      AdminMfaEnrollment?
+  adminMfaSessions        AdminMfaSession[]
+  legalVersionsAuthored   LegalDocumentVersion[]      @relation("LegalVersionAuthor")
+  legalVersionsApproved   LegalDocumentVersion[]      @relation("LegalVersionApprover")
+  acceptances             UserAcceptance[]
+  consentPreferences      ConsentPreference[]
+  privacyRequests         PrivacyRequest[]
+  contentDeclarations     ContentDeclaration[]
+  checkoutAcceptances     CheckoutAcceptance[]
+  deletionJobs            DataDeletionJob[]
+  phoneVerificationCodes  PhoneVerificationCode[]
+  payments                Payment[]
+  claimedPremiumPurchases PremiumPurchaseIntent[]     @relation("PremiumPurchaseClaimedBy")
+  voucherSpins            VoucherSpin[]               @relation("VoucherSpinClient")
+  clientVouchers          ClientVoucher[]             @relation("ClientVouchers")
+  uploadedAssets          UploadAsset[]               @relation("UploadOwner")
+  reviewedAssets          UploadAsset[]               @relation("UploadReviewer")
 
   @@index([phone])
   @@index([accountType])
 }
 
 model PhoneVerificationCode {
-  id          String    @id @default(cuid())
-  phone       String
-  codeHash    String
-  accountType String    @default("client")
-  channel     String    @default("sms")
-  expiresAt   DateTime
-  attempts    Int       @default(0)
-  usedAt      DateTime?
-  createdAt   DateTime  @default(now())
-  sentAt      DateTime?
-  deliveryProvider String?
-  providerMessageId String?
-  sendError   String?
-  requestIp   String?
-  termsConsent Boolean   @default(false)
-  lgpdConsent  Boolean   @default(false)
-  ageConfirmed Boolean   @default(false)
-  ownershipConfirmed Boolean @default(false)
-  userId      String?
+  id                 String    @id @default(cuid())
+  phone              String
+  codeHash           String
+  accountType        String    @default("client")
+  channel            String    @default("sms")
+  expiresAt          DateTime
+  attempts           Int       @default(0)
+  usedAt             DateTime?
+  createdAt          DateTime  @default(now())
+  sentAt             DateTime?
+  deliveryProvider   String?
+  providerMessageId  String?
+  sendError          String?
+  requestIp          String?
+  termsConsent       Boolean   @default(false)
+  lgpdConsent        Boolean   @default(false)
+  ageConfirmed       Boolean   @default(false)
+  ownershipConfirmed Boolean   @default(false)
+  userId             String?
 
-  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([phone, accountType, createdAt])
   @@index([phone, accountType, usedAt, expiresAt])
@@ -226,15 +254,15 @@ model PhoneVerificationCode {
 }
 
 model Story {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  mediaUrl   String
-  mediaType  String   @default("image")
-  thumbnail  String?
-  expiresAt  DateTime
-  views      Int      @default(0)
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaUrl  String
+  mediaType String   @default("image")
+  thumbnail String?
+  expiresAt DateTime
+  views     Int      @default(0)
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([expiresAt])
@@ -254,7 +282,7 @@ model HostProfile {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ClientProfile {
@@ -265,7 +293,7 @@ model ClientProfile {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {
@@ -307,41 +335,41 @@ model VerificationToken {
 // ─── Property ────────────────────────────────────────────────────────────────
 
 model Property {
-  id              String          @id @default(cuid())
-  hostId          String
-  title           String
-  description     String          @db.Text
-  type            PropertyType    @default(APARTMENT)
-  status          PropertyStatus  @default(DRAFT)
-  address         String
-  bairro          String?
-  city            String
-  state           String
-  country         String          @default("Brasil")
-  zipCode         String?
-  latitude        Float?
-  longitude       Float?
-  pricePerNight   Float
-  cleaningFee     Float           @default(0)
-  serviceFee      Float           @default(0)
-  maxGuests       Int             @default(1)
-  bedrooms        Int             @default(1)
-  beds            Int             @default(1)
-  bathrooms       Int             @default(1)
-  checkInTime     String          @default("14:00")
-  checkOutTime    String          @default("12:00")
-  minNights       Int             @default(1)
-  maxNights       Int?
-  instantBook     Boolean         @default(false)
-  allowPets       Boolean         @default(false)
-  allowSmoking    Boolean         @default(false)
-  allowParties    Boolean         @default(false)
-  rating          Float           @default(0)
-  totalReviews    Int             @default(0)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id            String         @id @default(cuid())
+  hostId        String
+  title         String
+  description   String         @db.Text
+  type          PropertyType   @default(APARTMENT)
+  status        PropertyStatus @default(DRAFT)
+  address       String
+  bairro        String?
+  city          String
+  state         String
+  country       String         @default("Brasil")
+  zipCode       String?
+  latitude      Float?
+  longitude     Float?
+  pricePerNight Float
+  cleaningFee   Float          @default(0)
+  serviceFee    Float          @default(0)
+  maxGuests     Int            @default(1)
+  bedrooms      Int            @default(1)
+  beds          Int            @default(1)
+  bathrooms     Int            @default(1)
+  checkInTime   String         @default("14:00")
+  checkOutTime  String         @default("12:00")
+  minNights     Int            @default(1)
+  maxNights     Int?
+  instantBook   Boolean        @default(false)
+  allowPets     Boolean        @default(false)
+  allowSmoking  Boolean        @default(false)
+  allowParties  Boolean        @default(false)
+  rating        Float          @default(0)
+  totalReviews  Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
-  host            User            @relation(fields: [hostId], references: [id])
+  host            User              @relation(fields: [hostId], references: [id])
   photos          PropertyPhoto[]
   amenities       PropertyAmenity[]
   bookings        Booking[]
@@ -363,16 +391,16 @@ model PropertyPhoto {
   order      Int      @default(0)
   createdAt  DateTime @default(now())
 
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 model PropertyAmenity {
-  id         String   @id @default(cuid())
+  id         String  @id @default(cuid())
   propertyId String
   name       String
   icon       String?
 
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 model BlockedDate {
@@ -381,7 +409,7 @@ model BlockedDate {
   date       DateTime
   reason     String?
 
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@unique([propertyId, date])
 }
@@ -394,42 +422,61 @@ model SeasonalPrice {
   price      Float
   label      String?
 
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 // ─── Booking ─────────────────────────────────────────────────────────────────
 
 model Booking {
-  id            String        @id @default(cuid())
-  propertyId    String
-  guestId       String
-  checkIn       DateTime
-  checkOut      DateTime
-  guests        Int
-  nights        Int
-  pricePerNight Float
-  cleaningFee   Float         @default(0)
-  serviceFee    Float         @default(0)
-  discount      Float         @default(0)
-  totalPrice    Float
-  status        BookingStatus @default(PENDING)
-  paymentStatus PaymentStatus @default(PENDING)
-  paymentId     String?
-  paymentMethod String?
-  couponCode    String?
-  notes         String?       @db.Text
-  hostPayout    Float?
-  payoutDate    DateTime?
-  cancelledAt   DateTime?
-  cancelReason  String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id                    String        @id @default(cuid())
+  propertyId            String
+  guestId               String
+  checkIn               DateTime
+  checkOut              DateTime
+  guests                Int
+  nights                Int
+  pricePerNight         Float
+  cleaningFee           Float         @default(0)
+  serviceFee            Float         @default(0)
+  discount              Float         @default(0)
+  totalPrice            Float
+  status                BookingStatus @default(PENDING)
+  paymentStatus         PaymentStatus @default(PENDING)
+  paymentId             String?
+  paymentMethod         String?
+  couponCode            String?
+  notes                 String?       @db.Text
+  hostPayout            Float?
+  subtotalCents         Int?
+  cleaningFeeCents      Int?
+  serviceFeeCents       Int?
+  discountCents         Int?
+  totalPriceCents       Int?
+  hostPayoutCents       Int?
+  payoutStatus          String        @default("NOT_SCHEDULED")
+  disputeStatus         String        @default("NONE")
+  checkInStatus         String        @default("NOT_CONFIRMED")
+  payoutBlocked         Boolean       @default(true)
+  payoutBlockedReason   String?       @db.Text
+  payoutEligibleAt      DateTime?
+  contestationDeadline  DateTime?
+  termsVersionId        String?
+  refundPolicyVersionId String?
+  acceptedAt            DateTime?
+  acceptanceIp          String?
+  acceptanceUserAgent   String?
+  payoutDate            DateTime?
+  cancelledAt           DateTime?
+  cancelReason          String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 
-  property      Property      @relation(fields: [propertyId], references: [id])
-  guest         User          @relation("GuestBookings", fields: [guestId], references: [id])
-  review        Review?
-  messages      Message[]
-  payment       Payment?
+  property        Property                @relation(fields: [propertyId], references: [id])
+  guest           User                    @relation("GuestBookings", fields: [guestId], references: [id])
+  review          Review?
+  messages        Message[]
+  payments        Payment[]
+  financialEvents BookingFinancialEvent[]
 
   @@index([guestId, status, createdAt])
   @@index([propertyId, status, checkIn, checkOut])
@@ -437,35 +484,143 @@ model Booking {
 }
 
 model Payment {
-  id              String        @id @default(cuid())
-  bookingId       String?       @unique
-  userId          String?
-  amount          Float
-  currency        String        @default("BRL")
-  method          String
-  status          PaymentStatus @default(PENDING)
-  provider        String        @default("asaas")
-  providerPaymentId String?     @unique
-  externalReference String?     @unique
-  stripePaymentId String?
-  pixCode         String?
-  pixQrCodeBase64 String?
-  invoiceUrl      String?
-  creditAmount    Float?
-  premiumUntil    DateTime?
-  boletoUrl       String?
-  paidAt          DateTime?
-  refundedAt      DateTime?
-  refundAmount    Float?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                  String        @id @default(cuid())
+  bookingId           String?
+  userId              String?
+  amount              Float
+  currency            String        @default("BRL")
+  method              String
+  status              PaymentStatus @default(PENDING)
+  provider            String        @default("asaas")
+  providerPaymentId   String?       @unique
+  externalReference   String?       @unique
+  stripePaymentId     String?
+  pixCode             String?
+  pixQrCodeBase64     String?
+  invoiceUrl          String?
+  creditAmount        Float?
+  premiumUntil        DateTime?
+  boletoUrl           String?
+  paidAt              DateTime?
+  refundedAt          DateTime?
+  refundAmount        Float?
+  amountCents         Int?
+  refundedAmountCents Int           @default(0)
+  providerStatus      String?
+  providerUpdatedAt   DateTime?
+  expiresAt           DateTime?
+  cancelledAt         DateTime?
+  lastReconciledAt    DateTime?
+  benefitStatus       String        @default("PENDING")
+  benefitAppliedAt    DateTime?
+  benefitReversedAt   DateTime?
+  benefitError        String?       @db.Text
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
-  booking         Booking?      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  user            User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  voucherUnlocks  ClientVoucher[]
+  booking             Booking?               @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user                User?                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  voucherUnlocks      ClientVoucher[]
+  checkoutAcceptances CheckoutAcceptance[]
+  operations          PaymentOperation[]
+  premiumPurchase     PremiumPurchaseIntent?
 
   @@index([userId, status])
+  @@index([bookingId, createdAt])
   @@index([provider, providerPaymentId])
+}
+
+model PremiumPurchaseIntent {
+  id                     String    @id @default(cuid())
+  paymentId              String    @unique
+  planId                 String
+  status                 String    @default("PAYMENT_PENDING")
+  claimTokenHash         String    @unique
+  purchaserName          String
+  purchaserEmail         String
+  purchaserPhone         String?
+  purchaserDocumentHash  String
+  purchaserDocumentLast4 String
+  ipAddress              String?
+  userAgent              String?   @db.Text
+  termsVersionId         String?
+  refundPolicyVersionId  String?
+  termsHash              String
+  refundPolicyHash       String
+  acceptedAt             DateTime
+  paidAt                 DateTime?
+  claimedAt              DateTime?
+  claimedByUserId        String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  payment   Payment                @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  claimedBy User?                  @relation("PremiumPurchaseClaimedBy", fields: [claimedByUserId], references: [id], onDelete: SetNull)
+  events    PremiumPurchaseEvent[]
+
+  @@index([purchaserEmail, status, createdAt])
+  @@index([claimedByUserId, status])
+  @@index([status, createdAt])
+}
+
+model PremiumPurchaseEvent {
+  id        String   @id @default(cuid())
+  intentId  String
+  type      String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  intent PremiumPurchaseIntent @relation(fields: [intentId], references: [id], onDelete: Cascade)
+
+  @@index([intentId, createdAt])
+  @@index([type, createdAt])
+}
+
+model PaymentOperation {
+  id               String    @id @default(cuid())
+  paymentId        String
+  adminId          String?
+  type             String
+  status           String    @default("PROCESSING")
+  amountCents      Int?
+  previousStatus   String?
+  nextStatus       String?
+  providerStatus   String?
+  providerResponse Json?
+  reason           String    @db.Text
+  confirmation     String?
+  idempotencyKey   String    @unique
+  error            String?   @db.Text
+  createdAt        DateTime  @default(now())
+  completedAt      DateTime?
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+
+  @@index([paymentId, createdAt])
+  @@index([type, status, createdAt])
+  @@index([adminId, createdAt])
+}
+
+model BookingFinancialEvent {
+  id               String   @id @default(cuid())
+  bookingId        String
+  paymentId        String?
+  type             String
+  status           String
+  grossCents       Int?
+  platformFeeCents Int?
+  hostNetCents     Int?
+  refundCents      Int?
+  payoutCents      Int?
+  reason           String?  @db.Text
+  metadata         Json?
+  createdAt        DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  @@index([bookingId, createdAt])
+  @@index([paymentId, createdAt])
+  @@index([type, status, createdAt])
 }
 
 model WebhookEvent {
@@ -506,9 +661,9 @@ model Review {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  property      Property @relation(fields: [propertyId], references: [id])
-  author        User     @relation(fields: [authorId], references: [id])
+  booking  Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id])
+  author   User     @relation(fields: [authorId], references: [id])
 }
 
 // ─── Message ─────────────────────────────────────────────────────────────────
@@ -521,8 +676,8 @@ model Message {
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  sender    User     @relation("SentMessages", fields: [senderId], references: [id])
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  sender  User    @relation("SentMessages", fields: [senderId], references: [id])
 
   @@index([bookingId, createdAt])
   @@index([bookingId, read])
@@ -531,14 +686,14 @@ model Message {
 // ─── Favorite ────────────────────────────────────────────────────────────────
 
 model Favorite {
-  id         String   @id @default(cuid())
-  userId     String
-  propertyId String?
+  id             String   @id @default(cuid())
+  userId         String
+  propertyId     String?
   professionalId String?
-  createdAt  DateTime @default(now())
+  createdAt      DateTime @default(now())
 
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property   Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property     Property?     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   professional Professional? @relation(fields: [professionalId], references: [id], onDelete: Cascade)
 
   @@unique([userId, propertyId])
@@ -574,8 +729,8 @@ model Referral {
   paid         Boolean  @default(false)
   createdAt    DateTime @default(now())
 
-  referrer     User     @relation("ReferrerUser", fields: [referrerId], references: [id])
-  referred     User     @relation("ReferredUser", fields: [referredId], references: [id])
+  referrer User @relation("ReferrerUser", fields: [referrerId], references: [id])
+  referred User @relation("ReferredUser", fields: [referredId], references: [id])
 }
 
 // ─── Notification ────────────────────────────────────────────────────────────
@@ -590,7 +745,7 @@ model Notification {
   link      String?
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, read])
 }
@@ -598,63 +753,69 @@ model Notification {
 // ─── Module 2: Marketplace de Profissionais ──────────────────────────────────
 
 model Professional {
-  id           String             @id @default(cuid())
-  userId       String             @unique
-  slug         String             @unique
-  displayName  String
-  bio          String             @db.Text
-  city         String
-  state        String
-  bairro           String?
-  phone        String?
-  whatsapp     String?
-  instagram    String?
-  website      String?
-  hidePhone    Boolean @default(false)
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  slug              String    @unique
+  displayName       String
+  bio               String    @db.Text
+  city              String
+  state             String
+  bairro            String?
+  phone             String?
+  whatsapp          String?
+  instagram         String?
+  website           String?
+  hidePhone         Boolean   @default(false)
+  contactVisibility String    @default("PUBLIC")
   listingPhoneUntil DateTime?
 
   // Preços
-  priceMin         Float?
-  priceMax         Float?
-  pricePerHour     Float?
-  price30min       Float?
-  price2h          Float?
-  priceOvernight   Float?
-  priceWebcam      Float?
-  paymentMethods   String[]
+  priceMin       Float?
+  priceMax       Float?
+  pricePerHour   Float?
+  price15min     Float?
+  price30min     Float?
+  price2h        Float?
+  priceOvernight Float?
+  priceWebcam    Float?
+  paymentMethods String[]
 
   // Perfil físico
-  escortCategory   String?
-  birthDate        DateTime?
-  hideAge          Boolean  @default(false)
-  height           Int?
-  weight           Int?
-  hairColor        String?
-  eyeColor         String?
-  ethnicity        String?
-  signo            String?
-  hasTattoos       Boolean  @default(false)
-  hasPiercing      Boolean  @default(false)
-  hasSilicone      Boolean  @default(false)
-  isDepilada       Boolean  @default(true)
-  depilationStyle  String?
-  bodyType         String?
+  escortCategory  String?
+  birthDate       DateTime?
+  hideAge         Boolean   @default(false)
+  height          Int?
+  weight          Int?
+  hairColor       String?
+  eyeColor        String?
+  ethnicity       String?
+  signo           String?
+  hasTattoos      Boolean   @default(false)
+  hasPiercing     Boolean   @default(false)
+  hasSilicone     Boolean   @default(false)
+  isDepilada      Boolean   @default(true)
+  depilationStyle String?
+  bodyType        String?
 
   // Atendimento
-  attendanceTypes  String[]
-  servesGenders    String[]
-  idiomas          String[]
-  diasDisponiveis  String[]
-  horarioInicio    String?
-  horarioFim       String?
+  attendanceTypes String[]
+  servesGenders   String[]
+  idiomas         String[]
+  diasDisponiveis String[]
+  horarioInicio   String?
+  horarioFim      String?
 
   // Serviços
-  services         String[]
-  fetishes         String[]
+  services            String[]
+  servicesNotOffered  String[] @default([])
+  fetishes            String[]
+  amenities           String[] @default([])
+  serviceCities       String[] @default([])
+  approximateLocation String?
 
   // Fotos
-  image            String?
-  galleryUrls      String[]
+  image                         String?
+  galleryUrls                   String[]
   presentationVideoUrl          String?
   presentationVideoStatus       String   @default("NONE") // NONE | PENDING | APPROVED | REJECTED
   presentationVideoRejectReason String?
@@ -663,123 +824,292 @@ model Professional {
   docType          String?
   docFrenteUrl     String?
   docVersoUrl      String?
-  docStatus        String   @default("NOT_SENT")  // NOT_SENT | PENDING | APPROVED | REJECTED
-  verifStatus      String   @default("NOT_SENT")  // NOT_SENT | PENDING | APPROVED | REJECTED
+  docStatus        String  @default("NOT_SENT") // NOT_SENT | PENDING | APPROVED | REJECTED
+  verifStatus      String  @default("NOT_SENT") // NOT_SENT | PENDING | APPROVED | REJECTED
   verificationUrl  String?
   verificationType String?
   verificationCode String?
   kycProvider      String?
   kycSessionId     String?
-  kycStatus        String   @default("NOT_STARTED") // NOT_STARTED | PENDING | APPROVED | REJECTED | KYC_MANUAL_PENDENTE
+  kycStatus        String  @default("NOT_STARTED") // NOT_STARTED | PENDING | APPROVED | REJECTED | KYC_MANUAL_PENDENTE
   rejectReason     String?
 
   // Status e métricas
-  status            ProfessionalStatus @default(PENDING_REVIEW)
-  verified          Boolean            @default(false)
-  featured          Boolean            @default(false)
-  pauseStartedAt    DateTime?
-  pauseUntil        DateTime?
-  pauseReason       String?
-  boostActive       Boolean            @default(false)
-  boostStartedAt    DateTime?
-  boostUntil        DateTime?
-  boostSource       String?
-  profileViews      Int                @default(0)
-  contactClicks     Int                @default(0)
-  rating            Float              @default(0)
-  totalReviews      Int                @default(0)
-  totalAppointments Int                @default(0)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  status              ProfessionalStatus @default(PENDING_REVIEW)
+  verified            Boolean            @default(false)
+  featured            Boolean            @default(false)
+  freeAccessStartedAt DateTime?
+  freeAccessEndsAt    DateTime?
+  accessGrandfathered Boolean            @default(true)
+  pauseStartedAt      DateTime?
+  pauseUntil          DateTime?
+  pauseReason         String?
+  boostActive         Boolean            @default(false)
+  boostStartedAt      DateTime?
+  boostUntil          DateTime?
+  boostSource         String?
+  activePlanId        String?
+  planPriority        Int                @default(0)
+  onlineVisible       Boolean            @default(true)
+  lastOnlineAt        DateTime?
+  profileViews        Int                @default(0)
+  contactClicks       Int                @default(0)
+  rating              Float              @default(0)
+  totalReviews        Int                @default(0)
+  totalAppointments   Int                @default(0)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 
-  user         User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  photos       ProfessionalPhoto[]
-  specialties  ProfessionalSpecialty[]
-  schedule     Schedule[]
-  appointments Appointment[]
-  reviews      ProfessionalReview[]
-  reviewDisputes ProfessionalReviewDispute[]
-  profileEvents ProfessionalProfileEvent[]
-  favorites    Favorite[]
+  user            User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photos          ProfessionalPhoto[]
+  specialties     ProfessionalSpecialty[]
+  schedule        Schedule[]
+  appointments    Appointment[]
+  reviews         ProfessionalReview[]
+  reviewDisputes  ProfessionalReviewDispute[]
+  profileEvents   ProfessionalProfileEvent[]
+  favorites       Favorite[]
   voucherSettings ProfessionalVoucherSettings?
 
   @@index([status, featured, rating, totalReviews, createdAt])
+  @@index([status, accessGrandfathered, freeAccessEndsAt])
   @@index([status, boostActive, boostUntil])
+  @@index([status, planPriority, featured, rating])
+  @@index([status, lastOnlineAt])
   @@index([status, listingPhoneUntil])
   @@index([status, city])
   @@index([status, escortCategory])
   @@index([status, priceMin])
 }
 
+model PlatformSettings {
+  id                                  String   @id @default("default")
+  professionalFreeTrialDays           Int      @default(30)
+  uploadSecurityEnabled               Boolean  @default(true)
+  uploadAvProvider                    String   @default("CLAMAV")
+  uploadModerationProvider            String   @default("MANUAL")
+  moderationOperationalOwner          String   @default("BRUNO MORAES DA ROCHA")
+  privacyOperationalOwner             String   @default("BRUNO MORAES DA ROCHA")
+  commonReportTriageBusinessDays      Int      @default(2)
+  supportInitialResponseBusinessDays  Int      @default(2)
+  refundReviewBusinessDays            Int      @default(5)
+  bookingServiceFeeBps                Int      @default(1000)
+  bookingPayoutDelayHours             Int      @default(24)
+  bookingPayoutReleaseEvent           String   @default("CHECK_IN_CONFIRMED")
+  bookingContestationHours            Int?
+  bookingProposalStatus               String   @default("PENDING_PARTNER_AND_LEGAL_APPROVAL")
+  bookingCommercialModelApproved      Boolean  @default(false)
+  bookingCancellationPolicyApproved   Boolean  @default(false)
+  bookingPayoutIntegrationHomologated Boolean  @default(false)
+  bookingFinancialTestsApproved       Boolean  @default(false)
+  bookingLivePayoutEnabled            Boolean  @default(false)
+  createdAt                           DateTime @default(now())
+  updatedAt                           DateTime @updatedAt
+}
+
+model ModerationAuthorityRule {
+  id                       String   @id @default(cuid())
+  key                      String   @unique
+  action                   String
+  requiredPermission       String
+  canExecuteAlone          Boolean  @default(false)
+  requiresSecondApprover   Boolean  @default(false)
+  requiresPartner          Boolean  @default(false)
+  requiresLegal            Boolean  @default(false)
+  requiresEvidence         Boolean  @default(true)
+  requiresUserNotification Boolean  @default(true)
+  operationalRule          String   @db.Text
+  status                   String   @default("PROPOSED")
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@index([status, action])
+}
+
+model CorporateChannel {
+  id               String    @id @default(cuid())
+  key              String    @unique
+  label            String
+  purpose          String    @db.Text
+  email            String?
+  required         Boolean   @default(true)
+  status           String    @default("PENDING_CREATION")
+  domainValidated  Boolean   @default(false)
+  receiveValidated Boolean   @default(false)
+  sendValidated    Boolean   @default(false)
+  owner            String?
+  mfaEnabled       Boolean   @default(false)
+  recoveryEmail    String?
+  lastValidatedAt  DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([status, required])
+}
+
+model PrivacyOfficerAppointment {
+  id                          String    @id @default("default")
+  operationalOwner            String    @default("BRUNO MORAES DA ROCHA")
+  formalName                  String?
+  formalRole                  String?
+  cpfEncrypted                String?   @db.Text
+  publicEmail                 String?
+  corporatePhone              String?
+  designationActReference     String?
+  designatedAt                DateTime?
+  startsAt                    DateTime?
+  substituteName              String?
+  duties                      String?   @db.Text
+  autonomy                    String?   @db.Text
+  conflicts                   String?   @db.Text
+  legalRepresentativeApproval String?
+  status                      String    @default("NOT_FORMALLY_APPOINTED")
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
+}
+
+model LegalAddressVisibility {
+  id                String   @id @default(cuid())
+  context           String   @unique
+  label             String
+  visible           Boolean  @default(false)
+  legallyRequired   Boolean  @default(false)
+  legalReviewStatus String   @default("PENDING_LEGAL_REVIEW")
+  notes             String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([legalReviewStatus, legallyRequired])
+}
+
+model BookingPolicyHistory {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  reason    String   @db.Text
+  before    Json?
+  after     Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+}
+
+model UploadAsset {
+  id                        String    @id @default(cuid())
+  userId                    String
+  originalName              String
+  folder                    String
+  category                  String
+  declaredMimeType          String?
+  detectedMimeType          String
+  extension                 String
+  sizeBytes                 Int
+  fileHash                  String
+  status                    String    @default("QUARANTINED")
+  malwareStatus             String    @default("PENDING")
+  moderationStatus          String    @default("PENDING")
+  malwareProvider           String?
+  malwareProviderVersion    String?
+  malwareResult             Json?
+  moderationProvider        String?
+  moderationProviderVersion String?
+  moderationResult          Json?
+  quarantineBucket          String
+  quarantinePath            String
+  approvedBucket            String?
+  approvedPath              String?
+  controlledUrl             String?
+  failureReason             String?   @db.Text
+  scanAttempts              Int       @default(0)
+  moderationAttempts        Int       @default(0)
+  lastProcessedAt           DateTime?
+  approvedAt                DateTime?
+  rejectedAt                DateTime?
+  reviewedById              String?
+  reviewReason              String?   @db.Text
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  owner    User  @relation("UploadOwner", fields: [userId], references: [id], onDelete: Restrict)
+  reviewer User? @relation("UploadReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@unique([quarantineBucket, quarantinePath])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([malwareStatus, moderationStatus, createdAt])
+  @@index([fileHash])
+}
+
 model ProfessionalProfileEvent {
-  id             String       @id @default(cuid())
+  id             String   @id @default(cuid())
   professionalId String
   eventType      String
   metadata       Json?
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime @default(now())
 
-  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
 
   @@index([professionalId, eventType, createdAt])
   @@index([createdAt])
 }
 
 model ProfessionalPhoto {
-  id             String       @id @default(cuid())
+  id             String   @id @default(cuid())
   professionalId String
   url            String
   caption        String?
-  order          Int          @default(0)
-  cover          Boolean      @default(false)
-  createdAt      DateTime     @default(now())
+  order          Int      @default(0)
+  cover          Boolean  @default(false)
+  createdAt      DateTime @default(now())
 
-  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
 
   @@index([professionalId, cover, order])
 }
 
 model ProfessionalSpecialty {
-  id             String       @id @default(cuid())
+  id             String  @id @default(cuid())
   professionalId String
   name           String
   icon           String?
 
-  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
 }
 
 model Schedule {
-  id             String       @id @default(cuid())
+  id             String  @id @default(cuid())
   professionalId String
   dayOfWeek      Int
   startTime      String
   endTime        String
-  available      Boolean      @default(true)
+  available      Boolean @default(true)
 
-  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
 
   @@unique([professionalId, dayOfWeek])
 }
 
 model Appointment {
-  id             String            @id @default(cuid())
-  professionalId String
-  clientId       String
-  date           DateTime
-  duration       Int               @default(60)
-  status         AppointmentStatus @default(PENDING)
-  notes          String?           @db.Text
-  contactMethod  String            @default("whatsapp")
-  price          Float?
-  originalPrice  Float?
+  id              String            @id @default(cuid())
+  professionalId  String
+  clientId        String
+  date            DateTime
+  duration        Int               @default(60)
+  status          AppointmentStatus @default(PENDING)
+  notes           String?           @db.Text
+  contactMethod   String            @default("whatsapp")
+  price           Float?
+  originalPrice   Float?
   voucherDiscount Float             @default(0)
-  finalPrice     Float?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  finalPrice      Float?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
-  professional   Professional       @relation(fields: [professionalId], references: [id])
-  client         User               @relation("ClientAppointments", fields: [clientId], references: [id])
-  review         ProfessionalReview?
-  voucher        ClientVoucher?      @relation("AppointmentVoucher")
+  professional Professional        @relation(fields: [professionalId], references: [id])
+  client       User                @relation("ClientAppointments", fields: [clientId], references: [id])
+  review       ProfessionalReview?
+  voucher      ClientVoucher?      @relation("AppointmentVoucher")
 
   @@index([clientId, status, createdAt])
   @@index([clientId, date])
@@ -788,42 +1118,43 @@ model Appointment {
 }
 
 model ProfessionalReview {
-  id             String       @id @default(cuid())
-  professionalId String
-  appointmentId  String       @unique
-  authorId       String
-  rating         Int
-  comment        String       @db.Text
-  response       String?      @db.Text
-  hidden         Boolean      @default(false)
-  moderationStatus String     @default("VISIBLE") // VISIBLE | DISPUTED | REMOVED
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id               String   @id @default(cuid())
+  professionalId   String
+  appointmentId    String   @unique
+  authorId         String
+  rating           Int
+  comment          String   @db.Text
+  response         String?  @db.Text
+  hidden           Boolean  @default(false)
+  moderationStatus String   @default("VISIBLE") // VISIBLE | DISPUTED | REMOVED
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  professional   Professional @relation(fields: [professionalId], references: [id])
-  appointment    Appointment  @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-  author         User         @relation("ProReviewAuthor", fields: [authorId], references: [id])
-  dispute        ProfessionalReviewDispute?
+  professional Professional               @relation(fields: [professionalId], references: [id])
+  appointment  Appointment                @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  author       User                       @relation("ProReviewAuthor", fields: [authorId], references: [id])
+  dispute      ProfessionalReviewDispute?
 
   @@index([professionalId, hidden, createdAt])
 }
 
 model VoucherSettings {
-  id                  String   @id @default("default")
-  active              Boolean  @default(true)
-  dailySpinLimit      Int      @default(1)
-  guestDailySpinLimit Int      @default(1)
-  pendingClaimMinutes Int      @default(30)
-  defaultExpiresInDays Int     @default(15)
-  monthlyBudgetLimit  Float    @default(3000)
-  dailyBudgetLimit    Float    @default(100)
-  dailyBudgetMode     String   @default("BLOCK_FREE_VOUCHERS")
-  voucherWinCooldownDays Int   @default(7)
-  blockMultipleActiveVouchers Boolean @default(true)
-  registrationClaimHours Int   @default(24)
-  allowMultipleVouchersPerAppointment Boolean @default(false)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                                  String   @id @default("default")
+  active                              Boolean  @default(true)
+  promotionAuthorizationReference     String?
+  dailySpinLimit                      Int      @default(1)
+  guestDailySpinLimit                 Int      @default(1)
+  pendingClaimMinutes                 Int      @default(30)
+  defaultExpiresInDays                Int      @default(15)
+  monthlyBudgetLimit                  Float    @default(3000)
+  dailyBudgetLimit                    Float    @default(100)
+  dailyBudgetMode                     String   @default("BLOCK_FREE_VOUCHERS")
+  voucherWinCooldownDays              Int      @default(7)
+  blockMultipleActiveVouchers         Boolean  @default(true)
+  registrationClaimHours              Int      @default(24)
+  allowMultipleVouchersPerAppointment Boolean  @default(false)
+  createdAt                           DateTime @default(now())
+  updatedAt                           DateTime @updatedAt
 }
 
 model VoucherBudget {
@@ -843,30 +1174,30 @@ model VoucherBudget {
 }
 
 model VoucherPrize {
-  id              String   @id @default(cuid())
-  name            String
-  type            String
-  value           Float?
-  probability     Float
-  baseProbability Float    @default(0)
-  currentProbability Float @default(0)
+  id                   String   @id @default(cuid())
+  name                 String
+  type                 String
+  value                Float?
+  probability          Float
+  baseProbability      Float    @default(0)
+  currentProbability   Float    @default(0)
   monthlyQuantityLimit Int?
-  monthlyQuantityUsed Int  @default(0)
-  dailyQuantityLimit Int?
-  dailyQuantityUsed Int   @default(0)
-  weeklyQuantityLimit Int?
-  active          Boolean  @default(true)
-  requiresPayment Boolean  @default(false)
-  paymentAmount   Float?
-  expiresInDays   Int      @default(15)
-  expiresInHours  Int?
-  sortOrder       Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  monthlyQuantityUsed  Int      @default(0)
+  dailyQuantityLimit   Int?
+  dailyQuantityUsed    Int      @default(0)
+  weeklyQuantityLimit  Int?
+  active               Boolean  @default(true)
+  requiresPayment      Boolean  @default(false)
+  paymentAmount        Float?
+  expiresInDays        Int      @default(15)
+  expiresInHours       Int?
+  sortOrder            Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
-  spins           VoucherSpin[]
-  vouchers        ClientVoucher[]
-  dailyStocks     VoucherDailyStock[]
+  spins       VoucherSpin[]
+  vouchers    ClientVoucher[]
+  dailyStocks VoucherDailyStock[]
 
   @@index([active, sortOrder])
 }
@@ -890,7 +1221,7 @@ model VoucherDailyStock {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
-  prize                 VoucherPrize @relation(fields: [prizeId], references: [id], onDelete: Cascade)
+  prize VoucherPrize @relation(fields: [prizeId], references: [id], onDelete: Cascade)
 
   @@unique([date, prizeId])
   @@index([date, active])
@@ -898,26 +1229,30 @@ model VoucherDailyStock {
 }
 
 model VoucherSpin {
-  id              String   @id @default(cuid())
-  clientId        String?
-  visitorId       String?
-  prizeId         String?
-  result          String
-  voucherValue    Float?
-  whatsapp        String?
-  ipAddress       String?
-  userAgent       String?  @db.Text
-  idempotencyKey  String   @unique
-  pendingToken    String?  @unique
-  pendingExpiresAt DateTime?
-  claimedAt       DateTime?
-  recipientName   String?
-  recipientPhone  String?
-  createdAt       DateTime @default(now())
+  id                    String    @id @default(cuid())
+  clientId              String?
+  visitorId             String?
+  prizeId               String?
+  result                String
+  voucherValue          Float?
+  whatsapp              String?
+  ipAddress             String?
+  userAgent             String?   @db.Text
+  idempotencyKey        String    @unique
+  pendingToken          String?   @unique
+  pendingExpiresAt      DateTime?
+  claimedAt             DateTime?
+  recipientName         String?
+  recipientPhone        String?
+  legalPolicyKey        String?
+  legalPolicyVersion    String?
+  legalPolicyHash       String?
+  legalPolicyAcceptedAt DateTime?
+  createdAt             DateTime  @default(now())
 
-  client          User?        @relation("VoucherSpinClient", fields: [clientId], references: [id], onDelete: SetNull)
-  prize           VoucherPrize? @relation(fields: [prizeId], references: [id], onDelete: SetNull)
-  vouchers        ClientVoucher[]
+  client   User?           @relation("VoucherSpinClient", fields: [clientId], references: [id], onDelete: SetNull)
+  prize    VoucherPrize?   @relation(fields: [prizeId], references: [id], onDelete: SetNull)
+  vouchers ClientVoucher[]
 
   @@index([clientId, createdAt])
   @@index([visitorId, createdAt])
@@ -926,37 +1261,38 @@ model VoucherSpin {
   @@index([visitorId, result, createdAt])
   @@index([ipAddress, result, createdAt])
   @@index([result, createdAt])
+  @@index([legalPolicyHash, createdAt])
   @@index([createdAt])
 }
 
 model ClientVoucher {
-  id              String   @id @default(cuid())
-  clientId        String?
-  visitorId       String?
-  prizeId         String?
-  spinId          String?
-  code            String   @unique
-  value           Float
-  status          String   @default("AVAILABLE")
-  expiresAt       DateTime
-  usedAt          DateTime?
-  appointmentId   String?  @unique
-  requiresPayment Boolean  @default(false)
-  paymentStatus   String   @default("NOT_REQUIRED")
-  paymentId       String?
-  whatsapp        String?
-  registrationRequired Boolean @default(false)
+  id                     String    @id @default(cuid())
+  clientId               String?
+  visitorId              String?
+  prizeId                String?
+  spinId                 String?
+  code                   String    @unique
+  value                  Float
+  status                 String    @default("AVAILABLE")
+  expiresAt              DateTime
+  usedAt                 DateTime?
+  appointmentId          String?   @unique
+  requiresPayment        Boolean   @default(false)
+  paymentStatus          String    @default("NOT_REQUIRED")
+  paymentId              String?
+  whatsapp               String?
+  registrationRequired   Boolean   @default(false)
   registrationReleasedAt DateTime?
-  recipientName   String?
-  recipientPhone  String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  recipientName          String?
+  recipientPhone         String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
-  client          User?         @relation("ClientVouchers", fields: [clientId], references: [id], onDelete: SetNull)
-  prize           VoucherPrize? @relation(fields: [prizeId], references: [id], onDelete: SetNull)
-  spin            VoucherSpin?  @relation(fields: [spinId], references: [id], onDelete: SetNull)
-  appointment     Appointment?  @relation("AppointmentVoucher", fields: [appointmentId], references: [id], onDelete: SetNull)
-  payment         Payment?      @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  client      User?         @relation("ClientVouchers", fields: [clientId], references: [id], onDelete: SetNull)
+  prize       VoucherPrize? @relation(fields: [prizeId], references: [id], onDelete: SetNull)
+  spin        VoucherSpin?  @relation(fields: [spinId], references: [id], onDelete: SetNull)
+  appointment Appointment?  @relation("AppointmentVoucher", fields: [appointmentId], references: [id], onDelete: SetNull)
+  payment     Payment?      @relation(fields: [paymentId], references: [id], onDelete: SetNull)
 
   @@index([clientId, status, expiresAt])
   @@index([visitorId, status, expiresAt])
@@ -974,23 +1310,23 @@ model ProfessionalVoucherSettings {
   acceptsVouchers Boolean  @default(false)
   updatedAt       DateTime @updatedAt
 
-  professional    Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
 }
 
 model ProfessionalReviewDispute {
-  id             String             @id @default(cuid())
-  reviewId       String             @unique
+  id             String   @id @default(cuid())
+  reviewId       String   @unique
   professionalId String
   authorId       String
-  status         String             @default("PENDING") // PENDING | ACCEPTED | REJECTED
-  reason         String             @db.Text
-  adminNote      String?            @db.Text
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  status         String   @default("PENDING") // PENDING | ACCEPTED | REJECTED
+  reason         String   @db.Text
+  adminNote      String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  review         ProfessionalReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  professional   Professional       @relation(fields: [professionalId], references: [id], onDelete: Cascade)
-  author         User               @relation("ProReviewDisputeAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  review       ProfessionalReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  professional Professional       @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  author       User               @relation("ProReviewDisputeAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([professionalId, status, createdAt])
   @@index([status, createdAt])
@@ -999,21 +1335,21 @@ model ProfessionalReviewDispute {
 // ─── Moderação: Denúncias ────────────────────────────────────────────────────
 
 model Report {
-  id             String       @id @default(cuid())
-  authorId       String
-  targetType     String       // "USER", "PROFESSIONAL", "PROPERTY", "CONTENT"
-  targetId       String
-  reason         ReportReason
-  description    String       @db.Text
-  evidence       String[]     // URLs de imagens/screenshots
-  status         ReportStatus @default(PENDING)
-  reviewedBy     String?
-  reviewNotes    String?      @db.Text
-  resolution     String?      @db.Text
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id          String       @id @default(cuid())
+  authorId    String
+  targetType  String // "USER", "PROFESSIONAL", "PROPERTY", "CONTENT"
+  targetId    String
+  reason      ReportReason
+  description String       @db.Text
+  evidence    String[] // URLs de imagens/screenshots
+  status      ReportStatus @default(PENDING)
+  reviewedBy  String?
+  reviewNotes String?      @db.Text
+  resolution  String?      @db.Text
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
-  author         User         @relation("ReportAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  author User @relation("ReportAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([status])
   @@index([targetType, targetId])
@@ -1023,21 +1359,517 @@ model Report {
 // ─── Auditoria ────────────────────────────────────────────────────────────────
 
 model AuditLog {
-  id             String           @id @default(cuid())
-  adminId        String
-  action         AuditAction
-  targetType     AuditTargetType
-  targetId       String
-  changes        Json?
-  reason         String?
-  ipAddress      String?
-  userAgent      String?
-  timestamp      DateTime         @default(now())
+  id              String          @id @default(cuid())
+  adminId         String?
+  actorIdentifier String?
+  action          AuditAction
+  targetType      AuditTargetType
+  targetId        String
+  changes         Json?
+  reason          String?
+  ipAddress       String?
+  userAgent       String?
+  timestamp       DateTime        @default(now())
 
-  admin          User             @relation("AuditAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+  admin User? @relation("AuditAdmin", fields: [adminId], references: [id], onDelete: SetNull)
 
   @@index([adminId])
   @@index([action])
   @@index([targetType, targetId])
   @@index([timestamp])
+}
+
+model AdminRoleAssignment {
+  id          String    @id @default(cuid())
+  userId      String
+  role        AdminRole
+  active      Boolean   @default(true)
+  grantedById String?
+  reason      String?
+  grantedAt   DateTime  @default(now())
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user      User  @relation("AdminRoleUser", fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy User? @relation("AdminRoleGrantedBy", fields: [grantedById], references: [id], onDelete: SetNull)
+
+  @@index([userId, active])
+  @@index([role, active])
+  @@index([grantedAt])
+}
+
+model AdminMfaEnrollment {
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  encryptedSecret  String
+  recoveryCodeHash String?
+  verifiedAt       DateTime?
+  disabledAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([verifiedAt])
+}
+
+model AdminMfaSession {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+}
+
+model LegalDocument {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String
+  type      String
+  audience  String
+  internal  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  versions LegalDocumentVersion[]
+
+  @@index([type, audience])
+}
+
+model LegalDocumentVersion {
+  id                         String    @id @default(cuid())
+  documentId                 String
+  language                   String    @default("pt-BR")
+  version                    String
+  content                    String    @db.Text
+  changeSummary              String?   @db.Text
+  contentHash                String
+  status                     String    @default("DRAFT")
+  pendingFields              Json?
+  requiresNewAcceptance      Boolean   @default(false)
+  createdAt                  DateTime  @default(now())
+  approvedAt                 DateTime?
+  publishedAt                DateTime?
+  effectiveAt                DateTime?
+  archivedAt                 DateTime?
+  authorId                   String?
+  approverId                 String?
+  legalReviewerName          String?
+  legalReviewNote            String?   @db.Text
+  legalReviewReference       String?
+  operationalPublisherName   String?
+  legalRepresentativeName    String?
+  applicableChannel          String?
+  operationalPublicationNote String?   @db.Text
+
+  document             LegalDocument        @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  author               User?                @relation("LegalVersionAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  approver             User?                @relation("LegalVersionApprover", fields: [approverId], references: [id], onDelete: SetNull)
+  acceptances          UserAcceptance[]
+  checkoutTerms        CheckoutAcceptance[] @relation("CheckoutTermsVersion")
+  checkoutRefundPolicy CheckoutAcceptance[] @relation("CheckoutRefundVersion")
+
+  @@unique([documentId, language, version])
+  @@index([documentId, status])
+  @@index([status, effectiveAt])
+  @@index([contentHash])
+  @@index([createdAt])
+}
+
+model UserAcceptance {
+  id             String    @id @default(cuid())
+  userId         String
+  versionId      String
+  userCategory   String
+  documentType   String
+  versionNumber  String
+  versionHash    String
+  acceptedAt     DateTime  @default(now())
+  ipAddress      String?
+  userAgent      String?
+  sessionId      String?
+  source         String
+  route          String?
+  language       String    @default("pt-BR")
+  action         String
+  acceptanceType String    @default("DOCUMENT")
+  required       Boolean   @default(true)
+  revokedAt      DateTime?
+
+  user    User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+  version LegalDocumentVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
+
+  @@index([userId, acceptedAt])
+  @@index([versionId, acceptedAt])
+  @@index([documentType, acceptedAt])
+  @@index([revokedAt])
+}
+
+model ConsentPreference {
+  id         String    @id @default(cuid())
+  userId     String
+  purpose    String
+  granted    Boolean
+  source     String
+  legalBasis String?
+  version    String?
+  ipAddress  String?
+  userAgent  String?
+  grantedAt  DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, updatedAt])
+  @@index([purpose, granted])
+}
+
+model PrivacyRequest {
+  id           String    @id @default(cuid())
+  protocol     String    @unique
+  userId       String
+  type         String
+  status       String    @default("RECEIVED")
+  details      String?   @db.Text
+  preservation Json?
+  requestedAt  DateTime  @default(now())
+  dueAt        DateTime?
+  completedAt  DateTime?
+  receiptHash  String?
+  assignedToId String?
+
+  user   User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  events PrivacyRequestEvent[]
+
+  @@index([userId, requestedAt])
+  @@index([status, requestedAt])
+  @@index([dueAt])
+}
+
+model PrivacyRequestEvent {
+  id        String   @id @default(cuid())
+  requestId String
+  actorId   String?
+  type      String
+  notes     String?  @db.Text
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  request PrivacyRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, createdAt])
+}
+
+model ContentDeclaration {
+  id             String    @id @default(cuid())
+  userId         String
+  storageBucket  String
+  storagePath    String
+  fileHash       String
+  declarationKey String
+  version        String
+  statements     Json
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime  @default(now())
+  revokedAt      DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([storageBucket, storagePath, declarationKey, version])
+  @@index([userId, createdAt])
+  @@index([fileHash])
+}
+
+model CheckoutAcceptance {
+  id                    String    @id @default(cuid())
+  userId                String
+  paymentId             String?
+  productId             String
+  productName           String
+  dailyPrice            Float?
+  totalPrice            Float
+  durationDays          Int?
+  startsAt              DateTime?
+  expectedEndsAt        DateTime?
+  termsVersionId        String?
+  refundPolicyVersionId String?
+  termsHash             String?
+  refundPolicyHash      String?
+  ipAddress             String?
+  userAgent             String?
+  sessionId             String?
+  status                String    @default("ACCEPTED")
+  route                 String?
+  language              String    @default("pt-BR")
+  acceptanceType        String    @default("CHECKOUT")
+  required              Boolean   @default(true)
+  acceptedAt            DateTime  @default(now())
+
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  payment             Payment?              @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  termsVersion        LegalDocumentVersion? @relation("CheckoutTermsVersion", fields: [termsVersionId], references: [id], onDelete: Restrict)
+  refundPolicyVersion LegalDocumentVersion? @relation("CheckoutRefundVersion", fields: [refundPolicyVersionId], references: [id], onDelete: Restrict)
+
+  @@index([userId, acceptedAt])
+  @@index([paymentId])
+  @@index([productId, acceptedAt])
+  @@index([status])
+}
+
+model ModerationCase {
+  id           String    @id @default(cuid())
+  protocol     String    @unique
+  reporterId   String?
+  targetType   String
+  targetId     String
+  reason       String
+  status       String    @default("RECEIVED")
+  priority     String    @default("NORMAL")
+  emergency    Boolean   @default(false)
+  assignedToId String?
+  slaDueAt     DateTime?
+  restrictedAt DateTime?
+  resolvedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  events   ModerationCaseEvent[]
+  evidence EvidenceArtifact[]
+
+  @@index([status, priority, createdAt])
+  @@index([targetType, targetId])
+  @@index([reporterId, createdAt])
+  @@index([slaDueAt])
+}
+
+model ModerationCaseEvent {
+  id         String   @id @default(cuid())
+  caseId     String
+  actorId    String?
+  type       String
+  fromStatus String?
+  toStatus   String?
+  notes      String?  @db.Text
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  case ModerationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId, createdAt])
+}
+
+model EvidenceArtifact {
+  id             String    @id @default(cuid())
+  caseId         String
+  bucket         String
+  storagePath    String
+  fileHash       String
+  mimeType       String
+  originalSource String?
+  preservedAt    DateTime  @default(now())
+  expiresAt      DateTime?
+  legalHold      Boolean   @default(false)
+  removedAt      DateTime?
+
+  case ModerationCase @relation(fields: [caseId], references: [id], onDelete: Restrict)
+
+  @@index([caseId, preservedAt])
+  @@index([fileHash])
+  @@index([expiresAt, legalHold])
+}
+
+model DataRetentionRule {
+  id            String    @id @default(cuid())
+  category      String    @unique
+  status        String    @default("PENDING")
+  action        String?
+  retentionDays Int?
+  legalBasis    String?
+  notes         String?   @db.Text
+  approvedById  String?
+  approvedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status])
+}
+
+model DataDeletionJob {
+  id               String    @id @default(cuid())
+  userId           String
+  privacyRequestId String?
+  status           String    @default("PENDING")
+  mode             String    @default("EXECUTE")
+  scope            Json
+  preservation     Json?
+  attempts         Int       @default(0)
+  maxAttempts      Int       @default(5)
+  nextAttemptAt    DateTime?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  legalHold        Boolean   @default(false)
+  legalHoldReason  String?   @db.Text
+  errorSummary     String?   @db.Text
+  receiptHash      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user  User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  items DataDeletionJobItem[]
+
+  @@index([userId, createdAt])
+  @@index([status, nextAttemptAt])
+}
+
+model DataDeletionJobItem {
+  id            String    @id @default(cuid())
+  jobId         String
+  itemKey       String
+  status        String    @default("PENDING")
+  attempts      Int       @default(0)
+  details       Json?
+  error         String?   @db.Text
+  nextAttemptAt DateTime?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  job DataDeletionJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, itemKey])
+  @@index([status, nextAttemptAt])
+  @@index([jobId, status])
+}
+
+model LegacyMediaMigrationJob {
+  id               String    @id @default(cuid())
+  status           String    @default("PLANNED")
+  mode             String    @default("STAGE")
+  manifestHash     String    @unique
+  totalItems       Int       @default(0)
+  processedItems   Int       @default(0)
+  failedItems      Int       @default(0)
+  approvedById     String?
+  approvalReason   String?   @db.Text
+  rollbackManifest Json?
+  errorSummary     String?   @db.Text
+  startedAt        DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  items LegacyMediaMigrationItem[]
+
+  @@index([status, createdAt])
+}
+
+model LegacyMediaMigrationItem {
+  id               String    @id @default(cuid())
+  jobId            String
+  referenceType    String
+  referenceId      String
+  field            String
+  ownerId          String?
+  sourceBucket     String
+  sourcePath       String
+  sourceUrl        String    @db.Text
+  sourceVisibility String?
+  action           String
+  status           String    @default("PLANNED")
+  targetAssetId    String?
+  fileHash         String?
+  snapshot         Json?
+  error            String?   @db.Text
+  stagedAt         DateTime?
+  finalizedAt      DateTime?
+  rolledBackAt     DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  job LegacyMediaMigrationJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, referenceType, referenceId, field, sourcePath])
+  @@index([jobId, status])
+  @@index([targetAssetId])
+  @@index([sourceBucket, sourcePath])
+}
+
+model PublicationRequirement {
+  id                 String    @id @default(cuid())
+  key                String    @unique
+  information        String
+  reason             String    @db.Text
+  owner              String?
+  status             String    @default("PENDING")
+  dueAt              DateTime?
+  documentKey        String?
+  affectedFeature    String?
+  value              String?   @db.Text
+  requiredForPublish Boolean   @default(true)
+  completedAt        DateTime?
+  completedById      String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  history PublicationRequirementHistory[]
+
+  @@index([status, dueAt])
+  @@index([documentKey, status])
+}
+
+model PublicationRequirementHistory {
+  id            String   @id @default(cuid())
+  requirementId String
+  actorId       String?
+  fromStatus    String?
+  toStatus      String?
+  previousValue String?  @db.Text
+  nextValue     String?  @db.Text
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now())
+
+  requirement PublicationRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+
+  @@index([requirementId, createdAt])
+}
+
+model SecurityIncident {
+  id                 String    @id @default(cuid())
+  protocol           String    @unique
+  title              String
+  category           String
+  status             String    @default("OPEN")
+  discoveredAt       DateTime
+  occurredAt         DateTime?
+  systemsAffected    Json
+  dataCategories     Json
+  affectedSubjects   Int?
+  riskAssessment     String?   @db.Text
+  relevantHarm       Boolean?
+  containment        String?   @db.Text
+  investigation      String?   @db.Text
+  correctiveMeasures String?   @db.Text
+  notificationDueAt  DateTime?
+  anpdNotifiedAt     DateTime?
+  subjectsNotifiedAt DateTime?
+  ownerId            String?
+  evidence           Json?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([status, discoveredAt])
+  @@index([notificationDueAt])
 }

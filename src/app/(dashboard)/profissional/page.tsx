@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireCompanionPanel } from "@/lib/account-access";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
+import { resolveProfessionalAccess } from "@/lib/professional-access";
 import {
   PendingAppointmentsCard,
   PlanResourcesCard,
@@ -91,7 +92,6 @@ function buildCompleteness(professional: {
     { ok: hasSchedule, label: "agenda" },
     { ok: professional.docFrenteUrl && professional.docVersoUrl, label: "documentos" },
     { ok: professional.verificationUrl || professional.kycSessionId, label: "verificação" },
-    { ok: professional.user.premiumUntil && professional.user.premiumUntil > new Date(), label: "plano ativo" },
   ];
 
   return {
@@ -105,7 +105,7 @@ function appointmentLabel(client: { name: string | null; email: string | null })
 }
 
 export default async function ProfissionalDashPage() {
-  const access = await requireCompanionPanel();
+  const access = await requireCompanionPanel({ allowExpired: true });
   await refreshExpiredProfessionalTimers();
   const now = new Date();
   const eventsSince = new Date(now.getTime() - 31 * DAY_MS);
@@ -144,6 +144,45 @@ export default async function ProfissionalDashPage() {
     redirect(ACCOUNT_ROUTES.onboardingAcompanhante);
   }
 
+  const professionalAccess = resolveProfessionalAccess(
+    professional,
+    professional.user,
+    professional.status === "ACTIVE" || professional.status === "PAUSED",
+    now,
+  );
+
+  if (professionalAccess.kind === "EXPIRED") {
+    return (
+      <div className="professional-premium-page">
+        <section className="premium-section-card" style={{ padding: 28 }}>
+          <p className="premium-eyebrow">Período gratuito encerrado</p>
+          <h1 className="premium-title" style={{ fontSize: 32 }}>Escolha como continuar</h1>
+          <p className="premium-description" style={{ marginTop: 14 }}>
+            Seu período gratuito terminou. Nenhuma cobrança foi feita e não existe renovação automática.
+            Escolha uma opção somente quando quiser reativar a publicação do perfil.
+          </p>
+          <div className="premium-grid premium-grid-3" style={{ marginTop: 22 }}>
+            <div className="premium-card" style={{ padding: 18 }}>
+              <strong>Sem cobrança automática</strong>
+              <p className="premium-action-text" style={{ marginTop: 8 }}>Seus dados continuam salvos com segurança.</p>
+            </div>
+            <div className="premium-card" style={{ padding: 18 }}>
+              <strong>Pagamento autorizado</strong>
+              <p className="premium-action-text" style={{ marginTop: 8 }}>O acesso só é ativado depois da sua escolha e confirmação.</p>
+            </div>
+            <div className="premium-card" style={{ padding: 18 }}>
+              <strong>Planos e destaques</strong>
+              <p className="premium-action-text" style={{ marginTop: 8 }}>Compare os períodos e recursos antes de pagar.</p>
+            </div>
+          </div>
+          <Link href="/profissional/planos?acesso=expirado" className="premium-button" style={{ marginTop: 22 }}>
+            Ver opções disponíveis
+          </Link>
+        </section>
+      </div>
+    );
+  }
+
   const profilePhoto = professional.user.image ?? null;
   const coverPhoto = professional.photos.find((photo) => photo.cover)?.url ?? professional.image ?? null;
   const galleryCount = professional.photos.filter((photo) => !photo.cover).length || professional.galleryUrls.filter((url) => url !== coverPhoto).length;
@@ -157,7 +196,7 @@ export default async function ProfissionalDashPage() {
   const premiumDaysLeft = daysUntil(professional.user.premiumUntil, now);
   const isBoostActive = Boolean(professional.boostActive && (!professional.boostUntil || professional.boostUntil > now));
   const hasListingPhoneBenefit = Boolean(professional.listingPhoneUntil && professional.listingPhoneUntil > now);
-  const isVisible = professional.status === "ACTIVE" && (!professional.pauseUntil || professional.pauseUntil <= now);
+  const isVisible = professional.status === "ACTIVE" && professionalAccess.canAppearInSearch && (!professional.pauseUntil || professional.pauseUntil <= now);
   const smartCards: Array<Parameters<typeof PremiumActionCard>[0] & { id: string }> = [];
   const addSmartCard = (card: Parameters<typeof PremiumActionCard>[0] & { id: string }) => smartCards.push(card);
 
@@ -275,10 +314,10 @@ export default async function ProfissionalDashPage() {
       id: "plan",
       href: "/profissional/planos",
       icon: "diamond",
-      title: "Plano básico",
-      description: "Planos e destaques aumentam a visibilidade na cidade.",
-      buttonLabel: "Conhecer planos",
-      badge: "Visibilidade",
+      title: "Destaques opcionais",
+      description: "Seu acesso normal não exige plano durante o período gratuito. Pague apenas se quiser mais visibilidade.",
+      buttonLabel: "Ver destaques",
+      badge: "Opcional",
     });
   }
   if (!professional.featured && !isBoostActive) {
@@ -302,7 +341,6 @@ export default async function ProfissionalDashPage() {
     { label: "Agenda", href: "/profissional/agenda", done: hasSchedule, status: hasSchedule ? "completo" : "pendente" },
     { label: "Descrição", href: "/profissional/perfil", done: Boolean(professional.bio && professional.bio.trim().length >= 80), status: professional.bio && professional.bio.trim().length >= 80 ? "completo" : "pendente" },
     { label: "Verificação", href: ACCOUNT_ROUTES.analiseAcompanhante, done: hasApprovedVerification, status: hasApprovedVerification ? "completo" : "pendente" },
-    { label: "Plano ativo", href: "/profissional/planos", done: hasActivePlan, status: hasActivePlan ? "completo" : "recomendado" },
   ];
   const checklistProgress = Math.round((checklist.filter((item) => item.done).length / checklist.length) * 100);
 
@@ -379,6 +417,17 @@ export default async function ProfissionalDashPage() {
   };
 
   const alerts: ProfessionalAlert[] = [];
+  if (professionalAccess.kind === "FREE_TRIAL") {
+    alerts.push({
+      id: "free-access",
+      title: `${professionalAccess.freeTrialDaysLeft} dia(s) de acesso gratuito restante(s)`,
+      description: `Seu perfil pode ser usado e publicado normalmente até ${professionalAccess.freeTrialEndsAt?.toLocaleDateString("pt-BR")}. Planos e destaques são opcionais neste período.`,
+      href: "/profissional/planos",
+      actionLabel: "Ver destaques opcionais",
+      tone: professionalAccess.freeTrialDaysLeft !== null && professionalAccess.freeTrialDaysLeft <= 5 ? "gold" : "success",
+      icon: "clock",
+    });
+  }
   if (professional.status === "SUSPENDED" || professional.status === "REJECTED") {
     alerts.push({
       id: "status-blocked",
@@ -401,7 +450,7 @@ export default async function ProfissionalDashPage() {
       icon: "user",
     });
   }
-  if (!hasActivePlan) {
+  if (!hasActivePlan && professionalAccess.kind !== "FREE_TRIAL") {
     alerts.push({
       id: "basic-plan",
       title: "Seu perfil está no modo básico",
@@ -567,6 +616,8 @@ export default async function ProfissionalDashPage() {
         </div>
         <PremiumIllustration kind="growth" />
       </section>
+
+      {alerts.length ? <ProfessionalAlertStack alerts={alerts.slice(0, 4)} /> : null}
 
       {smartCards.slice(0, 8).map(({ id, ...card }) => (
         <PremiumActionCard key={id} {...card} />

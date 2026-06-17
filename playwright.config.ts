@@ -34,6 +34,56 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "account-routes",
+      testMatch: "**/account-routes.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "money-rounding",
+      testMatch: "**/money-rounding.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "booking-policy",
+      testMatch: "**/booking-policy.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "provider-adapters",
+      testMatch: "**/provider-adapters.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "professional-validation",
+      testMatch: "**/professional-validation.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "public-professional-profile",
+      testMatch: "**/public-professional-profile.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "premium-upsell",
+      testMatch: "**/premium-upsell.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "legal-security",
+      testMatch: "**/legal-security.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "voucher-roulette",
+      testMatch: "**/voucher-roulette.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "legal-document-catalog",
+      testMatch: "**/legal-document-catalog.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "mock-session",
       testMatch: "**/client-area-audit.spec.ts",
       use: { browserName: "chromium" },
@@ -46,6 +96,11 @@ export default defineConfig({
     {
       name: "professional-flow",
       testMatch: "**/professional-flow.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "professional-registration-conversion",
+      testMatch: "**/professional-registration-conversion.spec.ts",
       use: { browserName: "chromium" },
     },
     {

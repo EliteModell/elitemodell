@@ -7,6 +7,7 @@ import { createSupabaseServerClient } from "./supabase-server";
 import { checkRateLimitAsync } from "./rate-limit";
 import { getHostRegistrationStatus, normalizeEntryRole } from "./account-routes";
 import { deriveAvailableProfiles, ensureProfileForIntent, profileTypeFromIntent } from "./account-profiles";
+import { verifySignupDraftToken } from "./signup-draft-token";
 
 function accountTypeFromRoleIntent(roleIntent: ReturnType<typeof normalizeEntryRole>) {
   if (roleIntent === "profissional") return "model";
@@ -278,6 +279,158 @@ export const authOptions: NextAuthOptions = {
       },
     }),
     CredentialsProvider({
+      id: "email-signup-draft",
+      name: "Email Signup Draft",
+      credentials: {
+        token: { label: "Draft Token", type: "text" },
+      },
+      async authorize(credentials) {
+        const rawToken = credentials?.token;
+        const payload = verifySignupDraftToken(rawToken);
+        if (!payload || payload.accountType !== "PROFESSIONAL" || !payload.category) return null;
+
+        const limit = await checkRateLimitAsync(`auth:email-draft:${payload.email}`, 20, 15 * 60 * 1000);
+        if (!limit.allowed) return null;
+
+        try {
+          const email = payload.email.trim().toLowerCase();
+          const birthDate = /^\d{4}-\d{2}-\d{2}$/.test(payload.birthDate)
+            ? new Date(`${payload.birthDate}T00:00:00.000Z`)
+            : null;
+          const hasConsent = payload.lgpdConsent && payload.termsConsent && payload.ageConfirmed;
+
+          let user = await prisma.user.findUnique({
+            where: { email },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+              role: true,
+              accountType: true,
+              clientProfile: { select: { id: true } },
+              hostProfile: { select: { id: true } },
+              professional: { select: { id: true, status: true } },
+              properties: { select: { status: true } },
+              blocked: true,
+            },
+          });
+
+          if (user?.blocked) return null;
+
+          if (!user) {
+            user = await prisma.user.create({
+              data: {
+                email,
+                name: payload.name,
+                role: "HOST",
+                accountType: "model",
+                category: payload.category,
+                birthDate,
+                lgpdConsent: hasConsent,
+                termsConsent: hasConsent,
+                consentDate: hasConsent ? new Date() : null,
+              },
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+                role: true,
+                accountType: true,
+                clientProfile: { select: { id: true } },
+                hostProfile: { select: { id: true } },
+                professional: { select: { id: true, status: true } },
+                properties: { select: { status: true } },
+                blocked: true,
+              },
+            }).catch(async (err: unknown) => {
+              if (!isUniqueEmailConflict(err)) throw err;
+              return prisma.user.findUnique({
+                where: { email },
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  image: true,
+                  role: true,
+                  accountType: true,
+                  clientProfile: { select: { id: true } },
+                  hostProfile: { select: { id: true } },
+                  professional: { select: { id: true, status: true } },
+                  properties: { select: { status: true } },
+                  blocked: true,
+                },
+              });
+            });
+          } else {
+            user = await prisma.user.update({
+              where: { id: user.id },
+              data: {
+                name: user.name ?? payload.name,
+                role: "HOST",
+                accountType: "model",
+                category: payload.category,
+                birthDate: birthDate ?? undefined,
+                lgpdConsent: hasConsent || undefined,
+                termsConsent: hasConsent || undefined,
+                consentDate: hasConsent ? new Date() : undefined,
+              },
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+                role: true,
+                accountType: true,
+                clientProfile: { select: { id: true } },
+                hostProfile: { select: { id: true } },
+                professional: { select: { id: true, status: true } },
+                properties: { select: { status: true } },
+                blocked: true,
+              },
+            });
+          }
+
+          if (!user || user.blocked) return null;
+
+          await ensureProfileForIntent(user.id, "profissional", payload.category);
+
+          const refreshedUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+              role: true,
+              accountType: true,
+              clientProfile: { select: { id: true } },
+              hostProfile: { select: { id: true } },
+              professional: { select: { id: true, status: true } },
+              properties: { select: { status: true } },
+            },
+          });
+
+          if (!refreshedUser) return null;
+          return {
+            id: refreshedUser.id,
+            name: refreshedUser.name,
+            email: refreshedUser.email,
+            image: refreshedUser.image,
+            role: refreshedUser.role,
+            accountType: refreshedUser.accountType,
+            professionalStatus: refreshedUser.professional?.status ?? null,
+            activeProfileType: "PROFESSIONAL",
+            availableProfiles: deriveAvailableProfiles(refreshedUser),
+          };
+        } catch (err) {
+          console.error("[AUTH] Erro no authorize email-signup-draft:", err);
+          return null;
+        }
+      },
+    }),
+    CredentialsProvider({
       id: "phone-otp-token",
       name: "Phone OTP",
       credentials: {
@@ -358,7 +511,7 @@ export const authOptions: NextAuthOptions = {
               lgpdConsent: true,
               termsConsent: true,
               birthDate: true,
-              professional: { select: { id: true, status: true } },
+              professional: { select: { id: true, status: true, verified: true, kycStatus: true } },
               properties: { select: { status: true } },
               blocked: true,
             },
@@ -375,6 +528,10 @@ export const authOptions: NextAuthOptions = {
             token.accountType = dbUser.accountType;
             token.clientStatus = dbUser.clientStatus;
             token.professionalStatus = dbUser.professional?.status ?? null;
+            token.adultVerified =
+              dbUser.clientStatus === "VERIFIED" ||
+              Boolean(dbUser.professional?.verified && dbUser.professional?.kycStatus === "APPROVED") ||
+              dbUser.role === "ADMIN";
             token.availableProfiles = deriveAvailableProfiles(dbUser);
             token.isProfessional = !!dbUser.professional || token.availableProfiles.includes("PROFESSIONAL");
             token.needsConsent = !dbUser.lgpdConsent || !dbUser.termsConsent || !dbUser.birthDate;
@@ -404,6 +561,7 @@ export const authOptions: NextAuthOptions = {
         session.user.hostStatus = token.hostStatus as string | undefined;
         session.user.activeProfileType = token.activeProfileType as string | undefined;
         session.user.availableProfiles = token.availableProfiles as string[] | undefined;
+        session.user.adultVerified = token.adultVerified ?? false;
       }
       return session;
     },

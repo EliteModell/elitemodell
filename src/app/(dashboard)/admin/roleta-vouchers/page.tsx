@@ -46,13 +46,19 @@ async function updateSettings(formData: FormData) {
   const year = now.getFullYear();
   const monthlyLimit = floatField(formData, "monthlyBudgetLimit") ?? 3000;
   const dailyLimit = floatField(formData, "dailyBudgetLimit") ?? 100;
+  const promotionAuthorizationReference = String(
+    formData.get("promotionAuthorizationReference") ?? "",
+  ).trim() || null;
+  const requestedActive = formData.get("active") === "on";
+  const active = requestedActive;
 
   await prisma.$transaction([
     prisma.voucherSettings.upsert({
       where: { id: "default" },
       create: {
         id: "default",
-        active: formData.get("active") === "on",
+        active,
+        promotionAuthorizationReference,
         dailySpinLimit: intField(formData, "dailySpinLimit", 1),
         guestDailySpinLimit: intField(formData, "guestDailySpinLimit", 1),
         pendingClaimMinutes: intField(formData, "pendingClaimMinutes", 30),
@@ -66,7 +72,8 @@ async function updateSettings(formData: FormData) {
         allowMultipleVouchersPerAppointment: formData.get("allowMultipleVouchersPerAppointment") === "on",
       },
       update: {
-        active: formData.get("active") === "on",
+        active,
+        promotionAuthorizationReference,
         dailySpinLimit: intField(formData, "dailySpinLimit", 1),
         guestDailySpinLimit: intField(formData, "guestDailySpinLimit", 1),
         pendingClaimMinutes: intField(formData, "pendingClaimMinutes", 30),
@@ -98,7 +105,15 @@ async function updateSettings(formData: FormData) {
     }),
   ]);
 
-  await logAudit({ adminId: session.user.id, action: "SETTINGS_CHANGED", targetType: "SYSTEM", targetId: "voucher-roulette", reason: "Orcamento e configuracao da roleta atualizados" });
+  await logAudit({
+    adminId: session.user.id,
+    action: "SETTINGS_CHANGED",
+    targetType: "SYSTEM",
+    targetId: "voucher-roulette",
+    reason: requestedActive && !promotionAuthorizationReference
+      ? "Roleta ativada sem referencia promocional por decisao administrativa aprovada em reuniao interna"
+      : "Orcamento e configuracao da roleta atualizados",
+  });
   revalidatePath("/admin/roleta-vouchers");
 }
 
@@ -253,8 +268,14 @@ export default async function AdminRoletaVouchersPage({ searchParams }: { search
       </div>
 
       <AdminPanel>
+        <p style={{ marginTop: 0, color: settings?.promotionAuthorizationReference ? "#86efac" : "#fbbf24" }}>
+          {settings?.promotionAuthorizationReference
+            ? "Referência promocional informativa cadastrada. A operação ainda depende de política vigente, pelo menos dois prêmios ativos, orçamento e estoque disponíveis."
+            : "Roleta sem referência promocional cadastrada. O campo é opcional e informativo; a ativação sem referência foi aprovada por decisão administrativa em reunião interna e será registrada na auditoria."}
+        </p>
         <form action={updateSettings} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, alignItems: "end" }}>
-          <label style={labelStyle}>Roleta ativa<input name="active" type="checkbox" defaultChecked={settings?.active ?? true} style={checkStyle} /></label>
+          <label style={labelStyle}>Roleta ativa<input name="active" type="checkbox" defaultChecked={settings?.active ?? false} style={checkStyle} /></label>
+          <label style={labelStyle}>Referência promocional (opcional)<input name="promotionAuthorizationReference" defaultValue={settings?.promotionAuthorizationReference ?? ""} placeholder="Certificado/processo, se houver" style={inputStyle} /></label>
           <label style={labelStyle}>Orçamento ativo<input name="budgetActive" type="checkbox" defaultChecked={stats.budget.active} style={checkStyle} /></label>
           <label style={labelStyle}>Orçamento mensal<input name="monthlyBudgetLimit" defaultValue={stats.budget.monthlyLimit} style={inputStyle} /></label>
           <label style={labelStyle}>Orçamento diário base<input name="dailyBudgetLimit" defaultValue={stats.budget.dailyLimit} style={inputStyle} /></label>

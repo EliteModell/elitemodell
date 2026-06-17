@@ -31,7 +31,7 @@ export default async function AdminAuditoriaPage() {
             {logs.map((log) => (
               <tr key={log.id}>
                 <td style={tdStyle}>{log.timestamp.toLocaleString("pt-BR")}</td>
-                <td style={tdStyle}>{log.admin.name ?? log.admin.email ?? log.adminId}</td>
+                <td style={tdStyle}>{log.admin?.name ?? log.admin?.email ?? log.actorIdentifier ?? log.adminId ?? "Administrador removido"}</td>
                 <td style={tdStyle}>{log.action}</td>
                 <td style={tdStyle}>{log.targetType}<br />{log.targetId}</td>
                 <td style={tdStyle}>{log.reason ?? "-"}</td>

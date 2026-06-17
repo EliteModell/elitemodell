@@ -29,11 +29,13 @@ function canSeeLocations(session: ReturnType<typeof useSession>["data"]) {
 function isIncompleteProfessionalSession(session: ReturnType<typeof useSession>["data"]) {
   if (!session?.user) return false;
   const status = session.user.professionalStatus;
+  if (session.user.activeProfileType === "CLIENTE") return false;
   const isProfessional =
     session.user.activeProfileType === "PROFESSIONAL" ||
-    session.user.accountType === "model" ||
-    session.user.accountType === "professional" ||
-    session.user.isProfessional === true;
+    (!session.user.activeProfileType &&
+      (session.user.accountType === "model" ||
+        session.user.accountType === "professional" ||
+        session.user.isProfessional === true));
 
   return isProfessional && status !== "ACTIVE" && status !== "PAUSED";
 }

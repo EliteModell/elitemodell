@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   ArrowUpRight,
@@ -215,7 +215,7 @@ const PLAN_BENEFITS = [
 const FAQ = [
   {
     question: "Anunciar é gratuito?",
-    answer: "O cadastro pode ser iniciado gratuitamente, mas planos e destaques são recursos opcionais para aumentar a visibilidade do perfil.",
+    answer: "Sim. Após a aprovação, toda nova profissional recebe o período gratuito configurado pela plataforma. Planos e destaques são opcionais durante esse prazo.",
   },
   {
     question: "Comprar plano garante ficar em primeiro?",
@@ -223,7 +223,7 @@ const FAQ = [
   },
   {
     question: "Por quanto tempo meu destaque fica ativo?",
-    answer: "Depende do período contratado: 1 hora, 3 dias, 7 dias, 30 dias ou assinatura mensal, conforme o produto escolhido.",
+    answer: "Depende do período contratado: 1 hora, 3 dias, 7 dias ou 30 dias, conforme o produto escolhido.",
   },
   {
     question: "Posso comprar mais de um recurso?",
@@ -231,7 +231,7 @@ const FAQ = [
   },
   {
     question: "O que acontece quando o plano vence?",
-    answer: "O benefício deixa de ficar ativo e o perfil volta ao funcionamento padrão, a menos que seja renovado.",
+    answer: "O benefício deixa de ficar ativo. Não há renovação nem cobrança automática; uma nova compra exige sua autorização.",
   },
   {
     question: "O pagamento é por Pix?",
@@ -291,6 +291,7 @@ function hasValidCpfCnpjLength(value: string) {
 }
 
 function PlanCheckout({ selection, onClose }: { selection: CheckoutSelection; onClose: () => void }) {
+  const checkoutToken = useRef(crypto.randomUUID());
   const [stage, setStage] = useState<CheckoutStage>("idle");
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
@@ -298,6 +299,8 @@ function PlanCheckout({ selection, onClose }: { selection: CheckoutSelection; on
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [payerCpf, setPayerCpf] = useState("");
+  const [reviewedPurchase, setReviewedPurchase] = useState(false);
+  const [acceptedPolicies, setAcceptedPolicies] = useState(false);
   const meta = PRODUCT_META[selection.plan.id];
   const points = selectedPoints(selection.plan, selection.pointsQuantity ?? selection.plan.points);
   const payerCpfDigits = cpfCnpjDigits(payerCpf);
@@ -330,6 +333,9 @@ function PlanCheckout({ selection, onClose }: { selection: CheckoutSelection; on
           activationMode: "agora",
           paymentMethod: "pix",
           payerCpf: payerCpfDigits,
+          reviewedPurchase,
+          acceptedPolicies,
+          checkoutToken: checkoutToken.current,
           metadata: {
             headline: meta.headline,
             benefits: meta.benefits,
@@ -362,11 +368,16 @@ function PlanCheckout({ selection, onClose }: { selection: CheckoutSelection; on
     try {
       const res = await fetch(`/api/payments/status/${paymentId}`);
       const data = await res.json().catch(() => ({}));
-      if (data.status === "PAID") {
+      if (data.status === "PAID" && data.benefitStatus === "APPLIED") {
         setStage("paid");
         return;
       }
-      if (data.status === "FAILED" || data.status === "REFUNDED") {
+      if (data.status === "PAID" && data.benefitStatus === "FAILED") {
+        setError("Pagamento confirmado, mas o produto aguarda conciliacao do suporte.");
+        setStage("failed");
+        return;
+      }
+      if (["FAILED", "REFUNDED", "CANCELLED", "EXPIRED", "CHARGEBACK"].includes(data.status)) {
         setError("Pagamento não confirmado.");
         setStage("failed");
         return;
@@ -381,6 +392,15 @@ function PlanCheckout({ selection, onClose }: { selection: CheckoutSelection; on
     if (!qrCode) return;
     await navigator.clipboard.writeText(qrCode);
     setMessage("Código Pix copiado.");
+  }
+
+  function retryPix() {
+    checkoutToken.current = crypto.randomUUID();
+    setPaymentId(null);
+    setQrCode(null);
+    setQrCodeBase64(null);
+    setStage("idle");
+    setError(null);
   }
 
   useEffect(() => {
@@ -410,6 +430,9 @@ function PlanCheckout({ selection, onClose }: { selection: CheckoutSelection; on
           <span>Total</span>
           <strong>{money(selection.price.value)}</strong>
         </div>
+        <p className="status-copy">
+          Pagamento Ãºnico via Pix, sem renovaÃ§Ã£o automÃ¡tica e sem garantia de contatos, renda ou resultado.
+        </p>
 
         <ul className="checkout-benefits">
           {meta.benefits.slice(0, 4).map((benefit) => (
@@ -428,9 +451,15 @@ function PlanCheckout({ selection, onClose }: { selection: CheckoutSelection; on
             disabled={stage === "creating" || stage === "waiting" || stage === "paid"}
           />
         </label>
+        <label className="checkout-field">
+          <span><input type="checkbox" checked={reviewedPurchase} onChange={(event) => setReviewedPurchase(event.target.checked)} /> Confirmo que revisei o valor total, o perÃ­odo e os benefÃ­cios.</span>
+        </label>
+        <label className="checkout-field">
+          <span><input type="checkbox" checked={acceptedPolicies} onChange={(event) => setAcceptedPolicies(event.target.checked)} /> Li e aceito os Termos dos Destaques e a PolÃ­tica de Cancelamento e Reembolso.</span>
+        </label>
         {error && stage === "idle" && <p className="checkout-error">{error}</p>}
 
-        {stage === "idle" && <button className="primary-action" type="button" onClick={createPix} disabled={!payerCpfReady}>Gerar Pix</button>}
+        {stage === "idle" && <button className="primary-action" type="button" onClick={createPix} disabled={!payerCpfReady || !reviewedPurchase || !acceptedPolicies}>Gerar Pix</button>}
         {stage === "creating" && <p className="status-copy">Criando pedido e preparando o Pix...</p>}
         {stage === "waiting" && (
           <div className="pix-box">
@@ -452,7 +481,7 @@ function PlanCheckout({ selection, onClose }: { selection: CheckoutSelection; on
           <div className="pix-box">
             <h3>Não foi possível concluir</h3>
             <p className="status-copy">{error}</p>
-            <button className="primary-action" type="button" onClick={createPix}>Tentar novamente</button>
+            <button className="primary-action" type="button" onClick={retryPix}>Tentar novamente</button>
           </div>
         )}
       </div>
@@ -746,7 +775,7 @@ export default function PlanosPage() {
         <div className="plans-hero-copy">
           <p className="eyebrow">Elite Modell Premium</p>
           <h1>Impulsione seu perfil e apareça mais</h1>
-          <p>Escolha planos, destaques e recursos extras para aumentar sua visibilidade na Elite Modell.</p>
+          <p>Planos e destaques são opcionais durante o acesso gratuito. Não há cobrança ou renovação automática.</p>
         </div>
         <div className="plans-hero-art">
           <PremiumIllustration kind="crown" />
@@ -791,8 +820,8 @@ export default function PlanosPage() {
       <section className="secure-strip" aria-label="Pagamento seguro">
         <span className="secure-icon"><ShieldCheck size={30} /></span>
         <span>
-          <strong>Pagamento seguro e cancelamento fácil</strong>
-          <small>Ambiente 100% seguro. Cancele quando quiser, sem burocracia.</small>
+          <strong>Pagamento único via Pix</strong>
+          <small>Sem renovação automática. Consulte as regras de ativação, cancelamento e reembolso antes da compra.</small>
         </span>
         <BadgeCheck size={24} />
       </section>

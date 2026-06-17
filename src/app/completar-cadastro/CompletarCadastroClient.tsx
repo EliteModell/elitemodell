@@ -44,10 +44,11 @@ export default function CompletarCadastroClient() {
   const [birthDate, setBirthDate] = useState("");
   const [lgpdConsent, setLgpdConsent] = useState(false);
   const [termsConsent, setTermsConsent] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const parsedBirthDate = birthDateToIso(birthDate);
-  const canSubmit = Boolean(parsedBirthDate.iso && lgpdConsent && termsConsent && !loading);
+  const canSubmit = Boolean(parsedBirthDate.iso && lgpdConsent && termsConsent && ageConfirmed && !loading);
 
   function handleBirthDateChange(value: string) {
     setBirthDate(maskBirthDate(value));
@@ -64,8 +65,8 @@ export default function CompletarCadastroClient() {
       return;
     }
 
-    if (!lgpdConsent || !termsConsent) {
-      setError("Você deve aceitar os Termos de Uso e a Política de Privacidade para continuar.");
+    if (!lgpdConsent || !termsConsent || !ageConfirmed) {
+      setError("Confirme a maioridade e aceite os Termos de Uso e a Política de Privacidade para continuar.");
       return;
     }
     setLoading(true);
@@ -73,7 +74,7 @@ export default function CompletarCadastroClient() {
       const res = await fetch("/api/auth/complete-profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ birthDate: parsed.iso, lgpdConsent, termsConsent }),
+        body: JSON.stringify({ birthDate: parsed.iso, lgpdConsent, termsConsent, ageConfirmed }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -216,7 +217,33 @@ export default function CompletarCadastroClient() {
               <a href="/terms" target="_blank" style={{ color: GOLD, textDecoration: "none" }}>
                 Termos de Uso
               </a>{" "}
-              e confirmo que tenho 18 anos ou mais.
+              e li o{" "}
+              <a href="/documentos/registration-short-notice" target="_blank" style={{ color: GOLD, textDecoration: "none" }}>
+                Aviso Resumido de Cadastro
+              </a>.
+            </span>
+          </label>
+
+          {/* Age confirmation */}
+          <label
+            style={{
+              display: "flex",
+              gap: 12,
+              alignItems: "flex-start",
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={ageConfirmed}
+              onChange={(e) => setAgeConfirmed(e.target.checked)}
+              style={{ marginTop: 2, accentColor: GOLD, width: 16, height: 16, flexShrink: 0 }}
+            />
+            <span style={{ color: "#cbd5e1", fontSize: 13, lineHeight: 1.5 }}>
+              Confirmo que sou maior de 18 anos e li a{" "}
+              <a href="/documentos/adult-declaration" target="_blank" style={{ color: GOLD, textDecoration: "none" }}>
+                Confirmação de Maioridade
+              </a>.
             </span>
           </label>
 

@@ -21,6 +21,7 @@ type ApiProfessional = {
   verified: boolean;
   featured: boolean;
   specialties: { id: string; name: string }[];
+  services?: string[];
   photos: { id: string; url: string; cover: boolean }[];
   galleryUrls?: string[];
   user?: { image: string | null };
@@ -215,9 +216,9 @@ export default function ProfissionaisPage() {
               <p style={{ color: "#666", fontSize: 14 }}>
                 {total} profissional{total !== 1 ? "is" : ""} encontrado{total !== 1 ? "s" : ""}
               </p>
-              <Link href={`${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`} style={{ fontSize: 14, color: "#d4a843", textDecoration: "none", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+              <Link href={ACCOUNT_ROUTES.cadastroAcompanhante} style={{ fontSize: 14, color: "#d4a843", textDecoration: "none", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                Anunciar meu perfil
+                Anunciar como acompanhante
               </Link>
             </div>
 
@@ -315,7 +316,7 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
   const photoCount = (pro.galleryUrls?.length ?? 0) + (pro.photos?.length ?? 0);
   const coverPhoto = pro.photos?.find((p) => p.cover)?.url ?? pro.image;
   const profilePhoto = pro.user?.image ?? null;
-  const specialtyNames = pro.specialties.map((s) => s.name);
+  const specialtyNames = Array.from(new Set([...(pro.services ?? []), ...pro.specialties.map((s) => s.name)]));
 
   return (
     <Link href={`/profissionais/${pro.slug}`} style={{ textDecoration: "none", display: "block" }}>

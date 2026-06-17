@@ -24,10 +24,19 @@ type AccountType = "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
 type Category = "MULHER" | "TRANS" | "HOMEM";
 type Step = "form" | "verify";
 type BirthPart = "day" | "month" | "year";
+type EmailSignupResponse = {
+  ok?: boolean;
+  email?: string;
+  actionType?: string;
+  draftSessionToken?: string;
+  continueTo?: string;
+  accountType?: AccountType;
+};
 const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
 const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
 const PENDING_REGISTRATION_KEY = "elitemodell_pending_registration";
 const PENDING_REGISTRATION_COOKIE = "elitemodell_pending_registration";
+const REGISTRATION_STATE_MAX_AGE_SECONDS = 60 * 60 * 24;
 type AuthError = { code?: string; name?: string; message?: string };
 
 const GOLD = "#d4a843";
@@ -80,14 +89,14 @@ function rememberPendingRegistration(payload: unknown) {
   const serialized = JSON.stringify(payload);
   safeSetStorage(sessionStorage, PENDING_REGISTRATION_KEY, serialized);
   safeSetStorage(localStorage, PENDING_REGISTRATION_KEY, serialized);
-  document.cookie = `${PENDING_REGISTRATION_COOKIE}=${encodeURIComponent(serialized)}; Max-Age=900; Path=/${cookieDomainAttribute()}; SameSite=Lax; Secure`;
+  document.cookie = `${PENDING_REGISTRATION_COOKIE}=${encodeURIComponent(serialized)}; Max-Age=${REGISTRATION_STATE_MAX_AGE_SECONDS}; Path=/${cookieDomainAttribute()}; SameSite=Lax; Secure`;
 }
 
 function rememberRoleIntent(intent: EntryAccountRole) {
   safeSetStorage(sessionStorage, ROLE_INTENT_KEY, intent);
   safeSetStorage(localStorage, ROLE_INTENT_KEY, intent);
 
-  document.cookie = `${ROLE_INTENT_COOKIE}=${encodeURIComponent(intent)}; Max-Age=900; Path=/${cookieDomainAttribute()}; SameSite=Lax; Secure`;
+  document.cookie = `${ROLE_INTENT_COOKIE}=${encodeURIComponent(intent)}; Max-Age=${REGISTRATION_STATE_MAX_AGE_SECONDS}; Path=/${cookieDomainAttribute()}; SameSite=Lax; Secure`;
 }
 
 function rememberCadastroOAuthState(payload: unknown, intent: EntryAccountRole) {
@@ -324,6 +333,7 @@ export default function CadastroPage() {
   const [hydrated, setHydrated] = useState(false);
   const [accountTypeSelected, setAccountTypeSelected] = useState(false);
   const [continueIntent, setContinueIntent] = useState<EntryAccountRole | null>(null);
+  const [requestedReturnUrl, setRequestedReturnUrl] = useState<string | null>(null);
   const [step, setStep] = useState<Step>("form");
   const [form, setForm] = useState({
     name: "",
@@ -334,6 +344,7 @@ export default function CadastroPage() {
     category: "" as Category | "",
     lgpdConsent: false,
     termsConsent: false,
+    ageConfirmed: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [birthParts, setBirthParts] = useState<Record<BirthPart, string>>({
@@ -353,13 +364,19 @@ export default function CadastroPage() {
     const draft = params.get("draft");
     const legacyClientEmail = params.get("legacy") === "cliente";
     const tipo = normalizeCadastroTipo(params.get("tipo"));
+    const phoneValidated = params.get("telefoneValidado") === "1";
     const nextIntent = normalizeEntryRole(params.get("continue")) ?? normalizeEntryRole(params.get("role"));
+    const rawReturnUrl = params.get("returnUrl");
+    const safeReturnUrl = rawReturnUrl?.startsWith("/") && !rawReturnUrl.startsWith("//")
+      ? rawReturnUrl
+      : null;
     const shouldResumeRoomDraft = draft === "quarto" || draft === "imovel";
     const isFreshCadastroEntry = !tipo && !nextIntent && !draft;
 
     window.setTimeout(() => {
       setHydrated(true);
       setContinueIntent(nextIntent);
+      setRequestedReturnUrl(safeReturnUrl);
       if (isFreshCadastroEntry) {
         clearCadastroIntentState();
         setAccountTypeSelected(false);
@@ -375,6 +392,11 @@ export default function CadastroPage() {
 
       if (tipo === "anfitriao") {
         router.replace(ACCOUNT_ROUTES.onboardingAnfitriao);
+        return;
+      }
+
+      if (tipo === "acompanhante" && !legacyClientEmail && !phoneValidated) {
+        router.replace(ACCOUNT_ROUTES.cadastroAcompanhante);
         return;
       }
 
@@ -437,6 +459,7 @@ export default function CadastroPage() {
           birthDate: current.birthDate || savedBirthDate,
           termsConsent: current.termsConsent || Boolean(user.termsConsent),
           lgpdConsent: current.lgpdConsent || Boolean(user.lgpdConsent),
+          ageConfirmed: current.ageConfirmed || Boolean(savedBirthDate),
           category: current.category || savedCategory,
         }));
 
@@ -497,15 +520,26 @@ export default function CadastroPage() {
     { value: "HOMEM", label: "Homem" },
     { value: "TRANS", label: "Trans" },
   ];
+  const professionalOnboardingSteps = [
+    "Dados",
+    "Aparência",
+    "Atendimento",
+    "Serviços",
+    "Valores",
+    "Contato",
+    "Fotos",
+    "Verificação",
+    "Enviar",
+  ];
   const accountSubtitle =
     form.accountType === "PROFESSIONAL"
-      ? "Ativação profissional +18"
+      ? "Cadastro de acompanhante +18"
       : form.accountType === "PROPERTY_HOST"
         ? "Cadastro de imóvel +18"
         : "Conta cliente +18";
   const accountHint =
     form.accountType === "PROFESSIONAL"
-      ? "Depois da conta, você segue para a verificação e criação do perfil de anunciante."
+      ? "Depois da conta, você segue para as 9 etapas: perfil, aparência, atendimento, serviços, valores, contato, fotos, verificação e envio para análise."
       : form.accountType === "PROPERTY_HOST"
         ? "Seu rascunho fica salvo. Depois da conta, você volta para publicar o imóvel."
         : "";
@@ -540,6 +574,8 @@ export default function CadastroPage() {
     if (!form.termsConsent) newErrors.termsConsent = "Você deve aceitar os Termos de Uso";
     if (!form.lgpdConsent) newErrors.lgpdConsent = "Você deve aceitar a Política de Privacidade";
 
+    if (!form.ageConfirmed) newErrors.ageConfirmed = "Confirme que voce e maior de 18 anos";
+
     setErrors(newErrors);
     const isValid = Object.keys(newErrors).length === 0;
 
@@ -565,6 +601,7 @@ export default function CadastroPage() {
       birthDate: form.birthDate,
       lgpdConsent: form.lgpdConsent,
       termsConsent: form.termsConsent,
+      ageConfirmed: form.ageConfirmed,
       name: form.name,
     };
     return captchaToken ? { ...payload, captchaToken } : payload;
@@ -585,40 +622,6 @@ export default function CadastroPage() {
       });
       toast.error(err instanceof Error ? err.message : "Confirme a verificação anti-spam.");
       throw err;
-    }
-  }
-
-  async function registerUser(accessToken: string, captchaToken?: string) {
-    const payload = registrationPayload(captchaToken);
-    console.info("[cadastro] enviando cadastro ao backend", {
-      accountType: payload.accountType,
-      category: payload.category ?? null,
-      hasBirthDate: Boolean(payload.birthDate),
-      hasTermsConsent: Boolean(payload.termsConsent),
-      hasLgpdConsent: Boolean(payload.lgpdConsent),
-      hasCaptchaToken: Boolean(captchaToken),
-      captchaTokenLength: captchaToken?.length ?? 0,
-      loggedUpgradeFlow: isLoggedUpgradeFlow,
-    });
-
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        accessToken,
-        ...payload,
-      }),
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      console.error("[cadastro] backend recusou cadastro", {
-        status: res.status,
-        error: typeof data.error === "string" ? data.error : data.error ? "erro estruturado" : "erro ausente",
-        hasCaptchaToken: Boolean(captchaToken),
-        captchaTokenLength: captchaToken?.length ?? 0,
-      });
-      throw new Error(typeof data.error === "string" ? data.error : "Erro ao criar conta.");
     }
   }
 
@@ -656,7 +659,7 @@ export default function CadastroPage() {
     if (form.accountType === "PROPERTY_HOST") {
       return ACCOUNT_ROUTES.onboardingAnfitriao;
     }
-    return ACCOUNT_ROUTES.mainClientFeed;
+    return requestedReturnUrl ?? ACCOUNT_ROUTES.mainClientFeed;
   }
 
   async function resolvedNextPathAfterAuth() {
@@ -689,6 +692,39 @@ export default function CadastroPage() {
     return params.toString();
   }
 
+  function loginPathAfterEmailVerification() {
+    const params = new URLSearchParams({
+      role: roleIntent(),
+      returnUrl: nextPath(),
+    });
+    return `${ACCOUNT_ROUTES.login}?${params.toString()}`;
+  }
+
+  async function sendEmailSignup(captchaToken?: string) {
+    const payload = registrationPayload(captchaToken);
+    const response = await fetch("/api/auth/email-signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        redirectTo: buildAuthCallbackUrl(callbackParams()),
+        ...payload,
+      }),
+    });
+    const data = await response.json().catch(() => ({})) as EmailSignupResponse & { error?: string; code?: string };
+
+    if (!response.ok) {
+      const error = new Error(typeof data.error === "string" ? data.error : "Nao foi possivel enviar o email.") as Error & AuthError;
+      if (typeof data.code === "string") error.code = data.code;
+      throw error;
+    }
+
+    rememberPendingRegistration(payload);
+    rememberRoleIntent(roleIntent());
+    return { ...data, accountType: payload.accountType };
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validateRequiredForm(true)) return;
@@ -696,25 +732,21 @@ export default function CadastroPage() {
     setLoading(true);
     try {
       const captchaToken = await getCaptchaToken();
-      const { data, error } = await supabaseAuth.auth.signUp({
-        email: form.email.trim().toLowerCase(),
-        password: form.password,
-        options: {
-          emailRedirectTo: buildAuthCallbackUrl(callbackParams()),
-          data: registrationPayload(),
-        },
-      });
-      if (error) throw error;
-      if (data.session?.access_token) {
-        await registerUser(data.session.access_token, captchaToken);
-        const res = await signIn("supabase", nextAuthCadastroPayload(data.session.access_token));
-        if (res?.ok) {
-          router.push(await resolvedNextPathAfterAuth());
+      const signup = await sendEmailSignup(captchaToken);
+      if (signup.accountType === "PROFESSIONAL" && signup.draftSessionToken) {
+        const res = await signIn("email-signup-draft", {
+          token: signup.draftSessionToken,
+          redirect: false,
+        });
+        if (!res?.error) {
+          toast.success("Conta criada. Confirme o email ate o envio final.");
+          router.push(signup.continueTo ?? ACCOUNT_ROUTES.onboardingAcompanhante);
           router.refresh();
           return;
         }
+        console.warn("[cadastro] sessao de rascunho profissional recusada", res?.error);
       }
-      rememberPendingRegistration(registrationPayload(captchaToken));
+      toast.success("Email de confirmacao enviado.");
       setStep("verify");
     } catch (err: unknown) {
       const authError = asAuthError(err);
@@ -743,6 +775,23 @@ export default function CadastroPage() {
         invalid_email: "Email inválido.",
       };
       toast.error(msg[authError.code ?? ""] ?? msg[authError.name ?? ""] ?? authError.message ?? "Erro ao criar conta.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResendVerificationEmail() {
+    if (!isValidEmail(form.email) || form.password.length < 6) {
+      toast.error("Volte ao cadastro e confira email e senha.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await sendEmailSignup();
+      toast.success("Email reenviado. Confira a caixa de entrada e o spam.");
+    } catch (err: unknown) {
+      toast.error(asAuthError(err).message ?? "Nao foi possivel reenviar o email.");
     } finally {
       setLoading(false);
     }
@@ -793,6 +842,7 @@ export default function CadastroPage() {
         birthDate: form.birthDate,
         lgpdConsent: true,
         termsConsent: true,
+        ageConfirmed: form.ageConfirmed,
       });
 
       if (form.accountType === "PROFESSIONAL") {
@@ -800,7 +850,12 @@ export default function CadastroPage() {
       } else {
         const { data } = await supabaseAuth.auth.getSession();
         const accessToken = data.session?.access_token;
-        if (accessToken) await registerUser(accessToken);
+        if (accessToken) {
+          await postJsonOrThrow("/api/auth/register", {
+            accessToken,
+            ...registrationPayload(),
+          });
+        }
       }
 
       const { data } = await supabaseAuth.auth.getSession();
@@ -837,10 +892,11 @@ export default function CadastroPage() {
       },
       {
         tipo: "acompanhante",
-        eyebrow: "Perfil profissional",
+        eyebrow: "Acompanhante",
         title: "Quero anunciar como acompanhante",
-        desc: "Inicie a ativação profissional com maioridade, termos, documentos, fotos e análise da equipe.",
-        action: "Ativar perfil profissional",
+        desc: "Comece pelo telefone e siga para maioridade, termos, documentos, fotos e análise da equipe.",
+        action: "Cadastre-se como acompanhante",
+        directHref: ACCOUNT_ROUTES.cadastroAcompanhante,
       },
       {
         tipo: "anfitriao",
@@ -920,9 +976,21 @@ export default function CadastroPage() {
         <h2 style={{ color: "#f1f5f9", fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>Verifique seu email</h2>
         <p style={{ color: "#8d8578", fontSize: 14, lineHeight: 1.6, margin: "0 0 8px" }}>Enviamos uma verificação para</p>
         <p style={{ color: GOLD, fontSize: 15, fontWeight: 600, margin: "0 0 24px" }}>{form.email}</p>
-        <p style={{ color: "#615b52", fontSize: 13, lineHeight: 1.6, margin: "0 0 32px" }}>Confirme o email para ativar sua conta. Depois volte aqui para entrar.</p>
-        <button onClick={() => router.push(`${ACCOUNT_ROUTES.login}?role=cliente`)} style={{ width: "100%", padding: "13px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
-          Ir para o login
+        <p style={{ color: "#615b52", fontSize: 13, lineHeight: 1.6, margin: "0 0 32px" }}>
+          {form.accountType === "PROFESSIONAL"
+            ? "Confirme o email para ativar sua conta. Depois entre como acompanhante para continuar nas 9 etapas do cadastro."
+            : "Confirme o email para ativar sua conta. Depois volte aqui para entrar."}
+        </p>
+        <button onClick={() => router.push(loginPathAfterEmailVerification())} style={{ width: "100%", padding: "13px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
+          {form.accountType === "PROFESSIONAL" ? "Entrar como acompanhante" : "Ir para o login"}
+        </button>
+        <button
+          type="button"
+          onClick={handleResendVerificationEmail}
+          disabled={loading}
+          style={{ width: "100%", marginTop: 12, padding: "13px", background: "rgba(212,168,67,0.08)", color: GOLD, border: "1px solid rgba(212,168,67,0.3)", borderRadius: 8, fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}
+        >
+          {loading ? "Reenviando..." : "Reenviar email"}
         </button>
       </div>
       <AuthInfoFooter />
@@ -970,7 +1038,7 @@ export default function CadastroPage() {
           <div style={{ marginTop: 12, padding: 12, border: "1px solid rgba(212,168,67,0.18)", borderRadius: 8, background: "rgba(212,168,67,0.06)" }}>
             <p style={{ color: "#d4a843", fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", margin: "0 0 8px" }}>Fases do cadastro</p>
             <div style={{ display: "grid", gap: 6 }}>
-              {["Dados do perfil", "Fotos e valores", "Documentos", "Biometria", "Análise da equipe"].map((item, index) => (
+              {professionalOnboardingSteps.map((item, index) => (
                 <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, color: "#94a3b8", fontSize: 12 }}>
                   <span style={{ width: 18, height: 18, borderRadius: 999, border: "1px solid rgba(212,168,67,0.35)", color: "#f5d78c", display: "grid", placeItems: "center", fontSize: 10, fontWeight: 800 }}>{index + 1}</span>
                   {item}
@@ -984,7 +1052,7 @@ export default function CadastroPage() {
       {isLoggedUpgradeFlow ? (
         <div style={{ marginBottom: 20, padding: 14, borderRadius: 8, border: "1px solid rgba(212,168,67,0.24)", background: "rgba(15,23,42,0.72)" }}>
           <p style={{ color: "#f1f5f9", fontSize: 14, fontWeight: 800, margin: "0 0 6px" }}>
-            Continuar como {form.accountType === "PROFESSIONAL" ? "profissional anunciante" : "anunciante de espaço"}
+            Continuar cadastro de {form.accountType === "PROFESSIONAL" ? "acompanhante" : "anunciante de espaço"}
           </p>
           <p style={{ color: "#64748b", fontSize: 12, lineHeight: 1.5, margin: "0 0 12px" }}>
             Você já está logado. Vamos atualizar sua conta e abrir as etapas do cadastro.
@@ -1041,7 +1109,8 @@ export default function CadastroPage() {
             <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
               <input type="checkbox" checked={form.termsConsent} onChange={(e) => setForm({ ...form, termsConsent: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
               <span>
-                Li e aceito os <Link href="/terms" style={{ color: GOLD, textDecoration: "none" }}>Termos de Uso</Link>.
+                Li e aceito os <Link href="/terms" style={{ color: GOLD, textDecoration: "none" }}>Termos de Uso</Link> e li o{" "}
+                <Link href="/documentos/registration-short-notice" style={{ color: GOLD, textDecoration: "none" }}>Aviso Resumido de Cadastro</Link>.
                 {errors.termsConsent && <span data-auth-required-error="true" style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.termsConsent}</span>}
               </span>
             </label>
@@ -1054,6 +1123,14 @@ export default function CadastroPage() {
               </span>
             </label>
           </div>
+          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#64748b", fontSize: 12, lineHeight: 1.5, marginTop: 12 }}>
+            <input type="checkbox" checked={form.ageConfirmed} onChange={(e) => setForm({ ...form, ageConfirmed: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
+            <span>
+              Confirmo que sou maior de 18 anos e li a <Link href="/documentos/adult-declaration" style={{ color: GOLD, textDecoration: "none" }}>Confirmacao de Maioridade</Link>.
+              {errors.ageConfirmed && <span data-auth-required-error="true" style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.ageConfirmed}</span>}
+            </span>
+          </label>
+
           <button
             type="button"
             onClick={handleContinueExistingAccount}
@@ -1148,7 +1225,8 @@ export default function CadastroPage() {
         <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
           <input type="checkbox" checked={form.termsConsent} onChange={(e) => setForm({ ...form, termsConsent: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
           <span>
-            Li e aceito os <Link href="/terms" style={{ color: GOLD, textDecoration: "none" }}>Termos de Uso</Link>.
+            Li e aceito os <Link href="/terms" style={{ color: GOLD, textDecoration: "none" }}>Termos de Uso</Link> e li o{" "}
+            <Link href="/documentos/registration-short-notice" style={{ color: GOLD, textDecoration: "none" }}>Aviso Resumido de Cadastro</Link>.
             {errors.termsConsent && <span data-auth-required-error="true" style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.termsConsent}</span>}
           </span>
         </label>
@@ -1158,6 +1236,14 @@ export default function CadastroPage() {
           <span>
             Li e aceito a <Link href="/privacy" style={{ color: GOLD, textDecoration: "none" }}>Política de Privacidade</Link>.
             {errors.lgpdConsent && <span data-auth-required-error="true" style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.lgpdConsent}</span>}
+          </span>
+        </label>
+
+        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
+          <input type="checkbox" checked={form.ageConfirmed} onChange={(e) => setForm({ ...form, ageConfirmed: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
+          <span>
+            Confirmo que sou maior de 18 anos e li a <Link href="/documentos/adult-declaration" style={{ color: GOLD, textDecoration: "none" }}>Confirmacao de Maioridade</Link>.
+            {errors.ageConfirmed && <span data-auth-required-error="true" style={{ display: "block", color: "#ef4444", marginTop: 4 }}>{errors.ageConfirmed}</span>}
           </span>
         </label>
 

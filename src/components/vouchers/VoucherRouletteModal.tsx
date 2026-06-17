@@ -20,6 +20,14 @@ type RouletteConfig = {
   canSpin: boolean;
   blockedUntil: string | null;
   prizes: Prize[];
+  policy: {
+    key: string;
+    title: string;
+    href: string;
+    version: string;
+    hash: string;
+    authorizationReference: string | null;
+  };
 };
 
 type SpinResult = {
@@ -33,14 +41,59 @@ type SpinResult = {
   voucher?: { id: string; code: string; value: number; status: string; requiresPayment: boolean } | null;
 };
 
+type SpinErrorResponse = {
+  error?: string;
+  code?: string;
+  requestId?: string;
+};
+
+class SpinRequestError extends Error {
+  constructor(
+    message: string,
+    public readonly code?: string,
+    public readonly requestId?: string,
+  ) {
+    super(message);
+    this.name = "SpinRequestError";
+  }
+}
+
+type Props = {
+  demoMode?: boolean;
+};
+
 const CLOSED_KEY = "elite_voucher_modal_closed";
 const GOLD = "#d4a843";
 const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.webp?v=20260601-spin-audio";
 const SEGMENT_ANGLE = 36; // 360 / 10 segments
-const SPIN_DURATION_MS = 4000;   // duração fixa do giro visual (ms)
-const RESULT_REVEAL_DELAY_MS = 1000; // pausa após parar para mostrar onde caiu
+const SPIN_DURATION_MS = 1800;
+const RESULT_REVEAL_DELAY_MS = 450;
 const SLOW_PREPARE_MS = 180;
-const SPIN_API_TIMEOUT_MS = 8000;
+const SPIN_API_TIMEOUT_MS = 25000;
+const DEMO_PRIZES: Prize[] = Array.from({ length: 10 }, (_, index) => ({
+  id: `demo-${index}`,
+  index,
+  name: index % 2 === 0 ? `R$ ${[5, 10, 20, 50, 100][index / 2]} OFF` : "Tente novamente",
+  type: index % 2 === 0 ? "VOUCHER" : "TRY_AGAIN",
+  value: index % 2 === 0 ? [5, 10, 20, 50, 100][index / 2] : null,
+  requiresPayment: false,
+  paymentAmount: null,
+}));
+
+const DEMO_CONFIG: RouletteConfig = {
+  active: true,
+  canSpin: true,
+  blockedUntil: null,
+  prizes: DEMO_PRIZES,
+  policy: {
+    key: "roulette-promotion-policy",
+    title: "Política da Roleta Promocional",
+    href: "/documentos/roulette-promotion-policy",
+    version: "DEMONSTRACAO",
+    hash: "demonstracao-sem-premiacao",
+    authorizationReference: "DEMONSTRACAO_SEM_PREMIACAO",
+  },
+};
 
 function randomKey() {
   const bytes = new Uint8Array(16);
@@ -87,6 +140,14 @@ function resolveVisualIndex(result: SpinResult) {
 }
 
 function getResultView(result: SpinResult) {
+  if (result.result === "DEMO") {
+    return {
+      Icon: Sparkles,
+      tone: "again" as const,
+      title: "Demonstração concluída",
+      subtitle: "Nenhum prêmio, voucher ou participação real foi gerado.",
+    };
+  }
   if (result.result === "ERROR") {
     return {
       Icon: Sparkles,
@@ -121,9 +182,11 @@ function getResultView(result: SpinResult) {
   };
 }
 
-export default function VoucherRouletteModal() {
-  const [config, setConfig] = useState<RouletteConfig | null>(null);
-  const [open, setOpen] = useState(false);
+export default function VoucherRouletteModal({ demoMode = false }: Props) {
+  const [config, setConfig] = useState<RouletteConfig | null>(
+    demoMode ? DEMO_CONFIG : null,
+  );
+  const [open, setOpen] = useState(demoMode);
   const [spinning, setSpinning] = useState(false);
   const [fetching, setFetching] = useState(false); // aguardando resposta da API
   const [showResult, setShowResult] = useState(false);
@@ -131,8 +194,9 @@ export default function VoucherRouletteModal() {
   const [winningIndex, setWinningIndex] = useState<number | null>(null);
   const [slowPreparing, setSlowPreparing] = useState(false);
   const [name, setName] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
   const [claiming, setClaiming] = useState(false);
+  const [acceptedPolicy, setAcceptedPolicy] = useState(false);
 
   const wheelRef = useRef<HTMLImageElement>(null);
   const rotationRef = useRef(0);
@@ -148,20 +212,32 @@ export default function VoucherRouletteModal() {
   const preloadedWheelRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
+    if (demoMode) return;
     if (sessionStorage.getItem(CLOSED_KEY)) return;
     let active = true;
-    fetch("/api/vouchers/roulette", { cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: RouletteConfig | null) => {
-        if (!active || !data?.active || !data.canSpin || data.prizes.length < 2) return;
-        setConfig(data);
-        window.setTimeout(() => setOpen(true), 700);
-      })
-      .catch(() => undefined);
+    let openTimer: number | null = null;
+
+    function loadRoulette() {
+      fetch("/api/vouchers/roulette", { cache: "no-store" })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data: RouletteConfig | null) => {
+          if (!active || !data?.active || !data.canSpin || data.prizes.length < 2) return;
+          setConfig(data);
+          if (openTimer !== null) window.clearTimeout(openTimer);
+          openTimer = window.setTimeout(() => setOpen(true), 700);
+        })
+        .catch(() => undefined);
+    }
+
+    loadRoulette();
+    window.addEventListener("elite-cookie-consent", loadRoulette);
+
     return () => {
       active = false;
+      if (openTimer !== null) window.clearTimeout(openTimer);
+      window.removeEventListener("elite-cookie-consent", loadRoulette);
     };
-  }, []);
+  }, [demoMode]);
 
   useEffect(() => {
     if (!open) return;
@@ -186,7 +262,7 @@ export default function VoucherRouletteModal() {
   }, [open]);
 
   function close() {
-    sessionStorage.setItem(CLOSED_KEY, "1");
+    if (!demoMode) sessionStorage.setItem(CLOSED_KEY, "1");
     clearSlowPrepareTimer();
     stopWheelMotion();
     stopSpinSound();
@@ -387,6 +463,27 @@ export default function VoucherRouletteModal() {
       slowPrepareTimerRef.current = null;
     }, SLOW_PREPARE_MS);
 
+    if (demoMode) {
+      await delay(450);
+      clearSlowPrepareTimer();
+      setFetching(false);
+      const visualIndex = Math.floor(Math.random() * 10);
+      await animateWheelToSegment(visualIndex, SPIN_DURATION_MS);
+      stopSpinSound();
+      setWinningIndex(visualIndex);
+      await delay(RESULT_REVEAL_DELAY_MS);
+      setResult({
+        spinId: "demo",
+        prize: DEMO_PRIZES[visualIndex],
+        result: "DEMO",
+        message: "Demonstração visual sem premiação.",
+        needsIdentification: false,
+      });
+      setShowResult(true);
+      setSpinning(false);
+      return;
+    }
+
     let timeoutId: number | null = null;
 
     try {
@@ -397,22 +494,37 @@ export default function VoucherRouletteModal() {
       const res = await fetch("/api/vouchers/roulette/spin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idempotencyKey: idempotencyRef.current }),
+        body: JSON.stringify({
+          idempotencyKey: idempotencyRef.current,
+          acceptedPolicy,
+        }),
         signal: controller.signal,
       });
       if (timeoutId !== null) window.clearTimeout(timeoutId);
       timeoutId = null;
-      const data: SpinResult & { error?: string } = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Não foi possível girar agora.");
+      const data = await res.json().catch(() => null) as (SpinResult & SpinErrorResponse) | null;
+      if (!data) {
+        throw new SpinRequestError(
+          `O servidor retornou uma resposta inválida (HTTP ${res.status}).`,
+          "INVALID_SERVER_RESPONSE",
+        );
+      }
+      if (!res.ok) {
+        throw new SpinRequestError(
+          data.error ?? `O servidor recusou o giro (HTTP ${res.status}).`,
+          data.code,
+          data.requestId,
+        );
+      }
 
       clearSlowPrepareTimer();
       setFetching(false);
       const visualIndex = resolveVisualIndex(data);
 
-      // 3. A API respondeu: agora sim desacelera por 4s até o prêmio sorteado.
+      // 3. A API respondeu: desacelera rapidamente até o prêmio sorteado.
       await animateWheelToSegment(visualIndex, SPIN_DURATION_MS);
 
-      // 4. Parou: encerra o som e mostra onde caiu por 1 segundo
+      // 4. Parou: encerra o som e deixa o segmento vencedor visível.
       stopSpinSound();
       setWinningIndex(visualIndex);
       await delay(RESULT_REVEAL_DELAY_MS);
@@ -426,6 +538,8 @@ export default function VoucherRouletteModal() {
       console.error("[voucher-roulette-modal] spin_failed", {
         name: err instanceof Error ? err.name : "UnknownError",
         message: err instanceof Error ? err.message : String(err),
+        code: err instanceof SpinRequestError ? err.code : undefined,
+        requestId: err instanceof SpinRequestError ? err.requestId : undefined,
         timeoutMs: SPIN_API_TIMEOUT_MS,
       });
       clearSlowPrepareTimer();
@@ -446,10 +560,10 @@ export default function VoucherRouletteModal() {
         },
         result: "ERROR",
         message: err instanceof Error && err.name === "AbortError"
-          ? "Não foi possível preparar seu giro agora. Tente novamente."
+          ? "O servidor excedeu 25 segundos para preparar o giro. Tente novamente com a mesma participação."
           : err instanceof Error
             ? err.message
-            : "Não foi possível girar agora. Tente novamente.",
+            : "Falha desconhecida ao processar o giro.",
         needsIdentification: false,
       });
       setShowResult(true);
@@ -464,7 +578,7 @@ export default function VoucherRouletteModal() {
       const res = await fetch("/api/vouchers/roulette/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ spinId: result.spinId, pendingToken: result.pendingToken, name, whatsapp }),
+        body: JSON.stringify({ spinId: result.spinId, pendingToken: result.pendingToken, name, phone: contactPhone }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Não foi possível salvar o voucher.");
@@ -493,6 +607,7 @@ export default function VoucherRouletteModal() {
           <span>elite</span>modell
         </p>
         <h2 className="vm-title">ROLETA PREMIADA</h2>
+        {demoMode && <p className="vm-demo-badge">MODO DEMONSTRAÇÃO · SEM PRÊMIO REAL</p>}
         <p className="vm-sub">Gire a roleta e descubra seu desconto especial para usar na plataforma.</p>
 
         {/* Wheel section — pointer + ring are siblings; pointer overlaps ring top via negative margin */}
@@ -521,17 +636,43 @@ export default function VoucherRouletteModal() {
           type="button"
           className="vm-spin-btn"
           onClick={spin}
-          disabled={spinning || Boolean(result)}
+          disabled={spinning || Boolean(result) || (!demoMode && !acceptedPolicy)}
         >
           {fetching ? "Preparando..." : spinning ? "Girando..." : "GIRAR AGORA"}
         </button>
+        {demoMode ? (
+          <p className="vm-demo-note">
+            Esta visualização não registra giro, não consome estoque e não emite voucher.
+          </p>
+        ) : (
+          <label className="vm-policy-acceptance">
+            <input
+              type="checkbox"
+              checked={acceptedPolicy}
+              onChange={(event) => setAcceptedPolicy(event.target.checked)}
+              disabled={spinning || Boolean(result)}
+            />
+            <span>
+              Li e aceito a{" "}
+              <Link href={config.policy.href} target="_blank">
+                {config.policy.title}
+              </Link>
+              .
+            </span>
+          </label>
+        )}
         {fetching && slowPreparing && (
           <p className="vm-prepare-note" role="status">
             Preparando seu giro com segurança...
           </p>
         )}
 
-        <p className="vm-footnote">Descontos promocionais para uso interno na plataforma.</p>
+        <p className="vm-footnote">
+          Versão {config.policy.version}
+          {config.policy.authorizationReference
+            ? ` · Referência ${config.policy.authorizationReference}`
+            : ""}
+        </p>
       </div>
 
       {/* ── Result overlay ── */}
@@ -552,6 +693,21 @@ export default function VoucherRouletteModal() {
               <p className="vm-prize-sub">{resultView.subtitle}</p>
             </div>
 
+            {result.result === "ERROR" && (
+              <div className="vm-actions">
+                <button
+                  type="button"
+                  className="vm-btn-gold"
+                  onClick={() => {
+                    setResult(null);
+                    setShowResult(false);
+                  }}
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            )}
+
             {result.needsRegistration && (
               <div className="vm-actions">
                 <p className="vm-info">
@@ -569,7 +725,7 @@ export default function VoucherRouletteModal() {
 
             {result.needsIdentification && (
               <div className="vm-actions">
-                <p className="vm-info">Informe seus dados para salvar o benefício.</p>
+                <p className="vm-info">Informe nome e telefone para salvar o benefício. A validação por WhatsApp está indisponível no momento.</p>
                 <input
                   className="vm-input"
                   value={name}
@@ -578,9 +734,9 @@ export default function VoucherRouletteModal() {
                 />
                 <input
                   className="vm-input"
-                  value={whatsapp}
-                  onChange={(e) => setWhatsapp(e.target.value)}
-                  placeholder="WhatsApp com DDD"
+                  value={contactPhone}
+                  onChange={(e) => setContactPhone(e.target.value)}
+                  placeholder="Telefone com DDD"
                   inputMode="tel"
                 />
                 <button
@@ -815,6 +971,50 @@ export default function VoucherRouletteModal() {
         .vm-spin-btn:not(:disabled):hover { opacity: .9; }
         .vm-spin-btn:not(:disabled):active { transform: scale(.97); }
         .vm-spin-btn:disabled { opacity: .6; cursor: not-allowed; }
+        .vm-demo-badge {
+          width: fit-content;
+          margin: 8px auto 4px;
+          padding: 6px 10px;
+          border: 1px solid rgba(245,215,140,.4);
+          border-radius: 999px;
+          background: rgba(212,168,67,.12);
+          color: #f5d78c;
+          font-size: 10px;
+          font-weight: 900;
+          letter-spacing: .1em;
+        }
+        .vm-demo-note {
+          margin: 12px auto 0;
+          max-width: 420px;
+          color: rgba(255,255,255,.58);
+          font-size: 12px;
+          line-height: 1.55;
+          text-align: center;
+        }
+
+        .vm-policy-acceptance {
+          width: min(100%, 320px);
+          margin-top: 12px;
+          display: flex;
+          align-items: flex-start;
+          gap: 9px;
+          color: rgba(255,255,255,.76);
+          font-size: 12px;
+          line-height: 1.45;
+          text-align: left;
+        }
+        .vm-policy-acceptance input {
+          width: 16px;
+          height: 16px;
+          margin: 1px 0 0;
+          accent-color: ${GOLD};
+          flex: 0 0 auto;
+        }
+        .vm-policy-acceptance a {
+          color: #f5d78c;
+          font-weight: 800;
+          text-underline-offset: 2px;
+        }
 
         .vm-prepare-note {
           margin: 8px 0 0;

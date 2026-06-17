@@ -10,6 +10,7 @@ declare module "next-auth" {
     professionalStatus?: string | null;
     activeProfileType?: string;
     availableProfiles?: string[];
+    adultVerified?: boolean;
   }
 
   interface Session {
@@ -27,6 +28,7 @@ declare module "next-auth" {
       hostStatus?: string;
       activeProfileType?: string;
       availableProfiles?: string[];
+      adultVerified?: boolean;
     };
   }
 }
@@ -43,6 +45,7 @@ declare module "next-auth/jwt" {
     hostStatus?: string;
     activeProfileType?: string;
     availableProfiles?: string[];
+    adultVerified?: boolean;
     name?: string | null;
     email?: string | null;
     picture?: string | null;

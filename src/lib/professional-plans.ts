@@ -67,7 +67,7 @@ export const PROFESSIONAL_PLANS: ProfessionalPlan[] = [
       { key: "3d", label: "3 dias", value: 9.99, durationMs: 3 * day },
       { key: "7d", label: "7 dias", value: 19.99, durationMs: 7 * day },
       { key: "30d", label: "30 dias", value: 59.99, durationMs: 30 * day },
-      { key: "mensal", label: "Assinatura mensal", value: 59.7, durationMs: 30 * day, dailyLabel: "R$ 1,99/dia" },
+      { key: "mensal", label: "30 dias - pagamento único", value: 59.7, durationMs: 30 * day, dailyLabel: "R$ 1,99/dia" },
     ],
     benefits: { premium: true, showPhone: true },
   },
@@ -79,7 +79,7 @@ export const PROFESSIONAL_PLANS: ProfessionalPlan[] = [
       { key: "3d", label: "3 dias", value: 19.99, durationMs: 3 * day },
       { key: "7d", label: "7 dias", value: 39.99, durationMs: 7 * day },
       { key: "30d", label: "30 dias", value: 79.99, durationMs: 30 * day },
-      { key: "mensal", label: "Assinatura mensal", value: 79.9, durationMs: 30 * day, dailyLabel: "R$ 2,66/dia" },
+      { key: "mensal", label: "30 dias - pagamento único", value: 79.9, durationMs: 30 * day, dailyLabel: "R$ 2,66/dia" },
     ],
     benefits: { premium: true, featured: true },
   },
@@ -91,7 +91,7 @@ export const PROFESSIONAL_PLANS: ProfessionalPlan[] = [
       { key: "3d", label: "3 dias", value: 29.99, durationMs: 3 * day },
       { key: "7d", label: "7 dias", value: 59.99, durationMs: 7 * day },
       { key: "30d", label: "30 dias", value: 109.99, durationMs: 30 * day },
-      { key: "mensal", label: "Assinatura mensal", value: 109.8, durationMs: 30 * day, dailyLabel: "R$ 3,66/dia" },
+      { key: "mensal", label: "30 dias - pagamento único", value: 109.8, durationMs: 30 * day, dailyLabel: "R$ 3,66/dia" },
     ],
     benefits: { premium: true, featured: true },
   },
@@ -103,7 +103,7 @@ export const PROFESSIONAL_PLANS: ProfessionalPlan[] = [
       { key: "3d", label: "3 dias", value: 39.99, durationMs: 3 * day },
       { key: "7d", label: "7 dias", value: 79.99, durationMs: 7 * day },
       { key: "30d", label: "30 dias", value: 209.99, durationMs: 30 * day },
-      { key: "mensal", label: "Assinatura mensal", value: 209.7, durationMs: 30 * day, dailyLabel: "R$ 6,99/dia" },
+      { key: "mensal", label: "30 dias - pagamento único", value: 209.7, durationMs: 30 * day, dailyLabel: "R$ 6,99/dia" },
     ],
     benefits: { premium: true, featured: true, showPhone: true },
   },
@@ -115,7 +115,7 @@ export const PROFESSIONAL_PLANS: ProfessionalPlan[] = [
       { key: "3d", label: "3 dias", value: 69.99, durationMs: 3 * day },
       { key: "7d", label: "7 dias", value: 109.99, durationMs: 7 * day },
       { key: "30d", label: "30 dias", value: 339.99, durationMs: 30 * day },
-      { key: "mensal", label: "Assinatura mensal", value: 339.9, durationMs: 30 * day, dailyLabel: "R$ 11,33/dia" },
+      { key: "mensal", label: "30 dias - pagamento único", value: 339.9, durationMs: 30 * day, dailyLabel: "R$ 11,33/dia" },
     ],
     benefits: { premium: true, featured: true, showPhone: true },
   },
@@ -127,7 +127,7 @@ export const PROFESSIONAL_PLANS: ProfessionalPlan[] = [
       { key: "3d", label: "3 dias", value: 19.99, durationMs: 3 * day },
       { key: "7d", label: "7 dias", value: 29.99, durationMs: 7 * day },
       { key: "30d", label: "30 dias", value: 59.99, durationMs: 30 * day },
-      { key: "mensal", label: "Assinatura mensal", value: 59.7, durationMs: 30 * day, dailyLabel: "R$ 1,99/dia" },
+      { key: "mensal", label: "30 dias - pagamento único", value: 59.7, durationMs: 30 * day, dailyLabel: "R$ 1,99/dia" },
     ],
     benefits: { premium: true, hideAge: true },
   },
@@ -141,6 +141,19 @@ export function normalizePointsQuantity(value: unknown) {
 
 export function getProfessionalPlan(planId: string) {
   return PROFESSIONAL_PLANS.find((plan) => plan.id === planId) ?? null;
+}
+
+export function getProfessionalPlanPriority(planId: string) {
+  return {
+    diamante: 600,
+    ouro: 500,
+    prata: 400,
+    bronze: 300,
+    "one-hour-top": 700,
+    pontos: 200,
+    telefone: 100,
+    "idade-oculta": 100,
+  }[planId] ?? 0;
 }
 
 export function getProfessionalPlanPrice(planId: string, priceKey: string, pointsQuantity?: unknown) {
@@ -165,9 +178,10 @@ export function professionalPlanReference(input: {
   activationMode: ProfessionalActivationMode;
   userId: string;
   pointsQuantity?: number;
+  checkoutToken?: string;
 }) {
   const quantity = input.pointsQuantity ? `:${normalizePointsQuantity(input.pointsQuantity)}` : "";
-  return `professional-plan:${input.planId}:${input.priceKey}:${input.activationMode}:${input.userId}:${Date.now()}${quantity}`;
+  return `professional-plan:${input.planId}:${input.priceKey}:${input.activationMode}:${input.userId}:${input.checkoutToken ?? Date.now()}${quantity}`;
 }
 
 export function parseProfessionalPlanReference(reference?: string | null) {

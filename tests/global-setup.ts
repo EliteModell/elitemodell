@@ -1,12 +1,12 @@
 /**
- * Global setup — executa UMA vez antes de todos os testes.
- * Faz login real com Supabase + NextAuth e salva o storageState em
- * tests/.auth/user.json para reutilização em todos os testes autenticados.
+ * Global setup: cria uma sessao NextAuth assinada para a conta E2E configurada
+ * e salva o storageState para os testes autenticados.
  */
 
 import { chromium, type FullConfig } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
+import { installMockSessionCookie } from "./helpers/mock-auth";
 
 const STORAGE_PATH = path.join(__dirname, ".auth", "user.json");
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
@@ -32,22 +32,20 @@ export default async function globalSetup(config: FullConfig) {
   const shouldLogin = hasAuthenticatedProject && (selectedProjects.size === 0 || selectedProjects.has("authenticated"));
 
   if (!shouldLogin) {
-    console.warn("\n[global-setup] Projeto autenticado nao selecionado; login real ignorado.\n");
+    console.warn("\n[global-setup] Projeto autenticado nao selecionado; sessao E2E ignorada.\n");
     writeEmptyStorageState();
     return;
   }
 
   const email = process.env.TEST_USER_EMAIL;
-  const password = process.env.TEST_USER_PASSWORD;
 
-  if (!email || !password) {
-    console.warn("\n[global-setup] TEST_USER_EMAIL / TEST_USER_PASSWORD não definidos — testes autenticados serão pulados.\n");
-    // Cria um storageState vazio para não quebrar o setup
+  if (!email) {
+    console.warn("\n[global-setup] TEST_USER_EMAIL nao definido; testes autenticados serao pulados.\n");
     writeEmptyStorageState();
     return;
   }
 
-  console.log(`\n[global-setup] Fazendo login como: ${email}`);
+  console.log("\n[global-setup] Criando sessao assinada para a conta E2E configurada.");
 
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
@@ -60,7 +58,6 @@ export default async function globalSetup(config: FullConfig) {
   const page = await context.newPage();
 
   try {
-    // 0. Injeta sessionStorage para bypassar o Age Gate em TODOS os requests
     await context.addInitScript(() => {
       sessionStorage.setItem("elite_modell_adult_consent_session", "accepted");
       sessionStorage.setItem("elite_modell_adult_consent_at", new Date().toISOString());
@@ -68,28 +65,30 @@ export default async function globalSetup(config: FullConfig) {
       localStorage.setItem("elite_modell_ageConsentAcceptedAt", new Date().toISOString());
     });
 
-    // 1. Abre página de login
-    await page.goto(`${BASE_URL}/login`, { waitUntil: "domcontentloaded" });
+    await installMockSessionCookie(context, {
+      id: "e2e-user",
+      name: "Conta E2E",
+      email,
+      role: "GUEST",
+      accountType: "client",
+      clientStatus: "UNVERIFIED",
+      isProfessional: false,
+      needsConsent: false,
+      activeProfileType: "CLIENTE",
+      availableProfiles: ["CLIENTE"],
+      adultVerified: true,
+    });
 
-    // 2. Preenche e-mail e senha
-    await page.fill('input[type="email"]', email);
-    await page.fill('input[type="password"]', password);
+    await page.goto(`${BASE_URL}/dashboard`, { waitUntil: "domcontentloaded" });
+    if (page.url().includes("/login")) {
+      throw new Error("A sessao E2E foi redirecionada para o login.");
+    }
 
-    // 3. Submete
-    await page.click('button[type="submit"]');
-
-    // 4. Aguarda redirect para /dashboard* ou /painel*
-    await page.waitForURL(/\/(dashboard|painel|acompanhantes)/, { timeout: 20_000 });
-
-    console.log(`[global-setup] Login OK — URL: ${page.url()}`);
-
-    // 5. Salva sessão
     fs.mkdirSync(path.dirname(STORAGE_PATH), { recursive: true });
     await context.storageState({ path: STORAGE_PATH });
-    console.log(`[global-setup] storageState salvo em: ${STORAGE_PATH}\n`);
+    console.log(`[global-setup] Sessao E2E validada e salva em ${STORAGE_PATH}.\n`);
   } catch (err) {
-    console.error(`[global-setup] Falha no login: ${(err as Error).message}`);
-    // Salva estado vazio para não quebrar os testes (eles vão pular graciosamente)
+    console.error(`[global-setup] Falha ao criar sessao E2E: ${(err as Error).message}`);
     writeEmptyStorageState();
   } finally {
     await browser.close();

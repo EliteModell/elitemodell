@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,18 +8,17 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FiltersModal from "@/components/FiltersModal";
 import VoucherRouletteModal from "@/components/vouchers/VoucherRouletteModal";
+import ProfessionalContactAction from "@/components/professionals/ProfessionalContactAction";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import {
+  canonicalizeBrazilianLocation,
+  SUPPORTED_PUBLIC_LOCATIONS,
+} from "@/lib/brazilian-location";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.12)";
 const GOLD_MID = "rgba(212,168,67,0.28)";
 const PLAYFAIR = "var(--font-playfair), serif";
-
-function buildWaLink(raw: string): string {
-  const digits = raw.replace(/\D/g, "");
-  const withDDI = digits.startsWith("55") && digits.length >= 12 ? digits : `55${digits}`;
-  return `https://wa.me/${withDDI}?text=${encodeURIComponent("Olá, vi seu perfil na Elite Modell e gostaria de mais informações.")}`;
-}
 
 type MainTab = "acompanhantes" | "imoveis";
 type SubTab = "mulheres" | "trans" | "homens";
@@ -49,11 +48,17 @@ type CardPerfil = {
   attendanceTypes: string[];
   servicos: string[];
   bio: string;
+  phone: string | null;
   whatsapp: string | null;
+  contactVisibility: "PUBLIC" | "LOGGED_IN" | "PREMIUM";
+  contactAvailable: boolean;
+  verified: boolean;
+  sponsored: boolean;
 };
 
 type StoryGroup = {
   userId: string;
+  slug: string;
   nome: string;
   foto: string | null;
   stories: Array<{ id: string; mediaUrl: string; mediaType: string; thumbnail: string | null }>;
@@ -97,28 +102,20 @@ const SORT_OPTIONS: Array<{ id: SortFilter; label: string }> = [
   { id: "recent", label: "Mais recentes" },
 ];
 
-const SUGGESTED_LOCATIONS: LocationChoice[] = [
-  cityChoice("São Paulo", "SP"),
-  cityChoice("Rio de Janeiro", "RJ"),
-  cityChoice("Brasília", "DF"),
-  cityChoice("Belo Horizonte", "MG"),
-  cityChoice("Itaúna", "MG"),
-  cityChoice("Divinópolis", "MG"),
-  cityChoice("Pará de Minas", "MG"),
-  cityChoice("Brumadinho", "MG"),
-  cityChoice("Igarapé", "MG"),
-  cityChoice("Mateus Leme", "MG"),
-  cityChoice("Juatuba", "MG"),
-  cityChoice("Formiga", "MG"),
-  cityChoice("Oliveira", "MG"),
-];
+const SUGGESTED_LOCATIONS: LocationChoice[] = SUPPORTED_PUBLIC_LOCATIONS.map(
+  (location) => cityChoice(location.city, location.state),
+);
 
 function cityChoice(city: string, state: string): LocationChoice {
+  const canonical = canonicalizeBrazilianLocation(city, state) ?? {
+    city: city.trim(),
+    state: state.trim().toUpperCase(),
+  };
   return {
-    city,
-    state,
-    label: `${city}, ${state}`,
-    slug: `${slugify(city)}-${state.toLowerCase()}`,
+    city: canonical.city,
+    state: canonical.state,
+    label: `${canonical.city}, ${canonical.state}`,
+    slug: `${slugify(canonical.city)}-${canonical.state.toLowerCase()}`,
   };
 }
 
@@ -129,15 +126,6 @@ function slugify(text: string) {
     .replace(/\p{Diacritic}/gu, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-}
-
-function calcAge(birthDate?: string | null): number | null {
-  if (!birthDate) return null;
-  const today = new Date();
-  const birth = new Date(birthDate);
-  let age = today.getFullYear() - birth.getFullYear();
-  if (today.getMonth() - birth.getMonth() < 0 || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age--;
-  return age;
 }
 
 function isMainTab(value: string | null): value is MainTab {
@@ -181,7 +169,8 @@ function getLocationFromParams(params: URLSearchParams): LocationChoice | null {
 
 function apiSortBy(sortBy: SortFilter) {
   if (sortBy === "price_asc" || sortBy === "price_desc" || sortBy === "recent") return sortBy;
-  if (sortBy === "rating" || sortBy === "relevance" || sortBy === "distance" || sortBy === "online") return "rating";
+  if (sortBy === "online") return "online";
+  if (sortBy === "rating" || sortBy === "relevance" || sortBy === "distance") return "rating";
   return "rating";
 }
 
@@ -198,7 +187,11 @@ function BuscarContent() {
   const [distance, setDistance] = useState<DistanceFilter>(() => getDistance(initialParams.get("distance")));
   const [sortBy, setSortBy] = useState<SortFilter>(() => getSort(initialParams.get("sort")));
   const [showFilters, setShowFilters] = useState(false);
-  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(
+    initialParams.get("selecionarCidade") === "1" &&
+    !getLocationFromParams(initialParams) &&
+    initialParams.get("virtual") !== "1",
+  );
   const [locationSearch, setLocationSearch] = useState("");
   const [locationDraft, setLocationDraft] = useState<LocationChoice | null>(null);
   const [draftVirtual, setDraftVirtual] = useState(false);
@@ -209,6 +202,11 @@ function BuscarContent() {
   const [stories, setStories] = useState<StoryGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const geoAutoAttemptedRef = useRef(false);
+  const locationSelectionRequired =
+    params.get("selecionarCidade") === "1" &&
+    !selectedLocation &&
+    !virtualOnly;
 
   useEffect(() => {
     const nextParams = new URLSearchParams(params.toString());
@@ -220,13 +218,26 @@ function BuscarContent() {
       setVirtualOnly(nextParams.get("virtual") === "1");
       setDistance(getDistance(nextParams.get("distance")));
       setSortBy(getSort(nextParams.get("sort")));
+      if (
+        nextParams.get("selecionarCidade") === "1" &&
+        !getLocationFromParams(nextParams) &&
+        nextParams.get("virtual") !== "1"
+      ) {
+        setShowLocationModal(true);
+      }
     }, 0);
     return () => window.clearTimeout(timer);
   }, [params]);
 
   useEffect(() => {
+    if (locationSelectionRequired) return;
     const controller = new AbortController();
-    fetch("/api/stories", { signal: controller.signal })
+    const query = new URLSearchParams();
+    if (selectedLocation) {
+      query.set("city", selectedLocation.city);
+      query.set("state", selectedLocation.state);
+    }
+    fetch(`/api/stories${query.size ? `?${query}` : ""}`, { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : []))
       .then((data: StoryGroup[]) => setStories(Array.isArray(data) ? data : []))
       .catch((err) => {
@@ -236,10 +247,11 @@ function BuscarContent() {
         }
       });
     return () => controller.abort();
-  }, []);
+  }, [locationSelectionRequired, selectedLocation]);
 
   useEffect(() => {
     if (mainTab !== "acompanhantes") return;
+    if (locationSelectionRequired) return;
 
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
@@ -273,15 +285,21 @@ function BuscarContent() {
           image?: string | null;
           rating?: number;
           totalReviews?: number;
-          birthDate?: string | null;
-          hideAge?: boolean;
+          age?: number | null;
           boostActive?: boolean;
           boostUntil?: string | null;
           attendanceTypes?: string[];
           specialties?: Array<{ name: string }>;
+          services?: string[];
           bio?: string;
           photos?: Array<{ url: string }>;
+          phone?: string | null;
           whatsapp?: string | null;
+          contactVisibility?: "PUBLIC" | "LOGGED_IN" | "PREMIUM";
+          contactAvailable?: boolean;
+          online?: boolean;
+          verified?: boolean;
+          sponsored?: boolean;
         }) => ({
           id: p.id,
           slug: p.slug,
@@ -289,15 +307,20 @@ function BuscarContent() {
           cidade: `${p.city}, ${p.state}`,
           preco: p.priceMin ?? p.pricePerHour ?? null,
           foto: p.image ?? p.photos?.[0]?.url ?? null,
-          online: false,
+          online: Boolean(p.online),
           avaliacao: p.rating ?? 0,
           total: p.totalReviews ?? 0,
-          idade: p.hideAge ? null : calcAge(p.birthDate),
+          idade: p.age ?? null,
           local: p.attendanceTypes?.[0] ?? null,
           attendanceTypes: p.attendanceTypes ?? [],
-          servicos: (p.specialties ?? []).map((s) => s.name),
+          servicos: Array.from(new Set([...(p.services ?? []), ...(p.specialties ?? []).map((s) => s.name)])),
           bio: p.bio ?? "",
+          phone: p.phone ?? null,
           whatsapp: p.whatsapp ?? null,
+          contactVisibility: p.contactVisibility ?? "PUBLIC",
+          contactAvailable: Boolean(p.contactAvailable),
+          verified: Boolean(p.verified),
+          sponsored: Boolean(p.sponsored),
         }));
         setPerfis(list);
       } catch (err) {
@@ -315,7 +338,7 @@ function BuscarContent() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [busca, filtros, mainTab, selectedLocation, sortBy, subTab, virtualOnly]);
+  }, [busca, filtros, locationSelectionRequired, mainTab, selectedLocation, sortBy, subTab, virtualOnly]);
 
   function replaceQuery(updates: Record<string, string | null>) {
     const next = new URLSearchParams(params.toString());
@@ -377,6 +400,7 @@ function BuscarContent() {
       cidade: draftVirtual ? null : locationDraft?.city ?? null,
       estado: draftVirtual ? null : locationDraft?.state.toLowerCase() ?? null,
       virtual: draftVirtual ? "1" : null,
+      selecionarCidade: null,
     });
   }
 
@@ -398,10 +422,7 @@ function BuscarContent() {
     }
     setGeoLoading(true);
     navigator.geolocation.getCurrentPosition(
-      () => {
-        setGeoLoading(false);
-        setGeoMessage("Localização autorizada. Escolha uma cidade próxima para refinar a busca.");
-      },
+      (position) => void resolveCoordinates(position, false),
       () => {
         setGeoLoading(false);
         setGeoMessage("Não foi possível acessar sua localização. Você pode buscar por cidade.");
@@ -409,6 +430,61 @@ function BuscarContent() {
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 15 * 60 * 1000 },
     );
   }
+
+  async function resolveCoordinates(position: GeolocationPosition, applyImmediately: boolean) {
+    try {
+      const latlng = `${position.coords.latitude},${position.coords.longitude}`;
+      const response = await fetch(`/api/address/geocode?latlng=${encodeURIComponent(latlng)}`);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.city) throw new Error("city_not_found");
+      const choice = cityChoice(data.city, String(data.state ?? "").toUpperCase());
+      setLocationDraft(choice);
+      setDraftVirtual(false);
+      setGeoMessage(`Localização detectada: ${choice.label}.`);
+      if (applyImmediately) {
+        setSelectedLocation(choice);
+        replaceQuery({
+          cidade: choice.city,
+          estado: choice.state.toLowerCase(),
+          virtual: null,
+        });
+      }
+    } catch {
+      setGeoMessage("Localização autorizada, mas não foi possível identificar a cidade. Escolha manualmente.");
+    } finally {
+      setGeoLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (geoAutoAttemptedRef.current || selectedLocation || virtualOnly || !("geolocation" in navigator)) return;
+    geoAutoAttemptedRef.current = true;
+    if (!navigator.permissions) return;
+    void navigator.permissions.query({ name: "geolocation" }).then((permission) => {
+      if (permission.state !== "granted") return;
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const latlng = `${position.coords.latitude},${position.coords.longitude}`;
+          void fetch(`/api/address/geocode?latlng=${encodeURIComponent(latlng)}`)
+            .then((response) => response.ok ? response.json() : null)
+            .then((data) => {
+              if (!data?.city) return;
+              const choice = cityChoice(data.city, String(data.state ?? "").toUpperCase());
+              setSelectedLocation(choice);
+              const next = new URLSearchParams(params.toString());
+              next.set("cidade", choice.city);
+              next.set("estado", choice.state.toLowerCase());
+              next.delete("virtual");
+              next.delete("selecionarCidade");
+              router.replace(`/buscar?${next.toString()}`, { scroll: false });
+            })
+            .catch(() => undefined);
+        },
+        () => undefined,
+        { enableHighAccuracy: false, timeout: 6000, maximumAge: 15 * 60 * 1000 },
+      );
+    }).catch(() => undefined);
+  }, [params, router, selectedLocation, virtualOnly]);
 
   function clearSearch() {
     setBusca("");
@@ -648,7 +724,13 @@ function BuscarContent() {
           locationSearch={locationSearch}
           locations={filteredLocations}
           onApply={applyLocationChoice}
-          onClose={() => setShowLocationModal(false)}
+          onClose={() => {
+            if (locationSelectionRequired) {
+              router.push("/");
+              return;
+            }
+            setShowLocationModal(false);
+          }}
           onGeo={useApproximateLocation}
           onSearch={setLocationSearch}
           onSelectCity={selectCity}
@@ -716,7 +798,7 @@ function BuscarContent() {
       </div>
 
       <div style={{ maxWidth: 1280, margin: "0 auto", padding: "24px 16px 56px" }}>
-        {mainTab === "acompanhantes" && (
+        {mainTab === "acompanhantes" && !locationSelectionRequired && (
           <>
             {stories.length > 0 && <StoriesStrip stories={stories} />}
 
@@ -805,7 +887,7 @@ function BuscarContent() {
                   </p>
                   <div className="profiles-empty-actions">
                     <button type="button" onClick={clearSearch}>Limpar busca</button>
-                    <Link href={`${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`}>Ativar perfil profissional</Link>
+                    <Link href={ACCOUNT_ROUTES.cadastroAcompanhante}>Cadastre-se como acompanhante</Link>
                   </div>
                 </div>
               </div>
@@ -831,7 +913,10 @@ function BuscarContent() {
         )}
       </div>
 
-      <VoucherRouletteModal />
+      <VoucherRouletteModal
+        key={params.get("demonstrarRoleta") === "1" ? "roulette-demo" : "roulette-live"}
+        demoMode={params.get("demonstrarRoleta") === "1"}
+      />
       <Footer />
     </div>
   );
@@ -934,7 +1019,7 @@ function StoriesStrip({ stories }: { stories: StoryGroup[] }) {
   return (
     <div className="stories-strip" aria-label="Destaques">
       {stories.map((story) => (
-        <Link key={story.userId} href="/buscar" className="story-item">
+        <Link key={story.userId} href={`/profissionais/${story.slug}`} className="story-item">
           <div className="story-avatar">
             <div className="story-avatar-inner">
               <Image
@@ -950,14 +1035,6 @@ function StoriesStrip({ stories }: { stories: StoryGroup[] }) {
         </Link>
       ))}
     </div>
-  );
-}
-
-function WhatsAppIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-    </svg>
   );
 }
 
@@ -979,6 +1056,10 @@ function ProfileCard({ profile }: { profile: CardPerfil }) {
             style={{ objectFit: "cover" }}
           />
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(6,14,27,0.92) 0%, rgba(6,14,27,0.2) 50%, transparent 100%)" }} />
+          <div style={{ position: "absolute", top: 10, left: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {profile.sponsored && <span style={{ padding: "4px 8px", borderRadius: 999, background: GOLD, color: "#080704", fontSize: 9, fontWeight: 900 }}>Patrocinado</span>}
+            {profile.verified && <span style={{ padding: "4px 8px", borderRadius: 999, background: "rgba(5,5,5,.76)", border: `1px solid ${GOLD_MID}`, color: GOLD, fontSize: 9, fontWeight: 900 }}>Verificada</span>}
+          </div>
         </div>
 
         <div className="perfil-info">
@@ -1014,13 +1095,13 @@ function ProfileCard({ profile }: { profile: CardPerfil }) {
             )}
           </div>
 
-          <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: profile.whatsapp ? 10 : 0 }}>
+          <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: profile.contactAvailable ? 10 : 0 }}>
             {profile.servicos.slice(0, 3).map((service) => (
               <span key={service} style={{ fontSize: 10, background: GOLD_DIM, border: "1px solid rgba(212,168,67,0.15)", color: "#94a3b8", padding: "3px 8px", borderRadius: 10 }}>{service}</span>
             ))}
           </div>
 
-          {!profile.whatsapp && (
+          {!profile.contactAvailable && (
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, color: GOLD, fontSize: 12, fontWeight: 700, fontFamily: PLAYFAIR }}>
               Ver perfil <span aria-hidden="true">→</span>
             </div>
@@ -1028,33 +1109,18 @@ function ProfileCard({ profile }: { profile: CardPerfil }) {
         </div>
       </Link>
 
-      {/* Botão WhatsApp — fora do Link para não criar <a> dentro de <a> */}
-      {profile.whatsapp && (
+      {/* Ação de contato fica fora do Link para não criar elementos interativos aninhados. */}
+      {profile.contactAvailable && (
         <div style={{ padding: "0 16px 14px" }}>
-          <a
-            href={buildWaLink(profile.whatsapp)}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              width: "100%",
-              padding: "10px 14px",
-              background: GOLD,
-              color: "#060e1b",
-              borderRadius: 10,
-              fontSize: 13,
-              fontWeight: 800,
-              textDecoration: "none",
-              fontFamily: PLAYFAIR,
-              boxSizing: "border-box",
-            }}
-          >
-            <WhatsAppIcon />
-            Chamar no WhatsApp
-          </a>
+          <ProfessionalContactAction
+            slug={profile.slug}
+            visibility={profile.contactVisibility}
+            initialWhatsapp={profile.whatsapp}
+            initialPhone={profile.phone}
+            contactAvailable={profile.contactAvailable}
+            returnTo={`/profissionais/${profile.slug}`}
+            compact
+          />
         </div>
       )}
     </div>

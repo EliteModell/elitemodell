@@ -1,10 +1,11 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- QR Code PIX arrives as a data URL and should render immediately without image optimization. */
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { calculateBookingAmounts, fromCents, toCents } from "@/lib/money";
 
 const GOLD = "#d4a843";
 const GOLD_DIM = "rgba(212,168,67,0.10)";
@@ -26,6 +27,7 @@ interface Property {
 }
 
 function ReservarContent() {
+  const checkoutToken = useRef(crypto.randomUUID());
   const { data: session } = useSession();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -53,6 +55,9 @@ function ReservarContent() {
   const [loading, setLoading] = useState(false);
   const [phone, setPhone] = useState("");
   const [cpf, setCpf] = useState("");
+  const [acceptedBookingTerms, setAcceptedBookingTerms] = useState(false);
+  const [acceptedRefundPolicy, setAcceptedRefundPolicy] = useState(false);
+  const [serviceFeeBasisPoints, setServiceFeeBasisPoints] = useState(1_000);
 
   // Modal PIX
   const [pixData, setPixData] = useState<{ qrCodeBase64: string; copyPaste: string; bookingId: string; amount: number } | null>(null);
@@ -70,15 +75,35 @@ function ReservarContent() {
       .finally(() => setLoadingProp(false));
   }, [propertyId, canRequestLocation]);
 
+  useEffect(() => {
+    fetch("/api/public/booking-policy")
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (Number.isInteger(data?.serviceFeeBasisPoints)) {
+          setServiceFeeBasisPoints(data.serviceFeeBasisPoints);
+        }
+      })
+      .catch(() => undefined);
+  }, []);
+
   const nights = checkIn && checkOut
     ? Math.max(0, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000))
     : 0;
 
-  const subtotal = property ? nights * property.pricePerNight : 0;
-  const cleaningFee = property?.cleaningFee ?? 0;
-  const serviceFee = subtotal * 0.1;
-  const pixDiscount = payMethod === "pix" ? subtotal * 0.05 : 0;
-  const total = Math.max(0, subtotal + cleaningFee + serviceFee - discount - pixDiscount);
+  const amounts = calculateBookingAmounts({
+    nights,
+    pricePerNightCents: toCents(property?.pricePerNight ?? 0),
+    cleaningFeeCents: toCents(property?.cleaningFee ?? 0),
+    discountCents: toCents(discount),
+    serviceFeeBasisPoints,
+  });
+  const subtotal = fromCents(amounts.subtotalCents);
+  const cleaningFee = fromCents(amounts.cleaningFeeCents);
+  const total = fromCents(amounts.totalPriceCents);
+  const serviceFee = fromCents(amounts.serviceFeeCents);
+  const hostPayout = fromCents(amounts.hostPayoutCents);
+  const platformPercentage = serviceFeeBasisPoints / 100;
+  const hostPercentage = (10_000 - serviceFeeBasisPoints) / 100;
 
   function applyCoupon() {
     if (coupon.toUpperCase() === "ELITE10") {
@@ -96,6 +121,10 @@ function ReservarContent() {
       toast.error("Preencha telefone e CPF.");
       return;
     }
+    if (!acceptedBookingTerms || !acceptedRefundPolicy) {
+      toast.error("Confirme os termos da reserva e a politica de reembolso.");
+      return;
+    }
     setLoading(true);
     try {
       // 1. Cria booking
@@ -106,6 +135,8 @@ function ReservarContent() {
           propertyId, checkIn, checkOut, guests,
           paymentMethod: payMethod,
           couponCode: couponApplied ? coupon : undefined,
+          acceptedBookingTerms,
+          acceptedRefundPolicy,
         }),
       });
       const booking = await bRes.json();
@@ -121,6 +152,7 @@ function ReservarContent() {
             description: `Reserva ${property.title}`,
             payerName:  session?.user?.name ?? "",
             payerCpf:   cpf,
+            checkoutToken: checkoutToken.current,
           }),
         });
         const pix = await pRes.json();
@@ -259,7 +291,7 @@ function ReservarContent() {
             <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9", marginBottom: 16 }}>Forma de pagamento</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {([
-                { key: "pix", label: "PIX", desc: "Confirmação imediata · 5% de desconto", icon: "⚡" },
+                { key: "pix", label: "PIX", desc: "Confirmação após retorno do Asaas", icon: "⚡" },
                 { key: "card", label: "Cartão de crédito", desc: "Em breve", icon: "💳", disabled: true },
                 { key: "boleto", label: "Boleto bancário", desc: "Em breve", icon: "📄", disabled: true },
               ] as { key: PayMethod; label: string; desc: string; icon: string; disabled?: boolean }[]).map((m) => (
@@ -305,9 +337,7 @@ function ReservarContent() {
               {[
                 { label: `R$ ${fmt(property.pricePerNight)} × ${nights} período${nights > 1 ? "s" : ""}`, value: subtotal },
                 { label: "Taxa de limpeza", value: cleaningFee },
-                { label: "Taxa de serviço (10%)", value: serviceFee },
                 ...(couponApplied ? [{ label: "Cupom ELITE10", value: -discount }] : []),
-                ...(payMethod === "pix" ? [{ label: "Desconto PIX (5%)", value: -pixDiscount }] : []),
               ].map((r, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
                   <span style={{ color: r.value < 0 ? "#22c55e" : "#94a3b8" }}>{r.label}</span>
@@ -321,20 +351,44 @@ function ReservarContent() {
               <span style={{ color: GOLD }}>R$ {fmt(total)}</span>
             </div>
 
-            <button onClick={handleConfirm} disabled={loading || !nights || !phone || !cpf}
+            <div style={{ display: "grid", gap: 8, marginBottom: 18, padding: 12, border: `1px solid ${GOLD_DIM}`, borderRadius: 8, background: "#060e1b" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                <span style={{ color: "#94a3b8" }}>Taxa da plataforma ({fmt(platformPercentage)}%, incluida)</span>
+                <strong style={{ color: GOLD }}>R$ {fmt(serviceFee)}</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                <span style={{ color: "#94a3b8" }}>Valor destinado ao anfitriao ({fmt(hostPercentage)}%)</span>
+                <strong style={{ color: "#f1f5f9" }}>R$ {fmt(hostPayout)}</strong>
+              </div>
+              <p style={{ margin: 0, color: "#64748b", fontSize: 11, lineHeight: 1.55 }}>
+                Pagamento processado via Asaas. Nao ha renovacao automatica nesta reserva. Cancelamentos e reembolsos seguem a politica exibida e a legislacao aplicavel. No-show e disputas passam por analise; o repasse pode ficar retido ate a conciliacao.
+              </p>
+            </div>
+
+            <label style={{ display: "flex", gap: 9, alignItems: "flex-start", marginBottom: 10, color: "#94a3b8", fontSize: 12, lineHeight: 1.45 }}>
+              <input type="checkbox" checked={acceptedBookingTerms} onChange={(event) => setAcceptedBookingTerms(event.target.checked)} />
+              Confirmo datas, valor total, taxa de {fmt(platformPercentage)}%, valor liquido de {fmt(hostPercentage)}% ao anfitriao e regras condicionadas de disputa e repasse.
+            </label>
+            <label style={{ display: "flex", gap: 9, alignItems: "flex-start", marginBottom: 16, color: "#94a3b8", fontSize: 12, lineHeight: 1.45 }}>
+              <input type="checkbox" checked={acceptedRefundPolicy} onChange={(event) => setAcceptedRefundPolicy(event.target.checked)} />
+              Li e aceito a politica de cancelamento e reembolso aplicavel a esta reserva.
+            </label>
+
+            <button onClick={handleConfirm} disabled={loading || !nights || !phone || !cpf || !acceptedBookingTerms || !acceptedRefundPolicy}
               style={{
                 width: "100%", padding: 14,
-                background: loading || !phone || !cpf ? "rgba(212,168,67,0.3)" : GOLD,
+                background: loading || !phone || !cpf || !acceptedBookingTerms || !acceptedRefundPolicy ? "rgba(212,168,67,0.3)" : GOLD,
                 color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800,
-                cursor: loading || !phone || !cpf ? "not-allowed" : "pointer",
+                cursor: loading || !phone || !cpf || !acceptedBookingTerms || !acceptedRefundPolicy ? "not-allowed" : "pointer",
               }}>
               {loading ? "Processando..." : `Pagar R$ ${fmt(total)} via ${payMethod.toUpperCase()}`}
             </button>
 
             <p style={{ fontSize: 11, color: "#475569", textAlign: "center", marginTop: 12, lineHeight: 1.5 }}>
               Ao confirmar, você concorda com os{" "}
-              <Link href="/termos" style={{ color: GOLD, textDecoration: "none" }}>Termos</Link> e{" "}
-              <Link href="/privacidade" style={{ color: GOLD, textDecoration: "none" }}>Política de Reembolso</Link>.
+              <Link href="/documentos/checkout-notice" style={{ color: GOLD, textDecoration: "none" }}>Aviso de Checkout</Link>,{" "}
+              <Link href="/documentos/payments-policy" style={{ color: GOLD, textDecoration: "none" }}>Politica de Pagamentos</Link> e{" "}
+              <Link href="/documentos/refund-policy" style={{ color: GOLD, textDecoration: "none" }}>Politica de Reembolso</Link>.
             </p>
           </div>
         </div>

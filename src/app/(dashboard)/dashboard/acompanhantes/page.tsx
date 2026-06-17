@@ -419,7 +419,14 @@ export default function AcompanhantesPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
 
-  const [city, setCity] = useState(initialCity);
+  const [city, setCity] = useState(() => {
+    if (initialCity || typeof window === "undefined") return initialCity;
+    try {
+      return localStorage.getItem(CITY_STORAGE_KEY) ?? "";
+    } catch {
+      return "";
+    }
+  });
   const [sortBy, setSortBy] = useState("rating");
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -427,22 +434,12 @@ export default function AcompanhantesPage() {
   const [showCitySheet, setShowCitySheet] = useState(false);
   const [geolocating, setGeolocating] = useState(false);
 
-  // Load saved city from localStorage on mount
   useEffect(() => {
-    if (!initialCity) {
-      try {
-        const saved = localStorage.getItem(CITY_STORAGE_KEY);
-        if (saved) setCity(saved);
-      } catch { /* localStorage unavailable */ }
+    if (!appliedInitial.current) {
+      appliedInitial.current = true;
+      return;
     }
-    appliedInitial.current = true;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (appliedInitial.current) {
-      setCity(initialCity);
-    }
+    setCity(initialCity);
   }, [initialCity]);
 
   function handleCitySelect(selectedCity: string) {

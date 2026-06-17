@@ -1,0 +1,19 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Cadastre-se como acompanhante | Elite Modell",
+  description:
+    "Cadastre-se como acompanhante na Elite Modell começando pela validação segura do telefone.",
+  alternates: {
+    canonical: "/cadastro/acompanhante",
+  },
+  robots: { index: false, follow: false },
+};
+
+export default function CadastroAcompanhanteLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return children;
+}

@@ -11,11 +11,16 @@ export default async function VerificacaoCallbackPage() {
   const session = await getServerSession(authOptions);
   const user = session?.user;
 
+  if (user?.activeProfileType === "CLIENTE") {
+    redirect("/dashboard/verificacao-idade");
+  }
+
   if (
     user?.activeProfileType === "PROFESSIONAL" ||
-    user?.accountType === "model" ||
-    user?.accountType === "professional" ||
-    user?.isProfessional
+    (!user?.activeProfileType &&
+      (user?.accountType === "model" ||
+        user?.accountType === "professional" ||
+        user?.isProfessional))
   ) {
     redirect(ACCOUNT_ROUTES.analiseAcompanhante);
   }

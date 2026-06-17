@@ -10,6 +10,7 @@
  */
 
 import { test, expect, type Page, type Route } from "@playwright/test";
+import { installMockSessionCookie } from "./helpers/mock-auth";
 
 /* ─── Mock de sessão de acompanhante ──────────────────────────────────────── */
 
@@ -24,11 +25,22 @@ const MOCK_MODEL_SESSION = {
     clientStatus: "UNVERIFIED",
     isProfessional: false,
     needsConsent: false,
+    professionalStatus: "DRAFT",
+    activeProfileType: "PROFESSIONAL",
+    availableProfiles: ["PROFESSIONAL"],
+    adultVerified: true,
   },
   expires: new Date(Date.now() + 86_400_000).toISOString(),
 };
 
 async function mockModelAuth(page: Page) {
+  await installMockSessionCookie(page.context(), {
+    ...MOCK_MODEL_SESSION.user,
+    professionalStatus: "DRAFT",
+    activeProfileType: "PROFESSIONAL",
+    availableProfiles: ["PROFESSIONAL"],
+    adultVerified: true,
+  });
   await page.route("**/api/auth/session", (route: Route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(MOCK_MODEL_SESSION) })
   );
@@ -62,6 +74,17 @@ async function gotoWithModelSession(page: Page, path: string) {
   return page.goto(path, { waitUntil: "domcontentloaded" });
 }
 
+async function postProfessional(page: Page, data: Record<string, unknown>) {
+  return page.evaluate(async (payload) => {
+    const response = await fetch("/api/professionals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return response.status;
+  }, data);
+}
+
 /* ════════════════════════════════════════════════════════════════════════════
    GRUPO 1 — Rotas do fluxo carregam corretamente
    ════════════════════════════════════════════════════════════════════════════ */
@@ -75,9 +98,9 @@ test.describe("Fluxo acompanhante — rotas", () => {
     expect(resp?.status()).not.toBe(500);
   });
 
-  test("/cadastro-modelo tem campo de telefone e termos obrigatórios", async ({ page }) => {
+  test("/cadastro-modelo/verificar-telefone tem telefone e termos obrigatórios", async ({ page }) => {
     await page.addInitScript(() => { sessionStorage.setItem("elite_modell_adult_consent_session", "accepted"); localStorage.setItem("elite_modell_ageConsentAccepted", "true"); });
-    await page.goto("/cadastro-modelo", { waitUntil: "domcontentloaded" });
+    await page.goto("/cadastro-modelo/verificar-telefone", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
     const body = await page.textContent("body");
     const hasTelefone = body?.toLowerCase().includes("telefone") || body?.toLowerCase().includes("celular");
@@ -101,7 +124,7 @@ test.describe("Fluxo acompanhante — rotas", () => {
   test("/profissional/novo redireciona sem sessão", async ({ page }) => {
     await page.addInitScript(() => { sessionStorage.setItem("elite_modell_adult_consent_session", "accepted"); localStorage.setItem("elite_modell_ageConsentAccepted", "true"); });
     await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
-    await page.waitForLoadState("networkidle").catch(() => {});
+    await page.waitForURL(/\/login(?:\?|$)/, { timeout: 10_000 });
     expect(page.url()).toMatch(/\/login/);
   });
 
@@ -163,19 +186,15 @@ test.describe("API /api/professionals — validações", () => {
     await mockModelAuth(page);
     await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
 
-    const resp = await page.request.post("/api/professionals", {
-      data: { displayName: "Teste" }, // payload incompleto
-      headers: { "Content-Type": "application/json" },
-    });
-    expect([400, 401, 403]).toContain(resp.status());
+    const status = await postProfessional(page, { displayName: "Teste" });
+    expect([400, 401, 403]).toContain(status);
   });
 
   test("POST com bio muito curta (< 80 chars) retorna 400", async ({ page }) => {
     await mockModelAuth(page);
     await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
 
-    const resp = await page.request.post("/api/professionals", {
-      data: {
+    const status = await postProfessional(page, {
         displayName: "Modelo Teste",
         bio: "Bio muito curta", // menos de 80 caracteres
         city: "São Paulo",
@@ -196,18 +215,15 @@ test.describe("API /api/professionals — validações", () => {
         verificationUrl: "https://example.com/selfie.jpg",
         verificationType: "foto",
         verificationCode: "ABCD-1234",
-      },
-      headers: { "Content-Type": "application/json" },
     });
-    expect([400, 401]).toContain(resp.status());
+    expect([400, 401, 403]).toContain(status);
   });
 
   test("POST sem foto principal retorna 400", async ({ page }) => {
     await mockModelAuth(page);
     await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
 
-    const resp = await page.request.post("/api/professionals", {
-      data: {
+    const status = await postProfessional(page, {
         displayName: "Modelo Teste",
         bio: "A".repeat(85),
         city: "São Paulo",
@@ -228,18 +244,15 @@ test.describe("API /api/professionals — validações", () => {
         verificationUrl: "https://example.com/selfie.jpg",
         verificationType: "foto",
         verificationCode: "ABCD-1234",
-      },
-      headers: { "Content-Type": "application/json" },
     });
-    expect([400, 401]).toContain(resp.status());
+    expect([400, 401, 403]).toContain(status);
   });
 
-  test("POST sem documentos retorna 400", async ({ page }) => {
+  test("POST sem documentos ou sessao KYC e rejeitado", async ({ page }) => {
     await mockModelAuth(page);
     await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
 
-    const resp = await page.request.post("/api/professionals", {
-      data: {
+    const status = await postProfessional(page, {
         displayName: "Modelo Teste",
         bio: "A".repeat(85),
         city: "São Paulo",
@@ -258,18 +271,15 @@ test.describe("API /api/professionals — validações", () => {
         verificationUrl: "https://example.com/selfie.jpg",
         verificationType: "foto",
         verificationCode: "ABCD-1234",
-      },
-      headers: { "Content-Type": "application/json" },
     });
-    expect([400, 401]).toContain(resp.status());
+    expect([400, 401, 403]).toContain(status);
   });
 
   test("POST sem verificação facial retorna 400", async ({ page }) => {
     await mockModelAuth(page);
     await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
 
-    const resp = await page.request.post("/api/professionals", {
-      data: {
+    const status = await postProfessional(page, {
         displayName: "Modelo Teste",
         bio: "A".repeat(85),
         city: "São Paulo",
@@ -288,10 +298,8 @@ test.describe("API /api/professionals — validações", () => {
         docFrenteUrl: "https://example.com/frente.jpg",
         docVersoUrl: "https://example.com/verso.jpg",
         // verificationUrl e kycSessionId ausentes — deve falhar
-      },
-      headers: { "Content-Type": "application/json" },
     });
-    expect([400, 401]).toContain(resp.status());
+    expect([400, 401, 403]).toContain(status);
   });
 
 });

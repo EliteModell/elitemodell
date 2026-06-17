@@ -1,6 +1,18 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+const privateNoStoreHeaders = [
+  { key: "Cache-Control", value: "private, no-cache, no-store, max-age=0, must-revalidate" },
+  { key: "Pragma", value: "no-cache" },
+  { key: "Expires", value: "0" },
+];
+
+const ageRestrictedHeaders = [
+  ...privateNoStoreHeaders,
+  { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive, nosnippet, noimageindex" },
+  { key: "Referrer-Policy", value: "no-referrer" },
+];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["mercadopago"],
@@ -8,8 +20,8 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/:path*",
-        has: [{ type: "host", value: "elitemodell.com.br" }],
-        destination: "https://www.elitemodell.com.br/:path*",
+        has: [{ type: "host", value: "www.elitemodell.com.br" }],
+        destination: "https://elitemodell.com.br/:path*",
         permanent: true,
       },
     ];
@@ -18,28 +30,25 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/profissional/:path*",
-        headers: [
-          { key: "Cache-Control", value: "private, no-cache, no-store, max-age=0, must-revalidate" },
-          { key: "Pragma", value: "no-cache" },
-          { key: "Expires", value: "0" },
-        ],
+        headers: privateNoStoreHeaders,
       },
       {
         source: "/painel/:path*",
-        headers: [
-          { key: "Cache-Control", value: "private, no-cache, no-store, max-age=0, must-revalidate" },
-          { key: "Pragma", value: "no-cache" },
-          { key: "Expires", value: "0" },
-        ],
+        headers: privateNoStoreHeaders,
       },
       {
         source: "/dashboard/:path*",
-        headers: [
-          { key: "Cache-Control", value: "private, no-cache, no-store, max-age=0, must-revalidate" },
-          { key: "Pragma", value: "no-cache" },
-          { key: "Expires", value: "0" },
-        ],
+        headers: privateNoStoreHeaders,
       },
+      { source: "/buscar/:path*", headers: ageRestrictedHeaders },
+      { source: "/profissionais/:path*", headers: ageRestrictedHeaders },
+      { source: "/imoveis/:path*", headers: ageRestrictedHeaders },
+      { source: "/api/media/:path*", headers: ageRestrictedHeaders },
+      { source: "/api/professionals/:slug/contact", headers: privateNoStoreHeaders },
+      { source: "/api/professionals/:slug/premium-content", headers: privateNoStoreHeaders },
+      { source: "/api/properties/:path*", headers: ageRestrictedHeaders },
+      { source: "/api/reviews/:path*", headers: ageRestrictedHeaders },
+      { source: "/api/stories/:path*", headers: ageRestrictedHeaders },
       {
         source: "/(.*)",
         headers: [
@@ -55,7 +64,7 @@ const nextConfig: NextConfig = {
             value: [
               "default-src 'self'",
               // Next.js exige unsafe-inline/unsafe-eval para hidratação e estilos em runtime
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://maps.googleapis.com https://cdn.withpersona.com https://www.asaas.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://www.google.com https://www.recaptcha.net https://maps.googleapis.com https://cdn.withpersona.com https://www.asaas.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.withpersona.com",
               "font-src 'self' data: https://fonts.gstatic.com https://cdn.withpersona.com",
               // img-src amplo: Next Image usa blob e data URIs; imagens vêm de Supabase e CDNs
@@ -69,6 +78,8 @@ const nextConfig: NextConfig = {
                 "https://securetoken.googleapis.com",
                 "https://firebaseinstallations.googleapis.com",
                 "https://*.googleapis.com",
+                "https://www.google.com",
+                "https://www.recaptcha.net",
                 "https://api.withpersona.com",
                 "https://maps.googleapis.com",
                 "https://*.sentry.io",
@@ -76,8 +87,8 @@ const nextConfig: NextConfig = {
                 "https://api.asaas.com",
                 "https://www.asaas.com",
               ].join(" "),
-              // frame-src: Persona usa iframe para KYC
-              "frame-src 'self' https://withpersona.com https://cdn.withpersona.com",
+              // frame-src: Persona usa iframe para KYC; Firebase Phone Auth usa iframe + reCAPTCHA.
+              "frame-src 'self' https://withpersona.com https://cdn.withpersona.com https://elitemodell.firebaseapp.com https://*.firebaseapp.com https://www.google.com https://www.recaptcha.net https://recaptcha.google.com",
               "media-src 'self' blob: https://*.supabase.co",
               "worker-src 'self' blob:",
               "object-src 'none'",
@@ -90,6 +101,7 @@ const nextConfig: NextConfig = {
     ];
   },
   experimental: {
+    webpackBuildWorker: true,
     webpackMemoryOptimizations: true,
   },
   images: {
@@ -109,13 +121,26 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+const sentryEnabled = Boolean(
+  process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN,
+);
+
+const sentryConfig = withSentryConfig(nextConfig, {
   // Só faz upload de source maps se SENTRY_AUTH_TOKEN estiver configurado
   silent: !process.env.SENTRY_AUTH_TOKEN,
-  disableLogger: true,
-  automaticVercelMonitors: false,
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+  webpack: {
+    treeshake: {
+      removeDebugLogging: true,
+    },
+    automaticVercelMonitors: false,
+  },
   // Não quebra o build se o Sentry não estiver configurado
   authToken: process.env.SENTRY_AUTH_TOKEN,
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
 });
+
+export default sentryEnabled ? sentryConfig : nextConfig;

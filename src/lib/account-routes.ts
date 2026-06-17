@@ -8,7 +8,7 @@ export const ACCOUNT_ROUTES = {
   cadastroCliente: "/app/consumer/register",
   verificarTelefoneCliente: "/app/consumer/verify-phone",
   loginCliente: "/app/consumer/login",
-  cadastroAcompanhante: "/profissional/novo",
+  cadastroAcompanhante: "/cadastro/acompanhante",
   cadastroAnfitriao: "/cadastro-anfitriao",
   verificarTelefoneAnfitriao: "/cadastro-anfitriao/verificar-telefone",
   painelCliente: "/painel/cliente",
@@ -60,7 +60,7 @@ export function internalAccountTypeFromTipo(tipo: CadastroTipo): InternalAccount
 }
 
 export function cadastroHref(tipo: CadastroTipo) {
-  if (tipo === "acompanhante") return ACCOUNT_ROUTES.onboardingAcompanhante;
+  if (tipo === "acompanhante") return ACCOUNT_ROUTES.cadastroAcompanhante;
   if (tipo === "anfitriao") return ACCOUNT_ROUTES.onboardingAnfitriao;
   return ACCOUNT_ROUTES.cadastroCliente;
 }
@@ -110,7 +110,7 @@ export function loginHrefForRole(role: EntryAccountRole) {
 }
 
 export function cadastroHrefForRole(role: EntryAccountRole) {
-  if (role === "profissional") return `${ACCOUNT_ROUTES.cadastro}?tipo=acompanhante`;
+  if (role === "profissional") return ACCOUNT_ROUTES.cadastroAcompanhante;
   if (role === "anfitriao") return ACCOUNT_ROUTES.onboardingAnfitriao;
   return `${ACCOUNT_ROUTES.cadastro}?tipo=cliente`;
 }
@@ -134,9 +134,6 @@ export function postLoginPathFromUser(user: PostLoginUser | null | undefined, in
   const hostStatus = getHostRegistrationStatus(user);
 
   if (user.role === "ADMIN") return ACCOUNT_ROUTES.admin;
-  if (professionalStatus && professionalStatus !== "ACTIVE" && professionalStatus !== "PAUSED") {
-    return professionalStatus === "DRAFT" ? ACCOUNT_ROUTES.onboardingAcompanhante : ACCOUNT_ROUTES.analiseAcompanhante;
-  }
 
   if (intent === "cliente") return ACCOUNT_ROUTES.dashboardCliente;
 
@@ -148,6 +145,10 @@ export function postLoginPathFromUser(user: PostLoginUser | null | undefined, in
 
   if (intent === "anfitriao") {
     return hostPathForStatus(hostStatus);
+  }
+
+  if (professionalStatus && professionalStatus !== "ACTIVE" && professionalStatus !== "PAUSED") {
+    return professionalStatus === "DRAFT" ? ACCOUNT_ROUTES.onboardingAcompanhante : ACCOUNT_ROUTES.analiseAcompanhante;
   }
 
   if (professionalStatus === "ACTIVE" || professionalStatus === "PAUSED") return ACCOUNT_ROUTES.dashboardAcompanhante;
@@ -170,9 +171,6 @@ export function accountHomePathFromSession(sessionUser: {
 } | null | undefined) {
   if (!sessionUser) return ACCOUNT_ROUTES.dashboardCliente;
   if (sessionUser.role === "ADMIN") return ACCOUNT_ROUTES.admin;
-  if (sessionUser.professionalStatus && sessionUser.professionalStatus !== "ACTIVE" && sessionUser.professionalStatus !== "PAUSED") {
-    return sessionUser.professionalStatus === "DRAFT" ? ACCOUNT_ROUTES.onboardingAcompanhante : ACCOUNT_ROUTES.analiseAcompanhante;
-  }
   if (sessionUser.activeProfileType === "CLIENTE") return ACCOUNT_ROUTES.dashboardCliente;
   if (sessionUser.activeProfileType === "PROFESSIONAL") {
     if (sessionUser.professionalStatus === "ACTIVE" || sessionUser.professionalStatus === "PAUSED") {
@@ -186,6 +184,9 @@ export function accountHomePathFromSession(sessionUser: {
   if (sessionUser.activeProfileType === "HOST") {
     return hostPathForStatus((sessionUser.hostStatus ?? "CADASTRO_INCOMPLETO") as HostRegistrationStatus);
   }
+  if (sessionUser.professionalStatus && sessionUser.professionalStatus !== "ACTIVE" && sessionUser.professionalStatus !== "PAUSED") {
+    return sessionUser.professionalStatus === "DRAFT" ? ACCOUNT_ROUTES.onboardingAcompanhante : ACCOUNT_ROUTES.analiseAcompanhante;
+  }
   if (sessionUser.isProfessional || sessionUser.accountType === "model" || sessionUser.accountType === "professional") {
     if (!sessionUser.professionalStatus || sessionUser.professionalStatus === "DRAFT") return ACCOUNT_ROUTES.onboardingAcompanhante;
     if (sessionUser.professionalStatus !== "ACTIVE" && sessionUser.professionalStatus !== "PAUSED") return ACCOUNT_ROUTES.verificacaoAcompanhante;
@@ -196,4 +197,12 @@ export function accountHomePathFromSession(sessionUser: {
   }
   if (isHostAccountType(sessionUser.accountType)) return ACCOUNT_ROUTES.onboardingAnfitriao;
   return ACCOUNT_ROUTES.dashboardCliente;
+}
+
+export function shouldUseClientArea(account: {
+  activeProfileType?: string | null;
+  hasClientProfile?: boolean | null;
+  clientProfile?: unknown | null;
+} | null | undefined) {
+  return account?.activeProfileType === "CLIENTE" || Boolean(account?.hasClientProfile || account?.clientProfile);
 }

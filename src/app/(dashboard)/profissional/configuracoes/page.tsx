@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import toast from "react-hot-toast";
 
 type Settings = {
@@ -8,6 +9,7 @@ type Settings = {
   slug: string;
   status: string;
   hidePhone: boolean;
+  contactVisibility: "PUBLIC" | "LOGGED_IN" | "PREMIUM";
   hideAge: boolean;
   voucherSettings?: { acceptsVouchers: boolean } | null;
   pauseUntil?: string | null;
@@ -27,8 +29,8 @@ export default function ProfissionalConfiguracoesPage() {
   const [saving, setSaving] = useState(false);
   const [pauseDays, setPauseDays] = useState(7);
   const [pauseReason, setPauseReason] = useState("");
-  const [boostDays, setBoostDays] = useState(1);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [contentDeclarationAccepted, setContentDeclarationAccepted] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -85,17 +87,23 @@ export default function ProfissionalConfiguracoesPage() {
       toast.error("O vídeo deve ter no máximo 50 MB.");
       return;
     }
+    if (!contentDeclarationAccepted) {
+      toast.error("Confirme a declaracao de autoria e autorizacao antes de enviar.");
+      return;
+    }
     setUploadingVideo(true);
     try {
       const body = new FormData();
       body.append("file", file);
+      body.append("contentDeclarationAccepted", "true");
       const res = await fetch(`/api/upload?folder=profile-videos/${settings.id}`, { method: "POST", body });
-      if (!res.ok) throw new Error();
-      const data: { url?: string | null } = await res.json();
-      if (!data.url) throw new Error();
+      const data: { url?: string | null; error?: string; message?: string } = await res.json().catch(() => ({}));
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || data.message || "Não foi possível concluir agora.");
+      }
       await save({ presentationVideoUrl: data.url }, "Seu vídeo foi enviado para análise.");
-    } catch {
-      toast.error("Não foi possível concluir agora. Tente novamente.");
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Não foi possível concluir agora. Tente novamente.");
     } finally {
       setUploadingVideo(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -121,13 +129,49 @@ export default function ProfissionalConfiguracoesPage() {
       <div style={{ display: "grid", gap: 16 }}>
         <section style={card}>
           <h2 style={{ color: "#fff", fontSize: 17, margin: "0 0 12px" }}>Privacidade do perfil público</h2>
-          <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "12px 0", borderBottom: "1px solid #1e1e1e" }}>
-            <span>
-              <strong style={{ color: "#eee" }}>Ocultar telefone/WhatsApp</strong>
-              <p style={{ ...muted, margin: "4px 0 0" }}>Clientes veem contato indisponível e devem solicitar pela plataforma.</p>
-            </span>
-            <input type="checkbox" checked={settings.hidePhone} disabled={saving} onChange={(event) => save({ hidePhone: event.target.checked })} />
-          </label>
+          <p style={{ ...muted, margin: "0 0 12px" }}>Escolha quem poderá abrir seus botões de telefone e WhatsApp.</p>
+          <div style={{ display: "grid", gap: 8, paddingBottom: 14, borderBottom: "1px solid #1e1e1e" }}>
+            {([
+              ["PUBLIC", "Público para todos", "Visitantes podem acessar o contato sem criar conta."],
+              ["LOGGED_IN", "Somente usuários logados", "O contato é liberado depois do login."],
+              ["PREMIUM", "Somente clientes Premium", "O contato vira um benefício exclusivo do plano Premium."],
+            ] as const).map(([value, label, description]) => (
+              <label
+                key={value}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 10,
+                  padding: 12,
+                  borderRadius: 12,
+                  border: settings.contactVisibility === value
+                    ? "1px solid rgba(212,168,67,.5)"
+                    : "1px solid #252525",
+                  background: settings.contactVisibility === value
+                    ? "rgba(212,168,67,.08)"
+                    : "#0d0d0d",
+                  cursor: saving ? "wait" : "pointer",
+                }}
+              >
+                <input
+                  type="radio"
+                  name="contactVisibility"
+                  value={value}
+                  checked={settings.contactVisibility === value}
+                  disabled={saving}
+                  onChange={() => save(
+                    { contactVisibility: value },
+                    "Visibilidade do contato atualizada.",
+                  )}
+                  style={{ marginTop: 3, accentColor: "#d4a843" }}
+                />
+                <span>
+                  <strong style={{ color: "#eee" }}>{label}</strong>
+                  <span style={{ ...muted, display: "block", marginTop: 3 }}>{description}</span>
+                </span>
+              </label>
+            ))}
+          </div>
           <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "12px 0 0" }}>
             <span>
               <strong style={{ color: "#eee" }}>Ocultar idade</strong>
@@ -174,20 +218,15 @@ export default function ProfissionalConfiguracoesPage() {
 
         <section style={card}>
           <h2 style={{ color: "#fff", fontSize: 17, margin: "0 0 8px" }}>Impulsionamento individual</h2>
-          <p style={{ ...muted, margin: "0 0 14px" }}>Estrutura pronta para cobrança por diária. Enquanto ativo, o perfil ganha prioridade na listagem.</p>
+          <p style={{ ...muted, margin: "0 0 14px" }}>Recurso opcional de destaque. Ele nunca é ativado ou cobrado automaticamente.</p>
           {isBoostActive ? (
-            <div style={{ display: "grid", gap: 10 }}>
-              <div style={{ color: "#22c55e", border: "1px solid rgba(34,197,94,.22)", borderRadius: 10, padding: 12 }}>
+            <div style={{ color: "#22c55e", border: "1px solid rgba(34,197,94,.22)", borderRadius: 10, padding: 12, marginBottom: 12 }}>
                 Impulsionado até {settings.boostUntil ? new Date(settings.boostUntil).toLocaleString("pt-BR") : "data não informada"}.
-              </div>
-              <button disabled={saving} onClick={() => save({ boost: { enabled: false } }, "Impulsionamento desativado.")} style={{ minHeight: 44, borderRadius: 8, border: "1px solid #2a2a2a", background: "transparent", color: "#aaa", fontWeight: 800 }}>Desativar</button>
             </div>
-          ) : (
-            <div style={{ display: "grid", gap: 10 }}>
-              <input type="number" min={1} max={30} value={boostDays} onChange={(event) => setBoostDays(Number(event.target.value))} style={{ background: "#0d0d0d", border: "1px solid #2a2a2a", borderRadius: 8, color: "#fff", padding: 12 }} />
-              <button disabled={saving} onClick={() => save({ boost: { enabled: true, days: boostDays } }, "Impulsionamento ativado para teste.")} style={{ minHeight: 44, borderRadius: 8, border: 0, background: "#d4a843", color: "#080704", fontWeight: 900 }}>Ativar impulsionamento</button>
-            </div>
-          )}
+          ) : null}
+          <Link href="/profissional/planos" className="premium-button" style={{ width: "100%" }}>
+            Ver destaques opcionais
+          </Link>
         </section>
 
         <section style={card}>
@@ -203,6 +242,17 @@ export default function ProfissionalConfiguracoesPage() {
               <button disabled={saving} onClick={() => save({ removePresentationVideo: true }, "Vídeo removido.")} style={{ minHeight: 42, borderRadius: 10, border: "1px solid #2a2a2a", background: "transparent", color: "#aaa", fontWeight: 800 }}>Remover vídeo</button>
             </div>
           ) : null}
+          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", marginTop: 12, color: "#aaa", fontSize: 13, lineHeight: 1.5 }}>
+            <input
+              type="checkbox"
+              checked={contentDeclarationAccepted}
+              onChange={(event) => setContentDeclarationAccepted(event.target.checked)}
+              style={{ marginTop: 3, accentColor: "#d4a843" }}
+            />
+            <span>
+              Confirmo que sou autora ou tenho autorizacao para publicar este video, sem menoridade, exploracao, coercao, trafico, imagem de terceiros sem autorizacao ou conteudo proibido.
+            </span>
+          </label>
           <input ref={fileRef} type="file" accept="video/mp4,video/webm,video/quicktime" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadVideo(file); }} />
           <button disabled={uploadingVideo} onClick={() => fileRef.current?.click()} style={{ marginTop: 12, minHeight: 44, width: "100%", borderRadius: 8, border: "1px solid rgba(212,168,67,.28)", background: "rgba(212,168,67,.1)", color: "#f5d78c", fontWeight: 900, cursor: uploadingVideo ? "wait" : "pointer" }}>
             {uploadingVideo ? "Enviando..." : settings.presentationVideoUrl ? "Substituir vídeo" : "Enviar vídeo"}

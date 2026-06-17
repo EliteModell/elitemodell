@@ -5,8 +5,20 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
 import { MANUAL_PENDING_STATUS, PERSONA_PENDING_STATUS } from "@/lib/persona";
 import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
+import { activeProfessionalAccessWhere } from "@/lib/professional-access";
+import { createProfessionalSchema } from "@/lib/professional-profile-schema";
+import { assertApprovedMediaUrls } from "@/lib/approved-media";
+import { normalizeContactVisibility } from "@/lib/professional-contact";
+import {
+  calculateAge,
+  canonicalProfessionalPhotos,
+  isProfessionalOnline,
+  publicCacheHeaders,
+} from "@/lib/public-professional-profile";
+import { citySearchVariants } from "@/lib/brazilian-location";
 
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
@@ -16,99 +28,6 @@ function normalizePhone(raw: string): string {
   return digits.slice(0, 11);
 }
 
-const createSchema = z.object({
-  displayName:     z.string().min(2),
-  bio:             z.string().optional().default(""),
-  city:            z.string().min(2),
-  state:           z.string().min(2),
-  bairro:          z.string().optional(),
-
-  // Contato
-  phone:           z.string().optional(),
-  whatsapp:        z.string().optional(),
-  instagram:       z.string().optional(),
-  website:         z.string().optional(),
-
-  // Preços
-  priceMin:        z.number().positive().optional(),
-  priceMax:        z.number().positive().optional(),
-  pricePerHour:    z.number().positive().optional(),
-  price30min:      z.number().positive().optional(),
-  price2h:         z.number().positive().optional(),
-  priceOvernight:  z.number().positive().optional(),
-  priceWebcam:     z.number().positive().optional(),
-  paymentMethods:  z.array(z.string()).optional().default([]),
-
-  // Perfil físico
-  escortCategory:  z.string().optional(),
-  birthDate:       z.string().optional(),
-  height:          z.number().optional(),
-  weight:          z.number().optional(),
-  hairColor:       z.string().optional(),
-  eyeColor:        z.string().optional(),
-  ethnicity:       z.string().optional(),
-  signo:           z.string().optional(),
-  hasTattoos:      z.boolean().optional().default(false),
-  hasPiercing:     z.boolean().optional().default(false),
-  hasSilicone:     z.boolean().optional().default(false),
-  isDepilada:      z.boolean().optional().default(true),
-  depilationStyle: z.string().optional(),
-  bodyType:        z.string().optional(),
-
-  // Atendimento
-  attendanceTypes: z.array(z.string()).optional().default([]),
-  servesGenders:   z.array(z.string()).optional().default([]),
-  idiomas:         z.array(z.string()).optional().default([]),
-  diasDisponiveis: z.array(z.string()).optional().default([]),
-  horarioInicio:   z.string().optional(),
-  horarioFim:      z.string().optional(),
-
-  // Serviços (obrigatório pelo menos 1)
-  specialties:     z.array(z.string()).optional().default([]),
-  services:        z.array(z.string()).optional().default([]),
-  fetishes:        z.array(z.string()).optional().default([]),
-
-  // Fotos
-  image:           z.string().optional(),
-  galleryUrls:     z.array(z.string()).optional().default([]),
-
-  // Verificação de documentos
-  docType:         z.string().optional(),
-  docFrenteUrl:    z.string().optional(),
-  docVersoUrl:     z.string().optional(),
-  docStatus:       z.string().optional().default("PENDING"),
-  verifStatus:     z.string().optional().default("PENDING"),
-  verificationUrl: z.string().optional(),
-  verificationType:z.string().optional(),
-  verificationCode:z.string().optional(),
-  kycProvider:     z.string().optional(),
-  kycSessionId:    z.string().optional(),
-  kycStatus:       z.string().optional(),
-}).superRefine((data, ctx) => {
-  const addIssue = (path: string[], message: string) => {
-    ctx.addIssue({ code: "custom", path, message });
-  };
-
-  if (!["MULHER", "HOMEM", "TRANS"].includes(data.escortCategory ?? "")) {
-    addIssue(["escortCategory"], "Categoria invalida.");
-  }
-  if ((data.bio ?? "").trim().length < 80) {
-    addIssue(["bio"], "A biografia deve ter pelo menos 80 caracteres.");
-  }
-  if (!data.birthDate) addIssue(["birthDate"], "Data de nascimento obrigatória.");
-  if (data.attendanceTypes.length === 0) addIssue(["attendanceTypes"], "Informe o tipo de atendimento.");
-  if (data.servesGenders.length === 0) addIssue(["servesGenders"], "Informe quem atende.");
-  if (data.diasDisponiveis.length === 0) addIssue(["diasDisponiveis"], "Informe os dias disponiveis.");
-  if (data.services.length === 0) addIssue(["services"], "Informe pelo menos um servico.");
-  if (!data.pricePerHour && !data.price30min && !data.price2h && !data.priceOvernight && !data.priceWebcam) {
-    addIssue(["pricePerHour"], "Informe pelo menos um valor.");
-  }
-  if (data.paymentMethods.length === 0) addIssue(["paymentMethods"], "Informe uma forma de pagamento.");
-  if (!data.whatsapp || data.whatsapp.replace(/\D/g, "").length < 10) addIssue(["whatsapp"], "WhatsApp inválido.");
-  if (!data.image) addIssue(["image"], "Foto principal obrigatória.");
-  if (!data.kycSessionId) addIssue(["kycSessionId"], "Verificação de identidade obrigatória.");
-});
-
 function slugify(text: string) {
   return text
     .toLowerCase()
@@ -116,10 +35,6 @@ function slugify(text: string) {
     .replace(/\p{Diacritic}/gu, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-}
-
-function removeDiacritics(text: string) {
-  return text.normalize("NFD").replace(/\p{Diacritic}/gu, "");
 }
 
 export async function GET(req: NextRequest) {
@@ -143,6 +58,7 @@ export async function GET(req: NextRequest) {
   const where: Prisma.ProfessionalWhereInput = { status: "ACTIVE" };
   const andFilters: Prisma.ProfessionalWhereInput[] = [
     { OR: [{ pauseUntil: null }, { pauseUntil: { lt: now } }] },
+    activeProfessionalAccessWhere(now),
   ];
 
   if (search) {
@@ -153,7 +69,7 @@ export async function GET(req: NextRequest) {
     ];
   }
   if (city) {
-    const cityOptions = Array.from(new Set([city, removeDiacritics(city)]));
+    const cityOptions = citySearchVariants(city);
     andFilters.push({
       OR: cityOptions.map((name) => ({ city: { contains: name, mode: "insensitive" } })),
     });
@@ -168,15 +84,23 @@ export async function GET(req: NextRequest) {
   }
   if (category) where.escortCategory = category.toUpperCase();
   if (priceMax) where.priceMin = { lte: Number(priceMax) };
-  if (specialty) where.specialties = { some: { name: { contains: specialty, mode: "insensitive" } } };
+  if (specialty) {
+    andFilters.push({
+      OR: [
+        { specialties: { some: { name: { contains: specialty, mode: "insensitive" } } } },
+        { services: { has: specialty } },
+      ],
+    });
+  }
   if (andFilters.length > 0) where.AND = andFilters;
 
   const orderBy: Prisma.ProfessionalOrderByWithRelationInput[] =
-    sortBy === "price_asc"  ? [{ boostActive: "desc" }, { priceMin: "asc" }] :
-    sortBy === "price_desc" ? [{ boostActive: "desc" }, { priceMin: "desc" }] :
-    sortBy === "reviews"    ? [{ boostActive: "desc" }, { totalReviews: "desc" }] :
-    sortBy === "recent"     ? [{ boostActive: "desc" }, { createdAt: "desc" }] :
-    [{ boostActive: "desc" }, { featured: "desc" }, { rating: "desc" }];
+    sortBy === "price_asc"  ? [{ boostActive: "desc" }, { planPriority: "desc" }, { priceMin: "asc" }] :
+    sortBy === "price_desc" ? [{ boostActive: "desc" }, { planPriority: "desc" }, { priceMin: "desc" }] :
+    sortBy === "reviews"    ? [{ boostActive: "desc" }, { planPriority: "desc" }, { totalReviews: "desc" }] :
+    sortBy === "recent"     ? [{ boostActive: "desc" }, { planPriority: "desc" }, { createdAt: "desc" }] :
+    sortBy === "online"     ? [{ boostActive: "desc" }, { planPriority: "desc" }, { lastOnlineAt: "desc" }, { rating: "desc" }] :
+    [{ boostActive: "desc" }, { planPriority: "desc" }, { featured: "desc" }, { rating: "desc" }, { totalReviews: "desc" }];
 
   const [professionals, total] = await Promise.all([
     prisma.professional.findMany({
@@ -186,23 +110,28 @@ export async function GET(req: NextRequest) {
       take: limit,
       select: {
         id: true, slug: true, displayName: true,
+        bio: true,
         city: true, state: true, bairro: true,
-        image: true,
+        image: true, galleryUrls: true,
         escortCategory: true, birthDate: true,
         height: true, weight: true, hairColor: true, eyeColor: true, ethnicity: true,
         hasTattoos: true, hasSilicone: true,
         hideAge: true,
+        phone: true,
         whatsapp: true,
         hidePhone: true,
-        listingPhoneUntil: true,
+        contactVisibility: true,
         priceMin: true, pricePerHour: true, price30min: true,
         attendanceTypes: true, servesGenders: true,
+        services: true,
         rating: true, totalReviews: true, totalAppointments: true,
         verified: true, featured: true,
         boostActive: true, boostUntil: true,
+        activePlanId: true, planPriority: true,
+        onlineVisible: true, lastOnlineAt: true,
         profileViews: true, contactClicks: true,
-        user: { select: { image: true } },
-        photos:     { where: { cover: true }, take: 1 },
+        user: { select: { image: true, premiumUntil: true } },
+        photos: { orderBy: { order: "asc" } },
         specialties: true,
       },
     }),
@@ -212,15 +141,42 @@ export async function GET(req: NextRequest) {
   console.log("[CLIENT_SEARCH] filters", { search, city, state, category, sortBy, page, limit });
   console.log("[CLIENT_SEARCH] professionals found", professionals.length, "/ total", total);
 
-  // WhatsApp na listagem exige beneficio pago ativo e respeita a privacidade manual.
-  const safeList = professionals.map(({ hidePhone, listingPhoneUntil, ...p }) => ({
-    ...p,
-    whatsapp: !hidePhone && listingPhoneUntil && listingPhoneUntil > now ? p.whatsapp : null,
-  }));
+  const safeList = professionals.map(({
+    hidePhone,
+    contactVisibility,
+    galleryUrls,
+    birthDate,
+    hideAge,
+    onlineVisible,
+    lastOnlineAt,
+    activePlanId,
+    planPriority,
+    ...p
+  }) => {
+    const photos = canonicalProfessionalPhotos({ photos: p.photos, image: p.image, galleryUrls });
+    const premiumActive = Boolean(p.user.premiumUntil && p.user.premiumUntil > now);
+    const normalizedContactVisibility = normalizeContactVisibility(contactVisibility, hidePhone);
+    return {
+      ...p,
+      image: photos.find((photo) => photo.cover)?.url ?? photos[0]?.url ?? null,
+      avatar: stripLegacyPublicStorageUrl(p.user.image),
+      user: { image: stripLegacyPublicStorageUrl(p.user.image) },
+      photos,
+      age: hideAge ? null : calculateAge(birthDate, now),
+      online: isProfessionalOnline(lastOnlineAt, onlineVisible, now),
+      sponsored: p.boostActive && (!p.boostUntil || p.boostUntil > now),
+      plan: premiumActive ? activePlanId : null,
+      planPriority: premiumActive ? planPriority : 0,
+      contactVisibility: normalizedContactVisibility,
+      contactAvailable: Boolean(p.whatsapp || p.phone),
+      phone: normalizedContactVisibility === "PUBLIC" ? p.phone : null,
+      whatsapp: normalizedContactVisibility === "PUBLIC" ? p.whatsapp : null,
+    };
+  });
 
   return NextResponse.json(
     { professionals: safeList, total, page, pages: Math.ceil(total / limit) },
-    { headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120" } },
+    { headers: publicCacheHeaders() },
   );
 }
 
@@ -249,14 +205,30 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const data = createSchema.parse(body);
+    const data = createProfessionalSchema.parse(body);
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { category: true },
+      select: { category: true, email: true, emailVerified: true },
     });
 
-    const { specialties, services, phone, whatsapp, ...profileData } = data;
+    if (!user?.emailVerified) {
+      return NextResponse.json(
+        {
+          error: `Confirme seu email${user?.email ? ` (${user.email})` : ""} antes de enviar o cadastro para analise.`,
+          code: "email_not_verified",
+        },
+        { status: 428 },
+      );
+    }
+
+    const { specialties, services, phone, whatsapp, image, galleryUrls, ...profileData } = data;
+    await assertApprovedMediaUrls({
+      urls: [image, ...galleryUrls].filter((url): url is string => Boolean(url)),
+      requestUrl: req.url,
+      ownerId: session.user.id,
+      allowedFolderPrefixes: ["profiles"],
+    });
     const hasManualMedia =
       Boolean(profileData.verificationUrl) &&
       profileData.kycProvider !== "PERSONA";
@@ -279,6 +251,8 @@ export async function POST(req: NextRequest) {
 
     const professionalData = {
       ...profileData,
+      image: null,
+      galleryUrls: [],
       phone:     phone ? normalizePhone(phone) : undefined,
       whatsapp:  whatsapp ? normalizePhone(whatsapp) : undefined,
       kycProvider: normalizedKycProvider,
@@ -292,6 +266,9 @@ export async function POST(req: NextRequest) {
       docStatus:  profileData.docFrenteUrl ? "PENDING" : "NOT_SENT",
       verifStatus: profileData.verificationUrl || profileData.kycSessionId ? "PENDING" : "NOT_SENT",
     };
+    const initialPhotos = [image, ...galleryUrls]
+      .filter((url): url is string => Boolean(url))
+      .filter((url, index, values) => values.indexOf(url) === index);
 
     const professional = existing
       ? await prisma.professional.update({
@@ -302,6 +279,10 @@ export async function POST(req: NextRequest) {
             deleteMany: {},
             create: allSpecialties.map((name) => ({ name })),
           },
+          photos: {
+            deleteMany: {},
+            create: initialPhotos.map((url, order) => ({ url, order, cover: order === 0 })),
+          },
         },
         include: { specialties: true },
       })
@@ -309,8 +290,12 @@ export async function POST(req: NextRequest) {
       data: {
         ...professionalData,
         userId:    session.user.id,
+        accessGrandfathered: false,
         specialties: {
           create: allSpecialties.map((name) => ({ name })),
+        },
+        photos: {
+          create: initialPhotos.map((url, order) => ({ url, order, cover: order === 0 })),
         },
       },
       include: { specialties: true },

@@ -30,6 +30,7 @@ const schema = z.object({
   lgpdConsent: z.boolean().default(false),
   ageConfirmed: z.boolean().default(false),
   ownershipConfirmed: z.boolean().default(false),
+  marketingConsent: z.boolean().default(false),
 });
 
 export async function POST(req: NextRequest) {
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (body.accountType !== "client" && (!body.ageConfirmed || !body.ownershipConfirmed)) {
+    if (!body.ageConfirmed || (body.accountType !== "client" && !body.ownershipConfirmed)) {
       return NextResponse.json(
         { error: "Confirme os requisitos obrigatorios do cadastro antes de receber o codigo." },
         { status: 400 }
@@ -167,7 +168,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Dados invalidos." }, { status: 400 });
     }
     if (err instanceof OtpDeliveryConfigurationError) {
-      return NextResponse.json({ error: err.message }, { status: 503 });
+      console.error("[phone/send-code] otp_delivery_configuration", err.message);
+      return NextResponse.json(
+        { error: "Envio de SMS temporariamente indisponivel. Tente novamente em instantes." },
+        { status: 503 }
+      );
     }
     if (err instanceof OtpDeliveryProviderError) {
       return NextResponse.json({ error: err.message }, { status: 502 });

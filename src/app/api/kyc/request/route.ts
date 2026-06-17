@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createPersonaInquiry, buildPersonaUrl, shouldUsePersonaProvider } from "@/lib/persona";
+import { KYC_LEGAL_KEYS, recordUserAcceptances } from "@/lib/legal-acceptance";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { clientStatus: true, termsConsent: true, lgpdConsent: true },
+    select: { clientStatus: true, termsConsent: true, lgpdConsent: true, accountType: true },
   });
 
   if (!user) return NextResponse.json({ error: "Usuário não encontrado." }, { status: 404 });
@@ -103,6 +104,14 @@ export async function POST(req: Request) {
       },
       select: { id: true },
     });
+    await recordUserAcceptances({
+      userId: session.user.id,
+      userCategory: user.accountType,
+      documentKeys: KYC_LEGAL_KEYS,
+      source: "kyc-request",
+      acceptanceType: "KYC",
+      req,
+    });
 
     return NextResponse.json({
       success: true,
@@ -137,6 +146,14 @@ export async function POST(req: Request) {
       termsVersion: "v1.0",
     },
     select: { id: true },
+  });
+  await recordUserAcceptances({
+    userId: session.user.id,
+    userCategory: user.accountType,
+    documentKeys: KYC_LEGAL_KEYS,
+    source: "kyc-request",
+    acceptanceType: "KYC",
+    req,
   });
 
   return NextResponse.json({ success: true, status: "PENDING_REVIEW", provider: "MANUAL" });

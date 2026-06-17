@@ -113,7 +113,7 @@ export default async function AdminPage() {
               {recentAudits.length ? recentAudits.map((audit) => (
                 <tr key={audit.id}>
                   <td style={tdStyle}>{audit.action}</td>
-                  <td style={tdStyle}>{audit.admin.name ?? audit.admin.email ?? "Admin"}</td>
+                  <td style={tdStyle}>{audit.admin?.name ?? audit.admin?.email ?? audit.actorIdentifier ?? "Administrador removido"}</td>
                   <td style={tdStyle}>{audit.targetType} / {audit.targetId}</td>
                   <td style={tdStyle}>{audit.timestamp.toLocaleString("pt-BR")}</td>
                 </tr>
