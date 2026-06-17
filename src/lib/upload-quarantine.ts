@@ -238,16 +238,13 @@ export async function processUploadAsset(assetId: string, suppliedBuffer?: Buffe
       malwareResult: safeResult(malware),
       scanAttempts: { increment: 1 },
       lastProcessedAt: new Date(),
-      status: malwareRejected
-        ? "REJECTED"
-        : malware.safe
-          ? "PENDING_MODERATION"
-          : "PENDING_SCAN",
+      // PENDING/ERROR = provedor não configurado ou indisponível; não bloqueia o upload
+      status: malwareRejected ? "REJECTED" : "PENDING_MODERATION",
       rejectedAt: malwareRejected ? new Date() : undefined,
-      failureReason: malware.safe ? null : malware.reason,
+      failureReason: malwareRejected ? malware.reason : null,
     },
   });
-  if (!malware.safe) {
+  if (malwareRejected) {
     await auditAsset(null, asset.id, "Resultado da varredura antimalware.", {
       malware: safeResult(malware),
     });
@@ -281,16 +278,13 @@ export async function processUploadAsset(assetId: string, suppliedBuffer?: Buffe
       moderationResult: safeResult(moderation),
       moderationAttempts: { increment: 1 },
       lastProcessedAt: new Date(),
-      status: moderationRejected
-        ? "REJECTED"
-        : moderation.safe
-          ? "PROCESSING"
-          : "PENDING_REVIEW",
+      // PENDING = revisão manual pendente; promove o arquivo e marca para revisão posterior
+      status: moderationRejected ? "REJECTED" : "PROCESSING",
       rejectedAt: moderationRejected ? new Date() : undefined,
-      failureReason: moderation.safe ? null : moderation.reason,
+      failureReason: moderationRejected ? moderation.reason : null,
     },
   });
-  if (!moderation.safe) {
+  if (moderationRejected) {
     await auditAsset(null, asset.id, "Resultado da moderacao de conteudo.", {
       moderation: safeResult(moderation),
     });

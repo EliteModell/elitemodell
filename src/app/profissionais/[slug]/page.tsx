@@ -40,6 +40,7 @@ type ApiProfessional = {
   contactAvailable?: boolean;
   priceMin?: number | null;
   pricePerHour?: number | null;
+  price15min?: number | null;
   price30min?: number | null;
   price2h?: number | null;
   priceOvernight?: number | null;
@@ -787,6 +788,7 @@ export default function ProfissionalProfilePage() {
             </div>
             <div style={{ border: `1px solid ${GOLD_DIM}`, borderRadius: 12, overflow: "hidden" }}>
               {[
+                { label: "15 minutos", value: pro.price15min },
                 { label: "30 minutos", value: pro.price30min },
                 { label: "1 hora", value: pro.pricePerHour },
                 { label: "2 horas", value: pro.price2h },

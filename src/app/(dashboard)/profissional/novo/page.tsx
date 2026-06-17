@@ -25,7 +25,7 @@ const labelStyle: React.CSSProperties = {
 
 type ArrayFormField = "attendanceTypes" | "servesGenders" | "idiomas" | "diasDisponiveis" | "services" | "fetishes" | "paymentMethods";
 type SingleFormField = "escortCategory" | "hairColor" | "eyeColor" | "ethnicity" | "signo" | "depilationStyle" | "bodyType";
-type PriceFormField = "price30min" | "pricePerHour" | "price2h" | "priceOvernight" | "priceWebcam";
+type PriceFormField = "price15min" | "price30min" | "pricePerHour" | "price2h" | "priceOvernight" | "priceWebcam";
 type PersonaAvailability = {
   checked: boolean;
   available: boolean;
@@ -411,7 +411,7 @@ export default function ProfissionalNovoPage() {
     /* etapa 4 */
     services: [] as string[], fetishes: [] as string[],
     /* etapa 5 */
-    pricePerHour: "", price30min: "", price2h: "", priceOvernight: "", priceWebcam: "",
+    price15min: "", pricePerHour: "", price30min: "", price2h: "", priceOvernight: "", priceWebcam: "",
     paymentMethods: [] as string[],
     /* etapa 6 */
     phone: "", whatsapp: "", instagram: "", website: "",
@@ -809,6 +809,7 @@ export default function ProfissionalNovoPage() {
         diasDisponiveis: form.diasDisponiveis, horarioInicio: form.horarioInicio, horarioFim: form.horarioFim,
         services: form.services, fetishes: form.fetishes,
         specialties: form.services,
+        price15min: parseMoneyValue(form.price15min),
         pricePerHour: parseMoneyValue(form.pricePerHour),
         price30min: parseMoneyValue(form.price30min),
         price2h: parseMoneyValue(form.price2h),
@@ -875,7 +876,7 @@ export default function ProfissionalNovoPage() {
     }
     if (targetStep === 3 && form.services.length === 0) return "Selecione pelo menos um serviço.";
     if (targetStep === 4) {
-      if (!form.pricePerHour && !form.price30min && !form.price2h && !form.priceOvernight && !form.priceWebcam) return "Informe pelo menos um valor.";
+      if (!form.price15min && !form.pricePerHour && !form.price30min && !form.price2h && !form.priceOvernight && !form.priceWebcam) return "Informe pelo menos um valor.";
       if (form.paymentMethods.length === 0) return "Selecione pelo menos uma forma de pagamento.";
     }
     if (targetStep === 5 && form.whatsapp.replace(/\D/g, "").length < 10) return "Informe um WhatsApp válido com DDD.";
@@ -1248,6 +1249,7 @@ export default function ProfissionalNovoPage() {
           <Section title="Tabela de preços" desc="Esses valores aparecerão no seu perfil. Você pode alterá-los a qualquer momento.">
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
               {[
+                { field: "price15min", label: "15 minutos" },
                 { field: "price30min", label: "30 minutos" },
                 { field: "pricePerHour", label: "1 hora" },
                 { field: "price2h", label: "2 horas" },

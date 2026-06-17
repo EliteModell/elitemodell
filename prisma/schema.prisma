@@ -773,6 +773,7 @@ model Professional {
   priceMin       Float?
   priceMax       Float?
   pricePerHour   Float?
+  price15min     Float?
   price30min     Float?
   price2h        Float?
   priceOvernight Float?
