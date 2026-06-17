@@ -20,8 +20,8 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/:path*",
-        has: [{ type: "host", value: "elitemodell.com.br" }],
-        destination: "https://www.elitemodell.com.br/:path*",
+        has: [{ type: "host", value: "www.elitemodell.com.br" }],
+        destination: "https://elitemodell.com.br/:path*",
         permanent: true,
       },
     ];
@@ -49,8 +49,6 @@ const nextConfig: NextConfig = {
       { source: "/api/properties/:path*", headers: ageRestrictedHeaders },
       { source: "/api/reviews/:path*", headers: ageRestrictedHeaders },
       { source: "/api/stories/:path*", headers: ageRestrictedHeaders },
-      { source: "/robots.txt", headers: ageRestrictedHeaders },
-      { source: "/sitemap.xml", headers: ageRestrictedHeaders },
       {
         source: "/(.*)",
         headers: [

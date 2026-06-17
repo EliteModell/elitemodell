@@ -4,30 +4,30 @@ import Providers from "@/components/Providers";
 import AgeGateLoader from "@/components/AgeGateLoader";
 import CookiePreferences from "@/components/privacy/CookiePreferences";
 
-const siteUrl = "https://www.elitemodell.com.br";
+const siteUrl = "https://elitemodell.com.br";
 const publicBrandDescription =
-  "Elite Modell e uma plataforma de acesso restrito para adultos, com foco em privacidade, seguranca e verificacao de contas.";
+  "EliteModell — plataforma de acompanhantes verificadas no Brasil. Perfis reais, privacidade e segurança em cada contato.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  applicationName: "Elite Modell",
+  applicationName: "EliteModell",
   title: {
-    default: "Elite Modell | Acesso Restrito",
-    template: "%s | Elite Modell",
+    default: "EliteModell | Acompanhantes Verificadas",
+    template: "%s | EliteModell",
   },
   description: publicBrandDescription,
   keywords: [
-    "Elite Modell",
+    "EliteModell",
+    "acompanhantes verificadas",
     "elite modell",
-    "acesso restrito",
-    "maioridade",
-    "verificacao de conta",
+    "acompanhante",
+    "perfil verificado",
     "privacidade",
     "seguranca",
   ],
-  authors: [{ name: "Elite Modell" }],
-  creator: "Elite Modell",
-  publisher: "Elite Modell",
+  authors: [{ name: "EliteModell" }],
+  creator: "EliteModell",
+  publisher: "EliteModell",
   category: "restricted access",
   alternates: {
     canonical: siteUrl,
@@ -45,38 +45,43 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "Elite Modell",
+    title: "EliteModell",
     statusBarStyle: "black-translucent",
   },
   formatDetection: {
     telephone: false,
   },
   robots: {
-    index: false,
-    follow: false,
-    nocache: true,
-    noimageindex: true,
+    index: true,
+    follow: true,
     googleBot: {
-      index: false,
-      follow: false,
-      noimageindex: true,
-      "max-image-preview": "none",
-      "max-snippet": 0,
-      "max-video-preview": 0,
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
   },
   openGraph: {
-    title: "Elite Modell | Acesso Restrito",
+    title: "EliteModell | Acompanhantes Verificadas",
     description: publicBrandDescription,
     url: siteUrl,
-    siteName: "Elite Modell",
+    siteName: "EliteModell",
     locale: "pt_BR",
     type: "website",
+    images: [
+      {
+        url: `${siteUrl}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "EliteModell",
+      },
+    ],
   },
   twitter: {
-    card: "summary",
-    title: "Elite Modell | Acesso Restrito",
+    card: "summary_large_image",
+    title: "EliteModell | Acompanhantes Verificadas",
     description: publicBrandDescription,
+    images: [`${siteUrl}/og-image.png`],
   },
   other: {
     "theme-color": "#050505",
@@ -98,13 +103,14 @@ export default function RootLayout({
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Elite Modell",
+    name: "EliteModell",
     url: siteUrl,
     logo: `${siteUrl}/icon.png`,
+    image: `${siteUrl}/og-image.png`,
     description: publicBrandDescription,
     brand: {
       "@type": "Brand",
-      name: "Elite Modell",
+      name: "EliteModell",
     },
   };
 

@@ -1,7 +1,37 @@
 import type { MetadataRoute } from "next";
 
-export const dynamic = "force-dynamic";
+const siteUrl = "https://elitemodell.com.br";
+
+export const dynamic = "force-static";
+export const revalidate = 60 * 60 * 24; // 24h
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  return [];
+  const now = new Date().toISOString();
+
+  return [
+    {
+      url: siteUrl,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 1.0,
+    },
+    {
+      url: `${siteUrl}/terms`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.3,
+    },
+    {
+      url: `${siteUrl}/privacy`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.3,
+    },
+    {
+      url: `${siteUrl}/politica-conteudo`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.3,
+    },
+  ];
 }
