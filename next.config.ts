@@ -16,16 +16,6 @@ const ageRestrictedHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["mercadopago"],
-  async redirects() {
-    return [
-      {
-        source: "/:path*",
-        has: [{ type: "host", value: "www.elitemodell.com.br" }],
-        destination: "https://elitemodell.com.br/:path*",
-        permanent: true,
-      },
-    ];
-  },
   async headers() {
     return [
       {
