@@ -4,16 +4,16 @@ import Providers from "@/components/Providers";
 import AgeGateLoader from "@/components/AgeGateLoader";
 import CookiePreferences from "@/components/privacy/CookiePreferences";
 
-const siteUrl = "https://elitemodell.com.br";
+const siteUrl = "https://www.elitemodell.com.br";
 const publicBrandDescription =
-  "EliteModell — plataforma de acompanhantes verificadas no Brasil. Perfis reais, privacidade e segurança em cada contato.";
+  "Perfis verificados, privacidade total e uma experiência marcante do início ao fim. Ambiente seguro, discreto e sofisticado em cada detalhe.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   applicationName: "EliteModell",
   title: {
-    default: "EliteModell | Acompanhantes Verificadas",
-    template: "%s | EliteModell",
+    default: "Elite Modell | Conexões Premium com Discrição e Segurança",
+    template: "%s | Elite Modell",
   },
   description: publicBrandDescription,
   keywords: [
@@ -62,10 +62,10 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "EliteModell | Acompanhantes Verificadas",
+    title: "Elite Modell | Conexões Premium com Discrição e Segurança",
     description: publicBrandDescription,
     url: siteUrl,
-    siteName: "EliteModell",
+    siteName: "Elite Modell",
     locale: "pt_BR",
     type: "website",
     images: [
@@ -79,7 +79,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "EliteModell | Acompanhantes Verificadas",
+    title: "Elite Modell | Conexões Premium com Discrição e Segurança",
     description: publicBrandDescription,
     images: [`${siteUrl}/og-image.png`],
   },
