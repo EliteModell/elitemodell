@@ -387,6 +387,7 @@ export default function ProfissionalNovoPage() {
     checked: false,
     available: false,
   });
+  const [diditAvailable, setDigitAvailable] = useState(false);
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [emailVerified, setEmailVerified] = useState<boolean | null>(null);
   const [birthDateLockedFromAccount, setBirthDateLockedFromAccount] = useState(false);
@@ -556,6 +557,12 @@ export default function ProfissionalNovoPage() {
       });
     }
 
+    async function loadDigitAvailability() {
+      const res = await fetch("/api/didit/session", { method: "GET" });
+      const data = await res.json().catch(() => ({}));
+      if (active) setDigitAvailable(Boolean(data.available));
+    }
+
     loadUserDefaults().catch(() => {});
     loadPersonaAvailability().catch((err) => {
       console.warn("[KYC] Erro ao consultar disponibilidade da Persona.", err);
@@ -567,6 +574,7 @@ export default function ProfissionalNovoPage() {
         });
       }
     });
+    loadDigitAvailability().catch(() => { if (active) setDigitAvailable(false); });
     return () => {
       active = false;
     };
@@ -732,6 +740,37 @@ export default function ProfissionalNovoPage() {
       toast.success("Mídia de verificação enviada!");
     } catch { toast.error("Erro ao enviar mídia."); }
     finally { setUploadingIdx(null); }
+  }
+
+  /* ── verificação Didit ────────────────────────────────── */
+  async function startDigitVerification() {
+    setUploadingIdx(100);
+    try {
+      const res = await fetch("/api/didit/session", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        console.error("[Didit] Falha ao iniciar verificacao.", { status: res.status, data });
+        toast.error(data.error ?? "Não foi possível iniciar a verificação. Tente novamente.");
+        return;
+      }
+
+      set("kycProvider", data.provider);
+      set("kycSessionId", data.sessionId);
+      set("kycStatus", data.status);
+      set("verificationType", "biometria");
+      if (data.url) set("verificationUrl", data.url);
+
+      if (data.url?.startsWith("http")) {
+        window.location.href = data.url;
+      } else {
+        toast.success("Verificação iniciada.");
+      }
+    } catch (err) {
+      console.error("[Didit] Erro de rede ao iniciar verificacao.", err);
+      toast.error("Não foi possível iniciar a verificação. Tente novamente.");
+    } finally {
+      setUploadingIdx(null);
+    }
   }
 
   /* ── submit final ─────────────────────────────────────── */
@@ -1368,49 +1407,58 @@ export default function ProfissionalNovoPage() {
               </div>
             </div>
 
-            {/* Botão de verificação */}
-            <button
-              type="button"
-              onClick={startFaceBiometry}
-              disabled={personaButtonDisabled}
-              style={{
-                width: "100%", padding: "14px 16px", borderRadius: 12, border: "none",
-                background: personaUnavailable ? "#334155" : GOLD,
-                color: personaUnavailable ? "#94a3b8" : "#060e1b",
-                fontSize: 15, fontWeight: 800,
-                cursor: personaButtonDisabled ? "not-allowed" : "pointer",
-                marginBottom: 14,
-              }}
-            >
-              {uploadingIdx === 100
-                ? "Iniciando verificação..."
-                : personaUnavailable
-                  ? "Verificação indisponível no momento"
-                  : form.kycSessionId
-                    ? form.kycStatus === "APPROVED" ? "✓ Verificação aprovada" : "Continuar verificação"
-                    : "Iniciar verificação"}
-            </button>
+            {/* Botão de verificação – Didit (primário) ou Persona (fallback) */}
+            {(() => {
+              const kycUnavailable = !diditAvailable && personaUnavailable;
+              const startVerification = diditAvailable ? startDigitVerification : startFaceBiometry;
+              const buttonDisabled = uploadingIdx === 100 || kycUnavailable;
 
-            {/* Status da verificação */}
-            {form.kycSessionId && (
-              <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 14, fontWeight: 700, fontSize: 13,
-                background: form.kycStatus === "APPROVED" ? "rgba(34,197,94,0.10)" : GOLD_DIM,
-                border: `1px solid ${form.kycStatus === "APPROVED" ? "rgba(34,197,94,0.3)" : GOLD_MID}`,
-                color: form.kycStatus === "APPROVED" ? "#22c55e" : GOLD,
-              }}>
-                {form.kycStatus === "APPROVED"
-                  ? "Verificação aprovada"
-                  : form.kycStatus === "NEEDS_REVIEW"
-                    ? "Verificação precisa de atenção"
-                    : "Verificação em análise"}
-              </div>
-            )}
+              return (
+                <>
+                  <button
+                    type="button"
+                    onClick={startVerification}
+                    disabled={buttonDisabled}
+                    style={{
+                      width: "100%", padding: "14px 16px", borderRadius: 12, border: "none",
+                      background: kycUnavailable ? "#334155" : GOLD,
+                      color: kycUnavailable ? "#94a3b8" : "#060e1b",
+                      fontSize: 15, fontWeight: 800,
+                      cursor: buttonDisabled ? "not-allowed" : "pointer",
+                      marginBottom: 14,
+                    }}
+                  >
+                    {uploadingIdx === 100
+                      ? "Iniciando verificação..."
+                      : kycUnavailable
+                        ? "Verificação indisponível no momento"
+                        : form.kycSessionId
+                          ? form.kycStatus === "APPROVED" ? "✓ Verificação aprovada" : "Continuar verificação"
+                          : "Iniciar verificação"}
+                  </button>
 
-            {personaUnavailable && (
-              <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(234,179,8,0.10)", border: "1px solid rgba(234,179,8,0.25)", color: "#facc15", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>
-                {personaAvailability.message ?? "A verificação automática está temporariamente indisponível. Tente novamente em alguns minutos."}
-              </div>
-            )}
+                  {form.kycSessionId && (
+                    <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 14, fontWeight: 700, fontSize: 13,
+                      background: form.kycStatus === "APPROVED" ? "rgba(34,197,94,0.10)" : GOLD_DIM,
+                      border: `1px solid ${form.kycStatus === "APPROVED" ? "rgba(34,197,94,0.3)" : GOLD_MID}`,
+                      color: form.kycStatus === "APPROVED" ? "#22c55e" : GOLD,
+                    }}>
+                      {form.kycStatus === "APPROVED"
+                        ? "Verificação aprovada"
+                        : form.kycStatus === "NEEDS_REVIEW"
+                          ? "Verificação precisa de atenção"
+                          : "Verificação em análise"}
+                    </div>
+                  )}
+
+                  {kycUnavailable && (
+                    <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(234,179,8,0.10)", border: "1px solid rgba(234,179,8,0.25)", color: "#facc15", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>
+                      A verificação automática está temporariamente indisponível. Tente novamente em alguns minutos.
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </Section>
         </div>
       )}
@@ -1427,34 +1475,42 @@ export default function ProfissionalNovoPage() {
               <p style={{ margin: "0 0 14px", fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
                 O processo é feito em ambiente protegido e leva poucos minutos. Após o envio, seu cadastro permanece em análise até a revisão final da equipe.
               </p>
-              <button
-                type="button"
-                onClick={startFaceBiometry}
-                disabled={personaButtonDisabled}
-                style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "none", background: personaUnavailable ? "#334155" : GOLD, color: personaUnavailable ? "#94a3b8" : "#060e1b", fontSize: 14, fontWeight: 800, cursor: personaButtonDisabled ? "not-allowed" : "pointer" }}
-              >
-                {uploadingIdx === 100 ? "Iniciando..." : personaUnavailable ? "Verificação automática indisponível" : "Iniciar verificação facial"}
-              </button>
-              {personaUnavailable && (
-                <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: "rgba(234,179,8,0.10)", border: "1px solid rgba(234,179,8,0.25)", color: "#facc15", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>
-                  {personaAvailability.message ?? "Verificação automática indisponível no momento. Use a verificação manual."}
-                </div>
-              )}
-              {form.kycSessionId && (
-                <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, fontSize: 12, fontWeight: 700 }}>
-                  {form.kycProvider === "PERSONA" ? "Verificação facial com Persona" : "Verificação manual"}: {form.kycStatus}
-                  {form.kycExpiresAt && (
-                    <span style={{ display: "block", color: "#94a3b8", fontWeight: 500, marginTop: 4 }}>
-                      Expira em {new Date(form.kycExpiresAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                  )}
-                </div>
-              )}
+              {(() => {
+                const kycUnavailable9 = !diditAvailable && personaUnavailable;
+                const startVerification9 = diditAvailable ? startDigitVerification : startFaceBiometry;
+                return (
+                  <>
+                    <button
+                      type="button"
+                      onClick={startVerification9}
+                      disabled={uploadingIdx === 100 || kycUnavailable9}
+                      style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "none", background: kycUnavailable9 ? "#334155" : GOLD, color: kycUnavailable9 ? "#94a3b8" : "#060e1b", fontSize: 14, fontWeight: 800, cursor: (uploadingIdx === 100 || kycUnavailable9) ? "not-allowed" : "pointer" }}
+                    >
+                      {uploadingIdx === 100 ? "Iniciando..." : kycUnavailable9 ? "Verificação automática indisponível" : "Iniciar verificação facial"}
+                    </button>
+                    {kycUnavailable9 && (
+                      <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: "rgba(234,179,8,0.10)", border: "1px solid rgba(234,179,8,0.25)", color: "#facc15", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>
+                        Verificação automática indisponível no momento. Use a verificação manual.
+                      </div>
+                    )}
+                    {form.kycSessionId && (
+                      <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, fontSize: 12, fontWeight: 700 }}>
+                        {form.kycProvider === "DIDIT" ? "Verificação Didit" : form.kycProvider === "PERSONA" ? "Verificação facial com Persona" : "Verificação manual"}: {form.kycStatus}
+                        {form.kycExpiresAt && (
+                          <span style={{ display: "block", color: "#94a3b8", fontWeight: 500, marginTop: 4 }}>
+                            Expira em {new Date(form.kycExpiresAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             {form.verificationUrl && form.verificationType === "biometria" && (
               <div style={{ marginTop: 8, padding: "10px 14px", background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 8, fontSize: 12, color: GOLD }}>
-                Verificação facial com Persona iniciada
+                {form.kycProvider === "DIDIT" ? "Verificação Didit iniciada" : "Verificação facial iniciada"}
               </div>
             )}
 
