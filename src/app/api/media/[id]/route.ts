@@ -8,6 +8,7 @@ import { ageGateCacheHeaders } from "@/lib/age-gate-policy";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { publicProfessionalWhere } from "@/lib/public-professional-access";
+import { controlledMediaAssetId } from "@/lib/public-professional-media";
 
 function safeFilename(value: string) {
   return value.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 120) || "media";
@@ -63,28 +64,26 @@ export async function GET(
       );
     }
   } else if (!isOwner) {
-    const controlledUrl = `/api/media/${asset.id}`;
     const now = new Date();
-    const [profileReference, storyReference] = await Promise.all([
+    const [profile, stories] = await Promise.all([
       prisma.professional.findFirst({
         where: {
           ...publicProfessionalWhere(now),
           userId: asset.userId,
-          OR: [
-            { image: controlledUrl },
-            { galleryUrls: { has: controlledUrl } },
-            { photos: { some: { url: controlledUrl } } },
-            { user: { image: controlledUrl } },
-            { presentationVideoUrl: controlledUrl, presentationVideoStatus: "APPROVED" },
-          ],
         },
-        select: { id: true },
+        select: {
+          image: true,
+          galleryUrls: true,
+          presentationVideoUrl: true,
+          presentationVideoStatus: true,
+          photos: { select: { url: true } },
+          user: { select: { image: true } },
+        },
       }),
-      prisma.story.findFirst({
+      prisma.story.findMany({
         where: {
           userId: asset.userId,
           expiresAt: { gt: now },
-          OR: [{ mediaUrl: controlledUrl }, { thumbnail: controlledUrl }],
           user: {
             professional: {
               is: {
@@ -94,10 +93,20 @@ export async function GET(
             },
           },
         },
-        select: { id: true },
+        select: { mediaUrl: true, thumbnail: true },
       }),
     ]);
-    if (!profileReference && !storyReference) {
+    const profileUrls = profile ? [
+      profile.image,
+      ...profile.galleryUrls,
+      ...profile.photos.map((photo) => photo.url),
+      profile.user.image,
+      ...(profile.presentationVideoStatus === "APPROVED" ? [profile.presentationVideoUrl] : []),
+    ] : [];
+    const storyUrls = stories.flatMap((story) => [story.mediaUrl, story.thumbnail]);
+    const hasPublicReference = [...profileUrls, ...storyUrls]
+      .some((url) => controlledMediaAssetId(url) === asset.id);
+    if (!hasPublicReference) {
       return NextResponse.json(
         { error: "Midia indisponivel." },
         { status: 404, headers: ageGateCacheHeaders() },

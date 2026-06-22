@@ -2,9 +2,10 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
-import { AdminHeader, AdminPanel, AdminTable, StatusPill, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
+import { AdminHeader, AdminPagination, AdminPanel, AdminTable, StatusPill, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
+const PAGE_SIZE = 30;
 
 async function toggleClientBlock(formData: FormData) {
   "use server";
@@ -33,12 +34,17 @@ async function toggleClientBlock(formData: FormData) {
   revalidatePath("/admin/clientes");
 }
 
-export default async function AdminClientesPage() {
+export default async function AdminClientesPage({ searchParams }: { searchParams?: Promise<{ page?: string }> }) {
   await requireAdmin("clients:manage");
-  const clients = await prisma.user.findMany({
-    where: { role: "GUEST", accountType: { not: "host" } },
+  const params = await searchParams;
+  const parsedPage = Number(params?.page ?? "1");
+  const page = Number.isFinite(parsedPage) ? Math.max(1, Math.floor(parsedPage)) : 1;
+  const where = { role: "GUEST" as const, accountType: { not: "host" } };
+  const [total, clients] = await Promise.all([prisma.user.count({ where }), prisma.user.findMany({
+    where,
     orderBy: { createdAt: "desc" },
-    take: 120,
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
     select: {
       id: true,
       name: true,
@@ -48,10 +54,9 @@ export default async function AdminClientesPage() {
       blocked: true,
       blockReason: true,
       createdAt: true,
-      favorites: { select: { id: true } },
-      reportsCreated: { select: { id: true } },
+      _count: { select: { favorites: true, reportsCreated: true } },
     },
-  });
+  })]);
 
   return (
     <div>
@@ -77,7 +82,7 @@ export default async function AdminClientesPage() {
                   </StatusPill>
                   {client.blockReason ? <p style={{ color: "#ef4444", margin: "8px 0 0" }}>{client.blockReason}</p> : null}
                 </td>
-                <td style={tdStyle}>{client.favorites.length} favoritos<br />{client.reportsCreated.length} denuncias feitas</td>
+                <td style={tdStyle}>{client._count.favorites} favoritos<br />{client._count.reportsCreated} denuncias feitas</td>
                 <td style={tdStyle}>{client.createdAt.toLocaleDateString("pt-BR")}</td>
                 <td style={tdStyle}>
                   <form action={toggleClientBlock} style={{ display: "grid", gap: 8 }}>
@@ -92,6 +97,7 @@ export default async function AdminClientesPage() {
             ))}
           </tbody>
         </AdminTable>
+        <AdminPagination basePath="/admin/clientes" page={page} pageSize={PAGE_SIZE} total={total} />
       </AdminPanel>
     </div>
   );

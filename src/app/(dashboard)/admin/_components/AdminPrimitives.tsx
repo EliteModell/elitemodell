@@ -52,7 +52,7 @@ export function StatCard({
   );
 
   if (!href) return content;
-  return <Link href={href} style={{ textDecoration: "none" }}>{content}</Link>;
+  return <Link prefetch={false} href={href} style={{ textDecoration: "none" }}>{content}</Link>;
 }
 
 export function AdminPanel({ children }: { children: React.ReactNode }) {
@@ -77,6 +77,45 @@ export function AdminTable({ children }: { children: React.ReactNode }) {
     <div style={{ overflowX: "auto", border: `1px solid ${adminColors.border}`, borderRadius: 8 }}>
       <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 760 }}>{children}</table>
     </div>
+  );
+}
+
+export function AdminPagination({
+  basePath,
+  page,
+  pageSize,
+  total,
+  query = {},
+}: {
+  basePath: string;
+  page: number;
+  pageSize: number;
+  total: number;
+  query?: Record<string, string | undefined>;
+}) {
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  if (pages <= 1) return null;
+
+  const hrefFor = (targetPage: number) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (value) params.set(key, value);
+    }
+    if (targetPage > 1) params.set("page", String(targetPage));
+    const suffix = params.toString();
+    return suffix ? `${basePath}?${suffix}` : basePath;
+  };
+
+  return (
+    <nav aria-label="Paginação" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: 14, flexWrap: "wrap" }}>
+      <span style={{ color: adminColors.muted, fontSize: 12 }}>
+        Página {page} de {pages} · {total.toLocaleString("pt-BR")} registros
+      </span>
+      <div style={{ display: "flex", gap: 8 }}>
+        {page > 1 ? <Link prefetch={false} href={hrefFor(page - 1)} style={{ ...buttonStyle, textDecoration: "none" }}>Anterior</Link> : null}
+        {page < pages ? <Link prefetch={false} href={hrefFor(page + 1)} style={{ ...buttonStyle, textDecoration: "none" }}>Próxima</Link> : null}
+      </div>
+    </nav>
   );
 }
 

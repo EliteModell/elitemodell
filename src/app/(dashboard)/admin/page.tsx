@@ -12,35 +12,40 @@ export default async function AdminPage() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const [
-    totalUsers,
     activeUsers,
-    pendingProperties,
-    activeProperties,
-    pendingProfessionals,
-    activeProfessionals,
-    rejectedProfessionals,
-    manualKyc,
+    propertyCounts,
+    professionalCounts,
     pendingReports,
     paidThisMonth,
     recentAudits,
   ] = await Promise.all([
-    prisma.user.count(),
     prisma.user.count({ where: { blocked: false } }),
-    prisma.property.count({ where: { status: "PENDING_REVIEW" } }),
-    prisma.property.count({ where: { status: "ACTIVE" } }),
-    prisma.professional.count({ where: { status: "PENDING_REVIEW" } }),
-    prisma.professional.count({ where: { status: "ACTIVE" } }),
-    prisma.professional.count({ where: { status: "REJECTED" } }),
-    prisma.professional.count({ where: { kycStatus: { in: ["KYC_MANUAL_PENDENTE", "MANUAL_REVIEW"] } } }),
+    prisma.property.groupBy({ by: ["status"], _count: { _all: true } }),
+    prisma.professional.groupBy({ by: ["status", "kycStatus"], _count: { _all: true } }),
     prisma.report.count({ where: { status: "PENDING" } }),
     prisma.payment.aggregate({ where: { status: "PAID", paidAt: { gte: monthStart } }, _sum: { amount: true } }),
     prisma.auditLog.findMany({
       orderBy: { timestamp: "desc" },
       take: 8,
-      include: { admin: { select: { name: true, email: true } } },
+      select: {
+        id: true, action: true, targetType: true, targetId: true, timestamp: true,
+        actorIdentifier: true, admin: { select: { name: true, email: true } },
+      },
     }),
   ]);
 
+  const propertyCount = (status: string) => propertyCounts.find((item) => item.status === status)?._count._all ?? 0;
+  const professionalCount = (status: string) => professionalCounts
+    .filter((item) => item.status === status)
+    .reduce((total, item) => total + item._count._all, 0);
+  const pendingProperties = propertyCount("PENDING_REVIEW");
+  const activeProperties = propertyCount("ACTIVE");
+  const pendingProfessionals = professionalCount("PENDING_REVIEW");
+  const activeProfessionals = professionalCount("ACTIVE");
+  const rejectedProfessionals = professionalCount("REJECTED");
+  const manualKyc = professionalCounts
+    .filter((item) => ["KYC_MANUAL_PENDENTE", "MANUAL_REVIEW"].includes(item.kycStatus))
+    .reduce((total, item) => total + item._count._all, 0);
   const revenue = paidThisMonth._sum.amount ?? 0;
 
   return (
@@ -79,7 +84,7 @@ export default async function AdminPage() {
               ["Roleta de Vouchers", "/admin/roleta-vouchers", "Prêmios, giros, vouchers e profissionais participantes"],
               ["Auditoria", "/admin/auditoria", "Trilha das ações administrativas"],
             ].map(([label, href, desc]) => (
-              <Link key={href} href={href} style={{ textDecoration: "none", border: `1px solid ${adminColors.border}`, borderRadius: 8, padding: 14, background: "rgba(255,255,255,0.025)" }}>
+              <Link prefetch={false} key={href} href={href} style={{ textDecoration: "none", border: `1px solid ${adminColors.border}`, borderRadius: 8, padding: 14, background: "rgba(255,255,255,0.025)" }}>
                 <strong style={{ color: "#fff", display: "block", marginBottom: 6 }}>{label}</strong>
                 <span style={{ color: adminColors.muted, fontSize: 12, lineHeight: 1.5 }}>{desc}</span>
               </Link>

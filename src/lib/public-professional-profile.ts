@@ -1,4 +1,5 @@
 import { stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
+import { normalizeControlledMediaUrl } from "@/lib/public-professional-media";
 
 export const ONLINE_WINDOW_MS = 15 * 60 * 1000;
 
@@ -19,7 +20,7 @@ export function canonicalProfessionalPhotos(input: {
   const relationPhotos = (input.photos ?? [])
     .map((photo, index) => ({
       ...photo,
-      url: stripLegacyPublicStorageUrl(photo.url),
+      url: normalizeControlledMediaUrl(photo.url) ?? stripLegacyPublicStorageUrl(photo.url),
       cover: Boolean(photo.cover),
       order: photo.order ?? index,
     }))
@@ -29,7 +30,7 @@ export function canonicalProfessionalPhotos(input: {
   if (relationPhotos.length > 0) return relationPhotos;
 
   const legacy = [input.image, ...(input.galleryUrls ?? [])]
-    .map((url) => stripLegacyPublicStorageUrl(url))
+    .map((url) => normalizeControlledMediaUrl(url) ?? stripLegacyPublicStorageUrl(url))
     .filter((url): url is string => Boolean(url));
 
   return Array.from(new Set(legacy)).map((url, index) => ({

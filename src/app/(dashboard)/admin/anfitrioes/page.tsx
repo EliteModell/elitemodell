@@ -1,10 +1,12 @@
 import { revalidatePath } from "next/cache";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
-import { AdminHeader, AdminPanel, AdminTable, StatusPill, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
+import { AdminHeader, AdminPagination, AdminPanel, AdminTable, StatusPill, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
+const PAGE_SIZE = 25;
 
 async function reviewHost(formData: FormData) {
   "use server";
@@ -47,18 +49,23 @@ function hostStatus(user: { role: string; accountType: string; blocked: boolean;
   return "CADASTRO_INCOMPLETO";
 }
 
-export default async function AdminAnfitrioesPage() {
+export default async function AdminAnfitrioesPage({ searchParams }: { searchParams?: Promise<{ page?: string }> }) {
   await requireAdmin("hosts:review");
-  const hosts = await prisma.user.findMany({
-    where: {
+  const params = await searchParams;
+  const parsedPage = Number(params?.page ?? "1");
+  const page = Number.isFinite(parsedPage) ? Math.max(1, Math.floor(parsedPage)) : 1;
+  const where: Prisma.UserWhereInput = {
       OR: [
         { accountType: "host" },
         { role: "HOST" },
         { properties: { some: {} } },
       ],
-    },
+    };
+  const [total, hosts] = await Promise.all([prisma.user.count({ where }), prisma.user.findMany({
+    where,
     orderBy: { createdAt: "desc" },
-    take: 100,
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
     select: {
       id: true,
       name: true,
@@ -71,7 +78,7 @@ export default async function AdminAnfitrioesPage() {
       createdAt: true,
       properties: { select: { id: true, title: true, status: true, city: true, pricePerNight: true } },
     },
-  });
+  })]);
 
   return (
     <div>
@@ -121,6 +128,7 @@ export default async function AdminAnfitrioesPage() {
             {!hosts.length ? <tr><td style={tdStyle} colSpan={5}>Nenhum anfitriao encontrado.</td></tr> : null}
           </tbody>
         </AdminTable>
+        <AdminPagination basePath="/admin/anfitrioes" page={page} pageSize={PAGE_SIZE} total={total} />
       </AdminPanel>
     </div>
   );

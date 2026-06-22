@@ -16,6 +16,11 @@ import {
   publicCacheHeaders,
 } from "@/lib/public-professional-profile";
 import { normalizeContactVisibility } from "@/lib/professional-contact";
+import {
+  controlledMediaAssetId,
+  filterApprovedProfilePhotos,
+  normalizeControlledMediaUrl,
+} from "@/lib/public-professional-media";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -148,11 +153,23 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     );
   }
 
-  const photos = canonicalProfessionalPhotos({
+  const canonicalPhotos = canonicalProfessionalPhotos({
     photos: professional.photos,
     image: professional.image,
     galleryUrls: professional.galleryUrls,
   });
+  const photoAssetIds = canonicalPhotos
+    .map((photo) => controlledMediaAssetId(photo.url))
+    .filter((id): id is string => Boolean(id));
+  const photoAssets = photoAssetIds.length ? await prisma.uploadAsset.findMany({
+    where: { id: { in: photoAssetIds }, userId: professional.userId },
+    select: {
+      id: true, userId: true, folder: true, category: true, status: true,
+      moderationStatus: true, approvedBucket: true, approvedPath: true,
+    },
+  }) : [];
+  const photos = filterApprovedProfilePhotos(canonicalPhotos, photoAssets, professional.userId);
+  const coverImage = photos.find((photo) => photo.cover)?.url ?? photos[0]?.url ?? null;
   const premiumActive = Boolean(professional.user.premiumUntil && professional.user.premiumUntil > now);
   const contactVisibility = normalizeContactVisibility(
     professional.contactVisibility,
@@ -168,15 +185,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       ...professional.user,
       image: stripLegacyPublicStorageUrl(professional.user.image),
     },
-    image: photos.find((photo) => photo.cover)?.url ?? photos[0]?.url ?? null,
+    image: coverImage,
     galleryUrls: photos.filter((photo) => !photo.cover).map((photo) => photo.url),
     photos,
-    avatar: stripLegacyPublicStorageUrl(professional.user.image),
+    avatar: coverImage ?? stripLegacyPublicStorageUrl(professional.user.image),
     stories: professional.user.stories
       .map((story) => ({
         ...story,
-        mediaUrl: stripLegacyPublicStorageUrl(story.mediaUrl),
-        thumbnail: stripLegacyPublicStorageUrl(story.thumbnail),
+        mediaUrl: normalizeControlledMediaUrl(story.mediaUrl) ?? stripLegacyPublicStorageUrl(story.mediaUrl),
+        thumbnail: normalizeControlledMediaUrl(story.thumbnail) ?? stripLegacyPublicStorageUrl(story.thumbnail),
       }))
       .filter((story): story is typeof story & { mediaUrl: string } => Boolean(story.mediaUrl)),
     online: isProfessionalOnline(professional.lastOnlineAt, professional.onlineVisible),
@@ -222,6 +239,11 @@ function normalizePhone(raw: string): string {
   return digits.slice(0, 11);
 }
 
+const controlledMediaUrlSchema = z.string().refine(
+  (value) => Boolean(controlledMediaAssetId(value)),
+  "A mídia precisa usar a rota controlada da plataforma.",
+);
+
 const updateSchema = z.object({
   displayName: z.string().min(2).optional(),
   escortCategory: z.enum(["MULHER", "TRANS", "HOMEM"]).optional(),
@@ -241,10 +263,10 @@ const updateSchema = z.object({
   price2h: z.number().positive().optional(),
   priceOvernight: z.number().positive().optional(),
   priceWebcam: z.number().positive().optional(),
-  image: z.string().url().nullable().optional(),
-  galleryUrls: z.array(z.string().url()).max(12).optional(),
+  image: controlledMediaUrlSchema.nullable().optional(),
+  galleryUrls: z.array(controlledMediaUrlSchema).max(12).optional(),
   photos: z.array(z.object({
-    url: z.string().url(),
+    url: controlledMediaUrlSchema,
     cover: z.boolean().optional(),
     order: z.number().int().min(0).optional(),
     caption: z.string().max(160).nullable().optional(),
@@ -265,7 +287,7 @@ const updateSchema = z.object({
   onlineVisible: z.boolean().optional(),
   hidePhone: z.boolean().optional(),
   hideAge: z.boolean().optional(),
-  presentationVideoUrl: z.string().url().nullable().optional(),
+  presentationVideoUrl: controlledMediaUrlSchema.nullable().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
@@ -282,7 +304,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
   try {
     const body = await req.json();
     const data = updateSchema.parse(body);
-    const { specialties, presentationVideoUrl, phone, whatsapp, photos, escortCategory, ...profileData } = data;
+    const { specialties, presentationVideoUrl, phone, whatsapp, photos, image, galleryUrls, escortCategory, ...profileData } = data;
     await assertApprovedMediaUrls({
       urls: [
         ...(data.image ? [data.image] : []),
@@ -301,10 +323,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
         allowedFolderPrefixes: ["profile-videos"],
       });
     }
-    const normalizedPhotos = photos?.map((photo, index) => ({ ...photo, order: photo.order ?? index })) ?? null;
+    const normalizedPhotos = photos?.map((photo, index) => ({
+      ...photo,
+      url: normalizeControlledMediaUrl(photo.url)!,
+      order: photo.order ?? index,
+    })) ?? null;
     const coverPhoto = normalizedPhotos?.find((photo) => photo.cover) ?? null;
     const updateData: Prisma.ProfessionalUpdateInput = {
       ...profileData,
+      ...(image !== undefined && { image: image ? normalizeControlledMediaUrl(image) : null }),
+      ...(galleryUrls !== undefined && {
+        galleryUrls: galleryUrls
+          .map((url) => normalizeControlledMediaUrl(url))
+          .filter((url): url is string => Boolean(url)),
+      }),
       ...(phone !== undefined && { phone: phone ? normalizePhone(phone) : null }),
       ...(whatsapp !== undefined && { whatsapp: whatsapp ? normalizePhone(whatsapp) : null }),
       ...(escortCategory !== undefined && { escortCategory }),
@@ -316,7 +348,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
     }
 
     if (presentationVideoUrl !== undefined) {
-      updateData.presentationVideoUrl = presentationVideoUrl;
+      updateData.presentationVideoUrl = presentationVideoUrl ? normalizeControlledMediaUrl(presentationVideoUrl) : null;
       updateData.presentationVideoStatus = presentationVideoUrl ? "PENDING" : "NONE";
       updateData.presentationVideoRejectReason = null;
     }

@@ -256,7 +256,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         assetId: processed.id,
         path: `asset:${processed.id}`,
-        url: new URL(processed.controlledUrl, req.url).toString(),
+        // Persist and return the stable application path. Absolute URLs couple the
+        // media to a hostname and are treated as remote images by next/image.
+        url: processed.controlledUrl,
         status: processed.status,
         type,
       });

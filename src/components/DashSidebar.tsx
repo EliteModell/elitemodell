@@ -158,7 +158,10 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
   const isHostFlow = path.startsWith("/anfitriao") || path.startsWith("/verificacao/anfitriao");
   const hostStatus = session?.user?.hostStatus;
   const isRegisteredHostArea = isHostFlow && Boolean(hostStatus && hostStatus !== "NO_REQUEST");
-  const isAdmin = role === "ADMIN";
+  // Admin routes are already protected by the proxy and by their Server Components.
+  // Using the pathname here avoids waiting for the client session before rendering
+  // the correct, lightweight navigation.
+  const isAdmin = role === "ADMIN" || isAdminArea;
   const nav =
     isAdmin ? adminNav : isProfessionalArea ? professionalNav : isRegisteredHostArea ? hostNav : isHostFlow ? hostOnboardingNav : guestNav;
   const sectionLabel = isAdmin
@@ -312,6 +315,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                 <Link
                   key={navItem.href}
                   href={navItem.href}
+                  prefetch={isAdmin ? false : null}
                   onClick={onClose}
                   className={`group relative flex h-11 items-center gap-3 rounded-[8px] px-3 text-sm font-bold transition ${
                     active

@@ -19,6 +19,7 @@ import {
   publicCacheHeaders,
 } from "@/lib/public-professional-profile";
 import { citySearchVariants } from "@/lib/brazilian-location";
+import { normalizeControlledMediaUrl } from "@/lib/public-professional-media";
 
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
@@ -229,6 +230,10 @@ export async function POST(req: NextRequest) {
       ownerId: session.user.id,
       allowedFolderPrefixes: ["profiles"],
     });
+    const normalizedImage = normalizeControlledMediaUrl(image);
+    const normalizedGalleryUrls = galleryUrls
+      .map((url) => normalizeControlledMediaUrl(url))
+      .filter((url): url is string => Boolean(url));
     const hasManualMedia =
       Boolean(profileData.verificationUrl) &&
       profileData.kycProvider !== "PERSONA";
@@ -266,7 +271,7 @@ export async function POST(req: NextRequest) {
       docStatus:  profileData.docFrenteUrl ? "PENDING" : "NOT_SENT",
       verifStatus: profileData.verificationUrl || profileData.kycSessionId ? "PENDING" : "NOT_SENT",
     };
-    const initialPhotos = [image, ...galleryUrls]
+    const initialPhotos = [normalizedImage, ...normalizedGalleryUrls]
       .filter((url): url is string => Boolean(url))
       .filter((url, index, values) => values.indexOf(url) === index);
 

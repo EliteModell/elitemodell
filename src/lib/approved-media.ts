@@ -2,13 +2,13 @@ import "server-only";
 
 import { hasPublicStoragePath } from "@/lib/age-gate-policy";
 import { prisma } from "@/lib/prisma";
+import { controlledMediaAssetId } from "@/lib/public-professional-media";
 
 export function controlledAssetId(value: string, requestUrl: string) {
   try {
     const url = new URL(value, requestUrl);
     if (url.origin !== new URL(requestUrl).origin) return null;
-    const match = url.pathname.match(/^\/api\/media\/([^/]+)$/);
-    return match?.[1] ?? null;
+    return controlledMediaAssetId(url.pathname);
   } catch {
     return null;
   }

@@ -1,16 +1,25 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
-import { AdminHeader, AdminPanel, AdminTable, tdStyle, thStyle } from "../_components/AdminPrimitives";
+import { AdminHeader, AdminPagination, AdminPanel, AdminTable, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
+const PAGE_SIZE = 50;
 
-export default async function AdminAuditoriaPage() {
+export default async function AdminAuditoriaPage({ searchParams }: { searchParams?: Promise<{ page?: string }> }) {
   await requireAdmin("audit:view");
-  const logs = await prisma.auditLog.findMany({
+  const params = await searchParams;
+  const parsedPage = Number(params?.page ?? "1");
+  const page = Number.isFinite(parsedPage) ? Math.max(1, Math.floor(parsedPage)) : 1;
+  const [total, logs] = await Promise.all([prisma.auditLog.count(), prisma.auditLog.findMany({
     orderBy: { timestamp: "desc" },
-    take: 200,
-    include: { admin: { select: { name: true, email: true } } },
-  });
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+    select: {
+      id: true, timestamp: true, action: true, targetType: true, targetId: true,
+      reason: true, ipAddress: true, actorIdentifier: true, adminId: true,
+      admin: { select: { name: true, email: true } },
+    },
+  })]);
 
   return (
     <div>
@@ -41,6 +50,7 @@ export default async function AdminAuditoriaPage() {
             {!logs.length ? <tr><td style={tdStyle} colSpan={6}>Nenhum log registrado ainda.</td></tr> : null}
           </tbody>
         </AdminTable>
+        <AdminPagination basePath="/admin/auditoria" page={page} pageSize={PAGE_SIZE} total={total} />
       </AdminPanel>
     </div>
   );

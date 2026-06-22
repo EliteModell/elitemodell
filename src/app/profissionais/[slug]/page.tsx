@@ -9,6 +9,7 @@ import Navbar from "@/components/Navbar";
 import PublicReportButton from "@/components/moderation/PublicReportButton";
 import ProfessionalContactAction from "@/components/professionals/ProfessionalContactAction";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import { resolvePublicProfileMedia } from "@/lib/public-professional-media";
 import styles from "./profile.module.css";
 
 const ActionAuthModal = dynamic(() => import("@/components/auth/ActionAuthModal"));
@@ -31,6 +32,7 @@ type ApiProfessional = {
   state: string;
   bairro?: string | null;
   image?: string | null;
+  avatar?: string | null;
   galleryUrls?: string[];
   phone?: string | null;
   whatsapp?: string | null;
@@ -162,6 +164,7 @@ export default function ProfissionalProfilePage() {
   const [photoOpen, setPhotoOpen] = useState<number | null>(null);
   const [servicosAbertos, setServicosAbertos] = useState(false);
   const [caracteristicasAbertas, setCaracteristicasAbertas] = useState(true);
+  const [failedMediaUrls, setFailedMediaUrls] = useState<string[]>([]);
 
   const refGaleria = useRef<HTMLDivElement>(null);
   const refSobre = useRef<HTMLDivElement>(null);
@@ -232,6 +235,7 @@ export default function ProfissionalProfilePage() {
     async function loadProfile() {
       setLoading(true);
       setNotFound(false);
+      setFailedMediaUrls([]);
       try {
         const res = await fetch(`/api/professionals/${slug}`, {
           signal: controller.signal,
@@ -411,12 +415,21 @@ export default function ProfissionalProfilePage() {
   }
 
   // Monta capa, avatar e galeria sem misturar os papéis das imagens.
-  const coverImage = pro.photos?.find((photo) => photo.cover)?.url ?? pro.image ?? pro.galleryUrls?.[0] ?? "";
-  const relationGallery = pro.photos?.filter((photo) => !photo.cover).map((photo) => photo.url) ?? [];
-  const legacyGallery = pro.galleryUrls ?? [];
-  const allPhotos = Array.from(new Set([coverImage, ...(relationGallery.length ? relationGallery : legacyGallery)].filter(Boolean))) as string[];
-  const profileImage = pro.user?.image ?? null;
+  const profileMedia = resolvePublicProfileMedia({
+    photos: pro.photos,
+    image: pro.image,
+    galleryUrls: pro.galleryUrls,
+    avatar: pro.avatar,
+    userImage: pro.user?.image,
+    failedUrls: failedMediaUrls,
+  });
+  const coverImage = profileMedia.cover ?? "";
+  const profileImage = profileMedia.avatar;
+  const allPhotos = profileMedia.gallery;
   const fotosExibidas = galeriaFiltro === "videos" ? allPhotos.slice(0, 1) : allPhotos;
+  const markMediaFailed = (url: string) => {
+    setFailedMediaUrls((current) => current.includes(url) ? current : [...current, url]);
+  };
 
   // Serviços
   const specialtyNames = pro.specialties.map((s) => s.name);
@@ -475,7 +488,7 @@ export default function ProfissionalProfilePage() {
 
       {/* COVER com nome overlay */}
       <div style={{ paddingTop: 64 }}>
-        <div className={styles.cover}>
+        <div data-testid="profile-cover" data-media-state={coverImage ? "image" : "fallback"} className={styles.cover}>
           {coverImage ? (
             <Image
               src={coverImage}
@@ -484,6 +497,7 @@ export default function ProfissionalProfilePage() {
               preload
               sizes="100vw"
               quality={72}
+              onError={() => markMediaFailed(coverImage)}
               style={{ objectFit: "cover", objectPosition: "center 15%" }}
             />
           ) : (
@@ -503,7 +517,7 @@ export default function ProfissionalProfilePage() {
         {/* Avatar + badges */}
         <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 16px" }}>
           <div className={styles.profileSummary}>
-            <div data-testid="profile-avatar" className={styles.avatar} style={{ borderColor: GOLD }}>
+            <div data-testid="profile-avatar" data-media-state={profileImage ? "image" : "fallback"} className={styles.avatar} style={{ borderColor: GOLD }}>
               {profileImage ? (
                 <Image
                   src={profileImage}
@@ -512,6 +526,7 @@ export default function ProfissionalProfilePage() {
                   sizes="88px"
                   quality={62}
                   loading="eager"
+                  onError={() => markMediaFailed(profileImage)}
                   style={{ objectFit: "cover", objectPosition: "top" }}
                 />
               ) : (
@@ -637,7 +652,7 @@ export default function ProfissionalProfilePage() {
           {allPhotos.length > 0 ? (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 3, marginBottom: 28 }}>
               {fotosExibidas.map((url, i) => (
-                <div key={i} onClick={() => setPhotoOpen(i)}
+                <div data-testid="gallery-image" key={url} onClick={() => setPhotoOpen(i)}
                   style={{ aspectRatio: "3/4", overflow: "hidden", borderRadius: 6, cursor: "pointer", position: "relative", background: "#0b1420" }}>
                   <Image
                     src={url}
@@ -645,6 +660,7 @@ export default function ProfissionalProfilePage() {
                     fill
                     sizes="(max-width: 720px) 33vw, 220px"
                     quality={60}
+                    onError={() => markMediaFailed(url)}
                     style={{ objectFit: "cover", objectPosition: "top" }}
                   />
                   <div style={{ position: "absolute", bottom: 5, right: 5, background: "rgba(6,14,27,0.85)", borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1176,6 +1192,10 @@ export default function ProfissionalProfilePage() {
               alt=""
               fill
               sizes="95vw"
+              onError={() => {
+                markMediaFailed(allPhotos[photoOpen]);
+                setPhotoOpen(null);
+              }}
               style={{ objectFit: "contain", borderRadius: 8 }}
             />
           </div>

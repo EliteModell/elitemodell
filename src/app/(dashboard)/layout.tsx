@@ -63,7 +63,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [isPublicPropertyDraft, status, router]);
 
-  if (status === "loading" && !isPublicPropertyDraft) {
+  // Every admin page validates access again on the server. Do not hide an already
+  // rendered admin response behind the extra client-side session request.
+  if (status === "loading" && !isPublicPropertyDraft && !isAdminArea) {
     return <LoadingScreen />;
   }
 
@@ -86,7 +88,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className={roleAreaClass ? `${roleAreaClass}-shell min-h-screen overflow-x-hidden bg-[#050506] text-white` : "min-h-screen overflow-x-hidden bg-[#050506] text-white"}>
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,168,67,0.10),transparent_34%)]" />
+      {!isAdminArea ? <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,168,67,0.10),transparent_34%)]" /> : null}
       {isProfessionalArea ? <ProfessionalPremiumStyles /> : null}
 
       {isProfessionalOnboarding ? null : <DashSidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />}
@@ -95,7 +97,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {showProfessionalChrome ? (
           <ProfessionalTopHeader onMenuClick={() => setSidebarOpen(true)} />
         ) : isProfessionalOnboarding ? null : (
-        <header className={roleAreaClass ? `${roleAreaClass}-header sticky top-0 z-30 border-b border-white/10 bg-[#050506]/72 px-4 py-3 backdrop-blur-2xl sm:px-6 md:px-8` : "sticky top-0 z-30 border-b border-white/10 bg-[#050506]/72 px-4 py-3 backdrop-blur-2xl sm:px-6 md:px-8"}>
+        <header className={isAdminArea ? "admin-header sticky top-0 z-30 border-b border-white/10 bg-[#050506] px-4 py-3 sm:px-6 md:px-8" : roleAreaClass ? `${roleAreaClass}-header sticky top-0 z-30 border-b border-white/10 bg-[#050506]/72 px-4 py-3 backdrop-blur-2xl sm:px-6 md:px-8` : "sticky top-0 z-30 border-b border-white/10 bg-[#050506]/72 px-4 py-3 backdrop-blur-2xl sm:px-6 md:px-8"}>
           <div className="flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
               <button
