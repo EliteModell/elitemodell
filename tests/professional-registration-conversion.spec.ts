@@ -44,35 +44,18 @@ test("apresenta conversão original e validação por canal", async ({ page }) =
     page.getByRole("heading", { name: "Valide seu telefone para continuar" }),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: /Receber código via SMS/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /WhatsApp indisponível no momento/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /WhatsApp/i })).toHaveCount(0);
 });
 
-test("envia codigo profissional por SMS via Firebase", async ({ page }) => {
-  await page.addInitScript(() => {
-    const testWindow = window as unknown as {
-      __eliteProfessionalPhoneAuthMock?: {
-        sendCode: (phone: string) => Promise<{
-          confirm: () => Promise<{ user: { getIdToken: () => Promise<string> } }>;
-        }>;
-      };
-      __sentProfessionalSmsTo?: string;
-    };
-    testWindow.__eliteProfessionalPhoneAuthMock = {
-      async sendCode(phone: string) {
-        testWindow.__sentProfessionalSmsTo = phone;
-        return {
-          async confirm() {
-            return {
-              user: {
-                async getIdToken() {
-                  return "firebase-professional-token-for-tests";
-                },
-              },
-            };
-          },
-        };
-      },
-    };
+test("envia código profissional somente por SMS", async ({ page }) => {
+  let payload: Record<string, unknown> | undefined;
+  await page.route("**/api/auth/phone/send-code", async (route) => {
+    payload = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, message: "Código enviado por SMS" }),
+    });
   });
   await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
   await page.getByLabel("Qual seu número de telefone?").fill("31999999999");
@@ -81,37 +64,38 @@ test("envia codigo profissional por SMS via Firebase", async ({ page }) => {
   await page.getByRole("button", { name: /Receber código via SMS/ }).click();
 
   await expect(page.getByLabel("Código de 6 dígitos")).toBeVisible();
-  await expect
-    .poll(() =>
-      page.evaluate(() => (window as unknown as { __sentProfessionalSmsTo?: string }).__sentProfessionalSmsTo ?? null),
-    )
-    .toBe("+5531999999999");
+  expect(payload).toMatchObject({
+    phone: "31999999999",
+    accountType: "model",
+    channel: "sms",
+  });
+});
+
+test("HTML inesperado da API mostra erro amigável sem quebrar a tela", async ({ page }) => {
+  await page.route("**/api/auth/phone/send-code", async (route) => {
+    await route.fulfill({
+      status: 500,
+      contentType: "text/html",
+      body: "<!DOCTYPE html><html><body>erro interno</body></html>",
+    });
+  });
+  await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
+  await page.getByLabel("Qual seu número de telefone?").fill("31999999999");
+  await page.getByLabel(/Ao continuar, confirmo que tenho 18 anos ou mais/).check();
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await page.getByRole("button", { name: /Receber código via SMS/ }).click();
+
+  await expect(page.getByText("Não foi possível enviar o código agora. Tente novamente.")).toBeVisible();
+  await expect(page.getByLabel("Código de 6 dígitos")).toHaveCount(0);
 });
 
 test("após validar o código abre a ativação profissional completa", async ({ page }) => {
-  await page.addInitScript(() => {
-    const testWindow = window as unknown as {
-      __eliteProfessionalPhoneAuthMock?: {
-        sendCode: () => Promise<{
-          confirm: () => Promise<{ user: { getIdToken: () => Promise<string> } }>;
-        }>;
-      };
-    };
-    testWindow.__eliteProfessionalPhoneAuthMock = {
-      async sendCode() {
-        return {
-          async confirm() {
-            return {
-              user: {
-                async getIdToken() {
-                  return "firebase-professional-token-for-tests";
-                },
-              },
-            };
-          },
-        };
-      },
-    };
+  await page.route("**/api/auth/phone/send-code", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, message: "Código enviado por SMS" }),
+    });
   });
   await page.route("**/api/auth/phone/verify-code", async (route) => {
     expect(route.request().postDataJSON()).toMatchObject({
@@ -119,7 +103,6 @@ test("após validar o código abre a ativação profissional completa", async ({
       code: "123456",
       accountType: "model",
       deferAccountCreation: true,
-      firebaseIdToken: "firebase-professional-token-for-tests",
     });
     await route.fulfill({
       status: 200,

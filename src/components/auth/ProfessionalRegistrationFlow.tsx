@@ -26,8 +26,9 @@ import toast from "react-hot-toast";
 
 import styles from "./ProfessionalRegistrationFlow.module.css";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import { readJsonResponse } from "@/lib/safe-json-response";
 type RegistrationStage = "phone" | "verification";
-type VerificationChannel = "whatsapp" | "sms";
+type VerificationChannel = "sms";
 
 type ConsentState = {
   ageConfirmed: boolean;
@@ -260,7 +261,7 @@ export function ProfessionalRegistrationFlow({
     setStage("verification");
   }
 
-  async function sendCode(selectedChannel: VerificationChannel) {
+  async function sendCode() {
     if (!isValidBrazilianPhone(phone)) {
       toast.error("Informe novamente o telefone profissional.");
       setStage("phone");
@@ -275,58 +276,39 @@ export function ProfessionalRegistrationFlow({
 
     const normalizedPhone = onlyDigits(phone);
     setSendingCode(true);
+    const friendlyError = "Não foi possível enviar o código agora. Tente novamente.";
+
     try {
-      if (selectedChannel === "whatsapp") {
-        const response = await fetch("/api/auth/phone/send-code", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            phone: normalizedPhone,
-            accountType: "model",
-            channel: "whatsapp",
-            termsConsent: consents.termsConsent,
-            lgpdConsent: consents.lgpdConsent,
-            ageConfirmed: consents.ageConfirmed,
-            ownershipConfirmed: consents.ownershipConfirmed,
-            marketingConsent: consents.marketingConsent,
-          }),
-        });
-        const data = (await response.json()) as { error?: string };
-        if (!response.ok) {
-          throw new Error(data.error || "Não foi possível enviar o código pelo WhatsApp.");
-        }
-      } else {
-        const response = await fetch("/api/auth/phone/send-code", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            phone: normalizedPhone,
-            accountType: "model",
-            channel: "sms",
-            termsConsent: consents.termsConsent,
-            lgpdConsent: consents.lgpdConsent,
-            ageConfirmed: consents.ageConfirmed,
-            ownershipConfirmed: consents.ownershipConfirmed,
-            marketingConsent: consents.marketingConsent,
-          }),
-        });
-        const data = (await response.json()) as { error?: string };
-        if (!response.ok) {
-          throw new Error(data.error || "Não foi possível enviar o código por SMS.");
-        }
+      const response = await fetch("/api/auth/phone/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: normalizedPhone,
+          accountType: "model",
+          channel: "sms",
+          termsConsent: consents.termsConsent,
+          lgpdConsent: consents.lgpdConsent,
+          ageConfirmed: consents.ageConfirmed,
+          ownershipConfirmed: consents.ownershipConfirmed,
+          marketingConsent: consents.marketingConsent,
+        }),
+      });
+      const data = await readJsonResponse<{ ok?: boolean; error?: string }>(response);
+
+      if (!data) {
+        throw new Error(friendlyError);
+      }
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || friendlyError);
       }
 
-      setChannel(selectedChannel);
+      setChannel("sms");
       setCodeSent(true);
       setCode("");
       setResendSeconds(RESEND_SECONDS);
-      if (selectedChannel === "whatsapp") {
-        toast.success("Código enviado via WhatsApp!");
-      } else {
-        toast.success("SMS enviado! Pode levar ate 1 minuto para chegar.");
-      }
+      toast.success("SMS enviado! Pode levar até 1 minuto para chegar.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível enviar o código.");
+      toast.error(error instanceof Error ? error.message : friendlyError);
     } finally {
       setSendingCode(false);
     }
@@ -351,8 +333,11 @@ export function ProfessionalRegistrationFlow({
           ...consents,
         }),
       });
-      const data = (await response.json()) as VerifyCodeResponse;
+      const data = await readJsonResponse<VerifyCodeResponse>(response);
 
+      if (!data) {
+        throw new Error("Não foi possível validar o código agora. Tente novamente.");
+      }
       if (!response.ok || !data.registrationPending) {
         throw new Error(data.error || "Código inválido ou expirado.");
       }
@@ -557,7 +542,7 @@ export function ProfessionalRegistrationFlow({
 
               {!codeSent ? (
                 <div className={styles.channelList}>
-                  <button type="button" disabled={sendingCode} onClick={() => sendCode("sms")}>
+                  <button type="button" disabled={sendingCode} onClick={sendCode}>
                     <span className={styles.channelIcon}>
                       <Phone size={25} aria-hidden="true" />
                     </span>
@@ -567,28 +552,12 @@ export function ProfessionalRegistrationFlow({
                     </span>
                     <ChevronRight size={22} aria-hidden="true" />
                   </button>
-                  <button
-                    type="button"
-                    disabled={sendingCode}
-                    onClick={() => sendCode("whatsapp")}
-                  >
-                    <span className={styles.channelIcon}>
-                      <MessageCircle size={25} aria-hidden="true" />
-                    </span>
-                    <span>
-                      <strong>Receber código via WhatsApp</strong>
-                      <small>Receba o código de verificação no seu WhatsApp.</small>
-                    </span>
-                    <ChevronRight size={22} aria-hidden="true" />
-                  </button>
                 </div>
               ) : (
                 <div className={styles.codeArea}>
                   <div className={styles.sentNotice}>
                     <Check size={18} aria-hidden="true" />
-                    {channel === "whatsapp"
-                      ? "Código enviado via WhatsApp. Verifique suas mensagens."
-                      : "Código solicitado por SMS. Pode levar ate 1 minuto para chegar."}
+                    Código solicitado por SMS. Pode levar até 1 minuto para chegar.
                   </div>
                   <label htmlFor="verification-code">Código de 6 dígitos</label>
                   <input
@@ -620,13 +589,13 @@ export function ProfessionalRegistrationFlow({
                       <button
                         type="button"
                         disabled={sendingCode || !channel}
-                        onClick={() => sendCode(channel ?? "sms")}
+                        onClick={sendCode}
                       >
                         Reenviar código
                       </button>
                     )}
-                    <button type="button" onClick={() => setCodeSent(false)}>
-                      Trocar método
+                    <button type="button" onClick={() => setStage("phone")}>
+                      Corrigir telefone
                     </button>
                   </div>
                 </div>

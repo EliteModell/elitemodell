@@ -24,6 +24,14 @@ import {
   timingSafeCodeCompare,
 } from "@/lib/phone-otp";
 import { setPendingProfessionalPhoneCookie } from "@/lib/professional-phone-registration";
+import {
+  TWILIO_NOT_CONFIGURED_ERROR,
+  TwilioVerifyConfigurationError,
+  TwilioVerifyProviderError,
+  checkTwilioSmsVerification,
+  maskPhone,
+  toBrazilianE164,
+} from "@/lib/twilio-verify";
 
 const schema = z.object({
   phone: z.string().min(10),
@@ -338,7 +346,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const matches = timingSafeCodeCompare(phone, body.code, verification.codeHash);
+    let matches: boolean;
+    if (verification.deliveryProvider === "twilio-verify") {
+      console.info("[phone/verify-code] twilio_check_request", {
+        endpoint: "/api/auth/phone/verify-code",
+        phone: maskPhone(toBrazilianE164(phone)),
+        channel: "sms",
+      });
+      const check = await checkTwilioSmsVerification(phone, body.code);
+      matches = check.approved;
+      console.info("[phone/verify-code] twilio_check_response", {
+        endpoint: "/api/auth/phone/verify-code",
+        phone: maskPhone(check.to),
+        channel: "sms",
+        status: check.status,
+        verificationSidSuffix: check.sid?.slice(-6),
+      });
+    } else {
+      // Compatibilidade com solicitações antigas e com o fluxo Firebase.
+      matches = timingSafeCodeCompare(phone, body.code, verification.codeHash);
+    }
+
     if (!matches) {
       await prisma.phoneVerificationCode.update({
         where: { id: verification.id },
@@ -403,6 +431,29 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: "Dados invalidos." }, { status: 400 });
+    }
+    if (err instanceof TwilioVerifyConfigurationError) {
+      console.error("[phone/verify-code] twilio_configuration", {
+        endpoint: "/api/auth/phone/verify-code",
+        channel: "sms",
+      });
+      return NextResponse.json(
+        { ok: false, error: TWILIO_NOT_CONFIGURED_ERROR },
+        { status: 503 },
+      );
+    }
+    if (err instanceof TwilioVerifyProviderError) {
+      console.error("[phone/verify-code] twilio_error", {
+        endpoint: "/api/auth/phone/verify-code",
+        channel: "sms",
+        status: err.status,
+        providerCode: err.providerCode,
+        message: err.message,
+      });
+      return NextResponse.json(
+        { ok: false, error: "Não foi possível validar o código agora. Tente novamente." },
+        { status: 502 },
+      );
     }
     console.error("[phone/verify-code]", err);
     return NextResponse.json({ error: "Nao foi possivel verificar o codigo." }, { status: 500 });

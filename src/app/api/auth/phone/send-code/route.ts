@@ -5,17 +5,21 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import {
-  OtpDeliveryConfigurationError,
-  OtpDeliveryProviderError,
-  getOtpDeliveryProvider,
-} from "@/lib/otp-delivery";
+  TWILIO_NOT_CONFIGURED_ERROR,
+  TwilioVerifyConfigurationError,
+  TwilioVerifyProviderError,
+  assertTwilioVerifyConfigured,
+  maskPhone,
+  sendTwilioSmsVerification,
+  toBrazilianE164,
+  twilioVerifyEnvironmentStatus,
+} from "@/lib/twilio-verify";
 import {
   OTP_MAX_SENDS_PER_IP_PER_HOUR,
   OTP_MAX_SENDS_PER_PHONE_PER_HOUR,
   OTP_RESEND_SECONDS,
   OTP_TTL_MINUTES,
   PHONE_ACCOUNT_TYPES,
-  createOtpCode,
   formatBrazilianPhone,
   hashOtpCode,
   isValidBrazilianMobilePhone,
@@ -25,7 +29,7 @@ import {
 const schema = z.object({
   phone: z.string().min(10),
   accountType: z.enum(PHONE_ACCOUNT_TYPES).default("client"),
-  channel: z.enum(["sms", "whatsapp"]).default("sms"),
+  channel: z.literal("sms").default("sms"),
   termsConsent: z.boolean().default(false),
   lgpdConsent: z.boolean().default(false),
   ageConfirmed: z.boolean().default(false),
@@ -33,36 +37,63 @@ const schema = z.object({
   marketingConsent: z.boolean().default(false),
 });
 
+function jsonError(error: string, status: number, headers?: HeadersInit) {
+  return NextResponse.json({ ok: false, error }, { status, headers });
+}
+
 export async function POST(req: NextRequest) {
   let verificationId: string | null = null;
+  let maskedPhone = "desconhecido";
 
   try {
     const body = schema.parse(await req.json());
     const phone = normalizeBrazilianPhone(body.phone);
     const requestIp = getClientIP(req);
-    const limited = await enforceRateLimitAsync(
-      `otp-send-ip:${requestIp}`,
-      OTP_MAX_SENDS_PER_IP_PER_HOUR,
-      60 * 60 * 1000,
-      "Muitas solicitacoes a partir deste acesso. Tente novamente mais tarde."
-    );
-    if (limited) return limited;
+    const environment = twilioVerifyEnvironmentStatus();
+
+    if (isValidBrazilianMobilePhone(phone)) {
+      maskedPhone = maskPhone(toBrazilianE164(phone));
+    }
+
+    console.info("[phone/send-code] request", {
+      endpoint: "/api/auth/phone/send-code",
+      phone: maskedPhone,
+      channel: "sms",
+      hasTwilioAccountSid: environment.hasAccountSid,
+      hasTwilioAuthToken: environment.hasAuthToken,
+      hasTwilioVerifyServiceSid: environment.hasVerifyServiceSid,
+    });
 
     if (!isValidBrazilianMobilePhone(phone)) {
-      return NextResponse.json({ error: "Informe um celular brasileiro valido." }, { status: 400 });
+      return jsonError("Informe um celular brasileiro válido.", 400);
+    }
+
+    assertTwilioVerifyConfigured();
+
+    const rateLimitMessage = "Muitas solicitações a partir deste acesso. Tente novamente mais tarde.";
+    const limited = await enforceRateLimitAsync(
+      "otp-send-ip:" + requestIp,
+      OTP_MAX_SENDS_PER_IP_PER_HOUR,
+      60 * 60 * 1000,
+      rateLimitMessage,
+    );
+    if (limited) {
+      return jsonError(rateLimitMessage, 429, {
+        "Retry-After": limited.headers.get("Retry-After") ?? "60",
+      });
     }
 
     if (!body.termsConsent || !body.lgpdConsent) {
-      return NextResponse.json(
-        { error: "Aceite os Termos de Uso e a Politica de Privacidade para receber o codigo." },
-        { status: 400 }
+      return jsonError(
+        "Aceite os Termos de Uso e a Política de Privacidade para receber o código.",
+        400,
       );
     }
 
     if (!body.ageConfirmed || (body.accountType !== "client" && !body.ownershipConfirmed)) {
-      return NextResponse.json(
-        { error: "Confirme os requisitos obrigatorios do cadastro antes de receber o codigo." },
-        { status: 400 }
+      return jsonError(
+        "Confirme os requisitos obrigatórios do cadastro antes de receber o código.",
+        400,
       );
     }
 
@@ -76,11 +107,12 @@ export async function POST(req: NextRequest) {
       if (retryAt > new Date()) {
         return NextResponse.json(
           {
-            error: "Aguarde alguns segundos para reenviar o codigo.",
+            ok: false,
+            error: "Aguarde alguns segundos para reenviar o código.",
             retryAt,
             resendInSeconds: Math.ceil((retryAt.getTime() - Date.now()) / 1000),
           },
-          { status: 429 }
+          { status: 429 },
         );
       }
     }
@@ -98,26 +130,18 @@ export async function POST(req: NextRequest) {
     ]);
 
     if (recentPhoneCount >= OTP_MAX_SENDS_PER_PHONE_PER_HOUR) {
-      return NextResponse.json(
-        { error: "Muitas solicitacoes para este telefone. Tente novamente mais tarde." },
-        { status: 429 }
-      );
+      return jsonError("Muitas solicitações para este telefone. Tente novamente mais tarde.", 429);
     }
-
     if (recentIpCount >= OTP_MAX_SENDS_PER_IP_PER_HOUR) {
-      return NextResponse.json(
-        { error: "Muitas solicitacoes a partir deste acesso. Tente novamente mais tarde." },
-        { status: 429 }
-      );
+      return jsonError(rateLimitMessage, 429);
     }
 
-    const code = createOtpCode();
     const verification = await prisma.phoneVerificationCode.create({
       data: {
         phone,
         accountType: body.accountType,
-        channel: body.channel,
-        codeHash: hashOtpCode(phone, code),
+        channel: "sms",
+        codeHash: hashOtpCode(phone, "twilio-verify-managed"),
         expiresAt: new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000),
         requestIp: requestIp === "unknown" ? null : requestIp,
         termsConsent: body.termsConsent,
@@ -128,56 +152,76 @@ export async function POST(req: NextRequest) {
     });
     verificationId = verification.id;
 
-    const delivery = await getOtpDeliveryProvider().send({
-      phone,
-      code,
-      channel: body.channel,
-      accountType: body.accountType,
+    const delivery = await sendTwilioSmsVerification(phone);
+
+    console.info("[phone/send-code] twilio_response", {
+      endpoint: "/api/auth/phone/send-code",
+      phone: maskPhone(delivery.to),
+      channel: "sms",
+      provider: "twilio-verify",
+      status: delivery.status,
+      verificationSidSuffix: delivery.sid?.slice(-6),
     });
 
     await prisma.phoneVerificationCode.update({
       where: { id: verification.id },
       data: {
         sentAt: new Date(),
-        deliveryProvider: delivery.provider,
-        providerMessageId: delivery.providerMessageId ?? null,
+        deliveryProvider: "twilio-verify",
+        providerMessageId: delivery.sid ?? null,
       },
     });
 
     return NextResponse.json({
       ok: true,
+      message: "Código enviado por SMS",
       phone: formatBrazilianPhone(phone),
       expiresInSeconds: OTP_TTL_MINUTES * 60,
       resendInSeconds: OTP_RESEND_SECONDS,
-      delivery: {
-        provider: delivery.provider,
-        channel: body.channel,
-      },
+      delivery: { provider: "twilio-verify", channel: "sms" },
     });
   } catch (err) {
     if (verificationId) {
       await prisma.phoneVerificationCode
         .update({
           where: { id: verificationId },
-          data: { sendError: err instanceof Error ? err.message.slice(0, 500) : "Erro ao enviar codigo." },
+          data: {
+            sendError: err instanceof Error ? err.message.slice(0, 500) : "Erro ao enviar código.",
+          },
         })
         .catch(() => undefined);
     }
 
-    if (err instanceof z.ZodError) {
-      return NextResponse.json({ error: "Dados invalidos." }, { status: 400 });
+    if (err instanceof z.ZodError || err instanceof SyntaxError) {
+      return jsonError("Dados inválidos.", 400);
     }
-    if (err instanceof OtpDeliveryConfigurationError) {
-      console.error("[phone/send-code] otp_delivery_configuration", err.message);
-      return NextResponse.json(
-        { error: "Envio de SMS temporariamente indisponivel. Tente novamente em instantes." },
-        { status: 503 }
-      );
+    if (err instanceof TwilioVerifyConfigurationError) {
+      console.error("[phone/send-code] twilio_configuration", {
+        endpoint: "/api/auth/phone/send-code",
+        phone: maskedPhone,
+        channel: "sms",
+        ...twilioVerifyEnvironmentStatus(),
+      });
+      return jsonError(TWILIO_NOT_CONFIGURED_ERROR, 503);
     }
-    if (err instanceof OtpDeliveryProviderError) {
-      return NextResponse.json({ error: err.message }, { status: 502 });
+    if (err instanceof TwilioVerifyProviderError) {
+      console.error("[phone/send-code] twilio_error", {
+        endpoint: "/api/auth/phone/send-code",
+        phone: maskedPhone,
+        channel: "sms",
+        status: err.status,
+        providerCode: err.providerCode,
+        message: err.message,
+      });
+      return jsonError("Não foi possível enviar o código agora. Tente novamente.", 502);
     }
-    console.error("[phone/send-code]", err);
-    return NextResponse.json({ error: "Nao foi possivel enviar o codigo." }, { status: 500 });
+
+    console.error("[phone/send-code] unexpected_error", {
+      endpoint: "/api/auth/phone/send-code",
+      phone: maskedPhone,
+      channel: "sms",
+      error: err instanceof Error ? err.message : "Erro desconhecido",
+    });
+    return jsonError("Não foi possível enviar o código agora. Tente novamente.", 500);
   }
 }
