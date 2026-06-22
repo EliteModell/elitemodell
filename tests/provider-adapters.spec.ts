@@ -212,6 +212,7 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     const params = new URLSearchParams(twilioBody);
     expect(params.get("To")).toBe("+5511917934340");
     expect(params.get("Channel")).toBe("sms");
+    expect(params.get("RiskCheck")).toBe("disable");
     expect(params.has("CustomCode")).toBe(false);
   });
 

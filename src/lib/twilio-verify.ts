@@ -130,6 +130,9 @@ export async function sendTwilioSmsVerification(phone: string) {
       To: to,
       Channel: "sms",
       Locale: "pt-BR",
+      // Contingência para bloqueios 60238 do Fraud Guard. A API mantém
+      // limites próprios por IP e telefone antes de chegar à Twilio.
+      RiskCheck: "disable",
     }),
   );
 
