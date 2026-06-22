@@ -291,6 +291,45 @@ class WhatsAppCloudOtpDeliveryProvider implements OtpDeliveryProvider {
   }
 }
 
+function hasZenviaCredentials() {
+  return Boolean(process.env.ZENVIA_API_TOKEN);
+}
+
+class ZenviaOtpDeliveryProvider implements OtpDeliveryProvider {
+  private readonly apiToken = process.env.ZENVIA_API_TOKEN;
+  private readonly senderId = process.env.ZENVIA_SENDER_ID || "EliteModell";
+
+  async send(input: OtpDeliveryInput): Promise<OtpDeliveryResult> {
+    if (!this.apiToken) {
+      throw new OtpDeliveryConfigurationError("Configure ZENVIA_API_TOKEN.");
+    }
+
+    const to = `+55${input.phone}`;
+    const response = await fetch("https://api.zenvia.com/v2/channels/sms/messages", {
+      method: "POST",
+      headers: {
+        "X-API-TOKEN": this.apiToken,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: this.senderId,
+        to,
+        contents: [{ type: "text", text: otpMessage(input.code) }],
+      }),
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as { id?: string; message?: string; details?: string };
+
+    if (!response.ok) {
+      throw new OtpDeliveryProviderError(
+        payload.message ?? payload.details ?? "Zenvia recusou o envio do codigo."
+      );
+    }
+
+    return { provider: "zenvia", providerMessageId: payload.id };
+  }
+}
+
 class DevelopmentLogOtpDeliveryProvider implements OtpDeliveryProvider {
   async send(input: OtpDeliveryInput): Promise<OtpDeliveryResult> {
     console.info(`[otp:development] ${input.accountType}/${input.channel} ${input.phone}: ${input.code}`);
@@ -302,6 +341,10 @@ class AutoOtpDeliveryProvider implements OtpDeliveryProvider {
   async send(input: OtpDeliveryInput): Promise<OtpDeliveryResult> {
     if (input.channel === "whatsapp" && hasWhatsAppCloudCredentials()) {
       return new WhatsAppCloudOtpDeliveryProvider().send(input);
+    }
+
+    if (hasZenviaCredentials()) {
+      return new ZenviaOtpDeliveryProvider().send(input);
     }
 
     if (hasTwilioCredentials()) {
@@ -318,7 +361,7 @@ class AutoOtpDeliveryProvider implements OtpDeliveryProvider {
       );
     }
 
-    throw new OtpDeliveryConfigurationError("Envio de SMS nao configurado. Configure Twilio.");
+    throw new OtpDeliveryConfigurationError("Envio de SMS nao configurado. Configure Zenvia ou Twilio.");
   }
 }
 
@@ -351,9 +394,13 @@ export function getOtpDeliveryProvider(): OtpDeliveryProvider {
     return new DevelopmentLogOtpDeliveryProvider();
   }
 
-  if (["zenvia", "infobip"].includes(provider)) {
+  if (provider === "zenvia") {
+    return new ZenviaOtpDeliveryProvider();
+  }
+
+  if (provider === "infobip") {
     throw new OtpDeliveryConfigurationError(
-      `Provider ${provider} ainda nao esta implementado. Use a interface OtpDeliveryProvider para plugar o adaptador.`
+      `Provider infobip ainda nao esta implementado.`
     );
   }
 
