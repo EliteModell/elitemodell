@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
 import { MANUAL_PENDING_STATUS, PERSONA_PENDING_STATUS } from "@/lib/persona";
+import { DIDIT_PROVIDER, KYC_PENDING_STATUS } from "@/lib/professional-verification";
 import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
 import { activeProfessionalAccessWhere } from "@/lib/professional-access";
 import { createProfessionalSchema } from "@/lib/professional-profile-schema";
@@ -210,7 +211,7 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { category: true, email: true, emailVerified: true },
+      select: { category: true, email: true, emailVerified: true, clientStatus: true, kycSessionId: true },
     });
 
     if (!user?.emailVerified) {
@@ -268,8 +269,8 @@ export async function POST(req: NextRequest) {
       birthDate: profileData.birthDate ? new Date(profileData.birthDate) : undefined,
       status:    "PENDING_REVIEW" as const,
       verified:  false,
-      docStatus:  profileData.docFrenteUrl ? "PENDING" : "NOT_SENT",
-      verifStatus: profileData.verificationUrl || profileData.kycSessionId ? "PENDING" : "NOT_SENT",
+      docStatus:  normalizedKycStatus === "APPROVED" ? "APPROVED" : profileData.docFrenteUrl || normalizedKycProvider === DIDIT_PROVIDER ? "PENDING" : "NOT_SENT",
+      verifStatus: normalizedKycStatus === "APPROVED" ? "APPROVED" : profileData.verificationUrl || profileData.kycSessionId ? "PENDING" : "NOT_SENT",
     };
     const initialPhotos = [normalizedImage, ...normalizedGalleryUrls]
       .filter((url): url is string => Boolean(url))

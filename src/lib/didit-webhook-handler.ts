@@ -6,21 +6,31 @@ import {
   fetchDigitSessionDecision,
   extractDateOfBirth,
   isAdult,
+  DIDIT_APPROVED_STATUS,
   DIDIT_PENDING_STATUS,
+  DIDIT_REJECTED_STATUS,
   DiditWebhookPayload,
 } from "@/lib/didit";
 import { claimWebhookEvent, markWebhookEventDone, markWebhookEventFailed } from "@/lib/webhook-idempotency";
 
 const REJECTED_MESSAGE = "Verificacao nao aprovada pelo sistema de identidade Didit.";
+const PENDING_DIDIT_STATUSES = new Set(["Not Started", "In Progress", "In Review", "Resubmitted", "Awaiting User"]);
+const REJECTED_DIDIT_STATUSES = new Set(["Declined", "Abandoned", "Expired", "Kyc Expired"]);
 
 export async function handleDigitWebhook(req: NextRequest) {
   const rawBody = await req.text();
-  const sig =
-    req.headers.get("x-signature-v2") ??
-    req.headers.get("x-signature") ??
-    "";
+  const signatureV2 = req.headers.get("x-signature-v2");
+  const signature = req.headers.get("x-signature");
+  const signatureSimple = req.headers.get("x-signature-simple");
   const timestampHeader = req.headers.get("x-timestamp") ?? "";
   const secret = process.env.DIDIT_WEBHOOK_SECRET?.trim() ?? "";
+
+  let payload: DiditWebhookPayload;
+  try {
+    payload = JSON.parse(rawBody) as DiditWebhookPayload;
+  } catch {
+    return NextResponse.json({ error: "JSON invalido." }, { status: 400 });
+  }
 
   if (!secret && process.env.NODE_ENV === "production") {
     return NextResponse.json({ error: "DIDIT_WEBHOOK_SECRET obrigatorio em producao." }, { status: 500 });
@@ -32,18 +42,15 @@ export async function handleDigitWebhook(req: NextRequest) {
       return NextResponse.json({ error: "Timestamp expirado." }, { status: 400 });
     }
 
-    const valid = await verifyDigitWebhook(rawBody, sig, secret);
+    const valid = verifyDigitWebhook({ rawBody, parsedBody: payload, secret, signatureV2, signature, signatureSimple });
     if (!valid) {
-      console.error("[didit-webhook] Assinatura invalida.", { sig: sig.slice(0, 20) });
+      console.error("[didit-webhook] Assinatura invalida.", {
+        hasV2: Boolean(signatureV2),
+        hasRaw: Boolean(signature),
+        hasSimple: Boolean(signatureSimple),
+      });
       return NextResponse.json({ error: "Assinatura invalida." }, { status: 400 });
     }
-  }
-
-  let payload: DiditWebhookPayload;
-  try {
-    payload = JSON.parse(rawBody) as DiditWebhookPayload;
-  } catch {
-    return NextResponse.json({ error: "JSON invalido." }, { status: 400 });
   }
 
   const eventType = payload.webhook_type;
@@ -55,7 +62,7 @@ export async function handleDigitWebhook(req: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
-  const eventId = payload.event_id || `didit:${sessionId}:${status}`;
+  const eventId = payload.event_id || `didit:${sessionId}:${eventType}:${status}`;
   const claim = await claimWebhookEvent({
     provider: "didit",
     eventId,
@@ -69,7 +76,7 @@ export async function handleDigitWebhook(req: NextRequest) {
   }
 
   try {
-    if (eventType === "status.updated" && status === "Approved") {
+    if ((eventType === "status.updated" || eventType === "data.updated") && status === "Approved") {
       let dateOfBirth: string | null = null;
       let ageVerified = false;
 
@@ -85,16 +92,13 @@ export async function handleDigitWebhook(req: NextRequest) {
         const reason = dateOfBirth
           ? "Verificacao recusada: usuario nao tem 18 anos completos."
           : "Verificacao recusada: data de nascimento nao encontrada no documento.";
-        await updateRecords(sessionId, vendorData, "REJECTED", reason);
+        await updateRecords(sessionId, vendorData, DIDIT_REJECTED_STATUS, reason);
       } else {
-        await updateRecords(sessionId, vendorData, DIDIT_PENDING_STATUS, "Didit verificado; aguardando revisao admin.");
+        await updateRecords(sessionId, vendorData, DIDIT_APPROVED_STATUS, null);
       }
-    } else if (
-      eventType === "status.updated" &&
-      (status === "Declined" || status === "Abandoned" || status === "Expired" || status === "Kyc Expired")
-    ) {
-      await updateRecords(sessionId, vendorData, "REJECTED", REJECTED_MESSAGE);
-    } else if (eventType === "status.updated") {
+    } else if ((eventType === "status.updated" || eventType === "data.updated") && status && REJECTED_DIDIT_STATUSES.has(status)) {
+      await updateRecords(sessionId, vendorData, DIDIT_REJECTED_STATUS, payload.decision?.reason ? String(payload.decision.reason) : REJECTED_MESSAGE);
+    } else if ((eventType === "status.updated" || eventType === "data.updated") && (!status || PENDING_DIDIT_STATUSES.has(status))) {
       await updatePendingRecords(sessionId, vendorData, status ?? "");
     } else {
       await markWebhookEventDone("didit", eventId, "IGNORED");
@@ -116,9 +120,11 @@ async function updateRecords(
   kycStatus: string,
   rejectReason: string | null,
 ) {
-  const isApproved = kycStatus === DIDIT_PENDING_STATUS;
-  const verifStatus = isApproved ? "PENDING" : "REJECTED";
-  const userStatus = isApproved ? "PENDING_REVIEW" : "REJECTED";
+  const isApproved = kycStatus === DIDIT_APPROVED_STATUS;
+  const isRejected = kycStatus === DIDIT_REJECTED_STATUS;
+  const verifStatus = isApproved ? "APPROVED" : isRejected ? "REJECTED" : "PENDING";
+  const docStatus = isApproved ? "APPROVED" : isRejected ? "REJECTED" : "PENDING";
+  const userStatus = isApproved ? "VERIFIED" : isRejected ? "REJECTED" : "PENDING_REVIEW";
 
   await Promise.all([
     prisma.user.updateMany({
@@ -132,7 +138,7 @@ async function updateRecords(
         clientStatus: userStatus,
         kycSessionId: sessionId,
         kycReviewedAt: new Date(),
-        kycRejectionReason: isApproved ? null : rejectReason,
+        kycRejectionReason: isRejected ? rejectReason : null,
       },
     }),
     prisma.professional.updateMany({
@@ -145,8 +151,9 @@ async function updateRecords(
       data: {
         kycProvider: "DIDIT",
         kycStatus,
+        docStatus,
         verifStatus,
-        rejectReason,
+        rejectReason: isRejected ? rejectReason : null,
       },
     }),
   ]);
@@ -180,9 +187,11 @@ async function updatePendingRecords(
       },
       data: {
         kycProvider: "DIDIT",
-        kycStatus: "PENDING",
+        kycSessionId: sessionId,
+        kycStatus: DIDIT_PENDING_STATUS,
+        docStatus: "PENDING",
         verifStatus: "PENDING",
-        rejectReason: `Didit status: ${diditStatus}`,
+        rejectReason: diditStatus ? `Didit status: ${diditStatus}` : null,
       },
     }),
   ]);

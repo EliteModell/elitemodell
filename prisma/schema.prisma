@@ -761,6 +761,11 @@ model Professional {
   city              String
   state             String
   bairro            String?
+  region            String?
+  address           String?
+  placeId           String?
+  latitude          Float?
+  longitude         Float?
   phone             String?
   whatsapp          String?
   instagram         String?
@@ -793,6 +798,7 @@ model Professional {
   hasTattoos      Boolean   @default(false)
   hasPiercing     Boolean   @default(false)
   hasSilicone     Boolean   @default(false)
+  smoker          Boolean   @default(false)
   isDepilada      Boolean   @default(true)
   depilationStyle String?
   bodyType        String?
@@ -878,6 +884,8 @@ model Professional {
   @@index([status, lastOnlineAt])
   @@index([status, listingPhoneUntil])
   @@index([status, city])
+  @@index([status, city, bairro])
+  @@index([kycStatus])
   @@index([status, escortCategory])
   @@index([status, priceMin])
 }

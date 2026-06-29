@@ -5,7 +5,12 @@ export const createProfessionalSchema = z.object({
   bio: z.string().optional().default(""),
   city: z.string().min(2),
   state: z.string().min(2),
-  bairro: z.string().optional(),
+  bairro: z.string().min(2),
+  region: z.string().min(2),
+  address: z.string().optional(),
+  placeId: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
   phone: z.string().optional(),
   whatsapp: z.string().optional(),
   instagram: z.string().optional(),
@@ -28,7 +33,8 @@ export const createProfessionalSchema = z.object({
   signo: z.string().optional(),
   hasTattoos: z.boolean().optional().default(false),
   hasPiercing: z.boolean().optional().default(false),
-  hasSilicone: z.boolean().optional().default(false),
+    hasSilicone: z.boolean().optional().default(false),
+  smoker: z.boolean().optional().default(false),
   isDepilada: z.boolean().optional().default(true),
   depilationStyle: z.string().optional(),
   bodyType: z.string().optional(),
@@ -66,9 +72,11 @@ export const createProfessionalSchema = z.object({
   if (!["MULHER", "HOMEM", "TRANS"].includes(data.escortCategory ?? "")) {
     addIssue(["escortCategory"], "Categoria invalida.");
   }
-  if ((data.bio ?? "").trim().length < 80) {
+    if ((data.bio ?? "").trim().length < 80) {
     addIssue(["bio"], "A biografia deve ter pelo menos 80 caracteres.");
   }
+  if (!data.bairro.trim()) addIssue(["bairro"], "Bairro obrigatorio.");
+  if (!data.region.trim()) addIssue(["region"], "Regiao obrigatoria.");
   if (!data.birthDate) addIssue(["birthDate"], "Data de nascimento obrigatoria.");
   if (data.attendanceTypes.length === 0) {
     addIssue(["attendanceTypes"], "Informe o tipo de atendimento.");

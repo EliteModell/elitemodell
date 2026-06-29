@@ -3,6 +3,8 @@ import "./globals.css";
 import Providers from "@/components/Providers";
 import AgeGateLoader from "@/components/AgeGateLoader";
 import CookiePreferences from "@/components/privacy/CookiePreferences";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const siteUrl = "https://www.elitemodell.com.br";
 const publicBrandDescription =
@@ -136,6 +138,8 @@ export default function RootLayout({
           <CookiePreferences />
           {children}
         </Providers>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

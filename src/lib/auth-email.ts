@@ -199,3 +199,31 @@ export async function sendAuthEmail(to: string, email: AuthEmail) {
     throw new Error("Failed to send email");
   }
 }
+
+export async function sendProfessionalApprovalEmail(to: string): Promise<void> {
+  const base = `
+    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#0a0a0a;color:#f1f5f9;border:1px solid rgba(212,168,67,0.25);border-radius:12px;overflow:hidden">
+      <div style="height:3px;background:linear-gradient(90deg,transparent,#d4a843,#f5d78c,#d4a843,transparent)"></div>
+      <div style="padding:40px 32px">
+        <div style="margin-bottom:28px;text-align:center">
+          <span style="font-weight:900;font-size:24px">
+            <span style="background:linear-gradient(135deg,#ffe5a0,#d4a843,#f5d78c);-webkit-background-clip:text;-webkit-text-fill-color:transparent">elite</span><span style="color:#f1f5f9">modell</span>
+          </span>
+        </div>
+        <h2 style="color:#f1f5f9;font-size:22px;margin:0 0 12px">Cadastro aprovado</h2>
+        <p style="color:#94a3b8;line-height:1.7;margin:0">Olá,</p>
+        <p style="color:#94a3b8;line-height:1.7;margin:12px 0">Seu cadastro na Elite Modell foi aprovado.</p>
+        <p style="color:#94a3b8;line-height:1.7;margin:0">Seu perfil já pode ficar disponível na plataforma conforme as regras de segurança e moderação.</p>
+        <p style="color:#94a3b8;line-height:1.7;margin:24px 0 0">Atenciosamente,<br><strong style="color:#f1f5f9">Equipe Elite Modell</strong></p>
+        <div style="margin-top:32px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.08);text-align:center;color:#475569;font-size:12px">
+          Elite Modell - Plataforma premium adulta - Brasil
+        </div>
+      </div>
+    </div>
+  `;
+
+  await sendAuthEmail(to, {
+    subject: "Seu cadastro foi aprovado na Elite Modell",
+    html: base,
+  });
+}

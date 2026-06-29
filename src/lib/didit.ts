@@ -1,8 +1,10 @@
-import { timingSafeEqual } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 
 const DIDIT_API_BASE = "https://verification.didit.me";
 
-export const DIDIT_PENDING_STATUS = "DIDIT_PENDING";
+export const DIDIT_PENDING_STATUS = "PENDING";
+export const DIDIT_APPROVED_STATUS = "APPROVED";
+export const DIDIT_REJECTED_STATUS = "REJECTED";
 
 export type DiditSessionStatus =
   | "Not Started"
@@ -111,28 +113,45 @@ export async function fetchDigitSessionDecision(sessionId: string): Promise<Didi
   return res.json() as Promise<DiditDecision>;
 }
 
-export async function verifyDigitWebhook(
-  rawBody: string,
-  signatureHeader: string,
-  secret: string,
-): Promise<boolean> {
-  if (!secret || !signatureHeader) return false;
+function canonicalize(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map((item) => canonicalize(item)).join(",")}]`;
+
+  const object = value as Record<string, unknown>;
+  return `{${Object.keys(object)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${canonicalize(object[key])}`)
+    .join(",")}}`;
+}
+
+function hmacSha256Hex(secret: string, payload: string) {
+  return createHmac("sha256", secret).update(payload).digest("hex");
+}
+
+function matchesSignature(computed: string, received?: string | null) {
+  if (!received) return false;
+  const expected = received.toLowerCase().replace(/^sha256=/, "");
+  if (!/^[a-f0-9]+$/.test(expected) || computed.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(computed, "hex"), Buffer.from(expected, "hex"));
+}
+
+export function verifyDigitWebhook(input: {
+  rawBody: string;
+  parsedBody: unknown;
+  secret: string;
+  signatureV2?: string | null;
+  signature?: string | null;
+  signatureSimple?: string | null;
+}): boolean {
+  const { rawBody, parsedBody, secret, signatureV2, signature, signatureSimple } = input;
+  if (!secret) return false;
 
   try {
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      "raw",
-      encoder.encode(secret),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"],
-    );
-    const mac = await crypto.subtle.sign("HMAC", key, encoder.encode(rawBody));
-    const computed = Buffer.from(mac).toString("hex");
-    const expected = signatureHeader.toLowerCase().replace(/^sha256=/, "");
-
-    if (computed.length !== expected.length) return false;
-    return timingSafeEqual(Buffer.from(computed, "hex"), Buffer.from(expected, "hex"));
+    const canonicalPayload = canonicalize(parsedBody);
+    if (matchesSignature(hmacSha256Hex(secret, canonicalPayload), signatureV2)) return true;
+    if (matchesSignature(hmacSha256Hex(secret, rawBody), signature)) return true;
+    if (matchesSignature(hmacSha256Hex(secret, rawBody), signatureSimple)) return true;
+    return false;
   } catch {
     return false;
   }

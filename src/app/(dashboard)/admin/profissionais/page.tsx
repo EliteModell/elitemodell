@@ -6,6 +6,7 @@ import { logAudit } from "@/lib/audit";
 import { personaProviderLabel } from "@/lib/persona";
 import { professionalApprovalAccessData } from "@/lib/professional-access";
 import { filterApprovedProfilePhotos, type PublicProfileAsset } from "@/lib/public-professional-media";
+import { sendProfessionalApprovalEmail } from "@/lib/auth-email";
 import { AdminHeader, AdminPagination, AdminPanel, AdminTable, StatusPill, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
@@ -57,9 +58,11 @@ type ProfessionalApprovalReview = {
   paymentMethods: string[];
   whatsapp: string | null;
   kycSessionId: string | null;
+  kycStatus: string;
+  verifStatus: string;
   photos: Array<{ id?: string; url: string; cover?: boolean; order?: number }>;
   specialties: unknown[];
-  user: { blocked: boolean; uploadedAssets: PublicProfileAsset[] };
+  user: { blocked: boolean; email: string | null; uploadedAssets: PublicProfileAsset[] };
 };
 
 function translatedTechnicalStatus(status?: string | null) {
@@ -107,7 +110,10 @@ function professionalApprovalIssues(professional: ProfessionalApprovalReview) {
       professional.userId,
     ).length !== professional.photos.length
   ) issues.push("há mídia pendente, privada ou indisponível");
-  if (!professional.kycSessionId) issues.push("verificação de identidade não iniciada");
+  const kycInitiated = Boolean(professional.kycSessionId) ||
+    !["NOT_STARTED", "NOT_SENT", ""].includes((professional.kycStatus ?? "").trim().toUpperCase()) ||
+    !["NOT_STARTED", "NOT_SENT", ""].includes((professional.verifStatus ?? "").trim().toUpperCase());
+  if (!kycInitiated) issues.push("verificação de identidade não iniciada");
   return issues;
 }
 
@@ -186,11 +192,14 @@ async function reviewProfessional(formData: FormData) {
             paymentMethods: true,
             whatsapp: true,
             kycSessionId: true,
+            kycStatus: true,
+            verifStatus: true,
             photos: { select: { id: true, url: true, cover: true, order: true } },
             specialties: { take: 1, select: { id: true } },
             user: {
               select: {
                 blocked: true,
+                email: true,
                 uploadedAssets: {
                   where: { folder: { startsWith: "profiles" } },
                   select: {
@@ -218,11 +227,17 @@ async function reviewProfessional(formData: FormData) {
             rejectReason: null,
             ...accessData,
           },
-          select: { id: true, userId: true },
+          select: { id: true, userId: true, user: { select: { email: true } } },
         });
       })
-    : await prisma.professional.update({ where: { id }, data, select: { id: true, userId: true } });
+    : await prisma.professional.update({ where: { id }, data, select: { id: true, userId: true, user: { select: { email: true } } } });
   if (!professional) return;
+
+  if (action === "approve" && professional.user?.email) {
+    sendProfessionalApprovalEmail(professional.user.email).catch((err) => {
+      console.error("[admin-approve] falha ao enviar e-mail de aprovação:", err);
+    });
+  }
   if (action === "block") {
     await prisma.user.update({ where: { id: professional.userId }, data: { blocked: true, blockReason: reason, blockedAt: new Date() } });
   }
@@ -364,8 +379,9 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                   {pro.presentationVideoRejectReason ? <p style={{ color: "#ef4444", margin: "8px 0 0" }}>{pro.presentationVideoRejectReason}</p> : null}
                 </td>
                 <td style={tdStyle}>
-                  {pro.photos.length} mídia(s), {pro.specialties.length} serviço(s)<br />
-                  Bio: {pro.bio.length} caracteres<br />
+                  Fotos no perfil: {pro.photos.length} | Uploads enviados: {pro.user.uploadedAssets.length}<br />
+                  Serviços: {pro.services.length} tag(s), {pro.specialties.length} especialidade(s)<br />
+                  Bio: {pro.bio.length} caracteres{pro.bio.trim().length > 0 ? ` — "${pro.bio.trim().slice(0, 80)}${pro.bio.trim().length > 80 ? "…" : ""}"` : " — vazia"}<br />
                   Privacidade: {pro.hidePhone ? "telefone oculto" : "telefone permitido"} / {pro.hideAge ? "idade oculta" : "idade pública"}<br />
                   Telefone listagem: {pro.listingPhoneUntil && pro.listingPhoneUntil > now ? `ativo até ${pro.listingPhoneUntil.toLocaleDateString("pt-BR")}` : "sem benefício ativo"}<br />
                   Métricas: {pro.profileViews} views, {pro.contactClicks} contatos, nota {pro.rating.toFixed(1)} ({pro.totalReviews})<br />

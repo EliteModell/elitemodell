@@ -66,15 +66,28 @@ export async function POST() {
   }
 
   try {
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        kycSessionId: diditSession.session_id,
-        kycSubmittedAt: new Date(),
-        kycRejectionReason: null,
-      },
-      select: { id: true },
-    });
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: session.user.id },
+        data: {
+          kycSessionId: diditSession.session_id,
+          kycSubmittedAt: new Date(),
+          kycRejectionReason: null,
+        },
+        select: { id: true },
+      }),
+      prisma.professional.updateMany({
+        where: { userId: session.user.id },
+        data: {
+          kycProvider: "DIDIT",
+          kycSessionId: diditSession.session_id,
+          kycStatus: DIDIT_PENDING_STATUS,
+          verifStatus: "PENDING",
+          docStatus: "PENDING",
+          rejectReason: null,
+        },
+      }),
+    ]);
   } catch (err) {
     console.error("[Didit] Sessao criada mas falhou ao salvar no usuario:", err);
   }
