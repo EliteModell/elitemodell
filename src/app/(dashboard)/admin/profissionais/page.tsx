@@ -440,181 +440,195 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                 </div>
               </div>
 
-              {/* ── Corpo 3 colunas ── */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 230px" }}>
+              {/* ── Corpo: info à esquerda, ações à direita ── */}
+              <div style={{ display: "flex", gap: 0 }}>
 
-                {/* ── Col 1: Contato + KYC detalhes + Pendências ── */}
-                <div style={{ padding: "16px 20px", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
-                  {label("Contato")}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12, color: "#cbd5e1", marginBottom: 14 }}>
-                    <span>{pro.user.email || "—"}</span>
-                    <span style={{ color: "#94a3b8" }}>{pro.whatsapp ?? pro.user.phone ?? "—"}</span>
-                  </div>
+                {/* ── Área de info (flex 1) ── */}
+                <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", borderRight: "1px solid rgba(255,255,255,0.06)" }}>
 
-                  {label("KYC")}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, color: "#94a3b8", marginBottom: 14 }}>
-                    {pro.kycSessionId && (
-                      <span style={{ fontFamily: "monospace", fontSize: 10, color: "#475569" }}>
-                        {pro.kycSessionId.slice(0, 24)}…
-                      </span>
-                    )}
-                    <span>Doc: {translatedTechnicalStatus(pro.docStatus)} · Face: {translatedTechnicalStatus(pro.verifStatus)}</span>
-                    {pro.verificationUrl && <span>Verificação: {verificationTypeLabel(pro.verificationType)}</span>}
-                    {pro.presentationVideoUrl && (
-                      <span style={{ color: pro.presentationVideoStatus === "APPROVED" ? "#22c55e" : "#d4a843" }}>
-                        Vídeo: {translatedTechnicalStatus(pro.presentationVideoStatus)}
-                        {pro.presentationVideoRejectReason ? ` — ${pro.presentationVideoRejectReason}` : ""}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Pendências */}
-                  {approvalIssues.length > 0 ? (
-                    <>
-                      {label(`${approvalIssues.length} pendência${approvalIssues.length > 1 ? "s" : ""}`)}
-                      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                        {approvalIssues.map((issue, i) => (
-                          <span key={i} style={{
-                            fontSize: 11, color: "#fca5a5",
-                            padding: "3px 8px", borderRadius: 4,
-                            background: "rgba(239,68,68,0.10)",
-                            border: "1px solid rgba(239,68,68,0.20)",
-                          }}>
-                            {issue}
-                          </span>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <div style={{ padding: "6px 10px", borderRadius: 6, background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.20)" }}>
-                      <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 700 }}>✓ Sem pendências — pronta para aprovar</span>
+                  {/* Contato + KYC + Pendências */}
+                  <div style={{ padding: "20px 24px", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
+                    <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#475569", textTransform: "uppercase" }}>Contato</p>
+                    <div style={{ fontSize: 14, color: "#e2e8f0", marginBottom: 16, lineHeight: 1.7 }}>
+                      <div>{pro.user.email || "—"}</div>
+                      <div style={{ color: "#94a3b8" }}>{pro.whatsapp ?? pro.user.phone ?? "—"}</div>
                     </div>
-                  )}
 
-                  {pro.rejectReason && (
-                    <div style={{ marginTop: 8, padding: "6px 10px", borderRadius: 6, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.20)" }}>
-                      <span style={{ fontSize: 11, color: "#fca5a5" }}>Motivo: {reviewReasonLabel(pro.rejectReason)}</span>
+                    <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#475569", textTransform: "uppercase" }}>KYC</p>
+                    <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 16, lineHeight: 1.7 }}>
+                      {pro.kycSessionId && (
+                        <div style={{ fontFamily: "monospace", fontSize: 11, color: "#475569" }}>
+                          {pro.kycSessionId.slice(0, 20)}…
+                        </div>
+                      )}
+                      <div>Doc: {translatedTechnicalStatus(pro.docStatus)} · Face: {translatedTechnicalStatus(pro.verifStatus)}</div>
+                      {pro.verificationUrl && <div>Verificação: {verificationTypeLabel(pro.verificationType)}</div>}
+                      {pro.presentationVideoUrl && (
+                        <div style={{ color: pro.presentationVideoStatus === "APPROVED" ? "#22c55e" : "#d4a843" }}>
+                          Vídeo: {translatedTechnicalStatus(pro.presentationVideoStatus)}
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {pro.pauseUntil && (
-                    <div style={{ marginTop: 8, padding: "6px 10px", borderRadius: 6, background: "rgba(212,168,67,0.08)", border: "1px solid rgba(212,168,67,0.20)" }}>
-                      <span style={{ fontSize: 11, color: "#f5d78c" }}>Pausada até {pro.pauseUntil.toLocaleDateString("pt-BR")}</span>
-                    </div>
-                  )}
-                </div>
 
-                {/* ── Col 2: Métricas + Bio + Acesso ── */}
-                <div style={{ padding: "16px 20px", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
-                  {label("Perfil & Métricas")}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 12px", fontSize: 12, marginBottom: 14 }}>
-                    {[
-                      ["Fotos", pro.photos.length, pro.photos.length === 0],
-                      ["Uploads", pro.user.uploadedAssets.length, false],
-                      ["Serviços", pro.services.length, pro.services.length === 0],
-                      ["Especialidades", pro.specialties.length, false],
-                      ["Views", pro.profileViews, false],
-                      ["Contatos", pro.contactClicks, false],
-                      ["Nota", `${pro.rating.toFixed(1)} (${pro.totalReviews})`, false],
-                      ["Boost", pro.boostActive ? `Ativo${pro.boostUntil ? ` até ${pro.boostUntil.toLocaleDateString("pt-BR")}` : ""}` : "Off", false],
-                    ].map(([lbl, val, warn]) => (
-                      <div key={String(lbl)}>
-                        <span style={{ color: "#64748b" }}>{lbl} </span>
-                        <span style={{ fontWeight: 700, color: warn ? "#ef4444" : lbl === "Boost" && pro.boostActive ? "#d4a843" : "#fff" }}>{String(val)}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {label("Bio")}
-                  <div style={{ fontSize: 12, marginBottom: 14 }}>
-                    <span style={{ color: "#64748b" }}>{pro.bio.length} caracteres</span>
-                    {pro.bio.trim().length > 0 ? (
-                      <p style={{ margin: "4px 0 0", color: "#94a3b8", lineHeight: 1.5, fontSize: 12 }}>
-                        "{pro.bio.trim().slice(0, 100)}{pro.bio.trim().length > 100 ? "…" : ""}"
-                      </p>
+                    {/* Pendências */}
+                    {approvalIssues.length > 0 ? (
+                      <>
+                        <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#ef4444", textTransform: "uppercase" }}>
+                          {approvalIssues.length} Pendência{approvalIssues.length > 1 ? "s" : ""}
+                        </p>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+                          {approvalIssues.map((issue, i) => (
+                            <span key={i} style={{
+                              fontSize: 12, color: "#fca5a5",
+                              padding: "5px 10px", borderRadius: 6,
+                              background: "rgba(239,68,68,0.10)",
+                              border: "1px solid rgba(239,68,68,0.22)",
+                              lineHeight: 1.4,
+                            }}>
+                              {issue}
+                            </span>
+                          ))}
+                        </div>
+                      </>
                     ) : (
-                      <p style={{ margin: "4px 0 0", color: "#ef4444", fontSize: 12 }}>Vazia</p>
+                      <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)" }}>
+                        <span style={{ fontSize: 13, color: "#4ade80", fontWeight: 700 }}>✓ Sem pendências — pronta para aprovar</span>
+                      </div>
+                    )}
+
+                    {pro.rejectReason && (
+                      <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 8, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.22)" }}>
+                        <span style={{ fontSize: 12, color: "#fca5a5" }}>Motivo: {reviewReasonLabel(pro.rejectReason)}</span>
+                      </div>
+                    )}
+                    {pro.pauseUntil && (
+                      <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 8, background: "rgba(212,168,67,0.08)", border: "1px solid rgba(212,168,67,0.22)" }}>
+                        <span style={{ fontSize: 12, color: "#f5d78c" }}>Pausada até {pro.pauseUntil.toLocaleDateString("pt-BR")}</span>
+                      </div>
                     )}
                   </div>
 
-                  {label("Acesso")}
-                  <span style={{ fontSize: 12, color: "#94a3b8" }}>
-                    {pro.accessGrandfathered
-                      ? "Legado — sem bloqueio"
-                      : pro.freeAccessEndsAt
-                        ? `Gratuito até ${pro.freeAccessEndsAt.toLocaleDateString("pt-BR")}`
-                        : "Inicia na aprovação"}
-                  </span>
+                  {/* Métricas + Bio + Acesso */}
+                  <div style={{ padding: "20px 24px" }}>
+                    <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#475569", textTransform: "uppercase" }}>Perfil & Métricas</p>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px", fontSize: 13, marginBottom: 18 }}>
+                      {([
+                        ["Fotos", pro.photos.length, pro.photos.length === 0],
+                        ["Uploads", pro.user.uploadedAssets.length, false],
+                        ["Serviços", pro.services.length, pro.services.length === 0],
+                        ["Especialidades", pro.specialties.length, false],
+                        ["Views", pro.profileViews, false],
+                        ["Contatos", pro.contactClicks, false],
+                        ["Nota", `${pro.rating.toFixed(1)} (${pro.totalReviews})`, false],
+                        ["Boost", pro.boostActive ? "Ativo" : "Off", false],
+                      ] as [string, string | number, boolean][]).map(([lbl, val, warn]) => (
+                        <div key={lbl}>
+                          <span style={{ color: "#64748b", fontSize: 12 }}>{lbl} </span>
+                          <span style={{ fontWeight: 800, color: warn ? "#ef4444" : lbl === "Boost" && pro.boostActive ? "#d4a843" : "#e2e8f0" }}>
+                            {String(val)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
 
-                  <div style={{ marginTop: 10, fontSize: 11, color: "#475569" }}>
-                    Tel listagem: {pro.listingPhoneUntil && pro.listingPhoneUntil > now
-                      ? `ativo até ${pro.listingPhoneUntil.toLocaleDateString("pt-BR")}`
-                      : "sem benefício"}
-                    {" · "}
-                    {pro.hidePhone ? "Tel oculto" : "Tel visível"}
-                    {" · "}
-                    {pro.hideAge ? "Idade oculta" : "Idade visível"}
+                    <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#475569", textTransform: "uppercase" }}>Bio</p>
+                    <div style={{ fontSize: 13, marginBottom: 16 }}>
+                      <span style={{ color: "#64748b" }}>{pro.bio.length} caracteres</span>
+                      {pro.bio.trim().length > 0 ? (
+                        <p style={{ margin: "4px 0 0", color: "#94a3b8", lineHeight: 1.6, fontSize: 13 }}>
+                          "{pro.bio.trim().slice(0, 120)}{pro.bio.trim().length > 120 ? "…" : ""}"
+                        </p>
+                      ) : (
+                        <p style={{ margin: "4px 0 0", color: "#ef4444", fontSize: 13 }}>Vazia</p>
+                      )}
+                    </div>
+
+                    <p style={{ margin: "0 0 4px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#475569", textTransform: "uppercase" }}>Acesso</p>
+                    <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6 }}>
+                      {pro.accessGrandfathered
+                        ? "Legado — sem bloqueio"
+                        : pro.freeAccessEndsAt
+                          ? `Gratuito até ${pro.freeAccessEndsAt.toLocaleDateString("pt-BR")}`
+                          : "Inicia na aprovação"}
+                      <div style={{ fontSize: 12, color: "#475569", marginTop: 4 }}>
+                        {pro.hidePhone ? "Tel oculto" : "Tel visível"} · {pro.hideAge ? "Idade oculta" : "Idade visível"}
+                        {pro.listingPhoneUntil && pro.listingPhoneUntil > now
+                          ? ` · Listagem ativa até ${pro.listingPhoneUntil.toLocaleDateString("pt-BR")}`
+                          : ""}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* ── Col 3: Ações ── */}
-                <div style={{ padding: "16px 18px" }}>
-                  {label("Ações")}
-                  <form action={reviewProfessional} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {/* ── Painel de Ações (largura fixa) ── */}
+                <div style={{ width: 280, flexShrink: 0, padding: "20px 20px" }}>
+                  <p style={{ margin: "0 0 14px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#475569", textTransform: "uppercase" }}>Ações</p>
+                  <form action={reviewProfessional} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     <input type="hidden" name="id" value={pro.id} />
 
-                    {/* Aprovar — botão destaque */}
+                    {/* Aprovar — destaque máximo */}
                     <button
                       name="action"
                       value="approve"
                       disabled={!canApprove}
                       title={!canApprove ? `Pendências: ${approvalIssues.join(", ")}` : "Aprovar profissional"}
                       style={{
-                        width: "100%", padding: "10px", borderRadius: 8, border: "none",
-                        fontSize: 13, fontWeight: 900,
+                        width: "100%", padding: "13px 16px",
+                        borderRadius: 10, border: "none",
+                        fontSize: 15, fontWeight: 900, letterSpacing: 0.3,
                         cursor: canApprove ? "pointer" : "not-allowed",
                         background: canApprove
-                          ? "linear-gradient(135deg, #16a34a, #22c55e)"
+                          ? "linear-gradient(135deg, #15803d, #22c55e)"
                           : "rgba(255,255,255,0.05)",
                         color: canApprove ? "#fff" : "#475569",
-                        transition: "opacity 0.15s",
+                        boxShadow: canApprove ? "0 4px 16px rgba(34,197,94,0.25)" : "none",
                       }}
                     >
-                      {canApprove ? "✓ Aprovar" : "Aprovar (bloqueado)"}
+                      {canApprove ? "✓ Aprovar agora" : "Aprovar (bloqueado)"}
                     </button>
 
-                    {/* Textarea para motivo */}
+                    {/* Textarea */}
                     <textarea
                       name="reason"
-                      placeholder="Motivo (obrigatório para reprovar, corrigir, suspender, bloquear)"
+                      placeholder="Motivo (obrigatório para reprovar, corrigir, suspender ou bloquear)"
                       style={{
-                        background: "#050506",
-                        border: "1px solid rgba(255,255,255,0.10)",
-                        borderRadius: 8, color: "#fff",
-                        padding: "7px 10px", fontSize: 11,
-                        minHeight: 50, resize: "vertical",
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        borderRadius: 8, color: "#e2e8f0",
+                        padding: "10px 12px", fontSize: 13,
+                        minHeight: 64, resize: "vertical",
                         width: "100%", boxSizing: "border-box",
+                        lineHeight: 1.5,
                       }}
                     />
 
                     {/* Ações secundárias */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
                       {pro.status === "PAUSED" && (
-                        <button name="action" value="resume" style={{ ...buttonStyle, fontSize: 11, gridColumn: "1/-1" }}>
+                        <button name="action" value="resume" style={{ ...buttonStyle, fontSize: 13, padding: "9px 12px", gridColumn: "1/-1" }}>
                           Reativar
                         </button>
                       )}
-                      <button name="action" value="reject" style={{ ...buttonStyle, fontSize: 11, color: "#ef4444", borderColor: "rgba(239,68,68,0.3)" }}>Reprovar</button>
-                      <button name="action" value="correction" style={{ ...buttonStyle, fontSize: 11, color: "#fb923c", borderColor: "rgba(251,146,60,0.3)" }}>Corrigir</button>
-                      <button name="action" value="suspend" style={{ ...buttonStyle, fontSize: 11, color: "#fb923c", borderColor: "rgba(251,146,60,0.3)" }}>Suspender</button>
-                      <button name="action" value="block" style={{ ...buttonStyle, fontSize: 11, color: "#ef4444", borderColor: "rgba(239,68,68,0.3)" }}>Bloquear</button>
+                      <button name="action" value="reject" style={{ ...buttonStyle, fontSize: 13, padding: "9px 12px", color: "#ef4444", borderColor: "rgba(239,68,68,0.35)", background: "rgba(239,68,68,0.07)" }}>
+                        Reprovar
+                      </button>
+                      <button name="action" value="correction" style={{ ...buttonStyle, fontSize: 13, padding: "9px 12px", color: "#fb923c", borderColor: "rgba(251,146,60,0.35)", background: "rgba(251,146,60,0.07)" }}>
+                        Corrigir
+                      </button>
+                      <button name="action" value="suspend" style={{ ...buttonStyle, fontSize: 13, padding: "9px 12px", color: "#fb923c", borderColor: "rgba(251,146,60,0.35)", background: "rgba(251,146,60,0.07)" }}>
+                        Suspender
+                      </button>
+                      <button name="action" value="block" style={{ ...buttonStyle, fontSize: 13, padding: "9px 12px", color: "#ef4444", borderColor: "rgba(239,68,68,0.35)", background: "rgba(239,68,68,0.07)" }}>
+                        Bloquear
+                      </button>
                       {pro.presentationVideoUrl ? (
                         <>
-                          <button name="action" value="approveVideo" style={{ ...buttonStyle, fontSize: 11 }}>✓ Vídeo</button>
-                          <button name="action" value="rejectVideo" style={{ ...buttonStyle, fontSize: 11, color: "#ef4444", borderColor: "rgba(239,68,68,0.3)" }}>✗ Vídeo</button>
+                          <button name="action" value="approveVideo" style={{ ...buttonStyle, fontSize: 13, padding: "9px 12px" }}>✓ Vídeo</button>
+                          <button name="action" value="rejectVideo" style={{ ...buttonStyle, fontSize: 13, padding: "9px 12px", color: "#ef4444", borderColor: "rgba(239,68,68,0.35)" }}>✗ Vídeo</button>
                         </>
                       ) : null}
                       {pro.boostActive ? (
-                        <button name="action" value="disableBoost" style={{ ...buttonStyle, fontSize: 11, color: "#fb923c", borderColor: "rgba(251,146,60,0.3)", gridColumn: "1/-1" }}>
+                        <button name="action" value="disableBoost" style={{ ...buttonStyle, fontSize: 13, padding: "9px 12px", color: "#fb923c", borderColor: "rgba(251,146,60,0.35)", gridColumn: "1/-1" }}>
                           Desativar boost
                         </button>
                       ) : null}
