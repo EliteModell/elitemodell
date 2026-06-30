@@ -335,101 +335,308 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
 
   return (
     <div>
-      <AdminHeader title="Acompanhantes e profissionais" subtitle="Analise cadastro, documentos, selfie/vídeo, KYC, fotos públicas, descrição, serviços, cidade e histórico de moderação." />
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-        {["ALL", "DRAFT", "PENDING_REVIEW", "ACTIVE", "PAUSED", "REJECTED", "SUSPENDED"].map((item) => (
-          <Link prefetch={false} key={item} href={item === "ALL" ? "/admin/profissionais" : `/admin/profissionais?status=${item}`} style={{ ...buttonStyle, textDecoration: "none", background: item === (status ?? "ALL") ? "rgba(212,168,67,.22)" : "rgba(255,255,255,.03)" }}>
-            {item === "ALL" ? "Todos" : statusLabel[item] ?? item}
-          </Link>
-        ))}
+      <AdminHeader
+        title="Acompanhantes e profissionais"
+        subtitle="Analise cadastro, documentos, selfie/vídeo, KYC, fotos públicas, descrição, serviços, cidade e histórico de moderação."
+      />
+
+      {/* ── Filtros ── */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+        {["ALL", "DRAFT", "PENDING_REVIEW", "ACTIVE", "PAUSED", "REJECTED", "SUSPENDED"].map((item) => {
+          const active = item === (status ?? "ALL");
+          return (
+            <Link
+              prefetch={false}
+              key={item}
+              href={item === "ALL" ? "/admin/profissionais" : `/admin/profissionais?status=${item}`}
+              style={{
+                ...buttonStyle,
+                textDecoration: "none",
+                background: active ? "rgba(212,168,67,0.22)" : "rgba(255,255,255,0.03)",
+                border: active ? "1px solid rgba(212,168,67,0.5)" : "1px solid rgba(255,255,255,0.08)",
+                color: active ? "#f5d78c" : "#94a3b8",
+              }}
+            >
+              {item === "ALL" ? "Todos" : statusLabel[item] ?? item}
+            </Link>
+          );
+        })}
       </div>
-      <AdminPanel>
-        <AdminTable>
-          <thead>
-            <tr>
-              <th style={thStyle}>Profissional</th>
-              <th style={thStyle}>Status</th>
-              <th style={thStyle}>KYC e arquivos</th>
-              <th style={thStyle}>Perfil</th>
-              <th style={thStyle}>Ação</th>
-            </tr>
-          </thead>
-          <tbody>
-            {professionals.map((pro) => {
-              const approvalIssues = professionalApprovalIssues(pro);
-              const canApprove = approvalIssues.length === 0;
-              return <tr key={pro.id}>
-                <td style={tdStyle}>
-                  <Link href={`/profissionais/${pro.slug}`} style={{ color: "#fff", fontWeight: 900 }}>{pro.displayName}</Link><br />
-                  {pro.city}, {pro.state} - {pro.escortCategory ?? "sem categoria"}<br />
-                  <span style={{ color: "#94a3b8" }}>{pro.user.email} / {pro.whatsapp ?? pro.user.phone ?? "-"}</span>
-                </td>
-                <td style={tdStyle}>
-                  <StatusPill tone={pro.status === "ACTIVE" ? "success" : pro.status === "REJECTED" || pro.status === "SUSPENDED" ? "danger" : "warning"}>{statusLabel[pro.status] ?? pro.status}</StatusPill>
-                  {pro.pauseUntil ? <p style={{ color: "#f5d78c", margin: "8px 0 0" }}>Pausada até {pro.pauseUntil.toLocaleDateString("pt-BR")}</p> : null}
-                  {pro.rejectReason ? <p style={{ color: "#ef4444", margin: "8px 0 0" }}>{reviewReasonLabel(pro.rejectReason)}</p> : null}
-                </td>
-                <td style={tdStyle}>
-                  KYC: {kycProviderLabel(pro.kycProvider, pro.kycSessionId)} / {translatedTechnicalStatus(pro.kycStatus)}<br />
-                  Inquiry: {pro.kycSessionId ?? "-"}<br />
-                  Documento: {translatedTechnicalStatus(pro.docStatus)} | Face: {translatedTechnicalStatus(pro.verifStatus)}<br />
-                  Código: {pro.verificationCode ?? "-"}<br />
-                  Verificação: {pro.verificationUrl ? verificationTypeLabel(pro.verificationType) : "Não enviada"}<br />
-                  Vídeo do perfil: {pro.presentationVideoUrl ? translatedTechnicalStatus(pro.presentationVideoStatus) : "Não enviado"}
-                  {pro.presentationVideoRejectReason ? <p style={{ color: "#ef4444", margin: "8px 0 0" }}>{pro.presentationVideoRejectReason}</p> : null}
-                </td>
-                <td style={tdStyle}>
-                  Fotos no perfil: {pro.photos.length} | Uploads enviados: {pro.user.uploadedAssets.length}<br />
-                  Serviços: {pro.services.length} tag(s), {pro.specialties.length} especialidade(s)<br />
-                  Bio: {pro.bio.length} caracteres{pro.bio.trim().length > 0 ? ` — "${pro.bio.trim().slice(0, 80)}${pro.bio.trim().length > 80 ? "…" : ""}"` : " — vazia"}<br />
-                  Privacidade: {pro.hidePhone ? "telefone oculto" : "telefone permitido"} / {pro.hideAge ? "idade oculta" : "idade pública"}<br />
-                  Telefone listagem: {pro.listingPhoneUntil && pro.listingPhoneUntil > now ? `ativo até ${pro.listingPhoneUntil.toLocaleDateString("pt-BR")}` : "sem benefício ativo"}<br />
-                  Métricas: {pro.profileViews} views, {pro.contactClicks} contatos, nota {pro.rating.toFixed(1)} ({pro.totalReviews})<br />
-                  Boost: {pro.boostActive ? `ativo até ${pro.boostUntil ? pro.boostUntil.toLocaleDateString("pt-BR") : "data não informada"}` : "inativo"}<br />
-                  Acesso: {pro.accessGrandfathered
-                    ? "legado, sem bloqueio"
-                    : pro.freeAccessEndsAt
-                      ? `gratuito até ${pro.freeAccessEndsAt.toLocaleDateString("pt-BR")}`
-                      : "inicia na aprovação"}<br />
-                  Enviado em {pro.createdAt.toLocaleDateString("pt-BR")}
-                </td>
-                <td style={tdStyle}>
-                  <form action={reviewProfessional} style={{ display: "grid", gap: 8 }}>
+
+      {/* ── Cards ── */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {professionals.map((pro) => {
+          const approvalIssues = professionalApprovalIssues(pro);
+          const canApprove = approvalIssues.length === 0;
+
+          const statusTone: "success" | "danger" | "warning" | "neutral" =
+            pro.status === "ACTIVE" ? "success" :
+            pro.status === "REJECTED" || pro.status === "SUSPENDED" ? "danger" :
+            pro.status === "PENDING_REVIEW" ? "warning" : "neutral";
+
+          const accent =
+            pro.status === "ACTIVE" ? "#22c55e" :
+            pro.status === "REJECTED" || pro.status === "SUSPENDED" ? "#ef4444" :
+            pro.status === "PENDING_REVIEW" ? "#d4a843" : "#475569";
+
+          const kycColor =
+            (pro.kycStatus ?? "").toUpperCase() === "APPROVED" ? "#22c55e" :
+            (pro.kycStatus ?? "").toUpperCase() === "REJECTED" ? "#ef4444" :
+            pro.kycSessionId ? "#d4a843" : "#475569";
+
+          const label = (text: string) => (
+            <span style={{ fontSize: 11, color: "#64748b", display: "block", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>{text}</span>
+          );
+
+          return (
+            <div
+              key={pro.id}
+              style={{
+                background: "rgba(255,255,255,0.025)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderLeft: `3px solid ${accent}`,
+                borderRadius: 12,
+                overflow: "hidden",
+              }}
+            >
+              {/* ── Cabeçalho do card ── */}
+              <div style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                flexWrap: "wrap", gap: 10,
+                padding: "13px 20px",
+                background: "rgba(255,255,255,0.02)",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
+                    background: `${accent}18`, border: `2px solid ${accent}44`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 17, fontWeight: 900, color: accent,
+                  }}>
+                    {(pro.displayName || "?")[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <Link href={`/profissionais/${pro.slug}`} style={{ color: "#fff", fontWeight: 900, fontSize: 15, textDecoration: "none" }}>
+                      {pro.displayName || "(sem nome)"}
+                    </Link>
+                    <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>
+                      {[pro.city, pro.state].filter(Boolean).join(", ") || "—"} · {pro.escortCategory ?? "sem categoria"}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <StatusPill tone={statusTone}>{statusLabel[pro.status] ?? pro.status}</StatusPill>
+                  <span style={{
+                    fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 999,
+                    background: `${kycColor}14`, color: kycColor, border: `1px solid ${kycColor}44`,
+                  }}>
+                    KYC: {kycProviderLabel(pro.kycProvider, pro.kycSessionId)} · {translatedTechnicalStatus(pro.kycStatus)}
+                  </span>
+                  <span style={{ fontSize: 11, color: "#475569" }}>
+                    Cadastro: {pro.createdAt.toLocaleDateString("pt-BR")}
+                  </span>
+                </div>
+              </div>
+
+              {/* ── Corpo 3 colunas ── */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 230px" }}>
+
+                {/* ── Col 1: Contato + KYC detalhes + Pendências ── */}
+                <div style={{ padding: "16px 20px", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
+                  {label("Contato")}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12, color: "#cbd5e1", marginBottom: 14 }}>
+                    <span>{pro.user.email || "—"}</span>
+                    <span style={{ color: "#94a3b8" }}>{pro.whatsapp ?? pro.user.phone ?? "—"}</span>
+                  </div>
+
+                  {label("KYC")}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, color: "#94a3b8", marginBottom: 14 }}>
+                    {pro.kycSessionId && (
+                      <span style={{ fontFamily: "monospace", fontSize: 10, color: "#475569" }}>
+                        {pro.kycSessionId.slice(0, 24)}…
+                      </span>
+                    )}
+                    <span>Doc: {translatedTechnicalStatus(pro.docStatus)} · Face: {translatedTechnicalStatus(pro.verifStatus)}</span>
+                    {pro.verificationUrl && <span>Verificação: {verificationTypeLabel(pro.verificationType)}</span>}
+                    {pro.presentationVideoUrl && (
+                      <span style={{ color: pro.presentationVideoStatus === "APPROVED" ? "#22c55e" : "#d4a843" }}>
+                        Vídeo: {translatedTechnicalStatus(pro.presentationVideoStatus)}
+                        {pro.presentationVideoRejectReason ? ` — ${pro.presentationVideoRejectReason}` : ""}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Pendências */}
+                  {approvalIssues.length > 0 ? (
+                    <>
+                      {label(`${approvalIssues.length} pendência${approvalIssues.length > 1 ? "s" : ""}`)}
+                      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                        {approvalIssues.map((issue, i) => (
+                          <span key={i} style={{
+                            fontSize: 11, color: "#fca5a5",
+                            padding: "3px 8px", borderRadius: 4,
+                            background: "rgba(239,68,68,0.10)",
+                            border: "1px solid rgba(239,68,68,0.20)",
+                          }}>
+                            {issue}
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ padding: "6px 10px", borderRadius: 6, background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.20)" }}>
+                      <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 700 }}>✓ Sem pendências — pronta para aprovar</span>
+                    </div>
+                  )}
+
+                  {pro.rejectReason && (
+                    <div style={{ marginTop: 8, padding: "6px 10px", borderRadius: 6, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.20)" }}>
+                      <span style={{ fontSize: 11, color: "#fca5a5" }}>Motivo: {reviewReasonLabel(pro.rejectReason)}</span>
+                    </div>
+                  )}
+                  {pro.pauseUntil && (
+                    <div style={{ marginTop: 8, padding: "6px 10px", borderRadius: 6, background: "rgba(212,168,67,0.08)", border: "1px solid rgba(212,168,67,0.20)" }}>
+                      <span style={{ fontSize: 11, color: "#f5d78c" }}>Pausada até {pro.pauseUntil.toLocaleDateString("pt-BR")}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Col 2: Métricas + Bio + Acesso ── */}
+                <div style={{ padding: "16px 20px", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
+                  {label("Perfil & Métricas")}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 12px", fontSize: 12, marginBottom: 14 }}>
+                    {[
+                      ["Fotos", pro.photos.length, pro.photos.length === 0],
+                      ["Uploads", pro.user.uploadedAssets.length, false],
+                      ["Serviços", pro.services.length, pro.services.length === 0],
+                      ["Especialidades", pro.specialties.length, false],
+                      ["Views", pro.profileViews, false],
+                      ["Contatos", pro.contactClicks, false],
+                      ["Nota", `${pro.rating.toFixed(1)} (${pro.totalReviews})`, false],
+                      ["Boost", pro.boostActive ? `Ativo${pro.boostUntil ? ` até ${pro.boostUntil.toLocaleDateString("pt-BR")}` : ""}` : "Off", false],
+                    ].map(([lbl, val, warn]) => (
+                      <div key={String(lbl)}>
+                        <span style={{ color: "#64748b" }}>{lbl} </span>
+                        <span style={{ fontWeight: 700, color: warn ? "#ef4444" : lbl === "Boost" && pro.boostActive ? "#d4a843" : "#fff" }}>{String(val)}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {label("Bio")}
+                  <div style={{ fontSize: 12, marginBottom: 14 }}>
+                    <span style={{ color: "#64748b" }}>{pro.bio.length} caracteres</span>
+                    {pro.bio.trim().length > 0 ? (
+                      <p style={{ margin: "4px 0 0", color: "#94a3b8", lineHeight: 1.5, fontSize: 12 }}>
+                        "{pro.bio.trim().slice(0, 100)}{pro.bio.trim().length > 100 ? "…" : ""}"
+                      </p>
+                    ) : (
+                      <p style={{ margin: "4px 0 0", color: "#ef4444", fontSize: 12 }}>Vazia</p>
+                    )}
+                  </div>
+
+                  {label("Acesso")}
+                  <span style={{ fontSize: 12, color: "#94a3b8" }}>
+                    {pro.accessGrandfathered
+                      ? "Legado — sem bloqueio"
+                      : pro.freeAccessEndsAt
+                        ? `Gratuito até ${pro.freeAccessEndsAt.toLocaleDateString("pt-BR")}`
+                        : "Inicia na aprovação"}
+                  </span>
+
+                  <div style={{ marginTop: 10, fontSize: 11, color: "#475569" }}>
+                    Tel listagem: {pro.listingPhoneUntil && pro.listingPhoneUntil > now
+                      ? `ativo até ${pro.listingPhoneUntil.toLocaleDateString("pt-BR")}`
+                      : "sem benefício"}
+                    {" · "}
+                    {pro.hidePhone ? "Tel oculto" : "Tel visível"}
+                    {" · "}
+                    {pro.hideAge ? "Idade oculta" : "Idade visível"}
+                  </div>
+                </div>
+
+                {/* ── Col 3: Ações ── */}
+                <div style={{ padding: "16px 18px" }}>
+                  {label("Ações")}
+                  <form action={reviewProfessional} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     <input type="hidden" name="id" value={pro.id} />
-                    <textarea name="reason" placeholder="Motivo obrigatório para reprovar, corrigir, suspender ou bloquear" style={{ background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 8, minHeight: 58 }} />
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <button
-                        name="action"
-                        value="approve"
-                        disabled={!canApprove}
-                        title={!canApprove ? `Aprovação indisponível: ${approvalIssues.join(", ")}.` : "Aprovar profissional"}
-                        style={{ ...buttonStyle, cursor: canApprove ? "pointer" : "not-allowed", opacity: canApprove ? 1 : 0.45 }}
-                      >
-                        Aprovar
-                      </button>
-                      {pro.status === "PAUSED" ? <button name="action" value="resume" style={buttonStyle}>Reativar</button> : null}
-                      <button name="action" value="reject" style={{ ...buttonStyle, color: "#ef4444" }}>Reprovar</button>
-                      <button name="action" value="correction" style={{ ...buttonStyle, color: "#f97316" }}>Solicitar correção</button>
-                      <button name="action" value="suspend" style={{ ...buttonStyle, color: "#f97316" }}>Suspender</button>
-                      <button name="action" value="block" style={{ ...buttonStyle, color: "#ef4444" }}>Bloquear</button>
+
+                    {/* Aprovar — botão destaque */}
+                    <button
+                      name="action"
+                      value="approve"
+                      disabled={!canApprove}
+                      title={!canApprove ? `Pendências: ${approvalIssues.join(", ")}` : "Aprovar profissional"}
+                      style={{
+                        width: "100%", padding: "10px", borderRadius: 8, border: "none",
+                        fontSize: 13, fontWeight: 900,
+                        cursor: canApprove ? "pointer" : "not-allowed",
+                        background: canApprove
+                          ? "linear-gradient(135deg, #16a34a, #22c55e)"
+                          : "rgba(255,255,255,0.05)",
+                        color: canApprove ? "#fff" : "#475569",
+                        transition: "opacity 0.15s",
+                      }}
+                    >
+                      {canApprove ? "✓ Aprovar" : "Aprovar (bloqueado)"}
+                    </button>
+
+                    {/* Textarea para motivo */}
+                    <textarea
+                      name="reason"
+                      placeholder="Motivo (obrigatório para reprovar, corrigir, suspender, bloquear)"
+                      style={{
+                        background: "#050506",
+                        border: "1px solid rgba(255,255,255,0.10)",
+                        borderRadius: 8, color: "#fff",
+                        padding: "7px 10px", fontSize: 11,
+                        minHeight: 50, resize: "vertical",
+                        width: "100%", boxSizing: "border-box",
+                      }}
+                    />
+
+                    {/* Ações secundárias */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5 }}>
+                      {pro.status === "PAUSED" && (
+                        <button name="action" value="resume" style={{ ...buttonStyle, fontSize: 11, gridColumn: "1/-1" }}>
+                          Reativar
+                        </button>
+                      )}
+                      <button name="action" value="reject" style={{ ...buttonStyle, fontSize: 11, color: "#ef4444", borderColor: "rgba(239,68,68,0.3)" }}>Reprovar</button>
+                      <button name="action" value="correction" style={{ ...buttonStyle, fontSize: 11, color: "#fb923c", borderColor: "rgba(251,146,60,0.3)" }}>Corrigir</button>
+                      <button name="action" value="suspend" style={{ ...buttonStyle, fontSize: 11, color: "#fb923c", borderColor: "rgba(251,146,60,0.3)" }}>Suspender</button>
+                      <button name="action" value="block" style={{ ...buttonStyle, fontSize: 11, color: "#ef4444", borderColor: "rgba(239,68,68,0.3)" }}>Bloquear</button>
                       {pro.presentationVideoUrl ? (
                         <>
-                          <button name="action" value="approveVideo" style={buttonStyle}>Aprovar vídeo</button>
-                          <button name="action" value="rejectVideo" style={{ ...buttonStyle, color: "#ef4444" }}>Reprovar vídeo</button>
+                          <button name="action" value="approveVideo" style={{ ...buttonStyle, fontSize: 11 }}>✓ Vídeo</button>
+                          <button name="action" value="rejectVideo" style={{ ...buttonStyle, fontSize: 11, color: "#ef4444", borderColor: "rgba(239,68,68,0.3)" }}>✗ Vídeo</button>
                         </>
                       ) : null}
-                      {pro.boostActive ? <button name="action" value="disableBoost" style={{ ...buttonStyle, color: "#f97316" }}>Desativar boost</button> : null}
+                      {pro.boostActive ? (
+                        <button name="action" value="disableBoost" style={{ ...buttonStyle, fontSize: 11, color: "#fb923c", borderColor: "rgba(251,146,60,0.3)", gridColumn: "1/-1" }}>
+                          Desativar boost
+                        </button>
+                      ) : null}
                     </div>
-                    {!canApprove ? <small style={{ color: "#f5d78c", lineHeight: 1.45 }}>Aprovação indisponível: {approvalIssues.join(", ")}.</small> : null}
                   </form>
-                </td>
-              </tr>
-            })}
-            {!professionals.length ? <tr><td style={tdStyle} colSpan={5}>Nenhuma profissional encontrada.</td></tr> : null}
-          </tbody>
-        </AdminTable>
+                </div>
+
+              </div>
+            </div>
+          );
+        })}
+
+        {!professionals.length && (
+          <div style={{ textAlign: "center", padding: "48px 20px", color: "#475569", fontSize: 14 }}>
+            Nenhuma profissional encontrada para este filtro.
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginTop: 16 }}>
         <AdminPagination basePath="/admin/profissionais" page={page} pageSize={PAGE_SIZE} total={total} query={{ status }} />
-      </AdminPanel>
+      </div>
     </div>
   );
 }
