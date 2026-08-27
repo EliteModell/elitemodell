@@ -741,7 +741,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
         </p>
         {isClient && (
           <p style={{ textAlign: "center", margin: "28px 0", fontSize: 17, color: "#39454c" }}>
-            Quer anunciar? <Link href="/cadastro/acompanhante" style={linkStyle}>Cadastre-se como acompanhante</Link> ou <Link href="/cadastro-anfitriao" style={linkStyle}>anfitrião</Link>.
+            Quer anunciar? <Link href="/cadastro/acompanhante" style={linkStyle}>Cadastre-se como acompanhante</Link>.
           </p>
         )}
       </section>

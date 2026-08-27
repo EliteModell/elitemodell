@@ -220,7 +220,7 @@ function LoginContent() {
           <div className="login-mark"><Sparkles size={24} /></div>
           <p className="eyebrow">Acesso por tipo de conta</p>
           <h1 id="login-choice-title">Entrar como</h1>
-          <p>Escolha a área correta para acessar o painel certo sem misturar cliente, profissional e anfitrião.</p>
+          <p>Escolha a área correta para acessar sua experiência de cliente ou profissional.</p>
         </section>
 
         <section className="auth-card" aria-label="Escolha de login">
@@ -310,8 +310,8 @@ function LoginContent() {
         </Link>
         <div className="restricted-badge"><LockKeyhole size={18} /> Ambiente restrito a maiores de 18 anos</div>
         <p>
-          A Elite Modell conecta clientes, profissionais e locais reservados com foco em discricao, seguranca e uma
-          experiencia premium. Navegue por perfis e oportunidades em um ambiente pensado para privacidade.
+          A Elite Modell conecta clientes e profissionais com foco em discrição, segurança e uma
+          experiência premium. Navegue por perfis em um ambiente pensado para privacidade.
         </p>
       </section>
 
@@ -336,7 +336,6 @@ function LoginContent() {
       <section className="visibility-section">
         <h2>Aumente sua visibilidade</h2>
         <Link href={ACCOUNT_ROUTES.cadastroAcompanhante} className="secondary-cta">Cadastre-se como acompanhante</Link>
-        <Link href={ACCOUNT_ROUTES.cadastroAnfitriao} className="outline-cta">Cadastrar local reservado</Link>
       </section>
 
       <footer className="auth-footer">

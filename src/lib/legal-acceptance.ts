@@ -76,10 +76,6 @@ export const PROFESSIONAL_CHECKOUT_LEGAL_KEYS = [
   "refund-policy",
 ] as const;
 
-export const ROULETTE_PROMOTION_LEGAL_KEYS = [
-  "roleta-promocional-policy",
-] as const;
-
 function requestMetadata(req?: RequestLike): RequestMetadata {
   const forwardedFor = req?.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   const sessionCookie =

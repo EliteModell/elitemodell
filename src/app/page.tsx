@@ -22,27 +22,40 @@ export default function HomePage() {
     <Navbar />
     <main>
       <section className={styles.hero}>
+        <div className={styles.ambient} aria-hidden="true"><i/><i/><i/><i/></div>
         <div className={styles.heroCopy}>
           <h1><span>A plataforma</span><strong>premium</strong><span>do Brasil</span></h1>
           <p>Discrição, segurança e as melhores experiências em um só lugar.</p>
-          <div className={styles.benefits} aria-label="Benefícios da plataforma">{benefits.map((benefit) => <span key={benefit}>{benefit}</span>)}</div>
+          <div className={styles.benefits} aria-label="Benefícios da plataforma">
+            {benefits.map((benefit) => <span key={benefit}>{benefit}</span>)}
+          </div>
         </div>
         <div className={styles.model} aria-hidden="true">
-          <div className={styles.modelGlow} />
-          <Image src="/images/home/modelo-hero.jpeg" alt="" fill priority quality={92} sizes="(max-width: 720px) 72vw, 52vw" className={styles.modelImage} />
+          <div className={styles.modelGlow}/>
+          <Image src="/images/home/modelo-hero.jpeg" alt="" fill priority quality={75} sizes="(max-width: 760px) 78vw, 52vw" className={styles.modelImage}/>
         </div>
       </section>
+
       <section className={styles.quick}>
-        <span className={styles.eyebrow}>Entrada rápida</span><h2>O que você procura?</h2>
-        <div className={styles.entryGrid}>{entries.map((entry) => <article className={styles.entryCard} key={entry.title}>
-          <span className={styles.tag}>{entry.tag}</span><h3>{entry.title}</h3><p>{entry.description}</p>
-          <Link href={entry.href} className={styles.cta}>{entry.cta} <ChevronRight aria-hidden="true" size={20} /></Link>
-        </article>)}</div>
+        <span className={styles.eyebrow}>Entrada rápida</span>
+        <h2>O que você procura?</h2>
+        <div className={styles.entryGrid}>
+          {entries.map((entry) => <article className={styles.entryCard} key={entry.title}>
+            <span className={styles.tag}>{entry.tag}</span>
+            <h3>{entry.title}</h3>
+            <p>{entry.description}</p>
+            <Link href={entry.href} className={styles.cta}>{entry.cta}<ChevronRight aria-hidden="true" size={21}/></Link>
+          </article>)}
+        </div>
       </section>
-      <section className={styles.trust} aria-label="Compromissos Elite Modell">{trustItems.map(({ icon: Icon, title, text }) => <div className={styles.trustItem} key={title}>
-        <Icon aria-hidden="true" /><h3>{title}</h3><p>{text}</p>
-      </div>)}</section>
+
+      <section className={styles.trust} aria-label="Compromissos Elite Modell">
+        {trustItems.map(({ icon: Icon, title, text }) => <div className={styles.trustItem} key={title}>
+          <span className={styles.trustIcon}><Icon aria-hidden="true"/></span>
+          <h3>{title}</h3><p>{text}</p>
+        </div>)}
+      </section>
     </main>
-    <Footer />
+    <Footer/>
   </div>;
 }

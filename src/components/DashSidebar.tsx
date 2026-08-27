@@ -10,7 +10,6 @@ import {
   BadgePlus,
   Banknote,
   Bell,
-  Building2,
   CalendarCheck,
   ClipboardList,
   Compass,
@@ -19,7 +18,6 @@ import {
   ExternalLink,
   Headphones,
   Heart,
-  Home,
   LayoutDashboard,
   LogOut,
   MessageCircle,
@@ -31,7 +29,6 @@ import {
   UserCog,
   UserRound,
   UsersRound,
-  WalletCards,
 } from "lucide-react";
 import { supabaseAuth } from "@/lib/supabase-client";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
@@ -46,19 +43,8 @@ const guestNav: NavItem[] = [
   { label: "Perfil", href: "/dashboard/perfil", icon: <UserRound className="h-4 w-4" /> },
 ];
 
-const hostNav: NavItem[] = [
-  { label: "Painel", href: ACCOUNT_ROUTES.dashboardAnfitriao, icon: <LayoutDashboard className="h-4 w-4" />, accent: "Imóvel" },
-  { label: "Meus imóveis", href: "/anfitriao/imoveis", icon: <Home className="h-4 w-4" /> },
-  { label: "Reservas", href: "/anfitriao/reservas", icon: <CalendarCheck className="h-4 w-4" /> },
-  { label: "Ganhos", href: "/anfitriao/ganhos", icon: <WalletCards className="h-4 w-4" /> },
-  { label: "Meu Perfil", href: "/dashboard/perfil", icon: <UserRound className="h-4 w-4" /> },
-];
-
-const hostOnboardingNav: NavItem[] = [
-  { label: "Completar cadastro", href: ACCOUNT_ROUTES.onboardingAnfitriao, icon: <Home className="h-4 w-4" />, accent: "Etapas" },
-  { label: "Status da análise", href: ACCOUNT_ROUTES.verificacaoAnfitriao, icon: <Building2 className="h-4 w-4" /> },
-  { label: "Perfil", href: "/dashboard/perfil", icon: <UserRound className="h-4 w-4" /> },
-];
+const hostNav: NavItem[] = guestNav;
+const hostOnboardingNav: NavItem[] = guestNav;
 
 const adminNav: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: <LayoutDashboard className="h-4 w-4" />, accent: "Admin" },

@@ -1003,7 +1003,7 @@ export default function ProfissionalProfilePage() {
               <div>
                 <p style={{ margin: "0 0 6px", color: GOLD, fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase" }}>Agendamento Elite</p>
                 <h2 style={{ margin: 0, color: "#f8fafc", fontSize: 24, fontFamily: PLAYFAIR }}>Agendar com {pro.displayName}</h2>
-                <p style={{ margin: "8px 0 0", color: "#94a3b8", fontSize: 13, lineHeight: 1.5 }}>Use um voucher disponível se a profissional aceitar vouchers promocionais.</p>
+                <p style={{ margin: "8px 0 0", color: "#94a3b8", fontSize: 13, lineHeight: 1.5 }}>Confirme os detalhes diretamente com a profissional antes de solicitar o atendimento.</p>
               </div>
               <button onClick={() => setBookingOpen(false)} aria-label="Fechar agendamento" style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "rgba(255,255,255,0.03)", color: GOLD, cursor: "pointer", fontSize: 18 }}>×</button>
             </div>
@@ -1012,7 +1012,7 @@ export default function ProfissionalProfilePage() {
               <div style={{ padding: 18, display: "grid", gap: 12 }}>
                 <div style={{ border: `1px solid ${GOLD_DIM}`, background: "#0b1420", borderRadius: 12, padding: 14 }}>
                   <p style={{ margin: "0 0 6px", color: "#f8fafc", fontWeight: 800 }}>Confirme sua conta para usar voucher</p>
-                  <p style={{ margin: 0, color: "#94a3b8", fontSize: 13, lineHeight: 1.55 }}>Você pode ganhar voucher sem cadastro na roleta, mas para usar no agendamento precisa entrar ou concluir um cadastro simples.</p>
+                  <p style={{ margin: 0, color: "#94a3b8", fontSize: 13, lineHeight: 1.55 }}>Entre ou conclua um cadastro simples para solicitar o atendimento com segurança.</p>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <Link href={`${ACCOUNT_ROUTES.login}?returnUrl=${encodeURIComponent(`/profissionais/${slug}`)}`} style={{ textAlign: "center", padding: "12px", borderRadius: 10, background: GOLD, color: "#060e1b", fontWeight: 900, textDecoration: "none" }}>Entrar</Link>

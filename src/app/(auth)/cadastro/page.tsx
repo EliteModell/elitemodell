@@ -41,7 +41,6 @@ type AuthError = { code?: string; name?: string; message?: string };
 
 const GOLD = "#b72cff";
 const GOLD_GRADIENT = "linear-gradient(135deg, #f4d7ff 0%, #b72cff 22%, #e1a6ff 45%, #6900a3 72%, #b72cff 100%)";
-const PROPERTY_DRAFT_KEY = "elitemodell_location_onboarding_v2";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -898,14 +897,6 @@ export default function CadastroPage() {
         action: "Cadastre-se como acompanhante",
         directHref: ACCOUNT_ROUTES.cadastroAcompanhante,
       },
-      {
-        tipo: "anfitriao",
-        eyebrow: "Imóvel reservado",
-        title: "Cadastrar meu imóvel",
-        desc: "Cadastre um ambiente discreto primeiro. A conta entra no final e a publicação passa por aprovação.",
-        action: "Começar cadastro do imóvel",
-        directHref: ACCOUNT_ROUTES.onboardingAnfitriao,
-      },
     ];
 
     return (
@@ -917,7 +908,7 @@ export default function CadastroPage() {
           <p style={{ color: GOLD, fontSize: 11, fontWeight: 900, letterSpacing: 2.4, textTransform: "uppercase", margin: "0 0 8px" }}>Cadastro Elite Modell</p>
           <h1 style={{ color: "#f4f1ea", fontSize: 24, lineHeight: 1.15, margin: 0 }}>Como você quer se cadastrar?</h1>
           <p style={{ color: "#8d8578", fontSize: 13, lineHeight: 1.55, margin: "10px auto 0", maxWidth: 460 }}>
-            Uma conta única pode acessar a área cliente e solicitar ativação como acompanhante ou anfitrião, sempre com aprovação.
+            Escolha entre a experiência de cliente ou o cadastro profissional como acompanhante.
           </p>
         </div>
 
