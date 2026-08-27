@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- Upload previews can be blob/data/private URLs before the final hosted image is available. */
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import toast from "react-hot-toast";
@@ -14,12 +15,12 @@ const GOLD_MID = "rgba(183,44,255,0.28)";
 const PLAYFAIR = "var(--font-playfair), serif";
 
 const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "12px 14px", background: "#0b1420",
-  border: "1px solid #1e293b", borderRadius: 10, color: "#f1f5f9",
+  width: "100%", padding: "12px 14px", background: "#0b080f",
+  border: "1px solid rgba(183,44,255,0.28)", borderRadius: 16, color: "#f8f5fa",
   fontSize: 14, outline: "none", boxSizing: "border-box", transition: "border-color 0.2s",
 };
 const labelStyle: React.CSSProperties = {
-  display: "block", fontSize: 11, color: "#64748b", fontWeight: 700,
+  display: "block", fontSize: 11, color: "#d58cff", fontWeight: 700,
   textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8,
 };
 
@@ -954,7 +955,9 @@ export default function ProfissionalNovoPage() {
     <div className="model-flow-page" style={{ maxWidth: 680, margin: "0 auto", paddingBottom: 80 }}>
       <header className="model-flow-header">
         <button type="button" onClick={() => router.back()} aria-label="Voltar">←</button>
-        <span aria-label="Elite Modell"><b>elite</b>modell</span>
+        <span className="model-flow-logo" aria-label="Elite Modell">
+          <Image src="/brand/elite-modell-purple.svg" alt="Elite Modell" width={184} height={54} priority />
+        </span>
         <button type="button" onClick={handleExit}>Sair</button>
       </header>
 
@@ -976,7 +979,7 @@ export default function ProfissionalNovoPage() {
           borderRadius: 14,
           border: "1px solid rgba(183,44,255,0.35)",
           background: "rgba(183,44,255,0.10)",
-          color: "#f8e7b0",
+          color: "#ead8f5",
           fontSize: 12,
           lineHeight: 1.6,
         }}>
@@ -1452,7 +1455,7 @@ export default function ProfissionalNovoPage() {
                   )}
 
                   {kycUnavailable && (
-                    <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(234,179,8,0.10)", border: "1px solid rgba(234,179,8,0.25)", color: "#facc15", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>
+                    <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(183,44,255,0.10)", border: "1px solid rgba(183,44,255,0.25)", color: "#dc8cff", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>
                       A verificação automática está temporariamente indisponível. Tente novamente em alguns minutos.
                     </div>
                   )}
@@ -1489,7 +1492,7 @@ export default function ProfissionalNovoPage() {
                       {uploadingIdx === 100 ? "Iniciando..." : kycUnavailable9 ? "Verificação automática indisponível" : "Iniciar verificação facial"}
                     </button>
                     {kycUnavailable9 && (
-                      <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: "rgba(234,179,8,0.10)", border: "1px solid rgba(234,179,8,0.25)", color: "#facc15", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>
+                      <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: "rgba(183,44,255,0.10)", border: "1px solid rgba(183,44,255,0.25)", color: "#dc8cff", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>
                         Verificação automática indisponível no momento. Use a verificação manual.
                       </div>
                     )}
@@ -1580,7 +1583,7 @@ export default function ProfissionalNovoPage() {
           margin: 0 auto !important;
           padding: max(18px, env(safe-area-inset-top)) 16px calc(144px + env(safe-area-inset-bottom)) !important;
           overflow-x: hidden;
-          background: radial-gradient(circle at 20% 10%, rgba(214,168,58,0.16), transparent 32%), radial-gradient(circle at 85% 35%, rgba(214,168,58,0.10), transparent 34%), #050505;
+          background: radial-gradient(circle at 16% 8%, rgba(156,36,218,0.20), transparent 31%), radial-gradient(circle at 88% 34%, rgba(108,0,164,0.16), transparent 36%), #030204;
           color: #fff;
         }
         .model-flow-header {
@@ -1594,18 +1597,18 @@ export default function ProfissionalNovoPage() {
         .model-flow-header button {
           width: 44px;
           height: 44px;
-          border: 1px solid rgba(214,168,58,0.25);
+          border: 1px solid rgba(183,44,255,0.30);
           border-radius: 999px;
           background: rgba(11,11,13,0.82);
-          color: #d6a83a;
+          color: #d266ff;
           font-size: 18px;
           font-weight: 900;
           cursor: pointer;
           box-shadow: 0 14px 36px rgba(0,0,0,0.24);
         }
         .model-flow-header button:last-child { width: auto; padding: 0 12px; color: #fff; font-size: 12px; }
-        .model-flow-header span { justify-self: center; color: #fff; font-size: 18px; font-weight: 950; }
-        .model-flow-header b { color: #d6a83a; }
+        .model-flow-logo { display: grid; width: min(100%, 154px); place-items: center; justify-self: center; }
+        .model-flow-logo img { display: block; width: 100%; height: auto; }
         .model-flow-page p { color: #b8b8b8 !important; }
         .model-flow-page h1 {
           color: #fff !important;
@@ -1617,14 +1620,14 @@ export default function ProfissionalNovoPage() {
           text-wrap: balance;
         }
         .model-flow-page h3 { color: #fff !important; }
-        .model-flow-page label, .model-flow-page [style*="uppercase"] { color: #d6a83a !important; }
+        .model-flow-page label, .model-flow-page [style*="uppercase"] { color: #d58cff !important; }
         .model-flow-page input,
         .model-flow-page textarea,
         .model-flow-page select {
           min-height: 58px !important;
-          border: 1px solid rgba(214,168,58,0.28) !important;
+          border: 1px solid rgba(183,44,255,0.30) !important;
           border-radius: 18px !important;
-          background: rgba(11,11,13,0.94) !important;
+          background: rgba(11,8,15,0.96) !important;
           color: #fff !important;
           padding: 15px 16px !important;
           outline: none !important;
@@ -1634,8 +1637,8 @@ export default function ProfissionalNovoPage() {
         .model-flow-page textarea { min-height: 154px !important; }
         .model-flow-page input::placeholder, .model-flow-page textarea::placeholder { color: rgba(184,184,184,0.55) !important; }
         .model-flow-page input:focus, .model-flow-page textarea:focus, .model-flow-page select:focus {
-          border-color: rgba(245,184,59,0.72) !important;
-          box-shadow: 0 0 0 4px rgba(214,168,58,0.12) !important;
+          border-color: rgba(213,108,255,0.82) !important;
+          box-shadow: 0 0 0 4px rgba(183,44,255,0.14) !important;
         }
         .model-flow-page button { border-radius: 18px !important; }
         .model-flow-page [style*="#060e1b"],
@@ -1643,10 +1646,10 @@ export default function ProfissionalNovoPage() {
         .model-flow-page [style*="rgba(183,44,255"],
         .model-flow-page [style*="rgba(34,197,94"] {
           background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98)) !important;
-          border-color: rgba(214,168,58,0.25) !important;
+          border-color: rgba(183,44,255,0.28) !important;
           color: #fff !important;
         }
-        .model-flow-page [style*="#1e293b"] { border-color: rgba(214,168,58,0.25) !important; }
+        .model-flow-page [style*="#1e293b"] { border-color: rgba(183,44,255,0.28) !important; }
         .model-chip-group {
           display: flex;
           flex-wrap: wrap;
@@ -1659,7 +1662,7 @@ export default function ProfissionalNovoPage() {
           white-space: normal;
           overflow-wrap: anywhere;
           color: #d4d8df !important;
-          border-color: rgba(214,168,58,0.28) !important;
+          border-color: rgba(183,44,255,0.30) !important;
           background: rgba(11,11,13,0.74) !important;
         }
         .model-tag {
@@ -1671,14 +1674,14 @@ export default function ProfissionalNovoPage() {
           touch-action: manipulation;
         }
         .model-tag[data-active="true"] {
-          color: #070707 !important;
-          border-color: rgba(245,215,122,0.95) !important;
-          background: linear-gradient(135deg, #f5d77a, #d6a83a 54%, #a77818) !important;
-          box-shadow: 0 12px 30px rgba(214,168,58,0.22), inset 0 1px 0 rgba(255,255,255,0.22) !important;
+          color: #fff !important;
+          border-color: rgba(222,129,255,0.90) !important;
+          background: linear-gradient(135deg, #d653ff, #9a18e7 54%, #6900a3) !important;
+          box-shadow: 0 12px 30px rgba(183,44,255,0.24), inset 0 1px 0 rgba(255,255,255,0.20) !important;
         }
         .model-tag[data-active="false"] {
           color: #d4d8df !important;
-          border-color: rgba(214,168,58,0.28) !important;
+          border-color: rgba(183,44,255,0.30) !important;
           background: rgba(11,11,13,0.74) !important;
         }
         .model-tag-check {
@@ -1689,13 +1692,13 @@ export default function ProfissionalNovoPage() {
           flex: 0 0 auto;
           border-radius: 999px;
           background: rgba(7,7,7,0.20);
-          color: #070707;
+          color: #fff;
           font-size: 11px;
           font-weight: 950;
         }
         .model-subsection-label {
           margin: 0 0 8px !important;
-          color: #d6a83a !important;
+          color: #d58cff !important;
           font-size: 11px !important;
           font-weight: 800 !important;
           text-transform: uppercase;
@@ -1705,7 +1708,7 @@ export default function ProfissionalNovoPage() {
           display: grid;
           grid-template-columns: 86px minmax(0, 1fr);
           min-height: 58px;
-          border: 1px solid rgba(214,168,58,0.28);
+          border: 1px solid rgba(183,44,255,0.30);
           border-radius: 18px;
           background: rgba(11,11,13,0.94);
           overflow: hidden;
@@ -1716,8 +1719,8 @@ export default function ProfissionalNovoPage() {
           justify-content: center;
           gap: 7px;
           min-width: 0;
-          border-right: 1px solid rgba(214,168,58,0.20);
-          color: #f5d77a;
+          border-right: 1px solid rgba(183,44,255,0.22);
+          color: #dc8cff;
           font-size: 13px;
           font-weight: 900;
           user-select: none;
@@ -1728,12 +1731,12 @@ export default function ProfissionalNovoPage() {
           width: 27px;
           height: 20px;
           border-radius: 4px;
-          background: linear-gradient(135deg, #16a34a, #facc15);
-          color: #082f49;
+          background: linear-gradient(135deg, #16a34a, #b72cff);
+          color: #fff;
           font-size: 10px;
           font-weight: 950;
         }
-        .whatsapp-prefix strong { color: #f5d77a; font-size: 13px; }
+        .whatsapp-prefix strong { color: #dc8cff; font-size: 13px; }
         .whatsapp-field input {
           width: 100%;
           min-width: 0;
@@ -1745,14 +1748,14 @@ export default function ProfissionalNovoPage() {
           box-shadow: none !important;
         }
         .whatsapp-field:focus-within {
-          border-color: rgba(245,184,59,0.72);
-          box-shadow: 0 0 0 4px rgba(214,168,58,0.12);
+          border-color: rgba(213,108,255,0.82);
+          box-shadow: 0 0 0 4px rgba(183,44,255,0.14);
         }
         .instagram-field {
           display: grid;
           grid-template-columns: 48px minmax(0, 1fr);
           min-height: 58px;
-          border: 1px solid rgba(214,168,58,0.28);
+          border: 1px solid rgba(183,44,255,0.30);
           border-radius: 18px;
           background: rgba(11,11,13,0.94);
           overflow: hidden;
@@ -1761,8 +1764,8 @@ export default function ProfissionalNovoPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          border-right: 1px solid rgba(214,168,58,0.20);
-          color: #f5d77a;
+          border-right: 1px solid rgba(183,44,255,0.22);
+          color: #dc8cff;
           font-size: 16px;
           font-weight: 950;
           user-select: none;
@@ -1778,14 +1781,14 @@ export default function ProfissionalNovoPage() {
           box-shadow: none !important;
         }
         .instagram-field:focus-within {
-          border-color: rgba(245,184,59,0.72);
-          box-shadow: 0 0 0 4px rgba(214,168,58,0.12);
+          border-color: rgba(213,108,255,0.82);
+          box-shadow: 0 0 0 4px rgba(183,44,255,0.14);
         }
         .money-field {
           display: grid;
           grid-template-columns: 64px minmax(0, 1fr);
           min-height: 58px;
-          border: 1px solid rgba(214,168,58,0.28);
+          border: 1px solid rgba(183,44,255,0.30);
           border-radius: 18px;
           background: rgba(11,11,13,0.94);
           overflow: hidden;
@@ -1794,8 +1797,8 @@ export default function ProfissionalNovoPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          border-right: 1px solid rgba(214,168,58,0.20);
-          color: #f5d77a;
+          border-right: 1px solid rgba(183,44,255,0.22);
+          color: #dc8cff;
           font-size: 14px;
           font-weight: 950;
           user-select: none;
@@ -1813,8 +1816,8 @@ export default function ProfissionalNovoPage() {
         }
         .money-field input::placeholder { color: rgba(184,184,184,0.55) !important; }
         .money-field:focus-within {
-          border-color: rgba(245,184,59,0.72);
-          box-shadow: 0 0 0 4px rgba(214,168,58,0.12);
+          border-color: rgba(213,108,255,0.82);
+          box-shadow: 0 0 0 4px rgba(183,44,255,0.14);
         }
         .birth-date-grid {
           grid-template-columns: minmax(0, 0.78fr) minmax(0, 0.78fr) minmax(0, 1.25fr) !important;
@@ -1832,7 +1835,7 @@ export default function ProfissionalNovoPage() {
           grid-template-columns: minmax(0, 1fr) auto;
           align-items: center;
           gap: 10px;
-          border: 1px solid rgba(214,168,58,0.28);
+          border: 1px solid rgba(183,44,255,0.30);
           border-radius: 18px;
           background: rgba(11,11,13,0.94);
           padding: 9px 10px 9px 16px;
@@ -1844,17 +1847,17 @@ export default function ProfissionalNovoPage() {
         }
         .birth-date-confirmed button {
           min-height: 40px;
-          border: 1px solid rgba(214,168,58,0.28) !important;
+          border: 1px solid rgba(183,44,255,0.30) !important;
           border-radius: 12px !important;
-          background: rgba(214,168,58,0.10) !important;
-          color: #f5d77a !important;
+          background: rgba(183,44,255,0.12) !important;
+          color: #dc8cff !important;
           padding: 0 12px;
           font-size: 12px;
           font-weight: 900;
         }
         .model-flow-page > div:nth-of-type(2) {
           margin-bottom: 30px !important;
-          border: 1px solid rgba(214,168,58,0.25);
+          border: 1px solid rgba(183,44,255,0.28);
           border-radius: 20px;
           background: rgba(16,16,20,0.74);
           padding: 16px;
@@ -1865,7 +1868,7 @@ export default function ProfissionalNovoPage() {
           background: rgba(255,255,255,0.10) !important;
           overflow: hidden;
         }
-        .model-flow-page > div:nth-of-type(2) > div:nth-child(2) > div { background: linear-gradient(90deg, #d6a83a, #f5d77a) !important; }
+        .model-flow-page > div:nth-of-type(2) > div:nth-child(2) > div { background: linear-gradient(90deg, #8f16db, #e06aff) !important; }
         .model-flow-page > div:nth-of-type(2) > div:nth-child(3) {
           gap: 8px !important;
           padding-bottom: 4px;
@@ -1891,12 +1894,12 @@ export default function ProfissionalNovoPage() {
           scroll-snap-align: center;
         }
         .model-step-bubbles > div[data-current="true"] span {
-          color: #f5d77a !important;
+          color: #e2a0ff !important;
           font-weight: 950 !important;
         }
         .model-step-bubbles > div[data-current="true"] button {
           transform: scale(1.08);
-          box-shadow: 0 0 0 4px rgba(214,168,58,0.14), 0 12px 24px rgba(214,168,58,0.20) !important;
+          box-shadow: 0 0 0 4px rgba(183,44,255,0.16), 0 12px 24px rgba(183,44,255,0.22) !important;
         }
         @media (max-width: 520px) {
           .model-step-bubbles {
@@ -1924,7 +1927,7 @@ export default function ProfissionalNovoPage() {
           z-index: 9999;
           margin-top: 0 !important;
           padding: 14px 16px calc(14px + env(safe-area-inset-bottom)) !important;
-          border-top: 1px solid rgba(214,168,58,0.25) !important;
+          border-top: 1px solid rgba(183,44,255,0.28) !important;
           background: rgba(5,5,5,0.96);
           display: flex !important;
           justify-content: space-between !important;
@@ -1933,15 +1936,15 @@ export default function ProfissionalNovoPage() {
         }
         .model-step-actions button { min-height: 56px !important; flex: 1; font-weight: 900 !important; }
         .model-step-actions button:first-child {
-          border: 1px solid rgba(214,168,58,0.25) !important;
+          border: 1px solid rgba(183,44,255,0.28) !important;
           background: rgba(16,16,20,0.88) !important;
           color: #fff !important;
         }
         .model-step-actions button:last-child {
           border: 0 !important;
-          background: linear-gradient(135deg, #f5d77a, #d6a83a 45%, #a77818) !important;
-          color: #070707 !important;
-          box-shadow: 0 18px 46px rgba(214,168,58,0.22) !important;
+          background: linear-gradient(135deg, #d653ff, #9414e8 45%, #6900a3) !important;
+          color: #fff !important;
+          box-shadow: 0 18px 46px rgba(183,44,255,0.26) !important;
         }
         @media (max-width: 430px) {
           .model-flow-page [style*="gridTemplateColumns"] { grid-template-columns: 1fr !important; }
