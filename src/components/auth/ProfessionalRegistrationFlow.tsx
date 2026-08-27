@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   BadgeCheck,
@@ -377,10 +378,13 @@ export function ProfessionalRegistrationFlow({
           Voltar
         </Link>
         <Link className={styles.brand} href="/" aria-label="Elite Modell - página inicial">
-          <span className={styles.brandStar} aria-hidden="true">
-            ✦
-          </span>
-          elitemodell
+          <Image
+            src="/brand/elite-modell-purple.svg"
+            alt="Elite Modell"
+            width={720}
+            height={210}
+            priority
+          />
         </Link>
         <Link className={styles.loginLink} href="/login">
           Já tenho conta
