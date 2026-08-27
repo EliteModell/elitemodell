@@ -52,7 +52,7 @@ export default function InformacoesPage() {
               <h2 className="text-[18px] font-black text-[#f5f0e4]">{section.title}</h2>
               <p className="mt-2 text-[14px] leading-6 text-[#f5f0e4]/60">{section.summary}</p>
             </div>
-            <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-[#f5d78c] transition-transform group-open:rotate-180" />
+            <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-[#e1a6ff] transition-transform group-open:rotate-180" />
           </summary>
           <p className="mt-5 border-t border-white/10 pt-5 text-[14px] leading-7 text-[#f5f0e4]/56">
             Consulte esta orientação sempre que precisar. As políticas completas ficam disponíveis para leitura nos links oficiais.
@@ -60,7 +60,7 @@ export default function InformacoesPage() {
           {section.href && (
             <Link
               href={section.href}
-              className="mt-4 inline-block text-[13px] font-semibold text-[#f5d78c] no-underline"
+              className="mt-4 inline-block text-[13px] font-semibold text-[#e1a6ff] no-underline"
             >
               Ler completo →
             </Link>

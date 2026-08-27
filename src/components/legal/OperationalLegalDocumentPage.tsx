@@ -26,14 +26,14 @@ export async function OperationalLegalDocumentPage({ documentKey }: { documentKe
   return (
     <main style={{ minHeight: "100vh", background: "#060607", color: "#f8fafc", padding: "72px 20px" }}>
       <section style={{ maxWidth: 920, margin: "0 auto" }}>
-        <Link href="/" style={{ color: "#d4a843", textDecoration: "none", fontWeight: 800 }}>
+        <Link href="/" style={{ color: "#b72cff", textDecoration: "none", fontWeight: 800 }}>
           Voltar para Elite Modell
         </Link>
 
         <div
           style={{
             marginTop: 28,
-            border: "1px solid rgba(212,168,67,0.22)",
+            border: "1px solid rgba(183,44,255,0.22)",
             borderRadius: 24,
             background: "linear-gradient(180deg, rgba(15,15,18,.96), rgba(7,7,9,.96))",
             padding: "32px",

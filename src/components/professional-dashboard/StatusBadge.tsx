@@ -16,7 +16,7 @@ const statusConfig: Record<string, { label: string; className: string; icon: Rea
   },
   PENDING_REVIEW: {
     label: "Em análise",
-    className: "border-[#d4a843]/30 bg-[#d4a843]/10 text-[#f5d78c]",
+    className: "border-[#b72cff]/30 bg-[#b72cff]/10 text-[#e1a6ff]",
     icon: <Clock className="h-3.5 w-3.5" />,
   },
   DRAFT: {

@@ -3,8 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 
-const GOLD = "#d4a843";
-const GOLD_DIM = "rgba(212,168,67,0.10)";
+const GOLD = "#b72cff";
+const GOLD_DIM = "rgba(183,44,255,0.10)";
 
 interface Message {
   id: string;
@@ -150,7 +150,7 @@ export default function ChatBox({ bookingId, title }: Props) {
           onFocus={e => (e.target.style.borderColor = GOLD)}
           onBlur={e => (e.target.style.borderColor = "#1e293b")} />
         <button onClick={send} disabled={!input.trim() || sending}
-          style={{ padding: "0 18px", background: !input.trim() || sending ? "rgba(212,168,67,0.3)" : GOLD, color: "#060e1b", border: "none", borderRadius: 22, fontSize: 13, fontWeight: 800, cursor: !input.trim() || sending ? "not-allowed" : "pointer" }}>
+          style={{ padding: "0 18px", background: !input.trim() || sending ? "rgba(183,44,255,0.3)" : GOLD, color: "#060e1b", border: "none", borderRadius: 22, fontSize: 13, fontWeight: 800, cursor: !input.trim() || sending ? "not-allowed" : "pointer" }}>
           {sending ? "..." : "Enviar"}
         </button>
       </div>

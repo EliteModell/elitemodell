@@ -42,7 +42,7 @@ declare global {
   }
 }
 
-const GOLD = "#c9a84c";
+const GOLD = "#a92cff";
 const INK = "#1f2a32";
 const PHONE_STORAGE_KEY: Record<FlowMode, string> = {
   client: "elitemodell_client_phone",

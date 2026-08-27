@@ -33,12 +33,12 @@ export default async function ProfessionalAnalysisPage() {
 
   return (
     <div className="mx-auto grid min-h-[calc(100dvh-80px)] w-full max-w-[560px] place-items-center px-4 py-10">
-      <section className="w-full rounded-[8px] border border-[#d4a843]/25 bg-[#101010] p-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.34)] sm:p-8">
-        <div className={`mx-auto grid h-16 w-16 place-items-center rounded-[8px] border text-2xl font-black ${copy.tone === "danger" ? "border-[#ef4444]/35 bg-[#ef4444]/10 text-[#ff9aa4]" : "border-[#d4a843]/35 bg-[#d4a843]/12 text-[#f5d78c]"}`}>
+      <section className="w-full rounded-[8px] border border-[#b72cff]/25 bg-[#101010] p-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.34)] sm:p-8">
+        <div className={`mx-auto grid h-16 w-16 place-items-center rounded-[8px] border text-2xl font-black ${copy.tone === "danger" ? "border-[#ef4444]/35 bg-[#ef4444]/10 text-[#ff9aa4]" : "border-[#b72cff]/35 bg-[#b72cff]/12 text-[#e1a6ff]"}`}>
           {copy.tone === "danger" ? "!" : "..."}
         </div>
 
-        <p className="mt-6 text-[11px] font-black uppercase tracking-[0.22em] text-[#d4a843]">Status profissional</p>
+        <p className="mt-6 text-[11px] font-black uppercase tracking-[0.22em] text-[#b72cff]">Status profissional</p>
         <h1 className="mt-2 text-3xl font-black leading-tight text-white">{copy.title}</h1>
         <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-white/58">{copy.body}</p>
 
@@ -55,7 +55,7 @@ export default async function ProfessionalAnalysisPage() {
             "Enquanto estiver em analise, seu perfil nao aparece na busca publica.",
           ].map((item) => (
             <p key={item} className="flex gap-3 text-sm leading-6 text-white/60">
-              <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#d4a843]" />
+              <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#b72cff]" />
               <span>{item}</span>
             </p>
           ))}
@@ -65,7 +65,7 @@ export default async function ProfessionalAnalysisPage() {
           <Link href="/" className="inline-flex min-h-11 flex-1 items-center justify-center rounded-[8px] border border-white/10 px-4 text-sm font-black text-white/72 no-underline">
             Voltar ao inicio
           </Link>
-          <Link href="mailto:suporte@elitemodell.com.br" className="inline-flex min-h-11 flex-1 items-center justify-center rounded-[8px] bg-[#d4a843] px-4 text-sm font-black text-[#080704] no-underline">
+          <Link href="mailto:suporte@elitemodell.com.br" className="inline-flex min-h-11 flex-1 items-center justify-center rounded-[8px] bg-[#b72cff] px-4 text-sm font-black text-[#080704] no-underline">
             Falar com suporte
           </Link>
         </div>

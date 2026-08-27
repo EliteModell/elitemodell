@@ -173,10 +173,10 @@ export default function CitySelectorScreen({
             type="button"
             onClick={handleGeolocate}
             disabled={geolocating}
-            className="flex w-full items-center justify-center gap-2.5 rounded-[14px] border border-[#d4a843]/36 bg-[#d4a843]/14 py-4 text-[14px] font-bold text-[#f5d78c] transition active:scale-[0.98] disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2.5 rounded-[14px] border border-[#b72cff]/36 bg-[#b72cff]/14 py-4 text-[14px] font-bold text-[#e1a6ff] transition active:scale-[0.98] disabled:opacity-60"
           >
             {geolocating ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#f5d78c]/30 border-t-[#f5d78c]" />
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#e1a6ff]/30 border-t-[#e1a6ff]" />
             ) : (
               <Navigation2 className="h-4 w-4" />
             )}

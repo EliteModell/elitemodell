@@ -5,8 +5,8 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
-const GOLD = "#d4a843";
-const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
+const GOLD = "#b72cff";
+const GOLD_GRADIENT = "linear-gradient(135deg, #f4d7ff 0%, #b72cff 22%, #e1a6ff 45%, #6900a3 72%, #b72cff 100%)";
 
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
@@ -45,8 +45,8 @@ export function PasswordRecoveryClient() {
   }
 
   return (
-    <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "radial-gradient(ellipse at 50% 0%, rgba(212,168,67,0.06) 0%, #050505 60%)", color: "#f1f5f9", padding: 24 }}>
-      <section style={{ width: "100%", maxWidth: 430, background: "linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98))", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 20, padding: 30, boxShadow: "0 24px 70px rgba(0,0,0,0.34)" }}>
+    <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "radial-gradient(ellipse at 50% 0%, rgba(183,44,255,0.06) 0%, #050505 60%)", color: "#f1f5f9", padding: 24 }}>
+      <section style={{ width: "100%", maxWidth: 430, background: "linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98))", border: "1px solid rgba(183,44,255,0.28)", borderRadius: 20, padding: 30, boxShadow: "0 24px 70px rgba(0,0,0,0.34)" }}>
         <Link href="/" aria-label="Elite Modell" style={{ display: "inline-flex", alignItems: "baseline", textDecoration: "none", fontSize: 26, fontWeight: 950, marginBottom: 24 }}>
           <span style={{ background: GOLD_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>elite</span>
           <strong style={{ color: "#fff", font: "inherit" }}>modell</strong>
@@ -58,8 +58,8 @@ export function PasswordRecoveryClient() {
         </p>
 
         {sent ? (
-          <div style={{ border: "1px solid rgba(212,168,67,0.28)", background: "rgba(212,168,67,0.08)", borderRadius: 14, padding: 16, marginBottom: 18 }}>
-            <p style={{ color: "#f5d78c", fontWeight: 800, margin: "0 0 6px" }}>Confira sua caixa de entrada.</p>
+          <div style={{ border: "1px solid rgba(183,44,255,0.28)", background: "rgba(183,44,255,0.08)", borderRadius: 14, padding: 16, marginBottom: 18 }}>
+            <p style={{ color: "#e1a6ff", fontWeight: 800, margin: "0 0 6px" }}>Confira sua caixa de entrada.</p>
             <p style={{ color: "#94a3b8", fontSize: 14, lineHeight: 1.55, margin: 0 }}>
               Se houver conta para esse email, o link chegou ou chegara em instantes. Veja tambem a pasta de spam.
             </p>
@@ -75,7 +75,7 @@ export function PasswordRecoveryClient() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="seu@email.com"
-              style={{ minHeight: 54, borderRadius: 14, border: "1px solid rgba(212,168,67,0.28)", background: "#0b0b0d", color: "#fff", padding: "13px 15px", fontSize: 15, outline: "none" }}
+              style={{ minHeight: 54, borderRadius: 14, border: "1px solid rgba(183,44,255,0.28)", background: "#0b0b0d", color: "#fff", padding: "13px 15px", fontSize: 15, outline: "none" }}
             />
           </label>
 

@@ -50,7 +50,7 @@ export default async function ProfissionalEstatisticasPage() {
   });
   const max = Math.max(1, ...days.map((day) => Math.max(day.views, day.contacts)));
 
-  const card = { background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: 20 } as const;
+  const card = { background: "#111", border: "1px solid rgba(183,44,255,.16)", borderRadius: 18, padding: 20 } as const;
 
   return (
     <div style={{ maxWidth: 980 }}>
@@ -69,7 +69,7 @@ export default async function ProfissionalEstatisticasPage() {
         ].map(([label, value]) => (
           <div key={label} style={card}>
             <p style={{ margin: "0 0 8px", color: "#777", fontSize: 12, textTransform: "uppercase", letterSpacing: 1.4 }}>{label}</p>
-            <strong style={{ color: "#d4a843", fontSize: 26 }}>{value}</strong>
+            <strong style={{ color: "#b72cff", fontSize: 26 }}>{value}</strong>
           </div>
         ))}
       </div>
@@ -82,7 +82,7 @@ export default async function ProfissionalEstatisticasPage() {
               {last30.profile_view ?? 0} visualizações, {last30.contact_click ?? 0} contatos e {last30.favorite ?? 0} favoritos.
             </p>
           </div>
-          <span style={{ color: "#f5d78c", fontSize: 12, border: "1px solid rgba(212,168,67,.25)", borderRadius: 999, padding: "8px 12px", alignSelf: "flex-start" }}>
+          <span style={{ color: "#e1a6ff", fontSize: 12, border: "1px solid rgba(183,44,255,.25)", borderRadius: 999, padding: "8px 12px", alignSelf: "flex-start" }}>
             Dados reais do perfil público
           </span>
         </div>
@@ -90,7 +90,7 @@ export default async function ProfissionalEstatisticasPage() {
         <div style={{ display: "grid", gridTemplateColumns: `repeat(${days.length}, minmax(28px, 1fr))`, gap: 8, alignItems: "end", minHeight: 180 }}>
           {days.map((day) => (
             <div key={day.key} style={{ display: "grid", gap: 5, alignItems: "end" }}>
-              <div title={`${day.views} visualizações`} style={{ height: Math.max(6, (day.views / max) * 120), background: "linear-gradient(180deg,#f5d78c,#d4a843)", borderRadius: 6 }} />
+              <div title={`${day.views} visualizações`} style={{ height: Math.max(6, (day.views / max) * 120), background: "linear-gradient(180deg,#e1a6ff,#b72cff)", borderRadius: 6 }} />
               <div title={`${day.contacts} contatos`} style={{ height: Math.max(4, (day.contacts / max) * 80), background: "rgba(255,255,255,.18)", borderRadius: 6 }} />
               <span style={{ color: "#666", fontSize: 10, textAlign: "center" }}>{day.label}</span>
             </div>

@@ -495,4 +495,4 @@ const formGrid: React.CSSProperties = { display: "grid", gap: 12 };
 const responsiveGrid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12 };
 const checkGrid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 9 };
 const inputStyle: React.CSSProperties = { width: "100%", minWidth: 0, border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, background: "#050506", color: "#fff", padding: 10 };
-const primaryButton: React.CSSProperties = { ...buttonStyle, justifySelf: "start", background: "#d4a843", color: "#080704", border: 0 };
+const primaryButton: React.CSSProperties = { ...buttonStyle, justifySelf: "start", background: "#b72cff", color: "#080704", border: 0 };

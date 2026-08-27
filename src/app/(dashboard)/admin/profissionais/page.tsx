@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -352,9 +353,9 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
               style={{
                 ...buttonStyle,
                 textDecoration: "none",
-                background: active ? "rgba(212,168,67,0.22)" : "rgba(255,255,255,0.03)",
-                border: active ? "1px solid rgba(212,168,67,0.5)" : "1px solid rgba(255,255,255,0.08)",
-                color: active ? "#f5d78c" : "#94a3b8",
+                background: active ? "rgba(183,44,255,0.22)" : "rgba(255,255,255,0.03)",
+                border: active ? "1px solid rgba(183,44,255,0.5)" : "1px solid rgba(255,255,255,0.08)",
+                color: active ? "#e1a6ff" : "#94a3b8",
               }}
             >
               {item === "ALL" ? "Todos" : statusLabel[item] ?? item}
@@ -377,12 +378,12 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
           const accent =
             pro.status === "ACTIVE" ? "#22c55e" :
             pro.status === "REJECTED" || pro.status === "SUSPENDED" ? "#ef4444" :
-            pro.status === "PENDING_REVIEW" ? "#d4a843" : "#475569";
+            pro.status === "PENDING_REVIEW" ? "#b72cff" : "#475569";
 
           const kycColor =
             (pro.kycStatus ?? "").toUpperCase() === "APPROVED" ? "#22c55e" :
             (pro.kycStatus ?? "").toUpperCase() === "REJECTED" ? "#ef4444" :
-            pro.kycSessionId ? "#d4a843" : "#475569";
+            pro.kycSessionId ? "#b72cff" : "#475569";
 
           const label = (text: string) => (
             <span style={{ fontSize: 11, color: "#64748b", display: "block", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>{text}</span>
@@ -464,7 +465,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                       <div>Doc: {translatedTechnicalStatus(pro.docStatus)} · Face: {translatedTechnicalStatus(pro.verifStatus)}</div>
                       {pro.verificationUrl && <div>Verificação: {verificationTypeLabel(pro.verificationType)}</div>}
                       {pro.presentationVideoUrl && (
-                        <div style={{ color: pro.presentationVideoStatus === "APPROVED" ? "#22c55e" : "#d4a843" }}>
+                        <div style={{ color: pro.presentationVideoStatus === "APPROVED" ? "#22c55e" : "#b72cff" }}>
                           Vídeo: {translatedTechnicalStatus(pro.presentationVideoStatus)}
                         </div>
                       )}
@@ -502,8 +503,8 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                       </div>
                     )}
                     {pro.pauseUntil && (
-                      <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 8, background: "rgba(212,168,67,0.08)", border: "1px solid rgba(212,168,67,0.22)" }}>
-                        <span style={{ fontSize: 12, color: "#f5d78c" }}>Pausada até {pro.pauseUntil.toLocaleDateString("pt-BR")}</span>
+                      <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 8, background: "rgba(183,44,255,0.08)", border: "1px solid rgba(183,44,255,0.22)" }}>
+                        <span style={{ fontSize: 12, color: "#e1a6ff" }}>Pausada até {pro.pauseUntil.toLocaleDateString("pt-BR")}</span>
                       </div>
                     )}
                   </div>
@@ -524,7 +525,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                       ] as [string, string | number, boolean][]).map(([lbl, val, warn]) => (
                         <div key={lbl}>
                           <span style={{ color: "#64748b", fontSize: 12 }}>{lbl} </span>
-                          <span style={{ fontWeight: 800, color: warn ? "#ef4444" : lbl === "Boost" && pro.boostActive ? "#d4a843" : "#e2e8f0" }}>
+                          <span style={{ fontWeight: 800, color: warn ? "#ef4444" : lbl === "Boost" && pro.boostActive ? "#b72cff" : "#e2e8f0" }}>
                             {String(val)}
                           </span>
                         </div>

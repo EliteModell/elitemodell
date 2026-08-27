@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ComponentType } from "react";
-import { Building2, ChevronRight, ShieldCheck, UserRound, X } from "lucide-react";
+import { ChevronRight, ShieldCheck, UserRound, X } from "lucide-react";
 import {
   type EntryAccountRole,
   cadastroHrefForRole,
@@ -28,12 +28,6 @@ const options: Array<{
     title: "Acompanhante",
     description: "Quero anunciar meu perfil e acompanhar minha verificação.",
     icon: ShieldCheck,
-  },
-  {
-    role: "anfitriao",
-    title: "Anfitrião",
-    description: "Quero cadastrar um local para receber profissionais com segurança.",
-    icon: Building2,
   },
 ];
 
@@ -130,7 +124,7 @@ export function EntryChoiceStyles() {
         border-radius: 16px;
         display: grid;
         place-items: center;
-        color: #f5b83b;
+        color: #c451ff;
         background: rgba(245,184,59,0.10);
         border: 1px solid rgba(214,168,58,0.22);
       }
@@ -152,7 +146,7 @@ export function EntryChoiceStyles() {
         line-height: 1.45;
       }
       .entry-choice-arrow {
-        color: #f5b83b;
+        color: #c451ff;
       }
       .entry-choice-overlay {
         position: fixed;
@@ -187,7 +181,7 @@ export function EntryChoiceStyles() {
       }
       .entry-choice-head span {
         display: block;
-        color: #f5b83b;
+        color: #c451ff;
         font-size: 11px;
         font-weight: 950;
         letter-spacing: 0.16em;
@@ -212,7 +206,7 @@ export function EntryChoiceStyles() {
         border: 1px solid rgba(214,168,58,0.28);
         border-radius: 14px;
         background: #101014;
-        color: #f5b83b;
+        color: #c451ff;
         display: grid;
         place-items: center;
       }

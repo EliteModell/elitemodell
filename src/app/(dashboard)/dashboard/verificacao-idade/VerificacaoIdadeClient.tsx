@@ -82,11 +82,11 @@ export default function VerificacaoIdadeClient({
 
       <section className="client-panel overflow-hidden p-6">
         <div className="flex items-start gap-4">
-          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-[8px] border border-[#d6a83a]/25 bg-[#d6a83a]/12 text-[#f5b83b]">
+          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-[8px] border border-[#d6a83a]/25 bg-[#d6a83a]/12 text-[#c451ff]">
             <ShieldCheck className="h-7 w-7" />
           </span>
           <div className="min-w-0">
-            <span className="inline-flex rounded-full border border-[#d6a83a]/25 bg-[#d6a83a]/10 px-3 py-1 text-[12px] font-black uppercase text-[#f5b83b]">
+            <span className="inline-flex rounded-full border border-[#d6a83a]/25 bg-[#d6a83a]/10 px-3 py-1 text-[12px] font-black uppercase text-[#c451ff]">
               {clientAgeVerificationLabel(status)}
             </span>
             <h2 className="mt-4 text-[25px] font-black leading-8 text-white">
@@ -95,7 +95,7 @@ export default function VerificacaoIdadeClient({
             <p className="mt-3 text-[15px] leading-7 text-[#b8b8b8]">
               O aviso inicial 18+ apenas registra seu consentimento para navegar. Esta verificação é separada e libera contatos, conteúdos restritos e recursos privados do cliente.
             </p>
-            <p className="mt-2 text-[12px] font-black text-[#f5b83b]">
+            <p className="mt-2 text-[12px] font-black text-[#c451ff]">
               {providerLabel}
             </p>
             {kycSessionId ? (
@@ -125,7 +125,7 @@ export default function VerificacaoIdadeClient({
 
         {status === "pending" ? (
           <div className="mt-6 rounded-[18px] border border-[#d6a83a]/20 bg-[#d6a83a]/8 p-5 text-center">
-            <p className="text-[15px] font-black text-[#f5b83b]">Verificação em análise</p>
+            <p className="text-[15px] font-black text-[#c451ff]">Verificação em análise</p>
             <p className="mt-2 text-[13px] leading-6 text-[#b8b8b8]">
               Sua solicitação foi recebida. A equipe revisará e você será notificado quando o status for atualizado.
             </p>
@@ -160,7 +160,7 @@ export default function VerificacaoIdadeClient({
 
       <section className="client-card p-5">
         <div className="flex items-start gap-4">
-          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#d6a83a]/20 bg-[#d6a83a]/10 text-[#f5b83b]">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#d6a83a]/20 bg-[#d6a83a]/10 text-[#c451ff]">
             <LockKeyhole className="h-6 w-6" />
           </span>
           <div className="min-w-0">
@@ -174,7 +174,7 @@ export default function VerificacaoIdadeClient({
 
       <section className="client-card p-5">
         <div className="flex items-start gap-4">
-          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#d6a83a]/20 bg-[#d6a83a]/10 text-[#f5b83b]">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#d6a83a]/20 bg-[#d6a83a]/10 text-[#c451ff]">
             <CircleHelp className="h-6 w-6" />
           </span>
           <div className="min-w-0">

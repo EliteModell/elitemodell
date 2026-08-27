@@ -158,7 +158,7 @@ export default function AgendamentosPage() {
       {!loading && !error && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {filtered.length === 0 && (
-            <div style={{ background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: 40, textAlign: "center" }}>
+            <div style={{ background: "#111", border: "1px solid rgba(183,44,255,.16)", borderRadius: 18, padding: 40, textAlign: "center" }}>
               <p style={{ color: "#555", fontSize: 14 }}>Nenhum agendamento neste status.</p>
             </div>
           )}
@@ -168,7 +168,7 @@ export default function AgendamentosPage() {
             const date = new Date(a.date);
             const label = clientName(a);
             return (
-              <div key={a.id} style={{ background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: "20px 22px" }}>
+              <div key={a.id} style={{ background: "#111", border: "1px solid rgba(183,44,255,.16)", borderRadius: 18, padding: "20px 22px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
                   <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
                     <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#cc0000", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
@@ -186,8 +186,8 @@ export default function AgendamentosPage() {
                         <p style={{ fontSize: 13, color: "#666", marginTop: 6, maxWidth: 400 }}>{a.notes}</p>
                       )}
                       {a.voucher && (
-                        <div style={{ marginTop: 10, border: "1px solid rgba(212,168,67,.24)", borderRadius: 10, padding: 10, color: "#d8d1c7", fontSize: 12, lineHeight: 1.6 }}>
-                          <strong style={{ color: "#f5d78c" }}>Voucher promocional aplicado pela plataforma</strong><br />
+                        <div style={{ marginTop: 10, border: "1px solid rgba(183,44,255,.24)", borderRadius: 10, padding: 10, color: "#d8d1c7", fontSize: 12, lineHeight: 1.6 }}>
+                          <strong style={{ color: "#e1a6ff" }}>Voucher promocional aplicado pela plataforma</strong><br />
                           Valor original: {money(a.originalPrice ?? a.price)} · Voucher aplicado: {money(a.voucherDiscount ?? a.voucher.value)} · Cliente pagará: {money(a.finalPrice ?? a.price)}
                         </div>
                       )}

@@ -7,7 +7,6 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FiltersModal from "@/components/FiltersModal";
-import VoucherRouletteModal from "@/components/vouchers/VoucherRouletteModal";
 import ProfessionalContactAction from "@/components/professionals/ProfessionalContactAction";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import {
@@ -15,12 +14,12 @@ import {
   SUPPORTED_PUBLIC_LOCATIONS,
 } from "@/lib/brazilian-location";
 
-const GOLD = "#d4a843";
-const GOLD_DIM = "rgba(212,168,67,0.12)";
-const GOLD_MID = "rgba(212,168,67,0.28)";
+const GOLD = "#b72cff";
+const GOLD_DIM = "rgba(183,44,255,0.12)";
+const GOLD_MID = "rgba(183,44,255,0.28)";
 const PLAYFAIR = "var(--font-playfair), serif";
 
-type MainTab = "acompanhantes" | "imoveis";
+type MainTab = "acompanhantes";
 type SubTab = "mulheres" | "trans" | "homens";
 type QuickFilter = "price" | "online" | "reviews" | "place" | "photos";
 type DistanceFilter = "any" | "5" | "10" | "25" | "50";
@@ -129,7 +128,7 @@ function slugify(text: string) {
 }
 
 function isMainTab(value: string | null): value is MainTab {
-  return value === "acompanhantes" || value === "imoveis";
+  return value === "acompanhantes";
 }
 
 function isSubTab(value: string | null): value is SubTab {
@@ -350,11 +349,6 @@ function BuscarContent() {
     router.replace(query ? `/buscar?${query}` : "/buscar", { scroll: false });
   }
 
-  function setTab(next: MainTab) {
-    setMainTab(next);
-    replaceQuery({ tab: next === "acompanhantes" ? null : next });
-  }
-
   function setCategory(next: SubTab) {
     setSubTab(next);
     replaceQuery({ sub: next === "mulheres" ? null : next });
@@ -529,7 +523,7 @@ function BuscarContent() {
           gap: 14px;
         }
         .perfil-card { border-radius: 8px; overflow: hidden; background: #111; border: 1px solid #2a2620; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; cursor: pointer; box-shadow: 0 18px 48px rgba(0,0,0,0.28); contain: layout paint; }
-        .perfil-card:hover { transform: translateY(-3px); border-color: rgba(212,168,67,0.3); box-shadow: 0 24px 72px rgba(0,0,0,0.36); }
+        .perfil-card:hover { transform: translateY(-3px); border-color: rgba(183,44,255,0.3); box-shadow: 0 24px 72px rgba(0,0,0,0.36); }
         .perfil-card:active { transform: translateY(1px) scale(0.995); }
         .perfil-foto { position: relative; padding-top: 130%; }
         .perfil-info { padding: 14px 16px; }
@@ -546,7 +540,7 @@ function BuscarContent() {
           padding: 0 16px;
           border-radius: 12px;
           border: 1px solid ${GOLD_MID};
-          background: linear-gradient(135deg, rgba(212,168,67,0.09), rgba(255,255,255,0.025)), #0b0b0b;
+          background: linear-gradient(135deg, rgba(183,44,255,0.09), rgba(255,255,255,0.025)), #0b0b0b;
           color: #f4f1ea;
           cursor: pointer;
           text-align: left;
@@ -556,7 +550,7 @@ function BuscarContent() {
         .stories-strip { display: flex; gap: 12px; overflow-x: auto; padding: 2px 0 18px; margin-bottom: 6px; -webkit-overflow-scrolling: touch; }
         .stories-strip::-webkit-scrollbar, .filtros-scroll::-webkit-scrollbar, .action-scroll::-webkit-scrollbar { display: none; }
         .story-item { width: 72px; flex: 0 0 auto; color: #d9d1c3; text-align: center; text-decoration: none; }
-        .story-avatar { width: 64px; height: 64px; margin: 0 auto 7px; border-radius: 999px; padding: 2px; background: linear-gradient(135deg, #f6d979, #d4a843, #6f4b10); position: relative; }
+        .story-avatar { width: 64px; height: 64px; margin: 0 auto 7px; border-radius: 999px; padding: 2px; background: linear-gradient(135deg, #f6d979, #b72cff, #6f4b10); position: relative; }
         .story-avatar-inner { position: relative; width: 100%; height: 100%; border-radius: 999px; overflow: hidden; background: #151515; border: 2px solid #050505; }
         .dynamic-title { margin: 0 0 16px; max-width: 920px; color: #f4f1ea; font-family: ${PLAYFAIR}; font-size: clamp(1.75rem, 5vw, 3.7rem); line-height: 1.02; letter-spacing: 0; }
         .dynamic-title strong { color: ${GOLD}; font-weight: 900; }
@@ -574,7 +568,7 @@ function BuscarContent() {
           transition: all 0.2s;
           flex-shrink: 0;
         }
-        .filter-chip.active { background: rgba(212,168,67,0.15); border-color: ${GOLD}; color: #f1f5f9; font-weight: 800; }
+        .filter-chip.active { background: rgba(183,44,255,0.15); border-color: ${GOLD}; color: #f1f5f9; font-weight: 800; }
         .action-select {
           min-height: 38px;
           border-radius: 999px;
@@ -614,7 +608,7 @@ function BuscarContent() {
           align-items: center;
           justify-content: space-between;
           gap: 12px;
-          border: 1px solid rgba(212,168,67,0.12);
+          border: 1px solid rgba(183,44,255,0.12);
           border-radius: 12px;
           background: rgba(255,255,255,0.025);
           color: #f4f1ea;
@@ -623,15 +617,15 @@ function BuscarContent() {
           cursor: pointer;
           text-align: left;
         }
-        .location-option.active { border-color: ${GOLD}; background: rgba(212,168,67,0.12); }
+        .location-option.active { border-color: ${GOLD}; background: rgba(183,44,255,0.12); }
         .profiles-empty, .rooms-coming-soon {
           min-height: 330px;
           display: grid;
           place-items: center;
           text-align: center;
-          border: 1px solid rgba(212,168,67,0.16);
+          border: 1px solid rgba(183,44,255,0.16);
           border-radius: 18px;
-          background: radial-gradient(circle at 50% 0%, rgba(212,168,67,0.10), transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.035), rgba(212,168,67,0.025)), #080808;
+          background: radial-gradient(circle at 50% 0%, rgba(183,44,255,0.10), transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.035), rgba(183,44,255,0.025)), #080808;
           padding: 42px 22px;
           margin-top: 18px;
         }
@@ -642,14 +636,14 @@ function BuscarContent() {
           align-items: center;
           justify-content: center;
           padding: 6px 12px;
-          border: 1px solid rgba(212,168,67,0.26);
+          border: 1px solid rgba(183,44,255,0.26);
           border-radius: 999px;
           color: ${GOLD};
           font-size: 10px;
           font-weight: 900;
           letter-spacing: 0.16em;
           text-transform: uppercase;
-          background: rgba(212,168,67,0.08);
+          background: rgba(183,44,255,0.08);
         }
         .profiles-empty h2, .rooms-coming-soon h2 {
           margin: 16px 0 10px;
@@ -689,11 +683,11 @@ function BuscarContent() {
         }
         .profiles-empty-actions button, .coming-actions .primary {
           border: 1px solid transparent;
-          background: linear-gradient(135deg, #f6d979, #d4a843 50%, #a57920);
+          background: linear-gradient(135deg, #f6d979, #b72cff 50%, #a57920);
           color: #080704;
         }
         .profiles-empty-actions a, .coming-actions .secondary {
-          border: 1px solid rgba(212,168,67,0.22);
+          border: 1px solid rgba(183,44,255,0.22);
           background: rgba(255,255,255,0.035);
           color: #f4f1ea;
         }
@@ -741,17 +735,10 @@ function BuscarContent() {
       <Navbar />
 
       <div className="search-shell">
-        <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${GOLD}, rgba(212,168,67,0.3), transparent)` }} />
+        <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${GOLD}, rgba(183,44,255,0.3), transparent)` }} />
         <div style={{ maxWidth: 1280, margin: "0 auto", padding: "12px 16px 14px" }}>
           <div className="top-search-grid">
-            <div className="type-toggle" style={{ display: "flex", gap: 0, background: "#111", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, overflow: "hidden", flexShrink: 0 }}>
-              {([["acompanhantes", "Acompanhantes"], ["imoveis", "Quartos"]] as const).map(([tab, label]) => (
-                <button key={tab} onClick={() => setTab(tab)}
-                  style={{ padding: "9px 16px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, background: mainTab === tab ? GOLD : "transparent", color: mainTab === tab ? "#080704" : "#8d8578", transition: "all 0.2s", fontFamily: PLAYFAIR }}>
-                  {label}
-                </button>
-              ))}
-            </div>
+            <div className="type-toggle" style={{ padding: "9px 16px", background: "#111", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, color: GOLD, fontWeight: 700, fontSize: 13, fontFamily: PLAYFAIR }}>Acompanhantes</div>
 
             <div style={{ flex: 1, position: "relative", minWidth: 0 }}>
               <SearchIcon style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
@@ -761,7 +748,7 @@ function BuscarContent() {
                 onKeyDown={(event) => {
                   if (event.key === "Enter") applyKeywordSearch();
                 }}
-                placeholder={mainTab === "acompanhantes" ? "Nome, serviço ou especialidade..." : "Cidade, bairro ou estrutura..."}
+                placeholder="Nome, serviço ou especialidade..."
                 style={{ width: "100%", padding: "10px 14px 10px 36px", background: "#111", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, color: "#f4f1ea", fontSize: 14, outline: "none", boxSizing: "border-box", transition: "border-color 0.2s" }}
                 onFocus={(event) => ((event.target as HTMLElement).style.borderColor = GOLD)}
                 onBlur={(event) => ((event.target as HTMLElement).style.borderColor = GOLD_DIM)}
@@ -895,28 +882,8 @@ function BuscarContent() {
           </>
         )}
 
-        {mainTab === "imoveis" && (
-          <section className="rooms-coming-soon" aria-labelledby="rooms-coming-title">
-            <div className="rooms-coming-soon-inner">
-              <span className="soon-kicker">Ambientes reservados</span>
-              <h2 id="rooms-coming-title">Quartos discretos em breve.</h2>
-              <p>
-                Estamos selecionando os primeiros espaços profissionais da Elite Modell.
-                As listagens públicas só entram no ar depois de curadoria e aprovação.
-              </p>
-              <div className="coming-actions">
-                <Link className="primary" href={ACCOUNT_ROUTES.onboardingAnfitriao}>Cadastrar para anunciar</Link>
-                <Link className="secondary" href={ACCOUNT_ROUTES.login}>Já sou anfitrião</Link>
-              </div>
-            </div>
-          </section>
-        )}
       </div>
 
-      <VoucherRouletteModal
-        key={params.get("demonstrarRoleta") === "1" ? "roulette-demo" : "roulette-live"}
-        demoMode={params.get("demonstrarRoleta") === "1"}
-      />
       <Footer />
     </div>
   );
@@ -1097,7 +1064,7 @@ function ProfileCard({ profile }: { profile: CardPerfil }) {
 
           <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: profile.contactAvailable ? 10 : 0 }}>
             {profile.servicos.slice(0, 3).map((service) => (
-              <span key={service} style={{ fontSize: 10, background: GOLD_DIM, border: "1px solid rgba(212,168,67,0.15)", color: "#94a3b8", padding: "3px 8px", borderRadius: 10 }}>{service}</span>
+              <span key={service} style={{ fontSize: 10, background: GOLD_DIM, border: "1px solid rgba(183,44,255,0.15)", color: "#94a3b8", padding: "3px 8px", borderRadius: 10 }}>{service}</span>
             ))}
           </div>
 

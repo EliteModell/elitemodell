@@ -8,9 +8,9 @@ import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { supabaseAuth } from "@/lib/supabase-client";
 
 /* ── constantes de tema ─────────────────────────────────── */
-const GOLD = "#d4a843";
-const GOLD_DIM = "rgba(212,168,67,0.10)";
-const GOLD_MID = "rgba(212,168,67,0.28)";
+const GOLD = "#b72cff";
+const GOLD_DIM = "rgba(183,44,255,0.10)";
+const GOLD_MID = "rgba(183,44,255,0.28)";
 const PLAYFAIR = "var(--font-playfair), serif";
 
 const inputStyle: React.CSSProperties = {
@@ -974,8 +974,8 @@ export default function ProfissionalNovoPage() {
           margin: "0 0 22px",
           padding: "14px 16px",
           borderRadius: 14,
-          border: "1px solid rgba(212,168,67,0.35)",
-          background: "rgba(212,168,67,0.10)",
+          border: "1px solid rgba(183,44,255,0.35)",
+          background: "rgba(183,44,255,0.10)",
           color: "#f8e7b0",
           fontSize: 12,
           lineHeight: 1.6,
@@ -1565,7 +1565,7 @@ export default function ProfissionalNovoPage() {
           </button>
         ) : (
           <button onClick={submit} disabled={loading || emailVerified === false}
-            style={{ padding: "12px 32px", background: loading || emailVerified === false ? "#9e7b2a" : GOLD, border: "none", borderRadius: 10, color: "#060e1b", fontSize: 14, fontWeight: 800, cursor: loading || emailVerified === false ? "not-allowed" : "pointer" }}>
+            style={{ padding: "12px 32px", background: loading || emailVerified === false ? "#6900a3" : GOLD, border: "none", borderRadius: 10, color: "#060e1b", fontSize: 14, fontWeight: 800, cursor: loading || emailVerified === false ? "not-allowed" : "pointer" }}>
             {loading ? "Enviando..." : emailVerified === false ? "Confirme o email para enviar" : "Enviar para aprovação ✦"}
           </button>
         )}
@@ -1640,7 +1640,7 @@ export default function ProfissionalNovoPage() {
         .model-flow-page button { border-radius: 18px !important; }
         .model-flow-page [style*="#060e1b"],
         .model-flow-page [style*="#0b1420"],
-        .model-flow-page [style*="rgba(212,168,67"],
+        .model-flow-page [style*="rgba(183,44,255"],
         .model-flow-page [style*="rgba(34,197,94"] {
           background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98)) !important;
           border-color: rgba(214,168,58,0.25) !important;

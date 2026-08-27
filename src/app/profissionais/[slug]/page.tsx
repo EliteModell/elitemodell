@@ -16,9 +16,9 @@ const ActionAuthModal = dynamic(() => import("@/components/auth/ActionAuthModal"
 const PremiumUpsellModal = dynamic(() => import("@/components/premium/PremiumUpsellModal"));
 const ReviewForm = dynamic(() => import("@/components/ReviewForm"));
 
-const GOLD = "#d4a843";
-const GOLD_DIM = "rgba(212,168,67,0.12)";
-const GOLD_MID = "rgba(212,168,67,0.28)";
+const GOLD = "#b72cff";
+const GOLD_DIM = "rgba(183,44,255,0.12)";
+const GOLD_MID = "rgba(183,44,255,0.28)";
 const PLAYFAIR = "var(--font-playfair), serif";
 
 type GaleriaFiltro = "todas" | "fotos" | "videos";
@@ -508,7 +508,7 @@ export default function ProfissionalProfilePage() {
             <h1 style={{ fontSize: "clamp(34px, 9vw, 56px)", fontWeight: 700, color: "#f1f5f9", margin: 0, fontFamily: PLAYFAIR, letterSpacing: "-1px", lineHeight: 1, textShadow: "0 2px 16px rgba(0,0,0,0.6)" }}>
               {pro.displayName}
             </h1>
-            <p data-testid="profile-tier" style={{ fontSize: 10, color: "rgba(212,168,67,0.8)", fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", margin: "7px 0 0" }}>
+            <p data-testid="profile-tier" style={{ fontSize: 10, color: "rgba(183,44,255,0.8)", fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", margin: "7px 0 0" }}>
               {pro.verified ? "Verificada · " : ""}Premium
             </p>
           </div>
@@ -697,7 +697,7 @@ export default function ProfissionalProfilePage() {
                 setPremiumFeature("o vídeo exclusivo desta profissional");
                 setPremiumOpen(true);
               }}
-              style={{ width: "100%", marginBottom: 24, padding: 22, borderRadius: 16, border: `1px solid ${GOLD_MID}`, background: "radial-gradient(circle at 50% 0%,rgba(212,168,67,.16),transparent 55%),#0b1420", color: "#f5d78c", cursor: "pointer", textAlign: "left" }}
+              style={{ width: "100%", marginBottom: 24, padding: 22, borderRadius: 16, border: `1px solid ${GOLD_MID}`, background: "radial-gradient(circle at 50% 0%,rgba(183,44,255,.16),transparent 55%),#0b1420", color: "#e1a6ff", cursor: "pointer", textAlign: "left" }}
             >
               <span style={{ display: "block", color: GOLD, fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>Conteúdo Premium</span>
               <strong style={{ display: "block", marginTop: 8, color: "#f1f5f9", fontSize: 18, fontFamily: PLAYFAIR }}>Vídeo exclusivo disponível</strong>
@@ -941,7 +941,7 @@ export default function ProfissionalProfilePage() {
                 setPremiumFeature("todas as avaliações");
                 setPremiumOpen(true);
               }}
-              style={{ width: "100%", minHeight: 48, margin: "-6px 0 20px", borderRadius: 12, border: `1px solid ${GOLD_MID}`, background: GOLD_DIM, color: "#f5d78c", fontWeight: 900, cursor: "pointer" }}
+              style={{ width: "100%", minHeight: 48, margin: "-6px 0 20px", borderRadius: 12, border: `1px solid ${GOLD_MID}`, background: GOLD_DIM, color: "#e1a6ff", fontWeight: 900, cursor: "pointer" }}
             >
               Ver todas as {pro.totalReviews} avaliações com Premium
             </button>

@@ -126,14 +126,14 @@ export default function CardPaymentForm({ planId, creditAmount, bookingId, amoun
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative w-full max-w-[420px] overflow-hidden rounded-[24px] border border-[#d4a843]/25 bg-[#0d0d0d] shadow-[0_28px_90px_rgba(0,0,0,0.7)]">
-        <div className="h-[2px] bg-[linear-gradient(90deg,transparent,#f5b83b,#d4a843,transparent)]" />
+      <div className="relative w-full max-w-[420px] overflow-hidden rounded-[24px] border border-[#b72cff]/25 bg-[#0d0d0d] shadow-[0_28px_90px_rgba(0,0,0,0.7)]">
+        <div className="h-[2px] bg-[linear-gradient(90deg,transparent,#c451ff,#b72cff,transparent)]" />
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-2">
           <div className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4 text-[#d4a843]" />
-            <p className="text-[13px] font-bold uppercase tracking-widest text-[#d4a843]">Cartão de Crédito</p>
+            <CreditCard className="h-4 w-4 text-[#b72cff]" />
+            <p className="text-[13px] font-bold uppercase tracking-widest text-[#b72cff]">Cartão de Crédito</p>
           </div>
           {stage !== "paid" && (
             <button
@@ -258,7 +258,7 @@ export default function CardPaymentForm({ planId, creditAmount, bookingId, amoun
         {/* Processando */}
         {stage === "loading" && (
           <div className="flex flex-col items-center gap-4 px-6 pb-10 pt-6">
-            <Loader className="h-12 w-12 animate-spin text-[#d4a843]" />
+            <Loader className="h-12 w-12 animate-spin text-[#b72cff]" />
             <p className="text-[15px] text-white/60">Processando pagamento...</p>
           </div>
         )}

@@ -97,10 +97,10 @@ function ActionCard({
       <span className="min-w-0 flex-1">
         <span className="flex items-start gap-3">
           <span className="min-w-0 flex-1 text-[24px] font-black leading-7 text-[#f5f0e4]">{title}</span>
-          <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[#f5d78c] transition-transform group-active:translate-x-0.5" />
+          <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[#e1a6ff] transition-transform group-active:translate-x-0.5" />
         </span>
         <span className="mt-2 block text-[15px] leading-7 text-[#f5f0e4]/58">{description}</span>
-        <span className="mt-4 block text-[12px] font-black uppercase text-[#f5d78c]">{cta}</span>
+        <span className="mt-4 block text-[12px] font-black uppercase text-[#e1a6ff]">{cta}</span>
       </span>
     </Link>
   );
@@ -154,10 +154,10 @@ function QuickActionGrid({
               <span className="min-w-0 flex-1">
                 <span className="flex items-start gap-3">
                   <span className="min-w-0 flex-1 text-[24px] font-black leading-7 text-[#f5f0e4]">Carteira</span>
-                  <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[#f5d78c]" />
+                  <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[#e1a6ff]" />
                 </span>
                 <span className="mt-2 block text-[15px] leading-7 text-[#f5f0e4]/58">{walletText}</span>
-                <span className="mt-4 block text-[12px] font-black uppercase text-[#f5d78c]">Verificar idade</span>
+                <span className="mt-4 block text-[12px] font-black uppercase text-[#e1a6ff]">Verificar idade</span>
               </span>
             </ClientSensitiveAction>
           )}
@@ -186,10 +186,10 @@ function QuickStatsSection({
       <div className="client-card client-dashboard-level-card p-5">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-black uppercase tracking-wide text-[#f5d78c]/70">NIVEL ATUAL</p>
+            <p className="text-[11px] font-black uppercase tracking-wide text-[#e1a6ff]/70">NIVEL ATUAL</p>
             <p className="mt-1 text-[24px] font-black leading-tight text-[#f5f0e4]">{vip.label}</p>
           </div>
-          <span className="shrink-0 rounded-full border border-[#d4a843]/24 bg-[#d4a843]/10 px-2.5 py-1 text-[13px] font-black text-[#f5d78c]">
+          <span className="shrink-0 rounded-full border border-[#b72cff]/24 bg-[#b72cff]/10 px-2.5 py-1 text-[13px] font-black text-[#e1a6ff]">
             {vip.progress}%
           </span>
         </div>
@@ -197,7 +197,7 @@ function QuickStatsSection({
 
         <div className="mt-4 h-[5px] overflow-hidden rounded-full bg-[rgba(30,24,14,0.06)]">
           <div
-            className="h-full rounded-full bg-[#d4a843] transition-all duration-700"
+            className="h-full rounded-full bg-[#b72cff] transition-all duration-700"
             style={{ width: `${Math.max(3, vip.progress)}%` }}
           />
         </div>
@@ -230,7 +230,7 @@ function ReviewsSection() {
     <section className="client-page-tight client-dashboard-section">
       <div className="client-card p-5">
         <div className="flex items-start gap-4">
-          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-white/[0.07] bg-white/[0.04] text-[#f5d78c]">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-white/[0.07] bg-white/[0.04] text-[#e1a6ff]">
             <CircleAlert className="h-6 w-6" />
           </span>
           <div className="min-w-0">
@@ -256,7 +256,7 @@ function SafetyCard() {
     <section className="client-page-tight client-dashboard-section" style={{ paddingBottom: "calc(120px + env(safe-area-inset-bottom))" }}>
       <div className="client-panel p-5">
         <div className="flex items-start gap-4">
-          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/20 bg-[#d4a843]/10 text-[#f5d78c]">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#b72cff]/20 bg-[#b72cff]/10 text-[#e1a6ff]">
             <ShieldAlert className="h-6 w-6" />
           </span>
           <div className="min-w-0 flex-1">

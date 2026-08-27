@@ -7,7 +7,7 @@ import { PROPERTY_STATUS_DESCRIPTION, PROPERTY_STATUS_LABEL, propertyStatusTone 
 
 export const dynamic = "force-dynamic";
 
-const GOLD = "#d4a843";
+const GOLD = "#b72cff";
 
 function label(value: string | null | undefined) {
   return value?.trim() || "Não informado";
@@ -28,7 +28,7 @@ function statusColor(status: string) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section style={{ border: "1px solid rgba(212,168,67,0.18)", borderRadius: 8, background: "rgba(255,255,255,0.035)", padding: 18 }}>
+    <section style={{ border: "1px solid rgba(183,44,255,0.18)", borderRadius: 8, background: "rgba(255,255,255,0.035)", padding: 18 }}>
       <h2 style={{ margin: "0 0 14px", color: "#fff", fontSize: 17, fontWeight: 950 }}>{title}</h2>
       {children}
     </section>
@@ -37,7 +37,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Info({ label: itemLabel, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div style={{ border: "1px solid rgba(212,168,67,0.14)", borderRadius: 8, padding: 12, background: "rgba(0,0,0,0.18)" }}>
+    <div style={{ border: "1px solid rgba(183,44,255,0.14)", borderRadius: 8, padding: 12, background: "rgba(0,0,0,0.18)" }}>
       <p style={{ margin: "0 0 5px", color: GOLD, fontSize: 10, fontWeight: 950, letterSpacing: 1.2, textTransform: "uppercase" }}>{itemLabel}</p>
       <div style={{ color: "#f5f5f5", fontSize: 14, lineHeight: 1.45 }}>{value}</div>
     </div>
@@ -46,7 +46,7 @@ function Info({ label: itemLabel, value }: { label: string; value: React.ReactNo
 
 function ActionButton({ children }: { children: React.ReactNode }) {
   return (
-    <button style={{ minHeight: 42, borderRadius: 8, border: "1px solid rgba(212,168,67,0.28)", background: "rgba(212,168,67,0.10)", color: "#f5d78c", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "0 14px", fontWeight: 950, cursor: "pointer" }}>
+    <button style={{ minHeight: 42, borderRadius: 8, border: "1px solid rgba(183,44,255,0.28)", background: "rgba(183,44,255,0.10)", color: "#e1a6ff", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "0 14px", fontWeight: 950, cursor: "pointer" }}>
       {children}
     </button>
   );
@@ -119,7 +119,7 @@ export default async function ImovelAnfitriaoDetalhePage({
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <Link href={`/anfitriao/imoveis/${property.id}/editar`} style={{ minHeight: 42, borderRadius: 8, display: "inline-flex", alignItems: "center", gap: 8, border: "1px solid rgba(212,168,67,0.28)", color: "#f5d78c", padding: "0 14px", textDecoration: "none", fontWeight: 950 }}>
+          <Link href={`/anfitriao/imoveis/${property.id}/editar`} style={{ minHeight: 42, borderRadius: 8, display: "inline-flex", alignItems: "center", gap: 8, border: "1px solid rgba(183,44,255,0.28)", color: "#e1a6ff", padding: "0 14px", textDecoration: "none", fontWeight: 950 }}>
             <IconMark>Ed</IconMark> Editar
           </Link>
           {canSendReview ? (
@@ -157,7 +157,7 @@ export default async function ImovelAnfitriaoDetalhePage({
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
                 {property.photos.map((photo, index) => (
                   <a key={photo.id} href={photo.url} target="_blank" rel="noreferrer" style={{ color: "#aaa", textDecoration: "none", fontSize: 12 }}>
-                    <div style={{ aspectRatio: "4 / 3", borderRadius: 8, border: "1px solid rgba(212,168,67,0.18)", background: `url(${photo.url}) center / cover` }} />
+                    <div style={{ aspectRatio: "4 / 3", borderRadius: 8, border: "1px solid rgba(183,44,255,0.18)", background: `url(${photo.url}) center / cover` }} />
                     <span style={{ display: "block", marginTop: 6 }}>Foto {index + 1}</span>
                   </a>
                 ))}
@@ -203,7 +203,7 @@ export default async function ImovelAnfitriaoDetalhePage({
             ) : (
               <div style={{ display: "grid", gap: 10 }}>
                 {property.bookings.map((booking) => (
-                  <article key={booking.id} style={{ border: "1px solid rgba(212,168,67,0.14)", borderRadius: 8, padding: 12 }}>
+                  <article key={booking.id} style={{ border: "1px solid rgba(183,44,255,0.14)", borderRadius: 8, padding: 12 }}>
                     <strong style={{ color: "#fff" }}>{booking.guest.name ?? booking.guest.email ?? "Cliente"}</strong>
                     <p style={{ color: "#b8b8b8", margin: "6px 0" }}>
                       {booking.checkIn.toLocaleDateString("pt-BR")} até {booking.checkOut.toLocaleDateString("pt-BR")} · {money(booking.totalPrice)}
@@ -219,7 +219,7 @@ export default async function ImovelAnfitriaoDetalhePage({
             {auditLogs.length ? (
               <div style={{ display: "grid", gap: 10 }}>
                 {auditLogs.map((audit) => (
-                  <article key={audit.id} style={{ border: "1px solid rgba(212,168,67,0.14)", borderRadius: 8, padding: 12 }}>
+                  <article key={audit.id} style={{ border: "1px solid rgba(183,44,255,0.14)", borderRadius: 8, padding: 12 }}>
                     <strong style={{ color: "#fff", fontSize: 13 }}>{audit.action === "PROPERTY_APPROVED" ? "Aprovado" : "Revisado"}</strong>
                     <p style={{ color: "#9ca3af", margin: "5px 0 0", fontSize: 12 }}>{audit.timestamp.toLocaleString("pt-BR")}</p>
                     {audit.reason ? <p style={{ color: "#d1d5db", margin: "7px 0 0", fontSize: 13 }}>{audit.reason}</p> : null}

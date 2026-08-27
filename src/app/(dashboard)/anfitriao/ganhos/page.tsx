@@ -3,7 +3,7 @@ import { requireHostPanel } from "@/lib/account-access";
 
 export const dynamic = "force-dynamic";
 
-const GOLD = "#d4a843";
+const GOLD = "#b72cff";
 
 function money(value: number | null | undefined) {
   return `R$ ${(value ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
@@ -11,8 +11,8 @@ function money(value: number | null | undefined) {
 
 function Stat({ label, value, icon }: { label: string; value: React.ReactNode; icon: React.ReactNode }) {
   return (
-    <article style={{ border: "1px solid rgba(212,168,67,0.18)", borderRadius: 8, background: "rgba(255,255,255,0.035)", padding: 16 }}>
-      <div style={{ width: 42, height: 42, display: "grid", placeItems: "center", borderRadius: 8, color: GOLD, background: "rgba(212,168,67,0.10)", border: "1px solid rgba(212,168,67,0.20)", marginBottom: 12 }}>
+    <article style={{ border: "1px solid rgba(183,44,255,0.18)", borderRadius: 8, background: "rgba(255,255,255,0.035)", padding: 16 }}>
+      <div style={{ width: 42, height: 42, display: "grid", placeItems: "center", borderRadius: 8, color: GOLD, background: "rgba(183,44,255,0.10)", border: "1px solid rgba(183,44,255,0.20)", marginBottom: 12 }}>
         {icon}
       </div>
       <strong style={{ display: "block", color: "#fff", fontSize: 24 }}>{value}</strong>
@@ -56,14 +56,14 @@ export default async function GanhosAnfitriaoPage() {
         <Stat label="Repasse pendente" value={money(pending._sum.hostPayout)} icon={<IconMark>...</IconMark>} />
       </section>
 
-      <section style={{ border: "1px solid rgba(212,168,67,0.18)", borderRadius: 8, background: "rgba(255,255,255,0.035)", padding: 18 }}>
+      <section style={{ border: "1px solid rgba(183,44,255,0.18)", borderRadius: 8, background: "rgba(255,255,255,0.035)", padding: 18 }}>
         <h2 style={{ margin: "0 0 14px", color: "#fff", fontSize: 18, fontWeight: 950 }}>Movimentações recentes</h2>
         {recent.length === 0 ? (
           <p style={{ margin: 0, color: "#9ca3af" }}>Nenhuma movimentação financeira ainda.</p>
         ) : (
           <div style={{ display: "grid", gap: 10 }}>
             {recent.map((booking) => (
-              <article key={booking.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", border: "1px solid rgba(212,168,67,0.14)", borderRadius: 8, padding: 12 }}>
+              <article key={booking.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", border: "1px solid rgba(183,44,255,0.14)", borderRadius: 8, padding: 12 }}>
                 <div>
                   <strong style={{ color: "#fff" }}>{booking.property.title}</strong>
                   <p style={{ color: "#9ca3af", margin: "5px 0 0", fontSize: 13 }}>{booking.guest.name ?? booking.guest.email ?? "Cliente"} · {booking.status}</p>

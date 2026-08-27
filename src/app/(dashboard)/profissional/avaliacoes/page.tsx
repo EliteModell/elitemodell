@@ -86,7 +86,7 @@ export default function ProfissionalAvaliacoesPage() {
     }
   }
 
-  const card = { background: "#111", border: "1px solid rgba(212,168,67,.16)", borderRadius: 18, padding: 20 } as const;
+  const card = { background: "#111", border: "1px solid rgba(183,44,255,.16)", borderRadius: 18, padding: 20 } as const;
 
   return (
     <div style={{ maxWidth: 860 }}>
@@ -108,11 +108,11 @@ export default function ProfissionalAvaliacoesPage() {
                   <strong style={{ color: "#fff" }}>{review.author?.name ?? review.author?.email ?? "Cliente"}</strong>
                   <p style={{ color: "#777", margin: "4px 0 0", fontSize: 12 }}>{new Date(review.createdAt).toLocaleDateString("pt-BR")}</p>
                 </div>
-                <div style={{ color: "#d4a843", fontWeight: 900 }}>{"★".repeat(review.rating)}<span style={{ color: "#333" }}>{"★".repeat(5 - review.rating)}</span></div>
+                <div style={{ color: "#b72cff", fontWeight: 900 }}>{"★".repeat(review.rating)}<span style={{ color: "#333" }}>{"★".repeat(5 - review.rating)}</span></div>
               </div>
               <p style={{ color: "#aaa", lineHeight: 1.65, margin: "14px 0" }}>{review.comment}</p>
               {review.dispute ? (
-                <div style={{ border: "1px solid rgba(212,168,67,.22)", background: "rgba(212,168,67,.07)", borderRadius: 10, padding: 12, color: "#f5d78c", fontSize: 13 }}>
+                <div style={{ border: "1px solid rgba(183,44,255,.22)", background: "rgba(183,44,255,.07)", borderRadius: 10, padding: 12, color: "#e1a6ff", fontSize: 13 }}>
                   Contestação: {review.dispute.status === "PENDING" ? "em análise" : review.dispute.status === "ACCEPTED" ? "aceita" : "mantida"}.
                   {review.dispute.adminNote ? <div style={{ color: "#aaa", marginTop: 6 }}>Resposta admin: {review.dispute.adminNote}</div> : null}
                 </div>
@@ -126,12 +126,12 @@ export default function ProfissionalAvaliacoesPage() {
                     style={{ width: "100%", borderRadius: 8, border: "1px solid #2a2a2a", background: "#0d0d0d", color: "#fff", padding: 12 }}
                   />
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <button disabled={saving} onClick={() => disputeReview(review.id)} style={{ padding: "10px 16px", background: "#d4a843", color: "#080704", border: 0, borderRadius: 10, fontWeight: 900, cursor: saving ? "wait" : "pointer" }}>Enviar contestação</button>
+                    <button disabled={saving} onClick={() => disputeReview(review.id)} style={{ padding: "10px 16px", background: "#b72cff", color: "#080704", border: 0, borderRadius: 10, fontWeight: 900, cursor: saving ? "wait" : "pointer" }}>Enviar contestação</button>
                     <button onClick={() => { setOpenId(null); setReason(""); }} style={{ padding: "10px 16px", background: "transparent", color: "#aaa", border: "1px solid #2a2a2a", borderRadius: 8 }}>Cancelar</button>
                   </div>
                 </div>
               ) : (
-                <button onClick={() => setOpenId(review.id)} style={{ padding: "10px 14px", background: "transparent", border: "1px solid rgba(212,168,67,.28)", borderRadius: 10, color: "#d4a843", fontWeight: 800, cursor: "pointer" }}>
+                <button onClick={() => setOpenId(review.id)} style={{ padding: "10px 14px", background: "transparent", border: "1px solid rgba(183,44,255,.28)", borderRadius: 10, color: "#b72cff", fontWeight: 800, cursor: "pointer" }}>
                   Contestar avaliação
                 </button>
               )}

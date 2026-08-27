@@ -61,7 +61,7 @@ export default function PublicReportButton({ targetType, targetId, initialOpen =
               Descricao
               <textarea value={description} onChange={(event) => setDescription(event.target.value)} minLength={20} maxLength={2000} className="min-h-28 rounded-[8px] border border-white/15 bg-black p-3" />
             </label>
-            {result ? <p className="mt-3 text-sm text-[#f5d78c]">{result}</p> : null}
+            {result ? <p className="mt-3 text-sm text-[#e1a6ff]">{result}</p> : null}
             <button type="button" disabled={sending || description.trim().length < 20} onClick={submit} className="mt-4 min-h-11 rounded-[8px] bg-red-500 px-4 font-black text-white disabled:opacity-50">
               {sending ? "Enviando..." : "Enviar denuncia"}
             </button>

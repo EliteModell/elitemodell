@@ -7,7 +7,7 @@ import { PROPERTY_STATUS_LABEL } from "@/lib/property-status";
 
 export const dynamic = "force-dynamic";
 
-const GOLD = "#d4a843";
+const GOLD = "#b72cff";
 
 function Field({
   label,
@@ -39,7 +39,7 @@ function TextArea({ label, name, defaultValue, rows = 5 }: { label: string; name
 
 function Toggle({ label, name, defaultChecked }: { label: string; name: string; defaultChecked: boolean }) {
   return (
-    <label style={{ minHeight: 48, display: "flex", alignItems: "center", gap: 10, border: "1px solid rgba(212,168,67,0.18)", borderRadius: 8, padding: "0 12px", color: "#f5f5f5", fontSize: 13, fontWeight: 800 }}>
+    <label style={{ minHeight: 48, display: "flex", alignItems: "center", gap: 10, border: "1px solid rgba(183,44,255,0.18)", borderRadius: 8, padding: "0 12px", color: "#f5f5f5", fontSize: 13, fontWeight: 800 }}>
       <input name={name} type="checkbox" defaultChecked={defaultChecked} style={{ accentColor: GOLD }} />
       {label}
     </label>
@@ -48,7 +48,7 @@ function Toggle({ label, name, defaultChecked }: { label: string; name: string; 
 
 const inputStyle: React.CSSProperties = {
   minHeight: 48,
-  border: "1px solid rgba(212,168,67,0.26)",
+  border: "1px solid rgba(183,44,255,0.26)",
   borderRadius: 8,
   background: "rgba(8,8,10,0.92)",
   color: "#fff",
@@ -96,7 +96,7 @@ export default async function EditarImovelAnfitriaoPage({
         </div>
       ) : null}
 
-      <form action={saveHostProperty} style={{ display: "grid", gap: 18, border: "1px solid rgba(212,168,67,0.18)", borderRadius: 8, background: "rgba(255,255,255,0.035)", padding: 18 }}>
+      <form action={saveHostProperty} style={{ display: "grid", gap: 18, border: "1px solid rgba(183,44,255,0.18)", borderRadius: 8, background: "rgba(255,255,255,0.035)", padding: 18 }}>
         <input type="hidden" name="id" value={property.id} />
 
         <section style={{ display: "grid", gap: 14 }}>
@@ -159,8 +159,8 @@ export default async function EditarImovelAnfitriaoPage({
           </p>
         </section>
 
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end", borderTop: "1px solid rgba(212,168,67,0.14)", paddingTop: 16 }}>
-          <button name="intent" value="draft" style={{ minHeight: 46, borderRadius: 8, border: "1px solid rgba(212,168,67,0.28)", background: "rgba(212,168,67,0.08)", color: "#f5d78c", padding: "0 16px", fontWeight: 950, cursor: "pointer" }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end", borderTop: "1px solid rgba(183,44,255,0.14)", paddingTop: 16 }}>
+          <button name="intent" value="draft" style={{ minHeight: 46, borderRadius: 8, border: "1px solid rgba(183,44,255,0.28)", background: "rgba(183,44,255,0.08)", color: "#e1a6ff", padding: "0 16px", fontWeight: 950, cursor: "pointer" }}>
             Salvar rascunho
           </button>
           <button name="intent" value="review" style={{ minHeight: 46, border: "none", borderRadius: 8, background: GOLD, color: "#070707", padding: "0 18px", fontWeight: 950, cursor: "pointer" }}>

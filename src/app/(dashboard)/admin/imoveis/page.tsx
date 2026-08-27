@@ -56,7 +56,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams?
       <AdminHeader title="Imóveis e quartos" subtitle="Aprovação de locais, fotos, endereço, regras, comodidades, preços e anfitrião responsável." />
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
         {["ALL", "DRAFT", "PENDING_REVIEW", "ACTIVE", "REJECTED", "INACTIVE"].map((item) => (
-          <Link key={item} href={item === "ALL" ? "/admin/imoveis" : `/admin/imoveis?status=${item}`} style={{ ...buttonStyle, textDecoration: "none", background: item === (status ?? "ALL") ? "rgba(212,168,67,.22)" : "rgba(255,255,255,.03)" }}>
+          <Link key={item} href={item === "ALL" ? "/admin/imoveis" : `/admin/imoveis?status=${item}`} style={{ ...buttonStyle, textDecoration: "none", background: item === (status ?? "ALL") ? "rgba(183,44,255,.22)" : "rgba(255,255,255,.03)" }}>
             {item === "ALL" ? "Todos" : statusFilterLabel[item] ?? item}
           </Link>
         ))}

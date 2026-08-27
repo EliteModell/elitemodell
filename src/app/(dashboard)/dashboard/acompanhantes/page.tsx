@@ -128,7 +128,7 @@ function ProfessionalCard({ p }: { p: Professional }) {
             </span>
           ) : null}
           {p.featured && (
-            <span className="rounded-full bg-[#d4a843] px-2.5 py-1 text-[11px] font-bold text-[#0d1318]">
+            <span className="rounded-full bg-[#b72cff] px-2.5 py-1 text-[11px] font-bold text-[#0d1318]">
               Destaque
             </span>
           )}
@@ -146,8 +146,8 @@ function ProfessionalCard({ p }: { p: Professional }) {
               </div>
             </div>
             {price ? (
-              <div className="shrink-0 rounded-[6px] border border-[#d4a843]/28 bg-black/75 px-2.5 py-1.5 backdrop-blur-sm">
-                <p className="text-[13px] font-bold text-[#f5d78c]">
+              <div className="shrink-0 rounded-[6px] border border-[#b72cff]/28 bg-black/75 px-2.5 py-1.5 backdrop-blur-sm">
+                <p className="text-[13px] font-bold text-[#e1a6ff]">
                   {price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/h
                 </p>
               </div>
@@ -159,7 +159,7 @@ function ProfessionalCard({ p }: { p: Professional }) {
       <div className="flex items-center gap-2.5 border-t border-white/[0.05] px-4 py-2.5">
         {p.verified && <BadgeCheck className="h-4 w-4 shrink-0 text-[#7ed58a]" />}
         <div className="flex items-center gap-1">
-          <Star className="h-3.5 w-3.5 fill-[#d4a843] text-[#d4a843]" />
+          <Star className="h-3.5 w-3.5 fill-[#b72cff] text-[#b72cff]" />
           <span className="text-[13px] font-bold text-[#f5f0e4]">{p.rating.toFixed(1)}</span>
           <span className="text-[12px] text-[#f5f0e4]/36">({p.totalReviews})</span>
         </div>
@@ -181,7 +181,7 @@ function ProfessionalCard({ p }: { p: Professional }) {
         <button
           type="button"
           onClick={() => void toggleFavorite()}
-          className={`client-secondary-button grid min-h-0 w-11 place-items-center px-0 py-2.5 ${saved ? "text-[#f5d78c]" : ""}`}
+          className={`client-secondary-button grid min-h-0 w-11 place-items-center px-0 py-2.5 ${saved ? "text-[#e1a6ff]" : ""}`}
           aria-pressed={saved}
           aria-label={saved ? "Remover dos favoritos" : "Salvar perfil"}
           disabled={savingFavorite}
@@ -220,7 +220,7 @@ function FilterDrawer({
     <div className="client-filter-overlay" role="dialog" aria-modal="true" aria-label="Filtrar perfis">
       <button type="button" className="client-filter-backdrop" onClick={onClose} aria-label="Fechar filtros" />
       <section data-client-filter-panel="true" className="client-filter-panel">
-        <div className="mx-auto mb-5 h-1.5 w-14 rounded-full bg-[#f5b83b]/28" />
+        <div className="mx-auto mb-5 h-1.5 w-14 rounded-full bg-[#c451ff]/28" />
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h2 className="client-filter-title">Filtrar perfis</h2>
@@ -339,10 +339,10 @@ function EmptyState({
     return (
       <section className="client-empty mb-16 mt-1 pb-36 pt-12">
         <div className="flex flex-col items-center px-6 text-center">
-          <div className="grid h-[68px] w-[68px] place-items-center rounded-[16px] border border-[#d4a843]/26 bg-[#d4a843]/12 text-[#f5d78c]">
+          <div className="grid h-[68px] w-[68px] place-items-center rounded-[16px] border border-[#b72cff]/26 bg-[#b72cff]/12 text-[#e1a6ff]">
             <MapPin className="h-8 w-8" />
           </div>
-          <p className="mt-6 text-[11px] font-black uppercase text-[#f5d78c]/82">Localização</p>
+          <p className="mt-6 text-[11px] font-black uppercase text-[#e1a6ff]/82">Localização</p>
           <h2 className="mt-2 max-w-[330px] text-[28px] font-black leading-tight text-[#f5f0e4]">
             Selecione uma cidade para ver os perfis
           </h2>
@@ -357,10 +357,10 @@ function EmptyState({
   return (
     <section className="client-empty mb-16 mt-1 overflow-hidden pb-36 pt-12">
       <div className="flex flex-col items-center px-6 text-center">
-        <div className="grid h-[68px] w-[68px] place-items-center rounded-[16px] border border-[#d4a843]/26 bg-[#d4a843]/12 text-[#f5d78c] shadow-[0_14px_36px_rgba(212,168,67,0.14)]">
+        <div className="grid h-[68px] w-[68px] place-items-center rounded-[16px] border border-[#b72cff]/26 bg-[#b72cff]/12 text-[#e1a6ff] shadow-[0_14px_36px_rgba(183,44,255,0.14)]">
           {hasFilters ? <Search className="h-8 w-8" /> : <ShieldCheck className="h-8 w-8" />}
         </div>
-        <p className="mt-6 text-[11px] font-black uppercase text-[#f5d78c]/82">
+        <p className="mt-6 text-[11px] font-black uppercase text-[#e1a6ff]/82">
           {hasFilters ? "Sem resultado" : "Perfis verificados"}
         </p>
         <h2 className="mt-2 max-w-[330px] text-[28px] font-black leading-tight text-[#f5f0e4]">
@@ -371,7 +371,7 @@ function EmptyState({
             {activeTags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-[#d4a843]/28 bg-[#d4a843]/12 px-3 py-1 text-[11px] font-bold uppercase text-[#f5d78c]"
+                className="rounded-full border border-[#b72cff]/28 bg-[#b72cff]/12 px-3 py-1 text-[11px] font-bold uppercase text-[#e1a6ff]"
               >
                 {tag}
               </span>
@@ -659,10 +659,10 @@ export default function AcompanhantesPage() {
             type="button"
             onClick={handleGeolocate}
             disabled={geolocating}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-[14px] border border-[#d4a843]/28 bg-[#d4a843]/10 py-3 text-[13px] font-bold text-[#f5d78c] transition active:scale-[0.98] disabled:opacity-60"
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-[14px] border border-[#b72cff]/28 bg-[#b72cff]/10 py-3 text-[13px] font-bold text-[#e1a6ff] transition active:scale-[0.98] disabled:opacity-60"
           >
             {geolocating ? (
-              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#f5d78c]/30 border-t-[#f5d78c]" />
+              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#e1a6ff]/30 border-t-[#e1a6ff]" />
             ) : (
               <Navigation2 className="h-3.5 w-3.5" />
             )}
@@ -720,7 +720,7 @@ export default function AcompanhantesPage() {
             {total} {total === 1 ? "perfil encontrado" : "perfis encontrados"} em {city}
           </p>
           {hasFilters && (
-            <button type="button" onClick={clearFilters} className="text-[12px] font-semibold text-[#f5d78c]">
+            <button type="button" onClick={clearFilters} className="text-[12px] font-semibold text-[#e1a6ff]">
               Limpar filtros
             </button>
           )}

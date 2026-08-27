@@ -7,9 +7,9 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { calculateBookingAmounts, fromCents, toCents } from "@/lib/money";
 
-const GOLD = "#d4a843";
-const GOLD_DIM = "rgba(212,168,67,0.10)";
-const GOLD_MID = "rgba(212,168,67,0.28)";
+const GOLD = "#b72cff";
+const GOLD_DIM = "rgba(183,44,255,0.10)";
+const GOLD_MID = "rgba(183,44,255,0.28)";
 
 type PayMethod = "pix" | "card" | "boleto";
 
@@ -377,7 +377,7 @@ function ReservarContent() {
             <button onClick={handleConfirm} disabled={loading || !nights || !phone || !cpf || !acceptedBookingTerms || !acceptedRefundPolicy}
               style={{
                 width: "100%", padding: 14,
-                background: loading || !phone || !cpf || !acceptedBookingTerms || !acceptedRefundPolicy ? "rgba(212,168,67,0.3)" : GOLD,
+                background: loading || !phone || !cpf || !acceptedBookingTerms || !acceptedRefundPolicy ? "rgba(183,44,255,0.3)" : GOLD,
                 color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800,
                 cursor: loading || !phone || !cpf || !acceptedBookingTerms || !acceptedRefundPolicy ? "not-allowed" : "pointer",
               }}>

@@ -66,7 +66,7 @@ export default function CookiePreferences() {
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[400] border-t border-[#d4a843]/30 bg-[#0b0b0d] p-4 text-white shadow-[0_-20px_60px_rgba(0,0,0,.55)]">
+    <div className="fixed inset-x-0 bottom-0 z-[400] border-t border-[#b72cff]/30 bg-[#0b0b0d] p-4 text-white shadow-[0_-20px_60px_rgba(0,0,0,.55)]">
       <div className="mx-auto flex max-w-6xl flex-col gap-4">
         <div className="max-w-2xl">
           <h2 className="text-base font-black">Cookies e tecnologias semelhantes</h2>
@@ -99,7 +99,7 @@ export default function CookiePreferences() {
             />
             <CookieCategory
               label="Marketing e campanhas"
-              description="Cupons, roleta e campanhas promocionais."
+              description="Preferências de campanhas e comunicações promocionais."
               checked={choices.marketing}
               onChange={(checked) => setChoices((current) => ({ ...current, marketing: checked }))}
             />
@@ -120,7 +120,7 @@ export default function CookiePreferences() {
           <button
             type="button"
             onClick={() => closeWith("necessary", disabledChoices)}
-            className="min-h-11 rounded-[8px] border border-[#d4a843] bg-transparent px-4 font-black text-[#f5d78c]"
+            className="min-h-11 rounded-[8px] border border-[#b72cff] bg-transparent px-4 font-black text-[#e1a6ff]"
           >
             Rejeitar não necessários
           </button>
@@ -128,7 +128,7 @@ export default function CookiePreferences() {
             <button
               type="button"
               onClick={saveCustomChoices}
-              className="min-h-11 rounded-[8px] border border-[#d4a843] bg-[#d4a843] px-4 font-black text-black"
+              className="min-h-11 rounded-[8px] border border-[#b72cff] bg-[#b72cff] px-4 font-black text-black"
             >
               Salvar preferências
             </button>
@@ -136,7 +136,7 @@ export default function CookiePreferences() {
           <button
             type="button"
             onClick={() => closeWith("all", { preferences: true, analytics: true, marketing: true })}
-            className="min-h-11 rounded-[8px] border border-[#d4a843] bg-[#d4a843] px-4 font-black text-black"
+            className="min-h-11 rounded-[8px] border border-[#b72cff] bg-[#b72cff] px-4 font-black text-black"
           >
             Aceitar todos
           </button>
@@ -166,7 +166,7 @@ function CookieCategory({
         checked={checked}
         disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}
-        className="mt-1 h-4 w-4 accent-[#d4a843]"
+        className="mt-1 h-4 w-4 accent-[#b72cff]"
       />
       <span>
         <strong className="block text-sm">{label}</strong>

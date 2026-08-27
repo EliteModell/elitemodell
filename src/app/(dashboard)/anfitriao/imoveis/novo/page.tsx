@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
-const GOLD = "#d4a843";
+const GOLD = "#b72cff";
 const DRAFT_KEY = "elitemodell_location_onboarding_v2";
 
 type LocationType =
@@ -1131,7 +1131,7 @@ export default function NovoImovelPage() {
         .choice.active,
         .day.active {
           border-color: ${GOLD};
-          background: rgba(212,168,67,0.12);
+          background: rgba(183,44,255,0.12);
           box-shadow: inset 0 0 0 1px ${GOLD};
         }
         .stack {

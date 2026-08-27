@@ -1,9 +1,9 @@
 "use client";
 import { useState } from "react";
 
-const GOLD = "#d4a843";
-const GOLD_DIM = "rgba(212,168,67,0.12)";
-const GOLD_MID = "rgba(212,168,67,0.25)";
+const GOLD = "#b72cff";
+const GOLD_DIM = "rgba(183,44,255,0.12)";
+const GOLD_MID = "rgba(183,44,255,0.25)";
 const PLAYFAIR = "var(--font-playfair), serif";
 
 type Props = { onClose: () => void; onApply: (f: Filters) => void };
@@ -120,7 +120,7 @@ export default function FiltersModal({ onClose, onApply }: Props) {
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 24px", borderBottom: `1px solid ${GOLD_DIM}` }}>
           <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#f1f5f9", fontFamily: PLAYFAIR }}>Filtros avançados</h2>
-          <button onClick={onClose} style={{ background: "rgba(212,168,67,0.08)", border: `1px solid ${GOLD_DIM}`, color: "#94a3b8", cursor: "pointer", width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✕</button>
+          <button onClick={onClose} style={{ background: "rgba(183,44,255,0.08)", border: `1px solid ${GOLD_DIM}`, color: "#94a3b8", cursor: "pointer", width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✕</button>
         </div>
 
         <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
@@ -249,7 +249,7 @@ export default function FiltersModal({ onClose, onApply }: Props) {
           </button>
           <button onClick={() => { onApply(filters); onClose(); }}
             style={{ padding: "11px 32px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: PLAYFAIR, transition: "background 0.2s" }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#e8bb47")}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#c75aff")}
             onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = GOLD)}>
             Ver resultados
           </button>

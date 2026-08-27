@@ -61,15 +61,15 @@ function fmt(iso: string) {
 function WalletIllustration() {
   return (
     <svg width="88" height="72" viewBox="0 0 88 72" fill="none" aria-hidden="true">
-      <rect x="4" y="14" width="76" height="50" rx="10" fill="rgba(212,168,67,0.10)" stroke="rgba(212,168,67,0.28)" strokeWidth="1.5" />
-      <rect x="4" y="22" width="76" height="14" fill="rgba(212,168,67,0.08)" />
-      <rect x="52" y="28" width="20" height="14" rx="7" fill="rgba(212,168,67,0.18)" stroke="rgba(212,168,67,0.35)" strokeWidth="1.2" />
-      <circle cx="62" cy="35" r="4" fill="rgba(212,168,67,0.5)" />
-      <rect x="12" y="44" width="28" height="4" rx="2" fill="rgba(212,168,67,0.18)" />
-      <rect x="12" y="52" width="18" height="4" rx="2" fill="rgba(212,168,67,0.10)" />
+      <rect x="4" y="14" width="76" height="50" rx="10" fill="rgba(183,44,255,0.10)" stroke="rgba(183,44,255,0.28)" strokeWidth="1.5" />
+      <rect x="4" y="22" width="76" height="14" fill="rgba(183,44,255,0.08)" />
+      <rect x="52" y="28" width="20" height="14" rx="7" fill="rgba(183,44,255,0.18)" stroke="rgba(183,44,255,0.35)" strokeWidth="1.2" />
+      <circle cx="62" cy="35" r="4" fill="rgba(183,44,255,0.5)" />
+      <rect x="12" y="44" width="28" height="4" rx="2" fill="rgba(183,44,255,0.18)" />
+      <rect x="12" y="52" width="18" height="4" rx="2" fill="rgba(183,44,255,0.10)" />
       {/* sparkle */}
-      <path d="M76 8 L78 4 L80 8 L84 10 L80 12 L78 16 L76 12 L72 10 Z" fill="#f5d78c" opacity="0.7" />
-      <path d="M14 6 L15 4 L16 6 L18 7 L16 8 L15 10 L14 8 L12 7 Z" fill="#d4a843" opacity="0.5" />
+      <path d="M76 8 L78 4 L80 8 L84 10 L80 12 L78 16 L76 12 L72 10 Z" fill="#e1a6ff" opacity="0.7" />
+      <path d="M14 6 L15 4 L16 6 L18 7 L16 8 L15 10 L14 8 L12 7 Z" fill="#b72cff" opacity="0.5" />
     </svg>
   );
 }
@@ -82,9 +82,9 @@ function PixIcon() {
   );
 }
 
-const GOLD = "#d4a843";
-const GOLD_DIM = "rgba(212,168,67,0.10)";
-const GOLD_BORDER = "rgba(212,168,67,0.20)";
+const GOLD = "#b72cff";
+const GOLD_DIM = "rgba(183,44,255,0.10)";
+const GOLD_BORDER = "rgba(183,44,255,0.20)";
 
 export default function CarteiraPage() {
   const [wallet, setWallet] = useState<WalletData | null>(null);
@@ -140,8 +140,8 @@ export default function CarteiraPage() {
           position: absolute;
           inset: 0;
           background:
-            radial-gradient(ellipse at 80% 0%, rgba(212,168,67,0.18) 0%, transparent 55%),
-            radial-gradient(ellipse at 20% 100%, rgba(212,168,67,0.08) 0%, transparent 50%);
+            radial-gradient(ellipse at 80% 0%, rgba(183,44,255,0.18) 0%, transparent 55%),
+            radial-gradient(ellipse at 20% 100%, rgba(183,44,255,0.08) 0%, transparent 50%);
           pointer-events: none;
         }
         .cw-kicker {
@@ -174,8 +174,8 @@ export default function CarteiraPage() {
           margin: 0 16px;
           border-radius: 20px;
           background: linear-gradient(145deg, #1a1208, #0e0c07);
-          border: 1.5px solid rgba(212,168,67,0.32);
-          box-shadow: 0 24px 64px rgba(0,0,0,0.5), 0 0 40px rgba(212,168,67,0.06);
+          border: 1.5px solid rgba(183,44,255,0.32);
+          box-shadow: 0 24px 64px rgba(0,0,0,0.5), 0 0 40px rgba(183,44,255,0.06);
           padding: 24px 24px 20px;
           position: relative;
           overflow: hidden;
@@ -185,7 +185,7 @@ export default function CarteiraPage() {
           position: absolute;
           top: 0; right: 0;
           width: 180px; height: 130px;
-          background: radial-gradient(ellipse at 100% 0%, rgba(212,168,67,0.20), transparent 65%);
+          background: radial-gradient(ellipse at 100% 0%, rgba(183,44,255,0.20), transparent 65%);
           pointer-events: none;
         }
         .cw-balance-label {
@@ -220,12 +220,12 @@ export default function CarteiraPage() {
           align-items: center;
           gap: 5px;
           border-radius: 999px;
-          border: 1px solid rgba(212,168,67,0.28);
-          background: rgba(212,168,67,0.12);
+          border: 1px solid rgba(183,44,255,0.28);
+          background: rgba(183,44,255,0.12);
           padding: 4px 10px;
           font-size: 11px;
           font-weight: 800;
-          color: #f5d78c;
+          color: #e1a6ff;
           margin-top: 12px;
         }
         .cw-card-actions {
@@ -248,7 +248,7 @@ export default function CarteiraPage() {
           font-weight: 800;
           cursor: pointer;
           transition: opacity 0.15s, transform 0.15s;
-          box-shadow: 0 8px 24px rgba(212,168,67,0.22);
+          box-shadow: 0 8px 24px rgba(183,44,255,0.22);
         }
         .cw-btn-add:active { transform: scale(0.97); opacity: 0.88; }
         .cw-btn-transfer {
@@ -258,9 +258,9 @@ export default function CarteiraPage() {
           gap: 7px;
           min-height: 50px;
           border-radius: 12px;
-          background: rgba(212,168,67,0.07);
-          border: 1.5px solid rgba(212,168,67,0.28);
-          color: #f5d78c;
+          background: rgba(183,44,255,0.07);
+          border: 1.5px solid rgba(183,44,255,0.28);
+          color: #e1a6ff;
           font-size: 14px;
           font-weight: 800;
           cursor: not-allowed;
@@ -332,7 +332,7 @@ export default function CarteiraPage() {
           width: 48px; height: 48px;
           border-radius: 12px;
           background: ${GOLD_DIM};
-          border: 1px solid rgba(212,168,67,0.24);
+          border: 1px solid rgba(183,44,255,0.24);
           color: ${GOLD};
           flex-shrink: 0;
         }
@@ -353,7 +353,7 @@ export default function CarteiraPage() {
           padding: 14px 16px;
           border-radius: 10px;
           background: rgba(255,255,255,0.02);
-          border: 1px dashed rgba(212,168,67,0.15);
+          border: 1px dashed rgba(183,44,255,0.15);
           font-size: 13px;
           color: rgba(245,240,228,0.36);
           text-align: center;
@@ -362,8 +362,8 @@ export default function CarteiraPage() {
           margin: 10px 14px;
           padding: 14px;
           border-radius: 10px;
-          background: rgba(212,168,67,0.06);
-          border: 1px solid rgba(212,168,67,0.18);
+          background: rgba(183,44,255,0.06);
+          border: 1px solid rgba(183,44,255,0.18);
         }
 
         /* ── Transaction list ── */
@@ -569,7 +569,7 @@ export default function CarteiraPage() {
                   <div key={voucher.id} className="cw-voucher-item">
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
                       <div>
-                        <p style={{ margin: "0 0 2px", fontSize: 18, fontWeight: 900, color: "#f5d78c" }}>
+                        <p style={{ margin: "0 0 2px", fontSize: 18, fontWeight: 900, color: "#e1a6ff" }}>
                           R$ {voucher.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                         </p>
                         <p style={{ margin: 0, fontFamily: "monospace", fontSize: 13, fontWeight: 700, color: "#f5f0e4" }}>{voucher.code}</p>
@@ -614,7 +614,7 @@ export default function CarteiraPage() {
             ) : !wallet?.transactions.length ? (
               <div className="cw-empty-state">
                 <div className="cw-empty-icon">
-                  <CreditCard style={{ width: 26, height: 26, color: "#f5d78c" }} />
+                  <CreditCard style={{ width: 26, height: 26, color: "#e1a6ff" }} />
                 </div>
                 <p className="cw-empty-text">Nenhuma transação ainda.</p>
               </div>
@@ -640,7 +640,7 @@ export default function CarteiraPage() {
                         </div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <p className="cw-tx-amount" style={{ color: paid ? "#f5d78c" : "rgba(245,240,228,0.3)" }}>
+                        <p className="cw-tx-amount" style={{ color: paid ? "#e1a6ff" : "rgba(245,240,228,0.3)" }}>
                           R$ {t.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                         </p>
                         <ChevronRight className="cw-tx-chevron" style={{ width: 16, height: 16 }} />

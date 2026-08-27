@@ -4,7 +4,7 @@ import { acceptBooking, completeBooking, rejectBooking } from "@/lib/host-bookin
 
 export const dynamic = "force-dynamic";
 
-const GOLD = "#d4a843";
+const GOLD = "#b72cff";
 
 const bookingLabel: Record<string, string> = {
   PENDING: "Pendente",
@@ -41,7 +41,7 @@ function Pill({ children, color }: { children: React.ReactNode; color: string })
 
 function BookingButton({ children }: { children: React.ReactNode }) {
   return (
-    <button style={{ minHeight: 38, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, borderRadius: 8, border: "1px solid rgba(212,168,67,0.25)", background: "rgba(212,168,67,0.08)", color: "#f5d78c", padding: "0 12px", fontSize: 12, fontWeight: 900, cursor: "pointer" }}>
+    <button style={{ minHeight: 38, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, borderRadius: 8, border: "1px solid rgba(183,44,255,0.25)", background: "rgba(183,44,255,0.08)", color: "#e1a6ff", padding: "0 12px", fontSize: 12, fontWeight: 900, cursor: "pointer" }}>
       {children}
     </button>
   );
@@ -74,7 +74,7 @@ export default async function ReservasAnfitriaoPage() {
       </header>
 
       {bookings.length === 0 ? (
-        <section style={{ border: "1px dashed rgba(212,168,67,0.32)", borderRadius: 8, background: "rgba(255,255,255,0.03)", padding: 28, textAlign: "center" }}>
+        <section style={{ border: "1px dashed rgba(183,44,255,0.32)", borderRadius: 8, background: "rgba(255,255,255,0.03)", padding: 28, textAlign: "center" }}>
           <div style={{ color: GOLD, fontSize: 36, fontWeight: 950 }}>0</div>
           <h2 style={{ color: "#fff", margin: "12px 0 8px" }}>Nenhuma reserva ainda</h2>
           <p style={{ margin: 0, color: "#9ca3af", lineHeight: 1.7 }}>Quando um imóvel aprovado receber solicitação, ela aparecerá aqui com status e ações.</p>
@@ -86,7 +86,7 @@ export default async function ReservasAnfitriaoPage() {
             const canAccept = booking.status === "PENDING";
             const canComplete = booking.status === "CONFIRMED";
             return (
-              <article key={booking.id} style={{ display: "grid", gridTemplateColumns: "118px minmax(0,1fr)", gap: 14, border: "1px solid rgba(212,168,67,0.18)", borderRadius: 8, background: "rgba(255,255,255,0.035)", padding: 14 }}>
+              <article key={booking.id} style={{ display: "grid", gridTemplateColumns: "118px minmax(0,1fr)", gap: 14, border: "1px solid rgba(183,44,255,0.18)", borderRadius: 8, background: "rgba(255,255,255,0.035)", padding: 14 }}>
                 <div role="img" aria-label={`Foto de ${booking.property.title}`} style={{ aspectRatio: "4 / 3", borderRadius: 8, background: photo ? `url(${photo}) center / cover` : "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }} />
                 <div style={{ minWidth: 0, display: "grid", gap: 10 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>

@@ -14,14 +14,14 @@ import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 function LoadingScreen() {
   return (
     <div className="grid min-h-screen place-items-center bg-[#050506] px-5 text-white">
-      <div className="w-full max-w-sm rounded-[8px] border border-[#d4a843]/18 bg-white/[0.04] p-6 text-center shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-        <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-[8px] border border-[#d4a843]/28 bg-[#d4a843]/10 text-[#f5d78c]">
+      <div className="w-full max-w-sm rounded-[8px] border border-[#b72cff]/18 bg-white/[0.04] p-6 text-center shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+        <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-[8px] border border-[#b72cff]/28 bg-[#b72cff]/10 text-[#e1a6ff]">
           <Sparkles className="h-6 w-6 animate-pulse" />
         </div>
-        <p className="text-xs font-black uppercase tracking-[0.24em] text-[#d4a843]">EliteModell</p>
+        <p className="text-xs font-black uppercase tracking-[0.24em] text-[#b72cff]">EliteModell</p>
         <h1 className="mt-2 text-xl font-black">Preparando sua conta</h1>
         <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
-          <div className="premium-loading-bar h-full w-1/2 rounded-full bg-[linear-gradient(90deg,#cc1f2f,#d4a843,#f5d78c)]" />
+          <div className="premium-loading-bar h-full w-1/2 rounded-full bg-[linear-gradient(90deg,#cc1f2f,#b72cff,#e1a6ff)]" />
         </div>
       </div>
     </div>
@@ -74,7 +74,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (isPublicPropertyDraft && status !== "authenticated") {
     return (
       <div className="min-h-screen overflow-x-hidden bg-[#050505] text-white">
-        <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,168,67,0.10),transparent_34%)]" />
+        <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_0%,rgba(183,44,255,0.10),transparent_34%)]" />
         <main className="relative z-10 min-h-screen px-4 py-5 sm:px-6 sm:py-7">
           {children}
         </main>
@@ -88,7 +88,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className={roleAreaClass ? `${roleAreaClass}-shell min-h-screen overflow-x-hidden bg-[#050506] text-white` : "min-h-screen overflow-x-hidden bg-[#050506] text-white"}>
-      {!isAdminArea ? <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,168,67,0.10),transparent_34%)]" /> : null}
+      {!isAdminArea ? <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_0%,rgba(183,44,255,0.10),transparent_34%)]" /> : null}
       {isProfessionalArea ? <ProfessionalPremiumStyles /> : null}
 
       {isProfessionalOnboarding ? null : <DashSidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />}
@@ -108,12 +108,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Menu className="h-5 w-5" />
               </button>
               <div className="hidden min-w-0 items-center gap-3 rounded-[8px] border border-white/10 bg-white/[0.045] px-3 py-2 text-white/45 lg:flex">
-                <Search className="h-4 w-4 text-[#d4a843]" />
+                <Search className="h-4 w-4 text-[#b72cff]" />
                 <span className="text-sm">Buscar profissionais, favoritos e agendamentos</span>
               </div>
               <div className="min-w-0 lg:hidden">
                 <p className="text-sm font-black">
-                  <span className="bg-[linear-gradient(135deg,#ffe5a0_0%,#d4a843_22%,#f5d78c_50%,#9e7b2a_100%)] bg-clip-text text-transparent">elite</span>
+                  <span className="bg-[linear-gradient(135deg,#f4d7ff_0%,#b72cff_22%,#e1a6ff_50%,#6900a3_100%)] bg-clip-text text-transparent">elite</span>
                   <span className="text-white">modell</span>
                 </p>
                 <p className="truncate text-xs text-white/38">{session?.user?.email ?? "Conta discreta"}</p>
@@ -121,21 +121,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="hidden items-center gap-2 rounded-full border border-[#d4a843]/20 bg-[#d4a843]/10 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-[#f5d78c] sm:flex">
+              <div className="hidden items-center gap-2 rounded-full border border-[#b72cff]/20 bg-[#b72cff]/10 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-[#e1a6ff] sm:flex">
                 <ShieldCheck className="h-4 w-4" />
                 Ambiente seguro
               </div>
               <div ref={notifRef} className="relative">
                 <button
                   onClick={() => setNotifOpen((v) => !v)}
-                  className="grid h-10 w-10 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-white/70 transition hover:border-[#d4a843]/35 hover:text-[#f5d78c]"
+                  className="grid h-10 w-10 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-white/70 transition hover:border-[#b72cff]/35 hover:text-[#e1a6ff]"
                   aria-label="Notificações"
                 >
                   <Bell className="h-4 w-4" />
                 </button>
                 {notifOpen && (
                   <div className="absolute right-0 top-12 z-50 w-72 rounded-[8px] border border-white/10 bg-[#0d0d0f] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
-                    <p className="mb-3 text-[11px] font-black uppercase tracking-[0.22em] text-[#d4a843]">Notificações</p>
+                    <p className="mb-3 text-[11px] font-black uppercase tracking-[0.22em] text-[#b72cff]">Notificações</p>
                     <div className="rounded-[8px] border border-dashed border-white/10 p-4 text-center">
                       <Bell className="mx-auto mb-2 h-5 w-5 text-white/20" />
                       <p className="text-sm font-black text-white/50">Nenhuma notificação</p>
@@ -274,7 +274,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .host-content [style*="background: #101010"],
         .host-content [style*="background: #0b1420"],
         .host-content [style*="background: #060e1b"],
-        .host-content [style*="background: rgba(212,168,67"],
+        .host-content [style*="background: rgba(183,44,255"],
         .host-content [style*="background: rgba(34,197,94"] {
           background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98)) !important;
           border-color: rgba(214,168,58,0.25) !important;
@@ -328,11 +328,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           min-height: 44px;
           border-radius: 18px !important;
         }
-        .host-content button[style*="background: #d4a843"],
+        .host-content button[style*="background: #b72cff"],
         .host-content button[style*="background: rgb(212, 168, 67)"],
         .host-content button[style*="background: #D6A83A"],
         .host-content button[style*="background: #F5B83B"],
-        .host-content a[style*="background: #d4a843"],
+        .host-content a[style*="background: #b72cff"],
         .host-content a[style*="background: rgb(212, 168, 67)"] {
           background: linear-gradient(135deg, #f5d77a, #d6a83a 45%, #a77818) !important;
           color: #070707 !important;
@@ -452,7 +452,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .professional-content [style*="background: #0d0d0d"],
         .professional-content [style*="background: #0b1420"],
         .professional-content [style*="background: #060e1b"],
-        .professional-content [style*="background: rgba(212,168,67"],
+        .professional-content [style*="background: rgba(183,44,255"],
         .professional-content [style*="background: rgba(34,197,94"] {
           background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98)) !important;
           border-color: rgba(214,168,58,0.25) !important;
@@ -504,7 +504,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           letter-spacing: 0 !important;
         }
         .professional-content button[style*="background: #cc0000"],
-        .professional-content button[style*="background: #d4a843"],
+        .professional-content button[style*="background: #b72cff"],
         .professional-content button[style*="background: rgb(212, 168, 67)"],
         .professional-content button[style*="background: GOLD"] {
           background: linear-gradient(135deg, #f5d77a, #d6a83a 45%, #a77818) !important;

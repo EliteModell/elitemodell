@@ -28,7 +28,7 @@
   border: 3px solid;
   overflow: hidden;
   background: #0b1420;
-  box-shadow: 0 0 24px rgba(212, 168, 67, 0.3);
+  box-shadow: 0 0 24px rgba(183, 44, 255, 0.3);
   position: relative;
   z-index: 10;
 }

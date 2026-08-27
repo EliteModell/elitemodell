@@ -145,12 +145,12 @@ export default function PixPaymentModal({ planId, creditAmount, bookingId, amoun
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative w-full max-w-[400px] overflow-hidden rounded-[24px] border border-[#d4a843]/25 bg-[#0d0d0d] shadow-[0_28px_90px_rgba(0,0,0,0.7)]">
-        <div className="h-[2px] bg-[linear-gradient(90deg,transparent,#f5b83b,#d4a843,transparent)]" />
+      <div className="relative w-full max-w-[400px] overflow-hidden rounded-[24px] border border-[#b72cff]/25 bg-[#0d0d0d] shadow-[0_28px_90px_rgba(0,0,0,0.7)]">
+        <div className="h-[2px] bg-[linear-gradient(90deg,transparent,#c451ff,#b72cff,transparent)]" />
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
-          <p className="text-[13px] font-bold uppercase tracking-widest text-[#d4a843]">Pagar com PIX</p>
+          <p className="text-[13px] font-bold uppercase tracking-widest text-[#b72cff]">Pagar com PIX</p>
           {stage !== "paid" && (
             <button
               type="button"
@@ -165,7 +165,7 @@ export default function PixPaymentModal({ planId, creditAmount, bookingId, amoun
         {/* Loading */}
         {stage === "loading" && (
           <div className="flex flex-col items-center gap-4 px-6 pb-8 pt-4">
-            <Loader className="h-10 w-10 animate-spin text-[#d4a843]" />
+            <Loader className="h-10 w-10 animate-spin text-[#b72cff]" />
             <p className="text-[15px] text-white/60">Gerando cobrança PIX...</p>
           </div>
         )}
@@ -178,7 +178,7 @@ export default function PixPaymentModal({ planId, creditAmount, bookingId, amoun
             </p>
 
             {pix.qrCodeBase64 ? (
-              <div className="rounded-[12px] border border-[#d4a843]/20 bg-white p-3">
+              <div className="rounded-[12px] border border-[#b72cff]/20 bg-white p-3">
                 <img
                   src={`data:image/png;base64,${pix.qrCodeBase64}`}
                   alt="QR Code PIX"

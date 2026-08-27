@@ -32,15 +32,15 @@ export default function Navbar() {
   }
 
   return (
-    <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: "rgba(5,5,5,0.94)", backdropFilter: "blur(18px)", borderBottom: "1px solid rgba(212,168,67,0.16)", height: 64 }}>
+    <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: "rgba(5,5,5,0.94)", backdropFilter: "blur(18px)", borderBottom: "1px solid rgba(183,44,255,0.16)", height: 64 }}>
       <div className="navbar-inner" style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "100%", gap: 12 }}>
 
         {/* Logo */}
-        <Link className="brand-mark" href="/" style={{ textDecoration: "none", position: "relative", display: "inline-block", padding: "6px 16px", border: "1.5px solid rgba(212,168,67,0.34)", borderRadius: 8, background: "rgba(255,255,255,0.025)" }}>
-          <span style={{ position: "absolute", top: -10, right: -5, color: "#d4a843", fontSize: 16, lineHeight: 1, userSelect: "none" }}>✦</span>
+        <Link className="brand-mark" href="/" style={{ textDecoration: "none", position: "relative", display: "inline-block", padding: "6px 16px", border: "1.5px solid rgba(183,44,255,0.34)", borderRadius: 8, background: "rgba(255,255,255,0.025)" }}>
+          <span style={{ position: "absolute", top: -10, right: -5, color: "#b72cff", fontSize: 16, lineHeight: 1, userSelect: "none" }}>✦</span>
           <span className="brand-text" style={{ fontWeight: 900, fontSize: 22, letterSpacing: "-1px" }}>
             <span style={{
-              background: "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 50%, #9e7b2a 75%, #d4a843 100%)",
+              background: "linear-gradient(135deg, #f4d7ff 0%, #b72cff 22%, #e1a6ff 50%, #6900a3 75%, #b72cff 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -53,7 +53,7 @@ export default function Navbar() {
         <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <Link href="/buscar?tab=acompanhantes"
             style={{ padding: "8px 16px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14, fontWeight: 500, transition: "all 0.2s" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#f4f1ea"; (e.currentTarget as HTMLElement).style.background = "rgba(212,168,67,0.06)"; }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#f4f1ea"; (e.currentTarget as HTMLElement).style.background = "rgba(183,44,255,0.06)"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#b8b1a6"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
             Acompanhantes
           </Link>
@@ -73,7 +73,7 @@ export default function Navbar() {
               setOpenPathname(pathname);
               setMenuOpen(!menuVisible);
             }}
-            style={{ display: "none", padding: "8px", background: "transparent", border: "1px solid rgba(212,168,67,0.2)", borderRadius: 8, color: "#b8b1a6", cursor: "pointer", marginLeft: 4 }}
+            style={{ display: "none", padding: "8px", background: "transparent", border: "1px solid rgba(183,44,255,0.2)", borderRadius: 8, color: "#b8b1a6", cursor: "pointer", marginLeft: 4 }}
             className="mobile-menu-btn"
             aria-label="Menu"
           >
@@ -105,10 +105,10 @@ export default function Navbar() {
             <Link
               href={ACCOUNT_ROUTES.cadastro}
               onClick={() => setMenuOpen(false)}
-              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderRadius: 16, color: "#f4f1ea", textDecoration: "none", fontSize: 14, fontWeight: 700, border: "1px solid rgba(212,168,67,0.28)", background: "rgba(212,168,67,0.07)" }}
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderRadius: 16, color: "#f4f1ea", textDecoration: "none", fontSize: 14, fontWeight: 700, border: "1px solid rgba(183,44,255,0.28)", background: "rgba(183,44,255,0.07)" }}
             >
               Criar minha conta
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4a843" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b72cff" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
             </Link>
           </div>
           <div className="mobile-entry-section">
@@ -124,7 +124,7 @@ export default function Navbar() {
       <style>{`
         .mobile-entry-menu {
           background: #050505;
-          border-bottom: 1px solid rgba(212,168,67,0.22);
+          border-bottom: 1px solid rgba(183,44,255,0.22);
           padding: 16px 8px calc(18px + env(safe-area-inset-bottom));
           display: flex;
           flex-direction: column;
@@ -140,7 +140,7 @@ export default function Navbar() {
           font-weight: 950;
         }
         .mobile-entry-brand span {
-          background: linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 50%, #9e7b2a 75%, #d4a843 100%);
+          background: linear-gradient(135deg, #f4d7ff 0%, #b72cff 22%, #e1a6ff 50%, #6900a3 75%, #b72cff 100%);
           background-clip: text;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
@@ -166,7 +166,7 @@ export default function Navbar() {
         .mobile-entry-section p {
           margin: 0;
           padding: 0 8px;
-          color: #f5b83b;
+          color: #c451ff;
           font-size: 11px;
           font-weight: 950;
           letter-spacing: 0.16em;

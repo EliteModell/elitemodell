@@ -91,7 +91,7 @@ export function ProfessionalTopHeader({ onMenuClick }: { onMenuClick: () => void
           <Link href="/profissional" className="relative flex min-w-0 items-center justify-center no-underline" aria-label="Elite Modell">
             <span className="absolute -top-4 text-[16px] leading-none text-[#F5D46B]">♛</span>
             <span className="truncate text-[28px] font-black leading-none sm:text-[34px]">
-              <span className="bg-[linear-gradient(135deg,#ffe5a0,#D6A83A_34%,#F5D46B_64%,#8A671F)] bg-clip-text text-transparent">elite</span>
+              <span className="bg-[linear-gradient(135deg,#f4d7ff,#D6A83A_34%,#F5D46B_64%,#8A671F)] bg-clip-text text-transparent">elite</span>
               <span className="text-white">modell</span>
             </span>
           </Link>

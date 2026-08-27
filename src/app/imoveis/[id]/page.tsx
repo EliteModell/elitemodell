@@ -9,8 +9,8 @@ import PublicReportButton from "@/components/moderation/PublicReportButton";
 import { Star } from "lucide-react";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
-const GOLD = "#d4a843";
-const GOLD_SOFT = "#f5d78c";
+const GOLD = "#b72cff";
+const GOLD_SOFT = "#e1a6ff";
 const INK = "#050505";
 const PANEL = "#111";
 const LINE = "#2a2620";
@@ -189,7 +189,7 @@ function BookingCard({ property }: { property: PropertyDetail }) {
         style={{
           width: "100%",
           padding: "14px",
-          background: (!checkIn || !checkOut || nights < property.minNights) ? "#2a2620" : "linear-gradient(135deg, #f5d78c, #d4a843)",
+          background: (!checkIn || !checkOut || nights < property.minNights) ? "#2a2620" : "linear-gradient(135deg, #e1a6ff, #b72cff)",
           color: (!checkIn || !checkOut || nights < property.minNights) ? "#8d8578" : "#080704",
           border: "none",
           borderRadius: 8,
@@ -199,7 +199,7 @@ function BookingCard({ property }: { property: PropertyDetail }) {
           transition: "background 0.2s",
         }}
         onMouseEnter={(e) => { if (checkIn && checkOut && nights >= property.minNights) (e.currentTarget as HTMLElement).style.background = GOLD_SOFT; }}
-        onMouseLeave={(e) => { if (checkIn && checkOut && nights >= property.minNights) (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #f5d78c, #d4a843)"; }}
+        onMouseLeave={(e) => { if (checkIn && checkOut && nights >= property.minNights) (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #e1a6ff, #b72cff)"; }}
       >
         {property.instantBook ? "Reservar ambiente" : "Solicitar reserva"}
       </button>
@@ -385,7 +385,7 @@ export default function PropertyDetailPage() {
           <span style={{ color: "#333" }}>-</span>
           <span style={{ color: "#666" }}>{p.address}</span>
           {p.instantBook && (
-            <span style={{ padding: "3px 10px", background: "rgba(212,168,67,0.12)", border: "1px solid rgba(212,168,67,0.28)", borderRadius: 20, fontSize: 12, color: GOLD, fontWeight: 800 }}>
+            <span style={{ padding: "3px 10px", background: "rgba(183,44,255,0.12)", border: "1px solid rgba(183,44,255,0.28)", borderRadius: 20, fontSize: 12, color: GOLD, fontWeight: 800 }}>
               Reserva instantanea
             </span>
           )}
@@ -416,8 +416,8 @@ export default function PropertyDetailPage() {
                     width: 52,
                     height: 52,
                     borderRadius: "50%",
-                    background: "rgba(212,168,67,0.12)",
-                    border: "1px solid rgba(212,168,67,0.28)",
+                    background: "rgba(183,44,255,0.12)",
+                    border: "1px solid rgba(183,44,255,0.28)",
                     overflow: "hidden",
                     display: "flex",
                     alignItems: "center",
@@ -442,7 +442,7 @@ export default function PropertyDetailPage() {
                 { title: "Seguranca e privacidade", desc: "Endereco visivel apenas para contas autorizadas pela plataforma." },
               ].map((h, i) => (
                 <div key={i} style={{ display: "flex", gap: 14 }}>
-                  <span style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(212,168,67,0.12)", border: `1px solid ${LINE}`, flexShrink: 0 }} />
+                  <span style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(183,44,255,0.12)", border: `1px solid ${LINE}`, flexShrink: 0 }} />
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, marginBottom: 2 }}>{h.title}</div>
                     <div style={{ fontSize: 13, color: MUTED }}>{h.desc}</div>

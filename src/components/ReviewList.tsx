@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-const GOLD = "#d4a843";
+const GOLD = "#b72cff";
 
 interface Review {
   id: string;
@@ -33,7 +33,7 @@ export default function ReviewList({ professionalId }: Props) {
 
   if (reviews.length === 0) {
     return (
-      <div style={{ color: "#475569", fontSize: 13, padding: 24, textAlign: "center", background: "#0b1420", borderRadius: 12, border: "1px solid rgba(212,168,67,0.10)" }}>
+      <div style={{ color: "#475569", fontSize: 13, padding: 24, textAlign: "center", background: "#0b1420", borderRadius: 12, border: "1px solid rgba(183,44,255,0.10)" }}>
         Ainda não há avaliações. Seja o primeiro a avaliar.
       </div>
     );
@@ -44,7 +44,7 @@ export default function ReviewList({ professionalId }: Props) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {/* Header com média */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, paddingBottom: 14, borderBottom: "1px solid rgba(212,168,67,0.12)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, paddingBottom: 14, borderBottom: "1px solid rgba(183,44,255,0.12)" }}>
         <div style={{ fontSize: 36, fontWeight: 900, color: GOLD, fontFamily: "var(--font-playfair), serif" }}>
           {avgRating.toFixed(1)}
         </div>
@@ -60,10 +60,10 @@ export default function ReviewList({ professionalId }: Props) {
 
       {/* Lista de reviews */}
       {reviews.map(r => (
-        <div key={r.id} style={{ background: "#0b1420", border: "1px solid rgba(212,168,67,0.10)", borderRadius: 12, padding: 16 }}>
+        <div key={r.id} style={{ background: "#0b1420", border: "1px solid rgba(183,44,255,0.10)", borderRadius: 12, padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(212,168,67,0.15)", border: "1px solid rgba(212,168,67,0.3)", display: "flex", alignItems: "center", justifyContent: "center", color: GOLD, fontWeight: 700, fontSize: 14 }}>
+              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(183,44,255,0.15)", border: "1px solid rgba(183,44,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", color: GOLD, fontWeight: 700, fontSize: 14 }}>
                 {r.author?.name?.[0]?.toUpperCase() ?? "U"}
               </div>
               <div>

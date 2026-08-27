@@ -28,10 +28,10 @@ export default function AdminSetupPage() {
     <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#050506", padding: 24 }}>
       <div style={{
         width: "100%", maxWidth: 420, background: "#0d0d10",
-        border: "1px solid rgba(212,168,67,0.22)", borderRadius: 12,
+        border: "1px solid rgba(183,44,255,0.22)", borderRadius: 12,
         padding: "40px 32px 36px", textAlign: "center",
       }}>
-        <p style={{ color: "#d4a843", fontSize: 11, fontWeight: 900, letterSpacing: 2.5, textTransform: "uppercase", margin: "0 0 16px" }}>
+        <p style={{ color: "#b72cff", fontSize: 11, fontWeight: 900, letterSpacing: 2.5, textTransform: "uppercase", margin: "0 0 16px" }}>
           Configuração Inicial
         </p>
         <h1 style={{ color: "#f1f5f9", fontSize: 22, fontWeight: 800, margin: "0 0 12px" }}>
@@ -43,7 +43,7 @@ export default function AdminSetupPage() {
 
         {status === "idle" && (
           <button onClick={handleSetup} style={{
-            width: "100%", padding: "13px 20px", background: "#d4a843",
+            width: "100%", padding: "13px 20px", background: "#b72cff",
             border: "none", borderRadius: 8, color: "#0a0a0a",
             fontSize: 14, fontWeight: 800, cursor: "pointer",
           }}>
@@ -52,7 +52,7 @@ export default function AdminSetupPage() {
         )}
 
         {status === "loading" && (
-          <p style={{ color: "#d4a843", fontSize: 14 }}>Processando...</p>
+          <p style={{ color: "#b72cff", fontSize: 14 }}>Processando...</p>
         )}
 
         {status === "done" && (
@@ -60,7 +60,7 @@ export default function AdminSetupPage() {
             <p style={{ color: "#4ade80", fontSize: 14, marginBottom: 20 }}>{message}</p>
             <a href="/admin/login" style={{
               display: "inline-block", padding: "11px 24px",
-              background: "#d4a843", borderRadius: 8, color: "#0a0a0a",
+              background: "#b72cff", borderRadius: 8, color: "#0a0a0a",
               fontSize: 13, fontWeight: 800, textDecoration: "none",
             }}>
               Ir para o login admin

@@ -13,8 +13,8 @@ import {
   XCircle,
 } from "lucide-react";
 
-const GOLD = "#d4a843";
-const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 50%, #9e7b2a 100%)";
+const GOLD = "#b72cff";
+const GOLD_GRADIENT = "linear-gradient(135deg, #f4d7ff 0%, #b72cff 22%, #e1a6ff 50%, #6900a3 100%)";
 
 type Status = "UNVERIFIED" | "PENDING_REVIEW" | "VERIFIED" | "REJECTED";
 
@@ -73,13 +73,13 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
       {/* Gold line header card */}
       <div style={{
         background: "#0d0d0f",
-        border: "1px solid rgba(212,168,67,0.28)",
+        border: "1px solid rgba(183,44,255,0.28)",
         borderRadius: 16,
         padding: "40px 32px",
         position: "relative",
         overflow: "hidden",
       }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent 0%, #d4a843 30%, #f5d78c 50%, #d4a843 70%, transparent 100%)" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent 0%, #b72cff 30%, #e1a6ff 50%, #b72cff 70%, transparent 100%)" }} />
 
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
@@ -92,7 +92,7 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
         {/* Status: PENDING */}
         {(step === "submitted" || status === "PENDING_REVIEW") && (
           <div style={{ textAlign: "center" }}>
-            <div style={{ display: "inline-grid", placeItems: "center", width: 64, height: 64, borderRadius: "50%", border: `1.5px solid ${GOLD}`, background: "rgba(212,168,67,0.08)", marginBottom: 20 }}>
+            <div style={{ display: "inline-grid", placeItems: "center", width: 64, height: 64, borderRadius: "50%", border: `1.5px solid ${GOLD}`, background: "rgba(183,44,255,0.08)", marginBottom: 20 }}>
               <Clock style={{ width: 28, height: 28, color: GOLD }} />
             </div>
             <h1 style={{ color: "#f1f5f9", fontSize: 22, fontWeight: 900, margin: "0 0 12px" }}>Verificação em análise</h1>
@@ -105,8 +105,8 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
                 Enviado em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeStyle: "short" }).format(new Date(submittedAt))}
               </p>
             )}
-            <div style={{ marginTop: 28, padding: "14px 18px", background: "rgba(212,168,67,0.06)", border: "1px solid rgba(212,168,67,0.18)", borderRadius: 10, textAlign: "left" }}>
-              <p style={{ color: "#d4a843", fontSize: 12, fontWeight: 800, letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 10 }}>O que acontece agora?</p>
+            <div style={{ marginTop: 28, padding: "14px 18px", background: "rgba(183,44,255,0.06)", border: "1px solid rgba(183,44,255,0.18)", borderRadius: 10, textAlign: "left" }}>
+              <p style={{ color: "#b72cff", fontSize: 12, fontWeight: 800, letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 10 }}>O que acontece agora?</p>
               {["Nossa equipe analisa os dados em até 48h.", "Você recebe um email com o resultado.", "Aprovado: acesso completo liberado."].map((txt) => (
                 <p key={txt} style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.6, margin: "4px 0", display: "flex", gap: 8 }}>
                   <ShieldCheck style={{ width: 14, height: 14, color: GOLD, flexShrink: 0, marginTop: 2 }} />
@@ -141,7 +141,7 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
         {step === "info" && status !== "PENDING_REVIEW" && status !== "REJECTED" && (
           <div>
             <div style={{ textAlign: "center", marginBottom: 28 }}>
-              <div style={{ display: "inline-grid", placeItems: "center", width: 64, height: 64, borderRadius: "50%", border: `1.5px solid ${GOLD}`, background: "rgba(212,168,67,0.08)", marginBottom: 20 }}>
+              <div style={{ display: "inline-grid", placeItems: "center", width: 64, height: 64, borderRadius: "50%", border: `1.5px solid ${GOLD}`, background: "rgba(183,44,255,0.08)", marginBottom: 20 }}>
                 <BadgeCheck style={{ width: 28, height: 28, color: GOLD }} />
               </div>
               <h1 style={{ color: "#f1f5f9", fontSize: 22, fontWeight: 900, margin: "0 0 10px" }}>Confirme sua idade</h1>
@@ -156,7 +156,7 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
                 { icon: <FileText style={{ width: 16, height: 16, color: GOLD }} />, text: "Usados apenas para confirmar maioridade e identidade" },
                 { icon: <ShieldCheck style={{ width: 16, height: 16, color: GOLD }} />, text: "Em conformidade com a LGPD" },
               ].map(({ icon, text }) => (
-                <div key={text} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "rgba(212,168,67,0.05)", border: "1px solid rgba(212,168,67,0.12)", borderRadius: 8 }}>
+                <div key={text} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "rgba(183,44,255,0.05)", border: "1px solid rgba(183,44,255,0.12)", borderRadius: 8 }}>
                   {icon}
                   <p style={{ color: "#94a3b8", fontSize: 13, margin: 0 }}>{text}</p>
                 </div>
@@ -213,7 +213,7 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
               disabled={submitting || !agreed}
               style={{
                 width: "100%", padding: "13px",
-                background: agreed ? GOLD : "rgba(212,168,67,0.25)",
+                background: agreed ? GOLD : "rgba(183,44,255,0.25)",
                 color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800,
                 cursor: agreed ? "pointer" : "not-allowed", marginBottom: 12,
               }}

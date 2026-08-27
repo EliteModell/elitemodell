@@ -83,7 +83,7 @@ export default function Footer() {
     <footer
       style={{
         background: "#050505",
-        borderTop: "1px solid rgba(212,168,67,0.14)",
+        borderTop: "1px solid rgba(183,44,255,0.14)",
         padding: "48px 24px 32px",
       }}
     >
@@ -104,11 +104,11 @@ export default function Footer() {
           width: 46px;
           height: 46px;
           border-radius: 12px;
-          border: 1px solid rgba(212,168,67,0.24);
+          border: 1px solid rgba(183,44,255,0.24);
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #d4a843;
+          color: #b72cff;
           text-decoration: none;
           overflow: hidden;
           background:
@@ -132,16 +132,16 @@ export default function Footer() {
           height: 22px;
         }
         .social-link:hover {
-          color: #ffe5a0;
+          color: #f4d7ff;
           border-color: rgba(245,215,140,0.58);
           transform: translateY(-3px);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 16px 36px rgba(212,168,67,0.13);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 16px 36px rgba(183,44,255,0.13);
         }
         .social-link:hover::before {
           transform: translateX(65%) rotate(12deg);
         }
         .social-link:focus-visible {
-          outline: 2px solid #f5d78c;
+          outline: 2px solid #e1a6ff;
           outline-offset: 3px;
         }
         .social-link[aria-disabled="true"] {
@@ -187,14 +187,14 @@ export default function Footer() {
                 padding: "6px 16px",
                 border: "1.5px solid rgba(212,170,99,0.5)",
                 borderRadius: 8,
-                background: "rgba(201,168,76,0.04)",
+                background: "rgba(169,44,255,0.04)",
                 marginBottom: 12,
               }}
             >
               <span style={{ fontWeight: 900, fontSize: 24, letterSpacing: 0 }}>
                 <span
                   style={{
-                    background: "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 50%, #9e7b2a 75%, #d4a843 100%)",
+                    background: "linear-gradient(135deg, #f4d7ff 0%, #b72cff 22%, #e1a6ff 50%, #6900a3 75%, #b72cff 100%)",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
@@ -206,8 +206,8 @@ export default function Footer() {
               </span>
             </a>
             <p style={{ color: "#8d8578", fontSize: 13, lineHeight: 1.7 }}>
-              A plataforma que conecta acompanhantes, clientes e quartos discretos com
-              seguranca, privacidade e controle.
+              A plataforma que conecta acompanhantes e clientes com discrição,
+              segurança, privacidade e controle.
             </p>
           </div>
 
@@ -222,7 +222,7 @@ export default function Footer() {
             </div>
             <div>
               <h4 style={headingStyle}>Legal</h4>
-              {PUBLIC_FOOTER_LEGAL_LINKS.map(({ label, href }) => (
+              {PUBLIC_FOOTER_LEGAL_LINKS.filter(({ key }) => key !== "roleta-promocional-policy").map(({ label, href }) => (
                 <a key={label} href={href} className="footer-link">
                   {label}
                 </a>
@@ -266,7 +266,7 @@ export default function Footer() {
 
         <div
           style={{
-            borderTop: "1px solid rgba(212,168,67,0.12)",
+            borderTop: "1px solid rgba(183,44,255,0.12)",
             paddingTop: 24,
             display: "flex",
             justifyContent: "space-between",
@@ -290,7 +290,7 @@ export default function Footer() {
 const headingStyle: CSSProperties = {
   fontSize: 12,
   fontWeight: 700,
-  color: "#d4a843",
+  color: "#b72cff",
   letterSpacing: 0,
   textTransform: "uppercase",
   marginBottom: 16,

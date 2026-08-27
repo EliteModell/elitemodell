@@ -245,7 +245,7 @@ export default async function AdminRoletaVouchersPage({ searchParams }: { search
           ["week", "Semana"],
           ["month", "Mês"],
         ].map(([period, label]) => (
-          <a key={period} href={`/admin/roleta-vouchers?period=${period}`} style={{ ...buttonStyle, background: selectedPeriod === period ? "rgba(212,168,67,.18)" : "transparent" }}>{label}</a>
+          <a key={period} href={`/admin/roleta-vouchers?period=${period}`} style={{ ...buttonStyle, background: selectedPeriod === period ? "rgba(183,44,255,.18)" : "transparent" }}>{label}</a>
         ))}
       </div>
 

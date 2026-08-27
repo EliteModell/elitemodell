@@ -13,8 +13,8 @@ import { supabaseAuth } from "@/lib/supabase-client";
 import { ACCOUNT_ROUTES, normalizeEntryRole, postLoginPathFromUser } from "@/lib/account-routes";
 import { buildAuthCallbackUrl } from "@/lib/auth-redirect";
 
-const GOLD = "#d4a843";
-const GOLD_GRADIENT = "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
+const GOLD = "#b72cff";
+const GOLD_GRADIENT = "linear-gradient(135deg, #f4d7ff 0%, #b72cff 22%, #e1a6ff 45%, #6900a3 72%, #b72cff 100%)";
 const PROPERTY_DRAFT_KEY = "elitemodell_location_onboarding_v2";
 const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
 const ROLE_INTENT_KEY = "elitemodell_login_role_intent";

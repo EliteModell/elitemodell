@@ -39,7 +39,7 @@ export default function AdminLoginPage() {
         width: "100%",
         maxWidth: 400,
         background: "#0d0d10",
-        border: "1px solid rgba(212,168,67,0.22)",
+        border: "1px solid rgba(183,44,255,0.22)",
         borderRadius: 12,
         padding: "40px 32px 36px",
         position: "relative",
@@ -50,12 +50,12 @@ export default function AdminLoginPage() {
           top: 0, left: 0, right: 0,
           height: 2,
           borderRadius: "12px 12px 0 0",
-          background: "linear-gradient(90deg, transparent 0%, #d4a843 30%, #f5d78c 50%, #d4a843 70%, transparent 100%)",
+          background: "linear-gradient(90deg, transparent 0%, #b72cff 30%, #e1a6ff 50%, #b72cff 70%, transparent 100%)",
         }} />
 
         {/* Badge */}
         <p style={{
-          color: "#d4a843",
+          color: "#b72cff",
           fontSize: 11,
           fontWeight: 900,
           letterSpacing: 2.5,
@@ -95,7 +95,7 @@ export default function AdminLoginPage() {
             justifyContent: "center",
             gap: 10,
             padding: "13px 20px",
-            background: loading ? "rgba(212,168,67,0.3)" : "#d4a843",
+            background: loading ? "rgba(183,44,255,0.3)" : "#b72cff",
             border: "none",
             borderRadius: 8,
             color: "#0a0a0a",

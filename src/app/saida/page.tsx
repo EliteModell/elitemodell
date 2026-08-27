@@ -66,7 +66,7 @@ export default function SafeExitPage() {
         }
 
         .brand span {
-          background: linear-gradient(135deg, #ffe5a0 0%, #d6a83a 28%, #f5d77a 55%, #9e7b2a 100%);
+          background: linear-gradient(135deg, #f4d7ff 0%, #d6a83a 28%, #f5d77a 55%, #6900a3 100%);
           background-clip: text;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;

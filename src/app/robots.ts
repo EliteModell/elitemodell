@@ -25,7 +25,6 @@ export default function robots(): MetadataRoute.Robots {
           "/premium/",
           "/buscar",
           "/profissionais",
-          "/imoveis",
         ],
       },
     ],

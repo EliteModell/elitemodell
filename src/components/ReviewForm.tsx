@@ -2,7 +2,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 
-const GOLD = "#d4a843";
+const GOLD = "#b72cff";
 
 interface Props {
   professionalId: string;
@@ -36,7 +36,7 @@ export default function ReviewForm({ professionalId, appointmentId, onSubmitted 
   }
 
   return (
-    <div style={{ background: "#0b1420", border: `1px solid rgba(212,168,67,0.18)`, borderRadius: 14, padding: 20 }}>
+    <div style={{ background: "#0b1420", border: `1px solid rgba(183,44,255,0.18)`, borderRadius: 14, padding: 20 }}>
       <h3 style={{ color: "#f1f5f9", fontSize: 16, fontWeight: 700, margin: "0 0 14px" }}>Avalie sua experiência</h3>
 
       {/* Star rating */}
@@ -72,7 +72,7 @@ export default function ReviewForm({ professionalId, appointmentId, onSubmitted 
       <button onClick={submit} disabled={loading || rating < 1 || comment.trim().length < 10}
         style={{
           width: "100%", padding: 12,
-          background: loading || rating < 1 || comment.trim().length < 10 ? "rgba(212,168,67,0.3)" : GOLD,
+          background: loading || rating < 1 || comment.trim().length < 10 ? "rgba(183,44,255,0.3)" : GOLD,
           color: "#060e1b", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 800,
           cursor: loading || rating < 1 || comment.trim().length < 10 ? "not-allowed" : "pointer",
         }}>

@@ -17,7 +17,6 @@ import {
   Crown,
   FileCheck,
   ExternalLink,
-  Gift,
   Headphones,
   Heart,
   Home,
@@ -27,7 +26,6 @@ import {
   Scale,
   Settings,
   ShieldAlert,
-  ShieldCheck,
   Sparkles,
   TicketPercent,
   UserCog,
@@ -66,8 +64,6 @@ const adminNav: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: <LayoutDashboard className="h-4 w-4" />, accent: "Admin" },
   { label: "Profissionais", href: "/admin/profissionais", icon: <UserRound className="h-4 w-4" /> },
   { label: "Avaliações", href: "/admin/avaliacoes", icon: <MessageCircle className="h-4 w-4" /> },
-  { label: "Anfitriões", href: "/admin/anfitrioes", icon: <ShieldCheck className="h-4 w-4" /> },
-  { label: "Imóveis", href: "/admin/imoveis", icon: <Building2 className="h-4 w-4" /> },
   { label: "KYC", href: "/admin/kyc", icon: <FileCheck className="h-4 w-4" /> },
   { label: "Clientes", href: "/admin/clientes", icon: <UsersRound className="h-4 w-4" /> },
   { label: "Denúncias", href: "/admin/denuncias", icon: <ShieldAlert className="h-4 w-4" /> },
@@ -77,9 +73,7 @@ const adminNav: NavItem[] = [
   { label: "Auditoria", href: "/admin/auditoria", icon: <ClipboardList className="h-4 w-4" /> },
   { label: "Jurídico", href: "/admin/juridico", icon: <Scale className="h-4 w-4" /> },
   { label: "Configurações", href: "/admin/configuracoes", icon: <Settings className="h-4 w-4" /> },
-  { label: "Reservas", href: "/admin/reservas", icon: <CalendarCheck className="h-4 w-4" /> },
   { label: "Cupons", href: "/admin/cupons", icon: <TicketPercent className="h-4 w-4" /> },
-  { label: "Roleta", href: "/admin/roleta-vouchers", icon: <Gift className="h-4 w-4" /> },
 ];
 
 const professionalNav: NavItem[] = [
@@ -225,7 +219,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
         }`}
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(245,215,140,0.9),transparent)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(212,168,67,0.06),transparent_30%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(183,44,255,0.06),transparent_30%)]" />
 
         <div className="relative border-b border-white/10 p-4">
           <div className="flex items-center justify-between">
@@ -234,7 +228,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
               <img src="/brand/elite-modell-source.png" alt="Elite Modell" className="h-full w-full object-contain" />
             </span>
             <span className="text-xl font-black tracking-[-0.02em]">
-              <span className="bg-[linear-gradient(135deg,#ffe5a0,#d4a843_30%,#f5d78c_58%,#9e7b2a)] bg-clip-text text-transparent">
+              <span className="bg-[linear-gradient(135deg,#f4d7ff,#b72cff_30%,#e1a6ff_58%,#6900a3)] bg-clip-text text-transparent">
                 elite
               </span>
               <span className="text-white">modell</span>
@@ -254,7 +248,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
 
         <div className="relative border-b border-white/10 p-4">
           <div className="flex items-center gap-3">
-            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[8px] border border-[#d4a843]/28 bg-[#d4a843]/12">
+            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[8px] border border-[#b72cff]/28 bg-[#b72cff]/12">
               {sidebarImage ? (
                 <img
                   src={sidebarImage}
@@ -262,17 +256,17 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="grid h-full w-full place-items-center text-sm font-black text-[#f5d78c]">
+                <div className="grid h-full w-full place-items-center text-sm font-black text-[#e1a6ff]">
                   {initials(sidebarName)}
                 </div>
               )}
-              <span className="absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full border border-[#070708] bg-[#d4a843]" />
+              <span className="absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full border border-[#070708] bg-[#b72cff]" />
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-black text-white">{sidebarName}</p>
               <p className="mt-0.5 truncate text-xs text-white/42">{sidebarEmail}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
-                <p className="inline-flex items-center gap-1 rounded-full border border-[#d4a843]/20 bg-[#d4a843]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#f5d78c]">
+                <p className="inline-flex items-center gap-1 rounded-full border border-[#b72cff]/20 bg-[#b72cff]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#e1a6ff]">
                   <Crown className="h-3 w-3" />
                   {sidebarPlan}
                 </p>
@@ -319,13 +313,13 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                   onClick={onClose}
                   className={`group relative flex h-11 items-center gap-3 rounded-[8px] px-3 text-sm font-bold transition ${
                     active
-                      ? "border border-[#d4a843]/25 bg-[#d4a843]/12 text-white shadow-[0_12px_34px_rgba(212,168,67,0.08)]"
+                      ? "border border-[#b72cff]/25 bg-[#b72cff]/12 text-white shadow-[0_12px_34px_rgba(183,44,255,0.08)]"
                       : "border border-transparent text-white/48 hover:border-white/8 hover:bg-white/[0.045] hover:text-white/82"
                   }`}
                 >
                   <span
                     className={`grid h-7 w-7 place-items-center rounded-[8px] transition ${
-                      active ? "bg-[#d4a843]/15 text-[#f5d78c]" : "bg-white/[0.04] text-white/42 group-hover:text-[#f5d78c]"
+                      active ? "bg-[#b72cff]/15 text-[#e1a6ff]" : "bg-white/[0.04] text-white/42 group-hover:text-[#e1a6ff]"
                     }`}
                   >
                     {navItem.icon}
@@ -337,7 +331,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                     </span>
                   ) : null}
                   {active ? (
-                    <span className="absolute right-2 h-1.5 w-1.5 rounded-full bg-[#d4a843] shadow-[0_0_18px_rgba(212,168,67,0.95)]" />
+                    <span className="absolute right-2 h-1.5 w-1.5 rounded-full bg-[#b72cff] shadow-[0_0_18px_rgba(183,44,255,0.95)]" />
                   ) : null}
                 </Link>
               );
@@ -345,8 +339,8 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
           </div>
 
           {isAdmin ? (
-            <div className="mt-5 rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(255,255,255,0.03))] p-3">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f5d78c]">
+            <div className="mt-5 rounded-[8px] border border-[#b72cff]/18 bg-[linear-gradient(135deg,rgba(183,44,255,0.10),rgba(255,255,255,0.03))] p-3">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#e1a6ff]">
                 Navegação segura
               </p>
               <p className="mt-2 text-xs leading-5 text-white/48">
@@ -355,15 +349,15 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
               <Link
                 href="/"
                 onClick={onClose}
-                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-[8px] border border-[#d4a843]/28 px-3 py-2 text-xs font-black text-[#f5d78c] transition hover:bg-[#d4a843]/10"
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-[8px] border border-[#b72cff]/28 px-3 py-2 text-xs font-black text-[#e1a6ff] transition hover:bg-[#b72cff]/10"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 Ver site público
               </Link>
             </div>
           ) : isProfessionalArea ? (
-            <div className="mt-5 rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(204,31,47,0.06))] p-3">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f5d78c]">
+            <div className="mt-5 rounded-[8px] border border-[#b72cff]/18 bg-[linear-gradient(135deg,rgba(183,44,255,0.10),rgba(204,31,47,0.06))] p-3">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#e1a6ff]">
                 Perfil profissional
               </p>
               <p className="mt-2 text-xs leading-5 text-white/48">
@@ -372,14 +366,14 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
               <Link
                 href="/profissional/planos"
                 onClick={onClose}
-                className="mt-3 inline-flex w-full items-center justify-center rounded-[8px] bg-[#d4a843] px-3 py-2 text-xs font-black text-[#100d09] transition hover:bg-[#f5d78c]"
+                className="mt-3 inline-flex w-full items-center justify-center rounded-[8px] bg-[#b72cff] px-3 py-2 text-xs font-black text-[#100d09] transition hover:bg-[#e1a6ff]"
               >
                 Atualizar plano
               </Link>
             </div>
           ) : role === "GUEST" && !isHostFlow ? (
-            <div className="mt-5 rounded-[8px] border border-[#d4a843]/18 bg-[linear-gradient(135deg,rgba(212,168,67,0.10),rgba(204,31,47,0.06))] p-3">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f5d78c]">
+            <div className="mt-5 rounded-[8px] border border-[#b72cff]/18 bg-[linear-gradient(135deg,rgba(183,44,255,0.10),rgba(204,31,47,0.06))] p-3">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#e1a6ff]">
                 Encontre profissionais
               </p>
               <p className="mt-2 text-xs leading-5 text-white/48">
@@ -388,7 +382,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
               <Link
                 href="/profissionais"
                 onClick={onClose}
-                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-[8px] bg-[#d4a843] px-3 py-2 text-xs font-black text-[#100d09] transition hover:bg-[#f5d78c]"
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-[8px] bg-[#b72cff] px-3 py-2 text-xs font-black text-[#100d09] transition hover:bg-[#e1a6ff]"
               >
                 <MessageCircle className="h-3.5 w-3.5" />
                 Ver profissionais

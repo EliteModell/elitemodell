@@ -18,14 +18,14 @@ function SettingRow({
       href={href}
       className="flex min-h-[88px] items-center gap-4 border-b border-white/10 px-5 no-underline transition-colors active:bg-white/10 last:border-0"
     >
-      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[8px] border border-[#d4a843]/14 bg-white/[0.045] text-[#f5d78c]">
+      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[8px] border border-[#b72cff]/14 bg-white/[0.045] text-[#e1a6ff]">
         {icon}
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-[17px] font-bold text-[#f5f0e4]">{label}</p>
         {description && <p className="mt-1 text-[13px] leading-5 text-[#f5f0e4]/54">{description}</p>}
       </div>
-      <ChevronRight className="h-4 w-4 shrink-0 text-[#f5d78c]" />
+      <ChevronRight className="h-4 w-4 shrink-0 text-[#e1a6ff]" />
     </Link>
   );
 }

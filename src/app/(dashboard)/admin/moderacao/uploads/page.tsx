@@ -64,7 +64,7 @@ export default async function AdminUploadModerationPage() {
                 ) : asset.category === "video" ? (
                   <video src={`/api/admin/uploads/${asset.id}/preview`} controls preload="metadata" style={{ width: "100%", height: 220 }} />
                 ) : (
-                  <a href={`/api/admin/uploads/${asset.id}/preview`} target="_blank" rel="noreferrer" style={{ color: "#f5d78c", display: "grid", minHeight: 180, placeItems: "center" }}>
+                  <a href={`/api/admin/uploads/${asset.id}/preview`} target="_blank" rel="noreferrer" style={{ color: "#e1a6ff", display: "grid", minHeight: 180, placeItems: "center" }}>
                     Abrir documento privado
                   </a>
                 )}
@@ -98,7 +98,7 @@ export default async function AdminUploadModerationPage() {
                     <button name="action" value="REJECT" style={{ border: "1px solid rgba(239,68,68,.4)", borderRadius: 8, background: "rgba(239,68,68,.12)", color: "#fca5a5", padding: "9px 12px", fontWeight: 800 }}>
                       Rejeitar
                     </button>
-                    <button name="action" value="APPROVE" disabled={asset.malwareStatus !== "CLEAN"} style={{ border: 0, borderRadius: 8, background: "#d4a843", color: "#080704", padding: "9px 12px", fontWeight: 950, opacity: asset.malwareStatus === "CLEAN" ? 1 : 0.45 }}>
+                    <button name="action" value="APPROVE" disabled={asset.malwareStatus !== "CLEAN"} style={{ border: 0, borderRadius: 8, background: "#b72cff", color: "#080704", padding: "9px 12px", fontWeight: 950, opacity: asset.malwareStatus === "CLEAN" ? 1 : 0.45 }}>
                       Aprovar
                     </button>
                   </div>

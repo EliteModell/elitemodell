@@ -9,8 +9,8 @@ import {
 import { CLIENT_AGE_VERIFY_HREF } from "@/components/client-area/ClientSensitiveGate";
 
 const statusStyles: Record<ClientAgeVerificationStatus, string> = {
-  not_started: "border-[#d6a83a]/25 bg-[#d6a83a]/10 text-[#f5b83b]",
-  pending: "border-[#f5b83b]/28 bg-[#f5b83b]/12 text-[#f5b83b]",
+  not_started: "border-[#d6a83a]/25 bg-[#d6a83a]/10 text-[#c451ff]",
+  pending: "border-[#c451ff]/28 bg-[#c451ff]/12 text-[#c451ff]",
   verified: "border-[#4d9b56]/28 bg-[#4d9b56]/14 text-[#7ed58a]",
   rejected: "border-[#ef4444]/28 bg-[#ef4444]/12 text-[#fca5a5]",
 };
@@ -61,7 +61,7 @@ export default function AgeVerificationCard({
     <section className="client-page-tight client-dashboard-section">
       <div className="client-panel overflow-hidden p-5">
         <div className="flex items-start gap-4">
-          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-[8px] border border-[#d6a83a]/25 bg-[#d6a83a]/12 text-[#f5b83b]">
+          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-[8px] border border-[#d6a83a]/25 bg-[#d6a83a]/12 text-[#c451ff]">
             <ShieldCheck className="h-7 w-7" />
           </span>
           <div className="min-w-0 flex-1">

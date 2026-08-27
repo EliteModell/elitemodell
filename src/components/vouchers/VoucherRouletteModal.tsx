@@ -63,7 +63,7 @@ type Props = {
 };
 
 const CLOSED_KEY = "elite_voucher_modal_closed";
-const GOLD = "#d4a843";
+const GOLD = "#b72cff";
 const WHEEL_IMAGE_SRC = "/images/roleta/roleta-roda.webp?v=20260601-spin-audio";
 const SEGMENT_ANGLE = 36; // 360 / 10 segments
 const SPIN_DURATION_MS = 1800;
@@ -802,10 +802,10 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
           flex-direction: column;
           align-items: center;
           border-radius: 22px;
-          border: 1px solid rgba(212,168,67,.38);
+          border: 1px solid rgba(183,44,255,.38);
           background:
             radial-gradient(ellipse at 22% 0%, rgba(116,34,128,.55) 0%, transparent 48%),
-            radial-gradient(ellipse at 80% 8%, rgba(212,168,67,.14) 0%, transparent 40%),
+            radial-gradient(ellipse at 80% 8%, rgba(183,44,255,.14) 0%, transparent 40%),
             linear-gradient(170deg, #090212 0%, #110520 55%, #060208 100%);
           box-shadow:
             0 22px 54px rgba(0,0,0,.62),
@@ -821,9 +821,9 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
           position: absolute; top: 12px; right: 12px; z-index: 10;
           width: 32px; height: 32px;
           border-radius: 50%;
-          border: 1px solid rgba(212,168,67,.38);
+          border: 1px solid rgba(183,44,255,.38);
           background: rgba(0,0,0,.55);
-          color: #f5d78c;
+          color: #e1a6ff;
           font-size: 13px; font-weight: 800;
           cursor: pointer;
           display: grid; place-items: center;
@@ -845,7 +845,7 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
           font-size: clamp(30px, 9vw, 52px);
           line-height: .92;
           color: #ffe7a5;
-          text-shadow: 0 0 32px rgba(212,168,67,.38);
+          text-shadow: 0 0 32px rgba(183,44,255,.38);
           letter-spacing: .01em;
         }
 
@@ -899,7 +899,7 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
           background: #0b0311; /* solid base, no transparency */
           box-shadow:
             0 0 0 3px rgba(238,190,78,.78),
-            0 0 0 8px rgba(212,168,67,.08),
+            0 0 0 8px rgba(183,44,255,.08),
             0 10px 24px rgba(0,0,0,.34),
             0 0 24px rgba(171,63,188,.18);
           flex-shrink: 0;
@@ -964,7 +964,7 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
           letter-spacing: .07em;
           text-transform: uppercase;
           cursor: pointer;
-          box-shadow: 0 12px 32px rgba(212,168,67,.32), inset 0 1px 0 rgba(255,255,255,.28);
+          box-shadow: 0 12px 32px rgba(183,44,255,.32), inset 0 1px 0 rgba(255,255,255,.28);
           transition: opacity .15s, transform .1s;
           flex-shrink: 0;
         }
@@ -977,8 +977,8 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
           padding: 6px 10px;
           border: 1px solid rgba(245,215,140,.4);
           border-radius: 999px;
-          background: rgba(212,168,67,.12);
-          color: #f5d78c;
+          background: rgba(183,44,255,.12);
+          color: #e1a6ff;
           font-size: 10px;
           font-weight: 900;
           letter-spacing: .1em;
@@ -1011,7 +1011,7 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
           flex: 0 0 auto;
         }
         .vm-policy-acceptance a {
-          color: #f5d78c;
+          color: #e1a6ff;
           font-weight: 800;
           text-underline-offset: 2px;
         }
@@ -1051,7 +1051,7 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
           position: relative;
           width: min(100%, 390px);
           border-radius: 20px;
-          border: 1px solid rgba(212,168,67,.36);
+          border: 1px solid rgba(183,44,255,.36);
           background:
             radial-gradient(ellipse at 20% 0%, rgba(126,32,143,.38) 0%, transparent 50%),
             linear-gradient(145deg, #0d0912 0%, #050206 100%);
@@ -1080,12 +1080,12 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
           gap: 10px;
           padding: 22px 16px;
           border-radius: 14px;
-          border: 1px solid rgba(212,168,67,.28);
+          border: 1px solid rgba(183,44,255,.28);
           background: linear-gradient(145deg, rgba(255,231,165,.07), rgba(0,0,0,.18));
         }
         .vm-prize-box--voucher {
           border-color: rgba(255,231,165,.55);
-          box-shadow: 0 0 32px rgba(212,168,67,.16), inset 0 0 0 1px rgba(255,255,255,.04);
+          box-shadow: 0 0 32px rgba(183,44,255,.16), inset 0 0 0 1px rgba(255,255,255,.04);
         }
 
         .vm-prize-icon {
@@ -1094,7 +1094,7 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
           background: linear-gradient(180deg, #fff0b8 0%, ${GOLD} 52%, #9f6b1e 100%);
           display: grid; place-items: center;
           color: #120608;
-          box-shadow: 0 0 26px rgba(212,168,67,.45);
+          box-shadow: 0 0 26px rgba(183,44,255,.45);
           flex-shrink: 0;
         }
 
@@ -1129,14 +1129,14 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
           width: 100%; box-sizing: border-box;
           min-height: 46px;
           border-radius: 10px;
-          border: 1px solid rgba(212,168,67,.25);
+          border: 1px solid rgba(183,44,255,.25);
           background: rgba(255,255,255,.05);
           color: #fff;
           padding: 0 14px;
           font-size: 15px;
           outline: none;
         }
-        .vm-input:focus { border-color: rgba(212,168,67,.5); }
+        .vm-input:focus { border-color: rgba(183,44,255,.5); }
         .vm-input::placeholder { color: rgba(255,255,255,.35); }
 
         .vm-btn-gold {
@@ -1150,7 +1150,7 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
           cursor: pointer;
           display: flex; align-items: center; justify-content: center;
           text-decoration: none;
-          box-shadow: 0 8px 22px rgba(212,168,67,.28);
+          box-shadow: 0 8px 22px rgba(183,44,255,.28);
           transition: opacity .15s;
         }
         .vm-btn-gold:disabled { opacity: .55; cursor: not-allowed; }
@@ -1159,9 +1159,9 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
         .vm-btn-outline {
           min-height: 46px;
           border-radius: 12px;
-          border: 1px solid rgba(212,168,67,.38);
+          border: 1px solid rgba(183,44,255,.38);
           background: transparent;
-          color: #f5d78c;
+          color: #e1a6ff;
           font-size: 14px; font-weight: 700;
           cursor: pointer;
           display: flex; align-items: center; justify-content: center;
@@ -1171,7 +1171,7 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
         .vm-btn-outline:hover { opacity: .8; }
 
         .vm-link {
-          color: #f5d78c;
+          color: #e1a6ff;
           font-size: 13px;
           text-decoration: underline;
           text-underline-offset: 3px;
@@ -1180,7 +1180,7 @@ export default function VoucherRouletteModal({ demoMode = false }: Props) {
         .vm-code {
           font-family: monospace;
           font-size: 22px; letter-spacing: .12em;
-          color: #f5d78c;
+          color: #e1a6ff;
         }
         .vm-code-status {
           font-size: 13px;

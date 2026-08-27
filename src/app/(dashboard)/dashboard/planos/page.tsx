@@ -7,10 +7,10 @@ import { CLIENT_PLANS, type ClientPlan, type ClientPlanId } from "@/lib/client-p
 
 const PixPaymentModal = dynamic(() => import("@/components/payments/PixPaymentModal"), { ssr: false });
 
-const GOLD = "#d4a843";
-const GOLD_DIM = "rgba(212,168,67,0.12)";
-const GOLD_MID = "rgba(212,168,67,0.28)";
-const GOLD_TEXT = "#f5d78c";
+const GOLD = "#b72cff";
+const GOLD_DIM = "rgba(183,44,255,0.12)";
+const GOLD_MID = "rgba(183,44,255,0.28)";
+const GOLD_TEXT = "#e1a6ff";
 
 const BENEFITS = [
   "Mais de 10 mil avaliações para ver",
@@ -96,7 +96,7 @@ function PlanCard({
         width: "100%",
         textAlign: "left",
         background: selected
-          ? "linear-gradient(135deg, rgba(212,168,67,0.14) 0%, rgba(212,168,67,0.06) 100%)"
+          ? "linear-gradient(135deg, rgba(183,44,255,0.14) 0%, rgba(183,44,255,0.06) 100%)"
           : "rgba(255,255,255,0.03)",
         border: `2px solid ${selected ? GOLD : "rgba(255,255,255,0.08)"}`,
         borderRadius: 16,
@@ -304,7 +304,7 @@ export default function PlanosPage() {
 
         {/* Benefícios */}
         <div style={{
-          background: "rgba(212,168,67,0.07)",
+          background: "rgba(183,44,255,0.07)",
           border: `1px solid ${GOLD_MID}`,
           borderRadius: 18,
           padding: "20px 22px",
@@ -320,7 +320,7 @@ export default function PlanosPage() {
                   width: 22,
                   height: 22,
                   borderRadius: "50%",
-                  background: "rgba(212,168,67,0.18)",
+                  background: "rgba(183,44,255,0.18)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -427,7 +427,7 @@ export default function PlanosPage() {
         .planos-cta-btn {
           flex-shrink: 0;
           padding: 13px 28px;
-          background: #d4a843;
+          background: #b72cff;
           color: #060e1b;
           border: none;
           border-radius: 12px;

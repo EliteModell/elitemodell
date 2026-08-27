@@ -18,7 +18,7 @@ export type ProfessionalAlert = {
 };
 
 const toneClass = {
-  gold: "border-[#d4a843]/30 bg-[linear-gradient(135deg,rgba(212,168,67,0.13),rgba(255,255,255,0.035))] text-[#f5d78c]",
+  gold: "border-[#b72cff]/30 bg-[linear-gradient(135deg,rgba(183,44,255,0.13),rgba(255,255,255,0.035))] text-[#e1a6ff]",
   danger: "border-red-400/28 bg-[linear-gradient(135deg,rgba(248,113,113,0.13),rgba(255,255,255,0.03))] text-red-100",
   success: "border-emerald-400/25 bg-[linear-gradient(135deg,rgba(16,185,129,0.13),rgba(255,255,255,0.03))] text-emerald-100",
   neutral: "border-white/12 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.025))] text-white/72",
@@ -59,7 +59,7 @@ export function ProfessionalAlertStack({ alerts }: { alerts: ProfessionalAlert[]
                 <p className="mt-1.5 text-sm leading-6 text-white/64">{alert.description}</p>
                 <Link
                   href={alert.href}
-                  className="professional-primary-action mt-4 inline-flex min-h-11 w-full max-w-[260px] items-center justify-center rounded-[12px] bg-[#d4a843] px-5 py-2.5 text-center text-sm font-black leading-5 text-[#080704] no-underline shadow-[0_14px_34px_rgba(212,168,67,0.20)] transition hover:bg-[#f5d78c] sm:w-auto"
+                  className="professional-primary-action mt-4 inline-flex min-h-11 w-full max-w-[260px] items-center justify-center rounded-[12px] bg-[#b72cff] px-5 py-2.5 text-center text-sm font-black leading-5 text-[#080704] no-underline shadow-[0_14px_34px_rgba(183,44,255,0.20)] transition hover:bg-[#e1a6ff] sm:w-auto"
                 >
                   {alert.actionLabel}
                 </Link>

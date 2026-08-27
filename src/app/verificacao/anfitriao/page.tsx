@@ -5,7 +5,7 @@ import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 export const dynamic = "force-dynamic";
 
-const GOLD = "#d4a843";
+const GOLD = "#b72cff";
 
 export default async function VerificacaoAnfitriaoPage() {
   const access = await requireAuthenticatedAccount();
@@ -27,7 +27,7 @@ export default async function VerificacaoAnfitriaoPage() {
 
   return (
     <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#050505", color: "#f4f1ea", padding: 24 }}>
-      <section style={{ width: "100%", maxWidth: 520, border: "1px solid rgba(212,168,67,0.24)", borderRadius: 16, background: "#101010", padding: 28, textAlign: "center" }}>
+      <section style={{ width: "100%", maxWidth: 520, border: "1px solid rgba(183,44,255,0.24)", borderRadius: 16, background: "#101010", padding: 28, textAlign: "center" }}>
         <p style={{ margin: "0 0 10px", color: GOLD, fontSize: 11, fontWeight: 900, letterSpacing: 2.4, textTransform: "uppercase" }}>Solicitacao de anfitriao</p>
         <h1 style={{ margin: 0, fontSize: 28, lineHeight: 1.1 }}>{title}</h1>
         <p style={{ margin: "14px 0 24px", color: "#9f978b", lineHeight: 1.6 }}>{description}</p>

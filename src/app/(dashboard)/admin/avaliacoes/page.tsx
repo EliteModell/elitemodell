@@ -102,7 +102,7 @@ export default async function AdminAvaliacoesPage() {
                 <td style={tdStyle}>
                   <strong>{item.professional.displayName}</strong><br />
                   {item.professional.city}, {item.professional.state}<br />
-                  <Link href={`/profissionais/${item.professional.slug}`} style={{ color: "#d4a843" }}>Abrir perfil</Link>
+                  <Link href={`/profissionais/${item.professional.slug}`} style={{ color: "#b72cff" }}>Abrir perfil</Link>
                 </td>
                 <td style={tdStyle}>
                   Nota: {item.review.rating}/5<br />
@@ -112,7 +112,7 @@ export default async function AdminAvaliacoesPage() {
                 <td style={tdStyle}>
                   Enviada por {item.author.name ?? item.author.email ?? "Profissional"}<br />
                   <span style={{ color: "#94a3b8" }}>{item.reason}</span>
-                  {item.adminNote ? <p style={{ color: "#f5d78c", margin: "8px 0 0" }}>Admin: {item.adminNote}</p> : null}
+                  {item.adminNote ? <p style={{ color: "#e1a6ff", margin: "8px 0 0" }}>Admin: {item.adminNote}</p> : null}
                 </td>
                 <td style={tdStyle}>
                   <StatusPill tone={item.status === "PENDING" ? "warning" : item.status === "ACCEPTED" ? "success" : "danger"}>
@@ -126,7 +126,7 @@ export default async function AdminAvaliacoesPage() {
                     <textarea name="adminNote" placeholder="Observação interna" style={{ minHeight: 64, borderRadius: 8, border: "1px solid rgba(255,255,255,.14)", background: "#050506", color: "#fff", padding: 8 }} />
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                       <button name="action" value="remove" style={{ ...buttonStyle, color: "#22c55e" }}>Remover avaliacao</button>
-                      <button name="action" value="keep" style={{ ...buttonStyle, color: "#f5d78c" }}>Manter avaliacao</button>
+                      <button name="action" value="keep" style={{ ...buttonStyle, color: "#e1a6ff" }}>Manter avaliacao</button>
                     </div>
                   </form>
                 </td>

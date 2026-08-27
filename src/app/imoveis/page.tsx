@@ -92,7 +92,7 @@ export default function ImoveisPage() {
       <Navbar />
       {status !== "loading" && !canSeeLocations ? (
         <div style={{ maxWidth: 720, margin: "0 auto", padding: "128px 24px", textAlign: "center" }}>
-          <p style={{ margin: "0 0 10px", color: "#d4a843", fontSize: 11, fontWeight: 900, letterSpacing: 2.4, textTransform: "uppercase" }}>Área exclusiva</p>
+          <p style={{ margin: "0 0 10px", color: "#b72cff", fontSize: 11, fontWeight: 900, letterSpacing: 2.4, textTransform: "uppercase" }}>Área exclusiva</p>
           <h1 style={{ margin: "0 0 14px", color: "#f4f1ea", fontSize: "clamp(30px, 6vw, 54px)", lineHeight: 1 }}>
             Locais disponíveis apenas para profissionais aprovadas.
           </h1>
@@ -104,10 +104,10 @@ export default function ImoveisPage() {
       <>
 
       {/* Search bar */}
-      <div style={{ paddingTop: 80, background: "#070707", borderBottom: "1px solid rgba(212,168,67,0.14)" }}>
+      <div style={{ paddingTop: 80, background: "#070707", borderBottom: "1px solid rgba(183,44,255,0.14)" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "20px 24px" }}>
           <div style={{ marginBottom: 18 }}>
-            <p style={{ margin: "0 0 8px", color: "#d4a843", fontSize: 11, fontWeight: 900, letterSpacing: 2.4, textTransform: "uppercase" }}>Espaços para profissionais</p>
+            <p style={{ margin: "0 0 8px", color: "#b72cff", fontSize: 11, fontWeight: 900, letterSpacing: 2.4, textTransform: "uppercase" }}>Espaços para profissionais</p>
             <h1 style={{ margin: 0, color: "#f4f1ea", fontFamily: "var(--font-playfair), serif", fontSize: "clamp(26px, 4vw, 42px)", lineHeight: 1.05 }}>
               Ambientes discretos para atendimento reservado
             </h1>
@@ -137,7 +137,7 @@ export default function ImoveisPage() {
                   outline: "none",
                   boxSizing: "border-box",
                 }}
-                onFocus={(e) => ((e.target as HTMLElement).style.borderColor = "#d4a843")}
+                onFocus={(e) => ((e.target as HTMLElement).style.borderColor = "#b72cff")}
                 onBlur={(e) => ((e.target as HTMLElement).style.borderColor = "#2a2620")}
               />
             </div>
@@ -159,8 +159,8 @@ export default function ImoveisPage() {
               onClick={() => setFilterOpen(!filterOpen)}
               style={{
                 padding: "11px 16px",
-                background: filterOpen ? "rgba(212,168,67,0.12)" : "#111",
-                border: `1px solid ${filterOpen ? "#d4a843" : "#2a2620"}`,
+                background: filterOpen ? "rgba(183,44,255,0.12)" : "#111",
+                border: `1px solid ${filterOpen ? "#b72cff" : "#2a2620"}`,
                 borderRadius: 8,
                 color: "#cfc8ba",
                 fontSize: 14,
@@ -208,7 +208,7 @@ export default function ImoveisPage() {
               <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
                 <div>
                   <label style={{ fontSize: 13, color: "#aaa", fontWeight: 600, display: "block", marginBottom: 12 }}>
-                    Valor maximo: <span style={{ color: "#d4a843" }}>R$ {priceMax}</span>
+                    Valor maximo: <span style={{ color: "#b72cff" }}>R$ {priceMax}</span>
                   </label>
                   <input
                     type="range"
@@ -217,7 +217,7 @@ export default function ImoveisPage() {
                     step={50}
                     value={priceMax}
                     onChange={(e) => setPriceMax(Number(e.target.value))}
-                    style={{ accentColor: "#d4a843", width: 200 }}
+                    style={{ accentColor: "#b72cff", width: 200 }}
                   />
                 </div>
                 <div>
@@ -229,8 +229,8 @@ export default function ImoveisPage() {
                         onClick={() => toggleAmenity(a)}
                         style={{
                           padding: "6px 12px",
-                          background: selectedAmenities.includes(a) ? "rgba(212,168,67,0.14)" : "#0a0a0a",
-                          border: `1px solid ${selectedAmenities.includes(a) ? "#d4a843" : "#2a2620"}`,
+                          background: selectedAmenities.includes(a) ? "rgba(183,44,255,0.14)" : "#0a0a0a",
+                          border: `1px solid ${selectedAmenities.includes(a) ? "#b72cff" : "#2a2620"}`,
                           borderRadius: 6,
                           color: selectedAmenities.includes(a) ? "#f4f1ea" : "#8d8578",
                           fontSize: 13,
@@ -258,7 +258,7 @@ export default function ImoveisPage() {
 
         {!loading && error ? (
           <div className="premium-empty-state premium-enter" style={{ textAlign: "center", padding: "46px 22px", borderRadius: 8 }}>
-            <p style={{ margin: "0 0 8px", color: "#d4a843", fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase" }}>Instabilidade temporaria</p>
+            <p style={{ margin: "0 0 8px", color: "#b72cff", fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase" }}>Instabilidade temporaria</p>
             <h2 style={{ margin: "0 0 10px", color: "#f4f1ea", fontSize: 26, fontWeight: 850 }}>Nao conseguimos atualizar os ambientes.</h2>
             <p style={{ margin: "0 auto 20px", maxWidth: 460, color: "#b8b1a6", lineHeight: 1.6 }}>{error}</p>
             <button
@@ -292,7 +292,7 @@ export default function ImoveisPage() {
             <p style={{ color: "#666", fontSize: 16 }}>Nenhum local encontrado com esses filtros.</p>
             <button
               onClick={() => { setSearch(""); setModels(1); setPriceMax(2000); setSelectedAmenities([]); }}
-              style={{ marginTop: 16, padding: "10px 24px", background: "#d4a843", color: "#080704", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 800 }}
+              style={{ marginTop: 16, padding: "10px 24px", background: "#b72cff", color: "#080704", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 800 }}
             >
               Limpar filtros
             </button>
@@ -311,7 +311,7 @@ export default function ImoveisPage() {
         }
         @media (hover: hover) and (pointer: fine) {
           .property-card:hover {
-            border-color: rgba(212,168,67,0.34);
+            border-color: rgba(183,44,255,0.34);
             transform: translateY(-3px);
             box-shadow: 0 24px 72px rgba(0,0,0,0.36);
           }
@@ -380,7 +380,7 @@ function PropertyCard({ property: p }: { property: Property }) {
             justifyContent: "center",
           }}
         >
-          <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center, rgba(212,168,67,0.10) 0%, transparent 70%)" }} />
+          <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center, rgba(183,44,255,0.10) 0%, transparent 70%)" }} />
           {coverPhoto ? (
             <Image
               src={coverPhoto}
@@ -400,10 +400,10 @@ function PropertyCard({ property: p }: { property: Property }) {
               right: 10,
               padding: "4px 8px",
               background: "rgba(0,0,0,0.72)",
-              border: "1px solid rgba(212,168,67,0.18)",
+              border: "1px solid rgba(183,44,255,0.18)",
               borderRadius: 999,
               fontSize: 12,
-              color: "#d4a843",
+              color: "#b72cff",
             }}
           >
             {p.type}
@@ -415,11 +415,11 @@ function PropertyCard({ property: p }: { property: Property }) {
                 top: 10,
                 left: 10,
                 padding: "4px 8px",
-                background: "rgba(212,168,67,0.14)",
-                border: "1px solid rgba(212,168,67,0.28)",
+                background: "rgba(183,44,255,0.14)",
+                border: "1px solid rgba(183,44,255,0.28)",
                 borderRadius: 999,
                 fontSize: 11,
-                color: "#f5d78c",
+                color: "#e1a6ff",
                 fontWeight: 600,
               }}
             >
@@ -435,8 +435,8 @@ function PropertyCard({ property: p }: { property: Property }) {
               {p.title}
             </h3>
             <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-              <Star size={13} fill="#d4a843" color="#d4a843" />
-              <span style={{ fontSize: 13, color: "#d4a843", fontWeight: 700 }}>{p.rating.toFixed(1)}</span>
+              <Star size={13} fill="#b72cff" color="#b72cff" />
+              <span style={{ fontSize: 13, color: "#b72cff", fontWeight: 700 }}>{p.rating.toFixed(1)}</span>
               <span style={{ fontSize: 12, color: "#615b52" }}>({p.totalReviews})</span>
             </div>
           </div>
@@ -455,12 +455,12 @@ function PropertyCard({ property: p }: { property: Property }) {
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
             {(p.amenities ?? []).slice(0, 3).map((a: { name: string }) => (
-              <span key={a.name} style={{ padding: "3px 8px", background: "#0a0a0a", border: "1px solid rgba(212,168,67,0.14)", borderRadius: 999, fontSize: 11, color: "#b8b1a6" }}>
+              <span key={a.name} style={{ padding: "3px 8px", background: "#0a0a0a", border: "1px solid rgba(183,44,255,0.14)", borderRadius: 999, fontSize: 11, color: "#b8b1a6" }}>
                 {a.name}
               </span>
             ))}
             {(p.amenities ?? []).length > 3 && (
-              <span style={{ padding: "3px 8px", background: "#0a0a0a", border: "1px solid rgba(212,168,67,0.14)", borderRadius: 999, fontSize: 11, color: "#8d8578" }}>
+              <span style={{ padding: "3px 8px", background: "#0a0a0a", border: "1px solid rgba(183,44,255,0.14)", borderRadius: 999, fontSize: 11, color: "#8d8578" }}>
                 +{(p.amenities ?? []).length - 3}
               </span>
             )}
@@ -468,7 +468,7 @@ function PropertyCard({ property: p }: { property: Property }) {
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <span style={{ fontSize: 20, fontWeight: 800, color: "#d4a843" }}>
+              <span style={{ fontSize: 20, fontWeight: 800, color: "#b72cff" }}>
                 R$ {p.pricePerNight.toLocaleString("pt-BR")}
               </span>
               <span style={{ fontSize: 13, color: "#8d8578" }}>/período</span>
@@ -476,7 +476,7 @@ function PropertyCard({ property: p }: { property: Property }) {
             <div
               style={{
                 padding: "7px 14px",
-                background: "linear-gradient(135deg, #f5d78c, #d4a843)",
+                background: "linear-gradient(135deg, #e1a6ff, #b72cff)",
                 color: "#080704",
                 borderRadius: 7,
                 fontSize: 13,

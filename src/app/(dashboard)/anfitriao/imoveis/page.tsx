@@ -7,7 +7,7 @@ import { PROPERTY_STATUS_DESCRIPTION, PROPERTY_STATUS_LABEL, propertyStatusTone 
 
 export const dynamic = "force-dynamic";
 
-const GOLD = "#d4a843";
+const GOLD = "#b72cff";
 
 function money(value: number | null | undefined) {
   return `R$ ${(value ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
@@ -33,7 +33,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function ActionLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} style={{ minHeight: 38, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, borderRadius: 8, border: "1px solid rgba(212,168,67,0.24)", padding: "0 12px", color: "#f5d78c", textDecoration: "none", fontSize: 12, fontWeight: 900 }}>
+    <Link href={href} style={{ minHeight: 38, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, borderRadius: 8, border: "1px solid rgba(183,44,255,0.24)", padding: "0 12px", color: "#e1a6ff", textDecoration: "none", fontSize: 12, fontWeight: 900 }}>
       {children}
     </Link>
   );
@@ -41,7 +41,7 @@ function ActionLink({ href, children }: { href: string; children: React.ReactNod
 
 function ActionButton({ children }: { children: React.ReactNode }) {
   return (
-    <button style={{ minHeight: 38, borderRadius: 8, border: "1px solid rgba(212,168,67,0.24)", background: "rgba(212,168,67,0.08)", color: "#f5d78c", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "0 12px", fontSize: 12, fontWeight: 900, cursor: "pointer" }}>
+    <button style={{ minHeight: 38, borderRadius: 8, border: "1px solid rgba(183,44,255,0.24)", background: "rgba(183,44,255,0.08)", color: "#e1a6ff", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "0 12px", fontSize: 12, fontWeight: 900, cursor: "pointer" }}>
       {children}
     </button>
   );
@@ -80,8 +80,8 @@ export default async function ImoveisAnfitriaoPage() {
       </header>
 
       {properties.length === 0 ? (
-        <section style={{ border: "1px dashed rgba(212,168,67,0.32)", borderRadius: 8, background: "rgba(255,255,255,0.03)", padding: 28, textAlign: "center" }}>
-          <div style={{ width: 58, height: 58, display: "grid", placeItems: "center", margin: "0 auto 14px", borderRadius: 8, color: GOLD, background: "rgba(212,168,67,0.10)", border: "1px solid rgba(212,168,67,0.22)" }}>
+        <section style={{ border: "1px dashed rgba(183,44,255,0.32)", borderRadius: 8, background: "rgba(255,255,255,0.03)", padding: 28, textAlign: "center" }}>
+          <div style={{ width: 58, height: 58, display: "grid", placeItems: "center", margin: "0 auto 14px", borderRadius: 8, color: GOLD, background: "rgba(183,44,255,0.10)", border: "1px solid rgba(183,44,255,0.22)" }}>
             <IconMark>+</IconMark>
           </div>
           <h2 style={{ color: "#fff", margin: "0 0 8px", fontSize: 22 }}>Nenhum imóvel cadastrado ainda</h2>
@@ -99,17 +99,17 @@ export default async function ImoveisAnfitriaoPage() {
             const canSendReview = ["DRAFT", "REJECTED", "INACTIVE"].includes(property.status);
             const canPause = property.status === "ACTIVE";
             return (
-              <article key={property.id} style={{ overflow: "hidden", border: "1px solid rgba(212,168,67,0.18)", borderRadius: 8, background: "linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98))" }}>
+              <article key={property.id} style={{ overflow: "hidden", border: "1px solid rgba(183,44,255,0.18)", borderRadius: 8, background: "linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98))" }}>
                 <div
                   role="img"
                   aria-label={`Foto de ${property.title}`}
                   style={{
                     aspectRatio: "16 / 9",
-                    background: photo ? `url(${photo}) center / cover` : "linear-gradient(135deg, rgba(212,168,67,0.12), rgba(255,255,255,0.04))",
+                    background: photo ? `url(${photo}) center / cover` : "linear-gradient(135deg, rgba(183,44,255,0.12), rgba(255,255,255,0.04))",
                     display: "grid",
                     placeItems: "center",
                     color: GOLD,
-                    borderBottom: "1px solid rgba(212,168,67,0.16)",
+                    borderBottom: "1px solid rgba(183,44,255,0.16)",
                   }}
                 >
                   {photo ? null : <IconMark>+</IconMark>}

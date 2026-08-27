@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { validateBirthDate } from "@/lib/age-validation";
 
-const GOLD = "#d4a843";
+const GOLD = "#b72cff";
 const GOLD_GRADIENT =
-  "linear-gradient(135deg, #ffe5a0 0%, #d4a843 22%, #f5d78c 45%, #9e7b2a 72%, #d4a843 100%)";
+  "linear-gradient(135deg, #f4d7ff 0%, #b72cff 22%, #e1a6ff 45%, #6900a3 72%, #b72cff 100%)";
 
 function maskBirthDate(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 8);
@@ -99,7 +99,7 @@ export default function CompletarCadastroClient() {
         minHeight: "100vh",
         display: "grid",
         placeItems: "center",
-        background: "radial-gradient(ellipse at 50% 0%, rgba(212,168,67,0.06) 0%, #050505 60%)",
+        background: "radial-gradient(ellipse at 50% 0%, rgba(183,44,255,0.06) 0%, #050505 60%)",
         padding: 24,
       }}
     >
@@ -108,11 +108,11 @@ export default function CompletarCadastroClient() {
           width: "100%",
           maxWidth: 420,
           background: "rgba(10,10,10,0.97)",
-          border: "1px solid rgba(212,168,67,0.28)",
+          border: "1px solid rgba(183,44,255,0.28)",
           borderRadius: 16,
           padding: "40px 32px 36px",
           position: "relative",
-          boxShadow: "0 0 60px rgba(212,168,67,0.06), 0 20px 60px rgba(0,0,0,0.6)",
+          boxShadow: "0 0 60px rgba(183,44,255,0.06), 0 20px 60px rgba(0,0,0,0.6)",
         }}
       >
         {/* Gold top line */}
@@ -123,7 +123,7 @@ export default function CompletarCadastroClient() {
             height: 2,
             borderRadius: "16px 16px 0 0",
             background:
-              "linear-gradient(90deg, transparent 0%, #d4a843 30%, #f5d78c 50%, #d4a843 70%, transparent 100%)",
+              "linear-gradient(90deg, transparent 0%, #b72cff 30%, #e1a6ff 50%, #b72cff 70%, transparent 100%)",
           }}
         />
 
@@ -187,7 +187,7 @@ export default function CompletarCadastroClient() {
               required
               style={{
                 background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(212,168,67,0.2)",
+                border: "1px solid rgba(183,44,255,0.2)",
                 borderRadius: 8,
                 padding: "10px 14px",
                 color: "#f1f5f9",
@@ -294,8 +294,8 @@ export default function CompletarCadastroClient() {
             disabled={!canSubmit}
             style={{
               background: !canSubmit
-                ? "rgba(212,168,67,0.4)"
-                : "linear-gradient(135deg, #d4a843 0%, #f5d78c 50%, #d4a843 100%)",
+                ? "rgba(183,44,255,0.4)"
+                : "linear-gradient(135deg, #b72cff 0%, #e1a6ff 50%, #b72cff 100%)",
               border: "none",
               borderRadius: 8,
               padding: "13px 24px",

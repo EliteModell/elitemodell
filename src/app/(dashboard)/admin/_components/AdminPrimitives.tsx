@@ -1,11 +1,11 @@
 import Link from "next/link";
 
 export const adminColors = {
-  gold: "#d4a843",
+  gold: "#b72cff",
   bg: "#050506",
   panel: "#0d0d10",
   panel2: "#111116",
-  border: "rgba(212,168,67,0.18)",
+  border: "rgba(183,44,255,0.18)",
   muted: "rgba(255,255,255,0.55)",
 };
 
@@ -127,7 +127,7 @@ export const thStyle: React.CSSProperties = {
   textTransform: "uppercase",
   letterSpacing: 1.2,
   borderBottom: `1px solid ${adminColors.border}`,
-  background: "rgba(212,168,67,0.06)",
+  background: "rgba(183,44,255,0.06)",
 };
 
 export const tdStyle: React.CSSProperties = {
@@ -141,7 +141,7 @@ export const tdStyle: React.CSSProperties = {
 export const buttonStyle: React.CSSProperties = {
   border: `1px solid ${adminColors.border}`,
   borderRadius: 8,
-  background: "rgba(212,168,67,0.12)",
+  background: "rgba(183,44,255,0.12)",
   color: adminColors.gold,
   padding: "8px 11px",
   fontSize: 12,
