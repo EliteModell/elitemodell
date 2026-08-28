@@ -1011,13 +1011,13 @@ export default function ProfissionalNovoPage() {
                 aria-current={i === step ? "step" : undefined}
                 style={{
                   width: 28, height: 28, borderRadius: "50%", border: "none",
-                  background: i <= step ? GOLD : "#1e293b",
-                  color: i <= step ? "#060e1b" : "#475569",
+                  background: i <= step ? GOLD : "#24152c",
+                  color: i <= step ? "#14001d" : "#c8bdcf",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   margin: "0 auto 4px", fontSize: 11, fontWeight: 700,
                   cursor: i < step ? "pointer" : "default",
                   transition: "all 0.2s",
-                  opacity: i > step ? 0.5 : 1,
+                  opacity: i > step ? 0.76 : 1,
                 }}
               >
                 {i < step ? "✓" : i + 1}
@@ -1044,7 +1044,7 @@ export default function ProfissionalNovoPage() {
                 <textarea value={form.bio} onChange={(e) => set("bio", e.target.value)} rows={5}
                   style={{ ...inputStyle, resize: "vertical", lineHeight: 1.65 }}
                   placeholder="Conte sobre você, seus diferenciais, o que oferece de especial. Perfis com bio completa recebem até 3x mais contatos." />
-                <div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>{form.bio.length} / 800 caracteres</div>
+                <div style={{ fontSize: 11, color: "#94899d", marginTop: 4 }}>{form.bio.length} / 800 caracteres</div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 80px", gap: 12 }}>
                 <div>
@@ -1073,9 +1073,9 @@ export default function ProfissionalNovoPage() {
                 <button key={val} type="button" onClick={() => toggleSingle("escortCategory", val)}
                   style={{
                     padding: "16px 8px", borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 14,
-                    border: `2px solid ${form.escortCategory === val ? GOLD : "#1e293b"}`,
-                    background: form.escortCategory === val ? GOLD_DIM : "#0b1420",
-                    color: form.escortCategory === val ? "#f1f5f9" : "#475569",
+                    border: `2px solid ${form.escortCategory === val ? GOLD : "rgba(183,44,255,0.24)"}`,
+                    background: form.escortCategory === val ? GOLD_DIM : "#0f0a13",
+                    color: form.escortCategory === val ? "#ffffff" : "#c8bdcf",
                     display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
                   }}>
                   {label}
@@ -1138,7 +1138,7 @@ export default function ProfissionalNovoPage() {
                         style={{ ...inputStyle, textAlign: "center", padding: "12px 6px", minWidth: 0 }}
                       />
                     </div>
-                    <div style={{ fontSize: 10, color: "#334155", marginTop: 3 }}>Minimo 18 anos</div>
+                    <div style={{ fontSize: 10, color: "#94899d", marginTop: 3 }}>Minimo 18 anos</div>
                   </>
                 )}
               </div>
@@ -1324,7 +1324,7 @@ export default function ProfissionalNovoPage() {
               <div>
                 <label style={labelStyle}>WhatsApp *</label>
                 <WhatsAppInput value={form.whatsapp} onChange={(value) => set("whatsapp", value)} />
-                <p style={{ fontSize: 11, color: "#334155", margin: "4px 0 0" }}>Formato: DDD + número (ex: 11912345678)</p>
+                <p style={{ fontSize: 11, color: "#94899d", margin: "4px 0 0" }}>Formato: DDD + número (ex: 11912345678)</p>
               </div>
               <div>
                 <label style={labelStyle}>Telefone</label>
@@ -1635,21 +1635,17 @@ export default function ProfissionalNovoPage() {
           scroll-margin-bottom: 160px;
         }
         .model-flow-page textarea { min-height: 154px !important; }
-        .model-flow-page input::placeholder, .model-flow-page textarea::placeholder { color: rgba(184,184,184,0.55) !important; }
+        .model-flow-page input::placeholder, .model-flow-page textarea::placeholder { color: rgba(210,198,218,0.70) !important; }
         .model-flow-page input:focus, .model-flow-page textarea:focus, .model-flow-page select:focus {
           border-color: rgba(213,108,255,0.82) !important;
           box-shadow: 0 0 0 4px rgba(183,44,255,0.14) !important;
         }
         .model-flow-page button { border-radius: 18px !important; }
-        .model-flow-page [style*="#060e1b"],
-        .model-flow-page [style*="#0b1420"],
-        .model-flow-page [style*="rgba(183,44,255"],
-        .model-flow-page [style*="rgba(34,197,94"] {
-          background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98)) !important;
-          border-color: rgba(183,44,255,0.28) !important;
-          color: #fff !important;
+        .model-flow-page button:disabled {
+          opacity: 0.72 !important;
+          color: #d6ccdc !important;
+          cursor: not-allowed !important;
         }
-        .model-flow-page [style*="#1e293b"] { border-color: rgba(183,44,255,0.28) !important; }
         .model-chip-group {
           display: flex;
           flex-wrap: wrap;
