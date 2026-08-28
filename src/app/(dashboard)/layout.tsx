@@ -9,6 +9,7 @@ import ClientAreaShell from "@/components/client-area/ClientAreaShell";
 import { ProfessionalBottomNav } from "@/components/professional-dashboard/ProfessionalBottomNav";
 import { ProfessionalPremiumStyles } from "@/components/professional-dashboard/ProfessionalPremium";
 import { ProfessionalTopHeader } from "@/components/professional-dashboard/ProfessionalTopHeader";
+import { BrandMark } from "@/components/BrandMark";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 function LoadingScreen() {
@@ -112,10 +113,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span className="text-sm">Buscar profissionais, favoritos e agendamentos</span>
               </div>
               <div className="min-w-0 lg:hidden">
-                <p className="text-sm font-black">
-                  <span className="bg-[linear-gradient(135deg,#f4d7ff_0%,#b72cff_22%,#e1a6ff_50%,#6900a3_100%)] bg-clip-text text-transparent">elite</span>
-                  <span className="text-white">modell</span>
-                </p>
+                <div className="w-[118px]"><BrandMark /></div>
                 <p className="truncate text-xs text-white/38">{session?.user?.email ?? "Conta discreta"}</p>
               </div>
             </div>
@@ -188,14 +186,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
         .professional-shell {
           background:
-            radial-gradient(circle at 20% 10%, rgba(214,168,58,0.16), transparent 32%),
-            radial-gradient(circle at 85% 35%, rgba(214,168,58,0.10), transparent 34%),
+            radial-gradient(circle at 20% 10%, rgba(183,44,255,0.16), transparent 32%),
+            radial-gradient(circle at 85% 35%, rgba(183,44,255,0.10), transparent 34%),
             #050505;
         }
         .host-shell {
           background:
-            radial-gradient(circle at 20% 10%, rgba(214,168,58,0.16), transparent 32%),
-            radial-gradient(circle at 85% 35%, rgba(214,168,58,0.10), transparent 34%),
+            radial-gradient(circle at 20% 10%, rgba(183,44,255,0.16), transparent 32%),
+            radial-gradient(circle at 85% 35%, rgba(183,44,255,0.10), transparent 34%),
             #050505;
         }
         .host-shell * {
@@ -208,7 +206,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           height: auto;
         }
         .host-header {
-          border-bottom-color: rgba(214,168,58,0.25) !important;
+          border-bottom-color: rgba(183,44,255,0.25) !important;
           background: rgba(5,5,5,0.92) !important;
           padding-top: max(12px, env(safe-area-inset-top)) !important;
           box-shadow: 0 18px 50px rgba(0,0,0,0.34);
@@ -258,10 +256,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .host-content div,
         .host-content section,
         .host-content article {
-          border-color: rgba(214,168,58,0.25);
+          border-color: rgba(183,44,255,0.25);
         }
         .host-content a {
-          color: #d6a83a;
+          color: #b72cff;
         }
         .host-content > div > div,
         .host-content section,
@@ -272,12 +270,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .host-content [style*="background: #111"],
         .host-content [style*="background: #0d0d0d"],
         .host-content [style*="background: #101010"],
-        .host-content [style*="background: #0b1420"],
-        .host-content [style*="background: #060e1b"],
+        .host-content [style*="background: #0f0a13"],
+        .host-content [style*="background: #08050b"],
         .host-content [style*="background: rgba(183,44,255"],
         .host-content [style*="background: rgba(34,197,94"] {
           background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98)) !important;
-          border-color: rgba(214,168,58,0.25) !important;
+          border-color: rgba(183,44,255,0.25) !important;
           box-shadow: 0 22px 60px rgba(0,0,0,0.28);
         }
         .host-content [style*="borderRadius: 16"],
@@ -297,7 +295,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .host-content select {
           min-height: 58px !important;
           width: 100%;
-          border: 1px solid rgba(214,168,58,0.28) !important;
+          border: 1px solid rgba(183,44,255,0.28) !important;
           border-radius: 18px !important;
           background: rgba(11,11,13,0.94) !important;
           color: #fff !important;
@@ -316,13 +314,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .host-content input:focus,
         .host-content textarea:focus,
         .host-content select:focus {
-          border-color: rgba(245,184,59,0.72) !important;
-          box-shadow: 0 0 0 4px rgba(214,168,58,0.12) !important;
+          border-color: rgba(213,108,255,0.72) !important;
+          box-shadow: 0 0 0 4px rgba(183,44,255,0.12) !important;
         }
         .host-content label,
         .host-content [style*="textTransform"],
         .host-content [style*="uppercase"] {
-          color: #d6a83a !important;
+          color: #b72cff !important;
         }
         .host-content button {
           min-height: 44px;
@@ -330,13 +328,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
         .host-content button[style*="background: #b72cff"],
         .host-content button[style*="background: rgb(212, 168, 67)"],
-        .host-content button[style*="background: #D6A83A"],
+        .host-content button[style*="background: #B72CFF"],
         .host-content button[style*="background: #F5B83B"],
         .host-content a[style*="background: #b72cff"],
         .host-content a[style*="background: rgb(212, 168, 67)"] {
-          background: linear-gradient(135deg, #f5d77a, #d6a83a 45%, #a77818) !important;
+          background: linear-gradient(135deg, #e1a6ff, #b72cff 45%, #6900a3) !important;
           color: #070707 !important;
-          box-shadow: 0 18px 46px rgba(214,168,58,0.22) !important;
+          box-shadow: 0 18px 46px rgba(183,44,255,0.22) !important;
         }
         .host-content [style*="gridTemplateColumns"] {
           gap: 16px !important;
@@ -351,7 +349,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
         .host-content .premium-empty-state,
         .host-content .premium-card {
-          border: 1px solid rgba(214,168,58,0.25) !important;
+          border: 1px solid rgba(183,44,255,0.25) !important;
           background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98)) !important;
         }
         @media (min-width: 480px) {
@@ -379,7 +377,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           height: auto;
         }
         .professional-header {
-          border-bottom-color: rgba(214,168,58,0.25) !important;
+          border-bottom-color: rgba(183,44,255,0.25) !important;
           background: rgba(5,5,5,0.92) !important;
           padding-top: max(12px, env(safe-area-inset-top)) !important;
           box-shadow: 0 18px 50px rgba(0,0,0,0.34);
@@ -427,7 +425,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .professional-content span,
         .professional-content li,
         .professional-content div {
-          border-color: rgba(214,168,58,0.25);
+          border-color: rgba(183,44,255,0.25);
         }
         .professional-content p,
         .professional-content li {
@@ -435,7 +433,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           line-height: 1.6;
         }
         .professional-content a {
-          color: #d6a83a;
+          color: #b72cff;
         }
         .professional-content .professional-primary-action {
           color: #080704 !important;
@@ -450,12 +448,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .professional-content form,
         .professional-content [style*="background: #111"],
         .professional-content [style*="background: #0d0d0d"],
-        .professional-content [style*="background: #0b1420"],
-        .professional-content [style*="background: #060e1b"],
+        .professional-content [style*="background: #0f0a13"],
+        .professional-content [style*="background: #08050b"],
         .professional-content [style*="background: rgba(183,44,255"],
         .professional-content [style*="background: rgba(34,197,94"] {
           background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98)) !important;
-          border-color: rgba(214,168,58,0.25) !important;
+          border-color: rgba(183,44,255,0.25) !important;
           box-shadow: 0 22px 60px rgba(0,0,0,0.28);
         }
         .professional-content [style*="borderRadius: 12"],
@@ -471,7 +469,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .professional-content select {
           min-height: 58px !important;
           width: 100%;
-          border: 1px solid rgba(214,168,58,0.28) !important;
+          border: 1px solid rgba(183,44,255,0.28) !important;
           border-radius: 18px !important;
           background: rgba(11,11,13,0.94) !important;
           color: #fff !important;
@@ -490,13 +488,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .professional-content input:focus,
         .professional-content textarea:focus,
         .professional-content select:focus {
-          border-color: rgba(245,184,59,0.72) !important;
-          box-shadow: 0 0 0 4px rgba(214,168,58,0.12) !important;
+          border-color: rgba(213,108,255,0.72) !important;
+          box-shadow: 0 0 0 4px rgba(183,44,255,0.12) !important;
         }
         .professional-content label,
         .professional-content [style*="textTransform"],
         .professional-content [style*="uppercase"] {
-          color: #d6a83a !important;
+          color: #b72cff !important;
         }
         .professional-content button {
           min-height: 44px;
@@ -507,9 +505,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .professional-content button[style*="background: #b72cff"],
         .professional-content button[style*="background: rgb(212, 168, 67)"],
         .professional-content button[style*="background: GOLD"] {
-          background: linear-gradient(135deg, #f5d77a, #d6a83a 45%, #a77818) !important;
+          background: linear-gradient(135deg, #e1a6ff, #b72cff 45%, #6900a3) !important;
           color: #070707 !important;
-          box-shadow: 0 18px 46px rgba(214,168,58,0.22) !important;
+          box-shadow: 0 18px 46px rgba(183,44,255,0.22) !important;
         }
         .professional-content [style*="gridTemplateColumns"] {
           gap: 16px !important;
@@ -527,7 +525,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
         .professional-content .premium-empty-state,
         .professional-content .premium-card {
-          border: 1px solid rgba(214,168,58,0.25) !important;
+          border: 1px solid rgba(183,44,255,0.25) !important;
           background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98)) !important;
         }
         @media (min-width: 480px) {

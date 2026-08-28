@@ -7,6 +7,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { BrandMark } from "@/components/BrandMark";
 import { CaptchaField, type CaptchaFieldHandle } from "@/components/auth/CaptchaField";
 import { validateBirthDate } from "@/lib/age-validation";
 import { buildAuthCallbackUrl } from "@/lib/auth-redirect";
@@ -40,7 +41,6 @@ const REGISTRATION_STATE_MAX_AGE_SECONDS = 60 * 60 * 24;
 type AuthError = { code?: string; name?: string; message?: string };
 
 const GOLD = "#b72cff";
-const GOLD_GRADIENT = "linear-gradient(135deg, #f4d7ff 0%, #b72cff 22%, #e1a6ff 45%, #6900a3 72%, #b72cff 100%)";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -139,11 +139,8 @@ const GoldLine = () => (
 
 const Logo = () => (
   <div style={{ textAlign: "center", marginBottom: 28 }}>
-    <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 2 }}>
-      <span style={{ fontWeight: 900, fontSize: 26 }}>
-        <span style={{ background: GOLD_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>elite</span>
-        <span style={{ color: "#f1f5f9" }}>modell</span>
-      </span>
+    <Link href="/" aria-label="Elite Modell" style={{ width: 170, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+      <BrandMark priority />
     </Link>
   </div>
 );
@@ -176,10 +173,10 @@ function AuthMethodButton({
       style={{
         width: "100%",
         height: 56,
-        background: "#f8fafc",
+        background: "#fbf7ff",
         border: "1px solid rgba(255,255,255,0.86)",
         borderRadius: 8,
-        color: "#0f172a",
+        color: "#120b17",
         fontSize: 14,
         fontWeight: 800,
         cursor: disabled ? "not-allowed" : "pointer",
@@ -196,14 +193,14 @@ function AuthMethodButton({
         if (disabled) return;
         e.currentTarget.style.borderColor = "rgba(183,44,255,0.5)";
         e.currentTarget.style.background = "#fff7df";
-        e.currentTarget.style.color = "#060e1b";
+        e.currentTarget.style.color = "#08050b";
         e.currentTarget.style.transform = "translateY(-1px)";
       }}
       onMouseLeave={(e) => {
         if (disabled) return;
         e.currentTarget.style.borderColor = "rgba(255,255,255,0.86)";
-        e.currentTarget.style.background = "#f8fafc";
-        e.currentTarget.style.color = "#0f172a";
+        e.currentTarget.style.background = "#fbf7ff";
+        e.currentTarget.style.color = "#120b17";
         e.currentTarget.style.transform = "translateY(0)";
       }}
     >
@@ -220,8 +217,7 @@ function AuthInfoFooter() {
     <div className="auth-info-footer">
       <section className="auth-info-card">
         <Link href="/" className="auth-info-brand" aria-label="Elite Modell">
-          <span>elite</span>
-          <strong>modell</strong>
+          <BrandMark />
         </Link>
         <div className="auth-restricted-badge">Ambiente restrito a maiores de 18 anos</div>
         <p>
@@ -257,7 +253,7 @@ function AuthInfoFooter() {
         }
         .auth-info-card,
         .auth-link-groups {
-          border: 1px solid rgba(214,168,67,0.25);
+          border: 1px solid rgba(183,44,255,0.25);
           border-radius: 24px;
           background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98));
           box-shadow: 0 24px 70px rgba(0,0,0,0.34);
@@ -266,29 +262,17 @@ function AuthInfoFooter() {
           padding: 24px 18px;
         }
         .auth-info-brand {
-          display: inline-flex;
-          align-items: baseline;
-          gap: 1px;
+          display: inline-grid;
+          align-items: center;
+          width: 164px;
           margin-bottom: 14px;
           text-decoration: none;
-          font-size: 22px;
-          font-weight: 950;
-        }
-        .auth-info-brand span {
-          background: ${GOLD_GRADIENT};
-          background-clip: text;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-        .auth-info-brand strong {
-          color: #fff;
-          font: inherit;
         }
         .auth-restricted-badge {
           width: fit-content;
-          border: 1px solid rgba(214,168,67,0.24);
+          border: 1px solid rgba(183,44,255,0.24);
           border-radius: 14px;
-          background: rgba(214,168,67,0.12);
+          background: rgba(183,44,255,0.12);
           color: #e1a6ff;
           padding: 10px 12px;
           font-size: 12px;
@@ -917,7 +901,7 @@ export default function CadastroPage() {
             const content = (
               <>
                 <span style={{ color: GOLD, fontSize: 10, fontWeight: 900, letterSpacing: 1.7, textTransform: "uppercase" }}>{option.eyebrow}</span>
-                <strong style={{ display: "block", color: "#f8fafc", fontSize: 18, marginTop: 6 }}>{option.title}</strong>
+                <strong style={{ display: "block", color: "#fbf7ff", fontSize: 18, marginTop: 6 }}>{option.title}</strong>
                 <p style={{ color: "#8d8578", fontSize: 12.5, lineHeight: 1.55, margin: "8px 0 14px" }}>{option.desc}</p>
                 <span style={{ color: "#050505", background: GOLD, borderRadius: 999, display: "inline-flex", padding: "8px 13px", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0 }}>
                   {option.action}
@@ -950,7 +934,7 @@ export default function CadastroPage() {
           })}
         </div>
 
-        <p style={{ textAlign: "center", marginTop: 22, fontSize: 14, color: "#475569" }}>
+        <p style={{ textAlign: "center", marginTop: 22, fontSize: 14, color: "#aaa0b2" }}>
           Já tem uma conta? <Link href={ACCOUNT_ROUTES.login} style={{ color: GOLD, textDecoration: "none", fontWeight: 700 }}>Entrar</Link>
         </p>
       </div>
@@ -964,7 +948,7 @@ export default function CadastroPage() {
       <main style={{ width: "100%", maxWidth: 440, padding: "max(18px, env(safe-area-inset-top)) 0 0" }}>
       <div style={{ width: "100%", maxWidth: 420, background: "rgba(8,8,8,0.96)", border: "1px solid rgba(183,44,255,0.28)", borderRadius: 16, padding: "48px 36px", position: "relative", zIndex: 1, textAlign: "center" }}>
         <GoldLine />
-        <h2 style={{ color: "#f1f5f9", fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>Verifique seu email</h2>
+        <h2 style={{ color: "#f8f5fa", fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>Verifique seu email</h2>
         <p style={{ color: "#8d8578", fontSize: 14, lineHeight: 1.6, margin: "0 0 8px" }}>Enviamos uma verificação para</p>
         <p style={{ color: GOLD, fontSize: 15, fontWeight: 600, margin: "0 0 24px" }}>{form.email}</p>
         <p style={{ color: "#615b52", fontSize: 13, lineHeight: 1.6, margin: "0 0 32px" }}>
@@ -972,7 +956,7 @@ export default function CadastroPage() {
             ? "Confirme o email para ativar sua conta. Depois entre como acompanhante para continuar nas 9 etapas do cadastro."
             : "Confirme o email para ativar sua conta. Depois volte aqui para entrar."}
         </p>
-        <button onClick={() => router.push(loginPathAfterEmailVerification())} style={{ width: "100%", padding: "13px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
+        <button onClick={() => router.push(loginPathAfterEmailVerification())} style={{ width: "100%", padding: "13px", background: GOLD, color: "#08050b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
           {form.accountType === "PROFESSIONAL" ? "Entrar como acompanhante" : "Ir para o login"}
         </button>
         <button
@@ -996,11 +980,11 @@ export default function CadastroPage() {
       <Logo />
       <p style={{ color: "#8d8578", fontSize: 14, textAlign: "center", marginTop: -18, marginBottom: accountHint ? 8 : 26 }}>{accountSubtitle}</p>
       {accountHint && (
-        <p style={{ color: "#64748b", fontSize: 12, textAlign: "center", lineHeight: 1.5, margin: "0 0 22px" }}>{accountHint}</p>
+        <p style={{ color: "#968a9e", fontSize: 12, textAlign: "center", lineHeight: 1.5, margin: "0 0 22px" }}>{accountHint}</p>
       )}
       {form.accountType === "PROFESSIONAL" && (
         <div style={{ marginBottom: 18 }}>
-          <label style={{ display: "block", fontSize: 13, color: "#94a3b8", marginBottom: 8, fontWeight: 500 }}>Categoria do anúncio</label>
+          <label style={{ display: "block", fontSize: 13, color: "#b9adbf", marginBottom: 8, fontWeight: 500 }}>Categoria do anúncio</label>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
             {categories.map((c) => (
               <button
@@ -1009,10 +993,10 @@ export default function CadastroPage() {
                 onClick={() => setForm({ ...form, category: c.value as Category })}
                 style={{
                   padding: "11px 8px",
-                  background: form.category === c.value ? "rgba(183,44,255,0.08)" : "#0f172a",
-                  border: `1.5px solid ${form.category === c.value ? "rgba(183,44,255,0.5)" : "#1e293b"}`,
+                  background: form.category === c.value ? "rgba(183,44,255,0.08)" : "#120b17",
+                  border: `1.5px solid ${form.category === c.value ? "rgba(183,44,255,0.5)" : "#2d1d35"}`,
                   borderRadius: 8,
-                  color: form.category === c.value ? "#f1f5f9" : "#475569",
+                  color: form.category === c.value ? "#f8f5fa" : "#aaa0b2",
                   cursor: "pointer",
                   fontSize: 13,
                   fontWeight: 700,
@@ -1023,14 +1007,14 @@ export default function CadastroPage() {
             ))}
           </div>
           {errors.category && <p data-auth-required-error="true" style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors.category}</p>}
-          <p style={{ color: "#334155", fontSize: 11, margin: "8px 0 0", lineHeight: 1.5 }}>
+          <p style={{ color: "#66566f", fontSize: 11, margin: "8px 0 0", lineHeight: 1.5 }}>
             Para publicar, será obrigatório enviar documento com foto, fotos reais e biometria facial. A idade exibida deve ser confirmada por documento.
           </p>
           <div style={{ marginTop: 12, padding: 12, border: "1px solid rgba(183,44,255,0.18)", borderRadius: 8, background: "rgba(183,44,255,0.06)" }}>
             <p style={{ color: "#b72cff", fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", margin: "0 0 8px" }}>Fases do cadastro</p>
             <div style={{ display: "grid", gap: 6 }}>
               {professionalOnboardingSteps.map((item, index) => (
-                <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, color: "#94a3b8", fontSize: 12 }}>
+                <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, color: "#b9adbf", fontSize: 12 }}>
                   <span style={{ width: 18, height: 18, borderRadius: 999, border: "1px solid rgba(183,44,255,0.35)", color: "#e1a6ff", display: "grid", placeItems: "center", fontSize: 10, fontWeight: 800 }}>{index + 1}</span>
                   {item}
                 </div>
@@ -1042,15 +1026,15 @@ export default function CadastroPage() {
 
       {isLoggedUpgradeFlow ? (
         <div style={{ marginBottom: 20, padding: 14, borderRadius: 8, border: "1px solid rgba(183,44,255,0.24)", background: "rgba(15,23,42,0.72)" }}>
-          <p style={{ color: "#f1f5f9", fontSize: 14, fontWeight: 800, margin: "0 0 6px" }}>
+          <p style={{ color: "#f8f5fa", fontSize: 14, fontWeight: 800, margin: "0 0 6px" }}>
             Continuar cadastro de {form.accountType === "PROFESSIONAL" ? "acompanhante" : "anunciante de espaço"}
           </p>
-          <p style={{ color: "#64748b", fontSize: 12, lineHeight: 1.5, margin: "0 0 12px" }}>
+          <p style={{ color: "#968a9e", fontSize: 12, lineHeight: 1.5, margin: "0 0 12px" }}>
             Você já está logado. Vamos atualizar sua conta e abrir as etapas do cadastro.
           </p>
           <div style={{ display: "grid", gap: 12, marginBottom: 12 }}>
             <div>
-              <label style={{ display: "block", fontSize: 13, color: "#94a3b8", marginBottom: 6, fontWeight: 500 }}>Data de nascimento</label>
+              <label style={{ display: "block", fontSize: 13, color: "#b9adbf", marginBottom: 6, fontWeight: 500 }}>Data de nascimento</label>
               <div style={{ display: "grid", gridTemplateColumns: "0.72fr 0.72fr 1fr", gap: 8 }}>
                 <input
                   type="text"
@@ -1097,7 +1081,7 @@ export default function CadastroPage() {
               {errors.birthDate && <p data-auth-required-error="true" style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors.birthDate}</p>}
             </div>
 
-            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
+            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#968a9e", fontSize: 12, lineHeight: 1.5 }}>
               <input type="checkbox" checked={form.termsConsent} onChange={(e) => setForm({ ...form, termsConsent: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
               <span>
                 Li e aceito os <Link href="/terms" style={{ color: GOLD, textDecoration: "none" }}>Termos de Uso</Link> e li o{" "}
@@ -1106,7 +1090,7 @@ export default function CadastroPage() {
               </span>
             </label>
 
-            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
+            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#968a9e", fontSize: 12, lineHeight: 1.5 }}>
               <input type="checkbox" checked={form.lgpdConsent} onChange={(e) => setForm({ ...form, lgpdConsent: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
               <span>
                 Li e aceito a <Link href="/privacy" style={{ color: GOLD, textDecoration: "none" }}>Política de Privacidade</Link>.
@@ -1114,7 +1098,7 @@ export default function CadastroPage() {
               </span>
             </label>
           </div>
-          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#64748b", fontSize: 12, lineHeight: 1.5, marginTop: 12 }}>
+          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#968a9e", fontSize: 12, lineHeight: 1.5, marginTop: 12 }}>
             <input type="checkbox" checked={form.ageConfirmed} onChange={(e) => setForm({ ...form, ageConfirmed: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
             <span>
               Confirmo que sou maior de 18 anos e li a <Link href="/documentos/adult-declaration" style={{ color: GOLD, textDecoration: "none" }}>Confirmacao de Maioridade</Link>.
@@ -1126,7 +1110,7 @@ export default function CadastroPage() {
             type="button"
             onClick={handleContinueExistingAccount}
             disabled={loading}
-            style={{ width: "100%", padding: "13px", background: loading ? "#6900a3" : GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}
+            style={{ width: "100%", padding: "13px", background: loading ? "#6900a3" : GOLD, color: "#08050b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}
           >
             {loading ? "Preparando cadastro..." : form.accountType === "PROFESSIONAL" ? "Ir para as fases do cadastro" : "Voltar ao anúncio"}
           </button>
@@ -1156,14 +1140,14 @@ export default function CadastroPage() {
           { key: "password", label: "Senha", type: "password", placeholder: "Mínimo 6 caracteres" },
         ].map((field) => (
           <div key={field.key}>
-            <label style={{ display: "block", fontSize: 13, color: "#94a3b8", marginBottom: 6, fontWeight: 500 }}>{field.label}</label>
+            <label style={{ display: "block", fontSize: 13, color: "#b9adbf", marginBottom: 6, fontWeight: 500 }}>{field.label}</label>
             <input type={field.type} required placeholder={field.placeholder} value={(form as any)[field.key]} onChange={(e) => setForm({ ...form, [field.key]: e.target.value })} style={inputStyle} onFocus={focusGold} onBlur={blurGray} />
             {errors[field.key] && <p data-auth-required-error="true" style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors[field.key]}</p>}
           </div>
         ))}
 
         <div>
-          <label style={{ display: "block", fontSize: 13, color: "#94a3b8", marginBottom: 6, fontWeight: 500 }}>Data de nascimento</label>
+          <label style={{ display: "block", fontSize: 13, color: "#b9adbf", marginBottom: 6, fontWeight: 500 }}>Data de nascimento</label>
           <div style={{ display: "grid", gridTemplateColumns: "0.72fr 0.72fr 1fr", gap: 8 }}>
             <input
               type="text"
@@ -1213,7 +1197,7 @@ export default function CadastroPage() {
           {errors.birthDate && <p data-auth-required-error="true" style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors.birthDate}</p>}
         </div>
 
-        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
+        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#968a9e", fontSize: 12, lineHeight: 1.5 }}>
           <input type="checkbox" checked={form.termsConsent} onChange={(e) => setForm({ ...form, termsConsent: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
           <span>
             Li e aceito os <Link href="/terms" style={{ color: GOLD, textDecoration: "none" }}>Termos de Uso</Link> e li o{" "}
@@ -1222,7 +1206,7 @@ export default function CadastroPage() {
           </span>
         </label>
 
-        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
+        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#968a9e", fontSize: 12, lineHeight: 1.5 }}>
           <input type="checkbox" checked={form.lgpdConsent} onChange={(e) => setForm({ ...form, lgpdConsent: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
           <span>
             Li e aceito a <Link href="/privacy" style={{ color: GOLD, textDecoration: "none" }}>Política de Privacidade</Link>.
@@ -1230,7 +1214,7 @@ export default function CadastroPage() {
           </span>
         </label>
 
-        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
+        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#968a9e", fontSize: 12, lineHeight: 1.5 }}>
           <input type="checkbox" checked={form.ageConfirmed} onChange={(e) => setForm({ ...form, ageConfirmed: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
           <span>
             Confirmo que sou maior de 18 anos e li a <Link href="/documentos/adult-declaration" style={{ color: GOLD, textDecoration: "none" }}>Confirmacao de Maioridade</Link>.
@@ -1238,7 +1222,7 @@ export default function CadastroPage() {
           </span>
         </label>
 
-        <button type="submit" disabled={loading} style={{ padding: "13px", background: loading ? "#6900a3" : GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer", marginTop: 4 }}>
+        <button type="submit" disabled={loading} style={{ padding: "13px", background: loading ? "#6900a3" : GOLD, color: "#08050b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer", marginTop: 4 }}>
           {loading ? "Criando conta..." : "Criar conta"}
         </button>
       </form>}
@@ -1263,7 +1247,7 @@ export default function CadastroPage() {
         Trocar tipo de cadastro
       </button>
 
-      <p style={{ textAlign: "center", marginTop: 24, fontSize: 14, color: "#475569" }}>
+      <p style={{ textAlign: "center", marginTop: 24, fontSize: 14, color: "#aaa0b2" }}>
         Já tem uma conta? <Link href={ACCOUNT_ROUTES.login} style={{ color: GOLD, textDecoration: "none", fontWeight: 600 }}>Entrar</Link>
       </p>
     </div>

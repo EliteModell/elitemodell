@@ -591,16 +591,16 @@ export default function AcompanhantesPage() {
       <section className="client-explore-home">
         {/* Header */}
         <div>
-          <p className="text-[14px] font-bold uppercase tracking-wide text-[#f5c242]">EXPLORAR PERFIS</p>
+          <p className="text-[14px] font-bold uppercase tracking-wide text-[#c451ff]">EXPLORAR PERFIS</p>
           <h1 className="mt-2 text-[40px] font-black leading-[1.04] tracking-[-0.03em] text-white">
             {city ? (
               <>
                 Acompanhantes{" "}
-                <span className="text-[#f5c242]">em {city}</span>
+                <span className="text-[#c451ff]">em {city}</span>
               </>
             ) : (
               <>
-                Perfis <span className="text-[#f5c242]">verificados</span>
+                Perfis <span className="text-[#c451ff]">verificados</span>
                 <br />perto de você
               </>
             )}
@@ -628,7 +628,7 @@ export default function AcompanhantesPage() {
         {/* City / search card */}
         <div className="relative z-10 -mt-6 rounded-[28px] border border-white/[0.10] bg-white/[0.055] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.38)] backdrop-blur-xl">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="text-[15px] font-black uppercase text-[#f5c242]">CIDADE</h2>
+            <h2 className="text-[15px] font-black uppercase text-[#c451ff]">CIDADE</h2>
             {city && (
               <button
                 type="button"
@@ -647,7 +647,7 @@ export default function AcompanhantesPage() {
             onClick={() => setShowCitySheet(true)}
             className="flex w-full items-center gap-3 rounded-[18px] border border-white/[0.10] bg-[#111318] px-4 py-4 text-left transition active:bg-[#181c23]"
           >
-            <MapPin className="h-5 w-5 shrink-0 text-[#f5c242]" />
+            <MapPin className="h-5 w-5 shrink-0 text-[#c451ff]" />
             <span className={`flex-1 text-[16px] font-semibold ${city ? "text-white" : "text-white/38"}`}>
               {city || "Selecione uma cidade"}
             </span>
@@ -672,7 +672,7 @@ export default function AcompanhantesPage() {
 
         {/* Categories */}
         <div className="mt-6">
-          <p className="mb-3 text-[15px] font-black uppercase text-[#f5c242]">CATEGORIA</p>
+          <p className="mb-3 text-[15px] font-black uppercase text-[#c451ff]">CATEGORIA</p>
           <div className="category-scroll">
             {CATEGORIES.map((c) => (
               <button
@@ -691,19 +691,19 @@ export default function AcompanhantesPage() {
 
         {/* Active filter tags */}
         {hasFilters && (
-          <div className="mt-4 rounded-[18px] border border-[#f5c242]/18 bg-[#f5c242]/10 px-4 py-3">
+          <div className="mt-4 rounded-[18px] border border-[#c451ff]/18 bg-[#c451ff]/10 px-4 py-3">
             <div className="flex items-center justify-between gap-3">
               <span className="min-w-0 text-[13px] font-semibold text-white/72">
                 Filtros ativos
               </span>
-              <button type="button" onClick={clearFilters} className="shrink-0 text-[13px] font-black text-[#f5c242]">
+              <button type="button" onClick={clearFilters} className="shrink-0 text-[13px] font-black text-[#c451ff]">
                 Limpar
               </button>
             </div>
             {activeFilterLabels.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {activeFilterLabels.map((label) => (
-                  <span key={label} className="rounded-full border border-[#f5c242]/18 bg-black/20 px-2.5 py-1 text-[11px] font-bold text-[#f5f0e4]/72">
+                  <span key={label} className="rounded-full border border-[#c451ff]/18 bg-black/20 px-2.5 py-1 text-[11px] font-bold text-[#f5f0e4]/72">
                     {label}
                   </span>
                 ))}

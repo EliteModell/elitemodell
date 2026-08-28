@@ -249,7 +249,7 @@ export default function ProfissionaisPage() {
                 <p style={{ color: "#666", fontSize: 16, marginBottom: 16 }}>Nenhum profissional encontrado com esses filtros.</p>
                 <button
                   onClick={() => { setSearch(""); setCategory(""); setPriceMax(6000); setOnlyVerified(false); setPage(1); }}
-                  style={{ padding: "10px 24px", background: "#b72cff", color: "#060e1b", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 700 }}
+                  style={{ padding: "10px 24px", background: "#b72cff", color: "#08050b", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 700 }}
                 >
                   Limpar filtros
                 </button>
@@ -332,13 +332,13 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
         }}
       >
         {featured && (
-          <div style={{ position: "absolute", top: 12, left: 12, zIndex: 2, padding: "3px 10px", background: "#b72cff", color: "#060e1b", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
+          <div style={{ position: "absolute", top: 12, left: 12, zIndex: 2, padding: "3px 10px", background: "#b72cff", color: "#08050b", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
             ★ Destaque
           </div>
         )}
 
         {/* Foto de capa */}
-        <div style={{ height: 180, background: "linear-gradient(135deg, #0b1420 0%, #111 60%, #0d0d1a 100%)", position: "relative", overflow: "hidden" }}>
+        <div style={{ height: 180, background: "linear-gradient(135deg, #0f0a13 0%, #111 60%, #0d0d1a 100%)", position: "relative", overflow: "hidden" }}>
           {coverPhoto ? (
             <Image
               src={coverPhoto}
@@ -356,7 +356,7 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
             </div>
           )}
           {photoCount > 0 && (
-            <div style={{ position: "absolute", bottom: 10, right: 10, fontSize: 12, color: "#94a3b8", background: "rgba(0,0,0,0.6)", padding: "3px 8px", borderRadius: 6 }}>
+            <div style={{ position: "absolute", bottom: 10, right: 10, fontSize: 12, color: "#b9adbf", background: "rgba(0,0,0,0.6)", padding: "3px 8px", borderRadius: 6 }}>
               {photoCount} foto{photoCount !== 1 ? "s" : ""}
             </div>
           )}
@@ -423,7 +423,7 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
                 </span>
               )}
             </div>
-            <div style={{ padding: "7px 14px", background: "#b72cff", color: "#060e1b", borderRadius: 7, fontSize: 13, fontWeight: 700 }}>
+            <div style={{ padding: "7px 14px", background: "#b72cff", color: "#08050b", borderRadius: 7, fontSize: 13, fontWeight: 700 }}>
               Ver perfil
             </div>
           </div>

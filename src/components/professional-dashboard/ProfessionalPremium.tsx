@@ -39,13 +39,13 @@ export function ProfessionalPremiumStyles() {
         --elite-bg-soft: #090909;
         --elite-card: #111111;
         --elite-card-2: #181818;
-        --elite-gold: #D6A83A;
-        --elite-gold-light: #F5D46B;
-        --elite-gold-dark: #8A671F;
+        --elite-gold: #B72CFF;
+        --elite-gold-light: #E1A6FF;
+        --elite-gold-dark: #6900A3;
         --elite-text: #FFFFFF;
         --elite-text-muted: #B8B8B8;
-        --elite-border: rgba(214,168,58,0.35);
-        --elite-border-soft: rgba(214,168,58,0.18);
+        --elite-border: rgba(183,44,255,0.35);
+        --elite-border-soft: rgba(183,44,255,0.18);
         --elite-success: #75D99A;
         --elite-danger: #FF6B6B;
         --elite-warning: #FFB84D;
@@ -53,8 +53,8 @@ export function ProfessionalPremiumStyles() {
 
       .professional-shell {
         background:
-          radial-gradient(circle at top right, rgba(214,168,58,0.13), transparent 34%),
-          radial-gradient(circle at top left, rgba(214,168,58,0.06), transparent 28%),
+          radial-gradient(circle at top right, rgba(183,44,255,0.13), transparent 34%),
+          radial-gradient(circle at top left, rgba(183,44,255,0.06), transparent 28%),
           linear-gradient(180deg, #050505 0%, #090806 45%, #050505 100%) !important;
       }
 
@@ -92,7 +92,7 @@ export function ProfessionalPremiumStyles() {
         border: 1px solid var(--elite-border);
         border-radius: 24px;
         background:
-          radial-gradient(circle at 82% 18%, rgba(214,168,58,0.16), transparent 34%),
+          radial-gradient(circle at 82% 18%, rgba(183,44,255,0.16), transparent 34%),
           linear-gradient(145deg, rgba(22,22,22,0.98), rgba(8,8,8,0.98));
         box-shadow:
           0 14px 40px rgba(0,0,0,0.45),
@@ -110,7 +110,7 @@ export function ProfessionalPremiumStyles() {
         position: absolute;
         inset: 0 0 auto;
         height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(245,212,107,0.72), transparent);
+        background: linear-gradient(90deg, transparent, rgba(225,166,255,0.72), transparent);
         pointer-events: none;
         z-index: 0;
       }
@@ -144,7 +144,7 @@ export function ProfessionalPremiumStyles() {
         width: 48%;
         height: 84%;
         background:
-          radial-gradient(ellipse at center, rgba(245,212,107,0.20), rgba(214,168,58,0.08) 42%, transparent 70%);
+          radial-gradient(ellipse at center, rgba(225,166,255,0.20), rgba(183,44,255,0.08) 42%, transparent 70%);
         filter: blur(3px);
         pointer-events: none;
       }
@@ -214,7 +214,7 @@ export function ProfessionalPremiumStyles() {
         inset: 18px 10px 28px;
         border-radius: 999px;
         background:
-          radial-gradient(circle at 50% 45%, rgba(245,212,107,0.28), rgba(214,168,58,0.10) 42%, transparent 72%);
+          radial-gradient(circle at 50% 45%, rgba(225,166,255,0.28), rgba(183,44,255,0.10) 42%, transparent 72%);
         filter: blur(18px);
       }
 
@@ -225,7 +225,7 @@ export function ProfessionalPremiumStyles() {
         width: 120px;
         height: 174px;
         transform: skewX(-12deg);
-        background: linear-gradient(180deg, rgba(245,212,107,0.34), rgba(245,212,107,0.04) 62%, transparent);
+        background: linear-gradient(180deg, rgba(225,166,255,0.34), rgba(225,166,255,0.04) 62%, transparent);
         opacity: 0.7;
         filter: blur(2px);
       }
@@ -238,7 +238,7 @@ export function ProfessionalPremiumStyles() {
         height: 24px;
         border-radius: 50%;
         background:
-          radial-gradient(ellipse at center, rgba(245,212,107,0.34), rgba(214,168,58,0.10) 42%, transparent 72%);
+          radial-gradient(ellipse at center, rgba(225,166,255,0.34), rgba(183,44,255,0.10) 42%, transparent 72%);
         filter: blur(1px);
       }
 
@@ -248,11 +248,11 @@ export function ProfessionalPremiumStyles() {
         bottom: 24px;
         width: 112px;
         height: 44px;
-        border: 1px solid rgba(245,212,107,0.38);
+        border: 1px solid rgba(225,166,255,0.38);
         border-radius: 50% 50% 22px 22px;
         background:
-          linear-gradient(180deg, rgba(245,212,107,0.24), rgba(214,168,58,0.10) 45%, rgba(0,0,0,0.58)),
-          linear-gradient(90deg, rgba(0,0,0,0.58), rgba(245,212,107,0.32), rgba(0,0,0,0.48));
+          linear-gradient(180deg, rgba(225,166,255,0.24), rgba(183,44,255,0.10) 45%, rgba(0,0,0,0.58)),
+          linear-gradient(90deg, rgba(0,0,0,0.58), rgba(225,166,255,0.32), rgba(0,0,0,0.48));
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 18px 28px rgba(0,0,0,0.45);
       }
 
@@ -264,8 +264,8 @@ export function ProfessionalPremiumStyles() {
         top: -8px;
         height: 18px;
         border-radius: 50%;
-        border: 1px solid rgba(245,212,107,0.42);
-        background: linear-gradient(90deg, rgba(34,24,8,0.96), rgba(245,212,107,0.30), rgba(34,24,8,0.92));
+        border: 1px solid rgba(225,166,255,0.42);
+        background: linear-gradient(90deg, rgba(34,24,8,0.96), rgba(225,166,255,0.30), rgba(34,24,8,0.92));
       }
 
       .premium-art-bars {
@@ -280,11 +280,11 @@ export function ProfessionalPremiumStyles() {
         position: absolute;
         bottom: 0;
         width: 18px;
-        border: 1px solid rgba(245,212,107,0.46);
+        border: 1px solid rgba(225,166,255,0.46);
         border-radius: 8px 8px 2px 2px;
         background:
-          linear-gradient(90deg, rgba(71,48,9,0.92), rgba(245,212,107,0.82), rgba(138,103,31,0.86));
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 0 20px rgba(214,168,58,0.20);
+          linear-gradient(90deg, rgba(71,48,9,0.92), rgba(225,166,255,0.82), rgba(138,103,31,0.86));
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 0 20px rgba(183,44,255,0.20);
       }
 
       .premium-art-bars i:nth-child(1) { left: 12px; height: 38px; opacity: 0.72; }
@@ -308,10 +308,10 @@ export function ProfessionalPremiumStyles() {
         width: 112px;
         height: 5px;
         border-radius: 999px;
-        background: linear-gradient(90deg, rgba(138,103,31,0.75), rgba(245,212,107,0.96));
+        background: linear-gradient(90deg, rgba(138,103,31,0.75), rgba(225,166,255,0.96));
         transform: rotate(-34deg);
         transform-origin: right center;
-        box-shadow: 0 0 18px rgba(214,168,58,0.28);
+        box-shadow: 0 0 18px rgba(183,44,255,0.28);
       }
 
       .premium-art-arrow::after {
@@ -324,7 +324,7 @@ export function ProfessionalPremiumStyles() {
         border-left: 22px solid var(--elite-gold-light);
         border-top: 15px solid transparent;
         border-bottom: 15px solid transparent;
-        filter: drop-shadow(0 0 14px rgba(214,168,58,0.38));
+        filter: drop-shadow(0 0 14px rgba(183,44,255,0.38));
         transform: rotate(-34deg);
       }
 
@@ -337,8 +337,8 @@ export function ProfessionalPremiumStyles() {
         clip-path: polygon(0 44%, 17% 60%, 29% 15%, 50% 54%, 71% 15%, 83% 60%, 100% 44%, 91% 100%, 9% 100%);
         background:
           linear-gradient(135deg, #6F4B12 0%, #F8DD83 34%, #C7962C 58%, #7A5418 100%);
-        border: 1px solid rgba(245,212,107,0.48);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.36), 0 0 24px rgba(214,168,58,0.24);
+        border: 1px solid rgba(225,166,255,0.48);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.36), 0 0 24px rgba(183,44,255,0.24);
         transform: perspective(420px) rotateX(8deg) rotateZ(-2deg);
       }
 
@@ -361,8 +361,8 @@ export function ProfessionalPremiumStyles() {
         height: 112px;
         clip-path: polygon(50% 0, 100% 35%, 50% 100%, 0 35%);
         background:
-          linear-gradient(135deg, rgba(255,247,198,0.95), rgba(245,212,107,0.82) 38%, rgba(138,103,31,0.92) 72%, rgba(255,239,165,0.85));
-        box-shadow: inset 0 0 18px rgba(255,255,255,0.18), 0 0 34px rgba(214,168,58,0.34);
+          linear-gradient(135deg, rgba(255,247,198,0.95), rgba(225,166,255,0.82) 38%, rgba(138,103,31,0.92) 72%, rgba(255,239,165,0.85));
+        box-shadow: inset 0 0 18px rgba(255,255,255,0.18), 0 0 34px rgba(183,44,255,0.34);
       }
 
       .premium-art-diamond-shape::before,
@@ -388,7 +388,7 @@ export function ProfessionalPremiumStyles() {
         bottom: 54px;
         width: 132px;
         height: 78px;
-        border: 1px solid rgba(245,212,107,0.42);
+        border: 1px solid rgba(225,166,255,0.42);
         border-radius: 18px;
         background:
           linear-gradient(135deg, rgba(77,52,12,0.96), rgba(16,14,12,0.98) 48%, rgba(168,125,34,0.82));
@@ -402,9 +402,9 @@ export function ProfessionalPremiumStyles() {
         top: -18px;
         width: 50px;
         height: 24px;
-        border: 1px solid rgba(245,212,107,0.34);
+        border: 1px solid rgba(225,166,255,0.34);
         border-radius: 14px 14px 4px 4px;
-        background: linear-gradient(135deg, rgba(245,212,107,0.32), rgba(0,0,0,0.40));
+        background: linear-gradient(135deg, rgba(225,166,255,0.32), rgba(0,0,0,0.40));
       }
 
       .premium-art-camera-lens {
@@ -414,18 +414,18 @@ export function ProfessionalPremiumStyles() {
         width: 44px;
         height: 44px;
         border-radius: 999px;
-        border: 6px solid rgba(245,212,107,0.74);
+        border: 6px solid rgba(225,166,255,0.74);
         background:
           radial-gradient(circle at 34% 32%, rgba(255,255,255,0.58), transparent 16%),
           radial-gradient(circle, rgba(0,0,0,0.94), rgba(62,42,11,0.96));
-        box-shadow: 0 0 22px rgba(214,168,58,0.26);
+        box-shadow: 0 0 22px rgba(183,44,255,0.26);
       }
 
       .premium-art-phone-card,
       .premium-art-photo-card,
       .premium-art-video-card {
         position: absolute;
-        border: 1px solid rgba(245,212,107,0.32);
+        border: 1px solid rgba(225,166,255,0.32);
         border-radius: 16px;
         background: linear-gradient(145deg, rgba(27,25,22,0.98), rgba(7,7,8,0.94));
         box-shadow: 0 14px 26px rgba(0,0,0,0.36), inset 0 1px 0 rgba(255,255,255,0.06);
@@ -446,7 +446,7 @@ export function ProfessionalPremiumStyles() {
         top: 13px;
         height: 6px;
         border-radius: 999px;
-        background: rgba(245,212,107,0.28);
+        background: rgba(225,166,255,0.28);
       }
 
       .premium-art-phone-card::after {
@@ -458,7 +458,7 @@ export function ProfessionalPremiumStyles() {
         height: 34px;
         border-radius: 999px;
         background:
-          radial-gradient(circle at center, rgba(245,212,107,0.62), rgba(214,168,58,0.18) 56%, transparent 58%);
+          radial-gradient(circle at center, rgba(225,166,255,0.62), rgba(183,44,255,0.18) 56%, transparent 58%);
       }
 
       .premium-art-photo-card {
@@ -477,7 +477,7 @@ export function ProfessionalPremiumStyles() {
         bottom: 12px;
         height: 24px;
         clip-path: polygon(0 100%, 34% 28%, 54% 72%, 74% 38%, 100% 100%);
-        background: linear-gradient(135deg, rgba(245,212,107,0.80), rgba(138,103,31,0.62));
+        background: linear-gradient(135deg, rgba(225,166,255,0.80), rgba(138,103,31,0.62));
       }
 
       .premium-art-video-card {
@@ -498,7 +498,7 @@ export function ProfessionalPremiumStyles() {
         border-left: 18px solid var(--elite-gold-light);
         border-top: 12px solid transparent;
         border-bottom: 12px solid transparent;
-        filter: drop-shadow(0 0 10px rgba(214,168,58,0.35));
+        filter: drop-shadow(0 0 10px rgba(183,44,255,0.35));
       }
 
       .premium-art-profile-card {
@@ -507,10 +507,10 @@ export function ProfessionalPremiumStyles() {
         bottom: 46px;
         width: 148px;
         height: 146px;
-        border: 1px solid rgba(245,212,107,0.34);
+        border: 1px solid rgba(225,166,255,0.34);
         border-radius: 28px;
         background:
-          radial-gradient(circle at 50% 34%, rgba(245,212,107,0.18), transparent 40%),
+          radial-gradient(circle at 50% 34%, rgba(225,166,255,0.18), transparent 40%),
           linear-gradient(145deg, rgba(22,22,22,0.98), rgba(8,8,8,0.94));
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 18px 32px rgba(0,0,0,0.42);
       }
@@ -522,7 +522,7 @@ export function ProfessionalPremiumStyles() {
         top: 28px;
         width: 48px;
         height: 48px;
-        border: 5px solid rgba(245,212,107,0.78);
+        border: 5px solid rgba(225,166,255,0.78);
         border-radius: 999px;
         transform: translateX(-50%);
       }
@@ -534,7 +534,7 @@ export function ProfessionalPremiumStyles() {
         right: 35px;
         bottom: 28px;
         height: 42px;
-        border: 5px solid rgba(245,212,107,0.78);
+        border: 5px solid rgba(225,166,255,0.78);
         border-bottom: 0;
         border-radius: 52px 52px 0 0;
       }
@@ -548,7 +548,7 @@ export function ProfessionalPremiumStyles() {
         clip-path: polygon(50% 0, 95% 18%, 85% 72%, 50% 100%, 15% 72%, 5% 18%);
         background:
           linear-gradient(145deg, rgba(117,217,154,0.80), rgba(20,72,38,0.92)),
-          linear-gradient(145deg, rgba(245,212,107,0.35), rgba(0,0,0,0));
+          linear-gradient(145deg, rgba(225,166,255,0.35), rgba(0,0,0,0));
         box-shadow: 0 0 26px rgba(117,217,154,0.22);
       }
 
@@ -570,10 +570,10 @@ export function ProfessionalPremiumStyles() {
         bottom: 44px;
         width: 152px;
         height: 134px;
-        border: 1px solid rgba(245,212,107,0.36);
+        border: 1px solid rgba(225,166,255,0.36);
         border-radius: 22px;
         background:
-          linear-gradient(180deg, rgba(214,168,58,0.20), rgba(214,168,58,0.05) 28%, rgba(8,8,8,0.96) 29%),
+          linear-gradient(180deg, rgba(183,44,255,0.20), rgba(183,44,255,0.05) 28%, rgba(8,8,8,0.96) 29%),
           linear-gradient(145deg, rgba(24,22,18,0.98), rgba(7,7,8,0.98));
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 18px 34px rgba(0,0,0,0.42);
       }
@@ -586,12 +586,12 @@ export function ProfessionalPremiumStyles() {
         top: 48px;
         bottom: 22px;
         background:
-          radial-gradient(circle at 14px 14px, rgba(245,212,107,0.78) 0 4px, transparent 5px),
-          radial-gradient(circle at 52px 14px, rgba(245,212,107,0.48) 0 4px, transparent 5px),
-          radial-gradient(circle at 90px 14px, rgba(245,212,107,0.48) 0 4px, transparent 5px),
-          radial-gradient(circle at 14px 48px, rgba(245,212,107,0.48) 0 4px, transparent 5px),
-          radial-gradient(circle at 52px 48px, rgba(245,212,107,0.78) 0 4px, transparent 5px),
-          radial-gradient(circle at 90px 48px, rgba(245,212,107,0.48) 0 4px, transparent 5px);
+          radial-gradient(circle at 14px 14px, rgba(225,166,255,0.78) 0 4px, transparent 5px),
+          radial-gradient(circle at 52px 14px, rgba(225,166,255,0.48) 0 4px, transparent 5px),
+          radial-gradient(circle at 90px 14px, rgba(225,166,255,0.48) 0 4px, transparent 5px),
+          radial-gradient(circle at 14px 48px, rgba(225,166,255,0.48) 0 4px, transparent 5px),
+          radial-gradient(circle at 52px 48px, rgba(225,166,255,0.78) 0 4px, transparent 5px),
+          radial-gradient(circle at 90px 48px, rgba(225,166,255,0.48) 0 4px, transparent 5px);
       }
 
       .premium-art-camera-scene .premium-art-phone-card,
@@ -607,7 +607,7 @@ export function ProfessionalPremiumStyles() {
         height: 7px;
         border-radius: 999px;
         background: var(--elite-gold-light);
-        box-shadow: 0 0 14px rgba(245,212,107,0.82);
+        box-shadow: 0 0 14px rgba(225,166,255,0.82);
       }
 
       .premium-art-spark.s1 { left: 44px; top: 54px; opacity: 0.78; }
@@ -628,8 +628,8 @@ export function ProfessionalPremiumStyles() {
 
       .premium-action-card:hover {
         transform: translateY(-1px);
-        border-color: rgba(245,212,107,0.65);
-        box-shadow: 0 16px 42px rgba(0,0,0,0.55), 0 0 24px rgba(214,168,58,0.12);
+        border-color: rgba(225,166,255,0.65);
+        box-shadow: 0 16px 42px rgba(0,0,0,0.55), 0 0 24px rgba(183,44,255,0.12);
       }
 
       .premium-action-card:active {
@@ -642,13 +642,13 @@ export function ProfessionalPremiumStyles() {
         height: 82px;
         display: grid;
         place-items: center;
-        border: 1px solid rgba(245,212,107,0.42);
+        border: 1px solid rgba(225,166,255,0.42);
         border-radius: 999px;
         background:
-          radial-gradient(circle at 42% 34%, rgba(245,212,107,0.28), rgba(214,168,58,0.10) 44%, rgba(0,0,0,0.18) 68%),
-          linear-gradient(145deg, rgba(214,168,58,0.14), rgba(0,0,0,0.35));
+          radial-gradient(circle at 42% 34%, rgba(225,166,255,0.28), rgba(183,44,255,0.10) 44%, rgba(0,0,0,0.18) 68%),
+          linear-gradient(145deg, rgba(183,44,255,0.14), rgba(0,0,0,0.35));
         color: var(--elite-gold-light);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 0 28px rgba(214,168,58,0.12);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 0 28px rgba(183,44,255,0.12);
       }
 
       .premium-icon-orb::after {
@@ -656,7 +656,7 @@ export function ProfessionalPremiumStyles() {
         position: absolute;
         inset: 12px;
         border-radius: inherit;
-        border: 1px solid rgba(245,212,107,0.16);
+        border: 1px solid rgba(225,166,255,0.16);
       }
 
       .premium-icon-orb svg {
@@ -664,7 +664,7 @@ export function ProfessionalPremiumStyles() {
         z-index: 1;
         width: 36px;
         height: 36px;
-        filter: drop-shadow(0 0 16px rgba(214,168,58,0.38));
+        filter: drop-shadow(0 0 16px rgba(183,44,255,0.38));
       }
 
       .premium-action-body {
@@ -709,16 +709,16 @@ export function ProfessionalPremiumStyles() {
 
       .premium-button {
         border: 1px solid rgba(255,255,255,0.18);
-        background: linear-gradient(135deg, #F5D46B 0%, #D6A83A 48%, #B88722 100%);
+        background: linear-gradient(135deg, #E1A6FF 0%, #B72CFF 48%, #7C0FC4 100%);
         color: #080808;
         box-shadow:
-          0 10px 26px rgba(214,168,58,0.28),
+          0 10px 26px rgba(183,44,255,0.28),
           inset 0 1px 0 rgba(255,255,255,0.45);
       }
 
       .premium-button-secondary {
-        border: 1px solid rgba(214,168,58,0.35);
-        background: rgba(214,168,58,0.08);
+        border: 1px solid rgba(183,44,255,0.35);
+        background: rgba(183,44,255,0.08);
         color: var(--elite-gold-light);
       }
 
@@ -738,9 +738,9 @@ export function ProfessionalPremiumStyles() {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        border: 1px solid rgba(214,168,58,0.38);
+        border: 1px solid rgba(183,44,255,0.38);
         border-radius: 999px;
-        background: rgba(214,168,58,0.10);
+        background: rgba(183,44,255,0.10);
         color: var(--elite-gold-light);
         padding: 7px 12px;
         font-size: 11px;
@@ -779,8 +779,8 @@ export function ProfessionalPremiumStyles() {
       }
 
       .premium-status-badge.recommended {
-        border: 1px solid rgba(214,168,58,0.35);
-        background: rgba(214,168,58,0.12);
+        border: 1px solid rgba(183,44,255,0.35);
+        background: rgba(183,44,255,0.12);
         color: var(--elite-gold-light);
       }
 
@@ -813,9 +813,9 @@ export function ProfessionalPremiumStyles() {
         overflow: hidden;
         isolation: isolate;
         border-radius: 22px;
-        border: 1px solid rgba(214,168,58,0.28);
+        border: 1px solid rgba(183,44,255,0.28);
         background:
-          radial-gradient(circle at top right, rgba(214,168,58,0.10), transparent 38%),
+          radial-gradient(circle at top right, rgba(183,44,255,0.10), transparent 38%),
           linear-gradient(145deg, rgba(20,20,20,0.96), rgba(7,7,7,0.98));
         box-shadow:
           0 12px 32px rgba(0,0,0,0.38),
@@ -829,7 +829,7 @@ export function ProfessionalPremiumStyles() {
         height: 1px;
         pointer-events: none;
         z-index: 0;
-        background: linear-gradient(90deg, transparent, rgba(245,212,107,0.52), transparent);
+        background: linear-gradient(90deg, transparent, rgba(225,166,255,0.52), transparent);
       }
 
       .premium-lower-card > * {
@@ -866,7 +866,7 @@ export function ProfessionalPremiumStyles() {
         min-height: 32px;
         align-items: center;
         gap: 7px;
-        border: 1px solid rgba(214,168,58,0.22);
+        border: 1px solid rgba(183,44,255,0.22);
         border-radius: 999px;
         background: rgba(255,255,255,0.045);
         color: #d8d8d8;
@@ -897,7 +897,7 @@ export function ProfessionalPremiumStyles() {
         border: 1px solid var(--elite-border-soft);
         border-radius: 16px;
         background:
-          radial-gradient(circle at top right, rgba(214,168,58,0.08), transparent 48%),
+          radial-gradient(circle at top right, rgba(183,44,255,0.08), transparent 48%),
           rgba(255,255,255,0.035);
         padding: 14px 16px;
         color: #d8d8d8;
@@ -921,8 +921,8 @@ export function ProfessionalPremiumStyles() {
       }
 
       .premium-plan-card.featured {
-        border-color: rgba(245,212,107,0.75);
-        box-shadow: 0 22px 70px rgba(0,0,0,0.50), 0 0 38px rgba(214,168,58,0.18);
+        border-color: rgba(225,166,255,0.75);
+        box-shadow: 0 22px 70px rgba(0,0,0,0.50), 0 0 38px rgba(183,44,255,0.18);
       }
 
       .premium-plan-title {
@@ -983,11 +983,11 @@ export function ProfessionalPremiumStyles() {
         height: 88px;
         border-radius: 999px;
         border: 2px solid var(--elite-gold-light);
-        background: rgba(214,168,58,0.12);
+        background: rgba(183,44,255,0.12);
         display: grid;
         place-items: center;
         overflow: hidden;
-        box-shadow: 0 0 26px rgba(214,168,58,0.16);
+        box-shadow: 0 0 26px rgba(183,44,255,0.16);
       }
 
       .premium-avatar img {
@@ -1015,7 +1015,7 @@ export function ProfessionalPremiumStyles() {
       .premium-form select {
         width: 100%;
         min-height: 56px;
-        border: 1px solid rgba(214,168,58,0.28);
+        border: 1px solid rgba(183,44,255,0.28);
         border-radius: 16px;
         background: rgba(8,8,8,0.92);
         color: #fff;
@@ -1047,7 +1047,7 @@ export function ProfessionalPremiumStyles() {
         padding: 8px 8px calc(10px + env(safe-area-inset-bottom));
         background: rgba(5,5,5,0.92);
         backdrop-filter: blur(18px);
-        border-top: 1px solid rgba(214,168,58,0.25);
+        border-top: 1px solid rgba(183,44,255,0.25);
         box-shadow: 0 -12px 40px rgba(0,0,0,0.55);
       }
 
@@ -1075,10 +1075,10 @@ export function ProfessionalPremiumStyles() {
       }
 
       .professional-bottom-nav a.active {
-        border: 1px solid rgba(245,212,107,0.40);
-        background: linear-gradient(145deg, rgba(214,168,58,0.26), rgba(12,10,6,0.94));
+        border: 1px solid rgba(225,166,255,0.40);
+        background: linear-gradient(145deg, rgba(183,44,255,0.26), rgba(12,10,6,0.94));
         color: var(--elite-gold-light);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 26px rgba(214,168,58,0.12);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 26px rgba(183,44,255,0.12);
       }
 
       .professional-bottom-nav svg {
@@ -1519,7 +1519,7 @@ export function PremiumProfileRow({
   return (
     <Link href={href} className="premium-profile-row">
       <span className="premium-avatar">
-        {image ? <img src={image} alt={name} /> : <UserRound size={42} color="#F5D46B" />}
+        {image ? <img src={image} alt={name} /> : <UserRound size={42} color="#E1A6FF" />}
         <span className="premium-avatar-camera">
           <Camera size={16} />
         </span>

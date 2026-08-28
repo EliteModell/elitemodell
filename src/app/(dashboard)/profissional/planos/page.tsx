@@ -929,7 +929,7 @@ export default function PlanosPage() {
           width: min(100%, 1120px);
           margin: 0 auto;
           padding: 8px 0 calc(120px + env(safe-area-inset-bottom));
-          color: #f8fafc;
+          color: #fbf7ff;
           position: relative;
           isolation: isolate;
           overflow-x: clip;
@@ -967,7 +967,7 @@ export default function PlanosPage() {
           top: 6%;
           width: 48%;
           height: 88%;
-          background: radial-gradient(ellipse at center, rgba(245,215,140,0.24), rgba(183,44,255,0.10) 42%, transparent 72%);
+          background: radial-gradient(ellipse at center, rgba(225,166,255,0.24), rgba(183,44,255,0.10) 42%, transparent 72%);
           filter: blur(4px);
           pointer-events: none;
           z-index: 0;
@@ -1031,7 +1031,7 @@ export default function PlanosPage() {
           border: 1px solid rgba(183,44,255,0.26);
           border-radius: 24px;
           background:
-            radial-gradient(circle at 13% 50%, rgba(245,215,140,0.12), transparent 28%),
+            radial-gradient(circle at 13% 50%, rgba(225,166,255,0.12), transparent 28%),
             linear-gradient(145deg, rgba(22,22,22,0.98), rgba(8,8,8,0.98));
           padding: 18px 20px;
           color: inherit;
@@ -1039,18 +1039,18 @@ export default function PlanosPage() {
           box-shadow: 0 14px 34px rgba(0,0,0,0.36);
         }
         .plans-benefit-card:hover {
-          border-color: rgba(245,215,140,0.58);
+          border-color: rgba(225,166,255,0.58);
         }
         .plans-benefit-icon {
           width: 82px;
           height: 82px;
           display: grid;
           place-items: center;
-          border: 1px solid rgba(245,215,140,0.42);
+          border: 1px solid rgba(225,166,255,0.42);
           border-radius: 999px;
           color: #e1a6ff;
           background:
-            radial-gradient(circle at 50% 42%, rgba(245,215,140,0.30), rgba(183,44,255,0.08) 56%, rgba(0,0,0,0.24)),
+            radial-gradient(circle at 50% 42%, rgba(225,166,255,0.30), rgba(183,44,255,0.08) 56%, rgba(0,0,0,0.24)),
             linear-gradient(145deg, rgba(183,44,255,0.16), rgba(0,0,0,0.32));
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 0 28px rgba(183,44,255,0.13);
         }
@@ -1084,7 +1084,7 @@ export default function PlanosPage() {
         }
         .plan-showcase-heading span {
           height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(245,215,140,0.56), transparent);
+          background: linear-gradient(90deg, transparent, rgba(225,166,255,0.56), transparent);
         }
         .plan-showcase-heading h2 {
           margin: 0;
@@ -1115,13 +1115,13 @@ export default function PlanosPage() {
           border: 1px solid rgba(183,44,255,0.30);
           border-radius: 24px;
           background:
-            radial-gradient(circle at 50% 0%, rgba(245,215,140,0.10), transparent 36%),
+            radial-gradient(circle at 50% 0%, rgba(225,166,255,0.10), transparent 36%),
             linear-gradient(145deg, rgba(22,22,22,0.98), rgba(8,8,8,0.98));
           padding: 24px 20px 20px;
           box-shadow: 0 18px 42px rgba(0,0,0,0.42);
         }
         .showcase-plan-card.featured {
-          border-color: rgba(245,215,140,0.82);
+          border-color: rgba(225,166,255,0.82);
           box-shadow: 0 24px 62px rgba(0,0,0,0.50), 0 0 34px rgba(183,44,255,0.22);
         }
         .showcase-plan-card.diamond {
@@ -1151,7 +1151,7 @@ export default function PlanosPage() {
           border-radius: 999px;
           color: #e1a6ff;
           background:
-            radial-gradient(circle, rgba(245,215,140,0.26), rgba(183,44,255,0.08) 60%, transparent),
+            radial-gradient(circle, rgba(225,166,255,0.26), rgba(183,44,255,0.08) 60%, transparent),
             rgba(255,255,255,0.035);
           filter: drop-shadow(0 0 20px rgba(183,44,255,0.18));
         }
@@ -1230,7 +1230,7 @@ export default function PlanosPage() {
         }
         .showcase-plan-button.featured {
           border-color: rgba(255,255,255,0.18);
-          background: linear-gradient(135deg, #e1a6ff, ${GOLD} 48%, #a77818);
+          background: linear-gradient(135deg, #e1a6ff, ${GOLD} 48%, #6900a3);
           color: #080704;
           box-shadow: 0 16px 36px rgba(183,44,255,0.24);
         }
@@ -1247,7 +1247,7 @@ export default function PlanosPage() {
           border: 1px solid rgba(183,44,255,0.26);
           border-radius: 22px;
           background:
-            radial-gradient(circle at 6% 50%, rgba(245,215,140,0.12), transparent 24%),
+            radial-gradient(circle at 6% 50%, rgba(225,166,255,0.12), transparent 24%),
             rgba(255,255,255,0.035);
           padding: 16px 20px;
         }
@@ -1259,7 +1259,7 @@ export default function PlanosPage() {
           border-radius: 999px;
           color: #e1a6ff;
           background: rgba(183,44,255,0.12);
-          border: 1px solid rgba(245,215,140,0.28);
+          border: 1px solid rgba(225,166,255,0.28);
         }
         .secure-strip strong,
         .plans-extra-heading h2 {
@@ -1344,7 +1344,7 @@ export default function PlanosPage() {
           border-radius: 8px;
           background: rgba(255,255,255,0.035);
           padding: 16px;
-          color: #e2e8f0;
+          color: #e9e1ed;
           font-size: 14px;
           font-weight: 850;
           line-height: 1.25;
@@ -1360,7 +1360,7 @@ export default function PlanosPage() {
           gap: 16px;
           align-items: center;
           margin: 0 0 16px;
-          border: 1px solid rgba(245,215,140,0.30);
+          border: 1px solid rgba(225,166,255,0.30);
           border-radius: 8px;
           background: linear-gradient(135deg, rgba(183,44,255,0.16), rgba(255,255,255,0.035));
           padding: 15px 16px;
@@ -1370,7 +1370,7 @@ export default function PlanosPage() {
           display: inline-flex;
           align-items: center;
           gap: 7px;
-          border: 1px solid rgba(245,215,140,0.32);
+          border: 1px solid rgba(225,166,255,0.32);
           border-radius: 999px;
           background: rgba(0,0,0,0.22);
           color: #e1a6ff;
@@ -1463,10 +1463,10 @@ export default function PlanosPage() {
         }
         .hero-product {
           background: linear-gradient(135deg, rgba(38,32,18,0.98), rgba(7,7,8,0.98) 56%);
-          border-color: rgba(245,215,140,0.50);
+          border-color: rgba(225,166,255,0.50);
         }
         .tone-bronze::before { background: linear-gradient(90deg, transparent, #b87945, transparent); }
-        .tone-silver::before { background: linear-gradient(90deg, transparent, #cbd5e1, transparent); }
+        .tone-silver::before { background: linear-gradient(90deg, transparent, #d8cedd, transparent); }
         .tone-amber::before { background: linear-gradient(90deg, transparent, #fbbf24, transparent); }
         .tone-diamond::before { background: linear-gradient(90deg, transparent, #93c5fd, transparent); }
         .tone-privacy::before { background: linear-gradient(90deg, transparent, #c4b5fd, transparent); }
@@ -1490,7 +1490,7 @@ export default function PlanosPage() {
         .points-pill {
           width: fit-content;
           border-radius: 999px;
-          border: 1px solid rgba(245,215,140,0.35);
+          border: 1px solid rgba(225,166,255,0.35);
           background: rgba(183,44,255,0.14);
           color: #e1a6ff;
           padding: 7px 10px;
@@ -1524,7 +1524,7 @@ export default function PlanosPage() {
         }
         .product-heading p {
           margin: 7px 0 0;
-          color: #e2e8f0;
+          color: #e9e1ed;
           font-size: 15px;
           line-height: 1.35;
           font-weight: 750;
@@ -1657,15 +1657,15 @@ export default function PlanosPage() {
           display: grid;
           gap: 4px;
           margin-bottom: 12px;
-          border: 1px solid rgba(245,215,140,0.28);
+          border: 1px solid rgba(225,166,255,0.28);
           border-radius: 8px;
           background: rgba(183,44,255,0.10);
           padding: 12px;
-          color: #f8fafc;
+          color: #fbf7ff;
           font-size: 13px;
         }
         .simulation-box span {
-          color: #cbd5e1;
+          color: #d8cedd;
         }
         .card-actions {
           align-items: stretch;
@@ -1685,7 +1685,7 @@ export default function PlanosPage() {
         .primary-action {
           flex: 1;
           border: 0;
-          background: linear-gradient(135deg, #e1a6ff, ${GOLD} 48%, #a77818);
+          background: linear-gradient(135deg, #e1a6ff, ${GOLD} 48%, #6900a3);
           color: #080704;
           box-shadow: 0 18px 44px rgba(183,44,255,0.20);
         }
@@ -1749,7 +1749,7 @@ export default function PlanosPage() {
           display: grid;
           place-items: center;
           border-radius: 999px;
-          border: 1px solid rgba(245,215,140,0.32);
+          border: 1px solid rgba(225,166,255,0.32);
           background: rgba(183,44,255,0.12);
           color: #e1a6ff;
         }
@@ -1774,9 +1774,9 @@ export default function PlanosPage() {
           grid-column: 1 / -1;
           width: fit-content;
           align-self: end;
-          border: 1px solid rgba(214,168,67,0.35);
+          border: 1px solid rgba(183,44,255,0.35);
           border-radius: 999px;
-          background: rgba(214,168,67,0.12);
+          background: rgba(183,44,255,0.12);
           color: #e1a6ff;
           padding: 7px 10px;
           font-size: 10px;
@@ -1908,7 +1908,7 @@ export default function PlanosPage() {
           outline: none;
         }
         .checkout-field input:focus {
-          border-color: rgba(245,215,140,0.72);
+          border-color: rgba(225,166,255,0.72);
           box-shadow: 0 0 0 3px rgba(183,44,255,0.14);
         }
         .checkout-field input:disabled {
@@ -1987,7 +1987,7 @@ export default function PlanosPage() {
         .mini-gallery i {
           min-height: 42px;
           border-radius: 6px;
-          background: rgba(245,215,140,0.18);
+          background: rgba(225,166,255,0.18);
         }
         .preview-card strong {
           color: #fff;
@@ -2000,8 +2000,8 @@ export default function PlanosPage() {
           line-height: 1.45;
         }
         .active-preview {
-          border-color: rgba(245,215,140,0.38);
-          box-shadow: inset 0 0 0 1px rgba(245,215,140,0.08);
+          border-color: rgba(225,166,255,0.38);
+          box-shadow: inset 0 0 0 1px rgba(225,166,255,0.08);
         }
         .contact-pill {
           width: fit-content;

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { BrandMark } from "@/components/BrandMark";
 import {
   Bell,
   ChevronRight,
@@ -44,12 +45,8 @@ function initials(name?: string | null) {
 function BrandLogo() {
   return (
     <Link href={ACCOUNT_ROUTES.mainClientFeed} className="relative inline-flex items-center no-underline" aria-label="Elite Modell">
-      <span className="relative inline-flex items-center rounded-[8px] border border-[#b72cff]/30 bg-white/[0.045] px-3 py-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.22)]">
-        <span className="pointer-events-none absolute -right-1 -top-2 select-none text-[12px] leading-none text-[#e1a6ff]">✦</span>
-        <span className="text-[18px] font-black leading-none">
-          <span className="bg-[linear-gradient(135deg,#f4d7ff_0%,#b72cff_42%,#e1a6ff_100%)] bg-clip-text text-transparent">elite</span>
-          <span className="text-[#f5f0e4]">modell</span>
-        </span>
+      <span className="relative inline-grid w-[144px] items-center rounded-[12px] border border-[#b72cff]/30 bg-white/[0.045] px-2.5 py-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.22)]">
+        <BrandMark />
       </span>
     </Link>
   );
@@ -371,10 +368,7 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
         <div className="client-side-drawer-footer px-5 pb-10 pt-5 text-center">
           <div className="mx-3 mb-5 h-px bg-white/[0.07]" />
           <Link href="/" onClick={onClose} className="mx-auto inline-flex items-center rounded-[8px] border border-[#b72cff]/34 bg-[#b72cff]/10 px-4 py-2 no-underline shadow-[0_12px_30px_rgba(0,0,0,0.22)]">
-            <span className="text-[17px] font-black leading-none">
-              <span className="bg-[linear-gradient(135deg,#f4d7ff_0%,#b72cff_42%,#e1a6ff_100%)] bg-clip-text text-transparent">elite</span>
-              <span className="text-[#f5f0e4]">modell</span>
-            </span>
+            <span className="inline-grid w-[148px]"><BrandMark /></span>
           </Link>
           <Link
             href="/"

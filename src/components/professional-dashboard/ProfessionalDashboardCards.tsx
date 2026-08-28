@@ -157,7 +157,7 @@ export function ProfessionalMainCard({
               <span className="rounded-full border border-[#b72cff]/32 bg-[#b72cff]/12 px-3 py-1 text-sm font-black text-[#e1a6ff]">{completeness}%</span>
             </div>
             <div className="h-3 overflow-hidden rounded-full border border-[#b72cff]/18 bg-white/10 p-[2px]">
-              <div className="h-full rounded-full bg-[linear-gradient(90deg,#b72cff,#e1a6ff)] shadow-[0_0_18px_rgba(214,168,58,0.36)]" style={{ width: `${completeness}%` }} />
+              <div className="h-full rounded-full bg-[linear-gradient(90deg,#b72cff,#e1a6ff)] shadow-[0_0_18px_rgba(183,44,255,0.36)]" style={{ width: `${completeness}%` }} />
             </div>
             <p className="mt-3 text-sm leading-6 text-white/55">
               {missingItems.length > 0
@@ -182,7 +182,7 @@ export function ProfessionalMainCard({
               <Gauge className="h-4 w-4" />
               Editar
             </Link>
-            <Link href="/profissional/planos" className="professional-primary-action inline-flex min-h-11 items-center justify-center gap-2 rounded-[16px] bg-[#b72cff] px-3 text-sm font-black text-[#080704] no-underline shadow-[0_14px_34px_rgba(214,168,58,0.18)] transition hover:bg-[#e1a6ff]">
+            <Link href="/profissional/planos" className="professional-primary-action inline-flex min-h-11 items-center justify-center gap-2 rounded-[16px] bg-[#b72cff] px-3 text-sm font-black text-[#080704] no-underline shadow-[0_14px_34px_rgba(183,44,255,0.18)] transition hover:bg-[#e1a6ff]">
               <Sparkles className="h-4 w-4" />
               {planExpiresAt ? "Renovar" : "Comprar plano"}
             </Link>
@@ -215,7 +215,7 @@ export function RankingCard({ city, position }: { city: string | null; position:
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-7">
         {tips.map((tip) => (
-          <div key={tip} className="flex min-h-20 items-center gap-3 rounded-[16px] border border-[#b72cff]/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.045),rgba(214,168,58,0.025))] p-3 text-xs font-black leading-5 text-white/70">
+          <div key={tip} className="flex min-h-20 items-center gap-3 rounded-[16px] border border-[#b72cff]/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.045),rgba(183,44,255,0.025))] p-3 text-xs font-black leading-5 text-white/70">
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[#b72cff]/28 bg-[#b72cff]/10">
               <Check className="h-4 w-4 text-[#e1a6ff]" />
             </span>
@@ -292,7 +292,7 @@ export function PlanResourcesCard({
         {resources.map((resource) => {
           const recommended = !resource.active && ["premium", "Destaque", "Impulsionamento", "Galeria", "Stories"].some((term) => resource.label.includes(term));
           return (
-            <div key={resource.label} className="rounded-[18px] border border-[#b72cff]/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.045),rgba(214,168,58,0.025))] p-4">
+            <div key={resource.label} className="rounded-[18px] border border-[#b72cff]/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.045),rgba(183,44,255,0.025))] p-4">
               <div className="mb-3 flex items-start justify-between gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] border border-[#b72cff]/24 bg-[#b72cff]/10 text-[#e1a6ff]">
                   {resource.label.includes("premium") ? <Crown className="h-4 w-4" /> : resource.label.includes("Destaque") ? <Star className="h-4 w-4" /> : resource.label.includes("telefone") ? <PhoneOff className="h-4 w-4" /> : resource.label.includes("Galeria") ? <ImageIcon className="h-4 w-4" /> : resource.label.includes("Stories") ? <FileVideo className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
@@ -345,7 +345,7 @@ export function PrivacyBoostCard({
         {options.map((option) => {
           const Icon = option.icon;
           return (
-            <div key={option.label} className="rounded-[18px] border border-[#b72cff]/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.045),rgba(214,168,58,0.025))] p-4">
+            <div key={option.label} className="rounded-[18px] border border-[#b72cff]/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.045),rgba(183,44,255,0.025))] p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="grid h-10 w-10 place-items-center rounded-[14px] border border-[#b72cff]/24 bg-[#b72cff]/10 text-[#e1a6ff]">
                   <Icon className="h-4 w-4" />

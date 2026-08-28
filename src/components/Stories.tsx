@@ -110,12 +110,12 @@ export default function Stories() {
           {canPostStory && (
             <div onClick={() => fileRef.current?.click()}
               style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: uploading ? "wait" : "pointer", flexShrink: 0, opacity: uploading ? 0.6 : 1 }}>
-              <div style={{ width: 70, height: 70, borderRadius: "50%", background: "#0f172a", border: "2px dashed rgba(183,44,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: "#475569" }}
+              <div style={{ width: 70, height: 70, borderRadius: "50%", background: "#120b17", border: "2px dashed rgba(183,44,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: "#aaa0b2" }}
                 onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#b72cff")}
                 onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(183,44,255,0.3)")}>
                 {uploading ? "..." : "+"}
               </div>
-              <span style={{ fontSize: 10, color: "#475569", fontWeight: 600, fontFamily: "var(--font-playfair), serif" }}>Seu story</span>
+              <span style={{ fontSize: 10, color: "#aaa0b2", fontWeight: 600, fontFamily: "var(--font-playfair), serif" }}>Seu story</span>
               <input ref={fileRef} type="file" accept="image/*,video/*" style={{ display: "none" }} onChange={handleUpload} />
             </div>
           )}
@@ -126,15 +126,15 @@ export default function Stories() {
             return (
               <div key={g.userId} onClick={() => abrirGrupo(g)}
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer", flexShrink: 0 }}>
-                <div style={{ width: 70, height: 70, borderRadius: "50%", padding: 2.5, background: visto ? "linear-gradient(135deg,#334155,#475569)" : "linear-gradient(135deg,#f4d7ff,#b72cff,#f0c060,#6900a3)" }}>
-                  <div style={{ width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden", border: "2.5px solid #060e1b", background: "#0f172a", position: "relative" }}>
+                <div style={{ width: 70, height: 70, borderRadius: "50%", padding: 2.5, background: visto ? "linear-gradient(135deg,#66566f,#aaa0b2)" : "linear-gradient(135deg,#f4d7ff,#b72cff,#f0c060,#6900a3)" }}>
+                  <div style={{ width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden", border: "2.5px solid #08050b", background: "#120b17", position: "relative" }}>
                     {g.foto
                       ? <Image src={g.foto} alt={g.nome} fill sizes="70px" style={{ objectFit: "cover", objectPosition: "top" }} />
-                      : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: "#475569" }}>✦</div>
+                      : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: "#aaa0b2" }}>✦</div>
                     }
                   </div>
                 </div>
-                <span style={{ fontSize: 10, color: visto ? "#475569" : "#cbd5e1", fontWeight: 600, maxWidth: 70, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "var(--font-playfair), serif" }}>
+                <span style={{ fontSize: 10, color: visto ? "#aaa0b2" : "#d8cedd", fontWeight: 600, maxWidth: 70, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "var(--font-playfair), serif" }}>
                   {g.nome.split(" ")[0]}
                 </span>
               </div>
@@ -188,7 +188,7 @@ export default function Stories() {
             <div style={{ position: "absolute", bottom: 14, left: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 4 }}>
               <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>👁 {story.views} visualizações</span>
             </div>
-            <a href={`/profissionais/${aberto.grupo.slug}`} style={{ position: "absolute", right: 14, bottom: 12, zIndex: 3, borderRadius: 999, background: "#b72cff", color: "#060e1b", padding: "7px 12px", textDecoration: "none", fontSize: 11, fontWeight: 900 }}>
+            <a href={`/profissionais/${aberto.grupo.slug}`} style={{ position: "absolute", right: 14, bottom: 12, zIndex: 3, borderRadius: 999, background: "#b72cff", color: "#08050b", padding: "7px 12px", textDecoration: "none", fontSize: 11, fontWeight: 900 }}>
               Ver perfil
             </a>
           </div>

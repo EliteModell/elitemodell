@@ -62,10 +62,10 @@ function FaqItem({ q, a }: { q: string; a: string }) {
           textAlign: "left",
         }}
       >
-        <span style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0", lineHeight: 1.4 }}>{q}</span>
+        <span style={{ fontSize: 14, fontWeight: 600, color: "#e9e1ed", lineHeight: 1.4 }}>{q}</span>
         {open
           ? <ChevronUp style={{ width: 16, height: 16, color: GOLD, flexShrink: 0 }} />
-          : <ChevronDown style={{ width: 16, height: 16, color: "#64748b", flexShrink: 0 }} />}
+          : <ChevronDown style={{ width: 16, height: 16, color: "#968a9e", flexShrink: 0 }} />}
       </button>
       {open && (
         <p style={{ margin: "0 0 16px", fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{a}</p>
@@ -112,7 +112,7 @@ function PlanCard({
           top: -11,
           left: 18,
           background: GOLD,
-          color: "#060e1b",
+          color: "#08050b",
           fontSize: 10,
           fontWeight: 800,
           letterSpacing: "0.06em",
@@ -144,7 +144,7 @@ function PlanCard({
 
         {/* Duração */}
         <div style={{ flex: 1 }}>
-          <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: selected ? GOLD_TEXT : "#e2e8f0" }}>
+          <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: selected ? GOLD_TEXT : "#e9e1ed" }}>
             {plan.label}
           </p>
           {showFirstPurchaseBadge && (
@@ -156,7 +156,7 @@ function PlanCard({
 
         {/* Preço */}
         <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <p style={{ margin: 0, fontSize: 18, fontWeight: 900, color: selected ? GOLD_TEXT : "#e2e8f0" }}>
+          <p style={{ margin: 0, fontSize: 18, fontWeight: 900, color: selected ? GOLD_TEXT : "#e9e1ed" }}>
             {resolvedPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
           </p>
           {plan.pricePerMonthLabel && (
@@ -372,7 +372,7 @@ export default function PlanosPage() {
         }}>
           <QrCode style={{ width: 18, height: 18, color: GOLD, flexShrink: 0 }} />
           <div>
-            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>Pagamento via Pix</p>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#e9e1ed" }}>Pagamento via Pix</p>
             <p style={{ margin: "2px 0 0", fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
               Instantâneo · sem taxas · QR Code seguro
             </p>
@@ -428,7 +428,7 @@ export default function PlanosPage() {
           flex-shrink: 0;
           padding: 13px 28px;
           background: #b72cff;
-          color: #060e1b;
+          color: #08050b;
           border: none;
           border-radius: 12px;
           font-size: 15px;

@@ -107,18 +107,18 @@ export default async function AdminAvaliacoesPage() {
                 <td style={tdStyle}>
                   Nota: {item.review.rating}/5<br />
                   Autor: {item.review.author.name ?? item.review.author.email ?? "Cliente"}<br />
-                  <span style={{ color: "#94a3b8" }}>{item.review.comment}</span>
+                  <span style={{ color: "#b9adbf" }}>{item.review.comment}</span>
                 </td>
                 <td style={tdStyle}>
                   Enviada por {item.author.name ?? item.author.email ?? "Profissional"}<br />
-                  <span style={{ color: "#94a3b8" }}>{item.reason}</span>
+                  <span style={{ color: "#b9adbf" }}>{item.reason}</span>
                   {item.adminNote ? <p style={{ color: "#e1a6ff", margin: "8px 0 0" }}>Admin: {item.adminNote}</p> : null}
                 </td>
                 <td style={tdStyle}>
                   <StatusPill tone={item.status === "PENDING" ? "warning" : item.status === "ACCEPTED" ? "success" : "danger"}>
                     {item.status === "PENDING" ? "Pendente" : item.status === "ACCEPTED" ? "Removida" : "Mantida"}
                   </StatusPill>
-                  <p style={{ color: "#94a3b8", margin: "8px 0 0" }}>Review: {item.review.moderationStatus}</p>
+                  <p style={{ color: "#b9adbf", margin: "8px 0 0" }}>Review: {item.review.moderationStatus}</p>
                 </td>
                 <td style={tdStyle}>
                   <form action={moderateReviewDispute} style={{ display: "grid", gap: 8 }}>

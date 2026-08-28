@@ -9,12 +9,12 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { ArrowLeft, BadgeCheck, Eye, EyeOff, Globe2, LockKeyhole, Sparkles } from "lucide-react";
 import { EntryChoiceCards, EntryChoiceStyles } from "@/components/EntryChoiceSheet";
+import { BrandMark } from "@/components/BrandMark";
 import { supabaseAuth } from "@/lib/supabase-client";
 import { ACCOUNT_ROUTES, normalizeEntryRole, postLoginPathFromUser } from "@/lib/account-routes";
 import { buildAuthCallbackUrl } from "@/lib/auth-redirect";
 
 const GOLD = "#b72cff";
-const GOLD_GRADIENT = "linear-gradient(135deg, #f4d7ff 0%, #b72cff 22%, #e1a6ff 45%, #6900a3 72%, #b72cff 100%)";
 const PROPERTY_DRAFT_KEY = "elitemodell_location_onboarding_v2";
 const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
 const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
@@ -24,10 +24,10 @@ const PROFESSIONAL_CATEGORIES = ["MULHER", "HOMEM", "TRANS"];
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "11px 14px",
-  background: "#0f172a",
-  border: "1px solid #1e293b",
+  background: "#120b17",
+  border: "1px solid #2d1d35",
   borderRadius: 8,
-  color: "#f1f5f9",
+  color: "#f8f5fa",
   fontSize: 14,
   outline: "none",
   boxSizing: "border-box",
@@ -37,7 +37,7 @@ const inputStyle: React.CSSProperties = {
 const focusGold = (e: React.FocusEvent<HTMLInputElement>) =>
   (e.target.style.borderColor = GOLD);
 const blurGray = (e: React.FocusEvent<HTMLInputElement>) =>
-  (e.target.style.borderColor = "#1e293b");
+  (e.target.style.borderColor = "#2d1d35");
 
 const authMsg: Record<string, string> = {
   invalid_credentials: "E-mail ou senha invalidos. Se voce confirmou pelo link e nao entra, use Recuperar senha.",
@@ -210,8 +210,7 @@ function LoginContent() {
             <ArrowLeft size={18} />
           </button>
           <Link href="/" className="auth-brand" aria-label="Elite Modell">
-            <span>elite</span>
-            <strong>modell</strong>
+            <BrandMark priority />
           </Link>
           <span className="country-pill"><Globe2 size={14} /> Brasil</span>
         </header>
@@ -245,8 +244,7 @@ function LoginContent() {
           <ArrowLeft size={18} />
         </button>
         <Link href="/" className="auth-brand" aria-label="Elite Modell">
-          <span>elite</span>
-          <strong>modell</strong>
+          <BrandMark priority />
         </Link>
         <span className="country-pill"><Globe2 size={14} /> Brasil</span>
       </header>
@@ -305,8 +303,7 @@ function LoginContent() {
 
       <section className="trust-section" aria-label="Sobre a Elite Modell">
         <Link href="/" className="footer-brand" aria-label="Elite Modell">
-          <span>elite</span>
-          <strong>modell</strong>
+          <BrandMark />
         </Link>
         <div className="restricted-badge"><LockKeyhole size={18} /> Ambiente restrito a maiores de 18 anos</div>
         <p>
@@ -375,37 +372,23 @@ const loginPageStyles = (
           width: 42px;
           height: 42px;
           border-radius: 999px;
-          border: 1px solid rgba(214,168,58,0.25);
+          border: 1px solid rgba(183,44,255,0.25);
           background: rgba(11,11,13,0.82);
-          color: #f5d77a;
+          color: #e1a6ff;
           display: grid;
           place-items: center;
         }
         .auth-brand,
         .footer-brand {
-          display: inline-flex;
-          align-items: baseline;
-          gap: 1px;
+          display: inline-grid;
+          align-items: center;
+          width: 152px;
           text-decoration: none;
-          font-size: 22px;
-          font-weight: 950;
           justify-self: center;
-        }
-        .auth-brand span,
-        .footer-brand span {
-          background: ${GOLD_GRADIENT};
-          background-clip: text;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-        .auth-brand strong,
-        .footer-brand strong {
-          color: #fff;
-          font: inherit;
         }
         .country-pill {
           min-height: 36px;
-          border: 1px solid rgba(214,168,58,0.18);
+          border: 1px solid rgba(183,44,255,0.18);
           border-radius: 999px;
           background: rgba(16,16,20,0.72);
           color: #b8b8b8;
@@ -425,16 +408,16 @@ const loginPageStyles = (
           height: 58px;
           margin: 0 auto 16px;
           border-radius: 18px;
-          border: 1px solid rgba(214,168,58,0.28);
-          background: rgba(214,168,58,0.10);
-          color: #f5d77a;
+          border: 1px solid rgba(183,44,255,0.28);
+          background: rgba(183,44,255,0.10);
+          color: #e1a6ff;
           display: grid;
           place-items: center;
-          box-shadow: 0 22px 60px rgba(214,168,58,0.10);
+          box-shadow: 0 22px 60px rgba(183,44,255,0.10);
         }
         .eyebrow {
           margin: 0 0 8px;
-          color: #d6a83a;
+          color: #b72cff;
           font-size: 11px;
           font-weight: 950;
           letter-spacing: 0.18em;
@@ -461,7 +444,7 @@ const loginPageStyles = (
         .link-groups,
         .visibility-section {
           position: relative;
-          border: 1px solid rgba(214,168,58,0.25);
+          border: 1px solid rgba(183,44,255,0.25);
           border-radius: 24px;
           background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98));
           box-shadow: 0 24px 70px rgba(0,0,0,0.34);
@@ -474,7 +457,7 @@ const loginPageStyles = (
           position: absolute;
           inset: 0 0 auto;
           height: 2px;
-          background: linear-gradient(90deg, transparent, #d6a83a 32%, #f5d77a 50%, #d6a83a 68%, transparent);
+          background: linear-gradient(90deg, transparent, #b72cff 32%, #e1a6ff 50%, #b72cff 68%, transparent);
         }
         .google-button {
           width: 100%;
@@ -503,7 +486,7 @@ const loginPageStyles = (
           content: "";
           height: 1px;
           flex: 1;
-          background: rgba(214,168,58,0.14);
+          background: rgba(183,44,255,0.14);
         }
         .auth-form {
           display: grid;
@@ -512,7 +495,7 @@ const loginPageStyles = (
         .auth-form label > span {
           display: block;
           margin-bottom: 7px;
-          color: #d6a83a;
+          color: #b72cff;
           font-size: 12px;
           font-weight: 900;
           letter-spacing: 0.08em;
@@ -522,7 +505,7 @@ const loginPageStyles = (
           min-height: 58px;
           border-radius: 18px !important;
           background: rgba(11,11,13,0.94) !important;
-          border-color: rgba(214,168,58,0.28) !important;
+          border-color: rgba(183,44,255,0.28) !important;
           color: #fff !important;
           padding: 15px 16px !important;
           font-size: 15px !important;
@@ -554,17 +537,17 @@ const loginPageStyles = (
           display: flex;
           align-items: flex-start;
           gap: 10px;
-          border: 1px solid rgba(214,168,58,0.20);
-          border-left: 4px solid #d6a83a;
+          border: 1px solid rgba(183,44,255,0.20);
+          border-left: 4px solid #b72cff;
           border-radius: 16px;
-          background: rgba(214,168,58,0.08);
+          background: rgba(183,44,255,0.08);
           color: #d7d7d7;
           padding: 13px;
           font-size: 13px;
           line-height: 1.45;
         }
         .security-box svg {
-          color: #f5d77a;
+          color: #e1a6ff;
           flex: 0 0 auto;
         }
         .primary-auth-button,
@@ -573,7 +556,7 @@ const loginPageStyles = (
           min-height: 58px;
           border: 0;
           border-radius: 18px;
-          background: linear-gradient(135deg, #f5d77a, #d6a83a 45%, #a77818);
+          background: linear-gradient(135deg, #e1a6ff, #b72cff 45%, #6900a3);
           color: #070707;
           display: inline-flex;
           align-items: center;
@@ -581,7 +564,7 @@ const loginPageStyles = (
           text-decoration: none;
           font-size: 15px;
           font-weight: 950;
-          box-shadow: 0 20px 52px rgba(214,168,58,0.24);
+          box-shadow: 0 20px 52px rgba(183,44,255,0.24);
         }
         .primary-auth-button:disabled {
           opacity: 0.62;
@@ -589,7 +572,7 @@ const loginPageStyles = (
         .forgot-link {
           display: block;
           margin: 18px 0 0;
-          color: #f5d77a;
+          color: #e1a6ff;
           text-align: center;
           text-decoration: none;
           font-weight: 850;
@@ -597,7 +580,7 @@ const loginPageStyles = (
         .signup-block {
           margin-top: 24px;
           padding-top: 22px;
-          border-top: 1px solid rgba(214,168,58,0.18);
+          border-top: 1px solid rgba(183,44,255,0.18);
           text-align: center;
         }
         .signup-block p {
@@ -608,8 +591,8 @@ const loginPageStyles = (
         .signup-block a {
           width: 100%;
           background: transparent;
-          color: #f5d77a;
-          border: 1px solid rgba(214,168,58,0.45);
+          color: #e1a6ff;
+          border: 1px solid rgba(183,44,255,0.45);
           box-shadow: none;
         }
         .trust-section {
@@ -626,9 +609,9 @@ const loginPageStyles = (
           align-items: center;
           gap: 8px;
           border-radius: 14px;
-          background: rgba(214,168,58,0.12);
-          border: 1px solid rgba(214,168,58,0.24);
-          color: #f5d77a;
+          background: rgba(183,44,255,0.12);
+          border: 1px solid rgba(183,44,255,0.24);
+          color: #e1a6ff;
           padding: 10px 12px;
           font-size: 12px;
           font-weight: 900;
@@ -671,10 +654,10 @@ const loginPageStyles = (
         }
         .outline-cta {
           min-height: 56px;
-          border: 1px solid rgba(214,168,58,0.35);
+          border: 1px solid rgba(183,44,255,0.35);
           border-radius: 18px;
           background: rgba(16,16,20,0.88);
-          color: #f5d77a;
+          color: #e1a6ff;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -685,7 +668,7 @@ const loginPageStyles = (
           margin: 28px -16px 0;
           padding: 30px 16px calc(30px + env(safe-area-inset-bottom));
           background: #101010;
-          border-top: 1px solid rgba(214,168,58,0.18);
+          border-top: 1px solid rgba(183,44,255,0.18);
           text-align: center;
         }
         .social-row {

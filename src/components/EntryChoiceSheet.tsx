@@ -111,7 +111,7 @@ export function EntryChoiceStyles() {
         gap: 12px;
         min-height: 88px;
         padding: 14px;
-        border: 1px solid rgba(214,168,58,0.25);
+        border: 1px solid rgba(183,44,255,0.25);
         border-radius: 18px;
         background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(10,10,12,0.98));
         color: #fff;
@@ -125,8 +125,8 @@ export function EntryChoiceStyles() {
         display: grid;
         place-items: center;
         color: #c451ff;
-        background: rgba(245,184,59,0.10);
-        border: 1px solid rgba(214,168,58,0.22);
+        background: rgba(213,108,255,0.10);
+        border: 1px solid rgba(183,44,255,0.22);
       }
       .entry-choice-copy {
         min-width: 0;
@@ -167,7 +167,7 @@ export function EntryChoiceStyles() {
         width: min(100% - 16px, 430px);
         margin: 0 auto calc(8px + env(safe-area-inset-bottom));
         padding: 18px;
-        border: 1px solid rgba(214,168,58,0.28);
+        border: 1px solid rgba(183,44,255,0.28);
         border-radius: 26px;
         background: #050505;
         box-shadow: 0 -24px 70px rgba(0,0,0,0.64);
@@ -203,7 +203,7 @@ export function EntryChoiceStyles() {
       .entry-choice-head button {
         width: 42px;
         height: 42px;
-        border: 1px solid rgba(214,168,58,0.28);
+        border: 1px solid rgba(183,44,255,0.28);
         border-radius: 14px;
         background: #101014;
         color: #c451ff;

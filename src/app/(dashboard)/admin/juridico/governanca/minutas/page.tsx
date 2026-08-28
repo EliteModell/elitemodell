@@ -84,7 +84,7 @@ export default async function InternalGovernanceMinutesPage() {
 }
 
 const muted: React.CSSProperties = {
-  color: "#94a3b8",
+  color: "#b9adbf",
   lineHeight: 1.6,
   fontSize: 13,
   marginBottom: 0,
@@ -97,7 +97,7 @@ const metadataGrid: React.CSSProperties = {
 };
 
 const label: React.CSSProperties = {
-  color: "#94a3b8",
+  color: "#b9adbf",
   display: "block",
   fontSize: 11,
   fontWeight: 900,
@@ -121,9 +121,9 @@ const pendingList: React.CSSProperties = {
 };
 
 const documentStyle: React.CSSProperties = {
-  background: "#f8fafc",
+  background: "#fbf7ff",
   borderRadius: 8,
-  color: "#111827",
+  color: "#110a16",
   marginTop: 20,
   padding: "clamp(18px, 4vw, 42px)",
 };

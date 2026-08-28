@@ -12,10 +12,10 @@ const VERIFY_HREF = "/dashboard/verificacao-idade";
 function VerificationRequiredModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[1200] grid place-items-center bg-black/78 px-4 py-6 backdrop-blur-xl" role="dialog" aria-modal="true" aria-labelledby="client-age-lock-title">
-      <div className="w-full max-w-[420px] overflow-hidden rounded-[24px] border border-[#d6a83a]/25 bg-[#101014] shadow-[0_28px_90px_rgba(0,0,0,0.62)]">
-        <div className="h-[2px] bg-[linear-gradient(90deg,transparent,#c451ff,#d6a83a,transparent)]" />
+      <div className="w-full max-w-[420px] overflow-hidden rounded-[24px] border border-[#b72cff]/25 bg-[#101014] shadow-[0_28px_90px_rgba(0,0,0,0.62)]">
+        <div className="h-[2px] bg-[linear-gradient(90deg,transparent,#c451ff,#b72cff,transparent)]" />
         <div className="p-6 text-center">
-          <div className="mx-auto grid h-16 w-16 place-items-center rounded-[18px] border border-[#d6a83a]/28 bg-[#d6a83a]/12 text-[#c451ff]">
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-[18px] border border-[#b72cff]/28 bg-[#b72cff]/12 text-[#c451ff]">
             <LockKeyhole className="h-7 w-7" />
           </div>
           <h2 id="client-age-lock-title" className="mt-5 text-[26px] font-black leading-tight text-white">
@@ -92,7 +92,7 @@ export function ClientSensitiveGate({
     <>
       <div className="client-panel p-5">
         <div className="flex items-start gap-4">
-          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#d6a83a]/25 bg-[#d6a83a]/12 text-[#c451ff]">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#b72cff]/25 bg-[#b72cff]/12 text-[#c451ff]">
             <LockKeyhole className="h-6 w-6" />
           </span>
           <div className="min-w-0 flex-1">

@@ -34,7 +34,7 @@ export default function AdminSetupPage() {
         <p style={{ color: "#b72cff", fontSize: 11, fontWeight: 900, letterSpacing: 2.5, textTransform: "uppercase", margin: "0 0 16px" }}>
           Configuração Inicial
         </p>
-        <h1 style={{ color: "#f1f5f9", fontSize: 22, fontWeight: 800, margin: "0 0 12px" }}>
+        <h1 style={{ color: "#f8f5fa", fontSize: 22, fontWeight: 800, margin: "0 0 12px" }}>
           Ativar Acesso Admin
         </h1>
         <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, margin: "0 0 32px", lineHeight: 1.6 }}>

@@ -35,10 +35,10 @@ function formatCep(v: string) {
 const inputStyle = {
   width: "100%",
   padding: "12px 14px",
-  background: "#0f172a",
-  border: "1px solid #1e293b",
+  background: "#120b17",
+  border: "1px solid #2d1d35",
   borderRadius: 10,
-  color: "#f1f5f9",
+  color: "#f8f5fa",
   fontSize: 14,
   outline: "none",
 } as const;

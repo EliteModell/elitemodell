@@ -124,7 +124,7 @@ export const CaptchaField = forwardRef<CaptchaFieldHandle>(function CaptchaField
           }}
         />
       ) : (
-        <p style={{ color: "#64748b", fontSize: 12, lineHeight: 1.5, margin: 0 }}>
+        <p style={{ color: "#968a9e", fontSize: 12, lineHeight: 1.5, margin: 0 }}>
           Protecao anti-spam ativa.
         </p>
       )}

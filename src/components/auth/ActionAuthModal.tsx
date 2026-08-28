@@ -19,7 +19,7 @@ export default function ActionAuthModal({ open, actionLabel, returnTo, onClose }
 
   return (
     <div className="fixed inset-0 z-[950] grid place-items-center bg-black/80 p-4 backdrop-blur-xl" role="dialog" aria-modal="true" aria-labelledby="action-auth-title">
-      <section className="w-full max-w-md rounded-2xl border border-[#b72cff]/30 bg-[linear-gradient(180deg,#15120d,#070707)] p-6 text-[#f4f1ea] shadow-[0_32px_100px_rgba(0,0,0,.7)]">
+      <section className="w-full max-w-md rounded-2xl border border-[#b72cff]/30 bg-[linear-gradient(180deg,#100a14,#070707)] p-6 text-[#f4f1ea] shadow-[0_32px_100px_rgba(0,0,0,.7)]">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="m-0 text-[11px] font-black uppercase tracking-[.18em] text-[#b72cff]">Continue de onde parou</p>

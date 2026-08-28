@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { validateBirthDate } from "@/lib/age-validation";
+import { BrandMark } from "@/components/BrandMark";
 
 const GOLD = "#b72cff";
-const GOLD_GRADIENT =
-  "linear-gradient(135deg, #f4d7ff 0%, #b72cff 22%, #e1a6ff 45%, #6900a3 72%, #b72cff 100%)";
 
 function maskBirthDate(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 8);
@@ -128,25 +127,13 @@ export default function CompletarCadastroClient() {
         />
 
         {/* Logo */}
-        <div style={{ marginBottom: 28, textAlign: "center" }}>
-          <span style={{ fontWeight: 900, fontSize: 26, letterSpacing: "-0.5px" }}>
-            <span
-              style={{
-                background: GOLD_GRADIENT,
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
-              elite
-            </span>
-            <span style={{ color: "#f1f5f9" }}>modell</span>
-          </span>
+        <div style={{ width: 176, margin: "0 auto 28px" }}>
+          <BrandMark priority />
         </div>
 
         <h1
           style={{
-            color: "#f1f5f9",
+            color: "#f8f5fa",
             fontSize: 18,
             fontWeight: 700,
             margin: "0 0 6px",
@@ -157,7 +144,7 @@ export default function CompletarCadastroClient() {
         </h1>
         <p
           style={{
-            color: "#94a3b8",
+            color: "#b9adbf",
             fontSize: 13,
             textAlign: "center",
             margin: "0 0 28px",
@@ -170,7 +157,7 @@ export default function CompletarCadastroClient() {
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {/* Birth date */}
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ color: "#94a3b8", fontSize: 12, fontWeight: 600, letterSpacing: 0.5 }}>
+            <label style={{ color: "#b9adbf", fontSize: 12, fontWeight: 600, letterSpacing: 0.5 }}>
               DATA DE NASCIMENTO
             </label>
             <input
@@ -190,7 +177,7 @@ export default function CompletarCadastroClient() {
                 border: "1px solid rgba(183,44,255,0.2)",
                 borderRadius: 8,
                 padding: "10px 14px",
-                color: "#f1f5f9",
+                color: "#f8f5fa",
                 fontSize: 14,
                 outline: "none",
               }}
@@ -212,7 +199,7 @@ export default function CompletarCadastroClient() {
               onChange={(e) => setTermsConsent(e.target.checked)}
               style={{ marginTop: 2, accentColor: GOLD, width: 16, height: 16, flexShrink: 0 }}
             />
-            <span style={{ color: "#cbd5e1", fontSize: 13, lineHeight: 1.5 }}>
+            <span style={{ color: "#d8cedd", fontSize: 13, lineHeight: 1.5 }}>
               Li e aceito os{" "}
               <a href="/terms" target="_blank" style={{ color: GOLD, textDecoration: "none" }}>
                 Termos de Uso
@@ -239,7 +226,7 @@ export default function CompletarCadastroClient() {
               onChange={(e) => setAgeConfirmed(e.target.checked)}
               style={{ marginTop: 2, accentColor: GOLD, width: 16, height: 16, flexShrink: 0 }}
             />
-            <span style={{ color: "#cbd5e1", fontSize: 13, lineHeight: 1.5 }}>
+            <span style={{ color: "#d8cedd", fontSize: 13, lineHeight: 1.5 }}>
               Confirmo que sou maior de 18 anos e li a{" "}
               <a href="/documentos/adult-declaration" target="_blank" style={{ color: GOLD, textDecoration: "none" }}>
                 Confirmação de Maioridade
@@ -262,7 +249,7 @@ export default function CompletarCadastroClient() {
               onChange={(e) => setLgpdConsent(e.target.checked)}
               style={{ marginTop: 2, accentColor: GOLD, width: 16, height: 16, flexShrink: 0 }}
             />
-            <span style={{ color: "#cbd5e1", fontSize: 13, lineHeight: 1.5 }}>
+            <span style={{ color: "#d8cedd", fontSize: 13, lineHeight: 1.5 }}>
               Concordo com a{" "}
               <a href="/privacy" target="_blank" style={{ color: GOLD, textDecoration: "none" }}>
                 Política de Privacidade
@@ -311,7 +298,7 @@ export default function CompletarCadastroClient() {
           </button>
         </form>
 
-        <p style={{ color: "#334155", fontSize: 11, margin: "20px 0 0", letterSpacing: 1.5, textTransform: "uppercase", textAlign: "center" }}>
+        <p style={{ color: "#66566f", fontSize: 11, margin: "20px 0 0", letterSpacing: 1.5, textTransform: "uppercase", textAlign: "center" }}>
           Acesso seguro · 18+
         </p>
       </div>

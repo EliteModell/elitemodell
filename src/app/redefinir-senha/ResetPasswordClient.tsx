@@ -7,9 +7,9 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { supabaseAuth } from "@/lib/supabase-client";
+import { BrandMark } from "@/components/BrandMark";
 
 const GOLD = "#b72cff";
-const GOLD_GRADIENT = "linear-gradient(135deg, #f4d7ff 0%, #b72cff 22%, #e1a6ff 45%, #6900a3 72%, #b72cff 100%)";
 
 type SessionState = "checking" | "ready" | "invalid";
 
@@ -79,17 +79,16 @@ export function ResetPasswordClient() {
   }
 
   return (
-    <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "radial-gradient(ellipse at 50% 0%, rgba(183,44,255,0.06) 0%, #050505 60%)", color: "#f1f5f9", padding: 24 }}>
+    <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "radial-gradient(ellipse at 50% 0%, rgba(183,44,255,0.06) 0%, #050505 60%)", color: "#f8f5fa", padding: 24 }}>
       <section style={{ width: "100%", maxWidth: 430, background: "linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98))", border: "1px solid rgba(183,44,255,0.28)", borderRadius: 20, padding: 30, boxShadow: "0 24px 70px rgba(0,0,0,0.34)" }}>
-        <Link href="/" aria-label="Elite Modell" style={{ display: "inline-flex", alignItems: "baseline", textDecoration: "none", fontSize: 26, fontWeight: 950, marginBottom: 24 }}>
-          <span style={{ background: GOLD_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>elite</span>
-          <strong style={{ color: "#fff", font: "inherit" }}>modell</strong>
+        <Link href="/" aria-label="Elite Modell" style={{ display: "inline-flex", width: 176, alignItems: "center", textDecoration: "none", marginBottom: 24 }}>
+          <BrandMark priority />
         </Link>
 
         <h1 style={{ fontSize: 28, lineHeight: 1.1, margin: "0 0 10px" }}>Criar nova senha</h1>
 
         {sessionState === "checking" ? (
-          <p style={{ color: "#94a3b8", lineHeight: 1.6, margin: 0 }}>Validando seu link de recuperacao...</p>
+          <p style={{ color: "#b9adbf", lineHeight: 1.6, margin: 0 }}>Validando seu link de recuperacao...</p>
         ) : sessionState === "invalid" ? (
           <>
             <p style={{ color: "#fca5a5", lineHeight: 1.6, margin: "0 0 18px" }}>
@@ -101,7 +100,7 @@ export function ResetPasswordClient() {
           </>
         ) : (
           <>
-            <p style={{ color: "#94a3b8", lineHeight: 1.6, margin: "0 0 24px" }}>
+            <p style={{ color: "#b9adbf", lineHeight: 1.6, margin: "0 0 24px" }}>
               Escolha uma senha nova para sua conta Elite Modell.
             </p>
 

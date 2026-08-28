@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, Camera, ChevronRight, Mail, MapPin, Menu, UserRound } from "lucide-react";
+import { BrandMark } from "@/components/BrandMark";
 
 type HeaderProfile = {
   name: string;
@@ -82,31 +83,27 @@ export function ProfessionalTopHeader({ onMenuClick }: { onMenuClick: () => void
         <div className="grid h-[64px] grid-cols-[58px_minmax(0,1fr)_116px] items-center gap-3">
           <button
             onClick={onMenuClick}
-            className="grid h-14 w-14 place-items-center rounded-[18px] border border-[#D6A83A]/38 bg-white/[0.035] text-[#F5D46B] shadow-[0_12px_34px_rgba(0,0,0,0.34)]"
+            className="grid h-14 w-14 place-items-center rounded-[18px] border border-[#B72CFF]/38 bg-white/[0.035] text-[#E1A6FF] shadow-[0_12px_34px_rgba(0,0,0,0.34)]"
             aria-label="Abrir menu"
           >
             <Menu className="h-7 w-7" />
           </button>
 
           <Link href="/profissional" className="relative flex min-w-0 items-center justify-center no-underline" aria-label="Elite Modell">
-            <span className="absolute -top-4 text-[16px] leading-none text-[#F5D46B]">♛</span>
-            <span className="truncate text-[28px] font-black leading-none sm:text-[34px]">
-              <span className="bg-[linear-gradient(135deg,#f4d7ff,#D6A83A_34%,#F5D46B_64%,#8A671F)] bg-clip-text text-transparent">elite</span>
-              <span className="text-white">modell</span>
-            </span>
+            <span className="inline-grid w-[168px] sm:w-[196px]"><BrandMark priority /></span>
           </Link>
 
           <div className="flex justify-end gap-3">
             <Link
               href={messagesHref}
-              className="grid h-14 w-14 place-items-center rounded-[18px] border border-[#D6A83A]/38 bg-white/[0.035] text-[#F5D46B] no-underline shadow-[0_12px_34px_rgba(0,0,0,0.34)]"
+              className="grid h-14 w-14 place-items-center rounded-[18px] border border-[#B72CFF]/38 bg-white/[0.035] text-[#E1A6FF] no-underline shadow-[0_12px_34px_rgba(0,0,0,0.34)]"
               aria-label="Mensagens"
             >
               <Mail className="h-6 w-6" />
             </Link>
             <Link
               href={notificationsHref}
-              className="relative grid h-14 w-14 place-items-center rounded-[18px] border border-[#D6A83A]/38 bg-white/[0.035] text-[#F5D46B] no-underline shadow-[0_12px_34px_rgba(0,0,0,0.34)]"
+              className="relative grid h-14 w-14 place-items-center rounded-[18px] border border-[#B72CFF]/38 bg-white/[0.035] text-[#E1A6FF] no-underline shadow-[0_12px_34px_rgba(0,0,0,0.34)]"
               aria-label="Notificações"
             >
               <Bell className="h-6 w-6" />
@@ -116,7 +113,7 @@ export function ProfessionalTopHeader({ onMenuClick }: { onMenuClick: () => void
 
         <Link href="/profissional/perfil" className="premium-profile-row">
           <span className="premium-avatar">
-            {profile?.image ? <img src={profile.image} alt={profile.name} /> : <UserRound size={42} color="#F5D46B" />}
+            {profile?.image ? <img src={profile.image} alt={profile.name} /> : <UserRound size={42} color="#E1A6FF" />}
             <span className="premium-avatar-camera">
               <Camera size={16} />
             </span>

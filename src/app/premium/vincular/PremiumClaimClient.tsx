@@ -31,7 +31,7 @@ export default function PremiumClaimClient({ returnTo }: { returnTo: string }) {
 
   return (
     <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 20, background: "radial-gradient(circle at 50% 0%,rgba(183,44,255,.15),transparent 38%),#050505", color: "#f4f1ea" }}>
-      <section style={{ width: "min(460px,100%)", padding: 28, borderRadius: 22, border: "1px solid rgba(183,44,255,.3)", background: "linear-gradient(180deg,#15120d,#080808)", textAlign: "center", boxShadow: "0 30px 90px rgba(0,0,0,.7)" }}>
+      <section style={{ width: "min(460px,100%)", padding: 28, borderRadius: 22, border: "1px solid rgba(183,44,255,.3)", background: "linear-gradient(180deg,#100a14,#080808)", textAlign: "center", boxShadow: "0 30px 90px rgba(0,0,0,.7)" }}>
         <div style={{ width: 66, height: 66, display: "grid", placeItems: "center", margin: "0 auto", borderRadius: 999, background: status === "error" ? "rgba(239,68,68,.1)" : "rgba(183,44,255,.12)", color: status === "error" ? "#fca5a5" : "#b72cff" }}>
           {status === "loading" && <LoaderCircle className="animate-spin" size={30} />}
           {status === "success" && <Check size={32} />}

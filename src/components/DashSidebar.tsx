@@ -204,14 +204,14 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(245,215,140,0.9),transparent)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(225,166,255,0.9),transparent)]" />
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(183,44,255,0.06),transparent_30%)]" />
 
         <div className="relative border-b border-white/10 p-4">
           <div className="flex items-center justify-between">
           <Link href={logoHref} onClick={onClose} className="inline-flex items-center gap-2 no-underline">
             <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-[8px] bg-black">
-              <img src="/brand/elite-modell-source.png" alt="Elite Modell" className="h-full w-full object-contain" />
+              <img src="/brand/elite-modell-purple.svg" alt="Elite Modell" className="h-full w-full object-contain" />
             </span>
             <span className="text-xl font-black tracking-[-0.02em]">
               <span className="bg-[linear-gradient(135deg,#f4d7ff,#b72cff_30%,#e1a6ff_58%,#6900a3)] bg-clip-text text-transparent">

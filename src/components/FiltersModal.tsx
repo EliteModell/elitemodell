@@ -30,9 +30,9 @@ function Tag({ label, active, onClick }: { label: string; active: boolean; onCli
   return (
     <button onClick={onClick} style={{
       padding: "7px 14px", borderRadius: 20,
-      border: `1.5px solid ${active ? GOLD : "#1e293b"}`,
+      border: `1.5px solid ${active ? GOLD : "#2d1d35"}`,
       background: active ? GOLD_DIM : "transparent",
-      color: active ? "#f1f5f9" : "#64748b",
+      color: active ? "#f8f5fa" : "#968a9e",
       fontSize: 13, cursor: "pointer", transition: "all 0.15s", fontWeight: active ? 600 : 400,
     }}>
       {label}
@@ -65,7 +65,7 @@ function SectionTitle({ children }: { children: string }) {
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ width: 28, height: 2, background: GOLD, borderRadius: 2, marginBottom: 8 }} />
-      <h3 style={{ color: "#f1f5f9", fontSize: 14, fontWeight: 700, margin: 0, fontFamily: PLAYFAIR }}>{children}</h3>
+      <h3 style={{ color: "#f8f5fa", fontSize: 14, fontWeight: 700, margin: 0, fontFamily: PLAYFAIR }}>{children}</h3>
     </div>
   );
 }
@@ -112,26 +112,26 @@ export default function FiltersModal({ onClose, onApply }: Props) {
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(4,10,20,0.92)", padding: 16, backdropFilter: "blur(6px)" }}>
-      <div style={{ background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 20, width: "100%", maxWidth: 820, maxHeight: "92vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 32px 80px rgba(0,0,0,0.6)" }}>
+      <div style={{ background: "#0f0a13", border: `1px solid ${GOLD_MID}`, borderRadius: 20, width: "100%", maxWidth: 820, maxHeight: "92vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 32px 80px rgba(0,0,0,0.6)" }}>
 
         {/* Linha dourada no topo */}
         <div style={{ height: 2, background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 24px", borderBottom: `1px solid ${GOLD_DIM}` }}>
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#f1f5f9", fontFamily: PLAYFAIR }}>Filtros avançados</h2>
-          <button onClick={onClose} style={{ background: "rgba(183,44,255,0.08)", border: `1px solid ${GOLD_DIM}`, color: "#94a3b8", cursor: "pointer", width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✕</button>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#f8f5fa", fontFamily: PLAYFAIR }}>Filtros avançados</h2>
+          <button onClick={onClose} style={{ background: "rgba(183,44,255,0.08)", border: `1px solid ${GOLD_DIM}`, color: "#b9adbf", cursor: "pointer", width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✕</button>
         </div>
 
         <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
           {/* Sidebar */}
-          <div style={{ width: 190, borderRight: `1px solid ${GOLD_DIM}`, padding: "12px 0", overflowY: "auto", flexShrink: 0, background: "#08101e" }}>
+          <div style={{ width: 190, borderRight: `1px solid ${GOLD_DIM}`, padding: "12px 0", overflowY: "auto", flexShrink: 0, background: "#0b0710" }}>
             {sections.map((s) => (
               <button key={s.id} onClick={() => setSection(s.id)} style={{
                 width: "100%", padding: "11px 20px", textAlign: "left",
                 background: section === s.id ? GOLD_DIM : "transparent",
                 border: "none", borderLeft: `3px solid ${section === s.id ? GOLD : "transparent"}`,
-                color: section === s.id ? "#f1f5f9" : "#475569",
+                color: section === s.id ? "#f8f5fa" : "#aaa0b2",
                 fontSize: 13, fontWeight: section === s.id ? 700 : 400, cursor: "pointer", transition: "all 0.15s",
               }}>
                 {s.label}
@@ -240,15 +240,15 @@ export default function FiltersModal({ onClose, onApply }: Props) {
         </div>
 
         {/* Footer */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderTop: `1px solid ${GOLD_DIM}`, background: "#08101e" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderTop: `1px solid ${GOLD_DIM}`, background: "#0b0710" }}>
           <button onClick={() => setFilters(defaultFilters)}
-            style={{ background: "none", border: "none", color: "#475569", fontSize: 14, cursor: "pointer", fontWeight: 500, transition: "color 0.2s" }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#94a3b8")}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#475569")}>
+            style={{ background: "none", border: "none", color: "#aaa0b2", fontSize: 14, cursor: "pointer", fontWeight: 500, transition: "color 0.2s" }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#b9adbf")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#aaa0b2")}>
             Limpar filtros
           </button>
           <button onClick={() => { onApply(filters); onClose(); }}
-            style={{ padding: "11px 32px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: PLAYFAIR, transition: "background 0.2s" }}
+            style={{ padding: "11px 32px", background: GOLD, color: "#08050b", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: PLAYFAIR, transition: "background 0.2s" }}
             onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#c75aff")}
             onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = GOLD)}>
             Ver resultados

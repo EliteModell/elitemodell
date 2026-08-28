@@ -355,7 +355,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                 textDecoration: "none",
                 background: active ? "rgba(183,44,255,0.22)" : "rgba(255,255,255,0.03)",
                 border: active ? "1px solid rgba(183,44,255,0.5)" : "1px solid rgba(255,255,255,0.08)",
-                color: active ? "#e1a6ff" : "#94a3b8",
+                color: active ? "#e1a6ff" : "#b9adbf",
               }}
             >
               {item === "ALL" ? "Todos" : statusLabel[item] ?? item}
@@ -378,15 +378,15 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
           const accent =
             pro.status === "ACTIVE" ? "#22c55e" :
             pro.status === "REJECTED" || pro.status === "SUSPENDED" ? "#ef4444" :
-            pro.status === "PENDING_REVIEW" ? "#b72cff" : "#475569";
+            pro.status === "PENDING_REVIEW" ? "#b72cff" : "#aaa0b2";
 
           const kycColor =
             (pro.kycStatus ?? "").toUpperCase() === "APPROVED" ? "#22c55e" :
             (pro.kycStatus ?? "").toUpperCase() === "REJECTED" ? "#ef4444" :
-            pro.kycSessionId ? "#b72cff" : "#475569";
+            pro.kycSessionId ? "#b72cff" : "#aaa0b2";
 
           const label = (text: string) => (
-            <span style={{ fontSize: 11, color: "#64748b", display: "block", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>{text}</span>
+            <span style={{ fontSize: 11, color: "#968a9e", display: "block", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>{text}</span>
           );
 
           return (
@@ -421,7 +421,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                     <Link href={`/profissionais/${pro.slug}`} style={{ color: "#fff", fontWeight: 900, fontSize: 15, textDecoration: "none" }}>
                       {pro.displayName || "(sem nome)"}
                     </Link>
-                    <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>
+                    <div style={{ color: "#b9adbf", fontSize: 12, marginTop: 2 }}>
                       {[pro.city, pro.state].filter(Boolean).join(", ") || "—"} · {pro.escortCategory ?? "sem categoria"}
                     </div>
                   </div>
@@ -435,7 +435,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                   }}>
                     KYC: {kycProviderLabel(pro.kycProvider, pro.kycSessionId)} · {translatedTechnicalStatus(pro.kycStatus)}
                   </span>
-                  <span style={{ fontSize: 11, color: "#475569" }}>
+                  <span style={{ fontSize: 11, color: "#aaa0b2" }}>
                     Cadastro: {pro.createdAt.toLocaleDateString("pt-BR")}
                   </span>
                 </div>
@@ -449,16 +449,16 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
 
                   {/* Contato + KYC + Pendências */}
                   <div style={{ padding: "20px 24px", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
-                    <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#475569", textTransform: "uppercase" }}>Contato</p>
-                    <div style={{ fontSize: 14, color: "#e2e8f0", marginBottom: 16, lineHeight: 1.7 }}>
+                    <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#aaa0b2", textTransform: "uppercase" }}>Contato</p>
+                    <div style={{ fontSize: 14, color: "#e9e1ed", marginBottom: 16, lineHeight: 1.7 }}>
                       <div>{pro.user.email || "—"}</div>
-                      <div style={{ color: "#94a3b8" }}>{pro.whatsapp ?? pro.user.phone ?? "—"}</div>
+                      <div style={{ color: "#b9adbf" }}>{pro.whatsapp ?? pro.user.phone ?? "—"}</div>
                     </div>
 
-                    <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#475569", textTransform: "uppercase" }}>KYC</p>
-                    <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 16, lineHeight: 1.7 }}>
+                    <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#aaa0b2", textTransform: "uppercase" }}>KYC</p>
+                    <div style={{ fontSize: 13, color: "#b9adbf", marginBottom: 16, lineHeight: 1.7 }}>
                       {pro.kycSessionId && (
-                        <div style={{ fontFamily: "monospace", fontSize: 11, color: "#475569" }}>
+                        <div style={{ fontFamily: "monospace", fontSize: 11, color: "#aaa0b2" }}>
                           {pro.kycSessionId.slice(0, 20)}…
                         </div>
                       )}
@@ -511,7 +511,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
 
                   {/* Métricas + Bio + Acesso */}
                   <div style={{ padding: "20px 24px" }}>
-                    <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#475569", textTransform: "uppercase" }}>Perfil & Métricas</p>
+                    <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#aaa0b2", textTransform: "uppercase" }}>Perfil & Métricas</p>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px", fontSize: 13, marginBottom: 18 }}>
                       {([
                         ["Fotos", pro.photos.length, pro.photos.length === 0],
@@ -524,19 +524,19 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                         ["Boost", pro.boostActive ? "Ativo" : "Off", false],
                       ] as [string, string | number, boolean][]).map(([lbl, val, warn]) => (
                         <div key={lbl}>
-                          <span style={{ color: "#64748b", fontSize: 12 }}>{lbl} </span>
-                          <span style={{ fontWeight: 800, color: warn ? "#ef4444" : lbl === "Boost" && pro.boostActive ? "#b72cff" : "#e2e8f0" }}>
+                          <span style={{ color: "#968a9e", fontSize: 12 }}>{lbl} </span>
+                          <span style={{ fontWeight: 800, color: warn ? "#ef4444" : lbl === "Boost" && pro.boostActive ? "#b72cff" : "#e9e1ed" }}>
                             {String(val)}
                           </span>
                         </div>
                       ))}
                     </div>
 
-                    <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#475569", textTransform: "uppercase" }}>Bio</p>
+                    <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#aaa0b2", textTransform: "uppercase" }}>Bio</p>
                     <div style={{ fontSize: 13, marginBottom: 16 }}>
-                      <span style={{ color: "#64748b" }}>{pro.bio.length} caracteres</span>
+                      <span style={{ color: "#968a9e" }}>{pro.bio.length} caracteres</span>
                       {pro.bio.trim().length > 0 ? (
-                        <p style={{ margin: "4px 0 0", color: "#94a3b8", lineHeight: 1.6, fontSize: 13 }}>
+                        <p style={{ margin: "4px 0 0", color: "#b9adbf", lineHeight: 1.6, fontSize: 13 }}>
                           "{pro.bio.trim().slice(0, 120)}{pro.bio.trim().length > 120 ? "…" : ""}"
                         </p>
                       ) : (
@@ -544,14 +544,14 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                       )}
                     </div>
 
-                    <p style={{ margin: "0 0 4px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#475569", textTransform: "uppercase" }}>Acesso</p>
-                    <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6 }}>
+                    <p style={{ margin: "0 0 4px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#aaa0b2", textTransform: "uppercase" }}>Acesso</p>
+                    <div style={{ fontSize: 13, color: "#b9adbf", lineHeight: 1.6 }}>
                       {pro.accessGrandfathered
                         ? "Legado — sem bloqueio"
                         : pro.freeAccessEndsAt
                           ? `Gratuito até ${pro.freeAccessEndsAt.toLocaleDateString("pt-BR")}`
                           : "Inicia na aprovação"}
-                      <div style={{ fontSize: 12, color: "#475569", marginTop: 4 }}>
+                      <div style={{ fontSize: 12, color: "#aaa0b2", marginTop: 4 }}>
                         {pro.hidePhone ? "Tel oculto" : "Tel visível"} · {pro.hideAge ? "Idade oculta" : "Idade visível"}
                         {pro.listingPhoneUntil && pro.listingPhoneUntil > now
                           ? ` · Listagem ativa até ${pro.listingPhoneUntil.toLocaleDateString("pt-BR")}`
@@ -563,7 +563,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
 
                 {/* ── Painel de Ações (largura fixa) ── */}
                 <div style={{ width: 280, flexShrink: 0, padding: "20px 20px" }}>
-                  <p style={{ margin: "0 0 14px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#475569", textTransform: "uppercase" }}>Ações</p>
+                  <p style={{ margin: "0 0 14px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#aaa0b2", textTransform: "uppercase" }}>Ações</p>
                   <form action={reviewProfessional} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     <input type="hidden" name="id" value={pro.id} />
 
@@ -581,7 +581,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                         background: canApprove
                           ? "linear-gradient(135deg, #15803d, #22c55e)"
                           : "rgba(255,255,255,0.05)",
-                        color: canApprove ? "#fff" : "#475569",
+                        color: canApprove ? "#fff" : "#aaa0b2",
                         boxShadow: canApprove ? "0 4px 16px rgba(34,197,94,0.25)" : "none",
                       }}
                     >
@@ -595,7 +595,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                       style={{
                         background: "rgba(255,255,255,0.04)",
                         border: "1px solid rgba(255,255,255,0.12)",
-                        borderRadius: 8, color: "#e2e8f0",
+                        borderRadius: 8, color: "#e9e1ed",
                         padding: "10px 12px", fontSize: 13,
                         minHeight: 64, resize: "vertical",
                         width: "100%", boxSizing: "border-box",
@@ -643,7 +643,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
         })}
 
         {!professionals.length && (
-          <div style={{ textAlign: "center", padding: "48px 20px", color: "#475569", fontSize: 14 }}>
+          <div style={{ textAlign: "center", padding: "48px 20px", color: "#aaa0b2", fontSize: 14 }}>
             Nenhuma profissional encontrada para este filtro.
           </div>
         )}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
+import { BrandMark } from "@/components/BrandMark";
 
 const GOLD = "#b72cff";
 const CONSENT_KEY = "elite_modell_adult_consent_session";
@@ -115,8 +116,7 @@ export default function AgeGate() {
 
         <div className="age-content">
           <div className="age-logo" aria-label="Elite Modell">
-            <span>elite</span>
-            <strong>modell</strong>
+            <BrandMark priority />
           </div>
 
           <div className="adult-badge" aria-hidden="true">
@@ -173,7 +173,7 @@ export default function AgeGate() {
           border: 1px solid rgba(183, 44, 255, 0.28);
           border-radius: 26px;
           background:
-            radial-gradient(circle at 50% 0%, rgba(245, 184, 59, 0.10), transparent 36%),
+            radial-gradient(circle at 50% 0%, rgba(213, 108, 255, 0.10), transparent 36%),
             linear-gradient(180deg, rgba(20, 20, 20, 0.98), rgba(8, 8, 9, 0.99));
           box-shadow: 0 34px 100px rgba(0, 0, 0, 0.72), 0 0 54px rgba(183, 44, 255, 0.10);
           outline: none;
@@ -190,19 +190,15 @@ export default function AgeGate() {
         }
 
         .age-logo {
-          display: inline-flex;
-          align-items: baseline;
-          gap: 1px;
+          display: inline-grid;
+          align-items: center;
+          width: min(208px, 64vw);
           margin-bottom: 24px;
-          padding: 9px 18px;
-          border: 1px solid rgba(183, 44, 255, 0.25);
-          border-radius: 999px;
-          background: rgba(11, 11, 13, 0.86);
+          padding: 8px 14px;
+          border: 1px solid rgba(183, 44, 255, 0.28);
+          border-radius: 18px;
+          background: rgba(11, 8, 15, 0.86);
           box-shadow: 0 16px 42px rgba(0, 0, 0, 0.28);
-          font-size: 19px;
-          line-height: 1;
-          font-weight: 950;
-          letter-spacing: 0;
         }
 
         .age-logo span {
@@ -225,7 +221,7 @@ export default function AgeGate() {
           min-width: 96px;
           min-height: 54px;
           margin: 0 auto 18px;
-          border: 1px solid rgba(245, 184, 59, 0.58);
+          border: 1px solid rgba(213, 108, 255, 0.58);
           border-radius: 999px;
           background: rgba(183, 44, 255, 0.09);
           color: #e1a6ff;
@@ -269,7 +265,7 @@ export default function AgeGate() {
         .age-intro a:focus-visible,
         .continue-button:focus-visible,
         .deny-button:focus-visible {
-          outline: 3px solid rgba(245, 184, 59, 0.46);
+          outline: 3px solid rgba(213, 108, 255, 0.46);
           outline-offset: 3px;
         }
 

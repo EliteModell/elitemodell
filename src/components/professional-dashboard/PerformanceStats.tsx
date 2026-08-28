@@ -72,7 +72,7 @@ export function PerformanceStats({ snapshots }: { snapshots: Record<PerformanceP
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.label} className="min-h-[140px] rounded-[18px] border border-[#b72cff]/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.045),rgba(214,168,58,0.025))] p-4">
+            <div key={stat.label} className="min-h-[140px] rounded-[18px] border border-[#b72cff]/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.045),rgba(183,44,255,0.025))] p-4">
               <div className="mb-4 grid h-10 w-10 place-items-center rounded-[14px] border border-[#b72cff]/24 bg-[#b72cff]/10 text-[#e1a6ff]">
                 <Icon className="h-4 w-4" />
               </div>

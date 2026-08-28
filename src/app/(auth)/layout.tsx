@@ -5,7 +5,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       style={{
         minHeight: "100dvh",
         background:
-          "radial-gradient(circle at 20% 10%, rgba(214,168,58,0.16), transparent 32%), radial-gradient(circle at 85% 35%, rgba(214,168,58,0.10), transparent 34%), #050505",
+          "radial-gradient(circle at 20% 10%, rgba(183,44,255,0.16), transparent 32%), radial-gradient(circle at 85% 35%, rgba(183,44,255,0.10), transparent 34%), #050505",
         padding: "0",
         position: "relative",
         overflowX: "hidden",

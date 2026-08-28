@@ -97,19 +97,19 @@ export default function ChatBox({ bookingId, title }: Props) {
   }
 
   return (
-    <div style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", height: 480 }}>
+    <div style={{ background: "#0f0a13", border: `1px solid ${GOLD_DIM}`, borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", height: 480 }}>
       {/* Header */}
-      <div style={{ padding: "14px 18px", borderBottom: `1px solid ${GOLD_DIM}`, background: "#060e1b" }}>
-        <p style={{ margin: 0, fontSize: 11, color: "#475569", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Chat da reserva</p>
-        <p style={{ margin: "2px 0 0", fontSize: 14, color: "#f1f5f9", fontWeight: 700 }}>{title ?? "Conversa"}</p>
+      <div style={{ padding: "14px 18px", borderBottom: `1px solid ${GOLD_DIM}`, background: "#08050b" }}>
+        <p style={{ margin: 0, fontSize: 11, color: "#aaa0b2", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Chat da reserva</p>
+        <p style={{ margin: "2px 0 0", fontSize: 14, color: "#f8f5fa", fontWeight: 700 }}>{title ?? "Conversa"}</p>
       </div>
 
       {/* Messages */}
       <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
         {loading ? (
-          <div style={{ color: "#475569", fontSize: 13, textAlign: "center", margin: "auto" }}>Carregando...</div>
+          <div style={{ color: "#aaa0b2", fontSize: 13, textAlign: "center", margin: "auto" }}>Carregando...</div>
         ) : messages.length === 0 ? (
-          <div style={{ color: "#475569", fontSize: 13, textAlign: "center", margin: "auto", padding: 16 }}>
+          <div style={{ color: "#aaa0b2", fontSize: 13, textAlign: "center", margin: "auto", padding: 16 }}>
             Nenhuma mensagem ainda.<br />Inicie a conversa abaixo.
           </div>
         ) : (
@@ -120,8 +120,8 @@ export default function ChatBox({ bookingId, title }: Props) {
                 <div style={{
                   maxWidth: "78%",
                   padding: "9px 14px",
-                  background: mine ? GOLD : "#0f172a",
-                  color: mine ? "#060e1b" : "#f1f5f9",
+                  background: mine ? GOLD : "#120b17",
+                  color: mine ? "#08050b" : "#f8f5fa",
                   borderRadius: 14,
                   borderBottomRightRadius: mine ? 4 : 14,
                   borderBottomLeftRadius: mine ? 14 : 4,
@@ -132,7 +132,7 @@ export default function ChatBox({ bookingId, title }: Props) {
                 }}>
                   {m.content}
                 </div>
-                <span style={{ fontSize: 10, color: "#475569", padding: "0 6px" }}>
+                <span style={{ fontSize: 10, color: "#aaa0b2", padding: "0 6px" }}>
                   {!mine && (m.sender?.name?.split(" ")[0] ?? "")} · {fmtTime(m.createdAt)}
                 </span>
               </div>
@@ -142,15 +142,15 @@ export default function ChatBox({ bookingId, title }: Props) {
       </div>
 
       {/* Input */}
-      <div style={{ borderTop: `1px solid ${GOLD_DIM}`, padding: 12, display: "flex", gap: 8, background: "#060e1b" }}>
+      <div style={{ borderTop: `1px solid ${GOLD_DIM}`, padding: 12, display: "flex", gap: 8, background: "#08050b" }}>
         <input value={input} onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
           placeholder="Digite uma mensagem..." disabled={sending}
-          style={{ flex: 1, padding: "10px 14px", background: "#0f172a", border: "1px solid #1e293b", borderRadius: 22, color: "#f1f5f9", fontSize: 13, outline: "none" }}
+          style={{ flex: 1, padding: "10px 14px", background: "#120b17", border: "1px solid #2d1d35", borderRadius: 22, color: "#f8f5fa", fontSize: 13, outline: "none" }}
           onFocus={e => (e.target.style.borderColor = GOLD)}
-          onBlur={e => (e.target.style.borderColor = "#1e293b")} />
+          onBlur={e => (e.target.style.borderColor = "#2d1d35")} />
         <button onClick={send} disabled={!input.trim() || sending}
-          style={{ padding: "0 18px", background: !input.trim() || sending ? "rgba(183,44,255,0.3)" : GOLD, color: "#060e1b", border: "none", borderRadius: 22, fontSize: 13, fontWeight: 800, cursor: !input.trim() || sending ? "not-allowed" : "pointer" }}>
+          style={{ padding: "0 18px", background: !input.trim() || sending ? "rgba(183,44,255,0.3)" : GOLD, color: "#08050b", border: "none", borderRadius: 22, fontSize: 13, fontWeight: 800, cursor: !input.trim() || sending ? "not-allowed" : "pointer" }}>
           {sending ? "..." : "Enviar"}
         </button>
       </div>

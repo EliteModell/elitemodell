@@ -53,7 +53,7 @@ export default async function AdminUploadModerationPage() {
       <div style={{ display: "grid", gap: 14 }}>
         {assets.length === 0 ? (
           <AdminPanel>
-            <p style={{ margin: 0, color: "#94a3b8" }}>Nenhum upload aguardando análise.</p>
+            <p style={{ margin: 0, color: "#b9adbf" }}>Nenhum upload aguardando análise.</p>
           </AdminPanel>
         ) : assets.map((asset) => (
           <AdminPanel key={asset.id}>
@@ -76,7 +76,7 @@ export default async function AdminUploadModerationPage() {
                   <StatusPill tone={tone(asset.moderationStatus)}>Conteúdo: {asset.moderationStatus}</StatusPill>
                 </div>
                 <h2 style={{ color: "#fff", fontSize: 16, margin: "0 0 8px", overflowWrap: "anywhere" }}>{asset.originalName}</h2>
-                <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.6, margin: "0 0 12px" }}>
+                <p style={{ color: "#b9adbf", fontSize: 13, lineHeight: 1.6, margin: "0 0 12px" }}>
                   {asset.folder} · {asset.detectedMimeType} · {(asset.sizeBytes / 1024 / 1024).toFixed(2)} MB
                   <br />
                   AV: {asset.malwareProvider || "pendente"} · Moderação: {asset.moderationProvider || "pendente"}

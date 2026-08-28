@@ -550,7 +550,7 @@ function BuscarContent() {
         .stories-strip { display: flex; gap: 12px; overflow-x: auto; padding: 2px 0 18px; margin-bottom: 6px; -webkit-overflow-scrolling: touch; }
         .stories-strip::-webkit-scrollbar, .filtros-scroll::-webkit-scrollbar, .action-scroll::-webkit-scrollbar { display: none; }
         .story-item { width: 72px; flex: 0 0 auto; color: #d9d1c3; text-align: center; text-decoration: none; }
-        .story-avatar { width: 64px; height: 64px; margin: 0 auto 7px; border-radius: 999px; padding: 2px; background: linear-gradient(135deg, #f6d979, #b72cff, #6f4b10); position: relative; }
+        .story-avatar { width: 64px; height: 64px; margin: 0 auto 7px; border-radius: 999px; padding: 2px; background: linear-gradient(135deg, #e1a6ff, #b72cff, #6900a3); position: relative; }
         .story-avatar-inner { position: relative; width: 100%; height: 100%; border-radius: 999px; overflow: hidden; background: #151515; border: 2px solid #050505; }
         .dynamic-title { margin: 0 0 16px; max-width: 920px; color: #f4f1ea; font-family: ${PLAYFAIR}; font-size: clamp(1.75rem, 5vw, 3.7rem); line-height: 1.02; letter-spacing: 0; }
         .dynamic-title strong { color: ${GOLD}; font-weight: 900; }
@@ -558,8 +558,8 @@ function BuscarContent() {
         .filter-chip {
           min-height: 36px;
           padding: 0 14px;
-          background: #0f172a;
-          border: 1px solid #1e293b;
+          background: #120b17;
+          border: 1px solid #2d1d35;
           border-radius: 999px;
           color: #7d8795;
           font-size: 12px;
@@ -568,7 +568,7 @@ function BuscarContent() {
           transition: all 0.2s;
           flex-shrink: 0;
         }
-        .filter-chip.active { background: rgba(183,44,255,0.15); border-color: ${GOLD}; color: #f1f5f9; font-weight: 800; }
+        .filter-chip.active { background: rgba(183,44,255,0.15); border-color: ${GOLD}; color: #f8f5fa; font-weight: 800; }
         .action-select {
           min-height: 38px;
           border-radius: 999px;
@@ -683,7 +683,7 @@ function BuscarContent() {
         }
         .profiles-empty-actions button, .coming-actions .primary {
           border: 1px solid transparent;
-          background: linear-gradient(135deg, #f6d979, #b72cff 50%, #a57920);
+          background: linear-gradient(135deg, #e1a6ff, #b72cff 50%, #6900a3);
           color: #080704;
         }
         .profiles-empty-actions a, .coming-actions .secondary {
@@ -802,7 +802,7 @@ function BuscarContent() {
             <div style={{ display: "flex", marginBottom: 16, borderBottom: `1px solid ${GOLD_DIM}`, overflowX: "auto" }}>
               {([["mulheres", "Mulheres"], ["trans", "Trans"], ["homens", "Homens"]] as const).map(([tab, label]) => (
                 <button key={tab} onClick={() => setCategory(tab)}
-                  style={{ padding: "11px 20px", border: "none", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 14, color: subTab === tab ? "#f1f5f9" : "#64748b", borderBottom: `2px solid ${subTab === tab ? GOLD : "transparent"}`, transition: "all 0.2s", whiteSpace: "nowrap" }}>
+                  style={{ padding: "11px 20px", border: "none", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 14, color: subTab === tab ? "#f8f5fa" : "#968a9e", borderBottom: `2px solid ${subTab === tab ? GOLD : "transparent"}`, transition: "all 0.2s", whiteSpace: "nowrap" }}>
                   {label}
                 </button>
               ))}
@@ -813,7 +813,7 @@ function BuscarContent() {
                 const active = filtros.has(filter.id);
                 return (
                   <button key={filter.id} type="button" onClick={() => toggleFiltro(filter.id)} className={`filter-chip ${active ? "active" : ""}`}>
-                    {filter.id === "online" && <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: active ? "#22c55e" : "#334155", marginRight: 6, verticalAlign: "middle" }} />}
+                    {filter.id === "online" && <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: active ? "#22c55e" : "#66566f", marginRight: 6, verticalAlign: "middle" }} />}
                     {filter.label}
                   </button>
                 );
@@ -838,7 +838,7 @@ function BuscarContent() {
               </label>
             </div>
 
-            <p style={{ fontSize: 12, color: "#64748b", marginBottom: 14 }}>
+            <p style={{ fontSize: 12, color: "#968a9e", marginBottom: 14 }}>
               {loading ? "Buscando..." : `${lista.length} perfil${lista.length !== 1 ? "is" : ""} encontrado${lista.length !== 1 ? "s" : ""}`}
             </p>
 
@@ -972,7 +972,7 @@ function LocationModal({
             type="button"
             onClick={onApply}
             disabled={!draft && !draftVirtual}
-            style={{ minHeight: 46, borderRadius: 999, border: "none", background: !draft && !draftVirtual ? "#40392c" : `linear-gradient(135deg, #f6d979, ${GOLD} 52%, #a57920)`, color: "#080704", fontWeight: 900, cursor: !draft && !draftVirtual ? "not-allowed" : "pointer" }}
+            style={{ minHeight: 46, borderRadius: 999, border: "none", background: !draft && !draftVirtual ? "#24152c" : `linear-gradient(135deg, #e1a6ff, ${GOLD} 52%, #6900a3)`, color: "#080704", fontWeight: 900, cursor: !draft && !draftVirtual ? "not-allowed" : "pointer" }}
           >
             Buscar acompanhantes
           </button>
@@ -1032,39 +1032,39 @@ function ProfileCard({ profile }: { profile: CardPerfil }) {
         <div className="perfil-info">
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: profile.online ? "#22c55e" : "#475569", display: "inline-block", flexShrink: 0 }} />
-              <span style={{ fontSize: 11, color: profile.online ? "#22c55e" : "#64748b", fontWeight: 600 }}>{profile.online ? "Online agora" : "Offline"}</span>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: profile.online ? "#22c55e" : "#aaa0b2", display: "inline-block", flexShrink: 0 }} />
+              <span style={{ fontSize: 11, color: profile.online ? "#22c55e" : "#968a9e", fontWeight: 600 }}>{profile.online ? "Online agora" : "Offline"}</span>
             </div>
             <span style={{ fontSize: 14, color: GOLD, fontWeight: 800, fontFamily: PLAYFAIR }}>
               {profile.preco ? `R$${profile.preco}/h` : "Consultar"}
             </span>
           </div>
 
-          <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: 18, color: "#f1f5f9", fontFamily: PLAYFAIR, lineHeight: 1.2 }}>{profile.nome}</p>
-          <p style={{ margin: "0 0 6px", fontSize: 12, color: "#64748b", display: "flex", alignItems: "center", gap: 4 }}>
-            <LocationIcon size={11} color="#64748b" />
+          <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: 18, color: "#f8f5fa", fontFamily: PLAYFAIR, lineHeight: 1.2 }}>{profile.nome}</p>
+          <p style={{ margin: "0 0 6px", fontSize: 12, color: "#968a9e", display: "flex", alignItems: "center", gap: 4 }}>
+            <LocationIcon size={11} color="#968a9e" />
             {profile.cidade}
           </p>
-          <p style={{ margin: "0 0 8px", fontSize: 12, color: "#64748b", lineHeight: 1.55, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{profile.bio}</p>
+          <p style={{ margin: "0 0 8px", fontSize: 12, color: "#968a9e", lineHeight: 1.55, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{profile.bio}</p>
 
           <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
             <span style={{ color: "#f59e0b", fontSize: 13 }}>★</span>
             <span style={{ fontSize: 13, color: "#f59e0b", fontWeight: 700 }}>{profile.avaliacao}</span>
-            <span style={{ fontSize: 11, color: "#64748b" }}>({profile.total} avaliações)</span>
+            <span style={{ fontSize: 11, color: "#968a9e" }}>({profile.total} avaliações)</span>
           </div>
 
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
             {profile.idade && (
-              <span style={{ fontSize: 10, background: "rgba(255,255,255,0.04)", border: "1px solid #1e293b", color: "#64748b", padding: "3px 8px", borderRadius: 8 }}>{profile.idade} anos</span>
+              <span style={{ fontSize: 10, background: "rgba(255,255,255,0.04)", border: "1px solid #2d1d35", color: "#968a9e", padding: "3px 8px", borderRadius: 8 }}>{profile.idade} anos</span>
             )}
             {profile.local && (
-              <span style={{ fontSize: 10, background: "rgba(255,255,255,0.04)", border: "1px solid #1e293b", color: "#64748b", padding: "3px 8px", borderRadius: 8 }}>{profile.local}</span>
+              <span style={{ fontSize: 10, background: "rgba(255,255,255,0.04)", border: "1px solid #2d1d35", color: "#968a9e", padding: "3px 8px", borderRadius: 8 }}>{profile.local}</span>
             )}
           </div>
 
           <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: profile.contactAvailable ? 10 : 0 }}>
             {profile.servicos.slice(0, 3).map((service) => (
-              <span key={service} style={{ fontSize: 10, background: GOLD_DIM, border: "1px solid rgba(183,44,255,0.15)", color: "#94a3b8", padding: "3px 8px", borderRadius: 10 }}>{service}</span>
+              <span key={service} style={{ fontSize: 10, background: GOLD_DIM, border: "1px solid rgba(183,44,255,0.15)", color: "#b9adbf", padding: "3px 8px", borderRadius: 10 }}>{service}</span>
             ))}
           </div>
 

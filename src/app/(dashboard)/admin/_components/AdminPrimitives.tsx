@@ -64,7 +64,7 @@ export function AdminPanel({ children }: { children: React.ReactNode }) {
 }
 
 export function StatusPill({ children, tone = "neutral" }: { children: React.ReactNode; tone?: "neutral" | "warning" | "success" | "danger" }) {
-  const color = tone === "warning" ? adminColors.gold : tone === "success" ? "#22c55e" : tone === "danger" ? "#ef4444" : "#94a3b8";
+  const color = tone === "warning" ? adminColors.gold : tone === "success" ? "#22c55e" : tone === "danger" ? "#ef4444" : "#b9adbf";
   return (
     <span style={{ display: "inline-flex", alignItems: "center", border: `1px solid ${color}55`, background: `${color}16`, color, borderRadius: 999, padding: "5px 9px", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.8 }}>
       {children}

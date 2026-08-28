@@ -138,10 +138,8 @@ export default function CitySelectorScreen({
 
       <div className="client-city-wrap">
         <header className="client-city-header">
-          <span className="client-city-logo">
-            <span className="client-city-logo-gold">elite</span>
-            <span className="client-city-logo-white">modell</span>
-            <span className="client-city-logo-star">✦</span>
+          <span className="client-city-logo" aria-label="Elite Modell">
+            <Image src="/brand/elite-modell-purple.svg" alt="Elite Modell" width={720} height={210} priority style={{ width: 174, height: "auto" }} />
           </span>
           <button type="button" onClick={onClose} className="client-city-close" aria-label="Fechar">
             <X />
@@ -277,11 +275,11 @@ export default function CitySelectorScreen({
           {!noResults && !busy && visibleSuggestions.length === 0 && input.length < 2 && (
             <div className="space-y-[44px]">
               <div className="flex flex-wrap items-center gap-5 rounded-[18px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.32)] sm:flex-nowrap sm:p-7">
-                <div className="grid h-[82px] w-[82px] shrink-0 place-items-center rounded-[17px] bg-[#17130c]/88">
-                  <Diamond className="h-12 w-12 text-[#facc15]" strokeWidth={1.7} />
+                <div className="grid h-[82px] w-[82px] shrink-0 place-items-center rounded-[17px] bg-[#100a14]/88">
+                  <Diamond className="h-12 w-12 text-[#c451ff]" strokeWidth={1.7} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-[21px] font-black leading-tight text-[#facc15] sm:text-[24px]">Encontre perfis exclusivos</h2>
+                  <h2 className="text-[21px] font-black leading-tight text-[#c451ff] sm:text-[24px]">Encontre perfis exclusivos</h2>
                   <p className="mt-3 text-[15px] leading-[1.55] text-[#fffaf0]/60 sm:text-[18px]">
                     Explore acompanhantes na sua cidade com segurança e discrição.
                   </p>
@@ -289,15 +287,15 @@ export default function CitySelectorScreen({
                 <button
                   type="button"
                   onClick={() => setPremiumOpen(true)}
-                  className="flex min-h-[54px] w-full shrink-0 items-center justify-center gap-3 rounded-[12px] border border-[#facc15]/55 bg-[linear-gradient(135deg,rgba(250,204,21,0.34),rgba(104,74,18,0.78))] px-7 text-[16px] font-black text-[#facc15] shadow-[0_0_34px_rgba(250,204,21,0.14)] transition hover:brightness-110 active:scale-95 sm:min-h-[58px] sm:w-auto"
+                  className="flex min-h-[54px] w-full shrink-0 items-center justify-center gap-3 rounded-[12px] border border-[#c451ff]/55 bg-[linear-gradient(135deg,rgba(183,44,255,0.34),rgba(105,0,163,0.78))] px-7 text-[16px] font-black text-[#c451ff] shadow-[0_0_34px_rgba(183,44,255,0.14)] transition hover:brightness-110 active:scale-95 sm:min-h-[58px] sm:w-auto"
                 >
                   Seja Premium
-                  <Crown className="h-5 w-5 fill-[#facc15]/30" />
+                  <Crown className="h-5 w-5 fill-[#c451ff]/30" />
                 </button>
               </div>
               <div className="space-y-8 px-4">
                 <div className="flex items-center gap-5">
-                  <div className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-[16px] bg-[#17130c]/88 text-[#facc15]">
+                  <div className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-[16px] bg-[#100a14]/88 text-[#c451ff]">
                     <ShieldCheck className="h-7 w-7" />
                   </div>
                   <div>
@@ -307,7 +305,7 @@ export default function CitySelectorScreen({
                 </div>
                 <div className="h-px bg-white/10" />
                 <div className="flex items-center gap-5">
-                  <div className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-[16px] bg-[#17130c]/88 text-[#facc15]">
+                  <div className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-[16px] bg-[#100a14]/88 text-[#c451ff]">
                     <LockKeyhole className="h-7 w-7" />
                   </div>
                   <div>

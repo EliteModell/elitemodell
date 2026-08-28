@@ -287,7 +287,7 @@ export default async function AdminLegalPage() {
         )}
       />
       <AdminPanel>
-        <p style={{ color: "#cbd5e1", marginTop: 0 }}>
+        <p style={{ color: "#d8cedd", marginTop: 0 }}>
           Status disponiveis: {LEGAL_DOCUMENT_STATUSES.join(", ")}. A publicacao operacional nao representa aprovacao da advogada.
         </p>
         <p style={{ color: pending.length ? "#f59e0b" : "#22c55e" }}>
@@ -326,7 +326,7 @@ export default async function AdminLegalPage() {
                   <td style={tdStyle}>
                     <code>{version?.contentHash.slice(0, 16) ?? "-"}</code>
                     <br />
-                    <span style={{ color: "#94a3b8", fontSize: 12 }}>
+                    <span style={{ color: "#b9adbf", fontSize: 12 }}>
                       Criado: {version?.createdAt ? version.createdAt.toLocaleString("pt-BR") : "-"}<br />
                       Aprovado: {version?.approvedAt ? version.approvedAt.toLocaleString("pt-BR") : "-"}<br />
                       Publicado operacionalmente: {version?.publishedAt ? version.publishedAt.toLocaleString("pt-BR") : "-"}<br />
@@ -348,7 +348,7 @@ export default async function AdminLegalPage() {
                       </span>
                     ) : version ? (
                       <div style={{ display: "grid", gap: 8 }}>
-                        <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.5 }}>
+                        <div style={{ color: "#b9adbf", fontSize: 12, lineHeight: 1.5 }}>
                           Operacional: BRUNO MORAES DA ROCHA<br />
                           Empresa: Larissa de Campos Lacerda Souza<br />
                           Advogada: preencher na revisao

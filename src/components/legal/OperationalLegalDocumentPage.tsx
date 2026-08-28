@@ -24,7 +24,7 @@ export async function OperationalLegalDocumentPage({ documentKey }: { documentKe
   });
 
   return (
-    <main style={{ minHeight: "100vh", background: "#060607", color: "#f8fafc", padding: "72px 20px" }}>
+    <main style={{ minHeight: "100vh", background: "#060607", color: "#fbf7ff", padding: "72px 20px" }}>
       <section style={{ maxWidth: 920, margin: "0 auto" }}>
         <Link href="/" style={{ color: "#b72cff", textDecoration: "none", fontWeight: 800 }}>
           Voltar para Elite Modell
@@ -48,7 +48,7 @@ export async function OperationalLegalDocumentPage({ documentKey }: { documentKe
           <h1 style={{ margin: "14px 0 8px", fontSize: 40, lineHeight: 1.08 }}>
             {document.title}
           </h1>
-          <p style={{ margin: 0, color: "#cbd5e1", lineHeight: 1.7 }}>
+          <p style={{ margin: 0, color: "#d8cedd", lineHeight: 1.7 }}>
             Chave tecnica: <code>{document.key}</code> | Publico: {document.audience}
             {version ? ` | Versao: ${version.version}` : ""}
           </p>
@@ -111,14 +111,14 @@ export async function OperationalLegalDocumentPage({ documentKey }: { documentKe
 function Notice({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section style={{ borderTop: "1px solid rgba(255,255,255,.10)", paddingTop: 18, marginTop: 18 }}>
-      <h2 style={{ margin: "0 0 8px", fontSize: 18, color: "#f5d77a" }}>{title}</h2>
+      <h2 style={{ margin: "0 0 8px", fontSize: 18, color: "#e1a6ff" }}>{title}</h2>
       <p style={{ margin: 0, color: "#d9dee8", lineHeight: 1.7 }}>{children}</p>
     </section>
   );
 }
 
 const linkStyle: CSSProperties = {
-  color: "#f5d77a",
+  color: "#e1a6ff",
   textDecoration: "none",
   fontWeight: 800,
 };

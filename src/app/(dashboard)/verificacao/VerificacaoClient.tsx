@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { BrandMark } from "@/components/BrandMark";
 import {
   BadgeCheck,
   Clock,
@@ -14,7 +15,6 @@ import {
 } from "lucide-react";
 
 const GOLD = "#b72cff";
-const GOLD_GRADIENT = "linear-gradient(135deg, #f4d7ff 0%, #b72cff 22%, #e1a6ff 50%, #6900a3 100%)";
 
 type Status = "UNVERIFIED" | "PENDING_REVIEW" | "VERIFIED" | "REJECTED";
 
@@ -82,11 +82,8 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent 0%, #b72cff 30%, #e1a6ff 50%, #b72cff 70%, transparent 100%)" }} />
 
         {/* Logo */}
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <span style={{ fontWeight: 900, fontSize: 24, letterSpacing: "-0.5px" }}>
-            <span style={{ background: GOLD_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>elite</span>
-            <span style={{ color: "#f1f5f9" }}>modell</span>
-          </span>
+        <div style={{ width: 176, margin: "0 auto 32px" }}>
+          <BrandMark priority />
         </div>
 
         {/* Status: PENDING */}
@@ -95,20 +92,20 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
             <div style={{ display: "inline-grid", placeItems: "center", width: 64, height: 64, borderRadius: "50%", border: `1.5px solid ${GOLD}`, background: "rgba(183,44,255,0.08)", marginBottom: 20 }}>
               <Clock style={{ width: 28, height: 28, color: GOLD }} />
             </div>
-            <h1 style={{ color: "#f1f5f9", fontSize: 22, fontWeight: 900, margin: "0 0 12px" }}>Verificação em análise</h1>
-            <p style={{ color: "#64748b", fontSize: 14, lineHeight: 1.7, margin: "0 0 24px" }}>
+            <h1 style={{ color: "#f8f5fa", fontSize: 22, fontWeight: 900, margin: "0 0 12px" }}>Verificação em análise</h1>
+            <p style={{ color: "#968a9e", fontSize: 14, lineHeight: 1.7, margin: "0 0 24px" }}>
               Olá, {firstName(name)}. Sua solicitação foi recebida e está sendo analisada pela nossa equipe.
               Você será notificado assim que a verificação for concluída.
             </p>
             {submittedAt && (
-              <p style={{ color: "#475569", fontSize: 12 }}>
+              <p style={{ color: "#aaa0b2", fontSize: 12 }}>
                 Enviado em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeStyle: "short" }).format(new Date(submittedAt))}
               </p>
             )}
             <div style={{ marginTop: 28, padding: "14px 18px", background: "rgba(183,44,255,0.06)", border: "1px solid rgba(183,44,255,0.18)", borderRadius: 10, textAlign: "left" }}>
               <p style={{ color: "#b72cff", fontSize: 12, fontWeight: 800, letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 10 }}>O que acontece agora?</p>
               {["Nossa equipe analisa os dados em até 48h.", "Você recebe um email com o resultado.", "Aprovado: acesso completo liberado."].map((txt) => (
-                <p key={txt} style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.6, margin: "4px 0", display: "flex", gap: 8 }}>
+                <p key={txt} style={{ color: "#b9adbf", fontSize: 13, lineHeight: 1.6, margin: "4px 0", display: "flex", gap: 8 }}>
                   <ShieldCheck style={{ width: 14, height: 14, color: GOLD, flexShrink: 0, marginTop: 2 }} />
                   {txt}
                 </p>
@@ -123,14 +120,14 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
             <div style={{ display: "inline-grid", placeItems: "center", width: 64, height: 64, borderRadius: "50%", border: "1.5px solid #cc1f2f", background: "rgba(204,31,47,0.08)", marginBottom: 20 }}>
               <XCircle style={{ width: 28, height: 28, color: "#cc1f2f" }} />
             </div>
-            <h1 style={{ color: "#f1f5f9", fontSize: 22, fontWeight: 900, margin: "0 0 12px" }}>Verificação recusada</h1>
-            <p style={{ color: "#64748b", fontSize: 14, lineHeight: 1.7, margin: "0 0 24px" }}>
+            <h1 style={{ color: "#f8f5fa", fontSize: 22, fontWeight: 900, margin: "0 0 12px" }}>Verificação recusada</h1>
+            <p style={{ color: "#968a9e", fontSize: 14, lineHeight: 1.7, margin: "0 0 24px" }}>
               Sua verificação não foi aprovada.
               {rejectionReason ? ` Motivo: ${rejectionReason}` : " Entre em contato com o suporte para mais informações."}
             </p>
             <button
               onClick={() => setStep("info")}
-              style={{ width: "100%", padding: "13px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}
+              style={{ width: "100%", padding: "13px", background: GOLD, color: "#08050b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}
             >
               Tentar novamente
             </button>
@@ -144,8 +141,8 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
               <div style={{ display: "inline-grid", placeItems: "center", width: 64, height: 64, borderRadius: "50%", border: `1.5px solid ${GOLD}`, background: "rgba(183,44,255,0.08)", marginBottom: 20 }}>
                 <BadgeCheck style={{ width: 28, height: 28, color: GOLD }} />
               </div>
-              <h1 style={{ color: "#f1f5f9", fontSize: 22, fontWeight: 900, margin: "0 0 10px" }}>Confirme sua idade</h1>
-              <p style={{ color: "#64748b", fontSize: 14, lineHeight: 1.7, margin: 0 }}>
+              <h1 style={{ color: "#f8f5fa", fontSize: 22, fontWeight: 900, margin: "0 0 10px" }}>Confirme sua idade</h1>
+              <p style={{ color: "#968a9e", fontSize: 14, lineHeight: 1.7, margin: 0 }}>
                 Para manter a Elite Modell segura e em conformidade com a lei, precisamos confirmar que você é maior de 18 anos antes de liberar o acesso completo à plataforma.
               </p>
             </div>
@@ -158,18 +155,18 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
               ].map(({ icon, text }) => (
                 <div key={text} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "rgba(183,44,255,0.05)", border: "1px solid rgba(183,44,255,0.12)", borderRadius: 8 }}>
                   {icon}
-                  <p style={{ color: "#94a3b8", fontSize: 13, margin: 0 }}>{text}</p>
+                  <p style={{ color: "#b9adbf", fontSize: 13, margin: 0 }}>{text}</p>
                 </div>
               ))}
             </div>
 
             <button
               onClick={() => setStep("consent")}
-              style={{ width: "100%", padding: "13px", background: GOLD, color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer", marginBottom: 12 }}
+              style={{ width: "100%", padding: "13px", background: GOLD, color: "#08050b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer", marginBottom: 12 }}
             >
               Iniciar verificação
             </button>
-            <Link href="/privacy" style={{ display: "block", textAlign: "center", color: "#475569", fontSize: 13, textDecoration: "none" }}>
+            <Link href="/privacy" style={{ display: "block", textAlign: "center", color: "#aaa0b2", fontSize: 13, textDecoration: "none" }}>
               Ver política de privacidade →
             </Link>
           </div>
@@ -178,19 +175,19 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
         {/* Step: CONSENT */}
         {step === "consent" && (
           <div>
-            <h2 style={{ color: "#f1f5f9", fontSize: 20, fontWeight: 900, margin: "0 0 16px" }}>Consentimento de verificação</h2>
-            <p style={{ color: "#64748b", fontSize: 14, lineHeight: 1.7, marginBottom: 24 }}>
+            <h2 style={{ color: "#f8f5fa", fontSize: 20, fontWeight: 900, margin: "0 0 16px" }}>Consentimento de verificação</h2>
+            <p style={{ color: "#968a9e", fontSize: 14, lineHeight: 1.7, marginBottom: 24 }}>
               Para verificar sua identidade e maioridade, a Elite Modell solicitará seus dados conforme descrito abaixo. Leia com atenção antes de continuar.
             </p>
 
-            <div style={{ padding: "16px 18px", background: "rgba(15,23,42,0.6)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, marginBottom: 24, fontSize: 13, color: "#64748b", lineHeight: 1.7 }}>
-              <p style={{ color: "#94a3b8", fontWeight: 700, marginBottom: 8 }}>Dados coletados para verificação:</p>
+            <div style={{ padding: "16px 18px", background: "rgba(15,23,42,0.6)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, marginBottom: 24, fontSize: 13, color: "#968a9e", lineHeight: 1.7 }}>
+              <p style={{ color: "#b9adbf", fontWeight: 700, marginBottom: 8 }}>Dados coletados para verificação:</p>
               <ul style={{ margin: 0, paddingLeft: 18 }}>
                 <li>Confirmação de maioridade (+18 anos)</li>
                 <li>Aceitação dos Termos de Uso e Política de Privacidade</li>
                 <li>Registro de data, hora e versão dos termos aceitos</li>
               </ul>
-              <p style={{ marginTop: 12, color: "#475569" }}>
+              <p style={{ marginTop: 12, color: "#aaa0b2" }}>
                 Finalidade: confirmação de identidade, maioridade, segurança da plataforma e prevenção de fraudes.
                 Estes dados são tratados conforme a <Link href="/privacy" style={{ color: GOLD }}>Política de Privacidade</Link> da Elite Modell.
               </p>
@@ -203,7 +200,7 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
                 onChange={(e) => setAgreed(e.target.checked)}
                 style={{ marginTop: 3, accentColor: GOLD, width: 16, height: 16 }}
               />
-              <span style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.6 }}>
+              <span style={{ color: "#b9adbf", fontSize: 13, lineHeight: 1.6 }}>
                 Li e compreendi as informações acima. Consinto com a coleta e uso dos meus dados para verificação de maioridade e identidade, conforme a Política de Privacidade e os <Link href="/terms" style={{ color: GOLD }}>Termos de Uso</Link> da Elite Modell.
               </span>
             </label>
@@ -214,7 +211,7 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
               style={{
                 width: "100%", padding: "13px",
                 background: agreed ? GOLD : "rgba(183,44,255,0.25)",
-                color: "#060e1b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800,
+                color: "#08050b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800,
                 cursor: agreed ? "pointer" : "not-allowed", marginBottom: 12,
               }}
             >
@@ -222,7 +219,7 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
             </button>
             <button
               onClick={() => setStep("info")}
-              style={{ width: "100%", padding: "10px", background: "transparent", color: "#475569", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}
+              style={{ width: "100%", padding: "10px", background: "transparent", color: "#aaa0b2", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, fontSize: 14, cursor: "pointer" }}
             >
               Voltar
             </button>
@@ -231,7 +228,7 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
       </div>
 
       {/* Support link */}
-      <p style={{ textAlign: "center", marginTop: 20, color: "#334155", fontSize: 13 }}>
+      <p style={{ textAlign: "center", marginTop: 20, color: "#66566f", fontSize: 13 }}>
         Dúvidas?{" "}
         <a href="mailto:suporte@elitemodell.com.br" style={{ color: GOLD, textDecoration: "none" }}>
           Falar com suporte

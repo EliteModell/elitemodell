@@ -118,9 +118,9 @@ function Section({ title, desc, children }: { title: string; desc?: string; chil
     <div style={{ marginBottom: 28 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: desc ? 6 : 14, paddingBottom: 10, borderBottom: `1px solid ${GOLD_DIM}` }}>
         <div style={{ width: 20, height: 2, background: GOLD, borderRadius: 2, flexShrink: 0 }} />
-        <h3 style={{ color: "#f1f5f9", fontSize: 12, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.5 }}>{title}</h3>
+        <h3 style={{ color: "#f8f5fa", fontSize: 12, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.5 }}>{title}</h3>
       </div>
-      {desc && <p style={{ color: "#475569", fontSize: 12, margin: "0 0 14px", lineHeight: 1.6 }}>{desc}</p>}
+      {desc && <p style={{ color: "#aaa0b2", fontSize: 12, margin: "0 0 14px", lineHeight: 1.6 }}>{desc}</p>}
       {children}
     </div>
   );
@@ -143,7 +143,7 @@ function UploadZone({ label, accept, preview, onFile, loading }: {
       <div
         onClick={() => !loading && ref.current?.click()}
         style={{
-          border: `2px dashed ${preview ? GOLD_MID : "#1e293b"}`,
+          border: `2px dashed ${preview ? GOLD_MID : "#2d1d35"}`,
           borderRadius: 12,
           padding: canPreview || isPrivateFile ? 0 : "28px 16px",
           textAlign: "center",
@@ -172,15 +172,15 @@ function UploadZone({ label, accept, preview, onFile, loading }: {
         ) : loading ? (
           <div style={{ padding: "28px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
             <div style={{ width: 28, height: 28, border: `3px solid ${GOLD_MID}`, borderTopColor: GOLD, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-            <span style={{ color: "#475569", fontSize: 13 }}>Enviando…</span>
+            <span style={{ color: "#aaa0b2", fontSize: 13 }}>Enviando…</span>
           </div>
         ) : (
           <>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.5" style={{ marginBottom: 8 }}>
               <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
             </svg>
-            <p style={{ color: "#475569", fontSize: 13, margin: 0 }}>Clique para selecionar</p>
-            <p style={{ color: "#334155", fontSize: 11, margin: "4px 0 0" }}>{acceptLabel}</p>
+            <p style={{ color: "#aaa0b2", fontSize: 13, margin: 0 }}>Clique para selecionar</p>
+            <p style={{ color: "#66566f", fontSize: 11, margin: "4px 0 0" }}>{acceptLabel}</p>
           </>
         )}
       </div>
@@ -342,23 +342,23 @@ function FaceCapture({
   useEffect(() => () => stopCamera(), []);
 
   return (
-    <div style={{ background: "#060e1b", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: 14, marginBottom: 18 }}>
+    <div style={{ background: "#08050b", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: 14, marginBottom: 18 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
         <div>
-          <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 800, color: "#f1f5f9" }}>Captura pela câmera</p>
-          <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", lineHeight: 1.5 }}>Desafio: <strong style={{ color: GOLD }}>{challenge}</strong></p>
+          <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 800, color: "#f8f5fa" }}>Captura pela câmera</p>
+          <p style={{ margin: 0, fontSize: 12, color: "#b9adbf", lineHeight: 1.5 }}>Desafio: <strong style={{ color: GOLD }}>{challenge}</strong></p>
         </div>
         <button type="button" onClick={cameraOn ? stopCamera : startCamera}
-          style={{ padding: "9px 12px", borderRadius: 8, border: `1px solid ${GOLD_MID}`, background: cameraOn ? "transparent" : GOLD, color: cameraOn ? GOLD : "#060e1b", fontWeight: 800, cursor: "pointer", fontSize: 12 }}>
+          style={{ padding: "9px 12px", borderRadius: 8, border: `1px solid ${GOLD_MID}`, background: cameraOn ? "transparent" : GOLD, color: cameraOn ? GOLD : "#08050b", fontWeight: 800, cursor: "pointer", fontSize: 12 }}>
           {cameraOn ? "Fechar câmera" : "Abrir câmera"}
         </button>
       </div>
 
-      <div style={{ aspectRatio: "4 / 3", borderRadius: 10, overflow: "hidden", background: "#0b1420", border: "1px solid #1e293b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ aspectRatio: "4 / 3", borderRadius: 10, overflow: "hidden", background: "#0f0a13", border: "1px solid #2d1d35", display: "flex", alignItems: "center", justifyContent: "center" }}>
         {cameraOn ? (
           <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }} />
         ) : (
-          <p style={{ color: "#475569", fontSize: 12, margin: 0 }}>A câmera aparece aqui quando autorizada.</p>
+          <p style={{ color: "#aaa0b2", fontSize: 12, margin: 0 }}>A câmera aparece aqui quando autorizada.</p>
         )}
       </div>
 
@@ -366,11 +366,11 @@ function FaceCapture({
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
         <button type="button" onClick={takeSelfie} disabled={!cameraOn || loading}
-          style={{ padding: "11px", borderRadius: 8, border: "none", background: !cameraOn || loading ? "#334155" : GOLD, color: "#060e1b", fontWeight: 800, cursor: !cameraOn || loading ? "not-allowed" : "pointer" }}>
+          style={{ padding: "11px", borderRadius: 8, border: "none", background: !cameraOn || loading ? "#66566f" : GOLD, color: "#08050b", fontWeight: 800, cursor: !cameraOn || loading ? "not-allowed" : "pointer" }}>
           Enviar selfie
         </button>
         <button type="button" onClick={recording ? stopRecording : startRecording} disabled={!cameraOn || loading}
-          style={{ padding: "11px", borderRadius: 8, border: `1px solid ${recording ? "rgba(239,68,68,0.5)" : GOLD_MID}`, background: recording ? "rgba(239,68,68,0.12)" : "#0b1420", color: recording ? "#ef4444" : GOLD, fontWeight: 800, cursor: !cameraOn || loading ? "not-allowed" : "pointer" }}>
+          style={{ padding: "11px", borderRadius: 8, border: `1px solid ${recording ? "rgba(239,68,68,0.5)" : GOLD_MID}`, background: recording ? "rgba(239,68,68,0.12)" : "#0f0a13", color: recording ? "#ef4444" : GOLD, fontWeight: 800, cursor: !cameraOn || loading ? "not-allowed" : "pointer" }}>
           {recording ? "Parar vídeo" : "Gravar vídeo"}
         </button>
       </div>
@@ -964,10 +964,10 @@ export default function ProfissionalNovoPage() {
       {/* ── Header ── */}
       <div style={{ marginBottom: 28 }}>
         <p style={{ fontSize: 11, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", margin: "0 0 8px" }}>EliteModell — Novo anúncio</p>
-        <h1 style={{ fontSize: "clamp(22px, 4vw, 30px)", fontWeight: 700, color: "#f1f5f9", margin: "0 0 6px", fontFamily: PLAYFAIR }}>
+        <h1 style={{ fontSize: "clamp(22px, 4vw, 30px)", fontWeight: 700, color: "#f8f5fa", margin: "0 0 6px", fontFamily: PLAYFAIR }}>
           Criar perfil de acompanhante
         </h1>
-        <p style={{ color: "#475569", fontSize: 13, margin: 0 }}>
+        <p style={{ color: "#aaa0b2", fontSize: 13, margin: 0 }}>
           Preencha com atenção. Seu perfil é revisado em até 3 dias úteis antes de aparecer publicamente.
         </p>
       </div>
@@ -991,10 +991,10 @@ export default function ProfissionalNovoPage() {
       {/* ── Progresso ── */}
       <div style={{ marginBottom: 28 }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-          <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Etapa {step + 1} de {STEPS.length} — {STEPS[step]}</span>
+          <span style={{ fontSize: 12, color: "#968a9e", fontWeight: 600 }}>Etapa {step + 1} de {STEPS.length} — {STEPS[step]}</span>
           <span style={{ fontSize: 12, color: GOLD, fontWeight: 700 }}>{Math.round(progress)}%</span>
         </div>
-        <div style={{ height: 3, background: "#1e293b", borderRadius: 3 }}>
+        <div style={{ height: 3, background: "#2d1d35", borderRadius: 3 }}>
           <div style={{ height: "100%", width: `${progress}%`, background: GOLD, borderRadius: 3, transition: "width 0.4s ease" }} />
         </div>
         {/* Step bubbles — labels são ocultadas no mobile via CSS (.model-step-bubbles span) */}
@@ -1022,7 +1022,7 @@ export default function ProfissionalNovoPage() {
               >
                 {i < step ? "✓" : i + 1}
               </button>
-              <span className="model-step-label" style={{ fontSize: 9, color: i === step ? GOLD : "#334155", fontWeight: i === step ? 700 : 400, textTransform: "uppercase", letterSpacing: 0.3 }}>{s}</span>
+              <span className="model-step-label" style={{ fontSize: 9, color: i === step ? GOLD : "#66566f", fontWeight: i === step ? 700 : 400, textTransform: "uppercase", letterSpacing: 0.3 }}>{s}</span>
             </div>
           ))}
         </div>
@@ -1354,7 +1354,7 @@ export default function ProfissionalNovoPage() {
               loading={uploadingIdx === -1}
               onFile={handleMainPhoto} />
             {form.mainPhotoUrl && (
-              <button onClick={() => set("mainPhotoUrl", "")} style={{ marginTop: 8, background: "none", border: "none", color: "#475569", fontSize: 12, cursor: "pointer" }}>
+              <button onClick={() => set("mainPhotoUrl", "")} style={{ marginTop: 8, background: "none", border: "none", color: "#aaa0b2", fontSize: 12, cursor: "pointer" }}>
                 ✕ Remover foto
               </button>
             )}
@@ -1363,10 +1363,10 @@ export default function ProfissionalNovoPage() {
           <Section title="Galeria de fotos" desc={`Adicione ate ${MAX_ONBOARDING_GALLERY_PHOTOS} fotos. Fotos de boa qualidade aumentam muito as chances de contato. (${form.galleryUrls.length}/${MAX_ONBOARDING_GALLERY_PHOTOS})`}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               {form.galleryUrls.map((url, i) => (
-                <div key={i} style={{ position: "relative", borderRadius: 10, overflow: "hidden", aspectRatio: "3/4", background: "#0b1420" }}>
+                <div key={i} style={{ position: "relative", borderRadius: 10, overflow: "hidden", aspectRatio: "3/4", background: "#0f0a13" }}>
                   <img src={url} alt={`foto ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   <button onClick={() => set("galleryUrls", form.galleryUrls.filter((_, j) => j !== i))}
-                    style={{ position: "absolute", top: 6, right: 6, width: 24, height: 24, borderRadius: "50%", background: "rgba(6,14,27,0.9)", border: "none", color: "#f1f5f9", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                    style={{ position: "absolute", top: 6, right: 6, width: 24, height: 24, borderRadius: "50%", background: "rgba(6,14,27,0.9)", border: "none", color: "#f8f5fa", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
                 </div>
               ))}
               {form.galleryUrls.length < MAX_ONBOARDING_GALLERY_PHOTOS && (
@@ -1379,7 +1379,7 @@ export default function ProfissionalNovoPage() {
               )}
             </div>
             <div style={{ marginTop: 12, padding: "10px 14px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 8 }}>
-              <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
+              <p style={{ margin: 0, fontSize: 12, color: "#b9adbf", lineHeight: 1.6 }}>
                 Você pode publicar fotos e vídeos sensuais/adultos, desde que sejam seus e estejam dentro das regras da plataforma.<br />
                 Fotos de terceiros, conteúdo ilegal, material sem consentimento ou envolvendo menores de idade serão reprovados.<br />
                 Documentos pessoais não devem ser enviados na galeria pública.<br />
@@ -1404,7 +1404,7 @@ export default function ProfissionalNovoPage() {
               <span style={{ fontSize: 22, flexShrink: 0, marginTop: 1 }}>🛡️</span>
               <div>
                 <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "#22c55e" }}>Seus dados são protegidos</p>
-                <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", lineHeight: 1.65 }}>
+                <p style={{ margin: 0, fontSize: 12, color: "#b9adbf", lineHeight: 1.65 }}>
                   Clientes nunca verão seus documentos. A verificação é usada apenas para análise de segurança da plataforma.
                 </p>
               </div>
@@ -1424,8 +1424,8 @@ export default function ProfissionalNovoPage() {
                     disabled={buttonDisabled}
                     style={{
                       width: "100%", padding: "14px 16px", borderRadius: 12, border: "none",
-                      background: kycUnavailable ? "#334155" : GOLD,
-                      color: kycUnavailable ? "#94a3b8" : "#060e1b",
+                      background: kycUnavailable ? "#66566f" : GOLD,
+                      color: kycUnavailable ? "#b9adbf" : "#08050b",
                       fontSize: 15, fontWeight: 800,
                       cursor: buttonDisabled ? "not-allowed" : "pointer",
                       marginBottom: 14,
@@ -1473,9 +1473,9 @@ export default function ProfissionalNovoPage() {
         <div>
           <Section title="Verificação facial" desc="Para proteger a segurança da plataforma, realizamos uma validação facial para confirmar autenticidade, maioridade e evitar perfis falsos.">
 
-            <div style={{ background: "#060e1b", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "16px", marginBottom: 20 }}>
-              <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#f1f5f9" }}>Validação facial segura</p>
-              <p style={{ margin: "0 0 14px", fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
+            <div style={{ background: "#08050b", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "16px", marginBottom: 20 }}>
+              <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#f8f5fa" }}>Validação facial segura</p>
+              <p style={{ margin: "0 0 14px", fontSize: 12, color: "#b9adbf", lineHeight: 1.6 }}>
                 O processo é feito em ambiente protegido e leva poucos minutos. Após o envio, seu cadastro permanece em análise até a revisão final da equipe.
               </p>
               {(() => {
@@ -1487,7 +1487,7 @@ export default function ProfissionalNovoPage() {
                       type="button"
                       onClick={startVerification9}
                       disabled={uploadingIdx === 100 || kycUnavailable9}
-                      style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "none", background: kycUnavailable9 ? "#334155" : GOLD, color: kycUnavailable9 ? "#94a3b8" : "#060e1b", fontSize: 14, fontWeight: 800, cursor: (uploadingIdx === 100 || kycUnavailable9) ? "not-allowed" : "pointer" }}
+                      style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "none", background: kycUnavailable9 ? "#66566f" : GOLD, color: kycUnavailable9 ? "#b9adbf" : "#08050b", fontSize: 14, fontWeight: 800, cursor: (uploadingIdx === 100 || kycUnavailable9) ? "not-allowed" : "pointer" }}
                     >
                       {uploadingIdx === 100 ? "Iniciando..." : kycUnavailable9 ? "Verificação automática indisponível" : "Iniciar verificação facial"}
                     </button>
@@ -1500,7 +1500,7 @@ export default function ProfissionalNovoPage() {
                       <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, fontSize: 12, fontWeight: 700 }}>
                         {form.kycProvider === "DIDIT" ? "Verificação Didit" : form.kycProvider === "PERSONA" ? "Verificação facial com Persona" : "Verificação manual"}: {form.kycStatus}
                         {form.kycExpiresAt && (
-                          <span style={{ display: "block", color: "#94a3b8", fontWeight: 500, marginTop: 4 }}>
+                          <span style={{ display: "block", color: "#b9adbf", fontWeight: 500, marginTop: 4 }}>
                             Expira em {new Date(form.kycExpiresAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                           </span>
                         )}
@@ -1512,7 +1512,7 @@ export default function ProfissionalNovoPage() {
             </div>
 
             {form.verificationUrl && form.verificationType === "biometria" && (
-              <div style={{ marginTop: 8, padding: "10px 14px", background: "#0b1420", border: `1px solid ${GOLD_MID}`, borderRadius: 8, fontSize: 12, color: GOLD }}>
+              <div style={{ marginTop: 8, padding: "10px 14px", background: "#0f0a13", border: `1px solid ${GOLD_MID}`, borderRadius: 8, fontSize: 12, color: GOLD }}>
                 {form.kycProvider === "DIDIT" ? "Verificação Didit iniciada" : "Verificação facial iniciada"}
               </div>
             )}
@@ -1520,7 +1520,7 @@ export default function ProfissionalNovoPage() {
             {/* Zona segura explicação */}
             <div style={{ marginTop: 20, background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 10, padding: "14px 16px" }}>
               <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "#22c55e" }}>Ambiente seguro</p>
-              <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
+              <p style={{ margin: 0, fontSize: 12, color: "#b9adbf", lineHeight: 1.6 }}>
                 A validação facial é usada apenas para análise de autenticidade e segurança. A aprovação do perfil continua dependendo da revisão da equipe.
               </p>
             </div>
@@ -1538,16 +1538,16 @@ export default function ProfissionalNovoPage() {
                 ["Verificação", form.kycSessionId ? "✓ Concluída" : "Não iniciada"],
                 ["WhatsApp", form.whatsapp || "—"],
               ].map(([label, value]) => (
-                <div key={label} style={{ background: "#0b1420", border: `1px solid ${GOLD_DIM}`, borderRadius: 8, padding: "10px 12px" }}>
-                  <div style={{ fontSize: 10, color: "#475569", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>{label}</div>
-                  <div style={{ fontSize: 13, color: String(value).startsWith("✓") ? "#22c55e" : "#f1f5f9", fontWeight: String(value).startsWith("✓") ? 700 : 400 }}>{value}</div>
+                <div key={label} style={{ background: "#0f0a13", border: `1px solid ${GOLD_DIM}`, borderRadius: 8, padding: "10px 12px" }}>
+                  <div style={{ fontSize: 10, color: "#aaa0b2", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>{label}</div>
+                  <div style={{ fontSize: 13, color: String(value).startsWith("✓") ? "#22c55e" : "#f8f5fa", fontWeight: String(value).startsWith("✓") ? 700 : 400 }}>{value}</div>
                 </div>
               ))}
             </div>
           </Section>
 
           <div style={{ padding: "14px 18px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 10, marginTop: 8 }}>
-            <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", lineHeight: 1.7 }}>
+            <p style={{ margin: 0, fontSize: 12, color: "#b9adbf", lineHeight: 1.7 }}>
               Ao enviar, você confirma ter <strong>18 anos ou mais</strong> e concorda com os Termos de Uso da plataforma. Seu perfil fica em análise por até <strong>3 dias úteis</strong> e só ficará visível após aprovação.
             </p>
           </div>
@@ -1557,18 +1557,18 @@ export default function ProfissionalNovoPage() {
       {/* ── Navegação entre etapas ── */}
       <div className="model-step-actions" style={{ display: "flex", justifyContent: "space-between", marginTop: 36, paddingTop: 20, borderTop: `1px solid ${GOLD_DIM}` }}>
         <button onClick={back} disabled={step === 0}
-          style={{ padding: "12px 24px", background: "transparent", border: `1px solid ${step === 0 ? "#1e293b" : GOLD_MID}`, borderRadius: 10, color: step === 0 ? "#334155" : GOLD, fontSize: 14, cursor: step === 0 ? "default" : "pointer", fontWeight: 600 }}>
+          style={{ padding: "12px 24px", background: "transparent", border: `1px solid ${step === 0 ? "#2d1d35" : GOLD_MID}`, borderRadius: 10, color: step === 0 ? "#66566f" : GOLD, fontSize: 14, cursor: step === 0 ? "default" : "pointer", fontWeight: 600 }}>
           ← Voltar
         </button>
 
         {!isLast ? (
           <button onClick={next}
-            style={{ padding: "12px 32px", background: GOLD, border: "none", borderRadius: 10, color: "#060e1b", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
+            style={{ padding: "12px 32px", background: GOLD, border: "none", borderRadius: 10, color: "#08050b", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
             Continuar →
           </button>
         ) : (
           <button onClick={submit} disabled={loading || emailVerified === false}
-            style={{ padding: "12px 32px", background: loading || emailVerified === false ? "#6900a3" : GOLD, border: "none", borderRadius: 10, color: "#060e1b", fontSize: 14, fontWeight: 800, cursor: loading || emailVerified === false ? "not-allowed" : "pointer" }}>
+            style={{ padding: "12px 32px", background: loading || emailVerified === false ? "#6900a3" : GOLD, border: "none", borderRadius: 10, color: "#08050b", fontSize: 14, fontWeight: 800, cursor: loading || emailVerified === false ? "not-allowed" : "pointer" }}>
             {loading ? "Enviando..." : emailVerified === false ? "Confirme o email para enviar" : "Enviar para aprovação ✦"}
           </button>
         )}

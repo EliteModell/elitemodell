@@ -143,7 +143,7 @@ function safeInternalPath(value: string | null) {
 function Logo({ dark = false }: { dark?: boolean }) {
   return (
     <Link href="/" aria-label="Elite Modell" style={{ display: "inline-flex", alignItems: "center" }}>
-      <img src="/brand/elite-modell-logo.svg" alt="Elite Modell" style={{ height: dark ? 34 : 30, width: "auto" }} />
+      <img src="/brand/elite-modell-purple.svg" alt="Elite Modell" style={{ height: dark ? 44 : 38, width: "auto" }} />
     </Link>
   );
 }
@@ -164,7 +164,7 @@ function AuthShell({
       minHeight: "100dvh",
       overflowX: "hidden",
       background: premium
-        ? "radial-gradient(circle at 20% 10%, rgba(214,168,58,0.16), transparent 32%), radial-gradient(circle at 85% 35%, rgba(214,168,58,0.10), transparent 34%), #050505"
+        ? "radial-gradient(circle at 20% 10%, rgba(183,44,255,0.16), transparent 32%), radial-gradient(circle at 85% 35%, rgba(183,44,255,0.10), transparent 34%), #050505"
         : "#f8faf8",
       color: premium ? "#fff" : INK,
     }}>
@@ -172,7 +172,7 @@ function AuthShell({
         style={{
           height: 88,
           background: premium ? "rgba(5,5,5,0.92)" : "#fff",
-          borderBottom: premium ? "1px solid rgba(214,168,58,0.25)" : "1px solid #e4e8e4",
+          borderBottom: premium ? "1px solid rgba(183,44,255,0.25)" : "1px solid #e4e8e4",
           display: "grid",
           gridTemplateColumns: "56px 1fr 56px",
           alignItems: "center",
@@ -183,7 +183,7 @@ function AuthShell({
         <Link
           href={backHref ?? "/"}
           aria-label={backHref ? "Voltar" : "Abrir menu"}
-          style={{ color: premium ? "#d6a83a" : INK, display: "grid", placeItems: "center", textDecoration: "none" }}
+          style={{ color: premium ? "#b72cff" : INK, display: "grid", placeItems: "center", textDecoration: "none" }}
         >
           {backHref ? <ArrowLeft size={28} /> : menu ? <Menu size={30} /> : null}
         </Link>
@@ -254,7 +254,7 @@ function PremiumAuthFooter() {
         }
         .phone-premium-footer section,
         .phone-premium-footer .groups {
-          border: 1px solid rgba(214,168,58,0.25);
+          border: 1px solid rgba(183,44,255,0.25);
           border-radius: 24px;
           background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98));
           box-shadow: 0 24px 70px rgba(0,0,0,0.34);
@@ -263,10 +263,10 @@ function PremiumAuthFooter() {
         .phone-premium-footer .restricted {
           width: fit-content;
           margin-top: 14px;
-          border: 1px solid rgba(214,168,58,0.24);
+          border: 1px solid rgba(183,44,255,0.24);
           border-radius: 14px;
-          background: rgba(214,168,58,0.12);
-          color: #f5d77a;
+          background: rgba(183,44,255,0.12);
+          color: #e1a6ff;
           padding: 10px 12px;
           font-size: 12px;
           font-weight: 900;
@@ -318,13 +318,13 @@ function SubmitButton({ children, disabled, premium = false }: { children: React
         border: "none",
         borderRadius: premium ? 18 : 8,
         background: disabled
-          ? premium ? "rgba(214,168,58,0.15)" : "#cad4d9"
-          : premium ? "linear-gradient(135deg, #f5d77a, #d6a83a 45%, #a77818)" : GOLD,
+          ? premium ? "rgba(183,44,255,0.15)" : "#cad4d9"
+          : premium ? "linear-gradient(135deg, #e1a6ff, #b72cff 45%, #6900a3)" : GOLD,
         color: disabled ? premium ? "rgba(255,255,255,0.38)" : "#7a878d" : "#111",
         fontSize: 17,
         fontWeight: 900,
         cursor: disabled ? "not-allowed" : "pointer",
-        boxShadow: premium && !disabled ? "0 18px 46px rgba(214,168,58,0.22)" : undefined,
+        boxShadow: premium && !disabled ? "0 18px 46px rgba(183,44,255,0.22)" : undefined,
       }}
     >
       {children}
@@ -346,7 +346,7 @@ function StatusMessage({ status, message, premium = false }: { status: OtpStatus
         margin: "18px 0 0",
         padding: 14,
         borderRadius: premium ? 16 : 8,
-        border: premium ? `1px solid ${isError ? "rgba(255,139,134,0.42)" : "rgba(214,168,58,0.25)"}` : `1px solid ${isError ? "#f1b5b5" : isSuccess ? "#b8dbc0" : "#dfe4e7"}`,
+        border: premium ? `1px solid ${isError ? "rgba(255,139,134,0.42)" : "rgba(183,44,255,0.25)"}` : `1px solid ${isError ? "#f1b5b5" : isSuccess ? "#b8dbc0" : "#dfe4e7"}`,
         background: premium ? "rgba(16,16,20,0.88)" : isError ? "#fff2f2" : isSuccess ? "#eef8f0" : "#eef0f3",
         color: premium ? isError ? "#ffb4af" : "#b8b8b8" : isError ? "#8a1f1f" : "#354047",
         fontSize: 14,
@@ -440,7 +440,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
     return terms && privacyRead && adult && ownProfile;
   }, [adult, isClient, loading, ownProfile, phone, privacyRead, terms]);
   const themedCheckStyle = isPremium ? { ...checkStyle, color: "#b8b8b8" } : checkStyle;
-  const themedLinkStyle = isPremium ? { ...linkStyle, color: "#f5d77a" } : linkStyle;
+  const themedLinkStyle = isPremium ? { ...linkStyle, color: "#e1a6ff" } : linkStyle;
 
   async function sendCode(nextPhone = phone) {
     const normalized = digits(nextPhone);
@@ -609,7 +609,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
               style={{
                 width: "100%",
                 height: 64,
-                border: isPremium ? "1px solid rgba(214,168,58,0.28)" : "1px solid #cdd5d5",
+                border: isPremium ? "1px solid rgba(183,44,255,0.28)" : "1px solid #cdd5d5",
                 borderRadius: isPremium ? 18 : 8,
                 background: isPremium ? "rgba(11,11,13,0.94)" : "#fff",
                 color: isPremium ? "#fff" : INK,
@@ -630,7 +630,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
             type="button"
             onClick={() => sendCode()}
             disabled={loading || timer > 0 || otpStatus === "verified"}
-            style={{ marginTop: 22, width: "100%", border: "none", background: "transparent", color: isPremium ? "#d6a83a" : INK, fontSize: 16, fontWeight: 800, cursor: timer > 0 ? "not-allowed" : "pointer" }}
+            style={{ marginTop: 22, width: "100%", border: "none", background: "transparent", color: isPremium ? "#b72cff" : INK, fontSize: 16, fontWeight: 800, cursor: timer > 0 ? "not-allowed" : "pointer" }}
           >
             {timer > 0 ? `Reenviar código em ${timer}s` : "Reenviar código"}
           </button>
@@ -652,7 +652,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
     <AuthShell backHref={isClient ? undefined : "/"} menu={isClient} premium={isPremium}>
       <section style={{ width: "100%", maxWidth: 430, margin: "0 auto", padding: "32px 24px 0" }}>
         <div style={{ textAlign: "center", marginBottom: 42 }}>
-          <p style={{ margin: "0 0 10px", color: "#d6a83a", fontSize: 11, fontWeight: 950, letterSpacing: "0.18em", textTransform: "uppercase" }}>Acesse Elite Modell</p>
+          <p style={{ margin: "0 0 10px", color: "#b72cff", fontSize: 11, fontWeight: 950, letterSpacing: "0.18em", textTransform: "uppercase" }}>Acesse Elite Modell</p>
           <h1 style={{ fontSize: 34, lineHeight: 1.08, margin: 0, color: "#fff", fontWeight: 950, letterSpacing: 0 }}>Verificação obrigatória</h1>
           <p style={{ fontSize: 16, color: "#b8b8b8", margin: "12px auto 0", lineHeight: 1.55, maxWidth: 340 }}>Ative sua conta com uma camada extra de segurança.</p>
         </div>
@@ -668,14 +668,14 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
         )}
 
         <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 18 }}>
-          <Phone size={34} color="#f5d77a" />
+          <Phone size={34} color="#e1a6ff" />
           <h2 style={{ fontSize: 27, lineHeight: 1.12, margin: 0, color: "#fff", fontWeight: 950 }}>{text.title}</h2>
         </div>
         <p style={{ fontSize: 18, color: "#d7d7d7", margin: "0 0 34px", lineHeight: 1.58 }}>{text.hint}</p>
         <form onSubmit={handleRegister}>
-          <label style={{ display: "block", fontSize: 15, fontWeight: 950, marginBottom: 12, color: "#d6a83a", letterSpacing: "0.08em", textTransform: "uppercase" }}>*{text.phoneLabel}</label>
+          <label style={{ display: "block", fontSize: 15, fontWeight: 950, marginBottom: 12, color: "#b72cff", letterSpacing: "0.08em", textTransform: "uppercase" }}>*{text.phoneLabel}</label>
           <div style={{ position: "relative" }}>
-            <span style={{ position: "absolute", left: 16, top: 17, height: 36, minWidth: 54, borderRadius: 12, background: "rgba(214,168,58,0.10)", border: "1px solid rgba(214,168,58,0.24)", color: "#f5d77a", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 900, gap: 4 }}>
+            <span style={{ position: "absolute", left: 16, top: 17, height: 36, minWidth: 54, borderRadius: 12, background: "rgba(183,44,255,0.10)", border: "1px solid rgba(183,44,255,0.24)", color: "#e1a6ff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 900, gap: 4 }}>
               🇧🇷
             </span>
             <input
@@ -684,7 +684,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
               inputMode="tel"
               autoComplete="tel"
               placeholder={text.phonePlaceholder}
-              style={{ width: "100%", height: 70, border: "1px solid rgba(214,168,58,0.28)", borderRadius: 18, background: "rgba(11,11,13,0.94)", color: "#fff", padding: "0 18px 0 86px", fontSize: 17, outlineColor: GOLD }}
+              style={{ width: "100%", height: 70, border: "1px solid rgba(183,44,255,0.28)", borderRadius: 18, background: "rgba(11,11,13,0.94)", color: "#fff", padding: "0 18px 0 86px", fontSize: 17, outlineColor: GOLD }}
             />
           </div>
 
@@ -698,9 +698,9 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
           <button
             type="button"
             onClick={() => setPrivacyOpen(true)}
-            style={{ width: "100%", minHeight: 58, border: isPremium ? "1px solid rgba(214,168,58,0.25)" : "none", borderRadius: isPremium ? 18 : 8, background: isPremium ? "rgba(16,16,20,0.88)" : "#eef7ef", display: "flex", alignItems: "center", gap: 14, padding: "0 16px", color: isPremium ? "#fff" : "#233037", fontSize: 17, fontWeight: 800, cursor: "pointer", marginTop: 24 }}
+            style={{ width: "100%", minHeight: 58, border: isPremium ? "1px solid rgba(183,44,255,0.25)" : "none", borderRadius: isPremium ? 18 : 8, background: isPremium ? "rgba(16,16,20,0.88)" : "#eef7ef", display: "flex", alignItems: "center", gap: 14, padding: "0 16px", color: isPremium ? "#fff" : "#233037", fontSize: 17, fontWeight: 800, cursor: "pointer", marginTop: 24 }}
           >
-            <ShieldCheck size={23} color={isPremium ? "#d6a83a" : "#4a9b5a"} />
+            <ShieldCheck size={23} color={isPremium ? "#b72cff" : "#4a9b5a"} />
             <span style={{ flex: 1, textAlign: "left" }}>Privacidade e segurança</span>
             <Info size={24} />
           </button>
@@ -737,7 +737,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
         </form>
 
         <p style={{ textAlign: "center", margin: "34px 0 0", fontSize: 19, fontWeight: 900 }}>
-          <Link href={text.loginHref} style={{ color: isPremium ? "#d6a83a" : INK, textDecoration: "none" }}>{text.loginLabel}</Link>
+          <Link href={text.loginHref} style={{ color: isPremium ? "#b72cff" : INK, textDecoration: "none" }}>{text.loginLabel}</Link>
         </p>
         {isClient && (
           <p style={{ textAlign: "center", margin: "28px 0", fontSize: 17, color: "#39454c" }}>

@@ -112,7 +112,7 @@ export default async function AdminConfiguracoesPage() {
       <AdminPanel>
         <h2 style={{ color: "#fff", margin: "0 0 14px", fontSize: 16 }}>Ambiente operacional</h2>
         <div style={{ display: "grid", gap: 10 }}>
-          <div style={{ color: "#94a3b8" }}>Cargo desta sessao: <strong style={{ color: "#fff" }}>{adminRole}</strong></div>
+          <div style={{ color: "#b9adbf" }}>Cargo desta sessao: <strong style={{ color: "#fff" }}>{adminRole}</strong></div>
           {envStatus.map(([name, value]) => (
             <div key={name} style={{ display: "flex", justifyContent: "space-between", gap: 12, borderBottom: "1px solid rgba(255,255,255,.08)", paddingBottom: 10 }}>
               <span style={{ color: "#fff", fontWeight: 800 }}>{name}</span>
@@ -124,7 +124,7 @@ export default async function AdminConfiguracoesPage() {
       <div style={{ height: 16 }} />
       <AdminPanel>
         <h2 style={{ color: "#fff", margin: "0 0 8px", fontSize: 16 }}>Quarentena, antimalware e moderação</h2>
-        <p style={{ color: "#94a3b8", margin: "0 0 16px", lineHeight: 1.6, fontSize: 13 }}>
+        <p style={{ color: "#b9adbf", margin: "0 0 16px", lineHeight: 1.6, fontSize: 13 }}>
           Arquivos sem decisão explícita permanecem privados. Selecionar revisão manual ou desativar a automação nunca libera mídia automaticamente.
         </p>
         <form action={updateUploadSecurity} style={{ display: "grid", gap: 14, maxWidth: 620 }}>
@@ -159,7 +159,7 @@ export default async function AdminConfiguracoesPage() {
       <div style={{ height: 16 }} />
       <AdminPanel>
         <h2 style={{ color: "#fff", margin: "0 0 8px", fontSize: 16 }}>Acesso gratuito das profissionais</h2>
-        <p style={{ color: "#94a3b8", margin: "0 0 16px", lineHeight: 1.6, fontSize: 13 }}>
+        <p style={{ color: "#b9adbf", margin: "0 0 16px", lineHeight: 1.6, fontSize: 13 }}>
           O prazo começa somente na primeira aprovação do perfil. Contas já cadastradas permanecem com acesso legado.
           Alterar este valor afeta apenas profissionais aprovadas depois da mudança.
         </p>

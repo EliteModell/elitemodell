@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { signIn, signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import { BrandMark } from "@/components/BrandMark";
 import { supabaseAuth } from "@/lib/supabase-client";
 import { ACCOUNT_ROUTES, hostPathForStatus, normalizeEntryRole, postLoginPathFromUser } from "@/lib/account-routes";
 
@@ -27,7 +28,6 @@ const NEXTAUTH_SIGNIN_TIMEOUT_MS = 45000;
 const CALLBACK_SLOW_MESSAGE_MS = 2500;
 const CALLBACK_STILL_WORKING_MESSAGE_MS = 9000;
 const GOLD = "#b72cff";
-const GOLD_GRADIENT = "linear-gradient(135deg, #f4d7ff 0%, #b72cff 22%, #e1a6ff 45%, #6900a3 72%, #b72cff 100%)";
 
 function hasPropertyDraft() {
   return Boolean(localStorage.getItem(PROPERTY_DRAFT_KEY));
@@ -449,11 +449,8 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
         }} />
 
         {/* Logo */}
-        <div style={{ marginBottom: 32 }}>
-          <span style={{ fontWeight: 900, fontSize: 28, letterSpacing: "-0.5px" }}>
-            <span style={{ background: GOLD_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>elite</span>
-            <span style={{ color: "#f1f5f9" }}>modell</span>
-          </span>
+        <div style={{ width: 184, margin: "0 auto 32px" }}>
+          <BrandMark priority />
         </div>
 
         {/* Error icon */}
@@ -508,7 +505,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
 
         {/* Message */}
         <p style={{
-          color: error ? "#fca5a5" : "#cbd5e1",
+          color: error ? "#fca5a5" : "#d8cedd",
           fontSize: error ? 16 : 15,
           fontWeight: error ? 700 : 500,
           margin: 0,
@@ -528,7 +525,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
             borderRadius: 8,
             textAlign: "left",
           }}>
-            <p style={{ color: "#94a3b8", fontSize: 11, margin: "0 0 4px", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600 }}>
+            <p style={{ color: "#b9adbf", fontSize: 11, margin: "0 0 4px", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600 }}>
               Mensagem
             </p>
             <p style={{ color: "#f87171", fontSize: 13, margin: 0, wordBreak: "break-all", fontFamily: "monospace" }}>
@@ -565,7 +562,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
                 background: "transparent",
                 border: "1px solid rgba(148,163,184,0.32)",
                 borderRadius: 8,
-                color: "#cbd5e1",
+                color: "#d8cedd",
                 fontSize: 13,
                 fontWeight: 700,
                 textDecoration: "none",
@@ -578,7 +575,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
         )}
 
         {/* Subtle bottom label */}
-        <p style={{ color: "#334155", fontSize: 11, margin: "20px 0 0", letterSpacing: 1.5, textTransform: "uppercase" }}>
+        <p style={{ color: "#66566f", fontSize: 11, margin: "20px 0 0", letterSpacing: 1.5, textTransform: "uppercase" }}>
           Acesso seguro
         </p>
       </div>

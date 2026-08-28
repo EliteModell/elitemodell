@@ -203,7 +203,7 @@ function PremiumUpsellContent({
         .premium-upsell-panel {
           width: min(760px, 100%); max-height: calc(100dvh - 32px); overflow-y: auto;
           border: 1px solid rgba(183,44,255,.34); border-radius: 24px; color: #f5f1e8;
-          background: radial-gradient(circle at 50% -15%, rgba(183,44,255,.19), transparent 42%), linear-gradient(180deg,#15120d,#070707 58%);
+          background: radial-gradient(circle at 50% -15%, rgba(183,44,255,.19), transparent 42%), linear-gradient(180deg,#100a14,#070707 58%);
           box-shadow: 0 40px 120px rgba(0,0,0,.82); scrollbar-width: thin;
         }
         .premium-upsell-plans { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }

@@ -28,12 +28,12 @@ export default function ReviewList({ professionalId }: Props) {
   }, [professionalId]);
 
   if (loading) {
-    return <div style={{ color: "#475569", fontSize: 13, padding: 20, textAlign: "center" }}>Carregando avaliações...</div>;
+    return <div style={{ color: "#aaa0b2", fontSize: 13, padding: 20, textAlign: "center" }}>Carregando avaliações...</div>;
   }
 
   if (reviews.length === 0) {
     return (
-      <div style={{ color: "#475569", fontSize: 13, padding: 24, textAlign: "center", background: "#0b1420", borderRadius: 12, border: "1px solid rgba(183,44,255,0.10)" }}>
+      <div style={{ color: "#aaa0b2", fontSize: 13, padding: 24, textAlign: "center", background: "#0f0a13", borderRadius: 12, border: "1px solid rgba(183,44,255,0.10)" }}>
         Ainda não há avaliações. Seja o primeiro a avaliar.
       </div>
     );
@@ -51,35 +51,35 @@ export default function ReviewList({ professionalId }: Props) {
         <div>
           <div style={{ display: "flex", gap: 2, marginBottom: 2 }}>
             {[1, 2, 3, 4, 5].map(n => (
-              <span key={n} style={{ fontSize: 16, color: n <= Math.round(avgRating) ? GOLD : "#1e293b" }}>★</span>
+              <span key={n} style={{ fontSize: 16, color: n <= Math.round(avgRating) ? GOLD : "#2d1d35" }}>★</span>
             ))}
           </div>
-          <div style={{ fontSize: 12, color: "#94a3b8" }}>{reviews.length} avaliações</div>
+          <div style={{ fontSize: 12, color: "#b9adbf" }}>{reviews.length} avaliações</div>
         </div>
       </div>
 
       {/* Lista de reviews */}
       {reviews.map(r => (
-        <div key={r.id} style={{ background: "#0b1420", border: "1px solid rgba(183,44,255,0.10)", borderRadius: 12, padding: 16 }}>
+        <div key={r.id} style={{ background: "#0f0a13", border: "1px solid rgba(183,44,255,0.10)", borderRadius: 12, padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(183,44,255,0.15)", border: "1px solid rgba(183,44,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", color: GOLD, fontWeight: 700, fontSize: 14 }}>
                 {r.author?.name?.[0]?.toUpperCase() ?? "U"}
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>{r.author?.name ?? "Anônimo"}</div>
-                <div style={{ fontSize: 11, color: "#475569" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#f8f5fa" }}>{r.author?.name ?? "Anônimo"}</div>
+                <div style={{ fontSize: 11, color: "#aaa0b2" }}>
                   {new Date(r.createdAt).toLocaleDateString("pt-BR", { month: "short", year: "numeric" })}
                 </div>
               </div>
             </div>
             <div style={{ display: "flex", gap: 1 }}>
               {[1, 2, 3, 4, 5].map(n => (
-                <span key={n} style={{ fontSize: 13, color: n <= r.rating ? GOLD : "#1e293b" }}>★</span>
+                <span key={n} style={{ fontSize: 13, color: n <= r.rating ? GOLD : "#2d1d35" }}>★</span>
               ))}
             </div>
           </div>
-          <p style={{ margin: 0, fontSize: 13, color: "#94a3b8", lineHeight: 1.65 }}>{r.comment}</p>
+          <p style={{ margin: 0, fontSize: 13, color: "#b9adbf", lineHeight: 1.65 }}>{r.comment}</p>
         </div>
       ))}
     </div>

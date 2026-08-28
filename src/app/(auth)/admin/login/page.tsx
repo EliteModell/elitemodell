@@ -67,7 +67,7 @@ export default function AdminLoginPage() {
 
         {/* Título */}
         <h1 style={{
-          color: "#f1f5f9",
+          color: "#f8f5fa",
           fontSize: 24,
           fontWeight: 800,
           margin: "0 0 8px",
@@ -135,7 +135,7 @@ export default function AdminLoginPage() {
 
         {/* Rodapé */}
         <p style={{
-          color: "#1e293b",
+          color: "#2d1d35",
           fontSize: 11,
           margin: "24px 0 0",
           textAlign: "center",

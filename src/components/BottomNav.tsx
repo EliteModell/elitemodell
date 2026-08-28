@@ -19,7 +19,7 @@ export default function BottomNav() {
       label: "Buscar",
       active: pathname === "/buscar" && !tab,
       icon: (active: boolean) => (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? GOLD : "#475569"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? GOLD : "#aaa0b2"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
       ),
@@ -29,7 +29,7 @@ export default function BottomNav() {
       label: "Acomp.",
       active: pathname === "/buscar" && tab === "acompanhantes",
       icon: (active: boolean) => (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? GOLD : "#475569"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? GOLD : "#aaa0b2"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
         </svg>
       ),
@@ -39,7 +39,7 @@ export default function BottomNav() {
       label: session ? "Explorar" : "Entrar",
       active: pathname === ACCOUNT_ROUTES.mainClientFeed || pathname === ACCOUNT_ROUTES.painelCliente || pathname === ACCOUNT_ROUTES.login,
       icon: (active: boolean) => (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? GOLD : "#475569"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? GOLD : "#aaa0b2"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
         </svg>
       ),
@@ -69,7 +69,7 @@ export default function BottomNav() {
             {item.icon(item.active)}
             <span style={{
               fontSize: 10, fontWeight: item.active ? 700 : 500,
-              color: item.active ? GOLD : "#475569",
+              color: item.active ? GOLD : "#aaa0b2",
               transition: "color 0.2s",
             }}>
               {item.label}
