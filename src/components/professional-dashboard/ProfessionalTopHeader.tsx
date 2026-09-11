@@ -90,7 +90,7 @@ export function ProfessionalTopHeader({ onMenuClick }: { onMenuClick: () => void
           </button>
 
           <Link href="/profissional" className="relative flex min-w-0 items-center justify-center no-underline" aria-label="Elite Modell">
-            <span className="inline-grid w-[58px] sm:w-[64px]"><BrandMark priority /></span>
+            <span className="inline-grid w-[168px] sm:w-[196px]"><BrandMark priority /></span>
           </Link>
 
           <div className="flex justify-end gap-3">

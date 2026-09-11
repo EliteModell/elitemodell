@@ -116,7 +116,7 @@ export default function AgeGate() {
 
         <div className="age-content">
           <div className="age-logo" aria-label="Elite Modell">
-            <BrandMark priority variant="full" />
+            <BrandMark priority />
           </div>
 
           <div className="adult-badge" aria-hidden="true">

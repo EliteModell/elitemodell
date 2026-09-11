@@ -139,7 +139,7 @@ const GoldLine = () => (
 
 const Logo = () => (
   <div style={{ textAlign: "center", marginBottom: 28 }}>
-    <Link href="/" aria-label="Elite Modell" style={{ width: 64, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+    <Link href="/" aria-label="Elite Modell" style={{ width: 170, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
       <BrandMark priority />
     </Link>
   </div>
@@ -217,7 +217,7 @@ function AuthInfoFooter() {
     <div className="auth-info-footer">
       <section className="auth-info-card">
         <Link href="/" className="auth-info-brand" aria-label="Elite Modell">
-          <BrandMark variant="full" />
+          <BrandMark />
         </Link>
         <div className="auth-restricted-badge">Ambiente restrito a maiores de 18 anos</div>
         <p>

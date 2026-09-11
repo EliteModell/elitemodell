@@ -9,7 +9,7 @@ test.describe("tema claro responsivo", () => {
       await page.setViewportSize({ width, height: width < 768 ? 844 : 900 });
       await page.goto("/", { waitUntil: "domcontentloaded" });
 
-      await expect(page.getByRole("heading", { name: /Encontre quem combina com você/i })).toBeVisible();
+      await expect(page.getByRole("heading", { name: /Encontre o perfil certo para você/i })).toBeVisible();
       await expect(page.getByRole("img", { name: "Modelo da Elite Modell" })).toBeVisible();
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 

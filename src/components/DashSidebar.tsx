@@ -208,7 +208,13 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
           <div className="flex items-center justify-between">
           <Link href={logoHref} onClick={onClose} className="inline-flex items-center gap-2 no-underline">
             <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-white">
-              <img src="/brand/elite-modell-symbol-v20260911-512.png" alt="Elite Modell" className="h-full w-full object-contain" />
+              <img src="/brand/elite-modell-purple.svg" alt="Elite Modell" className="h-full w-full object-contain" />
+            </span>
+            <span className="text-xl font-black tracking-[-0.02em]">
+              <span className="text-[#7c22ee]">
+                elite
+              </span>
+              <span className="text-[#17141d]">modell</span>
             </span>
           </Link>
             <button

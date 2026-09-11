@@ -1,14 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import HomeCitySearch from "@/components/home/HomeCitySearch";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import styles from "./home.module.css";
 
 const entries = [
-  { tag: "Cliente", title: "Quero encontrar acompanhantes", description: "Veja perfis disponíveis na sua cidade e encontre quem combina com você.", cta: "Explorar perfis", href: "/buscar?tab=acompanhantes&selecionarCidade=1" },
-  { tag: "Acompanhante", title: "Quero anunciar meu perfil", description: "Crie seu perfil, escolha sua cidade e comece a receber contatos.", cta: "Criar meu perfil", href: ACCOUNT_ROUTES.cadastroAcompanhante },
+  { tag: "Cliente", title: "Quero encontrar acompanhantes", description: "Veja perfis verificados e encontre a sua próxima experiência.", cta: "Explorar perfis", href: "/buscar?tab=acompanhantes&selecionarCidade=1" },
+  { tag: "Acompanhante", title: "Quero anunciar meu perfil", description: "Crie seu perfil com segurança e comece a receber contatos.", cta: "Criar meu perfil", href: ACCOUNT_ROUTES.cadastroAcompanhante },
 ];
 const trustItems = [
   { title: "Privacidade real", text: "Seus dados protegidos." },
@@ -26,9 +26,9 @@ export default function HomePage() {
         </div>
         <div className={styles.heroCopy}>
           <span className={styles.heroEyebrow}>Discrição • Segurança • Liberdade</span>
-          <h1>Encontre quem combina com você.</h1>
-          <p>Perfis verificados, privacidade e liberdade para escolher do seu jeito.</p>
-          <HomeCitySearch />
+          <h1>Encontre o<br/>perfil certo<br/><strong>para você.</strong></h1>
+          <p>Acompanhantes verificadas, com privacidade, segurança e liberdade para viver boas experiências.</p>
+          <Link href="/buscar?tab=acompanhantes&selecionarCidade=1" className={styles.heroCta}>Explorar perfis<ArrowRight aria-hidden="true" size={25}/></Link>
           <span className={styles.ageNotice}>Ambiente exclusivo para maiores de 18 anos.</span>
         </div>
       </section>
@@ -48,7 +48,7 @@ export default function HomePage() {
             <span className={styles.tag}>{entry.tag}</span>
             <h3>{entry.title}</h3>
             <p>{entry.description}</p>
-            <Link href={entry.href} className={styles.cta}>{entry.cta}</Link>
+            <Link href={entry.href} className={styles.cta}>{entry.cta}<ArrowRight aria-hidden="true" size={22}/></Link>
           </article>)}
         </div>
       </section>

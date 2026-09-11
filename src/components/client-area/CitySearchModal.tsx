@@ -110,8 +110,8 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
 
       <div className="relative mx-auto flex min-h-dvh max-w-[820px] flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+38px)] pt-[calc(env(safe-area-inset-top)+22px)] sm:px-8">
         <header className="flex items-center justify-between">
-          <span className="inline-grid w-[64px]" aria-label="Elite Modell">
-            <Image src="/brand/elite-modell-symbol-v20260911-512.png" alt="Elite Modell" width={512} height={512} priority className="h-auto w-full" />
+          <span className="inline-grid w-[174px]" aria-label="Elite Modell">
+            <Image src="/brand/elite-modell-purple.svg" alt="Elite Modell" width={720} height={210} priority className="h-auto w-full" />
           </span>
           <button
             type="button"

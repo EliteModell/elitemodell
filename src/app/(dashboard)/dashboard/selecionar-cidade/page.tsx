@@ -118,7 +118,7 @@ export default function SelecionarCidadePage() {
 
         <header className="city-select-header">
           <span className="city-select-logo" aria-label="EliteModell">
-            <Image src="/brand/elite-modell-symbol-v20260911-512.png" alt="Elite Modell" width={512} height={512} priority style={{ width: 64, height: "auto" }} />
+            <Image src="/brand/elite-modell-purple.svg" alt="Elite Modell" width={720} height={210} priority style={{ width: 174, height: "auto" }} />
           </span>
           <button type="button" onClick={() => router.back()} className="city-select-close" aria-label="Fechar">
             <X />

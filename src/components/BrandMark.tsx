@@ -3,25 +3,18 @@ import Image from "next/image";
 type BrandMarkProps = {
   className?: string;
   priority?: boolean;
-  variant?: "symbol" | "full";
 };
 
-export function BrandMark({ className, priority = false, variant = "symbol" }: BrandMarkProps) {
-  const isFullLogo = variant === "full";
-
+export function BrandMark({ className, priority = false }: BrandMarkProps) {
   return (
     <Image
-      src={
-        isFullLogo
-          ? "/brand/elite-modell-official-v20260911.jpg"
-          : "/brand/elite-modell-symbol-v20260911.png"
-      }
+      src="/brand/elite-modell-purple.svg"
       alt="Elite Modell"
-      width={isFullLogo ? 1254 : 734}
-      height={isFullLogo ? 1254 : 734}
+      width={720}
+      height={210}
       priority={priority}
       className={className}
-      style={{ display: "block", width: "100%", height: "auto", objectFit: "contain", opacity: 1, filter: "none" }}
+      style={{ display: "block", width: "100%", height: "auto" }}
     />
   );
 }

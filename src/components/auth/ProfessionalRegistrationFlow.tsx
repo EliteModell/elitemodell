@@ -379,10 +379,10 @@ export function ProfessionalRegistrationFlow({
         </Link>
         <Link className={styles.brand} href="/" aria-label="Elite Modell - página inicial">
           <Image
-            src="/brand/elite-modell-symbol-v20260911-512.png"
+            src="/brand/elite-modell-purple.svg"
             alt="Elite Modell"
-            width={512}
-            height={512}
+            width={720}
+            height={210}
             priority
           />
         </Link>
