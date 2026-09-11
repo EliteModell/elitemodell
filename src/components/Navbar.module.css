@@ -39,6 +39,9 @@
 .logo {
   width: 100%;
   height: auto;
+  object-fit: contain;
+  opacity: 1;
+  filter: none;
 }
 .center {
   display: flex;

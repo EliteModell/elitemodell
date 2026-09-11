@@ -108,7 +108,7 @@ export default function RootLayout({
     "@type": "Organization",
     name: "EliteModell",
     url: siteUrl,
-    logo: `${siteUrl}/icon.png`,
+    logo: `${siteUrl}/brand/elite-modell-logo-transparent.svg`,
     image: `${siteUrl}/og-image.png`,
     description: publicBrandDescription,
     brand: {

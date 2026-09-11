@@ -143,7 +143,7 @@ function safeInternalPath(value: string | null) {
 function Logo({ dark = false }: { dark?: boolean }) {
   return (
     <Link href="/" aria-label="Elite Modell" style={{ display: "inline-flex", alignItems: "center" }}>
-      <img src="/brand/elite-modell-purple.svg" alt="Elite Modell" style={{ height: dark ? 44 : 38, width: "auto" }} />
+      <img src="/brand/elite-modell-logo-transparent.svg" alt="Elite Modell" style={{ height: dark ? 44 : 38, width: "auto", objectFit: "contain", opacity: 1, filter: "none" }} />
     </Link>
   );
 }

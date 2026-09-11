@@ -956,7 +956,7 @@ export default function ProfissionalNovoPage() {
       <header className="model-flow-header">
         <button type="button" onClick={() => router.back()} aria-label="Voltar">←</button>
         <span className="model-flow-logo" aria-label="Elite Modell">
-          <Image src="/brand/elite-modell-purple.svg" alt="Elite Modell" width={184} height={54} priority />
+          <Image src="/brand/elite-modell-logo-transparent.svg" alt="Elite Modell" width={184} height={54} priority style={{ objectFit: "contain", opacity: 1, filter: "none" }} />
         </span>
         <button type="button" onClick={handleExit}>Sair</button>
       </header>

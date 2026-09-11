@@ -104,6 +104,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "logo-context",
+      testMatch: "**/logo-context.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "authenticated",
       testMatch: "**/client-area-authenticated.spec.ts",
       use: {

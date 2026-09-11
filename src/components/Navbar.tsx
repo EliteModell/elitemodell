@@ -25,7 +25,7 @@ export default function Navbar({ tone = "dark" }: { tone?: "dark" | "light" }) {
   return <nav className={`${styles.nav} ${tone === "light" ? styles.light : ""}`} aria-label="Navegação principal">
     <div className={styles.inner}>
       <Link href="/" className={styles.brand} aria-label="Elite Modell — início">
-        <Image src="/brand/elite-modell-purple.svg" alt="Elite Modell" width={720} height={210} priority className={styles.logo}/>
+        <Image src="/brand/elite-modell-logo-transparent.svg" alt="Elite Modell" width={720} height={210} priority className={styles.logo}/>
       </Link>
       <div className={styles.center}>
         <Link href="/buscar?tab=acompanhantes">Explorar</Link>
