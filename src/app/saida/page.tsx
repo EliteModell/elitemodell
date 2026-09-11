@@ -15,7 +15,7 @@ export default function SafeExitPage() {
     <main className="safe-exit-page">
       <section className="safe-exit-card">
         <div className="brand" aria-label="Elite Modell">
-          <BrandMark priority />
+          <BrandMark priority variant="full" />
         </div>
         <p className="eyebrow">Saida segura</p>
         <h1>Acesso não confirmado</h1>

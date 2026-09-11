@@ -139,7 +139,7 @@ export default function CitySelectorScreen({
       <div className="client-city-wrap">
         <header className="client-city-header">
           <span className="client-city-logo" aria-label="Elite Modell">
-            <Image src="/brand/elite-modell-purple.svg" alt="Elite Modell" width={720} height={210} priority style={{ width: 174, height: "auto" }} />
+            <Image src="/brand/elite-modell-symbol-v20260911-512.png" alt="Elite Modell" width={512} height={512} priority style={{ width: 64, height: "auto" }} />
           </span>
           <button type="button" onClick={onClose} className="client-city-close" aria-label="Fechar">
             <X />

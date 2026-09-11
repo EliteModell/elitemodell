@@ -31,14 +31,23 @@
   gap: 24px;
 }
 .brand {
-  width: 268px;
+  width: 64px;
+  height: 64px;
+  border: 1px solid rgba(124, 34, 238, .24);
+  border-radius: 14px;
   display: flex;
   align-items: center;
+  overflow: hidden;
   flex: 0 0 auto;
+  background: #030303;
+  box-shadow: 0 5px 16px rgba(72, 22, 115, .12);
 }
 .logo {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;
+  opacity: 1;
+  filter: none;
 }
 .center {
   display: flex;
@@ -116,7 +125,9 @@
     gap: 8px;
   }
   .brand {
-    width: 160px;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
   }
   .center {
     display: none;
@@ -144,7 +155,8 @@
     padding: 0 8px;
   }
   .brand {
-    width: 142px;
+    width: 52px;
+    height: 52px;
   }
   .actions {
     gap: 5px;

@@ -13,7 +13,7 @@ const publicBrandDescription =
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  applicationName: "EliteModell",
+  applicationName: "Elite Modell",
   title: {
     default: "Elite Modell | Conexões Premium com Discrição e Segurança",
     template: "%s | Elite Modell",
@@ -28,9 +28,9 @@ export const metadata: Metadata = {
     "privacidade",
     "seguranca",
   ],
-  authors: [{ name: "EliteModell" }],
-  creator: "EliteModell",
-  publisher: "EliteModell",
+  authors: [{ name: "Elite Modell" }],
+  creator: "Elite Modell",
+  publisher: "Elite Modell",
   category: "restricted access",
   alternates: {
     canonical: siteUrl,
@@ -38,17 +38,18 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+      { url: "/brand/elite-modell-symbol-v20260911-512.png", type: "image/png", sizes: "512x512" },
+      { url: "/favicon-48x48.png", type: "image/png", sizes: "48x48" },
       { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
       { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
     ],
-    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
+    apple: [{ url: "/brand/elite-modell-symbol-v20260911-180.png", type: "image/png", sizes: "180x180" }],
     shortcut: ["/favicon.ico"],
   },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "EliteModell",
+    title: "Elite Modell",
     statusBarStyle: "black-translucent",
   },
   formatDetection: {
@@ -73,10 +74,10 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: `${siteUrl}/og-image.png`,
+        url: `${siteUrl}/brand/elite-modell-social-v20260911.png`,
         width: 1200,
         height: 630,
-        alt: "EliteModell",
+        alt: "Elite Modell",
       },
     ],
   },
@@ -84,12 +85,12 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Elite Modell | Conexões Premium com Discrição e Segurança",
     description: publicBrandDescription,
-    images: [`${siteUrl}/og-image.png`],
+    images: [`${siteUrl}/brand/elite-modell-social-v20260911.png`],
   },
   other: {
     "theme-color": "#ffffff",
     "msapplication-TileColor": "#ffffff",
-    "msapplication-TileImage": "/icon.png",
+    "msapplication-TileImage": "/brand/elite-modell-symbol-v20260911-512.png",
   },
 };
 
@@ -106,14 +107,14 @@ export default function RootLayout({
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "EliteModell",
+    name: "Elite Modell",
     url: siteUrl,
-    logo: `${siteUrl}/icon.png`,
-    image: `${siteUrl}/og-image.png`,
+    logo: `${siteUrl}/brand/elite-modell-symbol-v20260911-512.png`,
+    image: `${siteUrl}/brand/elite-modell-social-v20260911.png`,
     description: publicBrandDescription,
     brand: {
       "@type": "Brand",
-      name: "EliteModell",
+      name: "Elite Modell",
     },
   };
 

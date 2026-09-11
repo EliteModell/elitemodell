@@ -45,7 +45,7 @@
   width: min(48%, 610px);
   min-height: 700px;
   margin: 0 max(42px, calc((100vw - 1420px) / 2));
-  padding: 82px 0 56px;
+  padding: 68px 0 48px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -64,17 +64,13 @@
 
 .heroCopy h1 {
   margin: 22px 0 20px;
+  max-width: 590px;
   color: #0d0c12;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: clamp(58px, 5.4vw, 82px);
+  font-size: clamp(48px, 4.4vw, 68px);
   font-weight: 750;
-  line-height: .98;
-  letter-spacing: -.055em;
-}
-
-.heroCopy h1 strong {
-  color: var(--violet);
-  font-weight: inherit;
+  line-height: 1.02;
+  letter-spacing: -.045em;
 }
 
 .heroCopy > p {
@@ -85,29 +81,9 @@
   line-height: 1.47;
 }
 
-.heroCta {
-  min-width: 310px;
-  min-height: 70px;
-  margin-top: 32px;
-  padding: 0 34px;
-  border-radius: 24px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 28px;
-  color: #fff;
-  background: linear-gradient(115deg, #8c2ef3, #6512de);
-  box-shadow: 0 16px 34px rgba(106, 25, 218, .22);
-  text-decoration: none;
-  font-size: 19px;
-  font-weight: 750;
-  transition: transform .2s ease, box-shadow .2s ease;
-}
-
-.heroCta:hover,
 .cta:hover {
   transform: translateY(-2px);
-  box-shadow: 0 20px 42px rgba(106, 25, 218, .28);
+  box-shadow: 0 12px 28px rgba(106, 25, 218, .14);
 }
 
 .ageNotice {
@@ -190,15 +166,15 @@
 }
 
 .entryCard {
-  min-height: 330px;
+  min-height: 310px;
   padding: 38px 40px 34px;
-  border: 1px solid #eee9f7;
-  border-radius: 28px;
+  border: 1px solid #e8e2ef;
+  border-radius: 24px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  background: linear-gradient(135deg, #fbf9ff, #f5f0fb);
-  box-shadow: 0 18px 45px rgba(77, 49, 115, .06);
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(77, 49, 115, .06);
 }
 
 .tag {
@@ -249,7 +225,7 @@
 
 .entryCard:first-child .cta {
   color: #fff;
-  background: linear-gradient(115deg, #8d2cf4, #6711df);
+  background: #7419df;
 }
 
 @media (max-width: 900px) {
@@ -258,7 +234,7 @@
   .model { inset: 0 -4% 0 34%; }
   .modelImage { object-position: 52% 38%; }
   .heroCopy { width: 54%; min-height: 640px; margin: 0 24px; padding: 56px 0 36px; }
-  .heroCopy h1 { font-size: clamp(45px, 7.7vw, 64px); }
+  .heroCopy h1 { font-size: clamp(42px, 6.8vw, 58px); }
   .heroCopy > p { max-width: 360px; font-size: 16px; }
   .trust { padding-inline: 24px; }
   .trustItem { padding-inline: 28px; }
@@ -266,20 +242,19 @@
 }
 
 @media (max-width: 620px) {
-  .hero { min-height: 620px; }
+  .hero { min-height: 690px; }
   .hero::after {
     background:
       linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, .97) 27%, rgba(255, 255, 255, .67) 48%, rgba(255, 255, 255, .05) 78%),
       linear-gradient(0deg, rgba(255, 255, 255, .62), transparent 30%);
   }
-  .model { inset: 0 -26% 0 31%; }
-  .modelImage { object-position: 50% 32%; }
-  .heroCopy { width: 61%; min-height: 620px; margin: 0 16px; padding: 35px 0 28px; justify-content: flex-start; }
+  .model { inset: 0 -22% 0 28%; }
+  .modelImage { object-position: 50% 28%; }
+  .heroCopy { width: 72%; min-height: 690px; margin: 0 16px; padding: 34px 0 28px; justify-content: flex-start; }
   .heroEyebrow { max-width: 230px; margin-top: 28px; font-size: 9px; letter-spacing: .18em; }
-  .heroCopy h1 { margin: 18px 0 16px; font-size: clamp(36px, 10.5vw, 48px); line-height: 1; }
-  .heroCopy > p { max-width: 245px; font-size: 13px; line-height: 1.42; }
-  .heroCta { min-width: 0; width: 220px; min-height: 54px; margin-top: 22px; padding: 0 20px; border-radius: 17px; font-size: 14px; }
-  .ageNotice { max-width: 205px; margin-top: auto; font-size: 10px; }
+  .heroCopy h1 { margin: 18px 0 16px; font-size: clamp(36px, 10vw, 44px); line-height: 1.02; }
+  .heroCopy > p { max-width: 270px; font-size: 14px; line-height: 1.45; }
+  .ageNotice { max-width: 230px; margin-top: auto; font-size: 10px; }
   .trust { min-height: 104px; padding: 20px 10px; }
   .trustItem { min-height: 64px; padding: 2px 10px; }
   .trustItem:first-child { padding-left: 2px; }
@@ -295,6 +270,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .heroCta,
   .cta { transition: none; }
 }

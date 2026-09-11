@@ -45,7 +45,7 @@ function initials(name?: string | null) {
 function BrandLogo() {
   return (
     <Link href={ACCOUNT_ROUTES.mainClientFeed} className="relative inline-flex items-center no-underline" aria-label="Elite Modell">
-      <span className="relative inline-grid w-[144px] items-center rounded-[12px] border border-[#b72cff]/30 bg-white/[0.045] px-2.5 py-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.22)]">
+      <span className="relative inline-grid w-[58px] items-center rounded-[12px] border border-[#b72cff]/30 bg-white/[0.045] p-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.22)]">
         <BrandMark />
       </span>
     </Link>
@@ -368,7 +368,7 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
         <div className="client-side-drawer-footer px-5 pb-10 pt-5 text-center">
           <div className="mx-3 mb-5 h-px bg-white/[0.07]" />
           <Link href="/" onClick={onClose} className="mx-auto inline-flex items-center rounded-[8px] border border-[#b72cff]/34 bg-[#b72cff]/10 px-4 py-2 no-underline shadow-[0_12px_30px_rgba(0,0,0,0.22)]">
-            <span className="inline-grid w-[148px]"><BrandMark /></span>
+            <span className="inline-grid w-[148px]"><BrandMark variant="full" /></span>
           </Link>
           <Link
             href="/"

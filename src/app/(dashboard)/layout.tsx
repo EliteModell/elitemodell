@@ -111,7 +111,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span className="text-sm">Buscar profissionais, favoritos e agendamentos</span>
               </div>
               <div className="min-w-0 lg:hidden">
-                <div className="w-[118px]"><BrandMark /></div>
+                <div className="w-[58px]"><BrandMark /></div>
                 <p className="truncate text-xs text-[#777b88]">{session?.user?.email ?? "Conta discreta"}</p>
               </div>
             </div>

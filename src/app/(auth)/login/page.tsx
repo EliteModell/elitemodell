@@ -303,7 +303,7 @@ function LoginContent() {
 
       <section className="trust-section" aria-label="Sobre a Elite Modell">
         <Link href="/" className="footer-brand" aria-label="Elite Modell">
-          <BrandMark />
+          <BrandMark variant="full" />
         </Link>
         <div className="restricted-badge"><LockKeyhole size={18} /> Ambiente restrito a maiores de 18 anos</div>
         <p>
@@ -382,9 +382,14 @@ const loginPageStyles = (
         .footer-brand {
           display: inline-grid;
           align-items: center;
-          width: 152px;
           text-decoration: none;
           justify-self: center;
+        }
+        .auth-brand {
+          width: 56px;
+        }
+        .footer-brand {
+          width: 152px;
         }
         .country-pill {
           min-height: 36px;

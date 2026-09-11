@@ -56,7 +56,7 @@
 
 .brand img {
   display: block;
-  width: clamp(132px, 28vw, 210px);
+  width: clamp(52px, 12vw, 64px);
   height: auto;
 }
 
