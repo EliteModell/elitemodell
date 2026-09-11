@@ -45,10 +45,10 @@ const GOLD = "#b72cff";
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "11px 14px",
-  background: "#111",
+  background: "#fff",
   border: "1px solid rgba(183,44,255,0.16)",
   borderRadius: 8,
-  color: "#f4f1ea",
+  color: "#17141d",
   fontSize: 14,
   outline: "none",
   boxSizing: "border-box",
@@ -885,12 +885,12 @@ export default function CadastroPage() {
 
     return (
       <main style={{ width: "100%", maxWidth: 620, padding: "max(18px, env(safe-area-inset-top)) 0 0" }}>
-      <div style={{ width: "100%", maxWidth: 620, background: "linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98))", border: "1px solid rgba(183,44,255,0.28)", borderRadius: 24, padding: "34px 28px", position: "relative", zIndex: 1, boxShadow: "0 24px 70px rgba(0,0,0,0.34)" }}>
+      <div style={{ width: "100%", maxWidth: 620, background: "#fff", border: "1px solid #e7e2ec", borderRadius: 20, padding: "34px 28px", position: "relative", zIndex: 1, boxShadow: "0 12px 36px rgba(47,28,68,.08)" }}>
         <GoldLine />
         <Logo />
         <div style={{ textAlign: "center", margin: "-12px 0 24px" }}>
           <p style={{ color: GOLD, fontSize: 11, fontWeight: 900, letterSpacing: 2.4, textTransform: "uppercase", margin: "0 0 8px" }}>Cadastro Elite Modell</p>
-          <h1 style={{ color: "#f4f1ea", fontSize: 24, lineHeight: 1.15, margin: 0 }}>Como você quer se cadastrar?</h1>
+          <h1 style={{ color: "#17141d", fontSize: 24, lineHeight: 1.15, margin: 0 }}>Como você quer se cadastrar?</h1>
           <p style={{ color: "#8d8578", fontSize: 13, lineHeight: 1.55, margin: "10px auto 0", maxWidth: 460 }}>
             Escolha entre a experiência de cliente ou o cadastro profissional como acompanhante.
           </p>
@@ -901,7 +901,7 @@ export default function CadastroPage() {
             const content = (
               <>
                 <span style={{ color: GOLD, fontSize: 10, fontWeight: 900, letterSpacing: 1.7, textTransform: "uppercase" }}>{option.eyebrow}</span>
-                <strong style={{ display: "block", color: "#fbf7ff", fontSize: 18, marginTop: 6 }}>{option.title}</strong>
+                <strong style={{ display: "block", color: "#17141d", fontSize: 18, marginTop: 6 }}>{option.title}</strong>
                 <p style={{ color: "#8d8578", fontSize: 12.5, lineHeight: 1.55, margin: "8px 0 14px" }}>{option.desc}</p>
                 <span style={{ color: "#050505", background: GOLD, borderRadius: 999, display: "inline-flex", padding: "8px 13px", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0 }}>
                   {option.action}
@@ -914,7 +914,7 @@ export default function CadastroPage() {
                 <Link
                   key={option.tipo}
                   href={option.directHref}
-                  style={{ display: "block", border: "1px solid rgba(183,44,255,0.2)", borderRadius: 12, background: "#111", padding: 18, textDecoration: "none" }}
+                  style={{ display: "block", border: "1px solid #e7e2ec", borderRadius: 16, background: "#fff", padding: 18, textDecoration: "none" }}
                 >
                   {content}
                 </Link>
@@ -926,7 +926,7 @@ export default function CadastroPage() {
                 key={option.tipo}
                 type="button"
                 onClick={() => selectAccountType(option.tipo)}
-                style={{ width: "100%", textAlign: "left", border: "1px solid rgba(183,44,255,0.2)", borderRadius: 12, background: "#111", padding: 18, cursor: "pointer" }}
+                style={{ width: "100%", textAlign: "left", border: "1px solid #e7e2ec", borderRadius: 16, background: "#fff", padding: 18, cursor: "pointer" }}
               >
                 {content}
               </button>
@@ -946,9 +946,9 @@ export default function CadastroPage() {
   if (step === "verify") {
     return (
       <main style={{ width: "100%", maxWidth: 440, padding: "max(18px, env(safe-area-inset-top)) 0 0" }}>
-      <div style={{ width: "100%", maxWidth: 420, background: "rgba(8,8,8,0.96)", border: "1px solid rgba(183,44,255,0.28)", borderRadius: 16, padding: "48px 36px", position: "relative", zIndex: 1, textAlign: "center" }}>
+      <div style={{ width: "100%", maxWidth: 420, background: "#fff", border: "1px solid #e7e2ec", borderRadius: 20, padding: "48px 36px", position: "relative", zIndex: 1, textAlign: "center", boxShadow: "0 12px 36px rgba(47,28,68,.08)" }}>
         <GoldLine />
-        <h2 style={{ color: "#f8f5fa", fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>Verifique seu email</h2>
+        <h2 style={{ color: "#17141d", fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>Verifique seu email</h2>
         <p style={{ color: "#8d8578", fontSize: 14, lineHeight: 1.6, margin: "0 0 8px" }}>Enviamos uma verificação para</p>
         <p style={{ color: GOLD, fontSize: 15, fontWeight: 600, margin: "0 0 24px" }}>{form.email}</p>
         <p style={{ color: "#615b52", fontSize: 13, lineHeight: 1.6, margin: "0 0 32px" }}>
@@ -975,7 +975,7 @@ export default function CadastroPage() {
 
   return (
     <main style={{ width: "100%", maxWidth: 440, padding: "max(18px, env(safe-area-inset-top)) 0 0" }}>
-    <div style={{ width: "100%", maxWidth: 440, background: "linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98))", border: "1px solid rgba(183,44,255,0.28)", borderRadius: 24, padding: "42px 34px", position: "relative", zIndex: 1, boxShadow: "0 24px 70px rgba(0,0,0,0.34)" }}>
+    <div style={{ width: "100%", maxWidth: 440, background: "#fff", border: "1px solid #e7e2ec", borderRadius: 20, padding: "42px 34px", position: "relative", zIndex: 1, boxShadow: "0 12px 36px rgba(47,28,68,.08)" }}>
       <GoldLine />
       <Logo />
       <p style={{ color: "#8d8578", fontSize: 14, textAlign: "center", marginTop: -18, marginBottom: accountHint ? 8 : 26 }}>{accountSubtitle}</p>

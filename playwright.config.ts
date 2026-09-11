@@ -74,11 +74,6 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
-      name: "voucher-roulette",
-      testMatch: "**/voucher-roulette.spec.ts",
-      use: { browserName: "chromium" },
-    },
-    {
       name: "legal-document-catalog",
       testMatch: "**/legal-document-catalog.spec.ts",
       use: { browserName: "chromium" },
@@ -101,6 +96,11 @@ export default defineConfig({
     {
       name: "professional-registration-conversion",
       testMatch: "**/professional-registration-conversion.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "visual-responsive",
+      testMatch: "**/visual-responsive.spec.ts",
       use: { browserName: "chromium" },
     },
     {

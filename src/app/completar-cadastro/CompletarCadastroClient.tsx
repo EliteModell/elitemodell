@@ -98,7 +98,7 @@ export default function CompletarCadastroClient() {
         minHeight: "100vh",
         display: "grid",
         placeItems: "center",
-        background: "radial-gradient(ellipse at 50% 0%, rgba(183,44,255,0.06) 0%, #050505 60%)",
+        background: "#f7f7fa",
         padding: 24,
       }}
     >
@@ -106,12 +106,12 @@ export default function CompletarCadastroClient() {
         style={{
           width: "100%",
           maxWidth: 420,
-          background: "rgba(10,10,10,0.97)",
-          border: "1px solid rgba(183,44,255,0.28)",
+          background: "#fff",
+          border: "1px solid #e7e2ec",
           borderRadius: 16,
           padding: "40px 32px 36px",
           position: "relative",
-          boxShadow: "0 0 60px rgba(183,44,255,0.06), 0 20px 60px rgba(0,0,0,0.6)",
+          boxShadow: "0 20px 60px rgba(52,33,67,0.12)",
         }}
       >
         {/* Gold top line */}
@@ -133,7 +133,7 @@ export default function CompletarCadastroClient() {
 
         <h1
           style={{
-            color: "#f8f5fa",
+            color: "#17141d",
             fontSize: 18,
             fontWeight: 700,
             margin: "0 0 6px",
@@ -173,11 +173,11 @@ export default function CompletarCadastroClient() {
               maxLength={10}
               required
               style={{
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(183,44,255,0.2)",
+                background: "#fff",
+                border: "1px solid #ded7e5",
                 borderRadius: 8,
                 padding: "10px 14px",
-                color: "#f8f5fa",
+                color: "#17141d",
                 fontSize: 14,
                 outline: "none",
               }}
@@ -199,7 +199,7 @@ export default function CompletarCadastroClient() {
               onChange={(e) => setTermsConsent(e.target.checked)}
               style={{ marginTop: 2, accentColor: GOLD, width: 16, height: 16, flexShrink: 0 }}
             />
-            <span style={{ color: "#d8cedd", fontSize: 13, lineHeight: 1.5 }}>
+            <span style={{ color: "#514b59", fontSize: 13, lineHeight: 1.5 }}>
               Li e aceito os{" "}
               <a href="/terms" target="_blank" style={{ color: GOLD, textDecoration: "none" }}>
                 Termos de Uso
@@ -226,7 +226,7 @@ export default function CompletarCadastroClient() {
               onChange={(e) => setAgeConfirmed(e.target.checked)}
               style={{ marginTop: 2, accentColor: GOLD, width: 16, height: 16, flexShrink: 0 }}
             />
-            <span style={{ color: "#d8cedd", fontSize: 13, lineHeight: 1.5 }}>
+            <span style={{ color: "#514b59", fontSize: 13, lineHeight: 1.5 }}>
               Confirmo que sou maior de 18 anos e li a{" "}
               <a href="/documentos/adult-declaration" target="_blank" style={{ color: GOLD, textDecoration: "none" }}>
                 Confirmação de Maioridade
@@ -249,7 +249,7 @@ export default function CompletarCadastroClient() {
               onChange={(e) => setLgpdConsent(e.target.checked)}
               style={{ marginTop: 2, accentColor: GOLD, width: 16, height: 16, flexShrink: 0 }}
             />
-            <span style={{ color: "#d8cedd", fontSize: 13, lineHeight: 1.5 }}>
+            <span style={{ color: "#514b59", fontSize: 13, lineHeight: 1.5 }}>
               Concordo com a{" "}
               <a href="/privacy" target="_blank" style={{ color: GOLD, textDecoration: "none" }}>
                 Política de Privacidade
@@ -286,7 +286,7 @@ export default function CompletarCadastroClient() {
               border: "none",
               borderRadius: 8,
               padding: "13px 24px",
-              color: "#0a0a0a",
+              color: "#fff",
               fontSize: 14,
               fontWeight: 700,
               cursor: !canSubmit ? "not-allowed" : "pointer",

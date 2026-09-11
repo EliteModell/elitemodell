@@ -163,21 +163,19 @@ function AuthShell({
     <main style={{
       minHeight: "100dvh",
       overflowX: "hidden",
-      background: premium
-        ? "radial-gradient(circle at 20% 10%, rgba(183,44,255,0.16), transparent 32%), radial-gradient(circle at 85% 35%, rgba(183,44,255,0.10), transparent 34%), #050505"
-        : "#f8faf8",
-      color: premium ? "#fff" : INK,
+      background: "#f7f7fa",
+      color: INK,
     }}>
       <header
         style={{
           height: 88,
-          background: premium ? "rgba(5,5,5,0.92)" : "#fff",
-          borderBottom: premium ? "1px solid rgba(183,44,255,0.25)" : "1px solid #e4e8e4",
+          background: "rgba(255,255,255,0.94)",
+          borderBottom: "1px solid #e7e2ec",
           display: "grid",
           gridTemplateColumns: "56px 1fr 56px",
           alignItems: "center",
           padding: "0 16px",
-          boxShadow: premium ? "0 18px 50px rgba(0,0,0,0.34)" : "0 2px 12px rgba(25, 35, 38, 0.06)",
+          boxShadow: "0 2px 12px rgba(52,33,67,0.06)",
         }}
       >
         <Link
@@ -250,14 +248,14 @@ function PremiumAuthFooter() {
           max-width: 430px;
           margin: 34px auto 0;
           padding: 0 24px calc(30px + env(safe-area-inset-bottom));
-          color: #fff;
+          color: #17141d;
         }
         .phone-premium-footer section,
         .phone-premium-footer .groups {
           border: 1px solid rgba(183,44,255,0.25);
           border-radius: 24px;
-          background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98));
-          box-shadow: 0 24px 70px rgba(0,0,0,0.34);
+          background: #fff;
+          box-shadow: 0 18px 50px rgba(52,33,67,0.1);
           padding: 24px 18px;
         }
         .phone-premium-footer .restricted {
@@ -286,7 +284,7 @@ function PremiumAuthFooter() {
         .phone-premium-footer strong {
           display: block;
           margin-bottom: 10px;
-          color: #fff;
+          color: #17141d;
           font-size: 17px;
           font-weight: 950;
         }
@@ -320,7 +318,7 @@ function SubmitButton({ children, disabled, premium = false }: { children: React
         background: disabled
           ? premium ? "rgba(183,44,255,0.15)" : "#cad4d9"
           : premium ? "linear-gradient(135deg, #e1a6ff, #b72cff 45%, #6900a3)" : GOLD,
-        color: disabled ? premium ? "rgba(255,255,255,0.38)" : "#7a878d" : "#111",
+        color: disabled ? "#8b8491" : "#fff",
         fontSize: 17,
         fontWeight: 900,
         cursor: disabled ? "not-allowed" : "pointer",
@@ -347,8 +345,8 @@ function StatusMessage({ status, message, premium = false }: { status: OtpStatus
         padding: 14,
         borderRadius: premium ? 16 : 8,
         border: premium ? `1px solid ${isError ? "rgba(255,139,134,0.42)" : "rgba(183,44,255,0.25)"}` : `1px solid ${isError ? "#f1b5b5" : isSuccess ? "#b8dbc0" : "#dfe4e7"}`,
-        background: premium ? "rgba(16,16,20,0.88)" : isError ? "#fff2f2" : isSuccess ? "#eef8f0" : "#eef0f3",
-        color: premium ? isError ? "#ffb4af" : "#b8b8b8" : isError ? "#8a1f1f" : "#354047",
+        background: isError ? "#fff2f2" : isSuccess ? "#eef8f0" : "#eef0f3",
+        color: isError ? "#8a1f1f" : "#354047",
         fontSize: 14,
         lineHeight: 1.45,
       }}
@@ -595,7 +593,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
     return (
       <AuthShell backHref={text.verifyBack} premium={isPremium}>
         <section style={{ width: "100%", maxWidth: isPremium ? 430 : 680, margin: "0 auto", padding: "32px 24px 0" }}>
-          <h1 style={{ fontSize: 32, lineHeight: 1.14, margin: "0 0 12px", color: isPremium ? "#fff" : INK }}>Digite o código enviado</h1>
+          <h1 style={{ fontSize: 32, lineHeight: 1.14, margin: "0 0 12px", color: INK }}>Digite o código enviado</h1>
           <p style={{ fontSize: 17, lineHeight: 1.5, color: isPremium ? "#b8b8b8" : "#5b656b", margin: "0 0 28px" }}>
             Enviamos um código de verificação para {phone || "o telefone informado"}.
           </p>
@@ -611,8 +609,8 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
                 height: 64,
                 border: isPremium ? "1px solid rgba(183,44,255,0.28)" : "1px solid #cdd5d5",
                 borderRadius: isPremium ? 18 : 8,
-                background: isPremium ? "rgba(11,11,13,0.94)" : "#fff",
-                color: isPremium ? "#fff" : INK,
+                background: "#fff",
+                color: INK,
                 textAlign: "center",
                 fontSize: 28,
                 fontWeight: 800,
@@ -653,13 +651,13 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
       <section style={{ width: "100%", maxWidth: 430, margin: "0 auto", padding: "32px 24px 0" }}>
         <div style={{ textAlign: "center", marginBottom: 42 }}>
           <p style={{ margin: "0 0 10px", color: "#b72cff", fontSize: 11, fontWeight: 950, letterSpacing: "0.18em", textTransform: "uppercase" }}>Acesse Elite Modell</p>
-          <h1 style={{ fontSize: 34, lineHeight: 1.08, margin: 0, color: "#fff", fontWeight: 950, letterSpacing: 0 }}>Verificação obrigatória</h1>
+          <h1 style={{ fontSize: 34, lineHeight: 1.08, margin: 0, color: INK, fontWeight: 950, letterSpacing: 0 }}>Verificação obrigatória</h1>
           <p style={{ fontSize: 16, color: "#b8b8b8", margin: "12px auto 0", lineHeight: 1.55, maxWidth: 340 }}>Ative sua conta com uma camada extra de segurança.</p>
         </div>
 
         {sessionEmail && (
           <div style={{ marginBottom: 34 }}>
-            <h2 style={{ margin: "0 0 14px", color: "#fff", fontSize: 22, fontWeight: 950 }}>Seu e-mail</h2>
+            <h2 style={{ margin: "0 0 14px", color: INK, fontSize: 22, fontWeight: 950 }}>Seu e-mail</h2>
             <div style={{ display: "flex", alignItems: "center", gap: 12, color: "#b8b8b8", fontSize: 16, fontWeight: 800 }}>
               <CheckCircle2 size={22} color="#5bd37a" />
               <span style={{ overflowWrap: "anywhere" }}>{sessionEmail}</span>
@@ -669,7 +667,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
 
         <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 18 }}>
           <Phone size={34} color="#e1a6ff" />
-          <h2 style={{ fontSize: 27, lineHeight: 1.12, margin: 0, color: "#fff", fontWeight: 950 }}>{text.title}</h2>
+          <h2 style={{ fontSize: 27, lineHeight: 1.12, margin: 0, color: INK, fontWeight: 950 }}>{text.title}</h2>
         </div>
         <p style={{ fontSize: 18, color: "#d7d7d7", margin: "0 0 34px", lineHeight: 1.58 }}>{text.hint}</p>
         <form onSubmit={handleRegister}>
@@ -684,7 +682,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
               inputMode="tel"
               autoComplete="tel"
               placeholder={text.phonePlaceholder}
-              style={{ width: "100%", height: 70, border: "1px solid rgba(183,44,255,0.28)", borderRadius: 18, background: "rgba(11,11,13,0.94)", color: "#fff", padding: "0 18px 0 86px", fontSize: 17, outlineColor: GOLD }}
+              style={{ width: "100%", height: 70, border: "1px solid rgba(183,44,255,0.28)", borderRadius: 18, background: "#fff", color: INK, padding: "0 18px 0 86px", fontSize: 17, outlineColor: GOLD }}
             />
           </div>
 
@@ -698,7 +696,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
           <button
             type="button"
             onClick={() => setPrivacyOpen(true)}
-            style={{ width: "100%", minHeight: 58, border: isPremium ? "1px solid rgba(183,44,255,0.25)" : "none", borderRadius: isPremium ? 18 : 8, background: isPremium ? "rgba(16,16,20,0.88)" : "#eef7ef", display: "flex", alignItems: "center", gap: 14, padding: "0 16px", color: isPremium ? "#fff" : "#233037", fontSize: 17, fontWeight: 800, cursor: "pointer", marginTop: 24 }}
+            style={{ width: "100%", minHeight: 58, border: isPremium ? "1px solid rgba(183,44,255,0.25)" : "none", borderRadius: isPremium ? 18 : 8, background: isPremium ? "#fff" : "#eef7ef", display: "flex", alignItems: "center", gap: 14, padding: "0 16px", color: "#233037", fontSize: 17, fontWeight: 800, cursor: "pointer", marginTop: 24 }}
           >
             <ShieldCheck size={23} color={isPremium ? "#b72cff" : "#4a9b5a"} />
             <span style={{ flex: 1, textAlign: "left" }}>Privacidade e segurança</span>

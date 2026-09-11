@@ -65,7 +65,7 @@ test.describe("upsell premium para clientes", () => {
     })).toBe(true);
   });
 
-  test("checkout registra tentativa, aceite, idempotencia e nao importa a roleta", () => {
+  test("checkout registra tentativa, aceite e idempotencia", () => {
     const checkout = source("src/app/api/premium/checkout/pix/route.ts");
 
     expect(checkout).toContain("acceptedTerms: z.literal(true)");
@@ -73,7 +73,6 @@ test.describe("upsell premium para clientes", () => {
     expect(checkout).toContain("TransactionIsolationLevel.Serializable");
     expect(checkout).toContain("PURCHASE_ATTEMPT_REGISTERED");
     expect(checkout).toContain("hashPurchaserDocument");
-    expect(checkout).not.toMatch(/roulette|roleta|voucher-roulette/i);
   });
 
   test("pagamento anonimo aguarda conta antes de liberar o beneficio", () => {

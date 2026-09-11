@@ -132,29 +132,3 @@ test("upload publico exige declaracao de autoria", () => {
   expect(requiresContentAuthorizationDeclaration("documentos/clx")).toBe(false);
   expect(requiresContentAuthorizationDeclaration("verificacao/clx")).toBe(false);
 });
-
-/* Recurso promocional removido da plataforma.
-test("politica da roleta cobre operacao, fraude, premios e aceite versionado", () => {
-  expect(ROULETTE_PROMOTION_POLICY.key).toBe("roleta-promocional-policy");
-  expect(ROULETTE_PROMOTION_POLICY.version).toBe(
-    "1.0-operational-2026-06-11",
-  );
-  expect(ROULETTE_PROMOTION_POLICY.content).toContain(
-    "uma participação por dia",
-  );
-  expect(ROULETTE_PROMOTION_POLICY.content).toContain(
-    "cupons, créditos, vouchers",
-  );
-  expect(ROULETTE_PROMOTION_POLICY.content).toContain(
-    "prevenção a fraude",
-  );
-  expect(ROULETTE_PROMOTION_POLICY.content).toContain(
-    "versão, o hash do conteúdo",
-  );
-  expect(ROULETTE_PROMOTION_POLICY.content).toContain(
-    "autorização do órgão competente",
-  );
-  expect(ROULETTE_PROMOTION_POLICY.content).not.toContain("LEGAL_APPROVED");
-  expect(ROULETTE_PROMOTION_POLICY.content).not.toContain("PUBLISHED");
-});
-*/

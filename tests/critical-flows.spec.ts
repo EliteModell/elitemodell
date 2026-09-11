@@ -547,13 +547,6 @@ test.describe("Fluxo público — Buscar prazer", () => {
     await page.route("**/api/stories**", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: "[]" })
     );
-    await page.route("**/api/vouchers/roulette", (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ active: false, canSpin: false, prizes: [] }),
-      })
-    );
 
     await page.goto(
       "/buscar?tab=acompanhantes&selecionarCidade=1",
@@ -610,13 +603,6 @@ test.describe("Fluxo público — Buscar prazer", () => {
     );
     await page.route("**/api/stories**", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: "[]" })
-    );
-    await page.route("**/api/vouchers/roulette", (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ active: false, canSpin: false, prizes: [] }),
-      })
     );
 
     await page.goto("/buscar?tab=acompanhantes&selecionarCidade=1", {

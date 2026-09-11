@@ -10,13 +10,6 @@ type Appointment = {
   duration: number;
   status: string;
   contactMethod: string;
-  originalPrice?: number | null;
-  voucherDiscount?: number;
-  finalPrice?: number | null;
-  voucher?: {
-    code: string;
-    value: number;
-  } | null;
   professional?: {
     displayName: string;
     slug: string;
@@ -93,12 +86,6 @@ export default function ReservasPage() {
                   <Clock3 className="h-4 w-4" />
                   {dateLabel(appointment.date)} · {appointment.duration} min
                 </p>
-                {appointment.voucher ? (
-                  <p className="mt-2 text-[13px] font-bold text-emerald-200">
-                    Voucher promocional aplicado: {appointment.voucher.code} · -R$ {(appointment.voucherDiscount ?? appointment.voucher.value).toLocaleString("pt-BR")}
-                    {appointment.finalPrice != null ? ` · Total R$ ${appointment.finalPrice.toLocaleString("pt-BR")}` : ""}
-                  </p>
-                ) : null}
                 <p className="mt-2 text-sm font-black text-[#e1a6ff]">{statusLabel(appointment.status)}</p>
               </Link>
             ))}

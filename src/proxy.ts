@@ -17,7 +17,7 @@ function withAgeGateHeaders(response: NextResponse) {
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isApiRoute = pathname.startsWith("/api/");
-  const retiredPrefixes = ["/imoveis", "/anfitriao", "/cadastro-anfitriao", "/verificacao/anfitriao", "/painel/anfitriao", "/admin/imoveis", "/admin/anfitrioes", "/admin/roleta-vouchers", "/api/properties", "/api/vouchers/roulette"];
+  const retiredPrefixes = ["/imoveis", "/anfitriao", "/cadastro-anfitriao", "/verificacao/anfitriao", "/painel/anfitriao", "/admin/imoveis", "/admin/anfitrioes", "/api/properties"];
   if (retiredPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
     return isApiRoute
       ? NextResponse.json({ error: "Recurso desativado." }, { status: 410 })

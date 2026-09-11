@@ -20,8 +20,8 @@ const socialLinks = [
   { label: "Telegram", href: process.env.NEXT_PUBLIC_TELEGRAM_URL, icon: Send },
 ];
 
-export default function Footer() {
-  return <footer className={styles.footer}>
+export default function Footer({ tone = "dark" }: { tone?: "dark" | "light" }) {
+  return <footer className={`${styles.footer} ${tone === "light" ? styles.light : ""}`}>
     <div className={styles.inner}>
       <div className={styles.grid}>
         <div className={styles.brandBlock}>

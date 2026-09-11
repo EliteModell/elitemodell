@@ -21,11 +21,6 @@ const SOURCE = path.join(
   "docs",
   "PACOTE_COMPLETO_31_MINUTAS_PARA_REVISAO_E_ASSINATURA_2026-06-11.md",
 );
-const ROULETTE_POLICY_SOURCE = path.join(
-  ROOT,
-  "docs",
-  "POLITICA_ROLETA_PROMOCIONAL_V1_2026-06-11.md",
-);
 const OUTPUT_BASENAME =
   "PACOTE_FINAL_PUBLICACAO_ELITEMODELL_V1_2026-06-11";
 const OUTPUT_MD = path.join(ROOT, "docs", `${OUTPUT_BASENAME}.md`);
@@ -134,27 +129,6 @@ function extractMinutes(source) {
       section,
     };
   });
-}
-
-function extractFinalizedMinute(source, number) {
-  const title = source.match(/^#\s+(.+)$/m)?.[1]?.trim();
-  const rawKey = extractMetadata(source, "Chave");
-  const contentStart = source.indexOf("\n## Identificação");
-
-  if (!title || !rawKey || contentStart < 0) {
-    throw new Error("Estrutura inesperada na Política da Roleta Promocional.");
-  }
-
-  return {
-    number,
-    title,
-    key: rawKey.replace(/^`+|`+$/g, ""),
-    originalAcceptance: extractMetadata(source, "Aceite do usuário"),
-    finalizedContent: source
-      .slice(contentStart)
-      .trim()
-      .replace(/^##\s+/gm, "### "),
-  };
 }
 
 function removeReviewDependencies(text) {
@@ -500,7 +474,7 @@ function buildMarkdown(minutes) {
 
 ## Escopo e aplicação
 
-Este pacote consolida 32 documentos operacionais da Elite Modell. Vinte e seis documentos são destinados à publicação ou apresentação nos fluxos aplicáveis da plataforma. Seis documentos de segurança, governança, resposta a incidentes, contratação de operadores e designação interna permanecem de uso interno e não devem ser expostos publicamente.
+Este pacote consolida 31 documentos operacionais da Elite Modell. Vinte e cinco documentos são destinados à publicação ou apresentação nos fluxos aplicáveis da plataforma. Seis documentos de segurança, governança, resposta a incidentes, contratação de operadores e designação interna permanecem de uso interno e não devem ser expostos publicamente.
 
 Os documentos públicos devem ser distribuídos conforme o perfil, a funcionalidade e o momento do fluxo correspondente. Os documentos internos devem permanecer em ambiente administrativo com controle de acesso.
 
@@ -516,7 +490,7 @@ Os documentos públicos devem ser distribuídos conforme o perfil, a funcionalid
 - Prazo operacional: até 24 horas úteis após confirmação.
 - Data de vigência: ${EFFECTIVE_DATE}.
 
-## Índice dos 32 documentos
+## Índice dos 31 documentos
 
 ${index}
 
@@ -678,7 +652,7 @@ async function writeDocx(markdown) {
   const document = new Document({
     creator: COMPANY,
     title: "Pacote Final de Publicação Elite Modell V1",
-    description: "Pacote operacional consolidado com 32 documentos",
+    description: "Pacote operacional consolidado com 31 documentos",
     styles: {
       default: {
         document: {
@@ -974,9 +948,9 @@ function assertClean(markdown) {
   );
   const minuteCount = [...markdown.matchAll(/^##\s+\d+\.\s+/gm)].length;
 
-  if (minuteCount !== 32) {
+  if (minuteCount !== 31) {
     throw new Error(
-      `Pacote final deveria conter 32 minutas; contém ${minuteCount}.`,
+      `Pacote final deveria conter 31 minutas; contém ${minuteCount}.`,
     );
   }
 
@@ -988,12 +962,8 @@ function assertClean(markdown) {
 }
 
 async function main() {
-  const [source, roulettePolicySource] = await Promise.all([
-    fs.readFile(SOURCE, "utf8"),
-    fs.readFile(ROULETTE_POLICY_SOURCE, "utf8"),
-  ]);
+  const source = await fs.readFile(SOURCE, "utf8");
   const minutes = extractMinutes(source);
-  minutes.push(extractFinalizedMinute(roulettePolicySource, 32));
   const markdown = buildMarkdown(minutes);
 
   assertClean(markdown);

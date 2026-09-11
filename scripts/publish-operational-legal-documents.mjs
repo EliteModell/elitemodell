@@ -73,9 +73,6 @@ function audienceForKey(key) {
     return "Publicador";
   }
   if (key === "checkout-notice") return "Comprador";
-  if (key === "roleta-promocional-policy") {
-    return "Participantes da roleta";
-  }
   if (
     [
       "incident-response-plan",
@@ -121,7 +118,6 @@ function parseDocuments(markdown) {
 }
 
 function documentType(key) {
-  if (key.includes("roleta-promocional")) return "PROMOTION";
   if (key.includes("privacy") || key.includes("data-subject")) {
     return "PRIVACY";
   }
@@ -204,8 +200,8 @@ function versionData(entry) {
 }
 
 function validatePackage(documents) {
-  if (documents.length !== 32) {
-    throw new Error(`Esperadas 32 minutas, encontradas ${documents.length}.`);
+  if (documents.length !== 31) {
+    throw new Error(`Esperadas 31 minutas, encontradas ${documents.length}.`);
   }
   const uniqueKeys = new Set(documents.map((document) => document.key));
   const publicDocuments = documents.filter((document) => !document.internal);
@@ -213,9 +209,9 @@ function validatePackage(documents) {
   if (uniqueKeys.size !== documents.length) {
     throw new Error("O pacote final contem chaves juridicas duplicadas.");
   }
-  if (publicDocuments.length !== 26 || internalDocuments.length !== 6) {
+  if (publicDocuments.length !== 25 || internalDocuments.length !== 6) {
     throw new Error(
-      `Esperados 26 documentos publicos e 6 internos; encontrados ${publicDocuments.length}/${internalDocuments.length}.`,
+      `Esperados 25 documentos publicos e 6 internos; encontrados ${publicDocuments.length}/${internalDocuments.length}.`,
     );
   }
   return { publicDocuments, internalDocuments };

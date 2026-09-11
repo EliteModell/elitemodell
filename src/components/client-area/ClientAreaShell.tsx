@@ -509,7 +509,7 @@ export default function ClientAreaShell({
         <main className="page-content relative z-[1] w-full">
           {children}
         </main>
-        <style>{`body { background: #050505; }`}</style>
+        <style>{`body { background: #f7f7fa; }`}</style>
       </div>
     );
   }
@@ -531,7 +531,7 @@ export default function ClientAreaShell({
         </div>
       </main>
       <ClientBottomNav />
-      <style>{`body { background: #050505; }`}</style>
+      <style>{`body { background: #f7f7fa; }`}</style>
     </div>
   );
 }

@@ -33,7 +33,7 @@ export default function ReviewList({ professionalId }: Props) {
 
   if (reviews.length === 0) {
     return (
-      <div style={{ color: "#aaa0b2", fontSize: 13, padding: 24, textAlign: "center", background: "#0f0a13", borderRadius: 12, border: "1px solid rgba(183,44,255,0.10)" }}>
+      <div style={{ color: "#686270", fontSize: 13, padding: 24, textAlign: "center", background: "#fff", borderRadius: 12, border: "1px solid #e7e2ec" }}>
         Ainda não há avaliações. Seja o primeiro a avaliar.
       </div>
     );
@@ -60,7 +60,7 @@ export default function ReviewList({ professionalId }: Props) {
 
       {/* Lista de reviews */}
       {reviews.map(r => (
-        <div key={r.id} style={{ background: "#0f0a13", border: "1px solid rgba(183,44,255,0.10)", borderRadius: 12, padding: 16 }}>
+        <div key={r.id} style={{ background: "#fff", border: "1px solid #e7e2ec", borderRadius: 12, padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(183,44,255,0.15)", border: "1px solid rgba(183,44,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", color: GOLD, fontWeight: 700, fontSize: 14 }}>

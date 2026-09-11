@@ -1212,6 +1212,57 @@ export function ProfessionalPremiumStyles() {
           margin: 0 auto;
         }
       }
+      /* Identidade clara 2026: mantém a estrutura e remove o cenário decorativo escuro. */
+      :root {
+        --elite-bg: #f7f7fa;
+        --elite-bg-soft: #ffffff;
+        --elite-card: #ffffff;
+        --elite-card-2: #faf9fc;
+        --elite-gold: #7c22ee;
+        --elite-gold-light: #7c22ee;
+        --elite-gold-dark: #6418d1;
+        --elite-text: #17141d;
+        --elite-text-muted: #686d7d;
+        --elite-border: #e4dbea;
+        --elite-border-soft: #eee8f2;
+      }
+      .professional-shell { background: #f7f7fa !important; color: var(--elite-text) !important; }
+      .professional-premium-page { color: var(--elite-text) !important; }
+      .premium-card,
+      .premium-hero,
+      .premium-action-card,
+      .premium-section-card,
+      .premium-plan-card,
+      .premium-upload-zone,
+      .premium-profile-row {
+        border-color: var(--elite-border) !important;
+        border-radius: 18px !important;
+        background: #fff !important;
+        color: var(--elite-text) !important;
+        box-shadow: 0 10px 30px rgba(47,28,68,.07) !important;
+      }
+      .premium-card::before,
+      .premium-hero::before,
+      .premium-section-card::before,
+      .premium-plan-card::before,
+      .premium-upload-zone::before,
+      .premium-profile-row::before { display: none !important; }
+      .premium-title,
+      .premium-section-title,
+      .premium-action-title { color: var(--elite-text) !important; font-family: var(--font-inter), Inter, "Segoe UI", sans-serif !important; }
+      .premium-title { font-size: clamp(36px, 5vw, 56px) !important; line-height: 1.05 !important; }
+      .premium-eyebrow { letter-spacing: .08em !important; text-transform: none !important; }
+      .premium-description,
+      .premium-action-text { color: var(--elite-text-muted) !important; }
+      .premium-illustration { display: none !important; }
+      .premium-hero { min-height: 0 !important; grid-template-columns: 1fr !important; }
+      .premium-icon-orb { width: 48px !important; height: 48px !important; border-color: #dfd0ee !important; background: #f4edff !important; color: #7c22ee !important; box-shadow: none !important; }
+      .premium-icon-orb::after { display: none !important; }
+      .premium-icon-orb svg { width: 22px !important; height: 22px !important; filter: none !important; }
+      .premium-button { background: #7c22ee !important; color: #fff !important; box-shadow: 0 10px 24px rgba(124,34,238,.2) !important; }
+      .premium-button-secondary,
+      .premium-control { border-color: var(--elite-border) !important; background: #fff !important; color: #5f6472 !important; box-shadow: none !important; }
+      .premium-action-card { grid-template-columns: auto minmax(0,1fr) auto !important; }
     `}</style>
   );
 }

@@ -35,10 +35,10 @@ function formatCep(v: string) {
 const inputStyle = {
   width: "100%",
   padding: "12px 14px",
-  background: "#120b17",
-  border: "1px solid #2d1d35",
+  background: "#fff",
+  border: "1px solid #ded7e5",
   borderRadius: 10,
-  color: "#f8f5fa",
+  color: "#17141d",
   fontSize: 14,
   outline: "none",
 } as const;
@@ -47,7 +47,7 @@ const labelStyle = {
   display: "block",
   fontSize: 12,
   fontWeight: 700,
-  color: "rgba(245,240,228,0.5)",
+  color: "#686270",
   marginBottom: 6,
   textTransform: "uppercase" as const,
   letterSpacing: 1,
@@ -126,7 +126,7 @@ export default function CardPaymentForm({ planId, creditAmount, bookingId, amoun
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative w-full max-w-[420px] overflow-hidden rounded-[24px] border border-[#b72cff]/25 bg-[#0d0d0d] shadow-[0_28px_90px_rgba(0,0,0,0.7)]">
+      <div className="payment-light-modal relative w-full max-w-[420px] overflow-hidden rounded-[24px] border border-[#b72cff]/25 bg-white shadow-[0_28px_90px_rgba(52,33,67,0.24)]">
         <div className="h-[2px] bg-[linear-gradient(90deg,transparent,#c451ff,#b72cff,transparent)]" />
 
         {/* Header */}

@@ -14,15 +14,15 @@ import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 function LoadingScreen() {
   return (
-    <div className="grid min-h-screen place-items-center bg-[#050506] px-5 text-white">
-      <div className="w-full max-w-sm rounded-[8px] border border-[#b72cff]/18 bg-white/[0.04] p-6 text-center shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-        <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-[8px] border border-[#b72cff]/28 bg-[#b72cff]/10 text-[#e1a6ff]">
+    <div className="grid min-h-screen place-items-center bg-[#f7f7fa] px-5 text-[#17141d]">
+      <div className="w-full max-w-sm rounded-2xl border border-[#e7e2ec] bg-white p-6 text-center shadow-[0_18px_50px_rgba(47,28,68,0.10)]">
+        <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-xl border border-[#dfd0ee] bg-[#f4edff] text-[#7c22ee]">
           <Sparkles className="h-6 w-6 animate-pulse" />
         </div>
         <p className="text-xs font-black uppercase tracking-[0.24em] text-[#b72cff]">EliteModell</p>
         <h1 className="mt-2 text-xl font-black">Preparando sua conta</h1>
-        <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
-          <div className="premium-loading-bar h-full w-1/2 rounded-full bg-[linear-gradient(90deg,#cc1f2f,#b72cff,#e1a6ff)]" />
+        <div className="mt-5 h-2 overflow-hidden rounded-full bg-[#eee8f2]">
+          <div className="premium-loading-bar h-full w-1/2 rounded-full bg-[#7c22ee]" />
         </div>
       </div>
     </div>
@@ -74,8 +74,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (isPublicPropertyDraft && status !== "authenticated") {
     return (
-      <div className="min-h-screen overflow-x-hidden bg-[#050505] text-white">
-        <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_0%,rgba(183,44,255,0.10),transparent_34%)]" />
+      <div className="min-h-screen overflow-x-hidden bg-[#f7f7fa] text-[#17141d]">
         <main className="relative z-10 min-h-screen px-4 py-5 sm:px-6 sm:py-7">
           {children}
         </main>
@@ -88,8 +87,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className={roleAreaClass ? `${roleAreaClass}-shell min-h-screen overflow-x-hidden bg-[#050506] text-white` : "min-h-screen overflow-x-hidden bg-[#050506] text-white"}>
-      {!isAdminArea ? <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_0%,rgba(183,44,255,0.10),transparent_34%)]" /> : null}
+    <div className={roleAreaClass ? `${roleAreaClass}-shell min-h-screen overflow-x-hidden bg-[#f7f7fa] text-[#17141d]` : "min-h-screen overflow-x-hidden bg-[#f7f7fa] text-[#17141d]"}>
       {isProfessionalArea ? <ProfessionalPremiumStyles /> : null}
 
       {isProfessionalOnboarding ? null : <DashSidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />}
@@ -98,46 +96,46 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {showProfessionalChrome ? (
           <ProfessionalTopHeader onMenuClick={() => setSidebarOpen(true)} />
         ) : isProfessionalOnboarding ? null : (
-        <header className={isAdminArea ? "admin-header sticky top-0 z-30 border-b border-white/10 bg-[#050506] px-4 py-3 sm:px-6 md:px-8" : roleAreaClass ? `${roleAreaClass}-header sticky top-0 z-30 border-b border-white/10 bg-[#050506]/72 px-4 py-3 backdrop-blur-2xl sm:px-6 md:px-8` : "sticky top-0 z-30 border-b border-white/10 bg-[#050506]/72 px-4 py-3 backdrop-blur-2xl sm:px-6 md:px-8"}>
+        <header className={isAdminArea ? "admin-header sticky top-0 z-30 border-b border-[#e7e2ec] bg-white px-4 py-3 sm:px-6 md:px-8" : roleAreaClass ? `${roleAreaClass}-header sticky top-0 z-30 border-b border-[#e7e2ec] bg-white/95 px-4 py-3 backdrop-blur-2xl sm:px-6 md:px-8` : "sticky top-0 z-30 border-b border-[#e7e2ec] bg-white/95 px-4 py-3 backdrop-blur-2xl sm:px-6 md:px-8"}>
           <div className="flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="grid h-10 w-10 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-white md:hidden"
+                className="grid h-10 w-10 place-items-center rounded-xl border border-[#e7e2ec] bg-white text-[#7c22ee] md:hidden"
                 aria-label="Abrir menu"
               >
                 <Menu className="h-5 w-5" />
               </button>
-              <div className="hidden min-w-0 items-center gap-3 rounded-[8px] border border-white/10 bg-white/[0.045] px-3 py-2 text-white/45 lg:flex">
+              <div className="hidden min-w-0 items-center gap-3 rounded-xl border border-[#e7e2ec] bg-[#faf9fc] px-3 py-2 text-[#747887] lg:flex">
                 <Search className="h-4 w-4 text-[#b72cff]" />
                 <span className="text-sm">Buscar profissionais, favoritos e agendamentos</span>
               </div>
               <div className="min-w-0 lg:hidden">
                 <div className="w-[118px]"><BrandMark /></div>
-                <p className="truncate text-xs text-white/38">{session?.user?.email ?? "Conta discreta"}</p>
+                <p className="truncate text-xs text-[#777b88]">{session?.user?.email ?? "Conta discreta"}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="hidden items-center gap-2 rounded-full border border-[#b72cff]/20 bg-[#b72cff]/10 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-[#e1a6ff] sm:flex">
+              <div className="hidden items-center gap-2 rounded-full border border-[#dfd0ee] bg-[#f4edff] px-3 py-2 text-xs font-bold text-[#6c18d7] sm:flex">
                 <ShieldCheck className="h-4 w-4" />
                 Ambiente seguro
               </div>
               <div ref={notifRef} className="relative">
                 <button
                   onClick={() => setNotifOpen((v) => !v)}
-                  className="grid h-10 w-10 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045] text-white/70 transition hover:border-[#b72cff]/35 hover:text-[#e1a6ff]"
+                  className="grid h-10 w-10 place-items-center rounded-xl border border-[#e7e2ec] bg-white text-[#6f7280] transition hover:border-[#c9a8ed] hover:text-[#7c22ee]"
                   aria-label="Notificações"
                 >
                   <Bell className="h-4 w-4" />
                 </button>
                 {notifOpen && (
-                  <div className="absolute right-0 top-12 z-50 w-72 rounded-[8px] border border-white/10 bg-[#0d0d0f] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
-                    <p className="mb-3 text-[11px] font-black uppercase tracking-[0.22em] text-[#b72cff]">Notificações</p>
-                    <div className="rounded-[8px] border border-dashed border-white/10 p-4 text-center">
-                      <Bell className="mx-auto mb-2 h-5 w-5 text-white/20" />
-                      <p className="text-sm font-black text-white/50">Nenhuma notificação</p>
-                      <p className="mt-1 text-xs text-white/28">Novidades e alertas aparecem aqui.</p>
+                  <div className="absolute right-0 top-12 z-50 w-72 rounded-2xl border border-[#e7e2ec] bg-white p-4 shadow-[0_20px_60px_rgba(47,28,68,0.14)]">
+                    <p className="mb-3 text-[11px] font-bold text-[#7c22ee]">Notificações</p>
+                    <div className="rounded-xl border border-dashed border-[#e7e2ec] p-4 text-center">
+                      <Bell className="mx-auto mb-2 h-5 w-5 text-[#aaa4b1]" />
+                      <p className="text-sm font-bold text-[#4d4854]">Nenhuma notificação</p>
+                      <p className="mt-1 text-xs text-[#888b96]">Novidades e alertas aparecem aqui.</p>
                     </div>
                   </div>
                 )}

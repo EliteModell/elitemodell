@@ -19,7 +19,7 @@ const ReviewForm = dynamic(() => import("@/components/ReviewForm"));
 const GOLD = "#b72cff";
 const GOLD_DIM = "rgba(183,44,255,0.12)";
 const GOLD_MID = "rgba(183,44,255,0.28)";
-const PLAYFAIR = "var(--font-playfair), serif";
+const PLAYFAIR = "var(--font-inter), 'Segoe UI', sans-serif";
 
 type GaleriaFiltro = "todas" | "fotos" | "videos";
 
@@ -105,15 +105,6 @@ type SimilarPro = {
   pricePerHour?: number | null;
 };
 
-type AvailableVoucher = {
-  id: string;
-  code: string;
-  value: number;
-  expiresAt: string;
-  requiresPayment: boolean;
-  paymentStatus: string;
-};
-
 function calcAge(birthDate?: string | null): number | null {
   if (!birthDate) return null;
   const today = new Date();
@@ -144,10 +135,6 @@ export default function ProfissionalProfilePage() {
   const [bookingSaving, setBookingSaving] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState<string | null>(null);
-  const [availableVouchers, setAvailableVouchers] = useState<AvailableVoucher[]>([]);
-  const [selectedVoucherId, setSelectedVoucherId] = useState("");
-  const [acceptsVouchers, setAcceptsVouchers] = useState<boolean | null>(null);
-  const [voucherLoading, setVoucherLoading] = useState(false);
   const [authIntent, setAuthIntent] = useState<"review" | "favorite" | "report" | null>(null);
   const [favoriteSaved, setFavoriteSaved] = useState(false);
   const [favoriteSaving, setFavoriteSaving] = useState(false);
@@ -330,36 +317,10 @@ export default function ProfissionalProfilePage() {
     return () => window.clearTimeout(timer);
   }, [authStatus, pro, router, searchParams, slug]);
 
-  useEffect(() => {
-    if (!bookingOpen || authStatus !== "authenticated") return;
-    const controller = new AbortController();
-    async function loadAvailableVouchers() {
-      await Promise.resolve();
-      if (controller.signal.aborted) return;
-      setVoucherLoading(true);
-      try {
-        const res = await fetch(`/api/vouchers/available?professionalSlug=${encodeURIComponent(slug)}`, { signal: controller.signal, cache: "no-store" });
-        if (!res.ok) throw new Error("Não foi possível carregar seus vouchers.");
-        const data = await res.json();
-        setAcceptsVouchers(Boolean(data.acceptsVouchers));
-        setAvailableVouchers(data.vouchers ?? []);
-      } catch {
-        if (!controller.signal.aborted) {
-          setAcceptsVouchers(false);
-          setAvailableVouchers([]);
-        }
-      } finally {
-        if (!controller.signal.aborted) setVoucherLoading(false);
-      }
-    }
-    void loadAvailableVouchers();
-    return () => controller.abort();
-  }, [authStatus, bookingOpen, slug]);
-
   async function submitBooking(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!session?.user) {
-      setBookingError("Entre ou crie uma conta rápida para confirmar o agendamento e usar voucher.");
+      setBookingError("Entre ou crie uma conta rápida para confirmar o agendamento.");
       return;
     }
     if (!bookingDate) {
@@ -380,13 +341,11 @@ export default function ProfissionalProfilePage() {
           duration: bookingDuration,
           contactMethod: "whatsapp",
           notes: bookingNotes || undefined,
-          voucherId: selectedVoucherId || undefined,
         }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Não foi possível criar o agendamento.");
-      setBookingSuccess("Agendamento enviado. A profissional verá o voucher aplicado antes de confirmar.");
-      setSelectedVoucherId("");
+      setBookingSuccess("Agendamento enviado. A profissional poderá confirmar os detalhes.");
       setBookingNotes("");
     } catch (err) {
       setBookingError(err instanceof Error ? err.message : "Não foi possível criar o agendamento.");
@@ -397,7 +356,7 @@ export default function ProfissionalProfilePage() {
 
   if (loading) {
     return (
-      <div style={{ background: "#08050b", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "#f7f7fa", minHeight: "100vh", color: "#17141d", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Navbar />
         <p style={{ color: GOLD, fontSize: 16 }}>Carregando perfil...</p>
       </div>
@@ -406,7 +365,7 @@ export default function ProfissionalProfilePage() {
 
   if (notFound || !pro) {
     return (
-      <div style={{ background: "#08050b", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+      <div style={{ background: "#f7f7fa", minHeight: "100vh", color: "#17141d", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
         <Navbar />
         <p style={{ color: "#f8f5fa", fontSize: 20, fontWeight: 700 }}>Perfil não encontrado</p>
         <Link href="/buscar" style={{ color: GOLD, textDecoration: "none" }}>← Voltar para a busca</Link>
@@ -469,12 +428,9 @@ export default function ProfissionalProfilePage() {
   const preco = pro.priceMin ?? pro.pricePerHour;
   const memberYear = new Date(pro.createdAt).getFullYear();
   const bookingBasePrice = pro.pricePerHour ?? pro.priceMin ?? bookingDuration;
-  const selectedVoucher = availableVouchers.find((voucher) => voucher.id === selectedVoucherId) ?? null;
-  const voucherDiscount = selectedVoucher ? Math.min(bookingBasePrice, selectedVoucher.value) : 0;
-  const bookingFinalPrice = Math.max(0, bookingBasePrice - voucherDiscount);
 
   return (
-    <div style={{ background: "#08050b", minHeight: "100vh", color: "#f8f5fa", paddingBottom: 72 }}>
+    <div className="public-profile-page" style={{ background: "#f7f7fa", minHeight: "100vh", color: "#17141d", paddingBottom: 72 }}>
       <Navbar />
       <div style={{ position: "fixed", right: 18, bottom: 82, zIndex: 90, background: "rgba(8,8,10,.92)", border: "1px solid rgba(239,68,68,.35)", borderRadius: 8, padding: "10px 12px" }}>
         {authStatus === "authenticated" ? (
@@ -568,15 +524,15 @@ export default function ProfissionalProfilePage() {
 
           {/* Cards preço + localização */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-            <div style={{ background: "#0f0a13", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "14px 16px" }}>
+            <div style={{ background: "#fff", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "14px 16px", boxShadow: "0 10px 28px rgba(52,33,67,.06)" }}>
               <div style={{ fontSize: 10, color: GOLD, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>💰 Valores</div>
               <div style={{ fontSize: 10, color: "#aaa0b2", marginBottom: 2 }}>a partir de</div>
               <div style={{ fontSize: 20, fontWeight: 900, color: GOLD, fontFamily: PLAYFAIR }}>{preco ? `R$ ${preco.toLocaleString("pt-BR")}/h` : "Consulte"}</div>
               {pro.attendanceTypes && <div style={{ fontSize: 11, color: "#aaa0b2", marginTop: 4 }}>{pro.attendanceTypes.join(", ")}</div>}
             </div>
-            <div style={{ background: "#0f0a13", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, padding: "14px 16px" }}>
+            <div style={{ background: "#fff", border: "1px solid #e7e2ec", borderRadius: 12, padding: "14px 16px", boxShadow: "0 10px 28px rgba(52,33,67,.06)" }}>
               <div style={{ fontSize: 10, color: GOLD, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>📍 Localização</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#f8f5fa", fontFamily: PLAYFAIR }}>{pro.city}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#17141d", fontFamily: PLAYFAIR }}>{pro.city}</div>
               <div style={{ fontSize: 12, color: "#968a9e", marginTop: 2 }}>{pro.state}{pro.bairro ? ` · ${pro.bairro}` : ""}</div>
               {pro.servesGenders && <div style={{ fontSize: 11, color: "#aaa0b2", marginTop: 4 }}>Atende: {pro.servesGenders.join(", ")}</div>}
             </div>
@@ -591,7 +547,7 @@ export default function ProfissionalProfilePage() {
           {pro.stories && pro.stories.length > 0 ? (
             <div style={{ display: "flex", gap: 10, overflowX: "auto", padding: "18px 0 4px" }}>
               {pro.stories.map((story) => (
-                <a key={story.id} href={story.mediaUrl} target="_blank" rel="noreferrer" style={{ position: "relative", width: 74, height: 100, flex: "0 0 auto", overflow: "hidden", borderRadius: 12, border: `2px solid ${GOLD}`, background: "#111" }}>
+                <a key={story.id} href={story.mediaUrl} target="_blank" rel="noreferrer" style={{ position: "relative", width: 74, height: 100, flex: "0 0 auto", overflow: "hidden", borderRadius: 12, border: `2px solid ${GOLD}`, background: "#f1edf4" }}>
                   <Image src={story.thumbnail ?? story.mediaUrl} alt={`Story de ${pro.displayName}`} fill sizes="74px" quality={60} style={{ objectFit: "cover" }} />
                 </a>
               ))}
@@ -601,7 +557,7 @@ export default function ProfissionalProfilePage() {
       </div>
 
       {/* STICKY NAV */}
-      <div style={{ position: "sticky", top: 64, zIndex: 40, background: "rgba(6,14,27,0.97)", backdropFilter: "blur(12px)", borderBottom: `1px solid ${GOLD_DIM}`, marginTop: 16 }}>
+      <div style={{ position: "sticky", top: 64, zIndex: 40, background: "rgba(255,255,255,0.94)", backdropFilter: "blur(12px)", borderBottom: "1px solid #e7e2ec", marginTop: 16 }}>
         <div style={{ maxWidth: 720, margin: "0 auto", display: "flex", padding: "0 16px" }}>
           {[
             { label: `Fotos (${allPhotos.length})`, ref: refGaleria },
@@ -609,9 +565,9 @@ export default function ProfissionalProfilePage() {
             { label: `Avaliações (${pro.totalReviews ?? 0})`, ref: refAvaliacoes },
           ].map(({ label, ref }) => (
             <button key={label} onClick={() => scrollTo(ref)}
-              style={{ padding: "12px 16px", border: "none", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 12, color: "#b9adbf", borderBottom: "2px solid transparent", transition: "all 0.2s", whiteSpace: "nowrap" }}
+              style={{ padding: "12px 16px", border: "none", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 12, color: "#686270", borderBottom: "2px solid transparent", transition: "all 0.2s", whiteSpace: "nowrap" }}
               onMouseEnter={(e) => { e.currentTarget.style.color = GOLD; e.currentTarget.style.borderBottomColor = GOLD; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "#b9adbf"; e.currentTarget.style.borderBottomColor = "transparent"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "#686270"; e.currentTarget.style.borderBottomColor = "transparent"; }}
             >
               {label}
             </button>
@@ -630,7 +586,7 @@ export default function ProfissionalProfilePage() {
             </div>
           </div>
 
-          <div style={{ background: "#0f0a13", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, padding: "14px 16px", marginBottom: 14, display: "flex", gap: 12, alignItems: "center" }}>
+          <div style={{ background: "#fff", border: "1px solid #e7e2ec", borderRadius: 12, padding: "14px 16px", marginBottom: 14, display: "flex", gap: 12, alignItems: "center" }}>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
             </div>
@@ -697,7 +653,7 @@ export default function ProfissionalProfilePage() {
                 setPremiumFeature("o vídeo exclusivo desta profissional");
                 setPremiumOpen(true);
               }}
-              style={{ width: "100%", marginBottom: 24, padding: 22, borderRadius: 16, border: `1px solid ${GOLD_MID}`, background: "radial-gradient(circle at 50% 0%,rgba(183,44,255,.16),transparent 55%),#0f0a13", color: "#e1a6ff", cursor: "pointer", textAlign: "left" }}
+              style={{ width: "100%", marginBottom: 24, padding: 22, borderRadius: 16, border: `1px solid ${GOLD_MID}`, background: "#f7f1ff", color: "#6518cf", cursor: "pointer", textAlign: "left" }}
             >
               <span style={{ display: "block", color: GOLD, fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>Conteúdo Premium</span>
               <strong style={{ display: "block", marginTop: 8, color: "#f8f5fa", fontSize: 18, fontFamily: PLAYFAIR }}>Vídeo exclusivo disponível</strong>
@@ -1011,7 +967,7 @@ export default function ProfissionalProfilePage() {
             {authStatus !== "authenticated" ? (
               <div style={{ padding: 18, display: "grid", gap: 12 }}>
                 <div style={{ border: `1px solid ${GOLD_DIM}`, background: "#0f0a13", borderRadius: 12, padding: 14 }}>
-                  <p style={{ margin: "0 0 6px", color: "#fbf7ff", fontWeight: 800 }}>Confirme sua conta para usar voucher</p>
+                  <p style={{ margin: "0 0 6px", color: "#fbf7ff", fontWeight: 800 }}>Confirme sua conta para agendar</p>
                   <p style={{ margin: 0, color: "#b9adbf", fontSize: 13, lineHeight: 1.55 }}>Entre ou conclua um cadastro simples para solicitar o atendimento com segurança.</p>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -1049,40 +1005,7 @@ export default function ProfissionalProfilePage() {
                     <span>Valor do atendimento</span>
                     <strong style={{ color: "#fbf7ff" }}>R$ {bookingBasePrice.toLocaleString("pt-BR")}</strong>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, color: "#b9adbf", fontSize: 13, marginTop: 8 }}>
-                    <span>Voucher aplicado</span>
-                    <strong style={{ color: voucherDiscount ? "#22c55e" : "#968a9e" }}>- R$ {voucherDiscount.toLocaleString("pt-BR")}</strong>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, color: "#fbf7ff", fontSize: 16, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${GOLD_DIM}` }}>
-                    <span>Total com desconto</span>
-                    <strong style={{ color: GOLD }}>R$ {bookingFinalPrice.toLocaleString("pt-BR")}</strong>
-                  </div>
                 </div>
-
-                <label style={{ display: "grid", gap: 6, color: "#e9e1ed", fontSize: 13, fontWeight: 800 }}>
-                  Voucher
-                  <select
-                    value={selectedVoucherId}
-                    onChange={(event) => setSelectedVoucherId(event.target.value)}
-                    disabled={!acceptsVouchers || voucherLoading || availableVouchers.length === 0}
-                    style={{ minHeight: 44, borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "#09060d", color: "#fbf7ff", padding: "0 12px" }}
-                  >
-                    <option value="">
-                      {voucherLoading
-                        ? "Carregando vouchers..."
-                        : acceptsVouchers === false
-                          ? "Profissional não aceita vouchers promocionais"
-                          : availableVouchers.length
-                            ? "Não usar voucher"
-                            : "Nenhum voucher disponível"}
-                    </option>
-                    {availableVouchers.map((voucher) => (
-                      <option key={voucher.id} value={voucher.id}>
-                        {voucher.code} - R$ {voucher.value.toLocaleString("pt-BR")} - vence em {new Date(voucher.expiresAt).toLocaleDateString("pt-BR")}
-                      </option>
-                    ))}
-                  </select>
-                </label>
 
                 <label style={{ display: "grid", gap: 6, color: "#e9e1ed", fontSize: 13, fontWeight: 800 }}>
                   Observação
@@ -1152,7 +1075,7 @@ export default function ProfissionalProfilePage() {
       ) : null}
 
       {/* CTA FIXO */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 55, background: "rgba(6,14,27,0.98)", backdropFilter: "blur(12px)", borderTop: `1px solid ${GOLD_DIM}`, padding: "10px 16px calc(10px + env(safe-area-inset-bottom))", display: "flex", gap: 10, alignItems: "center" }}>
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 55, background: "rgba(255,255,255,0.96)", backdropFilter: "blur(12px)", borderTop: "1px solid #e7e2ec", boxShadow: "0 -10px 30px rgba(52,33,67,.08)", padding: "10px 16px calc(10px + env(safe-area-inset-bottom))", display: "flex", gap: 10, alignItems: "center" }}>
         <div style={{ flexShrink: 0 }}>
           <p style={{ margin: 0, fontSize: 9, color: "#aaa0b2" }}>a partir de</p>
           <p style={{ margin: 0, fontSize: 17, fontWeight: 900, color: GOLD, fontFamily: PLAYFAIR, lineHeight: 1.1 }}>{preco ? `R$ ${preco.toLocaleString("pt-BR")}/h` : "Consulte"}</p>

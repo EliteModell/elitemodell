@@ -1,6 +1,6 @@
 export default function AppRouteLoading() {
   return (
-    <div className="min-h-screen bg-[#050505] px-4 py-6 text-white">
+    <div className="min-h-screen bg-[#f7f7fa] px-4 py-6 text-[#17141d]">
       <div className="premium-enter mx-auto w-full max-w-[820px]">
         <div className="mb-5 flex items-center justify-between gap-4">
           <div className="premium-skeleton h-11 w-40 rounded-[8px]" />

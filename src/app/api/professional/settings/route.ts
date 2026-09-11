@@ -15,7 +15,6 @@ const settingsSchema = z.object({
   hidePhone: z.boolean().optional(),
   contactVisibility: z.enum(PROFESSIONAL_CONTACT_VISIBILITIES).optional(),
   hideAge: z.boolean().optional(),
-  acceptsVouchers: z.boolean().optional(),
   pause: z.object({
     enabled: z.boolean(),
     days: z.number().int().min(1).max(MAX_PAUSE_DAYS).optional(),
@@ -37,7 +36,6 @@ async function currentProfessional(userId: string) {
       contactVisibility: true,
       listingPhoneUntil: true,
       hideAge: true,
-      voucherSettings: { select: { acceptsVouchers: true } },
       pauseStartedAt: true,
       pauseUntil: true,
       pauseReason: true,
@@ -129,7 +127,6 @@ export async function PATCH(req: NextRequest) {
         contactVisibility: true,
         listingPhoneUntil: true,
         hideAge: true,
-        voucherSettings: { select: { acceptsVouchers: true } },
         pauseStartedAt: true,
         pauseUntil: true,
         pauseReason: true,
@@ -142,15 +139,6 @@ export async function PATCH(req: NextRequest) {
         presentationVideoRejectReason: true,
       },
     });
-
-    if (body.acceptsVouchers !== undefined) {
-      await prisma.professionalVoucherSettings.upsert({
-        where: { professionalId: professional.id },
-        create: { professionalId: professional.id, acceptsVouchers: body.acceptsVouchers },
-        update: { acceptsVouchers: body.acceptsVouchers },
-      });
-      updated.voucherSettings = { acceptsVouchers: body.acceptsVouchers };
-    }
 
     return NextResponse.json({ professional: updated });
   } catch (err) {

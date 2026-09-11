@@ -112,7 +112,7 @@ export default function FiltersModal({ onClose, onApply }: Props) {
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(4,10,20,0.92)", padding: 16, backdropFilter: "blur(6px)" }}>
-      <div style={{ background: "#0f0a13", border: `1px solid ${GOLD_MID}`, borderRadius: 20, width: "100%", maxWidth: 820, maxHeight: "92vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 32px 80px rgba(0,0,0,0.6)" }}>
+      <div style={{ background: "#fff", color: "#17141d", border: `1px solid ${GOLD_MID}`, borderRadius: 20, width: "100%", maxWidth: 820, maxHeight: "92vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 32px 80px rgba(52,33,67,0.24)" }}>
 
         {/* Linha dourada no topo */}
         <div style={{ height: 2, background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
@@ -248,7 +248,7 @@ export default function FiltersModal({ onClose, onApply }: Props) {
             Limpar filtros
           </button>
           <button onClick={() => { onApply(filters); onClose(); }}
-            style={{ padding: "11px 32px", background: GOLD, color: "#08050b", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: PLAYFAIR, transition: "background 0.2s" }}
+            style={{ padding: "11px 32px", background: GOLD, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: PLAYFAIR, transition: "background 0.2s" }}
             onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#c75aff")}
             onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = GOLD)}>
             Ver resultados

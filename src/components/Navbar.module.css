@@ -8,6 +8,18 @@
   backdrop-filter: blur(22px);
   box-shadow: 0 10px 45px rgba(0, 0, 0, 0.28);
 }
+.light {
+  border-bottom-color: #e8e3ef;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 8px 30px rgba(65, 39, 91, .06);
+}
+.light .center a { color: #211d29; }
+.light .center a:hover { color: #6e19df; background: #f7f1ff; }
+.light .menuButton { border-color: #dfd5e9; color: #6d1cda; background: #fff; }
+.light .actions :global(.nav-auth-link.signup-link) { color: #fff !important; background: linear-gradient(135deg, #8d2cf4, #6812df) !important; }
+.light .actions :global(.nav-auth-link.login-link) { color: #721be1 !important; border-color: #8226e9 !important; }
+.light .mobileMenu { border-color: #e3d7ef; background: rgba(255, 255, 255, .99); box-shadow: 0 30px 70px rgba(62, 29, 92, .16); }
+.light .mobileMenu > a { border-color: #ece4f4; color: #30283a; background: #faf7fd; }
 .inner {
   height: 100%;
   max-width: 1440px;

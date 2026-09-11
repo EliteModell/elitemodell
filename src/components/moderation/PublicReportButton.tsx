@@ -45,21 +45,21 @@ export default function PublicReportButton({ targetType, targetId, initialOpen =
       </button>
       {open ? (
         <div className="fixed inset-0 z-[300] grid place-items-center bg-black/80 p-4">
-          <section className="w-full max-w-lg rounded-[8px] border border-red-400/30 bg-[#101012] p-5 text-white">
+          <section className="w-full max-w-lg rounded-2xl border border-red-400/30 bg-white p-5 text-[#17141d] shadow-[0_28px_80px_rgba(52,33,67,.22)]">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-black">Denunciar conteudo</h2>
-              <button type="button" onClick={() => setOpen(false)} aria-label="Fechar" className="border-0 bg-transparent text-white"><X /></button>
+              <button type="button" onClick={() => setOpen(false)} aria-label="Fechar" className="border-0 bg-transparent text-[#514b59]"><X /></button>
             </div>
-            <p className="mt-2 text-sm text-white/60">Possivel menor, coercao, exploracao, trafico ou risco fisico recebem prioridade maxima.</p>
+            <p className="mt-2 text-sm text-[#686270]">Possivel menor, coercao, exploracao, trafico ou risco fisico recebem prioridade maxima.</p>
             <label className="mt-4 grid gap-2 text-sm font-bold">
               Motivo
-              <select value={reason} onChange={(event) => setReason(event.target.value as typeof reason)} className="rounded-[8px] border border-white/15 bg-black p-3">
+              <select value={reason} onChange={(event) => setReason(event.target.value as typeof reason)} className="rounded-[8px] border border-[#ded7e5] bg-white p-3 text-[#17141d]">
                 {reasons.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
             <label className="mt-3 grid gap-2 text-sm font-bold">
               Descricao
-              <textarea value={description} onChange={(event) => setDescription(event.target.value)} minLength={20} maxLength={2000} className="min-h-28 rounded-[8px] border border-white/15 bg-black p-3" />
+              <textarea value={description} onChange={(event) => setDescription(event.target.value)} minLength={20} maxLength={2000} className="min-h-28 rounded-[8px] border border-[#ded7e5] bg-white p-3 text-[#17141d]" />
             </label>
             {result ? <p className="mt-3 text-sm text-[#e1a6ff]">{result}</p> : null}
             <button type="button" disabled={sending || description.trim().length < 20} onClick={submit} className="mt-4 min-h-11 rounded-[8px] bg-red-500 px-4 font-black text-white disabled:opacity-50">

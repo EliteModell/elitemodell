@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./theme-v2.css";
 import Providers from "@/components/Providers";
 import AgeGateLoader from "@/components/AgeGateLoader";
 import CookiePreferences from "@/components/privacy/CookiePreferences";
@@ -86,15 +87,15 @@ export const metadata: Metadata = {
     images: [`${siteUrl}/og-image.png`],
   },
   other: {
-    "theme-color": "#050505",
-    "msapplication-TileColor": "#050505",
+    "theme-color": "#ffffff",
+    "msapplication-TileColor": "#ffffff",
     "msapplication-TileImage": "/icon.png",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#050505",
-  colorScheme: "dark",
+  themeColor: "#ffffff",
+  colorScheme: "light",
 };
 
 export default function RootLayout({
@@ -122,8 +123,8 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       style={
         {
-          "--font-inter": '"Inter", "Segoe UI", Arial, Helvetica, sans-serif',
-          "--font-playfair": '"Playfair Display", Georgia, serif',
+          "--font-inter": '"Inter", "Segoe UI Variable Text", "Segoe UI", Arial, Helvetica, sans-serif',
+          "--font-playfair": '"Inter", "Segoe UI Variable Text", "Segoe UI", Arial, Helvetica, sans-serif',
         } as React.CSSProperties
       }
     >

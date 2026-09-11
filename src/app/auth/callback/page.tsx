@@ -405,7 +405,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
       minHeight: "100vh",
       display: "grid",
       placeItems: "center",
-      background: "radial-gradient(ellipse at 50% 0%, rgba(183,44,255,0.06) 0%, #050505 60%)",
+      background: "#f7f7fa",
       padding: 24,
     }}>
       <style>{`
@@ -426,7 +426,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
       <div style={{
         width: "100%",
         maxWidth: 420,
-        background: "rgba(10,10,10,0.96)",
+        background: "#fff",
         border: error ? "1px solid rgba(248,113,113,0.4)" : "1px solid rgba(183,44,255,0.28)",
         borderRadius: 16,
         padding: "40px 32px 36px",
@@ -434,8 +434,8 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
         position: "relative",
         animation: "em-fadein 0.4s ease",
         boxShadow: error
-          ? "0 0 60px rgba(248,113,113,0.08), 0 20px 60px rgba(0,0,0,0.6)"
-          : "0 0 60px rgba(183,44,255,0.06), 0 20px 60px rgba(0,0,0,0.6)",
+          ? "0 20px 60px rgba(248,113,113,0.12)"
+          : "0 20px 60px rgba(52,33,67,0.12)",
       }}>
         {/* Top line */}
         <div style={{
@@ -505,7 +505,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
 
         {/* Message */}
         <p style={{
-          color: error ? "#fca5a5" : "#d8cedd",
+          color: error ? "#b42318" : "#514b59",
           fontSize: error ? 16 : 15,
           fontWeight: error ? 700 : 500,
           margin: 0,

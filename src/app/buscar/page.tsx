@@ -515,19 +515,19 @@ function BuscarContent() {
   const emptyContext = virtualOnly ? "atendimento virtual" : selectedLocation?.label;
 
   return (
-    <div style={{ background: "#050505", minHeight: "100vh", color: "#f4f1ea" }}>
+    <div className="public-search-page" style={{ background: "#f7f7fa", minHeight: "100vh", color: "#17141d" }}>
       <style>{`
         .perfil-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
           gap: 14px;
         }
-        .perfil-card { border-radius: 8px; overflow: hidden; background: #111; border: 1px solid #2a2620; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; cursor: pointer; box-shadow: 0 18px 48px rgba(0,0,0,0.28); contain: layout paint; }
-        .perfil-card:hover { transform: translateY(-3px); border-color: rgba(183,44,255,0.3); box-shadow: 0 24px 72px rgba(0,0,0,0.36); }
+        .perfil-card { border-radius: 16px; overflow: hidden; background: #fff; border: 1px solid #e7e2ec; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; cursor: pointer; box-shadow: 0 10px 30px rgba(47,28,68,.07); contain: layout paint; }
+        .perfil-card:hover { transform: translateY(-3px); border-color: rgba(124,34,238,.3); box-shadow: 0 16px 40px rgba(47,28,68,.11); }
         .perfil-card:active { transform: translateY(1px) scale(0.995); }
         .perfil-foto { position: relative; padding-top: 130%; }
         .perfil-info { padding: 14px 16px; }
-        .search-shell { background: #0a0a0a; border-bottom: 1px solid ${GOLD_DIM}; }
+        .search-shell { background: #fff; border-bottom: 1px solid #e7e2ec; }
         .top-search-grid { display: grid; grid-template-columns: auto minmax(0, 1fr) 42px; gap: 8px; align-items: center; }
         .location-bar {
           width: 100%;
@@ -540,41 +540,41 @@ function BuscarContent() {
           padding: 0 16px;
           border-radius: 12px;
           border: 1px solid ${GOLD_MID};
-          background: linear-gradient(135deg, rgba(183,44,255,0.09), rgba(255,255,255,0.025)), #0b0b0b;
-          color: #f4f1ea;
+          background: #fff;
+          color: #17141d;
           cursor: pointer;
           text-align: left;
-          box-shadow: 0 18px 44px rgba(0,0,0,0.24);
+          box-shadow: 0 8px 24px rgba(47,28,68,.06);
         }
         .location-bar span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .stories-strip { display: flex; gap: 12px; overflow-x: auto; padding: 2px 0 18px; margin-bottom: 6px; -webkit-overflow-scrolling: touch; }
         .stories-strip::-webkit-scrollbar, .filtros-scroll::-webkit-scrollbar, .action-scroll::-webkit-scrollbar { display: none; }
-        .story-item { width: 72px; flex: 0 0 auto; color: #d9d1c3; text-align: center; text-decoration: none; }
+        .story-item { width: 72px; flex: 0 0 auto; color: #514b59; text-align: center; text-decoration: none; }
         .story-avatar { width: 64px; height: 64px; margin: 0 auto 7px; border-radius: 999px; padding: 2px; background: linear-gradient(135deg, #e1a6ff, #b72cff, #6900a3); position: relative; }
-        .story-avatar-inner { position: relative; width: 100%; height: 100%; border-radius: 999px; overflow: hidden; background: #151515; border: 2px solid #050505; }
-        .dynamic-title { margin: 0 0 16px; max-width: 920px; color: #f4f1ea; font-family: ${PLAYFAIR}; font-size: clamp(1.75rem, 5vw, 3.7rem); line-height: 1.02; letter-spacing: 0; }
+        .story-avatar-inner { position: relative; width: 100%; height: 100%; border-radius: 999px; overflow: hidden; background: #f0ecf3; border: 2px solid #fff; }
+        .dynamic-title { margin: 0 0 16px; max-width: 920px; color: #17141d; font-family: var(--font-inter), Inter, sans-serif; font-size: clamp(1.75rem, 5vw, 3.7rem); line-height: 1.08; letter-spacing: -.03em; }
         .dynamic-title strong { color: ${GOLD}; font-weight: 900; }
         .filtros-scroll, .action-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; align-items: center; -webkit-overflow-scrolling: touch; }
         .filter-chip {
           min-height: 36px;
           padding: 0 14px;
-          background: #120b17;
-          border: 1px solid #2d1d35;
+          background: #fff;
+          border: 1px solid #e4ddea;
           border-radius: 999px;
-          color: #7d8795;
+          color: #62687a;
           font-size: 12px;
           cursor: pointer;
           white-space: nowrap;
           transition: all 0.2s;
           flex-shrink: 0;
         }
-        .filter-chip.active { background: rgba(183,44,255,0.15); border-color: ${GOLD}; color: #f8f5fa; font-weight: 800; }
+        .filter-chip.active { background: #f4edff; border-color: ${GOLD}; color: #6518cf; font-weight: 800; }
         .action-select {
           min-height: 38px;
           border-radius: 999px;
           border: 1px solid ${GOLD_MID};
-          background: #0b0f18;
-          color: #d8d1c7;
+          background: #fff;
+          color: #514b59;
           padding: 0 12px;
           font-size: 12px;
           outline: none;
@@ -597,8 +597,8 @@ function BuscarContent() {
           overflow: hidden;
           border-radius: 18px;
           border: 1px solid ${GOLD_MID};
-          background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(8,8,8,0.98));
-          box-shadow: 0 22px 58px rgba(0,0,0,0.54);
+          background: #fff;
+          box-shadow: 0 22px 58px rgba(47,28,68,.16);
         }
         .location-list { max-height: 280px; overflow-y: auto; padding: 4px 18px 0; }
         .location-option {
@@ -610,8 +610,8 @@ function BuscarContent() {
           gap: 12px;
           border: 1px solid rgba(183,44,255,0.12);
           border-radius: 12px;
-          background: rgba(255,255,255,0.025);
-          color: #f4f1ea;
+          background: #fff;
+          color: #17141d;
           padding: 0 14px;
           margin-bottom: 8px;
           cursor: pointer;
@@ -625,7 +625,7 @@ function BuscarContent() {
           text-align: center;
           border: 1px solid rgba(183,44,255,0.16);
           border-radius: 18px;
-          background: radial-gradient(circle at 50% 0%, rgba(183,44,255,0.10), transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.035), rgba(183,44,255,0.025)), #080808;
+          background: #fff;
           padding: 42px 22px;
           margin-top: 18px;
         }
@@ -647,8 +647,8 @@ function BuscarContent() {
         }
         .profiles-empty h2, .rooms-coming-soon h2 {
           margin: 16px 0 10px;
-          color: #f4f1ea;
-          font-family: ${PLAYFAIR};
+          color: #17141d;
+          font-family: var(--font-inter), Inter, sans-serif;
           font-size: clamp(1.9rem, 6vw, 3.5rem);
           line-height: 0.98;
           letter-spacing: 0;
@@ -656,7 +656,7 @@ function BuscarContent() {
         .profiles-empty p, .rooms-coming-soon p {
           margin: 0 auto;
           max-width: 520px;
-          color: #a9a297;
+          color: #686d7d;
           font-size: 14px;
           line-height: 1.7;
         }
@@ -684,12 +684,12 @@ function BuscarContent() {
         .profiles-empty-actions button, .coming-actions .primary {
           border: 1px solid transparent;
           background: linear-gradient(135deg, #e1a6ff, #b72cff 50%, #6900a3);
-          color: #080704;
+          color: #fff;
         }
         .profiles-empty-actions a, .coming-actions .secondary {
           border: 1px solid rgba(183,44,255,0.22);
-          background: rgba(255,255,255,0.035);
-          color: #f4f1ea;
+          background: #fff;
+          color: #6c18d7;
         }
         @media (max-width: 640px) {
           .search-shell { margin-top: 18px; }
@@ -738,7 +738,7 @@ function BuscarContent() {
         <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${GOLD}, rgba(183,44,255,0.3), transparent)` }} />
         <div style={{ maxWidth: 1280, margin: "0 auto", padding: "12px 16px 14px" }}>
           <div className="top-search-grid">
-            <div className="type-toggle" style={{ padding: "9px 16px", background: "#111", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, color: GOLD, fontWeight: 700, fontSize: 13, fontFamily: PLAYFAIR }}>Acompanhantes</div>
+            <div className="type-toggle" style={{ padding: "9px 16px", background: "#f4edff", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, color: GOLD, fontWeight: 700, fontSize: 13, fontFamily: PLAYFAIR }}>Acompanhantes</div>
 
             <div style={{ flex: 1, position: "relative", minWidth: 0 }}>
               <SearchIcon style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
@@ -749,7 +749,7 @@ function BuscarContent() {
                   if (event.key === "Enter") applyKeywordSearch();
                 }}
                 placeholder="Nome, serviço ou especialidade..."
-                style={{ width: "100%", padding: "10px 14px 10px 36px", background: "#111", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, color: "#f4f1ea", fontSize: 14, outline: "none", boxSizing: "border-box", transition: "border-color 0.2s" }}
+                style={{ width: "100%", padding: "10px 14px 10px 36px", background: "#fff", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, color: "#17141d", fontSize: 14, outline: "none", boxSizing: "border-box", transition: "border-color 0.2s" }}
                 onFocus={(event) => ((event.target as HTMLElement).style.borderColor = GOLD)}
                 onBlur={(event) => ((event.target as HTMLElement).style.borderColor = GOLD_DIM)}
               />

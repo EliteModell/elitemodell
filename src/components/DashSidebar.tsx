@@ -196,33 +196,30 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
   return (
     <>
       {mobileOpen ? (
-        <div onClick={onClose} className="fixed inset-0 z-40 bg-black/78 backdrop-blur-sm md:hidden" />
+        <div onClick={onClose} className="fixed inset-0 z-40 bg-[#201729]/45 backdrop-blur-sm md:hidden" />
       ) : null}
 
       <aside
-        className={`dash-sidebar fixed inset-y-0 left-0 z-50 flex w-[80vw] max-w-[320px] flex-col border-r border-white/10 bg-[#070708] shadow-[24px_0_90px_rgba(0,0,0,0.55)] transition-transform duration-300 md:w-[280px] md:translate-x-0 ${
+        className={`dash-sidebar fixed inset-y-0 left-0 z-50 flex w-[80vw] max-w-[320px] flex-col border-r border-[#e7e2ec] bg-white shadow-[14px_0_42px_rgba(47,28,68,0.08)] transition-transform duration-300 md:w-[280px] md:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(225,166,255,0.9),transparent)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(183,44,255,0.06),transparent_30%)]" />
-
-        <div className="relative border-b border-white/10 p-4">
+        <div className="relative border-b border-[#e7e2ec] p-4">
           <div className="flex items-center justify-between">
           <Link href={logoHref} onClick={onClose} className="inline-flex items-center gap-2 no-underline">
-            <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-[8px] bg-black">
+            <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-white">
               <img src="/brand/elite-modell-purple.svg" alt="Elite Modell" className="h-full w-full object-contain" />
             </span>
             <span className="text-xl font-black tracking-[-0.02em]">
-              <span className="bg-[linear-gradient(135deg,#f4d7ff,#b72cff_30%,#e1a6ff_58%,#6900a3)] bg-clip-text text-transparent">
+              <span className="text-[#7c22ee]">
                 elite
               </span>
-              <span className="text-white">modell</span>
+              <span className="text-[#17141d]">modell</span>
             </span>
           </Link>
             <button
               onClick={onClose}
-              className="grid h-8 w-8 place-items-center rounded-[8px] border border-white/10 text-white/40 transition hover:border-white/20 hover:text-white md:hidden"
+              className="grid h-8 w-8 place-items-center rounded-lg border border-[#e7e2ec] text-[#737684] transition hover:border-[#cdb4ea] hover:text-[#7c22ee] md:hidden"
               aria-label="Fechar menu"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -232,7 +229,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
           </div>
         </div>
 
-        <div className="relative border-b border-white/10 p-4">
+        <div className="relative border-b border-[#e7e2ec] p-4">
           <div className="flex items-center gap-3">
             <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[8px] border border-[#b72cff]/28 bg-[#b72cff]/12">
               {sidebarImage ? (
@@ -249,8 +246,8 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
               <span className="absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full border border-[#070708] bg-[#b72cff]" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-black text-white">{sidebarName}</p>
-              <p className="mt-0.5 truncate text-xs text-white/42">{sidebarEmail}</p>
+              <p className="truncate text-sm font-bold text-[#17141d]">{sidebarName}</p>
+              <p className="mt-0.5 truncate text-xs text-[#737684]">{sidebarEmail}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 <p className="inline-flex items-center gap-1 rounded-full border border-[#b72cff]/20 bg-[#b72cff]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#e1a6ff]">
                   <Crown className="h-3 w-3" />
@@ -275,7 +272,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
         </div>
 
         <nav className="relative flex-1 overflow-y-auto px-3 py-4">
-          <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.26em] text-white/28">
+          <p className="mb-2 px-3 text-[10px] font-bold text-[#8a8d98]">
             {sectionLabel}
           </p>
           <div className="space-y-1.5">
@@ -299,13 +296,13 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                   onClick={onClose}
                   className={`group relative flex h-11 items-center gap-3 rounded-[8px] px-3 text-sm font-bold transition ${
                     active
-                      ? "border border-[#b72cff]/25 bg-[#b72cff]/12 text-white shadow-[0_12px_34px_rgba(183,44,255,0.08)]"
-                      : "border border-transparent text-white/48 hover:border-white/8 hover:bg-white/[0.045] hover:text-white/82"
+                      ? "border border-[#dfd0ee] bg-[#f4edff] text-[#6818d1]"
+                      : "border border-transparent text-[#62687a] hover:border-[#eee8f2] hover:bg-[#faf8fc] hover:text-[#17141d]"
                   }`}
                 >
                   <span
                     className={`grid h-7 w-7 place-items-center rounded-[8px] transition ${
-                      active ? "bg-[#b72cff]/15 text-[#e1a6ff]" : "bg-white/[0.04] text-white/42 group-hover:text-[#e1a6ff]"
+                      active ? "bg-white text-[#7c22ee]" : "bg-[#f7f5fa] text-[#777b88] group-hover:text-[#7c22ee]"
                     }`}
                   >
                     {navItem.icon}

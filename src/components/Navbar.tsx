@@ -12,7 +12,7 @@ import styles from "./Navbar.module.css";
 
 const NavbarSessionControls = dynamic(() => import("@/components/NavbarSessionControls"), { ssr: false });
 
-export default function Navbar() {
+export default function Navbar({ tone = "dark" }: { tone?: "dark" | "light" }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [entryChoice, setEntryChoice] = useState<"login" | null>(null);
   const router = useRouter();
@@ -22,12 +22,16 @@ export default function Navbar() {
     setEntryChoice("login");
   }
 
-  return <nav className={styles.nav} aria-label="Navegação principal">
+  return <nav className={`${styles.nav} ${tone === "light" ? styles.light : ""}`} aria-label="Navegação principal">
     <div className={styles.inner}>
       <Link href="/" className={styles.brand} aria-label="Elite Modell — início">
         <Image src="/brand/elite-modell-purple.svg" alt="Elite Modell" width={720} height={210} priority className={styles.logo}/>
       </Link>
-      <div className={styles.center}><Link href="/buscar?tab=acompanhantes">Acompanhantes</Link></div>
+      <div className={styles.center}>
+        <Link href="/buscar?tab=acompanhantes">Explorar</Link>
+        <Link href={ACCOUNT_ROUTES.cadastroAcompanhante}>Seja acompanhante</Link>
+        <Link href="mailto:suporte@elitemodell.com.br">Ajuda</Link>
+      </div>
       <div className={styles.actions}>
         <NavbarSessionControls variant="authActions" onLoginChoice={openLogin} onRegisterChoice={() => router.push(ACCOUNT_ROUTES.cadastro)}/>
         <button type="button" className={styles.menuButton} aria-label={menuOpen ? "Fechar menu" : "Abrir menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>

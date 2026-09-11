@@ -145,7 +145,7 @@ export default function PixPaymentModal({ planId, creditAmount, bookingId, amoun
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative w-full max-w-[400px] overflow-hidden rounded-[24px] border border-[#b72cff]/25 bg-[#0d0d0d] shadow-[0_28px_90px_rgba(0,0,0,0.7)]">
+      <div className="payment-light-modal relative w-full max-w-[400px] overflow-hidden rounded-[24px] border border-[#b72cff]/25 bg-white shadow-[0_28px_90px_rgba(52,33,67,0.24)]">
         <div className="h-[2px] bg-[linear-gradient(90deg,transparent,#c451ff,#b72cff,transparent)]" />
 
         {/* Header */}

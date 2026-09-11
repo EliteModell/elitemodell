@@ -78,12 +78,12 @@ export function ProfessionalTopHeader({ onMenuClick }: { onMenuClick: () => void
   const location = profile?.city && profile.state ? `${profile.city}, ${profile.state}` : profile?.email ?? "Conta profissional";
 
   return (
-    <header className="sticky top-0 z-30 bg-[#050505]/82 px-4 pb-4 pt-[max(18px,env(safe-area-inset-top))] backdrop-blur-2xl sm:px-6 md:px-8">
+    <header className="professional-header sticky top-0 z-30 border-b border-[#e7e2ec] bg-white/95 px-4 pb-4 pt-[max(18px,env(safe-area-inset-top))] backdrop-blur-2xl sm:px-6 md:px-8">
       <div className="mx-auto flex w-full max-w-[960px] flex-col gap-5">
         <div className="grid h-[64px] grid-cols-[58px_minmax(0,1fr)_116px] items-center gap-3">
           <button
             onClick={onMenuClick}
-            className="grid h-14 w-14 place-items-center rounded-[18px] border border-[#B72CFF]/38 bg-white/[0.035] text-[#E1A6FF] shadow-[0_12px_34px_rgba(0,0,0,0.34)]"
+            className="grid h-14 w-14 place-items-center rounded-2xl border border-[#dfd0ee] bg-white text-[#7c22ee] shadow-[0_8px_22px_rgba(47,28,68,0.07)]"
             aria-label="Abrir menu"
           >
             <Menu className="h-7 w-7" />
@@ -96,14 +96,14 @@ export function ProfessionalTopHeader({ onMenuClick }: { onMenuClick: () => void
           <div className="flex justify-end gap-3">
             <Link
               href={messagesHref}
-              className="grid h-14 w-14 place-items-center rounded-[18px] border border-[#B72CFF]/38 bg-white/[0.035] text-[#E1A6FF] no-underline shadow-[0_12px_34px_rgba(0,0,0,0.34)]"
+              className="grid h-14 w-14 place-items-center rounded-2xl border border-[#dfd0ee] bg-white text-[#7c22ee] no-underline shadow-[0_8px_22px_rgba(47,28,68,0.07)]"
               aria-label="Mensagens"
             >
               <Mail className="h-6 w-6" />
             </Link>
             <Link
               href={notificationsHref}
-              className="relative grid h-14 w-14 place-items-center rounded-[18px] border border-[#B72CFF]/38 bg-white/[0.035] text-[#E1A6FF] no-underline shadow-[0_12px_34px_rgba(0,0,0,0.34)]"
+              className="relative grid h-14 w-14 place-items-center rounded-2xl border border-[#dfd0ee] bg-white text-[#7c22ee] no-underline shadow-[0_8px_22px_rgba(47,28,68,0.07)]"
               aria-label="Notificações"
             >
               <Bell className="h-6 w-6" />
@@ -119,15 +119,15 @@ export function ProfessionalTopHeader({ onMenuClick }: { onMenuClick: () => void
             </span>
           </span>
           <span className="min-w-0">
-            <span className="block truncate text-[28px] font-black text-white sm:text-[34px]">
+            <span className="block truncate text-[28px] font-bold text-[#17141d] sm:text-[34px]">
               Olá, {profile?.name ?? "Profissional Elite"}
             </span>
-            <span className="mt-2 flex min-w-0 items-center gap-2 text-[16px] text-[#B8B8B8]">
-              <MapPin className="h-5 w-5 shrink-0 text-white/82" />
+            <span className="mt-2 flex min-w-0 items-center gap-2 text-[16px] text-[#686d7d]">
+              <MapPin className="h-5 w-5 shrink-0 text-[#7c22ee]" />
               <span className="truncate">{location}</span>
             </span>
           </span>
-          <ChevronRight className="h-7 w-7 text-white/52" />
+          <ChevronRight className="h-7 w-7 text-[#8a8d98]" />
         </Link>
       </div>
     </header>

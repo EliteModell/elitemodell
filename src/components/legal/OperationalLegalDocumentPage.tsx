@@ -24,20 +24,21 @@ export async function OperationalLegalDocumentPage({ documentKey }: { documentKe
   });
 
   return (
-    <main style={{ minHeight: "100vh", background: "#060607", color: "#fbf7ff", padding: "72px 20px" }}>
+    <main className="legal-document-page" style={{ minHeight: "100vh", background: "#f7f7fa", color: "#17141d", padding: "72px 20px" }}>
       <section style={{ maxWidth: 920, margin: "0 auto" }}>
         <Link href="/" style={{ color: "#b72cff", textDecoration: "none", fontWeight: 800 }}>
           Voltar para Elite Modell
         </Link>
 
         <div
+          className="legal-document-card"
           style={{
             marginTop: 28,
             border: "1px solid rgba(183,44,255,0.22)",
             borderRadius: 24,
-            background: "linear-gradient(180deg, rgba(15,15,18,.96), rgba(7,7,9,.96))",
+            background: "#ffffff",
             padding: "32px",
-            boxShadow: "0 24px 70px rgba(0,0,0,.36)",
+            boxShadow: "0 18px 48px rgba(47,28,68,.09)",
           }}
         >
           <p style={{ margin: 0, color: "#f59e0b", fontWeight: 900, letterSpacing: ".08em", textTransform: "uppercase", fontSize: 12 }}>
@@ -48,7 +49,7 @@ export async function OperationalLegalDocumentPage({ documentKey }: { documentKe
           <h1 style={{ margin: "14px 0 8px", fontSize: 40, lineHeight: 1.08 }}>
             {document.title}
           </h1>
-          <p style={{ margin: 0, color: "#d8cedd", lineHeight: 1.7 }}>
+          <p style={{ margin: 0, color: "#62687a", lineHeight: 1.7 }}>
             Chave tecnica: <code>{document.key}</code> | Publico: {document.audience}
             {version ? ` | Versao: ${version.version}` : ""}
           </p>
@@ -65,9 +66,9 @@ export async function OperationalLegalDocumentPage({ documentKey }: { documentKe
               <article
                 style={{
                   marginTop: 24,
-                  borderTop: "1px solid rgba(255,255,255,.10)",
+                  borderTop: "1px solid #e7e2ec",
                   paddingTop: 24,
-                  color: "#d9dee8",
+                  color: "#45414c",
                   lineHeight: 1.75,
                   whiteSpace: "pre-wrap",
                   overflowWrap: "anywhere",
@@ -110,9 +111,9 @@ export async function OperationalLegalDocumentPage({ documentKey }: { documentKe
 
 function Notice({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section style={{ borderTop: "1px solid rgba(255,255,255,.10)", paddingTop: 18, marginTop: 18 }}>
+    <section style={{ borderTop: "1px solid #e7e2ec", paddingTop: 18, marginTop: 18 }}>
       <h2 style={{ margin: "0 0 8px", fontSize: 18, color: "#e1a6ff" }}>{title}</h2>
-      <p style={{ margin: 0, color: "#d9dee8", lineHeight: 1.7 }}>{children}</p>
+      <p style={{ margin: 0, color: "#62687a", lineHeight: 1.7 }}>{children}</p>
     </section>
   );
 }

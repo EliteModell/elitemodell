@@ -13,10 +13,6 @@ type Appointment = {
   notes?: string | null;
   contactMethod: string;
   price?: number | null;
-  originalPrice?: number | null;
-  voucherDiscount?: number | null;
-  finalPrice?: number | null;
-  voucher?: { id: string; code: string; value: number; status: string } | null;
   client: { name: string | null; email: string | null; image: string | null };
   professional: { displayName: string; slug: string };
 };
@@ -38,10 +34,6 @@ function formatDuration(minutes: number) {
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
   return rest ? `${hours}h ${rest}min` : `${hours}h`;
-}
-
-function money(value?: number | null) {
-  return (value ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 export default function AgendamentosPage() {
@@ -184,12 +176,6 @@ export default function AgendamentosPage() {
                       </div>
                       {a.notes && (
                         <p style={{ fontSize: 13, color: "#666", marginTop: 6, maxWidth: 400 }}>{a.notes}</p>
-                      )}
-                      {a.voucher && (
-                        <div style={{ marginTop: 10, border: "1px solid rgba(183,44,255,.24)", borderRadius: 10, padding: 10, color: "#d8d1c7", fontSize: 12, lineHeight: 1.6 }}>
-                          <strong style={{ color: "#e1a6ff" }}>Voucher promocional aplicado pela plataforma</strong><br />
-                          Valor original: {money(a.originalPrice ?? a.price)} · Voucher aplicado: {money(a.voucherDiscount ?? a.voucher.value)} · Cliente pagará: {money(a.finalPrice ?? a.price)}
-                        </div>
                       )}
                     </div>
                   </div>

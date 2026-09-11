@@ -11,6 +11,10 @@
   right: 16px;
 }
 
+.coverIdentity h1 {
+  color: #fff !important;
+}
+
 .profileSummary {
   display: flex;
   gap: 14px;
@@ -27,8 +31,8 @@
   flex-shrink: 0;
   border: 3px solid;
   overflow: hidden;
-  background: #0f0a13;
-  box-shadow: 0 0 24px rgba(183, 44, 255, 0.3);
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(52, 33, 67, 0.18);
   position: relative;
   z-index: 10;
 }

@@ -1018,6 +1018,89 @@
   animation: shimmer 1.5s infinite;
 }
 
+/* Elite Modell 2026 — camada clara compartilhada do cadastro profissional. */
+.page {
+  --gold: #7c22ee;
+  --gold-light: #7c22ee;
+  --gold-dark: #6418d1;
+  --ink: #17141d;
+  --surface: #ffffff;
+  --surface-strong: #faf9fc;
+  --line: #e7e2ec;
+  color: #17141d;
+  background: #f7f7fa;
+}
+.header { border-color: #e7e2ec; background: rgba(255,255,255,.96); }
+.backHome { color: #62687a; }
+.progressMeta { color: #737684; letter-spacing: 0; text-transform: none; }
+.progressTrack { background: #eae4ef; }
+.progressTrack span { background: #7c22ee; box-shadow: none; }
+.phoneStage,
+.formCard,
+.verificationCard,
+.emptyVerification,
+.welcomeSection,
+.simulatorSection,
+.benefitsSection,
+.faqSection,
+.finalSection,
+.heroCard,
+.heroMessage,
+.benefitCard,
+.faqList details {
+  border-color: #e7e2ec;
+  background: #fff;
+  color: #17141d;
+  box-shadow: 0 10px 32px rgba(47,28,68,.07);
+}
+.heroVisual { background: #f4edff; }
+.heroOverlay,
+.heroGlow { display: none; }
+.phoneContent h1,
+.verificationCard h1,
+.emptyVerification h1,
+.welcomeSection h1,
+.sectionHeading h2,
+.finalSection h2,
+.benefitCard h3 { color: #17141d; font-family: var(--font-inter), Inter, "Segoe UI", sans-serif; }
+.lead,
+.verificationCard > p,
+.emptyVerification p,
+.welcomeSection p,
+.sectionHeading > p,
+.benefitCard p,
+.faqList details p { color: #686d7d; }
+.eyebrow,
+.formCard > label,
+.codeArea > label { letter-spacing: 0; text-transform: none; }
+.inputShell,
+.codeInput,
+.channelList button {
+  border-color: #ded7e5;
+  background: #fff;
+  color: #17141d;
+  box-shadow: none;
+}
+.inputShell input { color: #17141d; }
+.inputShell input::placeholder { color: #9893a1; }
+.checkRow { color: #5f6472; }
+.primaryButton,
+.finalButton { background: #7c22ee; color: #fff; box-shadow: 0 10px 24px rgba(124,34,238,.2); }
+.quickBenefits svg,
+.benefitCard > span,
+.finalIcon { display: none; }
+.quickBenefits span { border-color: #e7e2ec; background: #fff; color: #5f6472; }
+.revenueCard { border-color: #dfd0ee; background: #f7f1ff; box-shadow: none; }
+.footer { border-color: #e7e2ec; background: #fff; color: #737684; }
+.loadingPage { background: #f7f7fa; }
+.loadingHeader,
+.loadingImage,
+.loadingLineShort,
+.loadingTitle,
+.loadingLine,
+.loadingInput,
+.loadingButton { background: #ebe7ef; }
+
 .loadingHeader {
   width: min(100%, 1080px);
   height: 48px;
@@ -1144,3 +1227,12 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+.loadingHero { border-color: #e7e2ec; background: #fff; }
+.loadingHeader,
+.loadingImage,
+.loadingLineShort,
+.loadingTitle,
+.loadingLine,
+.loadingInput,
+.loadingButton { background: #ebe7ef; }

@@ -685,6 +685,24 @@ const loginPageStyles = (
           color: #b8b8b8;
           font-size: 13px;
         }
+        /* Tema claro compartilhado com o restante da plataforma. */
+        .auth-login-page { color: #17141d; }
+        .auth-topbar button,
+        .country-pill { border-color: #e5ddeb; background: #fff; color: #62687a; }
+        .login-mark { display: none; }
+        .login-hero h1 { color: #17141d; font-weight: 800; }
+        .login-hero p,
+        .signup-block p { color: #686d7d; }
+        .auth-card,
+        .trust-section,
+        .link-groups,
+        .visibility-section { border-color: #e7e2ec; background: #fff; box-shadow: 0 12px 36px rgba(47,28,68,.08); }
+        .gold-line { display: none; }
+        .auth-form label > span { color: #5c5464; letter-spacing: 0; text-transform: none; }
+        .auth-form input { border-color: #ded7e5 !important; background: #fff !important; color: #17141d !important; }
+        .security-box { border-color: #dfd0ee; border-left-color: #7c22ee; background: #f7f1ff; color: #514a59; }
+        .primary-auth-button { background: #7c22ee; color: #fff; box-shadow: 0 10px 24px rgba(124,34,238,.2); }
+        .signup-block a { color: #6c18d7; border-color: #cdb4ea; }
         @media (min-width: 768px) {
           .auth-login-page {
             max-width: 520px;

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { ArrowDownLeft, ArrowRight, ArrowUpRight, ChevronRight, CreditCard, Loader, Plus, Shield, Star, Ticket } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ChevronRight, CreditCard, Loader, Plus, Shield, Star } from "lucide-react";
 import dynamic from "next/dynamic";
 import { ClientSensitiveAction } from "@/components/client-area/ClientSensitiveGate";
 
@@ -27,20 +27,6 @@ type WalletData = {
 };
 
 type AddMethod = "pix" | "card" | null;
-
-type Voucher = {
-  id: string;
-  code: string;
-  value: number;
-  status: string;
-  statusLabel: string;
-  createdAt: string;
-  expiresAt: string;
-  usedAt?: string | null;
-  requiresPayment: boolean;
-  paymentStatus: string;
-  participantOnly: boolean;
-};
 
 const STATUS_LABEL: Record<string, string> = {
   PAID: "Confirmado",
@@ -88,7 +74,6 @@ const GOLD_BORDER = "rgba(183,44,255,0.20)";
 
 export default function CarteiraPage() {
   const [wallet, setWallet] = useState<WalletData | null>(null);
-  const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [loading, setLoading] = useState(true);
   const [addMethod, setAddMethod] = useState<AddMethod>(null);
   const [addAmount] = useState(50);
@@ -99,11 +84,6 @@ export default function CarteiraPage() {
       if (!res.ok) return;
       const data: WalletData = await res.json();
       setWallet(data);
-      const voucherRes = await fetch("/api/vouchers/client", { cache: "no-store" });
-      if (voucherRes.ok) {
-        const voucherData: { vouchers: Voucher[] } = await voucherRes.json();
-        setVouchers(voucherData.vouchers ?? []);
-      }
     } finally {
       setLoading(false);
     }
@@ -319,53 +299,6 @@ export default function CarteiraPage() {
           overflow: hidden;
         }
 
-        /* ── Voucher card ── */
-        .cw-voucher-head {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          padding: 18px 18px 0;
-        }
-        .cw-voucher-icon {
-          display: grid;
-          place-items: center;
-          width: 48px; height: 48px;
-          border-radius: 12px;
-          background: ${GOLD_DIM};
-          border: 1px solid rgba(183,44,255,0.24);
-          color: ${GOLD};
-          flex-shrink: 0;
-        }
-        .cw-voucher-title {
-          font-size: 16px;
-          font-weight: 900;
-          color: #f5f0e4;
-          margin: 0 0 3px;
-        }
-        .cw-voucher-desc {
-          font-size: 12px;
-          color: rgba(245,240,228,0.46);
-          margin: 0;
-          line-height: 1.45;
-        }
-        .cw-voucher-empty {
-          margin: 14px 18px 18px;
-          padding: 14px 16px;
-          border-radius: 10px;
-          background: rgba(255,255,255,0.02);
-          border: 1px dashed rgba(183,44,255,0.15);
-          font-size: 13px;
-          color: rgba(245,240,228,0.36);
-          text-align: center;
-        }
-        .cw-voucher-item {
-          margin: 10px 14px;
-          padding: 14px;
-          border-radius: 10px;
-          background: rgba(183,44,255,0.06);
-          border: 1px solid rgba(183,44,255,0.18);
-        }
-
         /* ── Transaction list ── */
         .cw-tx-list {
           list-style: none;
@@ -542,59 +475,6 @@ export default function CarteiraPage() {
         <div className="cw-info-strip">
           <Shield style={{ width: 15, height: 15, color: GOLD, flexShrink: 0, marginTop: 1 }} />
           <p>Compra de créditos e movimentações privadas liberadas para clientes 18+ verificados.</p>
-        </div>
-
-        {/* ── Vouchers ── */}
-        <div className="cw-section">
-          <div className="cw-card">
-            <div className="cw-voucher-head">
-              <div className="cw-voucher-icon">
-                <Ticket style={{ width: 22, height: 22 }} />
-              </div>
-              <div>
-                <p className="cw-voucher-title">Meus Vouchers</p>
-                <p className="cw-voucher-desc">Vouchers promocionais para usar com profissionais participantes.</p>
-              </div>
-            </div>
-
-            {loading ? (
-              <div className="cw-loading" style={{ minHeight: 64 }}>
-                <Loader className="animate-spin" style={{ width: 22, height: 22, color: GOLD }} />
-              </div>
-            ) : vouchers.length === 0 ? (
-              <p className="cw-voucher-empty">Nenhum voucher disponível ainda.</p>
-            ) : (
-              <div style={{ paddingBottom: 10 }}>
-                {vouchers.map((voucher) => (
-                  <div key={voucher.id} className="cw-voucher-item">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                      <div>
-                        <p style={{ margin: "0 0 2px", fontSize: 18, fontWeight: 900, color: "#e1a6ff" }}>
-                          R$ {voucher.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                        </p>
-                        <p style={{ margin: 0, fontFamily: "monospace", fontSize: 13, fontWeight: 700, color: "#f5f0e4" }}>{voucher.code}</p>
-                        <p style={{ margin: "6px 0 0", fontSize: 11, color: "rgba(245,240,228,0.4)" }}>
-                          Válido até {fmt(voucher.expiresAt)}
-                        </p>
-                      </div>
-                      <span style={{
-                        borderRadius: 999, padding: "3px 9px", fontSize: 10, fontWeight: 900, textTransform: "uppercase",
-                        border: `1px solid ${voucher.status === "AVAILABLE" ? "rgba(34,197,94,0.3)" : "rgba(255,255,255,0.12)"}`,
-                        color: voucher.status === "AVAILABLE" ? "#86efac" : "rgba(245,240,228,0.4)",
-                      }}>
-                        {voucher.statusLabel}
-                      </span>
-                    </div>
-                    {voucher.status === "AVAILABLE" && (
-                      <a href="/dashboard/acompanhantes" style={{ display: "inline-flex", alignItems: "center", marginTop: 12, minHeight: 38, padding: "0 14px", borderRadius: 8, background: GOLD, color: "#080704", fontSize: 12, fontWeight: 800, textDecoration: "none", gap: 6 }}>
-                        Usar no agendamento <ArrowRight style={{ width: 13, height: 13 }} />
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* ── Extrato ── */}

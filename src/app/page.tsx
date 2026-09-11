@@ -1,61 +1,59 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, Headphones, LockKeyhole, ShieldCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import styles from "./home.module.css";
 
-const benefits = ["Discrição total", "Perfis verificados", "Experiência premium"];
 const entries = [
-  { tag: "Cliente", title: "Busco prazer", description: "Explore perfis verificados e encontre sua experiência.", cta: "Ver perfis agora", href: "/buscar?tab=acompanhantes&selecionarCidade=1" },
-  { tag: "Acompanhante", title: "Seja acompanhante", description: "Anuncie com segurança e acompanhe sua verificação.", cta: "Começar cadastro", href: ACCOUNT_ROUTES.cadastroAcompanhante },
+  { tag: "Cliente", title: "Quero encontrar acompanhantes", description: "Veja perfis verificados e encontre a sua próxima experiência.", cta: "Explorar perfis", href: "/buscar?tab=acompanhantes&selecionarCidade=1" },
+  { tag: "Acompanhante", title: "Quero anunciar meu perfil", description: "Crie seu perfil com segurança e comece a receber contatos.", cta: "Criar meu perfil", href: ACCOUNT_ROUTES.cadastroAcompanhante },
 ];
 const trustItems = [
-  { icon: ShieldCheck, title: "Discrição garantida", text: "Sua privacidade em primeiro lugar." },
-  { icon: Headphones, title: "Suporte dedicado", text: "Atendimento especializado e humanizado." },
-  { icon: LockKeyhole, title: "Ambiente seguro", text: "Tecnologia e equipe para sua proteção." },
+  { title: "Privacidade real", text: "Seus dados protegidos." },
+  { title: "Suporte humano", text: "Atendimento discreto e especializado." },
+  { title: "Ambiente seguro", text: "Tecnologia e moderação ativa." },
 ];
 
 export default function HomePage() {
   return <div className={styles.shell}>
-    <Navbar />
+    <Navbar tone="light" />
     <main>
       <section className={styles.hero}>
-        <div className={styles.ambient} aria-hidden="true"><i/><i/><i/><i/></div>
+        <div className={styles.model}>
+          <Image src="/images/home/modelo-elite.jpg" alt="Modelo da Elite Modell" fill preload quality={100} sizes="(max-width: 760px) 72vw, 58vw" className={styles.modelImage}/>
+        </div>
         <div className={styles.heroCopy}>
-          <h1><span>A plataforma</span><strong>premium</strong><span>do Brasil</span></h1>
-          <p>Discrição, segurança e as melhores experiências em um só lugar.</p>
-          <div className={styles.benefits} aria-label="Benefícios da plataforma">
-            {benefits.map((benefit) => <span key={benefit}>{benefit}</span>)}
-          </div>
+          <span className={styles.heroEyebrow}>Discrição • Segurança • Liberdade</span>
+          <h1>Encontre o<br/>perfil certo<br/><strong>para você.</strong></h1>
+          <p>Acompanhantes verificadas, com privacidade, segurança e liberdade para viver boas experiências.</p>
+          <Link href="/buscar?tab=acompanhantes&selecionarCidade=1" className={styles.heroCta}>Explorar perfis<ArrowRight aria-hidden="true" size={25}/></Link>
+          <span className={styles.ageNotice}>Ambiente exclusivo para maiores de 18 anos.</span>
         </div>
-        <div className={styles.model} aria-hidden="true">
-          <div className={styles.modelGlow}/>
-          <Image src="/images/home/modelo-hero.jpeg" alt="" fill priority quality={75} sizes="(max-width: 760px) 78vw, 52vw" className={styles.modelImage}/>
-        </div>
+      </section>
+
+      <section className={styles.trust} aria-label="Compromissos Elite Modell">
+        {trustItems.map(({ title, text }) => <div className={styles.trustItem} key={title}>
+          <h3>{title}</h3><p>{text}</p>
+        </div>)}
       </section>
 
       <section className={styles.quick}>
         <span className={styles.eyebrow}>Entrada rápida</span>
         <h2>O que você procura?</h2>
+        <p className={styles.quickIntro}>Escolha como deseja usar a Elite Modell.</p>
         <div className={styles.entryGrid}>
           {entries.map((entry) => <article className={styles.entryCard} key={entry.title}>
             <span className={styles.tag}>{entry.tag}</span>
             <h3>{entry.title}</h3>
             <p>{entry.description}</p>
-            <Link href={entry.href} className={styles.cta}>{entry.cta}<ChevronRight aria-hidden="true" size={21}/></Link>
+            <Link href={entry.href} className={styles.cta}>{entry.cta}<ArrowRight aria-hidden="true" size={22}/></Link>
           </article>)}
         </div>
       </section>
 
-      <section className={styles.trust} aria-label="Compromissos Elite Modell">
-        {trustItems.map(({ icon: Icon, title, text }) => <div className={styles.trustItem} key={title}>
-          <span className={styles.trustIcon}><Icon aria-hidden="true"/></span>
-          <h3>{title}</h3><p>{text}</p>
-        </div>)}
-      </section>
     </main>
-    <Footer/>
+    <Footer tone="light"/>
   </div>;
 }

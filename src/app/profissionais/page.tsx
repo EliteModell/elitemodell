@@ -91,16 +91,16 @@ export default function ProfissionaisPage() {
   const rest = professionals.filter((p) => !p.featured);
 
   return (
-    <div style={{ background: "#0d0d0d", minHeight: "100vh" }}>
-      <Navbar />
+    <div className="public-listing-page" style={{ background: "#f7f7fa", minHeight: "100vh", color: "#17141d" }}>
+      <Navbar tone="light" />
 
       {/* Hero */}
-      <div style={{ paddingTop: 80, background: "linear-gradient(180deg, #0a0a0a 0%, #0d0d0d 100%)", borderBottom: "1px solid #1a1a1a" }}>
+      <div style={{ paddingTop: 88, background: "#fff", borderBottom: "1px solid #e7e2ec" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "48px 24px 32px" }}>
-          <h1 style={{ fontSize: "clamp(28px, 5vw, 52px)", fontWeight: 800, color: "#fff", marginBottom: 12, letterSpacing: "-1px" }}>
+          <h1 style={{ fontSize: "clamp(28px, 5vw, 52px)", fontWeight: 800, color: "#17141d", marginBottom: 12, letterSpacing: "-1px" }}>
             Profissionais <span style={{ color: "#b72cff" }}>Elite Modell</span>
           </h1>
-          <p style={{ color: "#777", fontSize: 17, marginBottom: 32, maxWidth: 540 }}>
+          <p style={{ color: "#686d7d", fontSize: 17, marginBottom: 32, maxWidth: 540 }}>
             Perfis verificados com documentos e biometria. Discreção e segurança em cada contato.
           </p>
 
@@ -114,9 +114,9 @@ export default function ProfissionaisPage() {
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 placeholder="Nome, cidade ou serviço..."
-                style={{ width: "100%", padding: "12px 14px 12px 38px", background: "#111", border: "1px solid #222", borderRadius: 10, color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box" }}
+                style={{ width: "100%", padding: "12px 14px 12px 38px", background: "#fff", border: "1px solid #ded7e5", borderRadius: 12, color: "#17141d", fontSize: 15, outline: "none", boxSizing: "border-box" }}
                 onFocus={(e) => ((e.target as HTMLElement).style.borderColor = "#b72cff")}
-                onBlur={(e) => ((e.target as HTMLElement).style.borderColor = "#222")}
+                onBlur={(e) => ((e.target as HTMLElement).style.borderColor = "#ded7e5")}
               />
             </div>
 
@@ -124,7 +124,7 @@ export default function ProfissionaisPage() {
             <select
               value={category}
               onChange={(e) => { setCategory(e.target.value); setPage(1); }}
-              style={{ padding: "12px 14px", background: "#111", border: "1px solid #222", borderRadius: 10, color: category ? "#fff" : "#666", fontSize: 14, outline: "none", cursor: "pointer" }}
+              style={{ padding: "12px 14px", background: "#fff", border: "1px solid #ded7e5", borderRadius: 12, color: category ? "#17141d" : "#737684", fontSize: 14, outline: "none", cursor: "pointer" }}
             >
               <option value="">Todas as categorias</option>
               <option value="MULHER">Mulher</option>
@@ -134,7 +134,7 @@ export default function ProfissionaisPage() {
 
             <button
               onClick={() => setFilterOpen(!filterOpen)}
-              style={{ padding: "12px 16px", background: filterOpen ? "rgba(183,44,255,0.12)" : "#111", border: `1px solid ${filterOpen ? "#b72cff" : "#222"}`, borderRadius: 10, color: "#ccc", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+              style={{ padding: "12px 16px", background: filterOpen ? "#f4edff" : "#fff", border: `1px solid ${filterOpen ? "#7c22ee" : "#ded7e5"}`, borderRadius: 12, color: filterOpen ? "#6518cf" : "#514b59", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
@@ -145,7 +145,7 @@ export default function ProfissionaisPage() {
             <select
               value={sortBy}
               onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
-              style={{ padding: "12px 14px", background: "#111", border: "1px solid #222", borderRadius: 10, color: "#ccc", fontSize: 14, outline: "none", cursor: "pointer" }}
+              style={{ padding: "12px 14px", background: "#fff", border: "1px solid #ded7e5", borderRadius: 12, color: "#514b59", fontSize: 14, outline: "none", cursor: "pointer" }}
             >
               <option value="rating">Mais avaliados</option>
               <option value="reviews">Mais avaliações</option>
@@ -156,19 +156,19 @@ export default function ProfissionaisPage() {
 
           {/* Painel de filtros */}
           {filterOpen && (
-            <div style={{ marginTop: 16, padding: "20px", background: "#111", border: "1px solid #222", borderRadius: 12 }}>
+            <div style={{ marginTop: 16, padding: "20px", background: "#faf9fc", border: "1px solid #e7e2ec", borderRadius: 16 }}>
               <div style={{ display: "flex", gap: 40, flexWrap: "wrap" }}>
                 <div>
-                  <label style={{ fontSize: 13, color: "#aaa", fontWeight: 600, display: "block", marginBottom: 12 }}>
+                  <label style={{ fontSize: 13, color: "#514b59", fontWeight: 600, display: "block", marginBottom: 12 }}>
                     Preço máximo: <span style={{ color: "#b72cff" }}>R$ {priceMax.toLocaleString("pt-BR")}</span>
                   </label>
                   <input type="range" min={200} max={6000} step={100} value={priceMax} onChange={(e) => { setPriceMax(Number(e.target.value)); setPage(1); }} style={{ accentColor: "#b72cff", width: 220 }} />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <label style={{ fontSize: 13, color: "#aaa", fontWeight: 600 }}>Outros</label>
+                  <label style={{ fontSize: 13, color: "#514b59", fontWeight: 600 }}>Outros</label>
                   <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                     <input type="checkbox" checked={onlyVerified} onChange={(e) => { setOnlyVerified(e.target.checked); setPage(1); }} style={{ accentColor: "#b72cff" }} />
-                    <span style={{ fontSize: 13, color: "#ccc" }}>Apenas verificadas</span>
+                    <span style={{ fontSize: 13, color: "#686270" }}>Apenas verificadas</span>
                   </label>
                 </div>
               </div>
@@ -204,7 +204,7 @@ export default function ProfissionaisPage() {
               <div style={{ marginBottom: 40 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: "#b72cff", textTransform: "uppercase", letterSpacing: 2 }}>Em destaque</span>
-                  <div style={{ flex: 1, height: 1, background: "#1e1e1e" }} />
+                  <div style={{ flex: 1, height: 1, background: "#e7e2ec" }} />
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 20 }}>
                   {featured.map((p) => <ProfCard key={p.id} pro={p} featured />)}
@@ -235,7 +235,7 @@ export default function ProfissionaisPage() {
                   <button
                     key={p}
                     onClick={() => setPage(p)}
-                    style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${p === page ? "#b72cff" : "#222"}`, background: p === page ? "rgba(183,44,255,0.12)" : "#111", color: p === page ? "#b72cff" : "#666", fontSize: 14, fontWeight: p === page ? 700 : 400, cursor: "pointer" }}
+                    style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${p === page ? "#7c22ee" : "#ded7e5"}`, background: p === page ? "#f4edff" : "#fff", color: p === page ? "#6518cf" : "#686270", fontSize: 14, fontWeight: p === page ? 700 : 400, cursor: "pointer" }}
                   >
                     {p}
                   </button>
@@ -249,7 +249,7 @@ export default function ProfissionaisPage() {
                 <p style={{ color: "#666", fontSize: 16, marginBottom: 16 }}>Nenhum profissional encontrado com esses filtros.</p>
                 <button
                   onClick={() => { setSearch(""); setCategory(""); setPriceMax(6000); setOnlyVerified(false); setPage(1); }}
-                  style={{ padding: "10px 24px", background: "#b72cff", color: "#08050b", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 700 }}
+                  style={{ padding: "10px 24px", background: "#7c22ee", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 700 }}
                 >
                   Limpar filtros
                 </button>
@@ -261,10 +261,10 @@ export default function ProfissionaisPage() {
 
       <style>{`
         .prof-card {
-          border-color: #1e1e1e;
+          border-color: #e7e2ec;
           transform: translateY(0);
           will-change: transform;
-          box-shadow: 0 18px 48px rgba(0,0,0,0.28);
+          box-shadow: 0 16px 42px rgba(52, 33, 67, 0.08);
           contain: layout paint;
         }
         .prof-card.featured {
@@ -274,7 +274,7 @@ export default function ProfissionaisPage() {
           .prof-card:hover {
             border-color: rgba(183,44,255,0.4);
             transform: translateY(-3px);
-            box-shadow: 0 24px 72px rgba(0,0,0,0.36);
+            box-shadow: 0 20px 52px rgba(52, 33, 67, 0.14);
           }
         }
         .prof-card:active {
@@ -323,7 +323,7 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
       <div
         className={featured ? "prof-card featured" : "prof-card"}
         style={{
-          background: "#111",
+          background: "#fff",
           border: "1px solid",
           borderRadius: 14,
           overflow: "hidden",
@@ -332,13 +332,13 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
         }}
       >
         {featured && (
-          <div style={{ position: "absolute", top: 12, left: 12, zIndex: 2, padding: "3px 10px", background: "#b72cff", color: "#08050b", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
+          <div style={{ position: "absolute", top: 12, left: 12, zIndex: 2, padding: "3px 10px", background: "#7c22ee", color: "#fff", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
             ★ Destaque
           </div>
         )}
 
         {/* Foto de capa */}
-        <div style={{ height: 180, background: "linear-gradient(135deg, #0f0a13 0%, #111 60%, #0d0d1a 100%)", position: "relative", overflow: "hidden" }}>
+        <div style={{ height: 180, background: "linear-gradient(135deg, #f4edff 0%, #fbfaff 60%, #eee6f7 100%)", position: "relative", overflow: "hidden" }}>
           {coverPhoto ? (
             <Image
               src={coverPhoto}
@@ -365,7 +365,7 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
               {CATEGORY_LABELS[pro.escortCategory] ?? pro.escortCategory}
             </div>
           )}
-          <div style={{ position: "absolute", left: 14, bottom: -28, width: 64, height: 64, borderRadius: "50%", border: "3px solid #b72cff", overflow: "hidden", background: "#111", boxShadow: "0 10px 26px rgba(0,0,0,0.42)" }}>
+          <div style={{ position: "absolute", left: 14, bottom: -28, width: 64, height: 64, borderRadius: "50%", border: "3px solid #7c22ee", overflow: "hidden", background: "#fff", boxShadow: "0 10px 26px rgba(52,33,67,0.18)" }}>
             {profilePhoto ? (
               <Image src={profilePhoto} alt={pro.displayName} fill sizes="64px" style={{ objectFit: "cover", objectPosition: "top" }} />
             ) : (
@@ -381,7 +381,7 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: "#fff", margin: 0 }}>{pro.displayName}</h3>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: "#17141d", margin: 0 }}>{pro.displayName}</h3>
                 {pro.verified && (
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="#b72cff"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
                 )}
@@ -391,7 +391,7 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
             <div style={{ textAlign: "right" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
                 <span style={{ color: "#b72cff" }}>★</span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{(pro.rating ?? 0).toFixed(1)}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#17141d" }}>{(pro.rating ?? 0).toFixed(1)}</span>
               </div>
               <span style={{ fontSize: 12, color: "#555" }}>({pro.totalReviews ?? 0})</span>
             </div>
@@ -409,7 +409,7 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
               </span>
             ))}
             {specialtyNames.length > 2 && (
-              <span style={{ padding: "3px 10px", background: "#0d0d0d", border: "1px solid #222", borderRadius: 20, fontSize: 11, color: "#666" }}>
+              <span style={{ padding: "3px 10px", background: "#f5f3f7", border: "1px solid #e7e2ec", borderRadius: 20, fontSize: 11, color: "#686270" }}>
                 +{specialtyNames.length - 2}
               </span>
             )}
@@ -423,7 +423,7 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
                 </span>
               )}
             </div>
-            <div style={{ padding: "7px 14px", background: "#b72cff", color: "#08050b", borderRadius: 7, fontSize: 13, fontWeight: 700 }}>
+            <div style={{ padding: "7px 14px", background: "#7c22ee", color: "#fff", borderRadius: 9, fontSize: 13, fontWeight: 700 }}>
               Ver perfil
             </div>
           </div>

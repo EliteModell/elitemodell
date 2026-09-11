@@ -103,7 +103,7 @@ export default function CitySearchModal({ open, onClose, onSelectCity }: Props) 
   return (
     <>
       <div
-        className="fixed inset-0 z-[200] overflow-y-auto overscroll-contain bg-[#030405] text-white"
+        className="city-search-modal fixed inset-0 z-[200] overflow-y-auto overscroll-contain bg-[#f7f7fa] text-[#17141d]"
         style={{ animation: "premiumFadeUp 200ms ease-out both" }}
       >
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_75%_28%,rgba(183,44,255,0.10),transparent_32%),linear-gradient(180deg,#050505_0%,#030405_56%,#050505_100%)]" />
