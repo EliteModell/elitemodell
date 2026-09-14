@@ -104,6 +104,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "home-reference",
+      testMatch: "**/home-reference.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "logo-context",
       testMatch: "**/logo-context.spec.ts",
       use: { browserName: "chromium" },

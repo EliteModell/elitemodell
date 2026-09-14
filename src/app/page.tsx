@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import HomeCitySearch from "@/components/home/HomeCitySearch";
 import styles from "./home.module.css";
 
 const entries = [
@@ -18,7 +19,7 @@ const trustItems = [
 
 export default function HomePage() {
   return <div className={styles.shell}>
-    <Navbar tone="light" />
+    <Navbar tone="light" accent="coral" />
     <main>
       <section className={styles.hero}>
         <div className={styles.model}>
@@ -26,9 +27,13 @@ export default function HomePage() {
         </div>
         <div className={styles.heroCopy}>
           <span className={styles.heroEyebrow}>Discrição • Segurança • Liberdade</span>
-          <h1>Encontre o<br/>perfil certo<br/><strong>para você.</strong></h1>
+          <h1>Encontre o <br/>perfil certo <br/><strong>para você.</strong></h1>
           <p>Acompanhantes verificadas, com privacidade, segurança e liberdade para viver boas experiências.</p>
-          <Link href="/buscar?tab=acompanhantes&selecionarCidade=1" className={styles.heroCta}>Explorar perfis<ArrowRight aria-hidden="true" size={25}/></Link>
+          <HomeCitySearch />
+          <div className={styles.heroActions}>
+            <Link href="/buscar?tab=acompanhantes&selecionarCidade=1" className={styles.heroCta}>Explorar perfis<ArrowRight aria-hidden="true" size={22}/></Link>
+            <Link href={ACCOUNT_ROUTES.cadastroAcompanhante} className={`${styles.heroCta} ${styles.heroCtaSecondary}`}>Anunciar meu perfil<ArrowRight aria-hidden="true" size={22}/></Link>
+          </div>
           <span className={styles.ageNotice}>Ambiente exclusivo para maiores de 18 anos.</span>
         </div>
       </section>
