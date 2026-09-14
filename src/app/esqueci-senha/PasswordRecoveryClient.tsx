@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { BrandMark } from "@/components/BrandMark";
 
-const GOLD = "#b72cff";
+const GOLD = "#CA4651";
 
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());

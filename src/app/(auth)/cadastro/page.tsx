@@ -40,7 +40,7 @@ const PENDING_REGISTRATION_COOKIE = "elitemodell_pending_registration";
 const REGISTRATION_STATE_MAX_AGE_SECONDS = 60 * 60 * 24;
 type AuthError = { code?: string; name?: string; message?: string };
 
-const GOLD = "#b72cff";
+const GOLD = "#CA4651";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",

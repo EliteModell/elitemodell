@@ -119,6 +119,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "platform-redesign",
+      testMatch: "**/platform-redesign.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "authenticated",
       testMatch: "**/client-area-authenticated.spec.ts",
       use: {

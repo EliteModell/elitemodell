@@ -9,7 +9,7 @@ import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { supabaseAuth } from "@/lib/supabase-client";
 import { BrandMark } from "@/components/BrandMark";
 
-const GOLD = "#b72cff";
+const GOLD = "#CA4651";
 
 type SessionState = "checking" | "ready" | "invalid";
 

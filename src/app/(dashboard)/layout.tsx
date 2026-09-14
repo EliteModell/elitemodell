@@ -541,6 +541,105 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
           }
         }
+        /* Identidade coral oficial: sobrepõe somente a camada visual profissional. */
+        .professional-shell {
+          background: #f8f7f8 !important;
+          color: #17141d !important;
+        }
+        .professional-shell .professional-header {
+          border-bottom-color: #eadfe1 !important;
+          background: rgba(255,255,255,.97) !important;
+          box-shadow: 0 10px 28px rgba(83,42,49,.08) !important;
+        }
+        .professional-shell .professional-content h1,
+        .professional-shell .professional-content h2,
+        .professional-shell .professional-content h3,
+        .professional-shell .professional-content strong {
+          color: #17141d !important;
+        }
+        .professional-shell .professional-content p,
+        .professional-shell .professional-content li {
+          color: #67636f !important;
+        }
+        .professional-shell .professional-content > div > div,
+        .professional-shell .professional-content section,
+        .professional-shell .professional-content article,
+        .professional-shell .professional-content form,
+        .professional-shell .professional-content [style*="background: #111"],
+        .professional-shell .professional-content [style*="background: #0d0d0d"],
+        .professional-shell .professional-content [style*="background: #0f0a13"],
+        .professional-shell .professional-content [style*="background: #08050b"],
+        .professional-shell .professional-content [style*="background: rgba(183,44,255"],
+        .professional-shell .professional-content .premium-empty-state,
+        .professional-shell .professional-content .premium-card {
+          border-color: #eadfe1 !important;
+          background: #fff !important;
+          color: #17141d !important;
+          box-shadow: 0 14px 38px rgba(83,42,49,.08) !important;
+        }
+        .professional-shell .professional-content input,
+        .professional-shell .professional-content textarea,
+        .professional-shell .professional-content select {
+          border-color: #d9c5c9 !important;
+          background: #fff !important;
+          color: #17141d !important;
+          box-shadow: none !important;
+        }
+        .professional-shell .professional-content input[type="radio"],
+        .professional-shell .professional-content input[type="checkbox"] {
+          width: 20px !important;
+          min-width: 20px !important;
+          height: 20px !important;
+          min-height: 20px !important;
+          padding: 0 !important;
+          accent-color: #ca4651 !important;
+        }
+        .professional-shell .professional-content label,
+        .professional-shell .professional-content [style*="textTransform"],
+        .professional-shell .professional-content [style*="uppercase"] {
+          color: #ca4651 !important;
+        }
+        .professional-shell .professional-content label[style*="cursor"] {
+          border-color: #eadfe1 !important;
+          background: #fff !important;
+          color: #17141d !important;
+          box-shadow: none !important;
+        }
+        .professional-shell .professional-content label[style*="cursor"]:has(input:checked) {
+          border-color: #e3aeb5 !important;
+          background: #fff0f2 !important;
+        }
+        .professional-shell .professional-content .professional-primary-action,
+        .professional-shell .professional-content button[style*="background: #b72cff"] {
+          border-color: #ca4651 !important;
+          background: #ca4651 !important;
+          color: #fff !important;
+          box-shadow: 0 12px 28px rgba(202,70,81,.18) !important;
+        }
+        .professional-shell .professional-content button[style*="background: rgba(183,44,255"] {
+          border-color: #e3aeb5 !important;
+          background: #fff0f2 !important;
+          color: #ca4651 !important;
+          box-shadow: none !important;
+        }
+        .professional-shell .professional-bottom-nav {
+          border-top-color: #eadfe1 !important;
+          background: rgba(255,255,255,.97) !important;
+          box-shadow: 0 -10px 30px rgba(83,42,49,.10) !important;
+        }
+        .professional-shell .professional-bottom-nav a { color: #89838d !important; }
+        .professional-shell .professional-bottom-nav a.active {
+          border-color: #e8c4c9 !important;
+          background: #fff0f2 !important;
+          color: #ca4651 !important;
+          box-shadow: none !important;
+        }
+        .professional-shell .professional-header button,
+        .professional-shell .professional-header svg {
+          border-color: #eadfe1 !important;
+          color: #ca4651 !important;
+          box-shadow: none !important;
+        }
         .admin-shell * {
           box-sizing: border-box;
         }

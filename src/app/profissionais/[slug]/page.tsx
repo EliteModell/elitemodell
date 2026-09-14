@@ -16,9 +16,9 @@ const ActionAuthModal = dynamic(() => import("@/components/auth/ActionAuthModal"
 const PremiumUpsellModal = dynamic(() => import("@/components/premium/PremiumUpsellModal"));
 const ReviewForm = dynamic(() => import("@/components/ReviewForm"));
 
-const GOLD = "#b72cff";
-const GOLD_DIM = "rgba(183,44,255,0.12)";
-const GOLD_MID = "rgba(183,44,255,0.28)";
+const GOLD = "#CA4651";
+const GOLD_DIM = "rgba(202,70,81,0.12)";
+const GOLD_MID = "rgba(202,70,81,0.28)";
 const PLAYFAIR = "var(--font-inter), 'Segoe UI', sans-serif";
 
 type GaleriaFiltro = "todas" | "fotos" | "videos";

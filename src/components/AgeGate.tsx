@@ -6,7 +6,7 @@ import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 
-const GOLD = "#b72cff";
+const GOLD = "#CA4651";
 const CONSENT_KEY = "elite_modell_adult_consent_session";
 const CONSENT_DATE_KEY = "elite_modell_adult_consent_at";
 const CONSENT_PERSIST_KEY = "elite_modell_ageConsentAccepted";

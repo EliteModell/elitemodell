@@ -1020,9 +1020,9 @@
 
 /* Elite Modell 2026 — camada clara compartilhada do cadastro profissional. */
 .page {
-  --gold: #7c22ee;
-  --gold-light: #7c22ee;
-  --gold-dark: #6418d1;
+  --gold: #ca4651;
+  --gold-light: #ca4651;
+  --gold-dark: #b73946;
   --ink: #17141d;
   --surface: #ffffff;
   --surface-strong: #faf9fc;
@@ -1034,7 +1034,7 @@
 .backHome { color: #62687a; }
 .progressMeta { color: #737684; letter-spacing: 0; text-transform: none; }
 .progressTrack { background: #eae4ef; }
-.progressTrack span { background: #7c22ee; box-shadow: none; }
+.progressTrack span { background: #ca4651; box-shadow: none; }
 .phoneStage,
 .formCard,
 .verificationCard,
@@ -1053,7 +1053,7 @@
   color: #17141d;
   box-shadow: 0 10px 32px rgba(47,28,68,.07);
 }
-.heroVisual { background: #f4edff; }
+.heroVisual { background: #fff0f2; }
 .heroOverlay,
 .heroGlow { display: none; }
 .phoneContent h1,
@@ -1085,12 +1085,12 @@
 .inputShell input::placeholder { color: #9893a1; }
 .checkRow { color: #5f6472; }
 .primaryButton,
-.finalButton { background: #7c22ee; color: #fff; box-shadow: 0 10px 24px rgba(124,34,238,.2); }
+.finalButton { background: #ca4651; color: #fff; box-shadow: 0 10px 24px rgba(202,70,81,.2); }
 .quickBenefits svg,
 .benefitCard > span,
 .finalIcon { display: none; }
 .quickBenefits span { border-color: #e7e2ec; background: #fff; color: #5f6472; }
-.revenueCard { border-color: #dfd0ee; background: #f7f1ff; box-shadow: none; }
+.revenueCard { border-color: #eccbd0; background: #fff4f5; box-shadow: none; }
 .footer { border-color: #e7e2ec; background: #fff; color: #737684; }
 .loadingPage { background: #f7f7fa; }
 .loadingHeader,

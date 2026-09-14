@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./theme-v2.css";
+import "./coral-design-system.css";
 import Providers from "@/components/Providers";
 import AgeGateLoader from "@/components/AgeGateLoader";
 import CookiePreferences from "@/components/privacy/CookiePreferences";

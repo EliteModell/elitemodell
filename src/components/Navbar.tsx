@@ -12,7 +12,7 @@ import styles from "./Navbar.module.css";
 
 const NavbarSessionControls = dynamic(() => import("@/components/NavbarSessionControls"), { ssr: false });
 
-export default function Navbar({ tone = "dark", accent = "default" }: { tone?: "dark" | "light"; accent?: "default" | "coral" }) {
+export default function Navbar({ tone = "light", accent = "coral" }: { tone?: "dark" | "light"; accent?: "default" | "coral" }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [entryChoice, setEntryChoice] = useState<"login" | null>(null);
   const router = useRouter();

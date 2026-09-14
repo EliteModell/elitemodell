@@ -14,7 +14,7 @@ import { supabaseAuth } from "@/lib/supabase-client";
 import { ACCOUNT_ROUTES, normalizeEntryRole, postLoginPathFromUser } from "@/lib/account-routes";
 import { buildAuthCallbackUrl } from "@/lib/auth-redirect";
 
-const GOLD = "#b72cff";
+const GOLD = "#CA4651";
 const PROPERTY_DRAFT_KEY = "elitemodell_location_onboarding_v2";
 const PROPERTY_DRAFT_FINAL_PATH = ACCOUNT_ROUTES.onboardingAnfitriao;
 const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
