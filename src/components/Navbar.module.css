@@ -174,5 +174,19 @@
 }
 
 @media (max-width: 350px) {
-  .brand { width: 102px; }
+  .inner {
+    padding: 0 6px;
+    gap: 4px;
+  }
+  .brand { width: 92px; }
+  .actions { gap: 3px; }
+  .actions :global(.nav-auth-link) {
+    min-height: 38px !important;
+    padding: 0 7px !important;
+    font-size: 11px !important;
+  }
+  .menuButton {
+    width: 38px;
+    height: 38px;
+  }
 }

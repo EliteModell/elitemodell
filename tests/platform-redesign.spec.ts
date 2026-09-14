@@ -4,6 +4,7 @@ import * as path from "path";
 import { installMockSessionCookie } from "./helpers/mock-auth";
 
 const OUTPUT_DIR = path.join(process.cwd(), "artifacts", "visual-review", "contrast-audit");
+const MOBILE_OUTPUT_DIR = path.join(process.cwd(), "artifacts", "visual-review", "mobile-overflow");
 const MOBILE = { width: 390, height: 844 };
 const TRANSPARENT_PIXEL = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
@@ -43,6 +44,7 @@ const PROFESSIONAL_SESSION = {
 
 function ensureOutputDirectory() {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+  fs.mkdirSync(MOBILE_OUTPUT_DIR, { recursive: true });
 }
 
 async function acceptAdultGate(context: BrowserContext, includeCookies = true) {
@@ -56,7 +58,83 @@ async function acceptAdultGate(context: BrowserContext, includeCookies = true) {
 }
 
 async function assertNoOverflow(page: Page) {
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  const audit = await page.evaluate(() => {
+    const viewportWidth = document.documentElement.clientWidth;
+    const tolerance = 2;
+    const offenders: string[] = [];
+
+    for (const element of Array.from(document.body.querySelectorAll<HTMLElement>("*"))) {
+      const rect = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      if (style.display === "none" || style.visibility === "hidden" || rect.width < 1 || rect.height < 1) continue;
+      if (rect.left >= -tolerance && rect.right <= viewportWidth + tolerance) continue;
+
+      let clippedByValidContainer = false;
+      let parent = element.parentElement;
+      while (parent && parent !== document.body) {
+        const parentStyle = getComputedStyle(parent);
+        const parentRect = parent.getBoundingClientRect();
+        if (
+          ["auto", "scroll", "hidden", "clip"].includes(parentStyle.overflowX) &&
+          parentRect.left >= -tolerance &&
+          parentRect.right <= viewportWidth + tolerance
+        ) {
+          clippedByValidContainer = true;
+          break;
+        }
+        parent = parent.parentElement;
+      }
+
+      if (!clippedByValidContainer) {
+        offenders.push(`${element.tagName.toLowerCase()}.${String(element.className).split(" ").slice(0, 2).join(".")}`);
+      }
+    }
+
+    return {
+      viewportWidth,
+      htmlScrollWidth: document.documentElement.scrollWidth,
+      bodyScrollWidth: document.body.scrollWidth,
+      offenders: offenders.slice(0, 12),
+    };
+  });
+
+  expect(audit.htmlScrollWidth, JSON.stringify(audit)).toBeLessThanOrEqual(audit.viewportWidth + 1);
+  expect(audit.bodyScrollWidth, JSON.stringify(audit)).toBeLessThanOrEqual(audit.viewportWidth + 1);
+  expect(audit.offenders, JSON.stringify(audit)).toEqual([]);
+}
+
+async function assertGuestHeaderFits(page: Page) {
+  const header = page.locator('nav[aria-label="Navegação principal"]');
+  if (await header.count() === 0) return;
+  const logo = header.getByRole("link", { name: /Elite Modell/i });
+  const login = header.getByRole("button", { name: "Entrar", exact: true });
+  const signup = header.getByRole("button", { name: "Cadastrar", exact: true });
+  const menu = header.getByRole("button", { name: "Abrir menu", exact: true });
+
+  for (const control of [logo, login, signup, menu]) {
+    await expect(control).toBeVisible();
+  }
+
+  const audit = await header.evaluate((element) => {
+    const viewportWidth = document.documentElement.clientWidth;
+    const children = Array.from(element.querySelectorAll<HTMLElement>("a, button"))
+      .filter((child) => {
+        const style = getComputedStyle(child);
+        const rect = child.getBoundingClientRect();
+        return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+      })
+      .map((child) => {
+        const rect = child.getBoundingClientRect();
+        return { label: child.getAttribute("aria-label") || child.textContent?.trim(), left: rect.left, right: rect.right };
+      });
+
+    return { viewportWidth, children };
+  });
+
+  for (const child of audit.children) {
+    expect(child.left, JSON.stringify(audit)).toBeGreaterThanOrEqual(0);
+    expect(child.right, JSON.stringify(audit)).toBeLessThanOrEqual(audit.viewportWidth + 1);
+  }
 }
 
 async function capture(page: Page, fileName: string, fullPage = true) {
@@ -213,6 +291,38 @@ test("gera as capturas de busca e perfil público", async ({ page, context }) =>
   await capture(page, "09-public-profile.png");
 });
 
+test("listagem permanece encaixada e sem busca textual nos mobiles aprovados", async ({ page, context }) => {
+  await acceptAdultGate(context);
+  await mockPublicProfessionals(page);
+
+  for (const width of [320, 360, 375, 390, 430]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/buscar?tab=acompanhantes&cidade=Itaúna&estado=MG", { waitUntil: "domcontentloaded" });
+    await expect(page.getByPlaceholder("Nome, serviço ou especialidade...")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Buscar", exact: true })).toHaveCount(0);
+    await expect(page.getByText("Localização da busca", { exact: true })).toBeVisible();
+    await assertGuestHeaderFits(page);
+    const locationButton = page.getByRole("button", { name: /Localização da busca/i });
+    await expect(locationButton).toBeVisible();
+    const geometry = await page.evaluate(() => {
+      const header = document.querySelector<HTMLElement>('nav[aria-label="Navegação principal"]');
+      const location = document.querySelector<HTMLElement>(".location-bar");
+      return {
+        headerBottom: header?.getBoundingClientRect().bottom ?? 0,
+        locationTop: location?.getBoundingClientRect().top ?? -1,
+      };
+    });
+    expect(geometry.locationTop, JSON.stringify(geometry)).toBeGreaterThanOrEqual(geometry.headerBottom);
+    await assertNoOverflow(page);
+    if (width >= 375) {
+      await page.screenshot({
+        path: path.join(MOBILE_OUTPUT_DIR, `search-listing-${width}.png`),
+        fullPage: true,
+      });
+    }
+  }
+});
+
 test("gera as capturas da conta do cliente", async ({ page, context }) => {
   await acceptAdultGate(context);
   await mockClientAccount(page);
@@ -224,6 +334,14 @@ test("gera as capturas da conta do cliente", async ({ page, context }) => {
 
   await page.goto("/dashboard/configuracoes", { waitUntil: "domcontentloaded" });
   await capture(page, "12-settings.png");
+
+  for (const width of [320, 360, 375, 390, 430]) {
+    await page.setViewportSize({ width, height: 844 });
+    for (const route of ["/dashboard", "/dashboard/configuracoes"]) {
+      await page.goto(route, { waitUntil: "domcontentloaded" });
+      await assertNoOverflow(page);
+    }
+  }
 });
 
 test("gera a captura do painel profissional quando a conta E2E permite acesso", async ({ page, context }) => {
@@ -254,14 +372,20 @@ test("gera a captura do painel profissional quando a conta E2E permite acesso", 
   await page.goto("/profissional/configuracoes", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Configurações profissionais" })).toBeVisible();
   await capture(page, "11-professional-dashboard.png");
+
+  for (const width of [320, 360, 375, 390, 430]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/profissional/configuracoes", { waitUntil: "domcontentloaded" });
+    await assertNoOverflow(page);
+  }
 });
 
 test("rotas principais não têm overflow nos breakpoints aprovados", async ({ page, context }) => {
   await acceptAdultGate(context);
   await mockPublicProfessionals(page);
-  for (const width of [360, 375, 390, 430, 768, 1024, 1280, 1440]) {
+  for (const width of [320, 360, 375, 390, 430, 768, 1024, 1280, 1440]) {
     await page.setViewportSize({ width, height: width < 768 ? 844 : 900 });
-    for (const route of ["/", "/login", "/cadastro?tipo=cliente", "/cadastro/acompanhante", "/buscar?tab=acompanhantes", "/profissionais/victoria"]) {
+    for (const route of ["/", "/login", "/cadastro?tipo=cliente", "/cadastro/acompanhante", "/buscar?tab=acompanhantes", "/buscar?tab=acompanhantes&selecionarCidade=1", "/profissionais/victoria"]) {
       await page.goto(route, { waitUntil: "domcontentloaded" });
       await assertNoOverflow(page);
     }

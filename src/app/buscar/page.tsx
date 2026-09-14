@@ -180,7 +180,6 @@ function BuscarContent() {
 
   const [mainTab, setMainTab] = useState<MainTab>(() => getMainTab(initialParams.get("tab")));
   const [subTab, setSubTab] = useState<SubTab>(() => getSubTab(initialParams.get("sub")));
-  const [busca, setBusca] = useState(initialParams.get("q") ?? "");
   const [selectedLocation, setSelectedLocation] = useState<LocationChoice | null>(() => getLocationFromParams(initialParams));
   const [virtualOnly, setVirtualOnly] = useState(initialParams.get("virtual") === "1");
   const [distance, setDistance] = useState<DistanceFilter>(() => getDistance(initialParams.get("distance")));
@@ -212,7 +211,6 @@ function BuscarContent() {
     const timer = window.setTimeout(() => {
       setMainTab(getMainTab(nextParams.get("tab")));
       setSubTab(getSubTab(nextParams.get("sub")));
-      setBusca(nextParams.get("q") ?? "");
       setSelectedLocation(getLocationFromParams(nextParams));
       setVirtualOnly(nextParams.get("virtual") === "1");
       setDistance(getDistance(nextParams.get("distance")));
@@ -262,7 +260,6 @@ function BuscarContent() {
           sortBy: apiSortBy(sortBy),
           limit: "24",
         });
-        if (busca) qs.set("search", busca);
         if (selectedLocation) {
           qs.set("city", selectedLocation.city);
           qs.set("state", selectedLocation.state);
@@ -337,7 +334,7 @@ function BuscarContent() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [busca, filtros, locationSelectionRequired, mainTab, selectedLocation, sortBy, subTab, virtualOnly]);
+  }, [filtros, locationSelectionRequired, mainTab, selectedLocation, sortBy, subTab, virtualOnly]);
 
   function replaceQuery(updates: Record<string, string | null>) {
     const next = new URLSearchParams(params.toString());
@@ -352,10 +349,6 @@ function BuscarContent() {
   function setCategory(next: SubTab) {
     setSubTab(next);
     replaceQuery({ sub: next === "mulheres" ? null : next });
-  }
-
-  function applyKeywordSearch() {
-    replaceQuery({ q: busca.trim() || null });
   }
 
   function toggleFiltro(filter: QuickFilter) {
@@ -481,7 +474,6 @@ function BuscarContent() {
   }, [params, router, selectedLocation, virtualOnly]);
 
   function clearSearch() {
-    setBusca("");
     setFiltros(new Set());
     setSelectedLocation(null);
     setVirtualOnly(false);
@@ -527,8 +519,7 @@ function BuscarContent() {
         .perfil-card:active { transform: translateY(1px) scale(0.995); }
         .perfil-foto { position: relative; padding-top: 130%; }
         .perfil-info { padding: 14px 16px; }
-        .search-shell { background: #fff; border-bottom: 1px solid #e7e2ec; }
-        .top-search-grid { display: grid; grid-template-columns: auto minmax(0, 1fr) 42px; gap: 8px; align-items: center; }
+        .search-shell { margin-top: 88px; background: #fff; border-bottom: 1px solid #e7e2ec; }
         .location-bar {
           width: 100%;
           min-height: 52px;
@@ -536,7 +527,7 @@ function BuscarContent() {
           align-items: center;
           justify-content: space-between;
           gap: 12px;
-          margin: 12px 0 0;
+          margin: 0;
           padding: 0 16px;
           border-radius: 12px;
           border: 1px solid ${GOLD_MID};
@@ -710,10 +701,7 @@ function BuscarContent() {
           color: #6c18d7;
         }
         @media (max-width: 640px) {
-          .search-shell { margin-top: 18px; }
-          .top-search-grid { grid-template-columns: 1fr 42px; }
-          .type-toggle { grid-column: 1 / -1; width: 100%; }
-          .type-toggle button { flex: 1; }
+          .search-shell { margin-top: 72px; }
           .perfil-grid { grid-template-columns: 1fr; gap: 14px; }
           .perfil-foto { padding-top: 0; width: 100%; height: 320px; flex-shrink: 0; }
           .perfil-info { padding: 16px 18px; }
@@ -755,34 +743,6 @@ function BuscarContent() {
       <div className="search-shell">
         <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${GOLD}, rgba(183,44,255,0.3), transparent)` }} />
         <div style={{ maxWidth: 1280, margin: "0 auto", padding: "12px 16px 14px" }}>
-          <div className="top-search-grid">
-            <div className="type-toggle" style={{ padding: "9px 16px", background: "#f4edff", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, color: GOLD, fontWeight: 700, fontSize: 13, fontFamily: PLAYFAIR }}>Acompanhantes</div>
-
-            <div style={{ flex: 1, position: "relative", minWidth: 0 }}>
-              <SearchIcon style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
-              <input
-                value={busca}
-                onChange={(event) => setBusca(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") applyKeywordSearch();
-                }}
-                placeholder="Nome, serviço ou especialidade..."
-                style={{ width: "100%", padding: "10px 14px 10px 36px", background: "#fff", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, color: "#17141d", fontSize: 14, outline: "none", boxSizing: "border-box", transition: "border-color 0.2s" }}
-                onFocus={(event) => ((event.target as HTMLElement).style.borderColor = GOLD)}
-                onBlur={(event) => ((event.target as HTMLElement).style.borderColor = GOLD_DIM)}
-              />
-            </div>
-
-            <button
-              type="button"
-              aria-label="Buscar"
-              onClick={applyKeywordSearch}
-              style={{ width: 42, height: 42, borderRadius: "50%", background: GOLD, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}
-            >
-              <SearchIcon color="#080704" size={17} strokeWidth={2.5} />
-            </button>
-          </div>
-
           <button type="button" className="location-bar" onClick={openLocationModal}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 10, minWidth: 0 }}>
               <LocationIcon />
