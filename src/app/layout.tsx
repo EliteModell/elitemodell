@@ -8,6 +8,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const siteUrl = "https://www.elitemodell.com.br";
+const iconVersion = "20260914";
 const publicBrandDescription =
   "Perfis verificados, privacidade total e uma experiência marcante do início ao fim. Ambiente seguro, discreto e sofisticado em cada detalhe.";
 
@@ -37,13 +38,14 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.png", type: "image/png", sizes: "512x512" },
-      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
-      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
+      { url: `/favicon.ico?v=${iconVersion}`, sizes: "any" },
+      { url: `/brand/elite-modell-icon-512.png?v=${iconVersion}`, type: "image/png", sizes: "512x512" },
+      { url: `/favicon-48x48.png?v=${iconVersion}`, type: "image/png", sizes: "48x48" },
+      { url: `/favicon-32x32.png?v=${iconVersion}`, type: "image/png", sizes: "32x32" },
+      { url: `/favicon-16x16.png?v=${iconVersion}`, type: "image/png", sizes: "16x16" },
     ],
-    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
-    shortcut: ["/favicon.ico"],
+    apple: [{ url: `/brand/elite-modell-apple-touch-icon.png?v=${iconVersion}`, type: "image/png", sizes: "180x180" }],
+    shortcut: [`/favicon.ico?v=${iconVersion}`],
   },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -73,7 +75,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: `${siteUrl}/og-image.png`,
+        url: `${siteUrl}/og-image.png?v=${iconVersion}`,
         width: 1200,
         height: 630,
         alt: "EliteModell",
@@ -84,12 +86,12 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Elite Modell | Conexões Premium com Discrição e Segurança",
     description: publicBrandDescription,
-    images: [`${siteUrl}/og-image.png`],
+    images: [`${siteUrl}/og-image.png?v=${iconVersion}`],
   },
   other: {
     "theme-color": "#ffffff",
     "msapplication-TileColor": "#ffffff",
-    "msapplication-TileImage": "/icon.png",
+    "msapplication-TileImage": `/brand/elite-modell-icon-512.png?v=${iconVersion}`,
   },
 };
 
@@ -108,8 +110,8 @@ export default function RootLayout({
     "@type": "Organization",
     name: "EliteModell",
     url: siteUrl,
-    logo: `${siteUrl}/brand/elite-modell-logo-transparent.svg`,
-    image: `${siteUrl}/og-image.png`,
+    logo: `${siteUrl}/brand/elite-modell-icon-512.png?v=${iconVersion}`,
+    image: `${siteUrl}/og-image.png?v=${iconVersion}`,
     description: publicBrandDescription,
     brand: {
       "@type": "Brand",

@@ -109,6 +109,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "browser-icons",
+      testMatch: "**/browser-icons.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "authenticated",
       testMatch: "**/client-area-authenticated.spec.ts",
       use: {
