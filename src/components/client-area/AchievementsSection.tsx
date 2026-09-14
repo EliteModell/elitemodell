@@ -37,15 +37,15 @@ function AchievementCard({
       <div className="flex gap-4">
         <div className="w-[76px] shrink-0 text-center">
           <HexBadge>{icon}</HexBadge>
-          <p className="mt-2 text-[12px] font-semibold text-[#f5f0e4]/52">Nível 0</p>
+          <p className="mt-2 text-[12px] font-semibold text-[var(--text-secondary)]">Nível 0</p>
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
-            <h3 className="min-w-0 flex-1 text-[21px] font-black leading-7 text-[#f5f0e4]">{title}</h3>
+            <h3 className="min-w-0 flex-1 text-[21px] font-black leading-7 text-[var(--text-primary)]">{title}</h3>
             <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[#e1a6ff]" />
           </div>
-          <p className="mt-2 text-[15px] leading-7 text-[#f5f0e4]/58">{text}</p>
-          <p className="mt-3 text-[15px] font-black text-[#f5f0e4]">0 de {total} concluídos</p>
+          <p className="mt-2 text-[15px] leading-7 text-[var(--text-secondary)]">{text}</p>
+          <p className="mt-3 text-[15px] font-black text-[var(--text-primary)]">0 de {total} concluídos</p>
           <button type="button" className="mt-2 text-[13px] font-bold underline underline-offset-2 text-[#e1a6ff]">
             Mostrar progresso
           </button>
@@ -59,7 +59,7 @@ function AchievementCard({
           <div className="grid h-8 w-8 place-items-center rounded-full bg-[#b72cff]/14">
             {rewardIcon}
           </div>
-          <p className="mt-1 text-[10px] font-semibold text-[#f5f0e4]/50">Nível 1</p>
+        <p className="mt-1 text-[10px] font-semibold text-[var(--text-secondary)]">Nível 1</p>
         </div>
       </div>
     </article>

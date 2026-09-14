@@ -18,9 +18,9 @@ function ListCard({
           {icon}
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="text-[22px] font-black leading-7 text-[#f5f0e4]">{title}</h3>
-          <p className="mt-2 text-[15px] leading-7 text-[#f5f0e4]/56">{text}</p>
-          <p className="mt-3 text-[12px] font-black uppercase text-[#f5f0e4]/42">0 perfil salvo</p>
+        <h3 className="text-[22px] font-black leading-7 text-[var(--text-primary)]">{title}</h3>
+        <p className="mt-2 text-[15px] leading-7 text-[var(--text-secondary)]">{text}</p>
+        <p className="mt-3 text-[12px] font-black uppercase text-[var(--text-secondary)]">0 perfil salvo</p>
         </div>
       </div>
     </article>
@@ -33,7 +33,7 @@ export default function ListsSection() {
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
           <p className="client-kicker">Colecoes privadas</p>
-          <h2 className="mt-1 text-[30px] font-black leading-8 text-[#f5f0e4]">Listas</h2>
+      <h2 className="mt-1 text-[30px] font-black leading-8 text-[var(--text-primary)]">Listas</h2>
         </div>
         <Link
           href="/dashboard/favoritos"
@@ -42,7 +42,7 @@ export default function ListsSection() {
           Ver tudo
         </Link>
       </div>
-      <p className="mt-3 text-[16px] leading-7 text-[#f5f0e4]/58">
+      <p className="mt-3 text-[16px] leading-7 text-[var(--text-secondary)]">
         Organize perfis reais quando comecar a salvar acompanhantes.
       </p>
 

@@ -587,7 +587,8 @@ function BuscarContent() {
           display: flex;
           align-items: flex-end;
           justify-content: center;
-          background: rgba(0,0,0,0.72);
+          background: rgba(35,24,29,0.48);
+          backdrop-filter: blur(4px);
           padding: 16px;
         }
         .location-modal {
@@ -596,7 +597,7 @@ function BuscarContent() {
           max-height: min(720px, 92vh);
           overflow: hidden;
           border-radius: 18px;
-          border: 1px solid ${GOLD_MID};
+          border: 1px solid var(--border);
           background: #fff;
           box-shadow: 0 22px 58px rgba(47,28,68,.16);
         }
@@ -608,7 +609,7 @@ function BuscarContent() {
           align-items: center;
           justify-content: space-between;
           gap: 12px;
-          border: 1px solid rgba(183,44,255,0.12);
+          border: 1px solid var(--border);
           border-radius: 12px;
           background: #fff;
           color: #17141d;
@@ -617,7 +618,24 @@ function BuscarContent() {
           cursor: pointer;
           text-align: left;
         }
-        .location-option.active { border-color: ${GOLD}; background: rgba(183,44,255,0.12); }
+        .location-option:hover { border-color: #ddb8bd; background: var(--surface-soft); }
+        .location-option.active { border-color: var(--primary); background: var(--primary-soft); color: var(--text-primary); }
+        .location-modal-header { padding: 18px 18px 14px; border-bottom: 1px solid var(--border); }
+        .location-modal-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+        .location-modal-kicker { margin: 0 0 4px; color: var(--primary); font-size: 10px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+        .location-modal-title { margin: 0; color: var(--text-primary); font-family: ${PLAYFAIR}; font-size: 24px; line-height: 1.12; }
+        .location-modal-close { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: #fff; color: var(--text-primary); font-size: 22px; cursor: pointer; }
+        .location-modal-search { position: relative; }
+        .location-modal-search input { width: 100%; min-height: 48px; border-radius: 12px; border: 1px solid var(--border-strong); background: #fff; color: var(--text-primary); padding: 0 14px 0 38px; outline: none; font-size: 15px; }
+        .location-modal-search input::placeholder { color: #756f78; opacity: 1; }
+        .location-modal-search input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring); }
+        .location-modal-message { margin: 0 0 10px; color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
+        .location-modal-empty { color: var(--text-secondary); font-size: 13px; }
+        .location-modal-footer { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; padding: 14px 18px 18px; border-top: 1px solid var(--border); }
+        .location-modal-secondary, .location-modal-primary { min-height: 46px; border-radius: 999px; font-weight: 800; cursor: pointer; }
+        .location-modal-secondary { border: 1px solid #ddb8bd; background: #fff; color: var(--primary); }
+        .location-modal-primary { border: 1px solid var(--primary); background: var(--primary); color: var(--text-on-primary); font-weight: 900; }
+        .location-modal-primary:disabled { border-color: #dfc9cc; background: #eadde0; color: #6c6266; cursor: not-allowed; opacity: 1; }
         .profiles-empty, .rooms-coming-soon {
           min-height: 330px;
           display: grid;
@@ -919,21 +937,20 @@ function LocationModal({
   return (
     <div className="location-modal-backdrop" role="dialog" aria-modal="true" aria-label="Selecionar localização">
       <div className="location-modal">
-        <div style={{ padding: "18px 18px 14px", borderBottom: `1px solid ${GOLD_DIM}` }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
+        <div className="location-modal-header">
+          <div className="location-modal-heading">
             <div>
-              <p style={{ margin: "0 0 4px", color: GOLD, fontSize: 10, fontWeight: 900, letterSpacing: "0.16em", textTransform: "uppercase" }}>Localização</p>
-              <h2 style={{ margin: 0, color: "#f4f1ea", fontFamily: PLAYFAIR, fontSize: 24, lineHeight: 1 }}>Onde deseja buscar?</h2>
+              <p className="location-modal-kicker">Localização</p>
+              <h2 className="location-modal-title">Onde deseja buscar?</h2>
             </div>
-            <button type="button" onClick={onClose} style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "rgba(255,255,255,0.03)", color: "#f4f1ea", cursor: "pointer" }}>×</button>
+            <button type="button" className="location-modal-close" onClick={onClose} aria-label="Fechar seleção de localização">×</button>
           </div>
-          <div style={{ position: "relative" }}>
+          <div className="location-modal-search">
             <SearchIcon style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)" }} />
             <input
               value={locationSearch}
               onChange={(event) => onSearch(event.target.value)}
               placeholder="Digite cidade, bairro ou região"
-              style={{ width: "100%", minHeight: 48, borderRadius: 12, border: `1px solid ${GOLD_MID}`, background: "#090909", color: "#f4f1ea", padding: "0 14px 0 38px", outline: "none", fontSize: 15 }}
             />
           </div>
         </div>
@@ -946,7 +963,7 @@ function LocationModal({
             </span>
             <span style={{ color: GOLD }}>↗</span>
           </button>
-          {geoMessage && <p style={{ margin: "0 0 10px", color: "#9b948a", fontSize: 12, lineHeight: 1.5 }}>{geoMessage}</p>}
+          {geoMessage && <p className="location-modal-message">{geoMessage}</p>}
           <button type="button" className={`location-option ${draftVirtual ? "active" : ""}`} onClick={onSelectVirtual}>
             <span>Atendimento virtual</span>
             {draftVirtual && <span style={{ color: GOLD, fontWeight: 900 }}>Selecionado</span>}
@@ -963,16 +980,16 @@ function LocationModal({
               </button>
             );
           })}
-          {locations.length === 0 && <p style={{ color: "#9b948a", fontSize: 13 }}>Nenhuma cidade sugerida encontrada. Tente outra busca.</p>}
+          {locations.length === 0 && <p className="location-modal-empty">Nenhuma cidade sugerida encontrada. Tente outra busca.</p>}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10, padding: "14px 18px 18px", borderTop: `1px solid ${GOLD_DIM}` }}>
-          <button type="button" onClick={onClose} style={{ minHeight: 46, borderRadius: 999, border: `1px solid ${GOLD_MID}`, background: "transparent", color: "#f4f1ea", fontWeight: 800, cursor: "pointer" }}>Fechar</button>
+        <div className="location-modal-footer">
+          <button type="button" className="location-modal-secondary" onClick={onClose}>Fechar</button>
           <button
             type="button"
+            className="location-modal-primary"
             onClick={onApply}
             disabled={!draft && !draftVirtual}
-            style={{ minHeight: 46, borderRadius: 999, border: "none", background: !draft && !draftVirtual ? "#24152c" : `linear-gradient(135deg, #e1a6ff, ${GOLD} 52%, #6900a3)`, color: "#080704", fontWeight: 900, cursor: !draft && !draftVirtual ? "not-allowed" : "pointer" }}
           >
             Buscar acompanhantes
           </button>
@@ -1033,24 +1050,24 @@ function ProfileCard({ profile }: { profile: CardPerfil }) {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: profile.online ? "#22c55e" : "#aaa0b2", display: "inline-block", flexShrink: 0 }} />
-              <span style={{ fontSize: 11, color: profile.online ? "#22c55e" : "#968a9e", fontWeight: 600 }}>{profile.online ? "Online agora" : "Offline"}</span>
+              <span style={{ fontSize: 11, color: profile.online ? "#15803d" : "#625b66", fontWeight: 600 }}>{profile.online ? "Online agora" : "Offline"}</span>
             </div>
             <span style={{ fontSize: 14, color: GOLD, fontWeight: 800, fontFamily: PLAYFAIR }}>
               {profile.preco ? `R$${profile.preco}/h` : "Consultar"}
             </span>
           </div>
 
-          <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: 18, color: "#f8f5fa", fontFamily: PLAYFAIR, lineHeight: 1.2 }}>{profile.nome}</p>
-          <p style={{ margin: "0 0 6px", fontSize: 12, color: "#968a9e", display: "flex", alignItems: "center", gap: 4 }}>
-            <LocationIcon size={11} color="#968a9e" />
+          <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: 18, color: "#17141d", fontFamily: PLAYFAIR, lineHeight: 1.2 }}>{profile.nome}</p>
+          <p style={{ margin: "0 0 6px", fontSize: 12, color: "#625b66", display: "flex", alignItems: "center", gap: 4 }}>
+            <LocationIcon size={11} color="#625b66" />
             {profile.cidade}
           </p>
-          <p style={{ margin: "0 0 8px", fontSize: 12, color: "#968a9e", lineHeight: 1.55, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{profile.bio}</p>
+          <p style={{ margin: "0 0 8px", fontSize: 12, color: "#625b66", lineHeight: 1.55, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{profile.bio}</p>
 
           <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
             <span style={{ color: "#f59e0b", fontSize: 13 }}>★</span>
             <span style={{ fontSize: 13, color: "#f59e0b", fontWeight: 700 }}>{profile.avaliacao}</span>
-            <span style={{ fontSize: 11, color: "#968a9e" }}>({profile.total} avaliações)</span>
+            <span style={{ fontSize: 11, color: "#625b66" }}>({profile.total} avaliações)</span>
           </div>
 
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>

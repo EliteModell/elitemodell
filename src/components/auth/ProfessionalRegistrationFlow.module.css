@@ -1032,7 +1032,7 @@
 }
 .header { border-color: #e7e2ec; background: rgba(255,255,255,.96); }
 .backHome { color: #62687a; }
-.progressMeta { color: #737684; letter-spacing: 0; text-transform: none; }
+.progressMeta { color: #57515c; letter-spacing: 0; text-transform: none; }
 .progressTrack { background: #eae4ef; }
 .progressTrack span { background: #ca4651; box-shadow: none; }
 .phoneStage,
@@ -1069,7 +1069,7 @@
 .welcomeSection p,
 .sectionHeading > p,
 .benefitCard p,
-.faqList details p { color: #686d7d; }
+.faqList details p { color: #57515c; }
 .eyebrow,
 .formCard > label,
 .codeArea > label { letter-spacing: 0; text-transform: none; }
@@ -1082,15 +1082,38 @@
   box-shadow: none;
 }
 .inputShell input { color: #17141d; }
-.inputShell input::placeholder { color: #9893a1; }
-.checkRow { color: #5f6472; }
+.inputShell input::placeholder { color: #756f78; opacity: 1; }
+.inputHelp,
+.entryLinks,
+.checkRow { color: #57515c; }
 .primaryButton,
 .finalButton { background: #ca4651; color: #fff; box-shadow: 0 10px 24px rgba(202,70,81,.2); }
 .quickBenefits svg,
 .benefitCard > span,
 .finalIcon { display: none; }
-.quickBenefits span { border-color: #e7e2ec; background: #fff; color: #5f6472; }
+.quickBenefits span { border-color: #ddd2d5; background: #fff; color: #514b54; }
+.heroSteps span { border-color: #e3c6ca; background: #fff7f8; color: #8d3440; }
+.heroCard span,
+.heroMessage span { color: #a23844; }
+.heroCard strong,
+.heroMessage strong { color: #17141d; }
+.heroCard p { color: #57515c; }
+.channelList small { color: #625b66; }
+.primaryButton:disabled,
+.finalButton:disabled,
+.channelList button:disabled { opacity: .72; }
 .revenueCard { border-color: #eccbd0; background: #fff4f5; box-shadow: none; }
+.simulatorControls label { color: #57515c; }
+.simulatorControls label strong { color: #a23844; }
+.simulatorControls input[type="range"] { background: #e5dadd; }
+.revenueCard,
+.revenueCard > span,
+.revenueCard > strong,
+.revenueCard > div,
+.revenueCard > div b { color: #17141d; }
+.revenueCard > div { border-top-color: #dfc8cc; }
+.revenueCard p { color: #57515c; }
+.faqList summary { color: #2d2830; }
 .footer { border-color: #e7e2ec; background: #fff; color: #737684; }
 .loadingPage { background: #f7f7fa; }
 .loadingHeader,

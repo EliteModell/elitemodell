@@ -96,11 +96,11 @@ function ActionCard({
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-start gap-3">
-          <span className="min-w-0 flex-1 text-[24px] font-black leading-7 text-[#f5f0e4]">{title}</span>
-          <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[#e1a6ff] transition-transform group-active:translate-x-0.5" />
+          <span className="min-w-0 flex-1 text-[24px] font-black leading-7 text-[var(--text-primary)]">{title}</span>
+          <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[var(--primary)] transition-transform group-active:translate-x-0.5" />
         </span>
-        <span className="mt-2 block text-[15px] leading-7 text-[#f5f0e4]/58">{description}</span>
-        <span className="mt-4 block text-[12px] font-black uppercase text-[#e1a6ff]">{cta}</span>
+        <span className="mt-2 block text-[15px] leading-7 text-[var(--text-secondary)]">{description}</span>
+        <span className="mt-4 block text-[12px] font-black uppercase text-[var(--primary)]">{cta}</span>
       </span>
     </Link>
   );
@@ -153,11 +153,11 @@ function QuickActionGrid({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-start gap-3">
-                  <span className="min-w-0 flex-1 text-[24px] font-black leading-7 text-[#f5f0e4]">Carteira</span>
-                  <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[#e1a6ff]" />
+                  <span className="min-w-0 flex-1 text-[24px] font-black leading-7 text-[var(--text-primary)]">Carteira</span>
+                  <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[var(--primary)]" />
                 </span>
-                <span className="mt-2 block text-[15px] leading-7 text-[#f5f0e4]/58">{walletText}</span>
-                <span className="mt-4 block text-[12px] font-black uppercase text-[#e1a6ff]">Verificar idade</span>
+                <span className="mt-2 block text-[15px] leading-7 text-[var(--text-secondary)]">{walletText}</span>
+                <span className="mt-4 block text-[12px] font-black uppercase text-[var(--primary)]">Verificar idade</span>
               </span>
             </ClientSensitiveAction>
           )}
@@ -186,14 +186,14 @@ function QuickStatsSection({
       <div className="client-card client-dashboard-level-card p-5">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-black uppercase tracking-wide text-[#e1a6ff]/70">NIVEL ATUAL</p>
-            <p className="mt-1 text-[24px] font-black leading-tight text-[#f5f0e4]">{vip.label}</p>
+            <p className="text-[11px] font-black uppercase tracking-wide text-[var(--primary)]">NIVEL ATUAL</p>
+            <p className="mt-1 text-[24px] font-black leading-tight text-[var(--text-primary)]">{vip.label}</p>
           </div>
           <span className="shrink-0 rounded-full border border-[#b72cff]/24 bg-[#b72cff]/10 px-2.5 py-1 text-[13px] font-black text-[#e1a6ff]">
             {vip.progress}%
           </span>
         </div>
-        <p className="mt-2 text-[14px] leading-6 text-[#f5f0e4]/46">{vip.description}</p>
+        <p className="mt-2 text-[14px] leading-6 text-[var(--text-secondary)]">{vip.description}</p>
 
         <div className="mt-4 h-[5px] overflow-hidden rounded-full bg-[rgba(30,24,14,0.06)]">
           <div
@@ -206,18 +206,18 @@ function QuickStatsSection({
 
         <div className="flex items-center gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[30px] font-black leading-none text-[#f5f0e4]">{stats.completedAppointments}</p>
-            <p className="mt-2 text-[12px] text-[#f5f0e4]/44">Concluidos</p>
+            <p className="text-[30px] font-black leading-none text-[var(--text-primary)]">{stats.completedAppointments}</p>
+            <p className="mt-2 text-[12px] text-[var(--text-secondary)]">Concluidos</p>
           </div>
           <div className="h-8 w-px bg-[rgba(30,24,14,0.07)]" />
           <div className="min-w-0 flex-1">
-            <p className="text-[30px] font-black leading-none text-[#f5f0e4]">{stats.favoriteProfiles}</p>
-            <p className="mt-2 text-[12px] text-[#f5f0e4]/44">Salvos</p>
+            <p className="text-[30px] font-black leading-none text-[var(--text-primary)]">{stats.favoriteProfiles}</p>
+            <p className="mt-2 text-[12px] text-[var(--text-secondary)]">Salvos</p>
           </div>
           <div className="h-8 w-px bg-[rgba(30,24,14,0.07)]" />
           <div className="min-w-0 flex-1">
-            <p className="text-[30px] font-black leading-none text-[#f5f0e4]">{stats.totalAppointments}</p>
-            <p className="mt-2 text-[12px] text-[#f5f0e4]/44">Total</p>
+            <p className="text-[30px] font-black leading-none text-[var(--text-primary)]">{stats.totalAppointments}</p>
+            <p className="mt-2 text-[12px] text-[var(--text-secondary)]">Total</p>
           </div>
         </div>
       </div>
@@ -234,8 +234,8 @@ function ReviewsSection() {
             <CircleAlert className="h-6 w-6" />
           </span>
           <div className="min-w-0">
-            <h2 className="text-[22px] font-black leading-7 text-[#f5f0e4]">Avaliações</h2>
-            <p className="mt-2 text-[15px] leading-7 text-[#f5f0e4]/56">
+            <h2 className="text-[22px] font-black leading-7 text-[var(--text-primary)]">Avaliações</h2>
+            <p className="mt-2 text-[15px] leading-7 text-[var(--text-secondary)]">
               Quando você tiver experiências concluídas, poderá registrar avaliações de forma discreta.
             </p>
           </div>
@@ -260,8 +260,8 @@ function SafetyCard() {
             <ShieldAlert className="h-6 w-6" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="text-[22px] font-black leading-7 text-[#f5f0e4]">Segurança da conta</h2>
-            <p className="mt-2 text-[15px] leading-7 text-[#f5f0e4]/56">
+            <h2 className="text-[22px] font-black leading-7 text-[var(--text-primary)]">Segurança da conta</h2>
+            <p className="mt-2 text-[15px] leading-7 text-[var(--text-secondary)]">
               Nunca informe senhas, códigos ou documentos fora da plataforma.
             </p>
           </div>

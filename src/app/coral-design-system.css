@@ -7,6 +7,8 @@
   color-scheme: light;
   --background: #f8f7f8;
   --surface: #ffffff;
+  --surface-soft: #fff7f8;
+  --surface-muted: #f3eff0;
   --surface-2: #fff7f8;
   --card: #ffffff;
   --card-border: #eadfe1;
@@ -14,11 +16,15 @@
   --text-primary: #17141d;
   --text-secondary: #67636f;
   --text-muted: #89838d;
+  --text-on-primary: #ffffff;
   --text-faint: #aaa4ad;
   --primary: #ca4651;
   --primary-hover: #b73946;
+  --danger: #b42332;
+  --focus-ring: rgba(202, 70, 81, .28);
   --primary-soft: #fff0f2;
   --border: #eadfe1;
+  --border-soft: #f0e8ea;
   --border-strong: #d9c5c9;
   --radius: 18px;
   --radius-sm: 12px;
@@ -32,6 +38,36 @@
 body {
   background: var(--background);
   color: var(--text-primary);
+}
+
+/* Controles compartilhados: legibilidade consistente em formulários legados. */
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+  color: var(--text-primary);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #756f78;
+  opacity: 1;
+}
+
+button:disabled,
+input:disabled,
+textarea:disabled,
+select:disabled,
+[aria-disabled="true"] {
+  opacity: .7;
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+  border-color: var(--border);
+  background: var(--surface-muted);
+  color: #625c65;
+  -webkit-text-fill-color: #625c65;
 }
 
 ::selection { background: rgba(202, 70, 81, .24); color: #17141d; }
@@ -147,6 +183,9 @@ body {
 .auth-login-page .auth-card p,
 .auth-premium-shell p,
 .phone-premium-page p { color: var(--text-secondary) !important; }
+
+.auth-premium-shell label,
+.phone-premium-page label { color: #57515c; }
 
 .auth-login-page .eyebrow,
 .auth-login-page .login-mark,
@@ -328,6 +367,8 @@ body {
 .client-premium h2,
 .client-premium h3,
 .client-premium strong { color: var(--client-text) !important; }
+.client-premium [class*="text-[#f5f0e4]"] { color: var(--client-text) !important; }
+.client-premium [class*="text-[#e1a6ff]"] { color: var(--primary) !important; }
 .client-premium p,
 .client-premium li { color: var(--client-muted) !important; }
 .client-kicker,

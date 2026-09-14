@@ -21,12 +21,12 @@ export default function VerificationSection({ steps }: { steps: VerificationStep
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h2 className="min-w-0 flex-1 text-[28px] font-black leading-8 text-[#f5f0e4]">Verificação</h2>
+          <h2 className="min-w-0 flex-1 text-[28px] font-black leading-8 text-[var(--text-primary)]">Verificação</h2>
               <span className="rounded-full border border-[#b72cff]/18 bg-[#b72cff]/10 px-2.5 py-1 text-[14px] font-black text-[#e1a6ff]">
                 {doneCount}/{steps.length}
               </span>
             </div>
-            <p className="mt-3 text-[17px] leading-8 text-[#f5f0e4]/58">
+        <p className="mt-3 text-[17px] leading-8 text-[var(--text-secondary)]">
               Complete dados essenciais para manter acesso e suporte mais seguros.
             </p>
           </div>
@@ -48,7 +48,7 @@ export default function VerificationSection({ steps }: { steps: VerificationStep
               ) : (
                 <Circle className="h-6 w-6 shrink-0 text-[#f5f0e4]/28" />
               )}
-              <span className={step.done ? "text-[#f5f0e4]/72" : "text-[#f5f0e4]/46"}>
+              <span className="text-[var(--text-secondary)]">
                 {step.label}
               </span>
             </div>
