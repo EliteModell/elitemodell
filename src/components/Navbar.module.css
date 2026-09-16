@@ -48,7 +48,9 @@
   flex: 0 0 auto;
 }
 .logo {
+  display: block;
   width: 100%;
+  max-width: none;
   height: auto;
   object-fit: contain;
   opacity: 1;
@@ -130,7 +132,7 @@
     gap: 8px;
   }
   .brand {
-    width: 150px;
+    width: 170px;
   }
   .center {
     display: none;
@@ -153,12 +155,13 @@
     font-size: 13px !important;
   }
 }
-@media (max-width: 390px) {
+@media (max-width: 480px) {
   .inner {
     padding: 0 8px;
+    gap: 5px;
   }
   .brand {
-    width: 138px;
+    width: 165px;
   }
   .actions {
     gap: 5px;
@@ -172,13 +175,18 @@
     height: 40px;
   }
 }
+@media (max-width: 390px) {
+  .brand {
+    width: 150px;
+  }
+}
 
 @media (max-width: 350px) {
   .inner {
     padding: 0 6px;
     gap: 4px;
   }
-  .brand { width: 92px; }
+  .brand { width: 128px; }
   .actions { gap: 3px; }
   .actions :global(.nav-auth-link) {
     min-height: 38px !important;
