@@ -9,15 +9,14 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const siteUrl = "https://www.elitemodell.com.br";
-const iconVersion = "20260914";
 const publicBrandDescription =
-  "Perfis verificados, privacidade total e uma experiência marcante do início ao fim. Ambiente seguro, discreto e sofisticado em cada detalhe.";
+  "Encontre perfis verificados com privacidade, segurança e liberdade. Conheça a Elite Modell e explore perfis disponíveis na sua região com facilidade.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  applicationName: "EliteModell",
+  applicationName: "Elite Modell",
   title: {
-    default: "Elite Modell | Conexões Premium com Discrição e Segurança",
+    default: "Elite Modell | Conexões Discretas e Seguras",
     template: "%s | Elite Modell",
   },
   description: publicBrandDescription,
@@ -37,21 +36,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: siteUrl,
   },
-  icons: {
-    icon: [
-      { url: `/favicon.ico?v=${iconVersion}`, sizes: "any" },
-      { url: `/brand/elite-modell-icon-512.png?v=${iconVersion}`, type: "image/png", sizes: "512x512" },
-      { url: `/favicon-48x48.png?v=${iconVersion}`, type: "image/png", sizes: "48x48" },
-      { url: `/favicon-32x32.png?v=${iconVersion}`, type: "image/png", sizes: "32x32" },
-      { url: `/favicon-16x16.png?v=${iconVersion}`, type: "image/png", sizes: "16x16" },
-    ],
-    apple: [{ url: `/brand/elite-modell-apple-touch-icon.png?v=${iconVersion}`, type: "image/png", sizes: "180x180" }],
-    shortcut: [`/favicon.ico?v=${iconVersion}`],
-  },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "EliteModell",
+    title: "Elite Modell",
     statusBarStyle: "black-translucent",
   },
   formatDetection: {
@@ -68,31 +56,22 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Elite Modell | Conexões Premium com Discrição e Segurança",
+    title: "Elite Modell | Conexões Discretas e Seguras",
     description: publicBrandDescription,
     url: siteUrl,
     siteName: "Elite Modell",
     locale: "pt_BR",
     type: "website",
-    images: [
-      {
-        url: `${siteUrl}/og-image.png?v=${iconVersion}`,
-        width: 1200,
-        height: 630,
-        alt: "EliteModell",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Elite Modell | Conexões Premium com Discrição e Segurança",
+    title: "Elite Modell | Conexões Discretas e Seguras",
     description: publicBrandDescription,
-    images: [`${siteUrl}/og-image.png?v=${iconVersion}`],
   },
   other: {
     "theme-color": "#ffffff",
     "msapplication-TileColor": "#ffffff",
-    "msapplication-TileImage": `/brand/elite-modell-icon-512.png?v=${iconVersion}`,
+    "msapplication-TileImage": "/android-chrome-512x512.png",
   },
 };
 
@@ -110,15 +89,17 @@ export default function RootLayout({
 }) {
   const structuredData = {
     "@context": "https://schema.org",
-    "@type": "Organization",
-    name: "EliteModell",
+    "@type": "WebSite",
+    name: "Elite Modell",
     url: siteUrl,
-    logo: `${siteUrl}/brand/elite-modell-icon-512.png?v=${iconVersion}`,
-    image: `${siteUrl}/og-image.png?v=${iconVersion}`,
     description: publicBrandDescription,
-    brand: {
-      "@type": "Brand",
-      name: "EliteModell",
+    publisher: {
+      "@type": "Organization",
+      name: "Elite Modell",
+      logo: {
+        "@type": "ImageObject",
+        url: `${siteUrl}/android-chrome-512x512.png`,
+      },
     },
   };
 

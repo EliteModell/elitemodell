@@ -10,6 +10,7 @@
     "lint": "eslint",
     "test": "node scripts/run-playwright.mjs",
     "test:report": "playwright show-report",
+    "brand:generate": "node scripts/generate-brand-assets.mjs",
     "package:lawyer": "node scripts/generate-lawyer-package.mjs",
     "package:operational-final": "node scripts/generate-final-operational-package.mjs",
     "legal:publish-operational": "node scripts/publish-operational-legal-documents.mjs",

@@ -67,8 +67,8 @@ test.describe("logo por contexto", () => {
     expect(html).toContain("/manifest.webmanifest");
 
     const manifest = await (await request.get("/manifest.webmanifest")).text();
-    expect(manifest).toContain("/brand/elite-modell-icon-192.png");
-    expect(manifest).toContain("/brand/elite-modell-icon-512.png");
+    expect(manifest).toContain("/android-chrome-192x192.png");
+    expect(manifest).toContain("/android-chrome-512x512.png");
     expect(manifest).not.toContain(UI_LOGO);
   });
 });
