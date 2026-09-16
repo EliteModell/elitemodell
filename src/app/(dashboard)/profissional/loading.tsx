@@ -26,7 +26,7 @@ export default function ProfessionalLoading() {
         .skel-card,
         .skel-block {
           border-radius: 10px;
-          background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(183,44,255,0.07) 50%, rgba(255,255,255,0.04) 75%);
+          background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(202, 70, 81,0.07) 50%, rgba(255,255,255,0.04) 75%);
           background-size: 200% 100%;
           animation: skel-shimmer 1.6s ease-in-out infinite;
         }

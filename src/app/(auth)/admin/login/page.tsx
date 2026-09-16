@@ -39,7 +39,7 @@ export default function AdminLoginPage() {
         width: "100%",
         maxWidth: 400,
         background: "#0d0d10",
-        border: "1px solid rgba(183,44,255,0.22)",
+        border: "1px solid rgba(202, 70, 81,0.22)",
         borderRadius: 12,
         padding: "40px 32px 36px",
         position: "relative",
@@ -50,12 +50,12 @@ export default function AdminLoginPage() {
           top: 0, left: 0, right: 0,
           height: 2,
           borderRadius: "12px 12px 0 0",
-          background: "linear-gradient(90deg, transparent 0%, #b72cff 30%, #e1a6ff 50%, #b72cff 70%, transparent 100%)",
+          background: "linear-gradient(90deg, transparent 0%, #ca4651 30%, #f2c8cc 50%, #ca4651 70%, transparent 100%)",
         }} />
 
         {/* Badge */}
         <p style={{
-          color: "#b72cff",
+          color: "#ca4651",
           fontSize: 11,
           fontWeight: 900,
           letterSpacing: 2.5,
@@ -67,7 +67,7 @@ export default function AdminLoginPage() {
 
         {/* Título */}
         <h1 style={{
-          color: "#f8f5fa",
+          color: "#fff7f8",
           fontSize: 24,
           fontWeight: 800,
           margin: "0 0 8px",
@@ -95,7 +95,7 @@ export default function AdminLoginPage() {
             justifyContent: "center",
             gap: 10,
             padding: "13px 20px",
-            background: loading ? "rgba(183,44,255,0.3)" : "#b72cff",
+            background: loading ? "rgba(202, 70, 81,0.3)" : "#ca4651",
             border: "none",
             borderRadius: 8,
             color: "#0a0a0a",
@@ -135,7 +135,7 @@ export default function AdminLoginPage() {
 
         {/* Rodapé */}
         <p style={{
-          color: "#2d1d35",
+          color: "#251f20",
           fontSize: 11,
           margin: "24px 0 0",
           textAlign: "center",

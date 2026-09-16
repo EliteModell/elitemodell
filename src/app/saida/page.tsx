@@ -35,8 +35,8 @@ export default function SafeExitPage() {
           place-items: center;
           padding: max(22px, env(safe-area-inset-top)) 16px max(22px, env(safe-area-inset-bottom));
           background:
-            radial-gradient(circle at 20% 10%, rgba(183,44,255,0.16), transparent 32%),
-            radial-gradient(circle at 85% 35%, rgba(183,44,255,0.10), transparent 34%),
+            radial-gradient(circle at 20% 10%, rgba(202, 70, 81,0.16), transparent 32%),
+            radial-gradient(circle at 85% 35%, rgba(202, 70, 81,0.10), transparent 34%),
             #050505;
           color: #fff;
           overflow-x: hidden;
@@ -44,12 +44,12 @@ export default function SafeExitPage() {
 
         .safe-exit-card {
           width: min(100%, 430px);
-          border: 1px solid rgba(183,44,255,0.25);
+          border: 1px solid rgba(202, 70, 81,0.25);
           border-radius: 24px;
           background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98));
           padding: 28px 22px 22px;
           text-align: center;
-          box-shadow: 0 34px 100px rgba(0,0,0,0.58), 0 0 50px rgba(183,44,255,0.08);
+          box-shadow: 0 34px 100px rgba(0,0,0,0.58), 0 0 50px rgba(202, 70, 81,0.08);
         }
 
         .brand {
@@ -57,14 +57,14 @@ export default function SafeExitPage() {
           align-items: center;
           width: min(208px, 64vw);
           margin-bottom: 24px;
-          border: 1px solid rgba(183,44,255,0.25);
+          border: 1px solid rgba(202, 70, 81,0.25);
           border-radius: 18px;
           background: rgba(11,11,13,0.84);
           padding: 8px 14px;
         }
 
         .brand span {
-          background: linear-gradient(135deg, #f4d7ff 0%, #b72cff 28%, #e1a6ff 55%, #6900a3 100%);
+          background: linear-gradient(135deg, #fff7f8 0%, #ca4651 28%, #f2c8cc 55%, #8e2f38 100%);
           background-clip: text;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
@@ -77,7 +77,7 @@ export default function SafeExitPage() {
 
         .eyebrow {
           margin: 0 0 10px;
-          color: #b72cff;
+          color: #ca4651;
           font-size: 11px;
           font-weight: 950;
           letter-spacing: 0.18em;
@@ -103,9 +103,9 @@ export default function SafeExitPage() {
           min-height: 56px;
           margin-top: 24px;
           border-radius: 18px;
-          border: 1px solid rgba(183,44,255,0.28);
+          border: 1px solid rgba(202, 70, 81,0.28);
           background: rgba(16,16,20,0.9);
-          color: #e1a6ff;
+          color: #f2c8cc;
           display: inline-flex;
           width: 100%;
           align-items: center;

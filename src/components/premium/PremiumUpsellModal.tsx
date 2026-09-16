@@ -202,8 +202,8 @@ function PremiumUpsellContent({
         }
         .premium-upsell-panel {
           width: min(760px, 100%); max-height: calc(100dvh - 32px); overflow-y: auto;
-          border: 1px solid rgba(183,44,255,.34); border-radius: 24px; color: #f5f1e8;
-          background: radial-gradient(circle at 50% -15%, rgba(183,44,255,.19), transparent 42%), linear-gradient(180deg,#100a14,#070707 58%);
+          border: 1px solid rgba(202, 70, 81,.34); border-radius: 24px; color: #f5f1e8;
+          background: radial-gradient(circle at 50% -15%, rgba(202, 70, 81,.19), transparent 42%), linear-gradient(180deg,#080808,#070707 58%);
           box-shadow: 0 40px 120px rgba(0,0,0,.82); scrollbar-width: thin;
         }
         .premium-upsell-plans { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
@@ -212,17 +212,17 @@ function PremiumUpsellContent({
           border-radius: 16px; background: rgba(255,255,255,.025); color: #f4f1ea; text-align: left; cursor: pointer;
           transition: transform .2s ease, border-color .2s ease, background .2s ease;
         }
-        .premium-upsell-plan:hover { transform: translateY(-2px); border-color: rgba(183,44,255,.42); }
-        .premium-upsell-plan[data-active="true"] { border-color: #b72cff; background: rgba(183,44,255,.11); box-shadow: inset 0 0 0 1px rgba(183,44,255,.12); }
+        .premium-upsell-plan:hover { transform: translateY(-2px); border-color: rgba(202, 70, 81,.42); }
+        .premium-upsell-plan[data-active="true"] { border-color: #ca4651; background: rgba(202, 70, 81,.11); box-shadow: inset 0 0 0 1px rgba(202, 70, 81,.12); }
         .premium-upsell-input {
           width: 100%; min-height: 48px; box-sizing: border-box; border-radius: 12px; padding: 0 13px;
-          border: 1px solid rgba(183,44,255,.2); background: #090909; color: #fff; outline: none;
+          border: 1px solid rgba(202, 70, 81,.2); background: #090909; color: #fff; outline: none;
         }
-        .premium-upsell-input:focus { border-color: #b72cff; box-shadow: 0 0 0 3px rgba(183,44,255,.09); }
+        .premium-upsell-input:focus { border-color: #ca4651; box-shadow: 0 0 0 3px rgba(202, 70, 81,.09); }
         .premium-upsell-primary {
           min-height: 50px; border: 0; border-radius: 13px; padding: 0 20px; cursor: pointer;
-          background: linear-gradient(135deg,#f4d7ff,#b72cff 48%,#6900a3); color: #090704; font-weight: 950;
-          box-shadow: 0 16px 36px rgba(183,44,255,.15); transition: transform .2s ease, filter .2s ease;
+          background: linear-gradient(135deg,#fff7f8,#ca4651 48%,#8e2f38); color: #090704; font-weight: 950;
+          box-shadow: 0 16px 36px rgba(202, 70, 81,.15); transition: transform .2s ease, filter .2s ease;
         }
         .premium-upsell-primary:hover { transform: translateY(-1px); filter: brightness(1.04); }
         .premium-upsell-primary:disabled { cursor: wait; opacity: .58; transform: none; }
@@ -240,7 +240,7 @@ function PremiumUpsellContent({
       <section className="premium-upsell-panel">
         <header style={{ display: "flex", justifyContent: "space-between", gap: 18, padding: "22px 22px 0" }}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 9, color: "#b72cff", fontSize: 11, fontWeight: 950, letterSpacing: 2, textTransform: "uppercase" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 9, color: "#ca4651", fontSize: 11, fontWeight: 950, letterSpacing: 2, textTransform: "uppercase" }}>
               <Crown size={17} />
               Elite Modell Premium
             </div>
@@ -259,7 +259,7 @@ function PremiumUpsellContent({
               <div style={{ display: "grid", gap: 9, marginBottom: 20, color: "#c3bbae", fontSize: 14 }}>
                 {["Vídeos e conteúdos exclusivos", "Avaliações completas e benefícios Premium", "Navegação discreta, rápida e sem bloquear perfis públicos"].map((benefit) => (
                   <span key={benefit} style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                    <Check size={16} color="#b72cff" /> {benefit}
+                    <Check size={16} color="#ca4651" /> {benefit}
                   </span>
                 ))}
               </div>
@@ -272,9 +272,9 @@ function PremiumUpsellContent({
                     data-active={selectedPlan === plan.id}
                     onClick={() => setSelectedPlan(plan.id)}
                   >
-                    {plan.badge && <span style={{ color: "#b72cff", fontSize: 10, fontWeight: 950, textTransform: "uppercase", letterSpacing: 1 }}>{plan.badge}</span>}
+                    {plan.badge && <span style={{ color: "#ca4651", fontSize: 10, fontWeight: 950, textTransform: "uppercase", letterSpacing: 1 }}>{plan.badge}</span>}
                     <strong style={{ display: "block", marginTop: plan.badge ? 8 : 0, fontSize: 18 }}>{plan.label}</strong>
-                    <span style={{ display: "block", marginTop: 8, color: "#e1a6ff", fontSize: 21, fontWeight: 950 }}>{money(plan.price)}</span>
+                    <span style={{ display: "block", marginTop: 8, color: "#f2c8cc", fontSize: 21, fontWeight: 950 }}>{money(plan.price)}</span>
                     {plan.firstPurchaseOffer && <small style={{ display: "block", marginTop: 3, color: "#8f887d" }}>Primeira compra. Depois {money(plan.regularPrice)}.</small>}
                   </button>
                 ))}
@@ -285,7 +285,7 @@ function PremiumUpsellContent({
               <p style={{ margin: "13px 0 0", color: "#817a70", fontSize: 12, lineHeight: 1.55, textAlign: "center" }}>
                 Pagamento único, sem renovação automática. O acesso só é liberado após confirmação real do Pix.
               </p>
-              <Link href={`${ACCOUNT_ROUTES.login}?returnUrl=${encodeURIComponent(returnTo)}`} style={{ display: "block", marginTop: 14, color: "#b72cff", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
+              <Link href={`${ACCOUNT_ROUTES.login}?returnUrl=${encodeURIComponent(returnTo)}`} style={{ display: "block", marginTop: 14, color: "#ca4651", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
                 Já possui conta? Entrar
               </Link>
             </>
@@ -293,7 +293,7 @@ function PremiumUpsellContent({
 
           {stage === "identity" && (
             <>
-              <button type="button" onClick={() => setStage("offer")} style={{ border: 0, background: "transparent", color: "#b72cff", padding: 0, cursor: "pointer", fontWeight: 800 }}>← Voltar aos planos</button>
+              <button type="button" onClick={() => setStage("offer")} style={{ border: 0, background: "transparent", color: "#ca4651", padding: 0, cursor: "pointer", fontWeight: 800 }}>← Voltar aos planos</button>
               <p style={{ margin: "14px 0 18px", color: "#a39b90", fontSize: 14, lineHeight: 1.6 }}>
                 Para gerar o Pix, informe apenas os dados mínimos exigidos pelo processador. Você cria ou acessa sua conta depois do pagamento.
               </p>
@@ -304,15 +304,15 @@ function PremiumUpsellContent({
                 <input className="premium-upsell-input" value={phone} onChange={(event) => setPhone(onlyDigits(event.target.value, 11))} placeholder="Telefone com DDD" inputMode="tel" autoComplete="tel" />
               </div>
               <label style={{ display: "flex", gap: 10, marginTop: 15, color: "#aaa298", fontSize: 12, lineHeight: 1.55 }}>
-                <input type="checkbox" checked={ageConfirmed} onChange={(event) => setAgeConfirmed(event.target.checked)} style={{ marginTop: 3, accentColor: "#b72cff" }} />
+                <input type="checkbox" checked={ageConfirmed} onChange={(event) => setAgeConfirmed(event.target.checked)} style={{ marginTop: 3, accentColor: "#ca4651" }} />
                 Confirmo que tenho 18 anos ou mais.
               </label>
               <label style={{ display: "flex", gap: 10, marginTop: 10, color: "#aaa298", fontSize: 12, lineHeight: 1.55 }}>
-                <input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} style={{ marginTop: 3, accentColor: "#b72cff" }} />
+                <input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} style={{ marginTop: 3, accentColor: "#ca4651" }} />
                 <span>
-                  Li e aceito o <Link href="/documentos/checkout-notice" target="_blank" style={{ color: "#b72cff" }}>Aviso de Checkout</Link>, a{" "}
-                  <Link href="/documentos/payments-policy" target="_blank" style={{ color: "#b72cff" }}>Política de Pagamentos</Link> e a{" "}
-                  <Link href="/documentos/refund-policy" target="_blank" style={{ color: "#b72cff" }}>Política de Reembolso</Link>.
+                  Li e aceito o <Link href="/documentos/checkout-notice" target="_blank" style={{ color: "#ca4651" }}>Aviso de Checkout</Link>, a{" "}
+                  <Link href="/documentos/payments-policy" target="_blank" style={{ color: "#ca4651" }}>Política de Pagamentos</Link> e a{" "}
+                  <Link href="/documentos/refund-policy" target="_blank" style={{ color: "#ca4651" }}>Política de Reembolso</Link>.
                 </span>
               </label>
               {error && <p role="alert" style={{ margin: "14px 0 0", padding: 11, borderRadius: 10, background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.22)", color: "#fca5a5", fontSize: 13 }}>{error}</p>}
@@ -327,18 +327,18 @@ function PremiumUpsellContent({
 
           {stage === "pix" && checkout && (
             <div style={{ textAlign: "center" }}>
-              <p style={{ margin: 0, color: "#b72cff", fontWeight: 900 }}>Pix gerado com segurança</p>
+              <p style={{ margin: 0, color: "#ca4651", fontWeight: 900 }}>Pix gerado com segurança</p>
               <h3 style={{ margin: "8px 0 18px", fontSize: 24 }}>Pague {money(checkout.amount)}</h3>
               <div style={{ width: 220, height: 220, margin: "0 auto", padding: 10, borderRadius: 18, background: "#fff" }}>
                 <Image src={`data:image/png;base64,${checkout.qrCodeBase64}`} alt="QR Code Pix" width={200} height={200} unoptimized style={{ width: "100%", height: "100%" }} />
               </div>
-              <button type="button" onClick={() => void copyPix()} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", minHeight: 48, marginTop: 16, borderRadius: 12, border: "1px solid rgba(183,44,255,.3)", background: "rgba(183,44,255,.08)", color: "#e1a6ff", fontWeight: 900, cursor: "pointer" }}>
+              <button type="button" onClick={() => void copyPix()} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", minHeight: 48, marginTop: 16, borderRadius: 12, border: "1px solid rgba(202, 70, 81,.3)", background: "rgba(202, 70, 81,.08)", color: "#f2c8cc", fontWeight: 900, cursor: "pointer" }}>
                 <Copy size={16} /> {copied ? "Código copiado" : "Copiar código Pix"}
               </button>
               <p style={{ margin: "14px 0 0", color: "#918a80", fontSize: 13, lineHeight: 1.55 }}>
                 Aguardando confirmação do provedor. Não feche esta tela até o pagamento ser reconhecido.
               </p>
-              <LoaderCircle size={22} className="animate-spin" style={{ margin: "14px auto 0", color: "#b72cff" }} />
+              <LoaderCircle size={22} className="animate-spin" style={{ margin: "14px auto 0", color: "#ca4651" }} />
             </div>
           )}
 
@@ -360,7 +360,7 @@ function PremiumUpsellContent({
                   </p>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 18 }}>
                     <Link href={signupHref} className="premium-upsell-primary" style={{ display: "grid", placeItems: "center", textDecoration: "none" }}>Criar conta</Link>
-                    <Link href={loginHref} style={{ display: "grid", minHeight: 50, placeItems: "center", borderRadius: 13, border: "1px solid rgba(183,44,255,.34)", color: "#e1a6ff", fontWeight: 900, textDecoration: "none" }}>Entrar</Link>
+                    <Link href={loginHref} style={{ display: "grid", minHeight: 50, placeItems: "center", borderRadius: 13, border: "1px solid rgba(202, 70, 81,.34)", color: "#f2c8cc", fontWeight: 900, textDecoration: "none" }}>Entrar</Link>
                   </div>
                 </>
               )}

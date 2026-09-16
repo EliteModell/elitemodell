@@ -97,11 +97,11 @@ export default async function ProfessionalNotificationsPage() {
           height: 86px;
           display: grid;
           place-items: center;
-          border: 1px solid rgba(225,166,255,0.34);
+          border: 1px solid rgba(242, 200, 204,0.34);
           border-radius: 999px;
-          background: radial-gradient(circle, rgba(225,166,255,0.22), rgba(183,44,255,0.06) 62%, transparent);
+          background: radial-gradient(circle, rgba(242, 200, 204,0.22), rgba(202, 70, 81,0.06) 62%, transparent);
           color: var(--elite-gold-light);
-          box-shadow: 0 0 28px rgba(183,44,255,0.12);
+          box-shadow: 0 0 28px rgba(202, 70, 81,0.12);
         }
         .professional-empty-icon::after {
           content: "";
@@ -112,7 +112,7 @@ export default async function ProfessionalNotificationsPage() {
           height: 20px;
           border-radius: 999px;
           background: var(--elite-gold-light);
-          box-shadow: 0 0 14px rgba(225,166,255,0.52);
+          box-shadow: 0 0 14px rgba(242, 200, 204,0.52);
         }
         .professional-empty-icon span {
           color: var(--elite-gold-light);
@@ -153,16 +153,16 @@ export default async function ProfessionalNotificationsPage() {
           box-shadow: 0 14px 36px rgba(0,0,0,0.32);
         }
         .professional-notification-card:hover {
-          border-color: rgba(225,166,255,0.56);
+          border-color: rgba(242, 200, 204,0.56);
         }
         .notification-status {
           width: 54px;
           height: 54px;
           display: grid;
           place-items: center;
-          border: 1px solid rgba(225,166,255,0.34);
+          border: 1px solid rgba(242, 200, 204,0.34);
           border-radius: 999px;
-          background: rgba(183,44,255,0.10);
+          background: rgba(202, 70, 81,0.10);
           color: var(--elite-gold-light);
           font-size: 14px;
           font-weight: 950;
@@ -191,7 +191,7 @@ export default async function ProfessionalNotificationsPage() {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          color: rgba(225,166,255,0.72);
+          color: rgba(242, 200, 204,0.72);
           font-size: 12px;
           font-style: normal;
           font-weight: 800;

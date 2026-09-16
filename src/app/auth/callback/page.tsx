@@ -27,7 +27,7 @@ const CALLBACK_TIMEOUT_MS = 5000;
 const NEXTAUTH_SIGNIN_TIMEOUT_MS = 45000;
 const CALLBACK_SLOW_MESSAGE_MS = 2500;
 const CALLBACK_STILL_WORKING_MESSAGE_MS = 9000;
-const GOLD = "#b72cff";
+const GOLD = "#ca4651";
 
 function hasPropertyDraft() {
   return Boolean(localStorage.getItem(PROPERTY_DRAFT_KEY));
@@ -427,7 +427,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
         width: "100%",
         maxWidth: 420,
         background: "#fff",
-        border: error ? "1px solid rgba(248,113,113,0.4)" : "1px solid rgba(183,44,255,0.28)",
+        border: error ? "1px solid rgba(248,113,113,0.4)" : "1px solid rgba(202, 70, 81,0.28)",
         borderRadius: 16,
         padding: "40px 32px 36px",
         textAlign: "center",
@@ -435,7 +435,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
         animation: "em-fadein 0.4s ease",
         boxShadow: error
           ? "0 20px 60px rgba(248,113,113,0.12)"
-          : "0 20px 60px rgba(52,33,67,0.12)",
+          : "0 20px 60px rgba(37, 31, 32,0.12)",
       }}>
         {/* Top line */}
         <div style={{
@@ -445,7 +445,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
           borderRadius: "16px 16px 0 0",
           background: error
             ? "linear-gradient(90deg, transparent 0%, #f87171 30%, #fca5a5 50%, #f87171 70%, transparent 100%)"
-            : "linear-gradient(90deg, transparent 0%, #b72cff 30%, #e1a6ff 50%, #b72cff 70%, transparent 100%)",
+            : "linear-gradient(90deg, transparent 0%, #ca4651 30%, #f2c8cc 50%, #ca4651 70%, transparent 100%)",
         }} />
 
         {/* Logo */}
@@ -478,7 +478,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
               width: 48,
               height: 48,
               borderRadius: "50%",
-              border: "2.5px solid rgba(183,44,255,0.15)",
+              border: "2.5px solid rgba(202, 70, 81,0.15)",
               borderTopColor: GOLD,
               animation: "em-spin 0.9s linear infinite",
             }} />
@@ -491,7 +491,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
             <div style={{
               width: 48, height: 48,
               borderRadius: "50%",
-              background: "rgba(183,44,255,0.12)",
+              background: "rgba(202, 70, 81,0.12)",
               border: `1.5px solid ${GOLD}`,
               display: "grid",
               placeItems: "center",
@@ -525,7 +525,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
             borderRadius: 8,
             textAlign: "left",
           }}>
-            <p style={{ color: "#b9adbf", fontSize: 11, margin: "0 0 4px", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600 }}>
+            <p style={{ color: "#b4adb0", fontSize: 11, margin: "0 0 4px", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600 }}>
               Mensagem
             </p>
             <p style={{ color: "#f87171", fontSize: 13, margin: 0, wordBreak: "break-all", fontFamily: "monospace" }}>
@@ -542,7 +542,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
               style={{
                 display: "inline-block",
                 padding: "10px 18px",
-                background: "rgba(183,44,255,0.12)",
+                background: "rgba(202, 70, 81,0.12)",
                 border: `1px solid ${GOLD}`,
                 borderRadius: 8,
                 color: GOLD,
@@ -562,7 +562,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
                 background: "transparent",
                 border: "1px solid rgba(148,163,184,0.32)",
                 borderRadius: 8,
-                color: "#d8cedd",
+                color: "#ded8da",
                 fontSize: 13,
                 fontWeight: 700,
                 textDecoration: "none",
@@ -575,7 +575,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
         )}
 
         {/* Subtle bottom label */}
-        <p style={{ color: "#66566f", fontSize: 11, margin: "20px 0 0", letterSpacing: 1.5, textTransform: "uppercase" }}>
+        <p style={{ color: "#676064", fontSize: 11, margin: "20px 0 0", letterSpacing: 1.5, textTransform: "uppercase" }}>
           Acesso seguro
         </p>
       </div>

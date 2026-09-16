@@ -110,7 +110,7 @@ export default function ExcluirContaPage() {
 
         <p className="mt-4 text-center text-[12px] text-[#f5f0e4]/28">
           Ao confirmar, seus dados serão anonimizados conforme a{" "}
-          <Link href="/privacy" className="text-[#b72cff] no-underline">
+          <Link href="/privacy" className="text-[#ca4651] no-underline">
             Política de Privacidade
           </Link>
           .

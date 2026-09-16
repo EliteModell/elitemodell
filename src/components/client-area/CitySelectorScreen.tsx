@@ -139,7 +139,7 @@ export default function CitySelectorScreen({
       <div className="client-city-wrap">
         <header className="client-city-header">
           <span className="client-city-logo" aria-label="Elite Modell">
-            <Image src="/brand/elite-modell-logo-transparent.svg" alt="Elite Modell" width={720} height={210} priority style={{ width: 174, height: "auto", objectFit: "contain", opacity: 1, filter: "none" }} />
+            <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={2172} height={724} priority style={{ width: 174, height: "auto", objectFit: "contain", opacity: 1, filter: "none" }} />
           </span>
           <button type="button" onClick={onClose} className="client-city-close" aria-label="Fechar">
             <X />
@@ -171,10 +171,10 @@ export default function CitySelectorScreen({
             type="button"
             onClick={handleGeolocate}
             disabled={geolocating}
-            className="flex w-full items-center justify-center gap-2.5 rounded-[14px] border border-[#b72cff]/36 bg-[#b72cff]/14 py-4 text-[14px] font-bold text-[#e1a6ff] transition active:scale-[0.98] disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2.5 rounded-[14px] border border-[#ca4651]/36 bg-[#ca4651]/14 py-4 text-[14px] font-bold text-[#f2c8cc] transition active:scale-[0.98] disabled:opacity-60"
           >
             {geolocating ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#e1a6ff]/30 border-t-[#e1a6ff]" />
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#f2c8cc]/30 border-t-[#f2c8cc]" />
             ) : (
               <Navigation2 className="h-4 w-4" />
             )}
@@ -275,11 +275,11 @@ export default function CitySelectorScreen({
           {!noResults && !busy && visibleSuggestions.length === 0 && input.length < 2 && (
             <div className="space-y-[44px]">
               <div className="flex flex-wrap items-center gap-5 rounded-[18px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.32)] sm:flex-nowrap sm:p-7">
-                <div className="grid h-[82px] w-[82px] shrink-0 place-items-center rounded-[17px] bg-[#100a14]/88">
-                  <Diamond className="h-12 w-12 text-[#c451ff]" strokeWidth={1.7} />
+                <div className="grid h-[82px] w-[82px] shrink-0 place-items-center rounded-[17px] bg-[#080808]/88">
+                  <Diamond className="h-12 w-12 text-[#df828a]" strokeWidth={1.7} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-[21px] font-black leading-tight text-[#c451ff] sm:text-[24px]">Encontre perfis exclusivos</h2>
+                  <h2 className="text-[21px] font-black leading-tight text-[#df828a] sm:text-[24px]">Encontre perfis exclusivos</h2>
                   <p className="mt-3 text-[15px] leading-[1.55] text-[#fffaf0]/60 sm:text-[18px]">
                     Explore acompanhantes na sua cidade com segurança e discrição.
                   </p>
@@ -287,15 +287,15 @@ export default function CitySelectorScreen({
                 <button
                   type="button"
                   onClick={() => setPremiumOpen(true)}
-                  className="flex min-h-[54px] w-full shrink-0 items-center justify-center gap-3 rounded-[12px] border border-[#c451ff]/55 bg-[linear-gradient(135deg,rgba(183,44,255,0.34),rgba(105,0,163,0.78))] px-7 text-[16px] font-black text-[#c451ff] shadow-[0_0_34px_rgba(183,44,255,0.14)] transition hover:brightness-110 active:scale-95 sm:min-h-[58px] sm:w-auto"
+                  className="flex min-h-[54px] w-full shrink-0 items-center justify-center gap-3 rounded-[12px] border border-[#df828a]/55 bg-[linear-gradient(135deg,rgba(202, 70, 81,0.34),rgba(142, 47, 56,0.78))] px-7 text-[16px] font-black text-[#df828a] shadow-[0_0_34px_rgba(202, 70, 81,0.14)] transition hover:brightness-110 active:scale-95 sm:min-h-[58px] sm:w-auto"
                 >
                   Seja Premium
-                  <Crown className="h-5 w-5 fill-[#c451ff]/30" />
+                  <Crown className="h-5 w-5 fill-[#df828a]/30" />
                 </button>
               </div>
               <div className="space-y-8 px-4">
                 <div className="flex items-center gap-5">
-                  <div className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-[16px] bg-[#100a14]/88 text-[#c451ff]">
+                  <div className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-[16px] bg-[#080808]/88 text-[#df828a]">
                     <ShieldCheck className="h-7 w-7" />
                   </div>
                   <div>
@@ -305,7 +305,7 @@ export default function CitySelectorScreen({
                 </div>
                 <div className="h-px bg-white/10" />
                 <div className="flex items-center gap-5">
-                  <div className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-[16px] bg-[#100a14]/88 text-[#c451ff]">
+                  <div className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-[16px] bg-[#080808]/88 text-[#df828a]">
                     <LockKeyhole className="h-7 w-7" />
                   </div>
                   <div>

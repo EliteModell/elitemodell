@@ -128,7 +128,7 @@ function ProfessionalCard({ p }: { p: Professional }) {
             </span>
           ) : null}
           {p.featured && (
-            <span className="rounded-full bg-[#b72cff] px-2.5 py-1 text-[11px] font-bold text-[#0d1318]">
+            <span className="rounded-full bg-[#ca4651] px-2.5 py-1 text-[11px] font-bold text-[#0d1318]">
               Destaque
             </span>
           )}
@@ -146,8 +146,8 @@ function ProfessionalCard({ p }: { p: Professional }) {
               </div>
             </div>
             {price ? (
-              <div className="shrink-0 rounded-[6px] border border-[#b72cff]/28 bg-black/75 px-2.5 py-1.5 backdrop-blur-sm">
-                <p className="text-[13px] font-bold text-[#e1a6ff]">
+              <div className="shrink-0 rounded-[6px] border border-[#ca4651]/28 bg-black/75 px-2.5 py-1.5 backdrop-blur-sm">
+                <p className="text-[13px] font-bold text-[#f2c8cc]">
                   {price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/h
                 </p>
               </div>
@@ -159,7 +159,7 @@ function ProfessionalCard({ p }: { p: Professional }) {
       <div className="flex items-center gap-2.5 border-t border-white/[0.05] px-4 py-2.5">
         {p.verified && <BadgeCheck className="h-4 w-4 shrink-0 text-[#7ed58a]" />}
         <div className="flex items-center gap-1">
-          <Star className="h-3.5 w-3.5 fill-[#b72cff] text-[#b72cff]" />
+          <Star className="h-3.5 w-3.5 fill-[#ca4651] text-[#ca4651]" />
           <span className="text-[13px] font-bold text-[#f5f0e4]">{p.rating.toFixed(1)}</span>
           <span className="text-[12px] text-[#f5f0e4]/36">({p.totalReviews})</span>
         </div>
@@ -181,7 +181,7 @@ function ProfessionalCard({ p }: { p: Professional }) {
         <button
           type="button"
           onClick={() => void toggleFavorite()}
-          className={`client-secondary-button grid min-h-0 w-11 place-items-center px-0 py-2.5 ${saved ? "text-[#e1a6ff]" : ""}`}
+          className={`client-secondary-button grid min-h-0 w-11 place-items-center px-0 py-2.5 ${saved ? "text-[#f2c8cc]" : ""}`}
           aria-pressed={saved}
           aria-label={saved ? "Remover dos favoritos" : "Salvar perfil"}
           disabled={savingFavorite}
@@ -220,7 +220,7 @@ function FilterDrawer({
     <div className="client-filter-overlay" role="dialog" aria-modal="true" aria-label="Filtrar perfis">
       <button type="button" className="client-filter-backdrop" onClick={onClose} aria-label="Fechar filtros" />
       <section data-client-filter-panel="true" className="client-filter-panel">
-        <div className="mx-auto mb-5 h-1.5 w-14 rounded-full bg-[#c451ff]/28" />
+        <div className="mx-auto mb-5 h-1.5 w-14 rounded-full bg-[#df828a]/28" />
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h2 className="client-filter-title">Filtrar perfis</h2>
@@ -339,10 +339,10 @@ function EmptyState({
     return (
       <section className="client-empty mb-16 mt-1 pb-36 pt-12">
         <div className="flex flex-col items-center px-6 text-center">
-          <div className="grid h-[68px] w-[68px] place-items-center rounded-[16px] border border-[#b72cff]/26 bg-[#b72cff]/12 text-[#e1a6ff]">
+          <div className="grid h-[68px] w-[68px] place-items-center rounded-[16px] border border-[#ca4651]/26 bg-[#ca4651]/12 text-[#f2c8cc]">
             <MapPin className="h-8 w-8" />
           </div>
-          <p className="mt-6 text-[11px] font-black uppercase text-[#e1a6ff]/82">Localização</p>
+          <p className="mt-6 text-[11px] font-black uppercase text-[#f2c8cc]/82">Localização</p>
           <h2 className="mt-2 max-w-[330px] text-[28px] font-black leading-tight text-[#f5f0e4]">
             Selecione uma cidade para ver os perfis
           </h2>
@@ -357,10 +357,10 @@ function EmptyState({
   return (
     <section className="client-empty mb-16 mt-1 overflow-hidden pb-36 pt-12">
       <div className="flex flex-col items-center px-6 text-center">
-        <div className="grid h-[68px] w-[68px] place-items-center rounded-[16px] border border-[#b72cff]/26 bg-[#b72cff]/12 text-[#e1a6ff] shadow-[0_14px_36px_rgba(183,44,255,0.14)]">
+        <div className="grid h-[68px] w-[68px] place-items-center rounded-[16px] border border-[#ca4651]/26 bg-[#ca4651]/12 text-[#f2c8cc] shadow-[0_14px_36px_rgba(202, 70, 81,0.14)]">
           {hasFilters ? <Search className="h-8 w-8" /> : <ShieldCheck className="h-8 w-8" />}
         </div>
-        <p className="mt-6 text-[11px] font-black uppercase text-[#e1a6ff]/82">
+        <p className="mt-6 text-[11px] font-black uppercase text-[#f2c8cc]/82">
           {hasFilters ? "Sem resultado" : "Perfis verificados"}
         </p>
         <h2 className="mt-2 max-w-[330px] text-[28px] font-black leading-tight text-[#f5f0e4]">
@@ -371,7 +371,7 @@ function EmptyState({
             {activeTags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-[#b72cff]/28 bg-[#b72cff]/12 px-3 py-1 text-[11px] font-bold uppercase text-[#e1a6ff]"
+                className="rounded-full border border-[#ca4651]/28 bg-[#ca4651]/12 px-3 py-1 text-[11px] font-bold uppercase text-[#f2c8cc]"
               >
                 {tag}
               </span>
@@ -591,16 +591,16 @@ export default function AcompanhantesPage() {
       <section className="client-explore-home">
         {/* Header */}
         <div>
-          <p className="text-[14px] font-bold uppercase tracking-wide text-[#c451ff]">EXPLORAR PERFIS</p>
+          <p className="text-[14px] font-bold uppercase tracking-wide text-[#df828a]">EXPLORAR PERFIS</p>
           <h1 className="mt-2 text-[40px] font-black leading-[1.04] tracking-[-0.03em] text-white">
             {city ? (
               <>
                 Acompanhantes{" "}
-                <span className="text-[#c451ff]">em {city}</span>
+                <span className="text-[#df828a]">em {city}</span>
               </>
             ) : (
               <>
-                Perfis <span className="text-[#c451ff]">verificados</span>
+                Perfis <span className="text-[#df828a]">verificados</span>
                 <br />perto de você
               </>
             )}
@@ -628,7 +628,7 @@ export default function AcompanhantesPage() {
         {/* City / search card */}
         <div className="relative z-10 -mt-6 rounded-[28px] border border-white/[0.10] bg-white/[0.055] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.38)] backdrop-blur-xl">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="text-[15px] font-black uppercase text-[#c451ff]">CIDADE</h2>
+            <h2 className="text-[15px] font-black uppercase text-[#df828a]">CIDADE</h2>
             {city && (
               <button
                 type="button"
@@ -647,7 +647,7 @@ export default function AcompanhantesPage() {
             onClick={() => setShowCitySheet(true)}
             className="flex w-full items-center gap-3 rounded-[18px] border border-white/[0.10] bg-[#111318] px-4 py-4 text-left transition active:bg-[#181c23]"
           >
-            <MapPin className="h-5 w-5 shrink-0 text-[#c451ff]" />
+            <MapPin className="h-5 w-5 shrink-0 text-[#df828a]" />
             <span className={`flex-1 text-[16px] font-semibold ${city ? "text-white" : "text-white/38"}`}>
               {city || "Selecione uma cidade"}
             </span>
@@ -659,10 +659,10 @@ export default function AcompanhantesPage() {
             type="button"
             onClick={handleGeolocate}
             disabled={geolocating}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-[14px] border border-[#b72cff]/28 bg-[#b72cff]/10 py-3 text-[13px] font-bold text-[#e1a6ff] transition active:scale-[0.98] disabled:opacity-60"
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-[14px] border border-[#ca4651]/28 bg-[#ca4651]/10 py-3 text-[13px] font-bold text-[#f2c8cc] transition active:scale-[0.98] disabled:opacity-60"
           >
             {geolocating ? (
-              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#e1a6ff]/30 border-t-[#e1a6ff]" />
+              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#f2c8cc]/30 border-t-[#f2c8cc]" />
             ) : (
               <Navigation2 className="h-3.5 w-3.5" />
             )}
@@ -672,7 +672,7 @@ export default function AcompanhantesPage() {
 
         {/* Categories */}
         <div className="mt-6">
-          <p className="mb-3 text-[15px] font-black uppercase text-[#c451ff]">CATEGORIA</p>
+          <p className="mb-3 text-[15px] font-black uppercase text-[#df828a]">CATEGORIA</p>
           <div className="category-scroll">
             {CATEGORIES.map((c) => (
               <button
@@ -691,19 +691,19 @@ export default function AcompanhantesPage() {
 
         {/* Active filter tags */}
         {hasFilters && (
-          <div className="mt-4 rounded-[18px] border border-[#c451ff]/18 bg-[#c451ff]/10 px-4 py-3">
+          <div className="mt-4 rounded-[18px] border border-[#df828a]/18 bg-[#df828a]/10 px-4 py-3">
             <div className="flex items-center justify-between gap-3">
               <span className="min-w-0 text-[13px] font-semibold text-white/72">
                 Filtros ativos
               </span>
-              <button type="button" onClick={clearFilters} className="shrink-0 text-[13px] font-black text-[#c451ff]">
+              <button type="button" onClick={clearFilters} className="shrink-0 text-[13px] font-black text-[#df828a]">
                 Limpar
               </button>
             </div>
             {activeFilterLabels.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {activeFilterLabels.map((label) => (
-                  <span key={label} className="rounded-full border border-[#c451ff]/18 bg-black/20 px-2.5 py-1 text-[11px] font-bold text-[#f5f0e4]/72">
+                  <span key={label} className="rounded-full border border-[#df828a]/18 bg-black/20 px-2.5 py-1 text-[11px] font-bold text-[#f5f0e4]/72">
                     {label}
                   </span>
                 ))}
@@ -720,7 +720,7 @@ export default function AcompanhantesPage() {
             {total} {total === 1 ? "perfil encontrado" : "perfis encontrados"} em {city}
           </p>
           {hasFilters && (
-            <button type="button" onClick={clearFilters} className="text-[12px] font-semibold text-[#e1a6ff]">
+            <button type="button" onClick={clearFilters} className="text-[12px] font-semibold text-[#f2c8cc]">
               Limpar filtros
             </button>
           )}

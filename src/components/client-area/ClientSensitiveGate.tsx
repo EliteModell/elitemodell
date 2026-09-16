@@ -12,13 +12,13 @@ const VERIFY_HREF = "/dashboard/verificacao-idade";
 function VerificationRequiredModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[1200] grid place-items-center bg-black/78 px-4 py-6 backdrop-blur-xl" role="dialog" aria-modal="true" aria-labelledby="client-age-lock-title">
-      <div className="w-full max-w-[420px] overflow-hidden rounded-[24px] border border-[#b72cff]/25 bg-white shadow-[0_28px_90px_rgba(52,33,67,0.24)]">
-        <div className="h-[2px] bg-[linear-gradient(90deg,transparent,#c451ff,#b72cff,transparent)]" />
+      <div className="w-full max-w-[420px] overflow-hidden rounded-[24px] border border-[#ca4651]/25 bg-white shadow-[0_28px_90px_rgba(37, 31, 32,0.24)]">
+        <div className="h-[2px] bg-[linear-gradient(90deg,transparent,#df828a,#ca4651,transparent)]" />
         <div className="p-6 text-center">
-          <div className="mx-auto grid h-16 w-16 place-items-center rounded-[18px] border border-[#b72cff]/28 bg-[#b72cff]/12 text-[#c451ff]">
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-[18px] border border-[#ca4651]/28 bg-[#ca4651]/12 text-[#df828a]">
             <LockKeyhole className="h-7 w-7" />
           </div>
-          <h2 id="client-age-lock-title" className="mt-5 text-[26px] font-black leading-tight text-[#17141d]">
+          <h2 id="client-age-lock-title" className="mt-5 text-[26px] font-black leading-tight text-[#141212]">
             Verificação necessária
           </h2>
           <p className="mt-3 text-[15px] leading-7 text-[#b8b8b8]">
@@ -92,11 +92,11 @@ export function ClientSensitiveGate({
     <>
       <div className="client-panel p-5">
         <div className="flex items-start gap-4">
-          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#b72cff]/25 bg-[#b72cff]/12 text-[#c451ff]">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#ca4651]/25 bg-[#ca4651]/12 text-[#df828a]">
             <LockKeyhole className="h-6 w-6" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="text-[22px] font-black leading-7 text-[#17141d]">{fallbackTitle}</h2>
+            <h2 className="text-[22px] font-black leading-7 text-[#141212]">{fallbackTitle}</h2>
             <p className="mt-2 text-[15px] leading-7 text-[#b8b8b8]">
               Para acessar recursos privados, contatos e conteúdos restritos, confirme que você é maior de 18 anos.
             </p>

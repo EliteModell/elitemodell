@@ -189,7 +189,7 @@ function QuickStatsSection({
             <p className="text-[11px] font-black uppercase tracking-wide text-[var(--primary)]">NIVEL ATUAL</p>
             <p className="mt-1 text-[24px] font-black leading-tight text-[var(--text-primary)]">{vip.label}</p>
           </div>
-          <span className="shrink-0 rounded-full border border-[#b72cff]/24 bg-[#b72cff]/10 px-2.5 py-1 text-[13px] font-black text-[#e1a6ff]">
+          <span className="shrink-0 rounded-full border border-[#ca4651]/24 bg-[#ca4651]/10 px-2.5 py-1 text-[13px] font-black text-[#f2c8cc]">
             {vip.progress}%
           </span>
         </div>
@@ -197,7 +197,7 @@ function QuickStatsSection({
 
         <div className="mt-4 h-[5px] overflow-hidden rounded-full bg-[rgba(30,24,14,0.06)]">
           <div
-            className="h-full rounded-full bg-[#b72cff] transition-all duration-700"
+            className="h-full rounded-full bg-[#ca4651] transition-all duration-700"
             style={{ width: `${Math.max(3, vip.progress)}%` }}
           />
         </div>
@@ -230,7 +230,7 @@ function ReviewsSection() {
     <section className="client-page-tight client-dashboard-section">
       <div className="client-card p-5">
         <div className="flex items-start gap-4">
-          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-white/[0.07] bg-white/[0.04] text-[#e1a6ff]">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-white/[0.07] bg-white/[0.04] text-[#f2c8cc]">
             <CircleAlert className="h-6 w-6" />
           </span>
           <div className="min-w-0">
@@ -256,7 +256,7 @@ function SafetyCard() {
     <section className="client-page-tight client-dashboard-section" style={{ paddingBottom: "calc(120px + env(safe-area-inset-bottom))" }}>
       <div className="client-panel p-5">
         <div className="flex items-start gap-4">
-          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#b72cff]/20 bg-[#b72cff]/10 text-[#e1a6ff]">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#ca4651]/20 bg-[#ca4651]/10 text-[#f2c8cc]">
             <ShieldAlert className="h-6 w-6" />
           </span>
           <div className="min-w-0 flex-1">

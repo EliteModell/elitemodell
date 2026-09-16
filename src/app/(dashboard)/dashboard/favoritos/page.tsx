@@ -54,11 +54,11 @@ function FavoriteCard({ favorite }: { favorite: FavoriteProfessional }) {
 
   return (
     <Link href={`/profissionais/${professional.slug}`} className="client-card flex gap-4 p-4 no-underline">
-      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-[14px] border border-[#b72cff]/20 bg-white/[0.04]">
+      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-[14px] border border-[#ca4651]/20 bg-white/[0.04]">
         {cover ? (
           <img src={cover} alt={professional.displayName} className="h-full w-full object-cover" />
         ) : (
-          <div className="grid h-full w-full place-items-center text-[#e1a6ff]">
+          <div className="grid h-full w-full place-items-center text-[#f2c8cc]">
             <Heart className="h-6 w-6" />
           </div>
         )}
@@ -71,11 +71,11 @@ function FavoriteCard({ favorite }: { favorite: FavoriteProfessional }) {
         <p className="mt-1 truncate text-[13px] text-[#f5f0e4]/54">
           {professional.city}, {professional.state}
         </p>
-        <p className="mt-3 text-[12px] font-black uppercase text-[#e1a6ff]">
+        <p className="mt-3 text-[12px] font-black uppercase text-[#f2c8cc]">
           Ver perfil
         </p>
       </div>
-      <ChevronRight className="mt-7 h-5 w-5 shrink-0 text-[#e1a6ff]" />
+      <ChevronRight className="mt-7 h-5 w-5 shrink-0 text-[#f2c8cc]" />
     </Link>
   );
 }

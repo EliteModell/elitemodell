@@ -150,7 +150,7 @@ export default function AgendamentosPage() {
       {!loading && !error && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {filtered.length === 0 && (
-            <div style={{ background: "#111", border: "1px solid rgba(183,44,255,.16)", borderRadius: 18, padding: 40, textAlign: "center" }}>
+            <div style={{ background: "#111", border: "1px solid rgba(202, 70, 81,.16)", borderRadius: 18, padding: 40, textAlign: "center" }}>
               <p style={{ color: "#555", fontSize: 14 }}>Nenhum agendamento neste status.</p>
             </div>
           )}
@@ -160,7 +160,7 @@ export default function AgendamentosPage() {
             const date = new Date(a.date);
             const label = clientName(a);
             return (
-              <div key={a.id} style={{ background: "#111", border: "1px solid rgba(183,44,255,.16)", borderRadius: 18, padding: "20px 22px" }}>
+              <div key={a.id} style={{ background: "#111", border: "1px solid rgba(202, 70, 81,.16)", borderRadius: 18, padding: "20px 22px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
                   <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
                     <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#cc0000", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: "#fff", flexShrink: 0 }}>

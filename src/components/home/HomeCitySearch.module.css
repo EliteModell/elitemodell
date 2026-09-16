@@ -1,8 +1,8 @@
 .form { position: relative; width: min(100%, 510px); margin-top: 26px; }
-.label { display: block; margin-bottom: 9px; color: #211c25; font-size: 14px; font-weight: 800; }
+.label { display: block; margin-bottom: 9px; color: #141212; font-size: 14px; font-weight: 800; }
 .control { min-height: 60px; padding: 5px; border: 1px solid #e4d9dc; border-radius: 999px; display: flex; align-items: stretch; background: rgba(255,255,255,.97); box-shadow: 0 10px 28px rgba(94,35,45,.08); transition: border-color .18s, box-shadow .18s; }
 .control.focused { border-color: #cc4652; box-shadow: 0 0 0 3px rgba(201,65,78,.1), 0 10px 28px rgba(94,35,45,.08); }
-.control input { min-width: 0; flex: 1; border: 0; padding: 0 17px; color: #17131a; background: transparent; outline: 0; font: inherit; font-size: 15px; }
+.control input { min-width: 0; flex: 1; border: 0; padding: 0 17px; color: #141212; background: transparent; outline: 0; font: inherit; font-size: 15px; }
 .control input::placeholder { color: #85818d; }
 .control input::-webkit-search-cancel-button { display: none; }
 .control > button { width: 50px; min-width: 50px; border: 0; border-radius: 50%; display: grid; place-items: center; color: #fff; background: #ca4651; cursor: pointer; transition: background .18s, transform .18s; }

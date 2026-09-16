@@ -1,11 +1,11 @@
 import Link from "next/link";
 
 export const adminColors = {
-  gold: "#7c22ee",
+  gold: "#ca4651",
   bg: "#f7f7fa",
   panel: "#ffffff",
   panel2: "#faf9fc",
-  border: "#e7e2ec",
+  border: "#fff7f8",
   muted: "#6d7180",
 };
 
@@ -24,7 +24,7 @@ export function AdminHeader({
         <p style={{ margin: "0 0 8px", color: adminColors.gold, fontSize: 11, fontWeight: 900, letterSpacing: 2.4, textTransform: "uppercase" }}>
           Admin Elite Model
         </p>
-        <h1 style={{ margin: 0, color: "#17141d", fontSize: 28, lineHeight: 1.05, fontWeight: 800, letterSpacing: 0 }}>{title}</h1>
+        <h1 style={{ margin: 0, color: "#141212", fontSize: 28, lineHeight: 1.05, fontWeight: 800, letterSpacing: 0 }}>{title}</h1>
         {subtitle ? <p style={{ margin: "10px 0 0", color: adminColors.muted, fontSize: 14, lineHeight: 1.6, maxWidth: 780 }}>{subtitle}</p> : null}
       </div>
       {action}
@@ -43,9 +43,9 @@ export function StatCard({
   href?: string;
   tone?: "neutral" | "warning" | "success" | "danger";
 }) {
-  const toneColor = tone === "warning" ? adminColors.gold : tone === "success" ? "#168347" : tone === "danger" ? "#c93642" : "#17141d";
+  const toneColor = tone === "warning" ? adminColors.gold : tone === "success" ? "#168347" : tone === "danger" ? "#c93642" : "#141212";
   const content = (
-    <div style={{ background: adminColors.panel, border: `1px solid ${adminColors.border}`, borderRadius: 16, padding: 18, minHeight: 112, boxShadow: "0 8px 24px rgba(47,28,68,.06)" }}>
+    <div style={{ background: adminColors.panel, border: `1px solid ${adminColors.border}`, borderRadius: 16, padding: 18, minHeight: 112, boxShadow: "0 8px 24px rgba(37, 31, 32,.06)" }}>
       <div style={{ color: toneColor, fontSize: 28, fontWeight: 950, lineHeight: 1 }}>{typeof value === "number" ? value.toLocaleString("pt-BR") : value}</div>
       <div style={{ color: adminColors.muted, fontSize: 12, marginTop: 10, lineHeight: 1.4 }}>{label}</div>
     </div>
@@ -57,14 +57,14 @@ export function StatCard({
 
 export function AdminPanel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background: adminColors.panel, border: `1px solid ${adminColors.border}`, borderRadius: 16, padding: 16, boxShadow: "0 8px 24px rgba(47,28,68,.06)" }}>
+    <div style={{ background: adminColors.panel, border: `1px solid ${adminColors.border}`, borderRadius: 16, padding: 16, boxShadow: "0 8px 24px rgba(37, 31, 32,.06)" }}>
       {children}
     </div>
   );
 }
 
 export function StatusPill({ children, tone = "neutral" }: { children: React.ReactNode; tone?: "neutral" | "warning" | "success" | "danger" }) {
-  const color = tone === "warning" ? adminColors.gold : tone === "success" ? "#22c55e" : tone === "danger" ? "#ef4444" : "#b9adbf";
+  const color = tone === "warning" ? adminColors.gold : tone === "success" ? "#22c55e" : tone === "danger" ? "#ef4444" : "#b4adb0";
   return (
     <span style={{ display: "inline-flex", alignItems: "center", border: `1px solid ${color}55`, background: `${color}16`, color, borderRadius: 999, padding: "5px 9px", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0.8 }}>
       {children}
@@ -127,21 +127,21 @@ export const thStyle: React.CSSProperties = {
   textTransform: "uppercase",
   letterSpacing: 1.2,
   borderBottom: `1px solid ${adminColors.border}`,
-  background: "rgba(183,44,255,0.06)",
+  background: "rgba(202, 70, 81,0.06)",
 };
 
 export const tdStyle: React.CSSProperties = {
   padding: "13px 14px",
   color: "#34303b",
   fontSize: 13,
-  borderBottom: "1px solid #eeeaf2",
+  borderBottom: "1px solid #fff7f8",
   verticalAlign: "top",
 };
 
 export const buttonStyle: React.CSSProperties = {
   border: `1px solid ${adminColors.border}`,
   borderRadius: 8,
-  background: "rgba(183,44,255,0.12)",
+  background: "rgba(202, 70, 81,0.12)",
   color: adminColors.gold,
   padding: "8px 11px",
   fontSize: 12,

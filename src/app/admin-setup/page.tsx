@@ -28,13 +28,13 @@ export default function AdminSetupPage() {
     <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#050506", padding: 24 }}>
       <div style={{
         width: "100%", maxWidth: 420, background: "#0d0d10",
-        border: "1px solid rgba(183,44,255,0.22)", borderRadius: 12,
+        border: "1px solid rgba(202, 70, 81,0.22)", borderRadius: 12,
         padding: "40px 32px 36px", textAlign: "center",
       }}>
-        <p style={{ color: "#b72cff", fontSize: 11, fontWeight: 900, letterSpacing: 2.5, textTransform: "uppercase", margin: "0 0 16px" }}>
+        <p style={{ color: "#ca4651", fontSize: 11, fontWeight: 900, letterSpacing: 2.5, textTransform: "uppercase", margin: "0 0 16px" }}>
           Configuração Inicial
         </p>
-        <h1 style={{ color: "#f8f5fa", fontSize: 22, fontWeight: 800, margin: "0 0 12px" }}>
+        <h1 style={{ color: "#fff7f8", fontSize: 22, fontWeight: 800, margin: "0 0 12px" }}>
           Ativar Acesso Admin
         </h1>
         <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, margin: "0 0 32px", lineHeight: 1.6 }}>
@@ -43,7 +43,7 @@ export default function AdminSetupPage() {
 
         {status === "idle" && (
           <button onClick={handleSetup} style={{
-            width: "100%", padding: "13px 20px", background: "#b72cff",
+            width: "100%", padding: "13px 20px", background: "#ca4651",
             border: "none", borderRadius: 8, color: "#0a0a0a",
             fontSize: 14, fontWeight: 800, cursor: "pointer",
           }}>
@@ -52,7 +52,7 @@ export default function AdminSetupPage() {
         )}
 
         {status === "loading" && (
-          <p style={{ color: "#b72cff", fontSize: 14 }}>Processando...</p>
+          <p style={{ color: "#ca4651", fontSize: 14 }}>Processando...</p>
         )}
 
         {status === "done" && (
@@ -60,7 +60,7 @@ export default function AdminSetupPage() {
             <p style={{ color: "#4ade80", fontSize: 14, marginBottom: 20 }}>{message}</p>
             <a href="/admin/login" style={{
               display: "inline-block", padding: "11px 24px",
-              background: "#b72cff", borderRadius: 8, color: "#0a0a0a",
+              background: "#ca4651", borderRadius: 8, color: "#0a0a0a",
               fontSize: 13, fontWeight: 800, textDecoration: "none",
             }}>
               Ir para o login admin

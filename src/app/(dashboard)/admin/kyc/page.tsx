@@ -97,12 +97,12 @@ function KycChecksDisplay({ raw }: { raw: unknown }) {
   if (!verifications && !missingGovernmentId && !missingSelfie) return null;
 
   return (
-    <div style={{ marginTop: 6, fontSize: 11, color: "#b9adbf" }}>
+    <div style={{ marginTop: 6, fontSize: 11, color: "#b4adb0" }}>
       {missingGovernmentId && <div style={{ color: "#f59e0b" }}>⚠ Documento de identidade ausente</div>}
       {missingSelfie && <div style={{ color: "#f59e0b" }}>⚠ Selfie ausente</div>}
       {verifications && Object.entries(verifications).map(([verType, ver]) => (
         <div key={verType} style={{ marginBottom: 4 }}>
-          <span style={{ fontWeight: 600, color: "#d8cedd" }}>{verType}</span>{" "}
+          <span style={{ fontWeight: 600, color: "#ded8da" }}>{verType}</span>{" "}
           <CheckStatusIcon status={ver.status} />{" "}
           <span>{ver.status}</span>
           {ver.checks?.filter(c => c.status !== "not_applicable").map(c => (
@@ -189,7 +189,7 @@ export default async function AdminKycPage() {
                 <td style={tdStyle}><strong>{pro.displayName}</strong><br />{pro.user.email}</td>
                 <td style={tdStyle}>
                   {personaProviderLabel(pro.kycProvider, pro.kycSessionId)}<br />
-                  <span style={{ color: "#b9adbf" }}>{pro.kycSessionId ?? "sem inquiry/sessão"}</span>
+                  <span style={{ color: "#b4adb0" }}>{pro.kycSessionId ?? "sem inquiry/sessão"}</span>
                 </td>
                 <td style={tdStyle}><StatusPill tone={toneFor(pro.kycStatus)}>{pro.kycStatus}</StatusPill></td>
                 <td style={tdStyle}>
@@ -201,7 +201,7 @@ export default async function AdminKycPage() {
                   <form action={reviewProfessionalKyc} style={{ display: "grid", gap: 8 }}>
                     <input type="hidden" name="id" value={pro.id} />
                     <input name="reason" placeholder="Motivo/observação" style={{ background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 8 }} />
-                    <span style={{ color: "#b9adbf", fontSize: 11 }}>
+                    <span style={{ color: "#b4adb0", fontSize: 11 }}>
                       {personaProviderLabel(pro.kycProvider, pro.kycSessionId) === "PERSONA" ? "Use revisão manual apenas em exceção ou falha do webhook." : "Verificação manual pendente."}
                     </span>
                     <div style={{ display: "flex", gap: 8 }}>
@@ -253,7 +253,7 @@ export default async function AdminKycPage() {
                 </td>
                 <td style={tdStyle}>
                   {personaProviderLabel(null, client.kycSessionId)}<br />
-                  <span style={{ color: "#b9adbf" }}>{client.kycSessionId ?? "sem inquiry/sessão"}</span><br />
+                  <span style={{ color: "#b4adb0" }}>{client.kycSessionId ?? "sem inquiry/sessão"}</span><br />
                   {client.kycSubmittedAt?.toLocaleString("pt-BR") ?? "-"}
                   <KycChecksDisplay raw={client.kycChecksJson} />
                 </td>
@@ -266,7 +266,7 @@ export default async function AdminKycPage() {
                         ATENÇÃO: Este é um dado SANDBOX (simulado). Aprovação manual não valida identidade real.
                       </span>
                     )}
-                    <span style={{ color: "#b9adbf", fontSize: 11 }}>
+                    <span style={{ color: "#b4adb0", fontSize: 11 }}>
                       {personaProviderLabel(null, client.kycSessionId) === "PERSONA" ? "Use revisão manual apenas em exceção ou falha do webhook." : "Verificação manual pendente."}
                     </span>
                     <div style={{ display: "flex", gap: 8 }}>

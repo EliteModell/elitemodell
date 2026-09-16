@@ -159,8 +159,8 @@ export default function AgeGate() {
           justify-content: center;
           padding: max(18px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom));
           background:
-            radial-gradient(circle at 50% 0%, rgba(183, 44, 255, 0.18), transparent 34%),
-            radial-gradient(circle at 12% 84%, rgba(183, 44, 255, 0.10), transparent 30%),
+            radial-gradient(circle at 50% 0%, rgba(202, 70, 81, 0.18), transparent 34%),
+            radial-gradient(circle at 12% 84%, rgba(202, 70, 81, 0.10), transparent 30%),
             rgba(0, 0, 0, 0.88);
           color: #fff;
           backdrop-filter: blur(18px);
@@ -170,18 +170,18 @@ export default function AgeGate() {
           width: min(100%, 430px);
           max-height: min(92dvh, 720px);
           overflow-y: auto;
-          border: 1px solid rgba(183, 44, 255, 0.28);
+          border: 1px solid rgba(202, 70, 81, 0.28);
           border-radius: 26px;
           background:
-            radial-gradient(circle at 50% 0%, rgba(213, 108, 255, 0.10), transparent 36%),
+            radial-gradient(circle at 50% 0%, rgba(223, 130, 138, 0.10), transparent 36%),
             linear-gradient(180deg, rgba(20, 20, 20, 0.98), rgba(8, 8, 9, 0.99));
-          box-shadow: 0 34px 100px rgba(0, 0, 0, 0.72), 0 0 54px rgba(183, 44, 255, 0.10);
+          box-shadow: 0 34px 100px rgba(0, 0, 0, 0.72), 0 0 54px rgba(202, 70, 81, 0.10);
           outline: none;
         }
 
         .gold-line {
           height: 2px;
-          background: linear-gradient(90deg, transparent 0%, ${GOLD} 30%, #e1a6ff 50%, ${GOLD} 70%, transparent 100%);
+          background: linear-gradient(90deg, transparent 0%, ${GOLD} 30%, #f2c8cc 50%, ${GOLD} 70%, transparent 100%);
         }
 
         .age-content {
@@ -195,14 +195,14 @@ export default function AgeGate() {
           width: min(208px, 64vw);
           margin-bottom: 24px;
           padding: 8px 14px;
-          border: 1px solid rgba(183, 44, 255, 0.28);
+          border: 1px solid rgba(202, 70, 81, 0.28);
           border-radius: 18px;
-          background: rgba(11, 8, 15, 0.86);
+          background: rgba(8, 8, 8, 0.86);
           box-shadow: 0 16px 42px rgba(0, 0, 0, 0.28);
         }
 
         .age-logo span {
-          background: linear-gradient(135deg, #f4d7ff 0%, #b72cff 28%, #e1a6ff 55%, #6900a3 100%);
+          background: linear-gradient(135deg, #fff7f8 0%, #ca4651 28%, #f2c8cc 55%, #8e2f38 100%);
           background-clip: text;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
@@ -221,13 +221,13 @@ export default function AgeGate() {
           min-width: 96px;
           min-height: 54px;
           margin: 0 auto 18px;
-          border: 1px solid rgba(213, 108, 255, 0.58);
+          border: 1px solid rgba(223, 130, 138, 0.58);
           border-radius: 999px;
-          background: rgba(183, 44, 255, 0.09);
-          color: #e1a6ff;
+          background: rgba(202, 70, 81, 0.09);
+          color: #f2c8cc;
           font-size: 21px;
           font-weight: 950;
-          box-shadow: 0 0 34px rgba(183, 44, 255, 0.13);
+          box-shadow: 0 0 34px rgba(202, 70, 81, 0.13);
         }
 
         .eyebrow {
@@ -257,7 +257,7 @@ export default function AgeGate() {
         }
 
         .age-intro a {
-          color: #e1a6ff;
+          color: #f2c8cc;
           font-weight: 800;
           text-decoration: none;
         }
@@ -265,7 +265,7 @@ export default function AgeGate() {
         .age-intro a:focus-visible,
         .continue-button:focus-visible,
         .deny-button:focus-visible {
-          outline: 3px solid rgba(213, 108, 255, 0.46);
+          outline: 3px solid rgba(223, 130, 138, 0.46);
           outline-offset: 3px;
         }
 
@@ -274,7 +274,7 @@ export default function AgeGate() {
           align-items: flex-start;
           gap: 10px;
           margin: 18px 0 0;
-          border: 1px solid rgba(183, 44, 255, 0.22);
+          border: 1px solid rgba(202, 70, 81, 0.22);
           border-left: 4px solid ${GOLD};
           border-radius: 18px;
           background: rgba(16, 16, 20, 0.82);
@@ -287,7 +287,7 @@ export default function AgeGate() {
 
         .privacy-note svg {
           flex: 0 0 auto;
-          color: #e1a6ff;
+          color: #f2c8cc;
           margin-top: 1px;
         }
 
@@ -309,16 +309,16 @@ export default function AgeGate() {
         .continue-button {
           min-height: 58px;
           border: 0;
-          background: linear-gradient(135deg, #e1a6ff, ${GOLD} 46%, #6900a3);
+          background: linear-gradient(135deg, #f2c8cc, ${GOLD} 46%, #8e2f38);
           color: #070707;
           font-size: 15px;
           font-weight: 950;
-          box-shadow: 0 20px 52px rgba(183, 44, 255, 0.24);
+          box-shadow: 0 20px 52px rgba(202, 70, 81, 0.24);
         }
 
         .deny-button {
           min-height: 52px;
-          border: 1px solid rgba(183, 44, 255, 0.22);
+          border: 1px solid rgba(202, 70, 81, 0.22);
           background: rgba(11, 11, 13, 0.82);
           color: #f2f2f2;
           font-size: 14px;

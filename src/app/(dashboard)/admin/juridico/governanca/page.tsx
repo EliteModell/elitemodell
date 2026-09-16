@@ -482,7 +482,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function Check({ name, label, defaultChecked }: { name: string; label: string; defaultChecked: boolean }) {
-  return <label style={{ display: "flex", gap: 8, alignItems: "center", color: "#e9e1ed", fontSize: 13 }}><input type="checkbox" name={name} defaultChecked={defaultChecked} />{label}</label>;
+  return <label style={{ display: "flex", gap: 8, alignItems: "center", color: "#fff7f8", fontSize: 13 }}><input type="checkbox" name={name} defaultChecked={defaultChecked} />{label}</label>;
 }
 
 function SectionGap() {
@@ -490,9 +490,9 @@ function SectionGap() {
 }
 
 const heading: React.CSSProperties = { color: "#fff", margin: "0 0 14px", fontSize: 16 };
-const muted: React.CSSProperties = { color: "#b9adbf", lineHeight: 1.6, fontSize: 13 };
+const muted: React.CSSProperties = { color: "#b4adb0", lineHeight: 1.6, fontSize: 13 };
 const formGrid: React.CSSProperties = { display: "grid", gap: 12 };
 const responsiveGrid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12 };
 const checkGrid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 9 };
 const inputStyle: React.CSSProperties = { width: "100%", minWidth: 0, border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, background: "#050506", color: "#fff", padding: 10 };
-const primaryButton: React.CSSProperties = { ...buttonStyle, justifySelf: "start", background: "#b72cff", color: "#080704", border: 0 };
+const primaryButton: React.CSSProperties = { ...buttonStyle, justifySelf: "start", background: "#ca4651", color: "#080704", border: 0 };

@@ -102,23 +102,23 @@ export default async function AdminAvaliacoesPage() {
                 <td style={tdStyle}>
                   <strong>{item.professional.displayName}</strong><br />
                   {item.professional.city}, {item.professional.state}<br />
-                  <Link href={`/profissionais/${item.professional.slug}`} style={{ color: "#b72cff" }}>Abrir perfil</Link>
+                  <Link href={`/profissionais/${item.professional.slug}`} style={{ color: "#ca4651" }}>Abrir perfil</Link>
                 </td>
                 <td style={tdStyle}>
                   Nota: {item.review.rating}/5<br />
                   Autor: {item.review.author.name ?? item.review.author.email ?? "Cliente"}<br />
-                  <span style={{ color: "#b9adbf" }}>{item.review.comment}</span>
+                  <span style={{ color: "#b4adb0" }}>{item.review.comment}</span>
                 </td>
                 <td style={tdStyle}>
                   Enviada por {item.author.name ?? item.author.email ?? "Profissional"}<br />
-                  <span style={{ color: "#b9adbf" }}>{item.reason}</span>
-                  {item.adminNote ? <p style={{ color: "#e1a6ff", margin: "8px 0 0" }}>Admin: {item.adminNote}</p> : null}
+                  <span style={{ color: "#b4adb0" }}>{item.reason}</span>
+                  {item.adminNote ? <p style={{ color: "#f2c8cc", margin: "8px 0 0" }}>Admin: {item.adminNote}</p> : null}
                 </td>
                 <td style={tdStyle}>
                   <StatusPill tone={item.status === "PENDING" ? "warning" : item.status === "ACCEPTED" ? "success" : "danger"}>
                     {item.status === "PENDING" ? "Pendente" : item.status === "ACCEPTED" ? "Removida" : "Mantida"}
                   </StatusPill>
-                  <p style={{ color: "#b9adbf", margin: "8px 0 0" }}>Review: {item.review.moderationStatus}</p>
+                  <p style={{ color: "#b4adb0", margin: "8px 0 0" }}>Review: {item.review.moderationStatus}</p>
                 </td>
                 <td style={tdStyle}>
                   <form action={moderateReviewDispute} style={{ display: "grid", gap: 8 }}>
@@ -126,7 +126,7 @@ export default async function AdminAvaliacoesPage() {
                     <textarea name="adminNote" placeholder="Observação interna" style={{ minHeight: 64, borderRadius: 8, border: "1px solid rgba(255,255,255,.14)", background: "#050506", color: "#fff", padding: 8 }} />
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                       <button name="action" value="remove" style={{ ...buttonStyle, color: "#22c55e" }}>Remover avaliacao</button>
-                      <button name="action" value="keep" style={{ ...buttonStyle, color: "#e1a6ff" }}>Manter avaliacao</button>
+                      <button name="action" value="keep" style={{ ...buttonStyle, color: "#f2c8cc" }}>Manter avaliacao</button>
                     </div>
                   </form>
                 </td>

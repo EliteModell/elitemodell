@@ -90,20 +90,20 @@ export function ProfessionalMainCard({
 
   return (
     <section className="premium-lower-card p-0">
-      <div className="border-b border-[#b72cff]/18 bg-[#b72cff]/[0.055] px-4 py-3 sm:px-5">
+      <div className="border-b border-[#ca4651]/18 bg-[#ca4651]/[0.055] px-4 py-3 sm:px-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#b72cff]">Meu perfil profissional</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#ca4651]">Meu perfil profissional</p>
           <StatusBadge status={status} />
         </div>
       </div>
 
       <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="flex flex-col gap-4 sm:flex-row">
-          <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-[24px] border border-[#b72cff]/35 bg-black/40 shadow-[0_16px_42px_rgba(0,0,0,0.36)] sm:h-32 sm:w-32">
+          <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-[24px] border border-[#ca4651]/35 bg-black/40 shadow-[0_16px_42px_rgba(0,0,0,0.36)] sm:h-32 sm:w-32">
             {image ? (
               <img src={image} alt={displayName} className="h-full w-full object-cover" />
             ) : (
-              <div className="grid h-full w-full place-items-center text-[#e1a6ff]">
+              <div className="grid h-full w-full place-items-center text-[#f2c8cc]">
                 <UserRound className="h-10 w-10" />
               </div>
             )}
@@ -120,7 +120,7 @@ export function ProfessionalMainCard({
                 {online ? "Online" : "Offline"}
               </span>
               {verified ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-[#b72cff]/28 bg-[#b72cff]/10 px-2.5 py-1 text-xs font-black text-[#e1a6ff]">
+                <span className="inline-flex items-center gap-1 rounded-full border border-[#ca4651]/28 bg-[#ca4651]/10 px-2.5 py-1 text-xs font-black text-[#f2c8cc]">
                   <BadgeCheck className="h-3.5 w-3.5" />
                   Verificada
                 </span>
@@ -128,36 +128,36 @@ export function ProfessionalMainCard({
             </div>
             <div className="mt-4 grid gap-2.5 text-sm text-white/58">
               <span className="inline-flex items-center gap-2 rounded-[14px] border border-white/10 bg-white/[0.035] px-3 py-2">
-                <MapPin className="h-4 w-4 text-[#b72cff]" />
+                <MapPin className="h-4 w-4 text-[#ca4651]" />
                 {city && state ? `${city}, ${state}` : "Localização não informada"}
               </span>
               <span className="inline-flex items-center gap-2 rounded-[14px] border border-white/10 bg-white/[0.035] px-3 py-2">
-                <Crown className="h-4 w-4 text-[#b72cff]" />
+                <Crown className="h-4 w-4 text-[#ca4651]" />
                 {planName} {planExpiresAt ? `até ${formatDate(planExpiresAt)}` : ""}
               </span>
               <span className="inline-flex items-center gap-2 rounded-[14px] border border-white/10 bg-white/[0.035] px-3 py-2">
-                <Trophy className="h-4 w-4 text-[#b72cff]" />
+                <Trophy className="h-4 w-4 text-[#ca4651]" />
                 {rankingPosition ? `${rankingPosition}ª posição na cidade` : "Posição ainda não disponível"}
               </span>
               <span className="inline-flex items-center gap-2 rounded-[14px] border border-white/10 bg-white/[0.035] px-3 py-2">
-                <ShieldCheck className="h-4 w-4 text-[#b72cff]" />
+                <ShieldCheck className="h-4 w-4 text-[#ca4651]" />
                 Código de segurança: {securityCode ?? "não disponível"}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="grid content-between gap-4 rounded-[22px] border border-[#b72cff]/20 bg-black/24 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+        <div className="grid content-between gap-4 rounded-[22px] border border-[#ca4651]/20 bg-black/24 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
           <div>
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
-                <span className="text-xs font-black uppercase tracking-[0.18em] text-[#b72cff]">Completude do perfil</span>
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-[#ca4651]">Completude do perfil</span>
                 <h3 className="mt-1 text-lg font-black leading-tight text-white">Perfil {completeness}% completo</h3>
               </div>
-              <span className="rounded-full border border-[#b72cff]/32 bg-[#b72cff]/12 px-3 py-1 text-sm font-black text-[#e1a6ff]">{completeness}%</span>
+              <span className="rounded-full border border-[#ca4651]/32 bg-[#ca4651]/12 px-3 py-1 text-sm font-black text-[#f2c8cc]">{completeness}%</span>
             </div>
-            <div className="h-3 overflow-hidden rounded-full border border-[#b72cff]/18 bg-white/10 p-[2px]">
-              <div className="h-full rounded-full bg-[linear-gradient(90deg,#b72cff,#e1a6ff)] shadow-[0_0_18px_rgba(183,44,255,0.36)]" style={{ width: `${completeness}%` }} />
+            <div className="h-3 overflow-hidden rounded-full border border-[#ca4651]/18 bg-white/10 p-[2px]">
+              <div className="h-full rounded-full bg-[linear-gradient(90deg,#ca4651,#f2c8cc)] shadow-[0_0_18px_rgba(202, 70, 81,0.36)]" style={{ width: `${completeness}%` }} />
             </div>
             <p className="mt-3 text-sm leading-6 text-white/55">
               {missingItems.length > 0
@@ -174,15 +174,15 @@ export function ProfessionalMainCard({
           </div>
 
           <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-            <Link href={`/profissionais/${slug}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[16px] border border-[#b72cff]/24 bg-white/[0.025] px-3 text-sm font-black text-white/72 no-underline transition hover:border-[#b72cff]/45 hover:text-[#e1a6ff]">
+            <Link href={`/profissionais/${slug}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[16px] border border-[#ca4651]/24 bg-white/[0.025] px-3 text-sm font-black text-white/72 no-underline transition hover:border-[#ca4651]/45 hover:text-[#f2c8cc]">
               <Eye className="h-4 w-4" />
               Ver perfil
             </Link>
-            <Link href="/profissional/perfil" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[16px] border border-[#b72cff]/24 bg-white/[0.025] px-3 text-sm font-black text-white/72 no-underline transition hover:border-[#b72cff]/45 hover:text-[#e1a6ff]">
+            <Link href="/profissional/perfil" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[16px] border border-[#ca4651]/24 bg-white/[0.025] px-3 text-sm font-black text-white/72 no-underline transition hover:border-[#ca4651]/45 hover:text-[#f2c8cc]">
               <Gauge className="h-4 w-4" />
               Editar
             </Link>
-            <Link href="/profissional/planos" className="professional-primary-action inline-flex min-h-11 items-center justify-center gap-2 rounded-[16px] bg-[#b72cff] px-3 text-sm font-black text-[#080704] no-underline shadow-[0_14px_34px_rgba(183,44,255,0.18)] transition hover:bg-[#e1a6ff]">
+            <Link href="/profissional/planos" className="professional-primary-action inline-flex min-h-11 items-center justify-center gap-2 rounded-[16px] bg-[#ca4651] px-3 text-sm font-black text-[#080704] no-underline shadow-[0_14px_34px_rgba(202, 70, 81,0.18)] transition hover:bg-[#f2c8cc]">
               <Sparkles className="h-4 w-4" />
               {planExpiresAt ? "Renovar" : "Comprar plano"}
             </Link>
@@ -200,7 +200,7 @@ export function RankingCard({ city, position }: { city: string | null; position:
     <section className="premium-lower-card p-4 sm:p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b72cff]">Ranking e listagem</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#ca4651]">Ranking e listagem</p>
           <h2 className="mt-1 text-xl font-black text-white">
             {position && city ? `Seu perfil está na ${position}ª posição em ${city}` : "Posição ainda não disponível"}
           </h2>
@@ -209,15 +209,15 @@ export function RankingCard({ city, position }: { city: string | null; position:
           </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-2 lg:w-72 lg:grid-cols-1">
-          <Link href="/profissional/perfil" className="professional-primary-action inline-flex min-h-11 items-center justify-center rounded-[12px] bg-[#b72cff] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#e1a6ff]">Melhorar posição</Link>
-          <Link href="/profissional/listagem" className="inline-flex min-h-11 items-center justify-center rounded-[8px] border border-white/12 px-4 text-sm font-black text-white/70 no-underline transition hover:border-[#b72cff]/35 hover:text-[#e1a6ff]">Minha listagem</Link>
+          <Link href="/profissional/perfil" className="professional-primary-action inline-flex min-h-11 items-center justify-center rounded-[12px] bg-[#ca4651] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f2c8cc]">Melhorar posição</Link>
+          <Link href="/profissional/listagem" className="inline-flex min-h-11 items-center justify-center rounded-[8px] border border-white/12 px-4 text-sm font-black text-white/70 no-underline transition hover:border-[#ca4651]/35 hover:text-[#f2c8cc]">Minha listagem</Link>
         </div>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-7">
         {tips.map((tip) => (
-          <div key={tip} className="flex min-h-20 items-center gap-3 rounded-[16px] border border-[#b72cff]/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.045),rgba(183,44,255,0.025))] p-3 text-xs font-black leading-5 text-white/70">
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[#b72cff]/28 bg-[#b72cff]/10">
-              <Check className="h-4 w-4 text-[#e1a6ff]" />
+          <div key={tip} className="flex min-h-20 items-center gap-3 rounded-[16px] border border-[#ca4651]/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.045),rgba(202, 70, 81,0.025))] p-3 text-xs font-black leading-5 text-white/70">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[#ca4651]/28 bg-[#ca4651]/10">
+              <Check className="h-4 w-4 text-[#f2c8cc]" />
             </span>
             {tip}
           </div>
@@ -236,10 +236,10 @@ export function QuickPostCard() {
   ];
 
   return (
-    <section className="rounded-[18px] border border-[#b72cff]/20 bg-[linear-gradient(135deg,rgba(183,44,255,0.10),rgba(255,255,255,0.035)_44%,rgba(8,8,9,0.98))] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.26)] sm:p-6">
+    <section className="rounded-[18px] border border-[#ca4651]/20 bg-[linear-gradient(135deg,rgba(202, 70, 81,0.10),rgba(255,255,255,0.035)_44%,rgba(8,8,9,0.98))] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.26)] sm:p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b72cff]">Atualize seu conteúdo</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#ca4651]">Atualize seu conteúdo</p>
           <h2 className="mt-1 text-xl font-black text-white">Fotos recentes, vídeos e agenda em dia</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/58">Perfis com fotos recentes, vídeos e agenda atualizada tendem a receber mais visualizações.</p>
         </div>
@@ -248,8 +248,8 @@ export function QuickPostCard() {
         {actions.map((action) => {
           const Icon = action.icon;
           return (
-            <Link key={action.href} href={action.href} className="flex min-h-28 flex-col items-center justify-center gap-3 rounded-[16px] border border-dashed border-[#b72cff]/28 bg-black/25 p-4 text-center text-sm font-black text-white no-underline transition hover:border-[#b72cff]/50 hover:bg-[#b72cff]/10 hover:text-[#e1a6ff]">
-              <Icon className="h-6 w-6 text-[#e1a6ff]" />
+            <Link key={action.href} href={action.href} className="flex min-h-28 flex-col items-center justify-center gap-3 rounded-[16px] border border-dashed border-[#ca4651]/28 bg-black/25 p-4 text-center text-sm font-black text-white no-underline transition hover:border-[#ca4651]/50 hover:bg-[#ca4651]/10 hover:text-[#f2c8cc]">
+              <Icon className="h-6 w-6 text-[#f2c8cc]" />
               {action.label}
             </Link>
           );
@@ -276,25 +276,25 @@ export function PlanResourcesCard({
     <section className="premium-lower-card p-4 sm:p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b72cff]">Recursos do perfil</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#ca4651]">Recursos do perfil</p>
           <h2 className="mt-1 text-xl font-black text-white">{hasActivePlan ? planName : "Seu perfil está no modo básico"}</h2>
           <p className="mt-2 text-sm leading-6 text-white/55">
             {hasActivePlan ? `Status: ${statusLabel}. Vencimento: ${formatDate(expiresAt)}.` : "Controle os recursos que aumentam sua visibilidade e melhoram sua apresentaÃ§Ã£o para clientes."}
           </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-3 lg:w-[420px]">
-          <Link href="/profissional/planos" className="professional-primary-action inline-flex min-h-11 items-center justify-center rounded-[16px] bg-[#b72cff] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#e1a6ff]">{hasActivePlan ? "Renovar plano" : "Conhecer planos"}</Link>
-          <Link href="/profissional/planos" className="inline-flex min-h-11 items-center justify-center rounded-[16px] border border-[#b72cff]/24 bg-white/[0.025] px-4 text-sm font-black text-white/70 no-underline transition hover:border-[#b72cff]/45 hover:text-[#e1a6ff]">Comprar destaque</Link>
-          <Link href="/profissional/planos" className="inline-flex min-h-11 items-center justify-center rounded-[16px] border border-[#b72cff]/24 bg-white/[0.025] px-4 text-sm font-black text-white/70 no-underline transition hover:border-[#b72cff]/45 hover:text-[#e1a6ff]">Ver planos</Link>
+          <Link href="/profissional/planos" className="professional-primary-action inline-flex min-h-11 items-center justify-center rounded-[16px] bg-[#ca4651] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f2c8cc]">{hasActivePlan ? "Renovar plano" : "Conhecer planos"}</Link>
+          <Link href="/profissional/planos" className="inline-flex min-h-11 items-center justify-center rounded-[16px] border border-[#ca4651]/24 bg-white/[0.025] px-4 text-sm font-black text-white/70 no-underline transition hover:border-[#ca4651]/45 hover:text-[#f2c8cc]">Comprar destaque</Link>
+          <Link href="/profissional/planos" className="inline-flex min-h-11 items-center justify-center rounded-[16px] border border-[#ca4651]/24 bg-white/[0.025] px-4 text-sm font-black text-white/70 no-underline transition hover:border-[#ca4651]/45 hover:text-[#f2c8cc]">Ver planos</Link>
         </div>
       </div>
       <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {resources.map((resource) => {
           const recommended = !resource.active && ["premium", "Destaque", "Impulsionamento", "Galeria", "Stories"].some((term) => resource.label.includes(term));
           return (
-            <div key={resource.label} className="rounded-[18px] border border-[#b72cff]/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.045),rgba(183,44,255,0.025))] p-4">
+            <div key={resource.label} className="rounded-[18px] border border-[#ca4651]/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.045),rgba(202, 70, 81,0.025))] p-4">
               <div className="mb-3 flex items-start justify-between gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] border border-[#b72cff]/24 bg-[#b72cff]/10 text-[#e1a6ff]">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] border border-[#ca4651]/24 bg-[#ca4651]/10 text-[#f2c8cc]">
                   {resource.label.includes("premium") ? <Crown className="h-4 w-4" /> : resource.label.includes("Destaque") ? <Star className="h-4 w-4" /> : resource.label.includes("telefone") ? <PhoneOff className="h-4 w-4" /> : resource.label.includes("Galeria") ? <ImageIcon className="h-4 w-4" /> : resource.label.includes("Stories") ? <FileVideo className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
                 </span>
                 <span className={resource.active ? "premium-status-badge active" : recommended ? "premium-status-badge recommended" : "premium-status-badge inactive"}>
@@ -335,19 +335,19 @@ export function PrivacyBoostCard({
     <section className="premium-lower-card p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b72cff]">Privacidade e boost</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#ca4651]">Privacidade e boost</p>
           <h2 className="mt-1 text-xl font-black text-white">Controle sua presença pública</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">Gerencie privacidade, impulsionamento e recursos de visibilidade do seu perfil.</p>
         </div>
-        <Link href="/profissional/configuracoes" className="professional-primary-action inline-flex min-h-11 items-center justify-center rounded-[16px] bg-[#b72cff] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#e1a6ff]">Configurar</Link>
+        <Link href="/profissional/configuracoes" className="professional-primary-action inline-flex min-h-11 items-center justify-center rounded-[16px] bg-[#ca4651] px-4 text-sm font-black text-[#080704] no-underline transition hover:bg-[#f2c8cc]">Configurar</Link>
       </div>
       <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {options.map((option) => {
           const Icon = option.icon;
           return (
-            <div key={option.label} className="rounded-[18px] border border-[#b72cff]/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.045),rgba(183,44,255,0.025))] p-4">
+            <div key={option.label} className="rounded-[18px] border border-[#ca4651]/18 bg-[linear-gradient(145deg,rgba(255,255,255,0.045),rgba(202, 70, 81,0.025))] p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-[14px] border border-[#b72cff]/24 bg-[#b72cff]/10 text-[#e1a6ff]">
+                <div className="grid h-10 w-10 place-items-center rounded-[14px] border border-[#ca4651]/24 bg-[#ca4651]/10 text-[#f2c8cc]">
                   <Icon className="h-4 w-4" />
                 </div>
                 <span className={option.active ? "premium-status-badge active" : "premium-status-badge inactive"}>{option.active ? "ATIVO" : "INATIVO"}</span>
@@ -364,13 +364,13 @@ export function PrivacyBoostCard({
 
 export function PendingAppointmentsCard({ appointments }: { appointments: DashboardAppointment[] }) {
   return (
-    <section className="rounded-[8px] border border-[#b72cff]/20 bg-[linear-gradient(180deg,rgba(18,18,20,0.98),rgba(8,8,9,0.98))] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.28)] sm:p-5">
+    <section className="rounded-[8px] border border-[#ca4651]/20 bg-[linear-gradient(180deg,rgba(18,18,20,0.98),rgba(8,8,9,0.98))] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.28)] sm:p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b72cff]">Agenda comercial</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#ca4651]">Agenda comercial</p>
           <h2 className="mt-1 text-xl font-black text-white">Agendamentos pendentes</h2>
         </div>
-        <Link href="/profissional/agendamentos" className="text-sm font-black text-[#e1a6ff] no-underline">Ver todos</Link>
+        <Link href="/profissional/agendamentos" className="text-sm font-black text-[#f2c8cc] no-underline">Ver todos</Link>
       </div>
 
       {appointments.length === 0 ? (
@@ -391,7 +391,7 @@ export function PendingAppointmentsCard({ appointments }: { appointments: Dashbo
                   <p className="mt-1 text-xs leading-5 text-white/48">
                     {appointment.date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })} às {appointment.date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {appointment.duration} min · {formatCurrency(appointment.price)}
                   </p>
-                  <span className="mt-2 inline-flex rounded-full bg-[#b72cff]/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#e1a6ff]">Pendente</span>
+                  <span className="mt-2 inline-flex rounded-full bg-[#ca4651]/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#f2c8cc]">Pendente</span>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-3 lg:w-80">
                   <Link href="/profissional/agendamentos" className="inline-flex min-h-10 items-center justify-center rounded-[8px] bg-emerald-400/12 px-3 text-xs font-black text-emerald-100 no-underline">Aceitar</Link>
@@ -423,8 +423,8 @@ export function QuickManagementGrid({ slug }: { slug: string }) {
       {links.map((link) => {
         const Icon = link.icon;
         return (
-          <Link key={link.href} href={link.href} className="rounded-[8px] border border-[#b72cff]/18 bg-white/[0.035] p-4 no-underline transition hover:border-[#b72cff]/38 hover:bg-[#b72cff]/[0.075]">
-            <div className="mb-3 grid h-9 w-9 place-items-center rounded-[8px] bg-[#b72cff]/10 text-[#e1a6ff]">
+          <Link key={link.href} href={link.href} className="rounded-[8px] border border-[#ca4651]/18 bg-white/[0.035] p-4 no-underline transition hover:border-[#ca4651]/38 hover:bg-[#ca4651]/[0.075]">
+            <div className="mb-3 grid h-9 w-9 place-items-center rounded-[8px] bg-[#ca4651]/10 text-[#f2c8cc]">
               <Icon className="h-4 w-4" />
             </div>
             <h3 className="text-sm font-black text-white">{link.label}</h3>

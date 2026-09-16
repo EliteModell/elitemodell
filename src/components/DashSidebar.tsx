@@ -196,30 +196,22 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
   return (
     <>
       {mobileOpen ? (
-        <div onClick={onClose} className="fixed inset-0 z-40 bg-[#201729]/45 backdrop-blur-sm md:hidden" />
+        <div onClick={onClose} className="fixed inset-0 z-40 bg-[#141212]/45 backdrop-blur-sm md:hidden" />
       ) : null}
 
       <aside
-        className={`dash-sidebar fixed inset-y-0 left-0 z-50 flex w-[80vw] max-w-[320px] flex-col border-r border-[#e7e2ec] bg-white shadow-[14px_0_42px_rgba(47,28,68,0.08)] transition-transform duration-300 md:w-[280px] md:translate-x-0 ${
+        className={`dash-sidebar fixed inset-y-0 left-0 z-50 flex w-[80vw] max-w-[320px] flex-col border-r border-[#fff7f8] bg-white shadow-[14px_0_42px_rgba(37, 31, 32,0.08)] transition-transform duration-300 md:w-[280px] md:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="relative border-b border-[#e7e2ec] p-4">
+        <div className="relative border-b border-[#fff7f8] p-4">
           <div className="flex items-center justify-between">
-          <Link href={logoHref} onClick={onClose} className="inline-flex items-center gap-2 no-underline">
-            <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-white">
-              <img src="/brand/elite-modell-logo-transparent.svg" alt="Elite Modell" className="h-full w-full object-contain opacity-100" />
-            </span>
-            <span className="text-xl font-black tracking-[-0.02em]">
-              <span className="text-[#7c22ee]">
-                elite
-              </span>
-              <span className="text-[#17141d]">modell</span>
-            </span>
+          <Link href={logoHref} onClick={onClose} className="inline-flex w-[176px] items-center no-underline" aria-label="Elite Modell">
+            <img src="/brand/elite-modell-logo.png" alt="Elite Modell" className="h-auto w-full object-contain opacity-100" />
           </Link>
             <button
               onClick={onClose}
-              className="grid h-8 w-8 place-items-center rounded-lg border border-[#e7e2ec] text-[#737684] transition hover:border-[#cdb4ea] hover:text-[#7c22ee] md:hidden"
+              className="grid h-8 w-8 place-items-center rounded-lg border border-[#fff7f8] text-[#737684] transition hover:border-[#f2c8cc] hover:text-[#ca4651] md:hidden"
               aria-label="Fechar menu"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -229,9 +221,9 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
           </div>
         </div>
 
-        <div className="relative border-b border-[#e7e2ec] p-4">
+        <div className="relative border-b border-[#fff7f8] p-4">
           <div className="flex items-center gap-3">
-            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[8px] border border-[#b72cff]/28 bg-[#b72cff]/12">
+            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[8px] border border-[#ca4651]/28 bg-[#ca4651]/12">
               {sidebarImage ? (
                 <img
                   src={sidebarImage}
@@ -239,17 +231,17 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="grid h-full w-full place-items-center text-sm font-black text-[#e1a6ff]">
+                <div className="grid h-full w-full place-items-center text-sm font-black text-[#f2c8cc]">
                   {initials(sidebarName)}
                 </div>
               )}
-              <span className="absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full border border-[#070708] bg-[#b72cff]" />
+              <span className="absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full border border-[#070708] bg-[#ca4651]" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-[#17141d]">{sidebarName}</p>
+              <p className="truncate text-sm font-bold text-[#141212]">{sidebarName}</p>
               <p className="mt-0.5 truncate text-xs text-[#737684]">{sidebarEmail}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
-                <p className="inline-flex items-center gap-1 rounded-full border border-[#b72cff]/20 bg-[#b72cff]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#e1a6ff]">
+                <p className="inline-flex items-center gap-1 rounded-full border border-[#ca4651]/20 bg-[#ca4651]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#f2c8cc]">
                   <Crown className="h-3 w-3" />
                   {sidebarPlan}
                 </p>
@@ -296,13 +288,13 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                   onClick={onClose}
                   className={`group relative flex h-11 items-center gap-3 rounded-[8px] px-3 text-sm font-bold transition ${
                     active
-                      ? "border border-[#dfd0ee] bg-[#f4edff] text-[#6818d1]"
-                      : "border border-transparent text-[#62687a] hover:border-[#eee8f2] hover:bg-[#faf8fc] hover:text-[#17141d]"
+                      ? "border border-[#f2c8cc] bg-[#fff7f8] text-[#b73946]"
+                      : "border border-transparent text-[#62687a] hover:border-[#fff7f8] hover:bg-[#fff7f8] hover:text-[#141212]"
                   }`}
                 >
                   <span
                     className={`grid h-7 w-7 place-items-center rounded-[8px] transition ${
-                      active ? "bg-white text-[#7c22ee]" : "bg-[#f7f5fa] text-[#777b88] group-hover:text-[#7c22ee]"
+                      active ? "bg-white text-[#ca4651]" : "bg-[#fff7f8] text-[#777b88] group-hover:text-[#ca4651]"
                     }`}
                   >
                     {navItem.icon}
@@ -314,7 +306,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
                     </span>
                   ) : null}
                   {active ? (
-                    <span className="absolute right-2 h-1.5 w-1.5 rounded-full bg-[#b72cff] shadow-[0_0_18px_rgba(183,44,255,0.95)]" />
+                    <span className="absolute right-2 h-1.5 w-1.5 rounded-full bg-[#ca4651] shadow-[0_0_18px_rgba(202, 70, 81,0.95)]" />
                   ) : null}
                 </Link>
               );
@@ -322,8 +314,8 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
           </div>
 
           {isAdmin ? (
-            <div className="mt-5 rounded-[8px] border border-[#b72cff]/18 bg-[linear-gradient(135deg,rgba(183,44,255,0.10),rgba(255,255,255,0.03))] p-3">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#e1a6ff]">
+            <div className="mt-5 rounded-[8px] border border-[#ca4651]/18 bg-[linear-gradient(135deg,rgba(202, 70, 81,0.10),rgba(255,255,255,0.03))] p-3">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f2c8cc]">
                 Navegação segura
               </p>
               <p className="mt-2 text-xs leading-5 text-white/48">
@@ -332,15 +324,15 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
               <Link
                 href="/"
                 onClick={onClose}
-                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-[8px] border border-[#b72cff]/28 px-3 py-2 text-xs font-black text-[#e1a6ff] transition hover:bg-[#b72cff]/10"
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-[8px] border border-[#ca4651]/28 px-3 py-2 text-xs font-black text-[#f2c8cc] transition hover:bg-[#ca4651]/10"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 Ver site público
               </Link>
             </div>
           ) : isProfessionalArea ? (
-            <div className="mt-5 rounded-[8px] border border-[#b72cff]/18 bg-[linear-gradient(135deg,rgba(183,44,255,0.10),rgba(204,31,47,0.06))] p-3">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#e1a6ff]">
+            <div className="mt-5 rounded-[8px] border border-[#ca4651]/18 bg-[linear-gradient(135deg,rgba(202, 70, 81,0.10),rgba(204,31,47,0.06))] p-3">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f2c8cc]">
                 Perfil profissional
               </p>
               <p className="mt-2 text-xs leading-5 text-white/48">
@@ -349,14 +341,14 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
               <Link
                 href="/profissional/planos"
                 onClick={onClose}
-                className="mt-3 inline-flex w-full items-center justify-center rounded-[8px] bg-[#b72cff] px-3 py-2 text-xs font-black text-[#100d09] transition hover:bg-[#e1a6ff]"
+                className="mt-3 inline-flex w-full items-center justify-center rounded-[8px] bg-[#ca4651] px-3 py-2 text-xs font-black text-[#100d09] transition hover:bg-[#f2c8cc]"
               >
                 Atualizar plano
               </Link>
             </div>
           ) : role === "GUEST" && !isHostFlow ? (
-            <div className="mt-5 rounded-[8px] border border-[#b72cff]/18 bg-[linear-gradient(135deg,rgba(183,44,255,0.10),rgba(204,31,47,0.06))] p-3">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#e1a6ff]">
+            <div className="mt-5 rounded-[8px] border border-[#ca4651]/18 bg-[linear-gradient(135deg,rgba(202, 70, 81,0.10),rgba(204,31,47,0.06))] p-3">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f2c8cc]">
                 Encontre profissionais
               </p>
               <p className="mt-2 text-xs leading-5 text-white/48">
@@ -365,7 +357,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
               <Link
                 href="/profissionais"
                 onClick={onClose}
-                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-[8px] bg-[#b72cff] px-3 py-2 text-xs font-black text-[#100d09] transition hover:bg-[#e1a6ff]"
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-[8px] bg-[#ca4651] px-3 py-2 text-xs font-black text-[#100d09] transition hover:bg-[#f2c8cc]"
               >
                 <MessageCircle className="h-3.5 w-3.5" />
                 Ver profissionais

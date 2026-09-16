@@ -6,7 +6,7 @@ export default function AdminAcessoNegadoPage() {
     <div>
       <AdminHeader title="Acesso negado" subtitle="Seu usuário é administrador, mas não possui permissão para esta área operacional." />
       <AdminPanel>
-        <p style={{ color: "#b9adbf", margin: "0 0 16px" }}>
+        <p style={{ color: "#b4adb0", margin: "0 0 16px" }}>
           Seu papel administrativo persistente nao possui permissao para esta funcao. Solicite a um ADMIN_MASTER que revise sua atribuicao.
         </p>
         <Link href="/admin" style={{ ...buttonStyle, textDecoration: "none" }}>Voltar ao dashboard</Link>

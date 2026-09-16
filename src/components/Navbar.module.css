@@ -3,23 +3,23 @@
   inset: 0 0 auto;
   z-index: 100;
   height: 88px;
-  border-bottom: 1px solid rgba(191, 58, 255, 0.2);
+  border-bottom: 1px solid rgba(202, 70, 81, 0.2);
   background: rgba(2, 2, 3, 0.92);
   backdrop-filter: blur(22px);
   box-shadow: 0 10px 45px rgba(0, 0, 0, 0.28);
 }
 .light {
-  border-bottom-color: #e8e3ef;
+  border-bottom-color: #fff7f8;
   background: rgba(255, 255, 255, .96);
-  box-shadow: 0 8px 30px rgba(65, 39, 91, .06);
+  box-shadow: 0 8px 30px rgba(142, 47, 56, .06);
 }
-.light .center a { color: #211d29; }
-.light .center a:hover { color: #6e19df; background: #f7f1ff; }
-.light .menuButton { border-color: #dfd5e9; color: #6d1cda; background: #fff; }
-.light .actions :global(.nav-auth-link.signup-link) { color: #fff !important; background: linear-gradient(135deg, #8d2cf4, #6812df) !important; }
-.light .actions :global(.nav-auth-link.login-link) { color: #721be1 !important; border-color: #8226e9 !important; }
-.light .mobileMenu { border-color: #e3d7ef; background: rgba(255, 255, 255, .99); box-shadow: 0 30px 70px rgba(62, 29, 92, .16); }
-.light .mobileMenu > a { border-color: #ece4f4; color: #30283a; background: #faf7fd; }
+.light .center a { color: #251f20; }
+.light .center a:hover { color: #b73946; background: #fff7f8; }
+.light .menuButton { border-color: #f2c8cc; color: #b73946; background: #fff; }
+.light .actions :global(.nav-auth-link.signup-link) { color: #fff !important; background: linear-gradient(135deg, #ca4651, #b73946) !important; }
+.light .actions :global(.nav-auth-link.login-link) { color: #b73946 !important; border-color: #ca4651 !important; }
+.light .mobileMenu { border-color: #f2c8cc; background: rgba(255, 255, 255, .99); box-shadow: 0 30px 70px rgba(142, 47, 56, .16); }
+.light .mobileMenu > a { border-color: #fff7f8; color: #251f20; background: #fff7f8; }
 .coral {
   border-bottom-color: #eee4e5;
   box-shadow: 0 8px 28px rgba(110, 35, 45, .06);
@@ -71,7 +71,7 @@
 }
 .center a:hover {
   color: #fff;
-  background: rgba(183, 44, 255, 0.08);
+  background: rgba(202, 70, 81, 0.08);
 }
 .actions {
   display: flex;
@@ -85,14 +85,14 @@
   border-radius: 15px;
   display: grid;
   place-items: center;
-  color: #e8e2ea;
+  color: #fff7f8;
   background: rgba(255, 255, 255, 0.025);
   cursor: pointer;
   transition: 0.2s;
 }
 .menuButton:hover {
-  border-color: rgba(202, 83, 255, 0.55);
-  color: #d87aff;
+  border-color: rgba(223, 130, 138, 0.55);
+  color: #df828a;
 }
 .mobileMenu {
   position: absolute;
@@ -100,24 +100,24 @@
   right: 16px;
   width: min(360px, calc(100vw - 32px));
   padding: 18px;
-  border: 1px solid rgba(191, 58, 255, 0.28);
+  border: 1px solid rgba(202, 70, 81, 0.28);
   border-radius: 0 0 22px 22px;
-  background: rgba(5, 3, 7, 0.98);
+  background: rgba(8, 8, 8, 0.98);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.65);
   display: grid;
   gap: 12px;
 }
 .mobileMenu > a {
   padding: 14px 16px;
-  border: 1px solid rgba(183, 44, 255, 0.15);
+  border: 1px solid rgba(202, 70, 81, 0.15);
   border-radius: 14px;
   color: #d9d3dc;
   text-decoration: none;
-  background: #0c0910;
+  background: #080808;
 }
 .menuLabel {
   margin: 8px 5px 0;
-  color: #c956ff;
+  color: #df828a;
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.14em;

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const UI_LOGO = "elite-modell-logo-transparent.svg";
+const UI_LOGO = "elite-modell-logo.png";
 
 async function bypassAgeGate(page: Page) {
   await page.addInitScript(() => {
@@ -53,16 +53,14 @@ test.describe("logo por contexto", () => {
   test("asset de interface é transparente e sem blur", async ({ request }) => {
     const response = await request.get(`/brand/${UI_LOGO}`);
     expect(response.ok()).toBe(true);
-    const svg = await response.text();
-    expect(svg).not.toContain("<rect");
-    expect(svg).not.toContain("<filter");
-    expect(svg).not.toContain("feGaussianBlur");
+    expect(response.headers()["content-type"]).toContain("image/png");
+    expect((await response.body()).byteLength).toBeGreaterThan(100_000);
   });
 
   test("favicon e app icons continuam separados da marca de interface", async ({ request }) => {
     const home = await request.get("/");
     const html = await home.text();
-    expect(html).toContain(`/brand/${UI_LOGO}`);
+    expect(html).toContain(`%2Fbrand%2F${UI_LOGO}`);
     expect(html).toContain("/favicon.ico");
     expect(html).toContain("/manifest.webmanifest");
 

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 
-const GOLD = "#b72cff";
+const GOLD = "#ca4651";
 
 interface Props {
   professionalId: string;
@@ -36,8 +36,8 @@ export default function ReviewForm({ professionalId, appointmentId, onSubmitted 
   }
 
   return (
-    <div style={{ background: "#fff", border: `1px solid rgba(183,44,255,0.18)`, borderRadius: 14, padding: 20 }}>
-      <h3 style={{ color: "#17141d", fontSize: 16, fontWeight: 700, margin: "0 0 14px" }}>Avalie sua experiência</h3>
+    <div style={{ background: "#fff", border: `1px solid rgba(202, 70, 81,0.18)`, borderRadius: 14, padding: 20 }}>
+      <h3 style={{ color: "#141212", fontSize: 16, fontWeight: 700, margin: "0 0 14px" }}>Avalie sua experiência</h3>
 
       {/* Star rating */}
       <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>
@@ -46,11 +46,11 @@ export default function ReviewForm({ professionalId, appointmentId, onSubmitted 
             onClick={() => setRating(n)}
             onMouseEnter={() => setHover(n)}
             onMouseLeave={() => setHover(0)}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 4, fontSize: 32, lineHeight: 1, color: (hover || rating) >= n ? GOLD : "#2d1d35", transition: "color 0.15s" }}>
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 4, fontSize: 32, lineHeight: 1, color: (hover || rating) >= n ? GOLD : "#251f20", transition: "color 0.15s" }}>
             ★
           </button>
         ))}
-        <span style={{ alignSelf: "center", marginLeft: 12, color: "#b9adbf", fontSize: 13 }}>
+        <span style={{ alignSelf: "center", marginLeft: 12, color: "#b4adb0", fontSize: 13 }}>
           {rating > 0 ? `${rating} de 5 estrelas` : "Selecione uma nota"}
         </span>
       </div>
@@ -58,9 +58,9 @@ export default function ReviewForm({ professionalId, appointmentId, onSubmitted 
       {/* Comment */}
       <textarea value={comment} onChange={e => setComment(e.target.value)} rows={4} maxLength={1000}
         placeholder="Compartilhe sua experiência. O que você gostou? O que pode melhorar?"
-        style={{ width: "100%", padding: 12, background: "#fff", border: "1px solid #ded7e5", borderRadius: 8, color: "#17141d", fontSize: 14, outline: "none", boxSizing: "border-box", resize: "vertical", lineHeight: 1.5, marginBottom: 8 }}
+        style={{ width: "100%", padding: 12, background: "#fff", border: "1px solid #f2c8cc", borderRadius: 8, color: "#141212", fontSize: 14, outline: "none", boxSizing: "border-box", resize: "vertical", lineHeight: 1.5, marginBottom: 8 }}
         onFocus={e => (e.target.style.borderColor = GOLD)}
-        onBlur={e => (e.target.style.borderColor = "#ded7e5")}
+        onBlur={e => (e.target.style.borderColor = "#f2c8cc")}
       />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <span style={{ fontSize: 11, color: "#aaa0b2" }}>{comment.length} / 1000</span>
@@ -72,7 +72,7 @@ export default function ReviewForm({ professionalId, appointmentId, onSubmitted 
       <button onClick={submit} disabled={loading || rating < 1 || comment.trim().length < 10}
         style={{
           width: "100%", padding: 12,
-          background: loading || rating < 1 || comment.trim().length < 10 ? "rgba(183,44,255,0.3)" : GOLD,
+          background: loading || rating < 1 || comment.trim().length < 10 ? "rgba(202, 70, 81,0.3)" : GOLD,
           color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 800,
           cursor: loading || rating < 1 || comment.trim().length < 10 ? "not-allowed" : "pointer",
         }}>

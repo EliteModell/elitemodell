@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-const GOLD = "#b72cff";
+const GOLD = "#ca4651";
 
 interface Review {
   id: string;
@@ -33,7 +33,7 @@ export default function ReviewList({ professionalId }: Props) {
 
   if (reviews.length === 0) {
     return (
-      <div style={{ color: "#686270", fontSize: 13, padding: 24, textAlign: "center", background: "#fff", borderRadius: 12, border: "1px solid #e7e2ec" }}>
+      <div style={{ color: "#686270", fontSize: 13, padding: 24, textAlign: "center", background: "#fff", borderRadius: 12, border: "1px solid #fff7f8" }}>
         Ainda não há avaliações. Seja o primeiro a avaliar.
       </div>
     );
@@ -44,30 +44,30 @@ export default function ReviewList({ professionalId }: Props) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {/* Header com média */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, paddingBottom: 14, borderBottom: "1px solid rgba(183,44,255,0.12)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, paddingBottom: 14, borderBottom: "1px solid rgba(202, 70, 81,0.12)" }}>
         <div style={{ fontSize: 36, fontWeight: 900, color: GOLD, fontFamily: "var(--font-playfair), serif" }}>
           {avgRating.toFixed(1)}
         </div>
         <div>
           <div style={{ display: "flex", gap: 2, marginBottom: 2 }}>
             {[1, 2, 3, 4, 5].map(n => (
-              <span key={n} style={{ fontSize: 16, color: n <= Math.round(avgRating) ? GOLD : "#2d1d35" }}>★</span>
+              <span key={n} style={{ fontSize: 16, color: n <= Math.round(avgRating) ? GOLD : "#251f20" }}>★</span>
             ))}
           </div>
-          <div style={{ fontSize: 12, color: "#b9adbf" }}>{reviews.length} avaliações</div>
+          <div style={{ fontSize: 12, color: "#b4adb0" }}>{reviews.length} avaliações</div>
         </div>
       </div>
 
       {/* Lista de reviews */}
       {reviews.map(r => (
-        <div key={r.id} style={{ background: "#fff", border: "1px solid #e7e2ec", borderRadius: 12, padding: 16 }}>
+        <div key={r.id} style={{ background: "#fff", border: "1px solid #fff7f8", borderRadius: 12, padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(183,44,255,0.15)", border: "1px solid rgba(183,44,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", color: GOLD, fontWeight: 700, fontSize: 14 }}>
+              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(202, 70, 81,0.15)", border: "1px solid rgba(202, 70, 81,0.3)", display: "flex", alignItems: "center", justifyContent: "center", color: GOLD, fontWeight: 700, fontSize: 14 }}>
                 {r.author?.name?.[0]?.toUpperCase() ?? "U"}
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#f8f5fa" }}>{r.author?.name ?? "Anônimo"}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#fff7f8" }}>{r.author?.name ?? "Anônimo"}</div>
                 <div style={{ fontSize: 11, color: "#aaa0b2" }}>
                   {new Date(r.createdAt).toLocaleDateString("pt-BR", { month: "short", year: "numeric" })}
                 </div>
@@ -75,11 +75,11 @@ export default function ReviewList({ professionalId }: Props) {
             </div>
             <div style={{ display: "flex", gap: 1 }}>
               {[1, 2, 3, 4, 5].map(n => (
-                <span key={n} style={{ fontSize: 13, color: n <= r.rating ? GOLD : "#2d1d35" }}>★</span>
+                <span key={n} style={{ fontSize: 13, color: n <= r.rating ? GOLD : "#251f20" }}>★</span>
               ))}
             </div>
           </div>
-          <p style={{ margin: 0, fontSize: 13, color: "#b9adbf", lineHeight: 1.65 }}>{r.comment}</p>
+          <p style={{ margin: 0, fontSize: 13, color: "#b4adb0", lineHeight: 1.65 }}>{r.comment}</p>
         </div>
       ))}
     </div>

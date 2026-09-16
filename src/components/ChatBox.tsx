@@ -3,8 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 
-const GOLD = "#b72cff";
-const GOLD_DIM = "rgba(183,44,255,0.10)";
+const GOLD = "#ca4651";
+const GOLD_DIM = "rgba(202, 70, 81,0.10)";
 
 interface Message {
   id: string;
@@ -97,11 +97,11 @@ export default function ChatBox({ bookingId, title }: Props) {
   }
 
   return (
-    <div style={{ background: "#0f0a13", border: `1px solid ${GOLD_DIM}`, borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", height: 480 }}>
+    <div style={{ background: "#080808", border: `1px solid ${GOLD_DIM}`, borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", height: 480 }}>
       {/* Header */}
-      <div style={{ padding: "14px 18px", borderBottom: `1px solid ${GOLD_DIM}`, background: "#08050b" }}>
+      <div style={{ padding: "14px 18px", borderBottom: `1px solid ${GOLD_DIM}`, background: "#080808" }}>
         <p style={{ margin: 0, fontSize: 11, color: "#aaa0b2", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Chat da reserva</p>
-        <p style={{ margin: "2px 0 0", fontSize: 14, color: "#f8f5fa", fontWeight: 700 }}>{title ?? "Conversa"}</p>
+        <p style={{ margin: "2px 0 0", fontSize: 14, color: "#fff7f8", fontWeight: 700 }}>{title ?? "Conversa"}</p>
       </div>
 
       {/* Messages */}
@@ -120,8 +120,8 @@ export default function ChatBox({ bookingId, title }: Props) {
                 <div style={{
                   maxWidth: "78%",
                   padding: "9px 14px",
-                  background: mine ? GOLD : "#120b17",
-                  color: mine ? "#08050b" : "#f8f5fa",
+                  background: mine ? GOLD : "#080808",
+                  color: mine ? "#080808" : "#fff7f8",
                   borderRadius: 14,
                   borderBottomRightRadius: mine ? 4 : 14,
                   borderBottomLeftRadius: mine ? 14 : 4,
@@ -142,15 +142,15 @@ export default function ChatBox({ bookingId, title }: Props) {
       </div>
 
       {/* Input */}
-      <div style={{ borderTop: `1px solid ${GOLD_DIM}`, padding: 12, display: "flex", gap: 8, background: "#08050b" }}>
+      <div style={{ borderTop: `1px solid ${GOLD_DIM}`, padding: 12, display: "flex", gap: 8, background: "#080808" }}>
         <input value={input} onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
           placeholder="Digite uma mensagem..." disabled={sending}
-          style={{ flex: 1, padding: "10px 14px", background: "#120b17", border: "1px solid #2d1d35", borderRadius: 22, color: "#f8f5fa", fontSize: 13, outline: "none" }}
+          style={{ flex: 1, padding: "10px 14px", background: "#080808", border: "1px solid #251f20", borderRadius: 22, color: "#fff7f8", fontSize: 13, outline: "none" }}
           onFocus={e => (e.target.style.borderColor = GOLD)}
-          onBlur={e => (e.target.style.borderColor = "#2d1d35")} />
+          onBlur={e => (e.target.style.borderColor = "#251f20")} />
         <button onClick={send} disabled={!input.trim() || sending}
-          style={{ padding: "0 18px", background: !input.trim() || sending ? "rgba(183,44,255,0.3)" : GOLD, color: "#08050b", border: "none", borderRadius: 22, fontSize: 13, fontWeight: 800, cursor: !input.trim() || sending ? "not-allowed" : "pointer" }}>
+          style={{ padding: "0 18px", background: !input.trim() || sending ? "rgba(202, 70, 81,0.3)" : GOLD, color: "#080808", border: "none", borderRadius: 22, fontSize: 13, fontWeight: 800, cursor: !input.trim() || sending ? "not-allowed" : "pointer" }}>
           {sending ? "..." : "Enviar"}
         </button>
       </div>

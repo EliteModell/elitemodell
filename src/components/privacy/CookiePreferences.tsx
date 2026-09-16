@@ -66,7 +66,7 @@ export default function CookiePreferences() {
   }
 
   return (
-    <div className="cookie-consent-panel fixed inset-x-0 bottom-0 z-[400] border-t border-[#e7e2ec] bg-white p-4 text-[#17141d] shadow-[0_-20px_60px_rgba(52,33,67,.14)]">
+    <div className="cookie-consent-panel fixed inset-x-0 bottom-0 z-[400] border-t border-[#fff7f8] bg-white p-4 text-[#141212] shadow-[0_-20px_60px_rgba(37, 31, 32,.14)]">
       <div className="mx-auto flex max-w-6xl flex-col gap-4">
         <div className="max-w-2xl">
           <h2 className="text-base font-black">Cookies e tecnologias semelhantes</h2>
@@ -77,7 +77,7 @@ export default function CookiePreferences() {
         </div>
 
         {customizing ? (
-          <div className="cookie-preferences-grid grid gap-2 rounded-xl border border-[#e7e2ec] bg-[#f7f7fa] p-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="cookie-preferences-grid grid gap-2 rounded-xl border border-[#fff7f8] bg-[#f7f7fa] p-3 sm:grid-cols-2 lg:grid-cols-4">
             <CookieCategory
               label="Necessários"
               description="Login, segurança e funcionamento básico."
@@ -113,14 +113,14 @@ export default function CookiePreferences() {
               setCustomizing(true);
               setOpen(true);
             }}
-            className="cookie-button cookie-button-secondary min-h-11 rounded-[8px] border border-[#ded7e5] bg-transparent px-4 font-black text-[#514b59]"
+            className="cookie-button cookie-button-secondary min-h-11 rounded-[8px] border border-[#f2c8cc] bg-transparent px-4 font-black text-[#514b59]"
           >
             Configurar
           </button>
           <button
             type="button"
             onClick={() => closeWith("necessary", disabledChoices)}
-            className="cookie-button cookie-button-outline min-h-11 rounded-[8px] border border-[#b72cff] bg-transparent px-4 font-black text-[#e1a6ff]"
+            className="cookie-button cookie-button-outline min-h-11 rounded-[8px] border border-[#ca4651] bg-transparent px-4 font-black text-[#f2c8cc]"
           >
             Rejeitar não necessários
           </button>
@@ -128,7 +128,7 @@ export default function CookiePreferences() {
             <button
               type="button"
               onClick={saveCustomChoices}
-              className="cookie-button cookie-button-primary min-h-11 rounded-[8px] border border-[#7c22ee] bg-[#7c22ee] px-4 font-black text-white"
+              className="cookie-button cookie-button-primary min-h-11 rounded-[8px] border border-[#ca4651] bg-[#ca4651] px-4 font-black text-white"
             >
               Salvar preferências
             </button>
@@ -136,7 +136,7 @@ export default function CookiePreferences() {
           <button
             type="button"
             onClick={() => closeWith("all", { preferences: true, analytics: true, marketing: true })}
-            className="cookie-button cookie-button-primary min-h-11 rounded-[8px] border border-[#7c22ee] bg-[#7c22ee] px-4 font-black text-white"
+            className="cookie-button cookie-button-primary min-h-11 rounded-[8px] border border-[#ca4651] bg-[#ca4651] px-4 font-black text-white"
           >
             Aceitar todos
           </button>
@@ -160,13 +160,13 @@ function CookieCategory({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="cookie-category flex cursor-pointer items-start gap-3 rounded-lg border border-[#e7e2ec] bg-white p-3">
+    <label className="cookie-category flex cursor-pointer items-start gap-3 rounded-lg border border-[#fff7f8] bg-white p-3">
       <input
         type="checkbox"
         checked={checked}
         disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}
-        className="cookie-toggle mt-1 h-4 w-4 accent-[#b72cff]"
+        className="cookie-toggle mt-1 h-4 w-4 accent-[#ca4651]"
       />
       <span>
         <strong className="block text-sm">{label}</strong>

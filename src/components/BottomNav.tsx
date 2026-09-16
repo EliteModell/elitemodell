@@ -4,8 +4,8 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
-const GOLD = "#b72cff";
-const GOLD_DIM = "rgba(183,44,255,0.12)";
+const GOLD = "#ca4651";
+const GOLD_DIM = "rgba(202, 70, 81,0.12)";
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -64,7 +64,7 @@ export default function BottomNav() {
             gap: 3, padding: "10px 4px 8px", textDecoration: "none",
             borderTop: `2px solid ${item.active ? GOLD : "transparent"}`,
             transition: "border-color 0.2s",
-            WebkitTapHighlightColor: "rgba(183,44,255,0.15)",
+            WebkitTapHighlightColor: "rgba(202, 70, 81,0.15)",
           }}>
             {item.icon(item.active)}
             <span style={{

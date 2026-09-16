@@ -54,19 +54,19 @@ export default function NavbarSessionControls({
       <>
         {status === "loading" ? null : hasValidSession ? (
           <>
-            <Link href={accountHref} onClick={onNavigate} style={{ padding: "10px 14px", borderRadius: 8, color: "#b72cff", textDecoration: "none", fontSize: 14, border: "1px solid rgba(183,44,255,0.2)" }}>
+            <Link href={accountHref} onClick={onNavigate} style={{ padding: "10px 14px", borderRadius: 8, color: "#ca4651", textDecoration: "none", fontSize: 14, border: "1px solid rgba(202, 70, 81,0.2)" }}>
               Minha área
             </Link>
-            <button type="button" onClick={handleSignOut} style={{ padding: "10px 14px", borderRadius: 8, color: "#b72cff", background: "transparent", fontSize: 14, border: "1px solid rgba(183,44,255,0.2)", textAlign: "left" }}>
+            <button type="button" onClick={handleSignOut} style={{ padding: "10px 14px", borderRadius: 8, color: "#ca4651", background: "transparent", fontSize: 14, border: "1px solid rgba(202, 70, 81,0.2)", textAlign: "left" }}>
               Sair
             </button>
           </>
         ) : showGuestActions ? (
           <>
-            <button type="button" onClick={onLoginChoice} style={{ padding: "10px 14px", borderRadius: 8, color: "#b72cff", background: "transparent", textDecoration: "none", fontSize: 14, border: "1px solid rgba(183,44,255,0.2)", textAlign: "left" }}>
+            <button type="button" onClick={onLoginChoice} style={{ padding: "10px 14px", borderRadius: 8, color: "#ca4651", background: "transparent", textDecoration: "none", fontSize: 14, border: "1px solid rgba(202, 70, 81,0.2)", textAlign: "left" }}>
               Entrar
             </button>
-            <button type="button" onClick={onRegisterChoice} style={{ padding: "10px 14px", borderRadius: 8, background: "#b72cff", color: "#080704", textDecoration: "none", fontSize: 14, fontWeight: 800, textAlign: "center", border: 0 }}>
+            <button type="button" onClick={onRegisterChoice} style={{ padding: "10px 14px", borderRadius: 8, background: "#ca4651", color: "#080704", textDecoration: "none", fontSize: 14, fontWeight: 800, textAlign: "center", border: 0 }}>
               Cadastrar
             </button>
           </>
@@ -76,16 +76,16 @@ export default function NavbarSessionControls({
   }
 
   if (status === "loading") {
-    return <span className="hidden h-9 w-[142px] rounded-[8px] border border-[rgba(183,44,255,0.14)] bg-white/[0.025] sm:block" aria-hidden="true" />;
+    return <span className="hidden h-9 w-[142px] rounded-[8px] border border-[rgba(202, 70, 81,0.14)] bg-white/[0.025] sm:block" aria-hidden="true" />;
   }
 
   if (hasValidSession) {
     return (
       <>
-        <Link className="nav-auth-link" href={accountHref} style={{ padding: "8px 18px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14, fontWeight: 500, border: "1px solid rgba(183,44,255,0.2)" }}>
+        <Link className="nav-auth-link" href={accountHref} style={{ padding: "8px 18px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14, fontWeight: 500, border: "1px solid rgba(202, 70, 81,0.2)" }}>
           {incompleteProfessional ? "Continuar cadastro" : session.user?.name?.split(" ")[0] ?? "Explorar"}
         </Link>
-        <button className="nav-auth-link" onClick={handleSignOut} style={{ padding: "8px 18px", borderRadius: 8, background: "transparent", border: "1px solid rgba(183,44,255,0.3)", color: "#b72cff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+        <button className="nav-auth-link" onClick={handleSignOut} style={{ padding: "8px 18px", borderRadius: 8, background: "transparent", border: "1px solid rgba(202, 70, 81,0.3)", color: "#ca4651", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
           Sair
         </button>
       </>
@@ -98,9 +98,9 @@ export default function NavbarSessionControls({
         type="button"
         className="nav-auth-link login-link"
         onClick={onLoginChoice}
-        style={{ padding: "8px 22px", borderRadius: 8, color: "#b72cff", textDecoration: "none", fontSize: 14, fontWeight: 600, border: "1px solid rgba(183,44,255,0.3)", transition: "all 0.2s", background: "transparent" }}
+        style={{ padding: "8px 22px", borderRadius: 8, color: "#ca4651", textDecoration: "none", fontSize: 14, fontWeight: 600, border: "1px solid rgba(202, 70, 81,0.3)", transition: "all 0.2s", background: "transparent" }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = "rgba(183,44,255,0.07)";
+          e.currentTarget.style.background = "rgba(202, 70, 81,0.07)";
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.background = "transparent";
@@ -112,12 +112,12 @@ export default function NavbarSessionControls({
         type="button"
         className="nav-auth-link signup-link"
         onClick={onRegisterChoice}
-        style={{ padding: "8px 22px", borderRadius: 8, background: "linear-gradient(135deg, #e1a6ff, #b72cff)", color: "#080704", textDecoration: "none", fontSize: 14, fontWeight: 800, transition: "background 0.2s" }}
+        style={{ padding: "8px 22px", borderRadius: 8, background: "linear-gradient(135deg, #f2c8cc, #ca4651)", color: "#080704", textDecoration: "none", fontSize: 14, fontWeight: 800, transition: "background 0.2s" }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = "#c75aff";
+          e.currentTarget.style.background = "#df828a";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = "#b72cff";
+          e.currentTarget.style.background = "#ca4651";
         }}
       >
         Cadastrar

@@ -31,10 +31,10 @@ test.describe("home fiel à referência mobile", () => {
     await expect(page.getByRole("main").getByText("Discrição • Segurança • Liberdade", { exact: true })).toBeVisible();
     await expect(page.getByRole("main").getByRole("link", { name: "Explorar perfis" }).first()).toHaveAttribute("href", "/buscar?tab=acompanhantes&selecionarCidade=1");
     await expect(page.getByRole("main").getByRole("link", { name: "Anunciar meu perfil" })).toHaveAttribute("href", "/cadastro/acompanhante");
-    await expect(page.locator("nav img").first()).toHaveAttribute("src", /elite-modell-logo-transparent\.svg/);
+    await expect(page.locator("nav img").first()).toHaveAttribute("src", /elite-modell-logo\.png/);
   });
 
-  for (const width of [375, 390, 430]) {
+  for (const width of [320, 360, 375, 390, 414, 430, 768, 1024, 1440]) {
     test(`layout sem overflow e controles compactos em ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 844 });
       await page.goto("/", { waitUntil: "networkidle" });

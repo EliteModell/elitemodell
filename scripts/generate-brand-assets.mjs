@@ -5,16 +5,24 @@ import sharp from "sharp";
 const root = process.cwd();
 const publicDir = path.join(root, "public");
 const brandDir = path.join(publicDir, "brand");
+const faviconDir = path.join(brandDir, "favicon");
+const socialDir = path.join(brandDir, "social");
 const appDir = path.join(root, "src", "app");
-const symbolSvg = await readFile(path.join(brandDir, "elite-modell-icon.svg"));
-const horizontalLogo = await readFile(path.join(brandDir, "elite-modell-logo-transparent.svg"));
+const symbolPng = await readFile(path.join(brandDir, "elite-modell-symbol.png"));
+const horizontalLogo = await readFile(path.join(brandDir, "elite-modell-logo.png"));
 const modelPath = path.join(publicDir, "images", "home", "modelo-elite.jpg");
 
-await mkdir(brandDir, { recursive: true });
+await Promise.all([
+  mkdir(faviconDir, { recursive: true }),
+  mkdir(socialDir, { recursive: true }),
+]);
 
-async function renderSymbol(size, { background = null, scale = 0.84 } = {}) {
+async function renderSymbol(size, { background = null, scale = 0.88 } = {}) {
   const symbolSize = Math.round(size * scale);
-  const symbol = await sharp(symbolSvg).resize(symbolSize, symbolSize, { fit: "contain" }).png().toBuffer();
+  const symbol = await sharp(symbolPng)
+    .resize(symbolSize, symbolSize, { fit: "contain" })
+    .png()
+    .toBuffer();
   const canvas = sharp({
     create: {
       width: size,
@@ -24,9 +32,10 @@ async function renderSymbol(size, { background = null, scale = 0.84 } = {}) {
     },
   });
   const offset = Math.floor((size - symbolSize) / 2);
-  const rendered = canvas.composite([{ input: symbol, left: offset, top: offset }]);
-  if (background) rendered.removeAlpha();
-  return rendered.png({ compressionLevel: 9 }).toBuffer();
+  return canvas
+    .composite([{ input: symbol, left: offset, top: offset }])
+    .png({ compressionLevel: 9 })
+    .toBuffer();
 }
 
 function createIco(entries) {
@@ -53,9 +62,12 @@ function createIco(entries) {
 
 const faviconEntries = [];
 for (const size of [16, 32, 48]) {
-  const buffer = await renderSymbol(size, { scale: size === 16 ? 0.94 : 0.88 });
+  const buffer = await renderSymbol(size, { scale: size === 16 ? 0.96 : 0.92 });
   faviconEntries.push({ size, buffer });
-  await writeFile(path.join(publicDir, `favicon-${size}x${size}.png`), buffer);
+  await Promise.all([
+    writeFile(path.join(publicDir, `favicon-${size}x${size}.png`), buffer),
+    writeFile(path.join(faviconDir, `favicon-${size}x${size}.png`), buffer),
+  ]);
 }
 
 const faviconIco = createIco(faviconEntries);
@@ -64,9 +76,10 @@ await Promise.all([
   writeFile(path.join(appDir, "favicon.ico"), faviconIco),
 ]);
 
-const appleIcon = await renderSymbol(180, { background: "#FFFFFF", scale: 0.76 });
-const android192 = await renderSymbol(192, { background: "#FFFFFF", scale: 0.74 });
-const android512 = await renderSymbol(512, { background: "#FFFFFF", scale: 0.74 });
+const appleIcon = await renderSymbol(180, { scale: 0.82 });
+const android192 = await renderSymbol(192, { scale: 0.84 });
+const android512 = await renderSymbol(512, { scale: 0.84 });
+const maskable512 = await renderSymbol(512, { background: "#FDE7E9", scale: 0.64 });
 
 await Promise.all([
   writeFile(path.join(publicDir, "apple-touch-icon.png"), appleIcon),
@@ -76,21 +89,25 @@ await Promise.all([
   writeFile(path.join(brandDir, "elite-modell-icon-192.png"), android192),
   writeFile(path.join(publicDir, "android-chrome-512x512.png"), android512),
   writeFile(path.join(brandDir, "elite-modell-icon-512.png"), android512),
+  writeFile(path.join(publicDir, "android-chrome-maskable-512x512.png"), maskable512),
   writeFile(path.join(appDir, "icon.png"), android512),
 ]);
 
 const model = await sharp(modelPath)
-  .resize(470, 630, { fit: "cover", position: "centre" })
-  .modulate({ saturation: 0.92, brightness: 1.02 })
+  .resize(500, 630, { fit: "cover", position: "centre" })
+  .modulate({ saturation: 0.88, brightness: 1.02 })
   .toBuffer();
-const logo = await sharp(horizontalLogo).resize(610, 178, { fit: "contain" }).png().toBuffer();
+const logo = await sharp(horizontalLogo)
+  .resize(610, 204, { fit: "contain" })
+  .png()
+  .toBuffer();
 const socialBackground = Buffer.from(`
   <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0" stop-color="#FFFFFF"/>
-        <stop offset="0.62" stop-color="#FBF7FF"/>
-        <stop offset="1" stop-color="#EFE2FF"/>
+        <stop offset="0.62" stop-color="#FFF7F8"/>
+        <stop offset="1" stop-color="#FDE7E9"/>
       </linearGradient>
     </defs>
     <rect width="1200" height="630" fill="url(#background)"/>
@@ -104,12 +121,12 @@ const socialOverlay = Buffer.from(`
         <stop offset="1" stop-color="#FFFFFF" stop-opacity="1"/>
       </linearGradient>
     </defs>
-    <rect x="370" width="180" height="630" fill="url(#fade)"/>
-    <text x="555" y="350" fill="#2F2440" font-family="Arial, sans-serif" font-size="42" font-weight="700">Conexões Discretas e Seguras</text>
-    <text x="555" y="414" fill="#635873" font-family="Arial, sans-serif" font-size="25">Perfis verificados, privacidade e liberdade</text>
-    <text x="555" y="450" fill="#635873" font-family="Arial, sans-serif" font-size="25">para escolher do seu jeito.</text>
-    <rect x="555" y="505" width="270" height="3" rx="1.5" fill="#7B1FFF"/>
-    <text x="555" y="552" fill="#7B1FFF" font-family="Arial, sans-serif" font-size="22" font-weight="700">elitemodell.com.br</text>
+    <rect x="390" width="170" height="630" fill="url(#fade)"/>
+    <text x="575" y="365" fill="#1F1F1F" font-family="Arial, sans-serif" font-size="42" font-weight="700">Conexões discretas e seguras</text>
+    <text x="575" y="425" fill="#625C65" font-family="Arial, sans-serif" font-size="25">Perfis verificados, privacidade e liberdade</text>
+    <text x="575" y="461" fill="#625C65" font-family="Arial, sans-serif" font-size="25">para escolher do seu jeito.</text>
+    <rect x="575" y="516" width="270" height="3" rx="1.5" fill="#CA4651"/>
+    <text x="575" y="560" fill="#CA4651" font-family="Arial, sans-serif" font-size="22" font-weight="700">elitemodell.com.br</text>
   </svg>
 `);
 
@@ -117,7 +134,7 @@ const socialImage = await sharp(socialBackground)
   .composite([
     { input: model, left: 0, top: 0 },
     { input: socialOverlay, left: 0, top: 0 },
-    { input: logo, left: 540, top: 105 },
+    { input: logo, left: 565, top: 105 },
   ])
   .removeAlpha()
   .png({ compressionLevel: 9 })
@@ -125,8 +142,9 @@ const socialImage = await sharp(socialBackground)
 
 await Promise.all([
   writeFile(path.join(publicDir, "og-image.png"), socialImage),
+  writeFile(path.join(socialDir, "elite-modell-social.png"), socialImage),
   writeFile(path.join(appDir, "opengraph-image.png"), socialImage),
   writeFile(path.join(appDir, "twitter-image.png"), socialImage),
 ]);
 
-console.log("Elite Modell brand assets generated from the official vector mascot.");
+console.log("Elite Modell brand assets generated from the official PNG mascot and logo.");

@@ -635,7 +635,7 @@ export default async function ProfissionalDashPage() {
           <span className="premium-badge">{checklistProgress === 100 ? "Perfil completo" : "Pendências reais"}</span>
         </div>
         <div style={{ height: 10, overflow: "hidden", borderRadius: 999, background: "rgba(255,255,255,0.10)", marginTop: 18 }}>
-          <div style={{ width: `${checklistProgress}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#B72CFF,#E1A6FF)" }} />
+          <div style={{ width: `${checklistProgress}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#ca4651,#f2c8cc)" }} />
         </div>
         <div className="premium-grid premium-grid-3" style={{ marginTop: 18 }}>
           {checklist.map((item) => (

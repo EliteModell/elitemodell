@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
+import { ArrowRight, Gem, ShieldCheck, UserRound } from "lucide-react";
 import toast from "react-hot-toast";
 import { BrandMark } from "@/components/BrandMark";
 import { CaptchaField, type CaptchaFieldHandle } from "@/components/auth/CaptchaField";
@@ -20,6 +22,7 @@ import {
   normalizeCadastroTipo,
   normalizeEntryRole,
 } from "@/lib/account-routes";
+import styles from "./RegistrationChoice.module.css";
 
 type AccountType = "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
 type Category = "MULHER" | "TRANS" | "HOMEM";
@@ -46,9 +49,9 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "11px 14px",
   background: "#fff",
-  border: "1px solid rgba(183,44,255,0.16)",
+  border: "1px solid rgba(202, 70, 81,0.16)",
   borderRadius: 8,
-  color: "#17141d",
+  color: "#141212",
   fontSize: 14,
   outline: "none",
   boxSizing: "border-box",
@@ -59,7 +62,7 @@ const focusGold = (e: React.FocusEvent<HTMLInputElement>) => {
   e.target.style.borderColor = GOLD;
 };
 const blurGray = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.target.style.borderColor = "rgba(183,44,255,0.16)";
+  e.target.style.borderColor = "rgba(202, 70, 81,0.16)";
 };
 
 function onlyDigits(value: string, maxLength: number) {
@@ -134,7 +137,7 @@ function isValidEmail(value: string) {
 }
 
 const GoldLine = () => (
-  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, borderRadius: "16px 16px 0 0", background: "linear-gradient(90deg, transparent 0%, #b72cff 30%, #e1a6ff 50%, #b72cff 70%, transparent 100%)" }} />
+  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, borderRadius: "16px 16px 0 0", background: "linear-gradient(90deg, transparent 0%, #ca4651 30%, #f2c8cc 50%, #ca4651 70%, transparent 100%)" }} />
 );
 
 const Logo = () => (
@@ -173,10 +176,10 @@ function AuthMethodButton({
       style={{
         width: "100%",
         height: 56,
-        background: "#fbf7ff",
+        background: "#fff7f8",
         border: "1px solid rgba(255,255,255,0.86)",
         borderRadius: 8,
-        color: "#120b17",
+        color: "#080808",
         fontSize: 14,
         fontWeight: 800,
         cursor: disabled ? "not-allowed" : "pointer",
@@ -191,20 +194,20 @@ function AuthMethodButton({
       }}
       onMouseEnter={(e) => {
         if (disabled) return;
-        e.currentTarget.style.borderColor = "rgba(183,44,255,0.5)";
+        e.currentTarget.style.borderColor = "rgba(202, 70, 81,0.5)";
         e.currentTarget.style.background = "#fff7df";
-        e.currentTarget.style.color = "#08050b";
+        e.currentTarget.style.color = "#080808";
         e.currentTarget.style.transform = "translateY(-1px)";
       }}
       onMouseLeave={(e) => {
         if (disabled) return;
         e.currentTarget.style.borderColor = "rgba(255,255,255,0.86)";
-        e.currentTarget.style.background = "#fbf7ff";
-        e.currentTarget.style.color = "#120b17";
+        e.currentTarget.style.background = "#fff7f8";
+        e.currentTarget.style.color = "#080808";
         e.currentTarget.style.transform = "translateY(0)";
       }}
     >
-      <span style={{ width: 22, height: 22, display: "grid", placeItems: "center", color: "#b72cff" }}>
+      <span style={{ width: 22, height: 22, display: "grid", placeItems: "center", color: "#ca4651" }}>
         {icon}
       </span>
       {label}
@@ -253,7 +256,7 @@ function AuthInfoFooter() {
         }
         .auth-info-card,
         .auth-link-groups {
-          border: 1px solid rgba(183,44,255,0.25);
+          border: 1px solid rgba(202, 70, 81,0.25);
           border-radius: 24px;
           background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98));
           box-shadow: 0 24px 70px rgba(0,0,0,0.34);
@@ -270,10 +273,10 @@ function AuthInfoFooter() {
         }
         .auth-restricted-badge {
           width: fit-content;
-          border: 1px solid rgba(183,44,255,0.24);
+          border: 1px solid rgba(202, 70, 81,0.24);
           border-radius: 14px;
-          background: rgba(183,44,255,0.12);
-          color: #e1a6ff;
+          background: rgba(202, 70, 81,0.12);
+          color: #f2c8cc;
           padding: 10px 12px;
           font-size: 12px;
           font-weight: 900;
@@ -864,6 +867,7 @@ export default function CadastroPage() {
       eyebrow: string;
       desc: string;
       action: string;
+      icon: typeof UserRound;
       directHref?: string;
     }> = [
       {
@@ -872,6 +876,7 @@ export default function CadastroPage() {
         title: "Criar conta cliente",
         desc: "Busque perfis, salve favoritos, converse e reserve locais com uma conta discreta.",
         action: "Criar conta cliente",
+        icon: UserRound,
       },
       {
         tipo: "acompanhante",
@@ -879,66 +884,92 @@ export default function CadastroPage() {
         title: "Quero anunciar como acompanhante",
         desc: "Comece pelo telefone e siga para maioridade, termos, documentos, fotos e análise da equipe.",
         action: "Cadastre-se como acompanhante",
+        icon: Gem,
         directHref: ACCOUNT_ROUTES.cadastroAcompanhante,
       },
     ];
 
     return (
-      <main style={{ width: "100%", maxWidth: 620, padding: "max(18px, env(safe-area-inset-top)) 0 0" }}>
-      <div style={{ width: "100%", maxWidth: 620, background: "#fff", border: "1px solid #e7e2ec", borderRadius: 20, padding: "34px 28px", position: "relative", zIndex: 1, boxShadow: "0 12px 36px rgba(47,28,68,.08)" }}>
-        <GoldLine />
-        <Logo />
-        <div style={{ textAlign: "center", margin: "-12px 0 24px" }}>
-          <p style={{ color: GOLD, fontSize: 11, fontWeight: 900, letterSpacing: 2.4, textTransform: "uppercase", margin: "0 0 8px" }}>Cadastro Elite Modell</p>
-          <h1 style={{ color: "#17141d", fontSize: 24, lineHeight: 1.15, margin: 0 }}>Como você quer se cadastrar?</h1>
-          <p style={{ color: "#8d8578", fontSize: 13, lineHeight: 1.55, margin: "10px auto 0", maxWidth: 460 }}>
-            Escolha entre a experiência de cliente ou o cadastro profissional como acompanhante.
-          </p>
+      <main className={styles.choicePage} data-testid="registration-choice-page">
+        <div className={styles.modelStage} aria-hidden="true">
+          <Image
+            src="/images/registration/elite-registration-model.png"
+            alt=""
+            fill
+            preload
+            quality={90}
+            sizes="(max-width: 767px) 100vw, 58vw"
+            className={styles.modelImage}
+          />
         </div>
+        <div className={styles.atmosphere} aria-hidden="true" />
 
-        <div style={{ display: "grid", gap: 12 }}>
-          {options.map((option) => {
-            const content = (
-              <>
-                <span style={{ color: GOLD, fontSize: 10, fontWeight: 900, letterSpacing: 1.7, textTransform: "uppercase" }}>{option.eyebrow}</span>
-                <strong style={{ display: "block", color: "#17141d", fontSize: 18, marginTop: 6 }}>{option.title}</strong>
-                <p style={{ color: "#8d8578", fontSize: 12.5, lineHeight: 1.55, margin: "8px 0 14px" }}>{option.desc}</p>
-                <span style={{ color: "#050505", background: GOLD, borderRadius: 999, display: "inline-flex", padding: "8px 13px", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 0 }}>
-                  {option.action}
-                </span>
-              </>
-            );
+        <header className={styles.topbar}>
+          <Link href="/" className={styles.brand} aria-label="Elite Modell — início">
+            <BrandMark priority />
+          </Link>
+          <p>Discrição <span>•</span> Segurança <span>•</span> Liberdade</p>
+        </header>
 
-            if (option.directHref) {
-              return (
-                <Link
-                  key={option.tipo}
-                  href={option.directHref}
-                  style={{ display: "block", border: "1px solid #e7e2ec", borderRadius: 16, background: "#fff", padding: 18, textDecoration: "none" }}
-                >
-                  {content}
-                </Link>
-              );
-            }
+        <div className={styles.choiceLayout}>
+          <section className={styles.choicePanel} aria-labelledby="registration-choice-title">
+            <div className={styles.heading}>
+              <p className={styles.eyebrow}>Cadastro Elite Modell</p>
+              <h1 id="registration-choice-title">
+                Como você quer <span>se cadastrar?</span>
+              </h1>
+              <p className={styles.intro}>
+                Escolha entre a experiência de cliente ou o cadastro profissional como acompanhante.
+              </p>
+            </div>
 
-            return (
-              <button
-                key={option.tipo}
-                type="button"
-                onClick={() => selectAccountType(option.tipo)}
-                style={{ width: "100%", textAlign: "left", border: "1px solid #e7e2ec", borderRadius: 16, background: "#fff", padding: 18, cursor: "pointer" }}
-              >
-                {content}
-              </button>
-            );
-          })}
+            <div className={styles.options}>
+              {options.map((option) => {
+                const Icon = option.icon;
+                const content = (
+                  <>
+                    <span className={styles.optionIcon} aria-hidden="true"><Icon size={22} strokeWidth={1.8} /></span>
+                    <span className={styles.optionEyebrow}>{option.eyebrow}</span>
+                    <strong>{option.title}</strong>
+                    <p>{option.desc}</p>
+                    <span className={styles.optionAction}>
+                      <span>{option.action}</span>
+                      <ArrowRight size={19} aria-hidden="true" />
+                    </span>
+                  </>
+                );
+
+                if (option.directHref) {
+                  return (
+                    <Link key={option.tipo} href={option.directHref} className={styles.optionCard}>
+                      {content}
+                    </Link>
+                  );
+                }
+
+                return (
+                  <button
+                    key={option.tipo}
+                    type="button"
+                    onClick={() => selectAccountType(option.tipo)}
+                    className={styles.optionCard}
+                  >
+                    {content}
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className={styles.loginPrompt}>
+              Já tem uma conta? <Link href={ACCOUNT_ROUTES.login}>Entrar</Link>
+            </p>
+
+            <p className={styles.adultNotice}>
+              <ShieldCheck size={15} aria-hidden="true" />
+              Ambiente exclusivo para maiores de 18 anos.
+            </p>
+          </section>
         </div>
-
-        <p style={{ textAlign: "center", marginTop: 22, fontSize: 14, color: "#aaa0b2" }}>
-          Já tem uma conta? <Link href={ACCOUNT_ROUTES.login} style={{ color: GOLD, textDecoration: "none", fontWeight: 700 }}>Entrar</Link>
-        </p>
-      </div>
-      <AuthInfoFooter />
       </main>
     );
   }
@@ -946,9 +977,9 @@ export default function CadastroPage() {
   if (step === "verify") {
     return (
       <main style={{ width: "100%", maxWidth: 440, padding: "max(18px, env(safe-area-inset-top)) 0 0" }}>
-      <div style={{ width: "100%", maxWidth: 420, background: "#fff", border: "1px solid #e7e2ec", borderRadius: 20, padding: "48px 36px", position: "relative", zIndex: 1, textAlign: "center", boxShadow: "0 12px 36px rgba(47,28,68,.08)" }}>
+      <div style={{ width: "100%", maxWidth: 420, background: "#fff", border: "1px solid #fff7f8", borderRadius: 20, padding: "48px 36px", position: "relative", zIndex: 1, textAlign: "center", boxShadow: "0 12px 36px rgba(37, 31, 32,.08)" }}>
         <GoldLine />
-        <h2 style={{ color: "#17141d", fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>Verifique seu email</h2>
+        <h2 style={{ color: "#141212", fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>Verifique seu email</h2>
         <p style={{ color: "#8d8578", fontSize: 14, lineHeight: 1.6, margin: "0 0 8px" }}>Enviamos uma verificação para</p>
         <p style={{ color: GOLD, fontSize: 15, fontWeight: 600, margin: "0 0 24px" }}>{form.email}</p>
         <p style={{ color: "#615b52", fontSize: 13, lineHeight: 1.6, margin: "0 0 32px" }}>
@@ -956,14 +987,14 @@ export default function CadastroPage() {
             ? "Confirme o email para ativar sua conta. Depois entre como acompanhante para continuar nas 9 etapas do cadastro."
             : "Confirme o email para ativar sua conta. Depois volte aqui para entrar."}
         </p>
-        <button onClick={() => router.push(loginPathAfterEmailVerification())} style={{ width: "100%", padding: "13px", background: GOLD, color: "#08050b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
+        <button onClick={() => router.push(loginPathAfterEmailVerification())} style={{ width: "100%", padding: "13px", background: GOLD, color: "#080808", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
           {form.accountType === "PROFESSIONAL" ? "Entrar como acompanhante" : "Ir para o login"}
         </button>
         <button
           type="button"
           onClick={handleResendVerificationEmail}
           disabled={loading}
-          style={{ width: "100%", marginTop: 12, padding: "13px", background: "rgba(183,44,255,0.08)", color: GOLD, border: "1px solid rgba(183,44,255,0.3)", borderRadius: 8, fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}
+          style={{ width: "100%", marginTop: 12, padding: "13px", background: "rgba(202, 70, 81,0.08)", color: GOLD, border: "1px solid rgba(202, 70, 81,0.3)", borderRadius: 8, fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}
         >
           {loading ? "Reenviando..." : "Reenviar email"}
         </button>
@@ -975,7 +1006,7 @@ export default function CadastroPage() {
 
   return (
     <main style={{ width: "100%", maxWidth: 440, padding: "max(18px, env(safe-area-inset-top)) 0 0" }}>
-    <div style={{ width: "100%", maxWidth: 440, background: "#fff", border: "1px solid #e7e2ec", borderRadius: 20, padding: "42px 34px", position: "relative", zIndex: 1, boxShadow: "0 12px 36px rgba(47,28,68,.08)" }}>
+    <div style={{ width: "100%", maxWidth: 440, background: "#fff", border: "1px solid #fff7f8", borderRadius: 20, padding: "42px 34px", position: "relative", zIndex: 1, boxShadow: "0 12px 36px rgba(37, 31, 32,.08)" }}>
       <GoldLine />
       <Logo />
       <p style={{ color: "#8d8578", fontSize: 14, textAlign: "center", marginTop: -18, marginBottom: accountHint ? 8 : 26 }}>{accountSubtitle}</p>
@@ -984,7 +1015,7 @@ export default function CadastroPage() {
       )}
       {form.accountType === "PROFESSIONAL" && (
         <div style={{ marginBottom: 18 }}>
-          <label style={{ display: "block", fontSize: 13, color: "#b9adbf", marginBottom: 8, fontWeight: 500 }}>Categoria do anúncio</label>
+          <label style={{ display: "block", fontSize: 13, color: "#b4adb0", marginBottom: 8, fontWeight: 500 }}>Categoria do anúncio</label>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
             {categories.map((c) => (
               <button
@@ -993,10 +1024,10 @@ export default function CadastroPage() {
                 onClick={() => setForm({ ...form, category: c.value as Category })}
                 style={{
                   padding: "11px 8px",
-                  background: form.category === c.value ? "rgba(183,44,255,0.08)" : "#120b17",
-                  border: `1.5px solid ${form.category === c.value ? "rgba(183,44,255,0.5)" : "#2d1d35"}`,
+                  background: form.category === c.value ? "rgba(202, 70, 81,0.08)" : "#080808",
+                  border: `1.5px solid ${form.category === c.value ? "rgba(202, 70, 81,0.5)" : "#251f20"}`,
                   borderRadius: 8,
-                  color: form.category === c.value ? "#f8f5fa" : "#aaa0b2",
+                  color: form.category === c.value ? "#fff7f8" : "#aaa0b2",
                   cursor: "pointer",
                   fontSize: 13,
                   fontWeight: 700,
@@ -1007,15 +1038,15 @@ export default function CadastroPage() {
             ))}
           </div>
           {errors.category && <p data-auth-required-error="true" style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors.category}</p>}
-          <p style={{ color: "#66566f", fontSize: 11, margin: "8px 0 0", lineHeight: 1.5 }}>
+          <p style={{ color: "#676064", fontSize: 11, margin: "8px 0 0", lineHeight: 1.5 }}>
             Para publicar, será obrigatório enviar documento com foto, fotos reais e biometria facial. A idade exibida deve ser confirmada por documento.
           </p>
-          <div style={{ marginTop: 12, padding: 12, border: "1px solid rgba(183,44,255,0.18)", borderRadius: 8, background: "rgba(183,44,255,0.06)" }}>
-            <p style={{ color: "#b72cff", fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", margin: "0 0 8px" }}>Fases do cadastro</p>
+          <div style={{ marginTop: 12, padding: 12, border: "1px solid rgba(202, 70, 81,0.18)", borderRadius: 8, background: "rgba(202, 70, 81,0.06)" }}>
+            <p style={{ color: "#ca4651", fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", margin: "0 0 8px" }}>Fases do cadastro</p>
             <div style={{ display: "grid", gap: 6 }}>
               {professionalOnboardingSteps.map((item, index) => (
-                <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, color: "#b9adbf", fontSize: 12 }}>
-                  <span style={{ width: 18, height: 18, borderRadius: 999, border: "1px solid rgba(183,44,255,0.35)", color: "#e1a6ff", display: "grid", placeItems: "center", fontSize: 10, fontWeight: 800 }}>{index + 1}</span>
+                <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, color: "#b4adb0", fontSize: 12 }}>
+                  <span style={{ width: 18, height: 18, borderRadius: 999, border: "1px solid rgba(202, 70, 81,0.35)", color: "#f2c8cc", display: "grid", placeItems: "center", fontSize: 10, fontWeight: 800 }}>{index + 1}</span>
                   {item}
                 </div>
               ))}
@@ -1025,8 +1056,8 @@ export default function CadastroPage() {
       )}
 
       {isLoggedUpgradeFlow ? (
-        <div style={{ marginBottom: 20, padding: 14, borderRadius: 8, border: "1px solid rgba(183,44,255,0.24)", background: "rgba(15,23,42,0.72)" }}>
-          <p style={{ color: "#f8f5fa", fontSize: 14, fontWeight: 800, margin: "0 0 6px" }}>
+        <div style={{ marginBottom: 20, padding: 14, borderRadius: 8, border: "1px solid rgba(202, 70, 81,0.24)", background: "rgba(15,23,42,0.72)" }}>
+          <p style={{ color: "#fff7f8", fontSize: 14, fontWeight: 800, margin: "0 0 6px" }}>
             Continuar cadastro de {form.accountType === "PROFESSIONAL" ? "acompanhante" : "anunciante de espaço"}
           </p>
           <p style={{ color: "#968a9e", fontSize: 12, lineHeight: 1.5, margin: "0 0 12px" }}>
@@ -1034,7 +1065,7 @@ export default function CadastroPage() {
           </p>
           <div style={{ display: "grid", gap: 12, marginBottom: 12 }}>
             <div>
-              <label style={{ display: "block", fontSize: 13, color: "#b9adbf", marginBottom: 6, fontWeight: 500 }}>Data de nascimento</label>
+              <label style={{ display: "block", fontSize: 13, color: "#b4adb0", marginBottom: 6, fontWeight: 500 }}>Data de nascimento</label>
               <div style={{ display: "grid", gridTemplateColumns: "0.72fr 0.72fr 1fr", gap: 8 }}>
                 <input
                   type="text"
@@ -1110,7 +1141,7 @@ export default function CadastroPage() {
             type="button"
             onClick={handleContinueExistingAccount}
             disabled={loading}
-            style={{ width: "100%", padding: "13px", background: loading ? "#6900a3" : GOLD, color: "#08050b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}
+            style={{ width: "100%", padding: "13px", background: loading ? "#8e2f38" : GOLD, color: "#080808", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}
           >
             {loading ? "Preparando cadastro..." : form.accountType === "PROFESSIONAL" ? "Ir para as fases do cadastro" : "Voltar ao anúncio"}
           </button>
@@ -1126,9 +1157,9 @@ export default function CadastroPage() {
           />
 
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-            <div style={{ flex: 1, height: 1, background: "rgba(183,44,255,0.12)" }} />
+            <div style={{ flex: 1, height: 1, background: "rgba(202, 70, 81,0.12)" }} />
             <span style={{ color: "#8d8578", fontSize: 13 }}>ou cadastre com email</span>
-            <div style={{ flex: 1, height: 1, background: "rgba(183,44,255,0.12)" }} />
+            <div style={{ flex: 1, height: 1, background: "rgba(202, 70, 81,0.12)" }} />
           </div>
         </>
       )}
@@ -1140,14 +1171,14 @@ export default function CadastroPage() {
           { key: "password", label: "Senha", type: "password", placeholder: "Mínimo 6 caracteres" },
         ].map((field) => (
           <div key={field.key}>
-            <label style={{ display: "block", fontSize: 13, color: "#b9adbf", marginBottom: 6, fontWeight: 500 }}>{field.label}</label>
+            <label style={{ display: "block", fontSize: 13, color: "#b4adb0", marginBottom: 6, fontWeight: 500 }}>{field.label}</label>
             <input type={field.type} required placeholder={field.placeholder} value={(form as any)[field.key]} onChange={(e) => setForm({ ...form, [field.key]: e.target.value })} style={inputStyle} onFocus={focusGold} onBlur={blurGray} />
             {errors[field.key] && <p data-auth-required-error="true" style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors[field.key]}</p>}
           </div>
         ))}
 
         <div>
-          <label style={{ display: "block", fontSize: 13, color: "#b9adbf", marginBottom: 6, fontWeight: 500 }}>Data de nascimento</label>
+          <label style={{ display: "block", fontSize: 13, color: "#b4adb0", marginBottom: 6, fontWeight: 500 }}>Data de nascimento</label>
           <div style={{ display: "grid", gridTemplateColumns: "0.72fr 0.72fr 1fr", gap: 8 }}>
             <input
               type="text"
@@ -1222,7 +1253,7 @@ export default function CadastroPage() {
           </span>
         </label>
 
-        <button type="submit" disabled={loading} style={{ padding: "13px", background: loading ? "#6900a3" : GOLD, color: "#08050b", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer", marginTop: 4 }}>
+        <button type="submit" disabled={loading} style={{ padding: "13px", background: loading ? "#8e2f38" : GOLD, color: "#080808", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer", marginTop: 4 }}>
           {loading ? "Criando conta..." : "Criar conta"}
         </button>
       </form>}
@@ -1235,9 +1266,9 @@ export default function CadastroPage() {
           width: "100%",
           marginTop: 16,
           padding: "11px 13px",
-          border: "1px solid rgba(183,44,255,0.24)",
+          border: "1px solid rgba(202, 70, 81,0.24)",
           borderRadius: 8,
-          background: "rgba(183,44,255,0.06)",
+          background: "rgba(202, 70, 81,0.06)",
           color: GOLD,
           fontSize: 13,
           fontWeight: 800,

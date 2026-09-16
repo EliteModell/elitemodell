@@ -20,16 +20,16 @@ function ContactCard({
       href={href}
       target={external ? "_blank" : undefined}
       rel={external ? "noopener noreferrer" : undefined}
-      className="flex min-h-[92px] items-center gap-4 border-y border-[#b72cff]/12 bg-white/[0.025] p-5 text-[#f5f0e4] no-underline transition-colors active:bg-white/10"
+      className="flex min-h-[92px] items-center gap-4 border-y border-[#ca4651]/12 bg-white/[0.025] p-5 text-[#f5f0e4] no-underline transition-colors active:bg-white/10"
     >
-      <span className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[8px] border border-[#b72cff]/18 bg-[#b72cff]/12 text-[#e1a6ff]">
+      <span className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[8px] border border-[#ca4651]/18 bg-[#ca4651]/12 text-[#f2c8cc]">
         {icon}
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-[17px] font-bold text-[#f5f0e4]">{title}</p>
         <p className="mt-1 text-[13px] text-[#f5f0e4]/54">{subtitle}</p>
       </div>
-      <ChevronRight className="h-4 w-4 shrink-0 text-[#e1a6ff]" />
+      <ChevronRight className="h-4 w-4 shrink-0 text-[#f2c8cc]" />
     </a>
   );
 }
@@ -47,7 +47,7 @@ export default function AtendimentoPage() {
 
       {/* Notice */}
       <div className="client-panel p-6">
-        <p className="text-[14px] font-bold text-[#e1a6ff]">Atenção</p>
+        <p className="text-[14px] font-bold text-[#f2c8cc]">Atenção</p>
         <p className="mt-2 text-[14px] leading-6 text-[#f5f0e4]/62">
           Nunca peça ou forneça dados pessoais fora dos canais oficiais abaixo. A Elite Modell nunca solicita senhas.
         </p>
@@ -88,11 +88,11 @@ export default function AtendimentoPage() {
         ].map((faq, index) => (
           <details key={faq} className="group mt-4 border-t border-white/10 pt-4">
             <summary className="flex min-h-[54px] cursor-pointer list-none items-center gap-3 text-[15px] font-bold text-[#f5f0e4]">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[8px] bg-white/[0.045] text-[12px] text-[#e1a6ff]">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[8px] bg-white/[0.045] text-[12px] text-[#f2c8cc]">
                 {index + 1}
               </span>
               <span className="flex-1">{faq}</span>
-              <ChevronRight className="h-4 w-4 shrink-0 text-[#e1a6ff] transition-transform group-open:rotate-90" />
+              <ChevronRight className="h-4 w-4 shrink-0 text-[#f2c8cc] transition-transform group-open:rotate-90" />
             </summary>
             <p className="pb-2 pl-11 pr-1 text-[13px] leading-5 text-[#f5f0e4]/56">
               Nossa equipe orienta pelo canal oficial e mantém sua privacidade em todas as etapas.
@@ -103,7 +103,7 @@ export default function AtendimentoPage() {
 
       <Link
         href="/dashboard/informacoes"
-        className="block text-center text-[13px] font-semibold text-[#e1a6ff] no-underline"
+        className="block text-center text-[13px] font-semibold text-[#f2c8cc] no-underline"
       >
         Ver informações importantes →
       </Link>

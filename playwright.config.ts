@@ -124,6 +124,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "registration-choice-redesign",
+      testMatch: "**/registration-choice-redesign.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "authenticated",
       testMatch: "**/client-area-authenticated.spec.ts",
       use: {

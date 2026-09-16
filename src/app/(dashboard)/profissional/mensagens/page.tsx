@@ -117,11 +117,11 @@ export default async function ProfessionalMessagesPage() {
           height: 86px;
           display: grid;
           place-items: center;
-          border: 1px solid rgba(225,166,255,0.34);
+          border: 1px solid rgba(242, 200, 204,0.34);
           border-radius: 999px;
-          background: radial-gradient(circle, rgba(225,166,255,0.22), rgba(183,44,255,0.06) 62%, transparent);
+          background: radial-gradient(circle, rgba(242, 200, 204,0.22), rgba(202, 70, 81,0.06) 62%, transparent);
           color: var(--elite-gold-light);
-          box-shadow: 0 0 28px rgba(183,44,255,0.12);
+          box-shadow: 0 0 28px rgba(202, 70, 81,0.12);
         }
         .professional-empty-icon span {
           color: var(--elite-gold-light);
@@ -162,16 +162,16 @@ export default async function ProfessionalMessagesPage() {
           box-shadow: 0 14px 36px rgba(0,0,0,0.32);
         }
         .professional-message-card:hover {
-          border-color: rgba(225,166,255,0.56);
+          border-color: rgba(242, 200, 204,0.56);
         }
         .message-avatar {
           width: 58px;
           height: 58px;
           display: grid;
           place-items: center;
-          border: 1px solid rgba(225,166,255,0.38);
+          border: 1px solid rgba(242, 200, 204,0.38);
           border-radius: 999px;
-          background: rgba(183,44,255,0.12);
+          background: rgba(202, 70, 81,0.12);
           color: var(--elite-gold-light);
           font-size: 15px;
           font-weight: 950;
@@ -196,7 +196,7 @@ export default async function ProfessionalMessagesPage() {
           flex-wrap: wrap;
           align-items: center;
           gap: 6px;
-          color: rgba(225,166,255,0.72);
+          color: rgba(242, 200, 204,0.72);
           font-size: 12px;
           font-style: normal;
           font-weight: 800;
@@ -207,7 +207,7 @@ export default async function ProfessionalMessagesPage() {
           align-items: center;
           justify-content: center;
           gap: 8px;
-          border: 1px solid rgba(183,44,255,0.32);
+          border: 1px solid rgba(202, 70, 81,0.32);
           border-radius: 16px;
           color: var(--elite-gold-light);
           padding: 0 14px;

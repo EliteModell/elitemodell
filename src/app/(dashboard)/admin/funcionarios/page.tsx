@@ -128,7 +128,7 @@ export default async function AdminFuncionariosPage() {
             {assignments.map((assignment) => (
               <tr key={assignment.id}>
                 <td style={tdStyle}><strong>{assignment.user.name ?? "Sem nome"}</strong><br />{assignment.user.email}</td>
-                <td style={tdStyle}>{assignment.role}<br /><span style={{ color: "#b9adbf" }}>{ADMIN_ROLE_PERMISSIONS[assignment.role].join(", ")}</span></td>
+                <td style={tdStyle}>{assignment.role}<br /><span style={{ color: "#b4adb0" }}>{ADMIN_ROLE_PERMISSIONS[assignment.role].join(", ")}</span></td>
                 <td style={tdStyle}><StatusPill tone={assignment.active && !assignment.user.blocked ? "success" : "danger"}>{assignment.active && !assignment.user.blocked ? "ATIVO" : "INATIVO"}</StatusPill></td>
                 <td style={tdStyle}>{assignment.grantedAt.toLocaleString("pt-BR")}<br />por {assignment.grantedBy?.name ?? assignment.grantedBy?.email ?? "migration"}</td>
                 <td style={tdStyle}>

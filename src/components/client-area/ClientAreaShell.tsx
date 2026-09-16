@@ -45,7 +45,7 @@ function initials(name?: string | null) {
 function BrandLogo() {
   return (
     <Link href={ACCOUNT_ROUTES.mainClientFeed} className="relative inline-flex items-center no-underline" aria-label="Elite Modell">
-      <span className="relative inline-grid w-[144px] items-center rounded-[12px] border border-[#b72cff]/30 bg-white/[0.045] px-2.5 py-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.22)]">
+      <span className="relative inline-grid w-[144px] items-center rounded-[12px] border border-[#ca4651]/30 bg-white/[0.045] px-2.5 py-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.22)]">
         <BrandMark />
       </span>
     </Link>
@@ -113,13 +113,13 @@ export function LocationSearchBar({ onOpen }: { onOpen: () => void }) {
       onClick={onOpen}
       className="client-global-search group flex min-h-[50px] w-full items-center gap-3 rounded-[10px] border border-white/[0.10] bg-white/[0.07] px-4 text-[14px] backdrop-blur-sm transition-all duration-200 active:scale-[0.985] active:bg-white/[0.10]"
     >
-      <span className="client-global-search-icon grid h-8 w-8 shrink-0 place-items-center rounded-[7px] border border-[#b72cff]/22 bg-[#b72cff]/14 text-[#e1a6ff] transition-transform duration-200 group-active:scale-105">
+      <span className="client-global-search-icon grid h-8 w-8 shrink-0 place-items-center rounded-[7px] border border-[#ca4651]/22 bg-[#ca4651]/14 text-[#f2c8cc] transition-transform duration-200 group-active:scale-105">
         <Search className="h-4 w-4" />
       </span>
       <span className="client-global-search-label min-w-0 flex-1 truncate text-left text-[14px] font-semibold text-[#f5f0e4]/55">
         {isLists ? "Buscar perfis ou cidade" : "Cidade, nome ou característica"}
       </span>
-      <span className="client-global-search-button shrink-0 rounded-[7px] border border-[#b72cff]/28 bg-[#b72cff]/16 px-3 py-1.5 text-[11px] font-black uppercase text-[#e1a6ff]">
+      <span className="client-global-search-button shrink-0 rounded-[7px] border border-[#ca4651]/28 bg-[#ca4651]/16 px-3 py-1.5 text-[11px] font-black uppercase text-[#f2c8cc]">
         Buscar
       </span>
     </button>
@@ -144,7 +144,7 @@ export function MobileHeader({
   const showHeaderSearch = !isExplore && !isProfile && !isCitySelector;
 
   return (
-    <header className="client-header sticky top-0 z-30 border-b border-[#b72cff]/14 bg-[#08090a]/92 shadow-[0_16px_46px_rgba(0,0,0,0.30)] backdrop-blur-2xl">
+    <header className="client-header sticky top-0 z-30 border-b border-[#ca4651]/14 bg-[#08090a]/92 shadow-[0_16px_46px_rgba(0,0,0,0.30)] backdrop-blur-2xl">
       <div className={`client-header-inner mx-auto max-w-[760px] px-4 pt-4 ${isExplore ? "pb-3" : "pb-4"}`}>
         <div className="client-header-top grid h-11 items-center grid-cols-[48px_1fr_48px]">
           {backHref ? (
@@ -226,13 +226,13 @@ function DrawerItem({
       onClick={onClick}
       className={`mx-3 flex min-h-[50px] items-center gap-3 rounded-[8px] px-3 text-[14px] no-underline transition-all duration-150 active:scale-[0.98] active:bg-white/8 ${
         active
-          ? "border border-[#b72cff]/26 bg-[#b72cff]/12 font-bold text-[#e1a6ff]"
+          ? "border border-[#ca4651]/26 bg-[#ca4651]/12 font-bold text-[#f2c8cc]"
           : "text-[#f5f0e4]/70"
       }`}
     >
       <span
         className={`grid h-9 w-9 shrink-0 place-items-center rounded-[8px] transition-colors ${
-          active ? "bg-[#b72cff]/18 text-[#e1a6ff]" : "bg-white/[0.045] text-[#f5f0e4]/50"
+          active ? "bg-[#ca4651]/18 text-[#f2c8cc]" : "bg-white/[0.045] text-[#f5f0e4]/50"
         }`}
       >
         {icon}
@@ -276,7 +276,7 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
         onClick={onClose}
       />
       <aside
-        className={`client-side-drawer fixed inset-y-0 left-0 z-[1001] w-[84vw] max-w-[390px] overflow-y-auto border-r border-[#b72cff]/14 bg-[#090a0b] shadow-[26px_0_80px_rgba(0,0,0,0.52)] transition-transform duration-300 ease-out ${
+        className={`client-side-drawer fixed inset-y-0 left-0 z-[1001] w-[84vw] max-w-[390px] overflow-y-auto border-r border-[#ca4651]/14 bg-[#090a0b] shadow-[26px_0_80px_rgba(0,0,0,0.52)] transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -306,13 +306,13 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
         </div>
 
         {/* User info card */}
-        <div className="mx-3 mt-4 overflow-hidden rounded-[10px] border border-[#b72cff]/18 bg-gradient-to-br from-white/[0.07] to-[#b72cff]/[0.03] p-4 shadow-[0_14px_40px_rgba(0,0,0,0.22)]">
+        <div className="mx-3 mt-4 overflow-hidden rounded-[10px] border border-[#ca4651]/18 bg-gradient-to-br from-white/[0.07] to-[#ca4651]/[0.03] p-4 shadow-[0_14px_40px_rgba(0,0,0,0.22)]">
           <div className="flex items-center gap-3.5">
-            <div className="relative h-[56px] w-[56px] shrink-0 overflow-hidden rounded-full border-2 border-[#b72cff]/52 bg-[#1b1d1f] shadow-[0_0_28px_rgba(183,44,255,0.16)]">
+            <div className="relative h-[56px] w-[56px] shrink-0 overflow-hidden rounded-full border-2 border-[#ca4651]/52 bg-[#1b1d1f] shadow-[0_0_28px_rgba(202, 70, 81,0.16)]">
               {session?.user?.image ? (
                 <img src={session.user.image} alt={session.user.name ?? "Avatar"} className="h-full w-full object-cover" />
               ) : (
-                <div className="grid h-full w-full place-items-center text-[17px] font-black text-[#e1a6ff]">
+                <div className="grid h-full w-full place-items-center text-[17px] font-black text-[#f2c8cc]">
                   {initials(session?.user?.name)}
                 </div>
               )}
@@ -320,7 +320,7 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             <div className="min-w-0">
               <p className="truncate text-[15px] font-bold text-[#f5f0e4]">{session?.user?.name ?? "Cliente Elite"}</p>
               <p className="mt-0.5 truncate text-[12px] text-[#f5f0e4]/46">{session?.user?.email ?? "Conta discreta"}</p>
-              <p className="mt-2 inline-flex rounded-full border border-[#b72cff]/22 bg-[#b72cff]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase text-[#e1a6ff]">
+              <p className="mt-2 inline-flex rounded-full border border-[#ca4651]/22 bg-[#ca4651]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase text-[#f2c8cc]">
                 acesso cliente
               </p>
             </div>
@@ -367,18 +367,18 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
         {/* Drawer footer */}
         <div className="client-side-drawer-footer px-5 pb-10 pt-5 text-center">
           <div className="mx-3 mb-5 h-px bg-white/[0.07]" />
-          <Link href="/" onClick={onClose} className="mx-auto inline-flex items-center rounded-[8px] border border-[#b72cff]/34 bg-[#b72cff]/10 px-4 py-2 no-underline shadow-[0_12px_30px_rgba(0,0,0,0.22)]">
+          <Link href="/" onClick={onClose} className="mx-auto inline-flex items-center rounded-[8px] border border-[#ca4651]/34 bg-[#ca4651]/10 px-4 py-2 no-underline shadow-[0_12px_30px_rgba(0,0,0,0.22)]">
             <span className="inline-grid w-[148px]"><BrandMark /></span>
           </Link>
           <Link
             href="/"
             onClick={onClose}
-            className="mx-auto mt-3 flex h-10 max-w-[210px] items-center justify-center rounded-[8px] border border-[#b72cff]/40 bg-transparent text-[13px] font-bold text-[#e1a6ff] no-underline transition-colors active:bg-[#b72cff]/12"
+            className="mx-auto mt-3 flex h-10 max-w-[210px] items-center justify-center rounded-[8px] border border-[#ca4651]/40 bg-transparent text-[13px] font-bold text-[#f2c8cc] no-underline transition-colors active:bg-[#ca4651]/12"
           >
             Voltar ao início
           </Link>
           <p className="mt-6 text-[11px] font-bold uppercase tracking-wide text-[#f5f0e4]/40">
-            Siga a <span className="text-[#e1a6ff]">Elite Modell</span>
+            Siga a <span className="text-[#f2c8cc]">Elite Modell</span>
           </p>
           <div className="mt-3.5 flex justify-center gap-3">
             {socialLinks.map((item) => (
@@ -386,7 +386,7 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 key={item.label}
                 aria-label={item.label}
                 title={item.label}
-                className="grid h-11 w-11 place-items-center rounded-full border border-[#b72cff]/22 bg-white/[0.045] text-[#e1a6ff] shadow-[0_10px_28px_rgba(0,0,0,0.22)]"
+                className="grid h-11 w-11 place-items-center rounded-full border border-[#ca4651]/22 bg-white/[0.045] text-[#f2c8cc] shadow-[0_10px_28px_rgba(0,0,0,0.22)]"
               >
                 {item.icon}
               </span>
@@ -414,7 +414,7 @@ export function ClientBottomNav() {
 
   return (
     <nav className="client-bottom-nav fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(8px+env(safe-area-inset-bottom))] transition-all duration-200 md:hidden">
-      <div className="mx-auto grid h-[72px] max-w-[720px] grid-cols-4 rounded-[14px] border border-[#b72cff]/18 bg-[#090a0b]/94 p-1.5 shadow-[0_-12px_30px_rgba(0,0,0,0.30)] backdrop-blur-2xl">
+      <div className="mx-auto grid h-[72px] max-w-[720px] grid-cols-4 rounded-[14px] border border-[#ca4651]/18 bg-[#090a0b]/94 p-1.5 shadow-[0_-12px_30px_rgba(0,0,0,0.30)] backdrop-blur-2xl">
         {items.map((item) => {
           const isExplore = pathname === "/dashboard/explorar" || pathname?.startsWith("/dashboard/explorar/");
           const isLists = pathname === "/dashboard/listas" || pathname?.startsWith("/dashboard/listas/");
@@ -443,12 +443,12 @@ export function ClientBottomNav() {
               href={item.href}
               className={`relative flex flex-col items-center justify-center gap-1.5 rounded-[11px] text-[12px] font-bold leading-none no-underline transition-all duration-200 ${
                 active
-                  ? "border border-[#b72cff]/28 bg-[#b72cff]/15 text-[#e1a6ff] shadow-[0_10px_24px_rgba(183,44,255,0.10)]"
+                  ? "border border-[#ca4651]/28 bg-[#ca4651]/15 text-[#f2c8cc] shadow-[0_10px_24px_rgba(202, 70, 81,0.10)]"
                   : "text-[#f5f0e4]/48"
               }`}
             >
               {active && (
-                <span className="absolute inset-x-5 top-0.5 h-[3px] rounded-full bg-[#b72cff] shadow-[0_0_8px_rgba(183,44,255,0.65)]" />
+                <span className="absolute inset-x-5 top-0.5 h-[3px] rounded-full bg-[#ca4651] shadow-[0_0_8px_rgba(202, 70, 81,0.65)]" />
               )}
               <span
                 className={`transition-transform duration-200 ${active ? "scale-110" : "scale-100"}`}

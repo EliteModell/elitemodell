@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   },
   description: publicBrandDescription,
   keywords: [
-    "EliteModell",
+    "Elite Modell",
     "acompanhantes verificadas",
     "elite modell",
     "acompanhante",
@@ -29,9 +29,9 @@ export const metadata: Metadata = {
     "privacidade",
     "seguranca",
   ],
-  authors: [{ name: "EliteModell" }],
-  creator: "EliteModell",
-  publisher: "EliteModell",
+  authors: [{ name: "Elite Modell" }],
+  creator: "Elite Modell",
+  publisher: "Elite Modell",
   category: "restricted access",
   alternates: {
     canonical: siteUrl,
@@ -69,8 +69,8 @@ export const metadata: Metadata = {
     description: publicBrandDescription,
   },
   other: {
-    "theme-color": "#ffffff",
-    "msapplication-TileColor": "#ffffff",
+    "theme-color": "#CA4651",
+    "msapplication-TileColor": "#FDE7E9",
     "msapplication-TileImage": "/android-chrome-512x512.png",
   },
 };
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#ffffff",
+  themeColor: "#CA4651",
   colorScheme: "light",
 };
 
@@ -98,7 +98,9 @@ export default function RootLayout({
       name: "Elite Modell",
       logo: {
         "@type": "ImageObject",
-        url: `${siteUrl}/android-chrome-512x512.png`,
+        url: `${siteUrl}/brand/elite-modell-symbol.png`,
+        width: 1254,
+        height: 1254,
       },
     },
   };

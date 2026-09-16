@@ -25,7 +25,7 @@ export default function Footer({ tone = "light" }: { tone?: "dark" | "light" }) 
     <div className={styles.inner}>
       <div className={styles.grid}>
         <div className={styles.brandBlock}>
-          <Link href="/" className={styles.brand}><Image src="/brand/elite-modell-logo-transparent.svg" alt="Elite Modell" width={720} height={210}/></Link>
+          <Link href="/" className={styles.brand}><Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={2172} height={724}/></Link>
           <p className={styles.intro}>Conexões premium com discrição, segurança e privacidade em primeiro lugar.</p>
           <span className={styles.seal}>Ambiente exclusivo para maiores de 18 anos</span>
         </div>

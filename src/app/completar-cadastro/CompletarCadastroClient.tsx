@@ -107,11 +107,11 @@ export default function CompletarCadastroClient() {
           width: "100%",
           maxWidth: 420,
           background: "#fff",
-          border: "1px solid #e7e2ec",
+          border: "1px solid #fff7f8",
           borderRadius: 16,
           padding: "40px 32px 36px",
           position: "relative",
-          boxShadow: "0 20px 60px rgba(52,33,67,0.12)",
+          boxShadow: "0 20px 60px rgba(37, 31, 32,0.12)",
         }}
       >
         {/* Gold top line */}
@@ -133,7 +133,7 @@ export default function CompletarCadastroClient() {
 
         <h1
           style={{
-            color: "#17141d",
+            color: "#141212",
             fontSize: 18,
             fontWeight: 700,
             margin: "0 0 6px",
@@ -144,7 +144,7 @@ export default function CompletarCadastroClient() {
         </h1>
         <p
           style={{
-            color: "#b9adbf",
+            color: "#b4adb0",
             fontSize: 13,
             textAlign: "center",
             margin: "0 0 28px",
@@ -157,7 +157,7 @@ export default function CompletarCadastroClient() {
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {/* Birth date */}
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ color: "#b9adbf", fontSize: 12, fontWeight: 600, letterSpacing: 0.5 }}>
+            <label style={{ color: "#b4adb0", fontSize: 12, fontWeight: 600, letterSpacing: 0.5 }}>
               DATA DE NASCIMENTO
             </label>
             <input
@@ -174,10 +174,10 @@ export default function CompletarCadastroClient() {
               required
               style={{
                 background: "#fff",
-                border: "1px solid #ded7e5",
+                border: "1px solid #f2c8cc",
                 borderRadius: 8,
                 padding: "10px 14px",
-                color: "#17141d",
+                color: "#141212",
                 fontSize: 14,
                 outline: "none",
               }}
@@ -298,7 +298,7 @@ export default function CompletarCadastroClient() {
           </button>
         </form>
 
-        <p style={{ color: "#66566f", fontSize: 11, margin: "20px 0 0", letterSpacing: 1.5, textTransform: "uppercase", textAlign: "center" }}>
+        <p style={{ color: "#676064", fontSize: 11, margin: "20px 0 0", letterSpacing: 1.5, textTransform: "uppercase", textAlign: "center" }}>
           Acesso seguro · 18+
         </p>
       </div>

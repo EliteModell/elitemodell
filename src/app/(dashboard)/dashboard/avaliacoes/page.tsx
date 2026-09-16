@@ -50,7 +50,7 @@ function StarRow({ rating }: { rating: number }) {
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
           key={i}
-          className={`h-4 w-4 ${i <= Math.round(rating) ? "fill-[#a92cff] text-[#a92cff]" : "text-[#d0d7da]"}`}
+          className={`h-4 w-4 ${i <= Math.round(rating) ? "fill-[#ca4651] text-[#ca4651]" : "text-[#d0d7da]"}`}
         />
       ))}
     </div>
@@ -65,7 +65,7 @@ function ReviewCard({ review }: { review: ReviewItem }) {
     <div className="client-card p-4">
       {/* Professional info */}
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 overflow-hidden rounded-full border border-[#b72cff]/30 bg-[#1b1d1f]">
+        <div className="h-10 w-10 overflow-hidden rounded-full border border-[#ca4651]/30 bg-[#1b1d1f]">
           {pro.image ? (
             <img src={pro.image} alt={pro.displayName} className="h-full w-full object-cover" />
           ) : (
@@ -105,7 +105,7 @@ function ReviewCard({ review }: { review: ReviewItem }) {
         </p>
         <Link
           href={`/profissionais/${pro.slug}`}
-          className="flex items-center gap-1 text-[12px] font-semibold text-[#e1a6ff] no-underline"
+          className="flex items-center gap-1 text-[12px] font-semibold text-[#f2c8cc] no-underline"
         >
           Ver acompanhante
           <ChevronRight className="h-3.5 w-3.5" />
@@ -121,7 +121,7 @@ function RecommendCard({ p }: { p: Professional }) {
       href={`/profissionais/${p.slug}`}
       className="client-panel-soft flex min-w-[140px] flex-col items-center p-3 no-underline"
     >
-      <div className="h-14 w-14 overflow-hidden rounded-full border-2 border-[#b72cff]/40 bg-[#1b1d1f]">
+      <div className="h-14 w-14 overflow-hidden rounded-full border-2 border-[#ca4651]/40 bg-[#1b1d1f]">
         {p.image ? (
           <img src={p.image} alt={p.displayName} className="h-full w-full object-cover" />
         ) : (
@@ -134,7 +134,7 @@ function RecommendCard({ p }: { p: Professional }) {
         {p.displayName}
       </p>
       <div className="mt-1 flex items-center gap-1">
-        <Star className="h-3 w-3 fill-[#a92cff] text-[#a92cff]" />
+        <Star className="h-3 w-3 fill-[#ca4651] text-[#ca4651]" />
         <span className="text-[12px] font-semibold text-[#f5f0e4]">{p.rating.toFixed(1)}</span>
       </div>
     </Link>
@@ -205,7 +205,7 @@ export default function AvaliacoesPage() {
       <div className="px-4 pb-5 pt-2">
         <div className="client-panel p-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#b72cff]" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#ca4651]" />
             <input
               type="text"
               placeholder="Buscar por cidade..."
@@ -227,7 +227,7 @@ export default function AvaliacoesPage() {
             </div>
             <div className="client-panel-soft p-4 text-center">
               <div className="flex items-center justify-center gap-1.5">
-                <Star className="h-5 w-5 fill-[#a92cff] text-[#a92cff]" />
+                <Star className="h-5 w-5 fill-[#ca4651] text-[#ca4651]" />
                 <p className="text-[26px] font-bold text-[#f5f0e4]">{stats.avgRating.toFixed(1)}</p>
               </div>
               <p className="mt-0.5 text-[12px] text-[#f5f0e4]/48">média geral</p>
@@ -240,7 +240,7 @@ export default function AvaliacoesPage() {
           <div>
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-[16px] font-bold text-[#f5f0e4]">Mais bem avaliadas</h2>
-              <Link href="/dashboard/acompanhantes" className="text-[13px] font-semibold text-[#e1a6ff] no-underline">
+              <Link href="/dashboard/acompanhantes" className="text-[13px] font-semibold text-[#f2c8cc] no-underline">
                 Ver todas
               </Link>
             </div>
@@ -255,7 +255,7 @@ export default function AvaliacoesPage() {
         {/* Reviews list */}
         <div>
           <h2 className="mb-3 flex items-center gap-2 text-[16px] font-bold text-[#f5f0e4]">
-            <MessageSquare className="h-5 w-5 text-[#e1a6ff]" />
+            <MessageSquare className="h-5 w-5 text-[#f2c8cc]" />
             Avaliações recentes
           </h2>
 
@@ -266,9 +266,9 @@ export default function AvaliacoesPage() {
               ))}
             </div>
           ) : reviews.length === 0 ? (
-            <div className="flex min-h-[220px] flex-col items-center justify-center gap-4 border-y border-[#b72cff]/12 bg-white/[0.025] px-5 py-12 text-center">
+            <div className="flex min-h-[220px] flex-col items-center justify-center gap-4 border-y border-[#ca4651]/12 bg-white/[0.025] px-5 py-12 text-center">
               <div className="grid h-16 w-16 place-items-center rounded-[8px] border border-white/10 bg-white/[0.045]">
-                <ThumbsUp className="h-8 w-8 text-[#e1a6ff]" />
+                <ThumbsUp className="h-8 w-8 text-[#f2c8cc]" />
               </div>
               <p className="text-[16px] font-black text-[#f5f0e4]">Nenhuma avaliação encontrada</p>
               <p className="text-[14px] leading-6 text-[#f5f0e4]/56">

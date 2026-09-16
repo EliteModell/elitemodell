@@ -117,8 +117,8 @@ export default function SelecionarCidadePage() {
         />
 
         <header className="city-select-header">
-          <span className="city-select-logo" aria-label="EliteModell">
-            <Image src="/brand/elite-modell-logo-transparent.svg" alt="Elite Modell" width={720} height={210} priority style={{ width: 174, height: "auto", objectFit: "contain", opacity: 1, filter: "none" }} />
+          <span className="city-select-logo" aria-label="Elite Modell">
+            <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={2172} height={724} priority style={{ width: 174, height: "auto", objectFit: "contain", opacity: 1, filter: "none" }} />
           </span>
           <button type="button" onClick={() => router.back()} className="city-select-close" aria-label="Fechar">
             <X />
@@ -164,7 +164,7 @@ export default function SelecionarCidadePage() {
                 <MapPin />
               </span>
               <h2>Em breve teremos perfis em {selectedCity}</h2>
-              <p>Estamos atualizando a cobertura da EliteModell. Assim que houver perfis verificados nessa cidade, eles aparecerão aqui.</p>
+              <p>Estamos atualizando a cobertura da Elite Modell. Assim que houver perfis verificados nessa cidade, eles aparecerão aqui.</p>
               <button type="button" onClick={resetSearch}>
                 Buscar outra cidade
               </button>

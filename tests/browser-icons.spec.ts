@@ -75,7 +75,7 @@ test.describe("identidade visual nos navegadores e compartilhamentos", () => {
     expect(manifest.icons).toEqual([
       { src: "/android-chrome-192x192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/android-chrome-maskable-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ]);
     expect(JSON.stringify(manifest)).not.toContain("logo-transparent");
     expect(JSON.stringify(manifest)).not.toContain("?v=");
@@ -97,7 +97,9 @@ test.describe("identidade visual nos navegadores e compartilhamentos", () => {
       "/apple-touch-icon.png",
       "/android-chrome-192x192.png",
       "/android-chrome-512x512.png",
-      "/brand/elite-modell-icon.svg",
+      "/android-chrome-maskable-512x512.png",
+      "/brand/elite-modell-symbol.png",
+      "/brand/elite-modell-logo.png",
       "/og-image.png",
       "/robots.txt",
       "/sitemap.xml",

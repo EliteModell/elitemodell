@@ -109,7 +109,7 @@ export default function ProfissionalConfiguracoesPage() {
     }
   }
 
-  const card = { background: "#111", border: "1px solid rgba(183,44,255,.16)", borderRadius: 18, padding: 22 } as const;
+  const card = { background: "#111", border: "1px solid rgba(202, 70, 81,.16)", borderRadius: 18, padding: 22 } as const;
   const muted = { color: "#777", fontSize: 13, lineHeight: 1.6 } as const;
 
   if (loading) return <div className="premium-skeleton" style={{ height: 180, borderRadius: 12 }} />;
@@ -144,10 +144,10 @@ export default function ProfissionalConfiguracoesPage() {
                   padding: 12,
                   borderRadius: 12,
                   border: settings.contactVisibility === value
-                    ? "1px solid rgba(183,44,255,.5)"
+                    ? "1px solid rgba(202, 70, 81,.5)"
                     : "1px solid #252525",
                   background: settings.contactVisibility === value
-                    ? "rgba(183,44,255,.08)"
+                    ? "rgba(202, 70, 81,.08)"
                     : "#0d0d0d",
                   cursor: saving ? "wait" : "pointer",
                 }}
@@ -162,7 +162,7 @@ export default function ProfissionalConfiguracoesPage() {
                     { contactVisibility: value },
                     "Visibilidade do contato atualizada.",
                   )}
-                  style={{ marginTop: 3, accentColor: "#b72cff" }}
+                  style={{ marginTop: 3, accentColor: "#ca4651" }}
                 />
                 <span>
                   <strong style={{ color: "#eee" }}>{label}</strong>
@@ -185,16 +185,16 @@ export default function ProfissionalConfiguracoesPage() {
           <p style={{ ...muted, margin: "0 0 14px" }}>Enquanto pausado, o perfil não aparece na busca pública. Limite atual: {maxPauseDays} dias.</p>
           {isPaused ? (
             <div style={{ display: "grid", gap: 10 }}>
-              <div style={{ color: "#e1a6ff", border: "1px solid rgba(183,44,255,.24)", borderRadius: 10, padding: 12 }}>
+              <div style={{ color: "#f2c8cc", border: "1px solid rgba(202, 70, 81,.24)", borderRadius: 10, padding: 12 }}>
                 Perfil pausado até {settings.pauseUntil ? new Date(settings.pauseUntil).toLocaleDateString("pt-BR") : "data não informada"}.
               </div>
-              <button disabled={saving} onClick={() => save({ pause: { enabled: false } }, "Perfil reativado.")} style={{ minHeight: 44, borderRadius: 8, border: 0, background: "#b72cff", color: "#080704", fontWeight: 900, cursor: saving ? "wait" : "pointer" }}>Reativar perfil</button>
+              <button disabled={saving} onClick={() => save({ pause: { enabled: false } }, "Perfil reativado.")} style={{ minHeight: 44, borderRadius: 8, border: 0, background: "#ca4651", color: "#080704", fontWeight: 900, cursor: saving ? "wait" : "pointer" }}>Reativar perfil</button>
             </div>
           ) : (
             <div style={{ display: "grid", gap: 10 }}>
               <input type="number" min={1} max={maxPauseDays} value={pauseDays} onChange={(event) => setPauseDays(Number(event.target.value))} style={{ background: "#0d0d0d", border: "1px solid #2a2a2a", borderRadius: 8, color: "#fff", padding: 12 }} />
               <textarea value={pauseReason} onChange={(event) => setPauseReason(event.target.value)} placeholder="Motivo interno opcional" rows={3} style={{ background: "#0d0d0d", border: "1px solid #2a2a2a", borderRadius: 8, color: "#fff", padding: 12 }} />
-              <button disabled={saving} onClick={() => save({ pause: { enabled: true, days: pauseDays, reason: pauseReason } }, "Perfil pausado temporariamente.")} style={{ minHeight: 44, borderRadius: 8, border: "1px solid rgba(183,44,255,.28)", background: "rgba(183,44,255,.1)", color: "#e1a6ff", fontWeight: 900, cursor: saving ? "wait" : "pointer" }}>Pausar perfil</button>
+              <button disabled={saving} onClick={() => save({ pause: { enabled: true, days: pauseDays, reason: pauseReason } }, "Perfil pausado temporariamente.")} style={{ minHeight: 44, borderRadius: 8, border: "1px solid rgba(202, 70, 81,.28)", background: "rgba(202, 70, 81,.1)", color: "#f2c8cc", fontWeight: 900, cursor: saving ? "wait" : "pointer" }}>Pausar perfil</button>
             </div>
           )}
         </section>
@@ -218,7 +218,7 @@ export default function ProfissionalConfiguracoesPage() {
           {settings.presentationVideoUrl ? (
             <div style={{ display: "grid", gap: 12 }}>
               <video src={settings.presentationVideoUrl} controls style={{ width: "100%", maxHeight: 360, borderRadius: 10, background: "#050506" }} />
-              <div style={{ color: settings.presentationVideoStatus === "APPROVED" ? "#22c55e" : settings.presentationVideoStatus === "REJECTED" ? "#ef4444" : "#e1a6ff", fontWeight: 800 }}>
+              <div style={{ color: settings.presentationVideoStatus === "APPROVED" ? "#22c55e" : settings.presentationVideoStatus === "REJECTED" ? "#ef4444" : "#f2c8cc", fontWeight: 800 }}>
                 Status: {settings.presentationVideoStatus === "APPROVED" ? "aprovado" : settings.presentationVideoStatus === "REJECTED" ? "reprovado" : "pendente de análise"}
               </div>
               {settings.presentationVideoRejectReason ? <p style={muted}>{settings.presentationVideoRejectReason}</p> : null}
@@ -230,14 +230,14 @@ export default function ProfissionalConfiguracoesPage() {
               type="checkbox"
               checked={contentDeclarationAccepted}
               onChange={(event) => setContentDeclarationAccepted(event.target.checked)}
-              style={{ marginTop: 3, accentColor: "#b72cff" }}
+              style={{ marginTop: 3, accentColor: "#ca4651" }}
             />
             <span>
               Confirmo que sou autora ou tenho autorizacao para publicar este video, sem menoridade, exploracao, coercao, trafico, imagem de terceiros sem autorizacao ou conteudo proibido.
             </span>
           </label>
           <input ref={fileRef} type="file" accept="video/mp4,video/webm,video/quicktime" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadVideo(file); }} />
-          <button disabled={uploadingVideo} onClick={() => fileRef.current?.click()} style={{ marginTop: 12, minHeight: 44, width: "100%", borderRadius: 8, border: "1px solid rgba(183,44,255,.28)", background: "rgba(183,44,255,.1)", color: "#e1a6ff", fontWeight: 900, cursor: uploadingVideo ? "wait" : "pointer" }}>
+          <button disabled={uploadingVideo} onClick={() => fileRef.current?.click()} style={{ marginTop: 12, minHeight: 44, width: "100%", borderRadius: 8, border: "1px solid rgba(202, 70, 81,.28)", background: "rgba(202, 70, 81,.1)", color: "#f2c8cc", fontWeight: 900, cursor: uploadingVideo ? "wait" : "pointer" }}>
             {uploadingVideo ? "Enviando..." : settings.presentationVideoUrl ? "Substituir vídeo" : "Enviar vídeo"}
           </button>
         </section>

@@ -9,18 +9,18 @@ import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { supabaseAuth } from "@/lib/supabase-client";
 
 /* ── constantes de tema ─────────────────────────────────── */
-const GOLD = "#b72cff";
-const GOLD_DIM = "rgba(183,44,255,0.10)";
-const GOLD_MID = "rgba(183,44,255,0.28)";
+const GOLD = "#ca4651";
+const GOLD_DIM = "rgba(202, 70, 81,0.10)";
+const GOLD_MID = "rgba(202, 70, 81,0.28)";
 const PLAYFAIR = "var(--font-playfair), serif";
 
 const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "12px 14px", background: "#0b080f",
-  border: "1px solid rgba(183,44,255,0.28)", borderRadius: 16, color: "#f8f5fa",
+  width: "100%", padding: "12px 14px", background: "#080808",
+  border: "1px solid rgba(202, 70, 81,0.28)", borderRadius: 16, color: "#fff7f8",
   fontSize: 14, outline: "none", boxSizing: "border-box", transition: "border-color 0.2s",
 };
 const labelStyle: React.CSSProperties = {
-  display: "block", fontSize: 11, color: "#d58cff", fontWeight: 700,
+  display: "block", fontSize: 11, color: "#df828a", fontWeight: 700,
   textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8,
 };
 
@@ -118,7 +118,7 @@ function Section({ title, desc, children }: { title: string; desc?: string; chil
     <div style={{ marginBottom: 28 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: desc ? 6 : 14, paddingBottom: 10, borderBottom: `1px solid ${GOLD_DIM}` }}>
         <div style={{ width: 20, height: 2, background: GOLD, borderRadius: 2, flexShrink: 0 }} />
-        <h3 style={{ color: "#f8f5fa", fontSize: 12, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.5 }}>{title}</h3>
+        <h3 style={{ color: "#fff7f8", fontSize: 12, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.5 }}>{title}</h3>
       </div>
       {desc && <p style={{ color: "#aaa0b2", fontSize: 12, margin: "0 0 14px", lineHeight: 1.6 }}>{desc}</p>}
       {children}
@@ -143,7 +143,7 @@ function UploadZone({ label, accept, preview, onFile, loading }: {
       <div
         onClick={() => !loading && ref.current?.click()}
         style={{
-          border: `2px dashed ${preview ? GOLD_MID : "#2d1d35"}`,
+          border: `2px dashed ${preview ? GOLD_MID : "#251f20"}`,
           borderRadius: 12,
           padding: canPreview || isPrivateFile ? 0 : "28px 16px",
           textAlign: "center",
@@ -180,7 +180,7 @@ function UploadZone({ label, accept, preview, onFile, loading }: {
               <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
             </svg>
             <p style={{ color: "#aaa0b2", fontSize: 13, margin: 0 }}>Clique para selecionar</p>
-            <p style={{ color: "#66566f", fontSize: 11, margin: "4px 0 0" }}>{acceptLabel}</p>
+            <p style={{ color: "#676064", fontSize: 11, margin: "4px 0 0" }}>{acceptLabel}</p>
           </>
         )}
       </div>
@@ -342,19 +342,19 @@ function FaceCapture({
   useEffect(() => () => stopCamera(), []);
 
   return (
-    <div style={{ background: "#08050b", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: 14, marginBottom: 18 }}>
+    <div style={{ background: "#080808", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: 14, marginBottom: 18 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
         <div>
-          <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 800, color: "#f8f5fa" }}>Captura pela câmera</p>
-          <p style={{ margin: 0, fontSize: 12, color: "#b9adbf", lineHeight: 1.5 }}>Desafio: <strong style={{ color: GOLD }}>{challenge}</strong></p>
+          <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 800, color: "#fff7f8" }}>Captura pela câmera</p>
+          <p style={{ margin: 0, fontSize: 12, color: "#b4adb0", lineHeight: 1.5 }}>Desafio: <strong style={{ color: GOLD }}>{challenge}</strong></p>
         </div>
         <button type="button" onClick={cameraOn ? stopCamera : startCamera}
-          style={{ padding: "9px 12px", borderRadius: 8, border: `1px solid ${GOLD_MID}`, background: cameraOn ? "transparent" : GOLD, color: cameraOn ? GOLD : "#08050b", fontWeight: 800, cursor: "pointer", fontSize: 12 }}>
+          style={{ padding: "9px 12px", borderRadius: 8, border: `1px solid ${GOLD_MID}`, background: cameraOn ? "transparent" : GOLD, color: cameraOn ? GOLD : "#080808", fontWeight: 800, cursor: "pointer", fontSize: 12 }}>
           {cameraOn ? "Fechar câmera" : "Abrir câmera"}
         </button>
       </div>
 
-      <div style={{ aspectRatio: "4 / 3", borderRadius: 10, overflow: "hidden", background: "#0f0a13", border: "1px solid #2d1d35", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ aspectRatio: "4 / 3", borderRadius: 10, overflow: "hidden", background: "#080808", border: "1px solid #251f20", display: "flex", alignItems: "center", justifyContent: "center" }}>
         {cameraOn ? (
           <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }} />
         ) : (
@@ -366,11 +366,11 @@ function FaceCapture({
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
         <button type="button" onClick={takeSelfie} disabled={!cameraOn || loading}
-          style={{ padding: "11px", borderRadius: 8, border: "none", background: !cameraOn || loading ? "#66566f" : GOLD, color: "#08050b", fontWeight: 800, cursor: !cameraOn || loading ? "not-allowed" : "pointer" }}>
+          style={{ padding: "11px", borderRadius: 8, border: "none", background: !cameraOn || loading ? "#676064" : GOLD, color: "#080808", fontWeight: 800, cursor: !cameraOn || loading ? "not-allowed" : "pointer" }}>
           Enviar selfie
         </button>
         <button type="button" onClick={recording ? stopRecording : startRecording} disabled={!cameraOn || loading}
-          style={{ padding: "11px", borderRadius: 8, border: `1px solid ${recording ? "rgba(239,68,68,0.5)" : GOLD_MID}`, background: recording ? "rgba(239,68,68,0.12)" : "#0f0a13", color: recording ? "#ef4444" : GOLD, fontWeight: 800, cursor: !cameraOn || loading ? "not-allowed" : "pointer" }}>
+          style={{ padding: "11px", borderRadius: 8, border: `1px solid ${recording ? "rgba(239,68,68,0.5)" : GOLD_MID}`, background: recording ? "rgba(239,68,68,0.12)" : "#080808", color: recording ? "#ef4444" : GOLD, fontWeight: 800, cursor: !cameraOn || loading ? "not-allowed" : "pointer" }}>
           {recording ? "Parar vídeo" : "Gravar vídeo"}
         </button>
       </div>
@@ -956,15 +956,15 @@ export default function ProfissionalNovoPage() {
       <header className="model-flow-header">
         <button type="button" onClick={() => router.back()} aria-label="Voltar">←</button>
         <span className="model-flow-logo" aria-label="Elite Modell">
-          <Image src="/brand/elite-modell-logo-transparent.svg" alt="Elite Modell" width={184} height={54} priority style={{ objectFit: "contain", opacity: 1, filter: "none" }} />
+          <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={184} height={61} priority style={{ width: 184, height: "auto", objectFit: "contain", opacity: 1, filter: "none" }} />
         </span>
         <button type="button" onClick={handleExit}>Sair</button>
       </header>
 
       {/* ── Header ── */}
       <div style={{ marginBottom: 28 }}>
-        <p style={{ fontSize: 11, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", margin: "0 0 8px" }}>EliteModell — Novo anúncio</p>
-        <h1 style={{ fontSize: "clamp(22px, 4vw, 30px)", fontWeight: 700, color: "#f8f5fa", margin: "0 0 6px", fontFamily: PLAYFAIR }}>
+        <p style={{ fontSize: 11, color: GOLD, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", margin: "0 0 8px" }}>Elite Modell — Novo anúncio</p>
+        <h1 style={{ fontSize: "clamp(22px, 4vw, 30px)", fontWeight: 700, color: "#fff7f8", margin: "0 0 6px", fontFamily: PLAYFAIR }}>
           Criar perfil de acompanhante
         </h1>
         <p style={{ color: "#aaa0b2", fontSize: 13, margin: 0 }}>
@@ -977,9 +977,9 @@ export default function ProfissionalNovoPage() {
           margin: "0 0 22px",
           padding: "14px 16px",
           borderRadius: 14,
-          border: "1px solid rgba(183,44,255,0.35)",
-          background: "rgba(183,44,255,0.10)",
-          color: "#ead8f5",
+          border: "1px solid rgba(202, 70, 81,0.35)",
+          background: "rgba(202, 70, 81,0.10)",
+          color: "#fff7f8",
           fontSize: 12,
           lineHeight: 1.6,
         }}>
@@ -994,7 +994,7 @@ export default function ProfissionalNovoPage() {
           <span style={{ fontSize: 12, color: "#968a9e", fontWeight: 600 }}>Etapa {step + 1} de {STEPS.length} — {STEPS[step]}</span>
           <span style={{ fontSize: 12, color: GOLD, fontWeight: 700 }}>{Math.round(progress)}%</span>
         </div>
-        <div style={{ height: 3, background: "#2d1d35", borderRadius: 3 }}>
+        <div style={{ height: 3, background: "#251f20", borderRadius: 3 }}>
           <div style={{ height: "100%", width: `${progress}%`, background: GOLD, borderRadius: 3, transition: "width 0.4s ease" }} />
         </div>
         {/* Step bubbles — labels são ocultadas no mobile via CSS (.model-step-bubbles span) */}
@@ -1011,8 +1011,8 @@ export default function ProfissionalNovoPage() {
                 aria-current={i === step ? "step" : undefined}
                 style={{
                   width: 28, height: 28, borderRadius: "50%", border: "none",
-                  background: i <= step ? GOLD : "#24152c",
-                  color: i <= step ? "#14001d" : "#c8bdcf",
+                  background: i <= step ? GOLD : "#141212",
+                  color: i <= step ? "#080808" : "#b4adb0",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   margin: "0 auto 4px", fontSize: 11, fontWeight: 700,
                   cursor: i < step ? "pointer" : "default",
@@ -1022,7 +1022,7 @@ export default function ProfissionalNovoPage() {
               >
                 {i < step ? "✓" : i + 1}
               </button>
-              <span className="model-step-label" style={{ fontSize: 9, color: i === step ? GOLD : "#66566f", fontWeight: i === step ? 700 : 400, textTransform: "uppercase", letterSpacing: 0.3 }}>{s}</span>
+              <span className="model-step-label" style={{ fontSize: 9, color: i === step ? GOLD : "#676064", fontWeight: i === step ? 700 : 400, textTransform: "uppercase", letterSpacing: 0.3 }}>{s}</span>
             </div>
           ))}
         </div>
@@ -1073,9 +1073,9 @@ export default function ProfissionalNovoPage() {
                 <button key={val} type="button" onClick={() => toggleSingle("escortCategory", val)}
                   style={{
                     padding: "16px 8px", borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 14,
-                    border: `2px solid ${form.escortCategory === val ? GOLD : "rgba(183,44,255,0.24)"}`,
-                    background: form.escortCategory === val ? GOLD_DIM : "#0f0a13",
-                    color: form.escortCategory === val ? "#ffffff" : "#c8bdcf",
+                    border: `2px solid ${form.escortCategory === val ? GOLD : "rgba(202, 70, 81,0.24)"}`,
+                    background: form.escortCategory === val ? GOLD_DIM : "#080808",
+                    color: form.escortCategory === val ? "#ffffff" : "#b4adb0",
                     display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
                   }}>
                   {label}
@@ -1363,10 +1363,10 @@ export default function ProfissionalNovoPage() {
           <Section title="Galeria de fotos" desc={`Adicione ate ${MAX_ONBOARDING_GALLERY_PHOTOS} fotos. Fotos de boa qualidade aumentam muito as chances de contato. (${form.galleryUrls.length}/${MAX_ONBOARDING_GALLERY_PHOTOS})`}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               {form.galleryUrls.map((url, i) => (
-                <div key={i} style={{ position: "relative", borderRadius: 10, overflow: "hidden", aspectRatio: "3/4", background: "#0f0a13" }}>
+                <div key={i} style={{ position: "relative", borderRadius: 10, overflow: "hidden", aspectRatio: "3/4", background: "#080808" }}>
                   <img src={url} alt={`foto ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   <button onClick={() => set("galleryUrls", form.galleryUrls.filter((_, j) => j !== i))}
-                    style={{ position: "absolute", top: 6, right: 6, width: 24, height: 24, borderRadius: "50%", background: "rgba(6,14,27,0.9)", border: "none", color: "#f8f5fa", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                    style={{ position: "absolute", top: 6, right: 6, width: 24, height: 24, borderRadius: "50%", background: "rgba(6,14,27,0.9)", border: "none", color: "#fff7f8", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
                 </div>
               ))}
               {form.galleryUrls.length < MAX_ONBOARDING_GALLERY_PHOTOS && (
@@ -1379,7 +1379,7 @@ export default function ProfissionalNovoPage() {
               )}
             </div>
             <div style={{ marginTop: 12, padding: "10px 14px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 8 }}>
-              <p style={{ margin: 0, fontSize: 12, color: "#b9adbf", lineHeight: 1.6 }}>
+              <p style={{ margin: 0, fontSize: 12, color: "#b4adb0", lineHeight: 1.6 }}>
                 Você pode publicar fotos e vídeos sensuais/adultos, desde que sejam seus e estejam dentro das regras da plataforma.<br />
                 Fotos de terceiros, conteúdo ilegal, material sem consentimento ou envolvendo menores de idade serão reprovados.<br />
                 Documentos pessoais não devem ser enviados na galeria pública.<br />
@@ -1404,7 +1404,7 @@ export default function ProfissionalNovoPage() {
               <span style={{ fontSize: 22, flexShrink: 0, marginTop: 1 }}>🛡️</span>
               <div>
                 <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "#22c55e" }}>Seus dados são protegidos</p>
-                <p style={{ margin: 0, fontSize: 12, color: "#b9adbf", lineHeight: 1.65 }}>
+                <p style={{ margin: 0, fontSize: 12, color: "#b4adb0", lineHeight: 1.65 }}>
                   Clientes nunca verão seus documentos. A verificação é usada apenas para análise de segurança da plataforma.
                 </p>
               </div>
@@ -1424,8 +1424,8 @@ export default function ProfissionalNovoPage() {
                     disabled={buttonDisabled}
                     style={{
                       width: "100%", padding: "14px 16px", borderRadius: 12, border: "none",
-                      background: kycUnavailable ? "#66566f" : GOLD,
-                      color: kycUnavailable ? "#b9adbf" : "#08050b",
+                      background: kycUnavailable ? "#676064" : GOLD,
+                      color: kycUnavailable ? "#b4adb0" : "#080808",
                       fontSize: 15, fontWeight: 800,
                       cursor: buttonDisabled ? "not-allowed" : "pointer",
                       marginBottom: 14,
@@ -1455,7 +1455,7 @@ export default function ProfissionalNovoPage() {
                   )}
 
                   {kycUnavailable && (
-                    <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(183,44,255,0.10)", border: "1px solid rgba(183,44,255,0.25)", color: "#dc8cff", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>
+                    <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(202, 70, 81,0.10)", border: "1px solid rgba(202, 70, 81,0.25)", color: "#df828a", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>
                       A verificação automática está temporariamente indisponível. Tente novamente em alguns minutos.
                     </div>
                   )}
@@ -1473,9 +1473,9 @@ export default function ProfissionalNovoPage() {
         <div>
           <Section title="Verificação facial" desc="Para proteger a segurança da plataforma, realizamos uma validação facial para confirmar autenticidade, maioridade e evitar perfis falsos.">
 
-            <div style={{ background: "#08050b", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "16px", marginBottom: 20 }}>
-              <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#f8f5fa" }}>Validação facial segura</p>
-              <p style={{ margin: "0 0 14px", fontSize: 12, color: "#b9adbf", lineHeight: 1.6 }}>
+            <div style={{ background: "#080808", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "16px", marginBottom: 20 }}>
+              <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#fff7f8" }}>Validação facial segura</p>
+              <p style={{ margin: "0 0 14px", fontSize: 12, color: "#b4adb0", lineHeight: 1.6 }}>
                 O processo é feito em ambiente protegido e leva poucos minutos. Após o envio, seu cadastro permanece em análise até a revisão final da equipe.
               </p>
               {(() => {
@@ -1487,12 +1487,12 @@ export default function ProfissionalNovoPage() {
                       type="button"
                       onClick={startVerification9}
                       disabled={uploadingIdx === 100 || kycUnavailable9}
-                      style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "none", background: kycUnavailable9 ? "#66566f" : GOLD, color: kycUnavailable9 ? "#b9adbf" : "#08050b", fontSize: 14, fontWeight: 800, cursor: (uploadingIdx === 100 || kycUnavailable9) ? "not-allowed" : "pointer" }}
+                      style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "none", background: kycUnavailable9 ? "#676064" : GOLD, color: kycUnavailable9 ? "#b4adb0" : "#080808", fontSize: 14, fontWeight: 800, cursor: (uploadingIdx === 100 || kycUnavailable9) ? "not-allowed" : "pointer" }}
                     >
                       {uploadingIdx === 100 ? "Iniciando..." : kycUnavailable9 ? "Verificação automática indisponível" : "Iniciar verificação facial"}
                     </button>
                     {kycUnavailable9 && (
-                      <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: "rgba(183,44,255,0.10)", border: "1px solid rgba(183,44,255,0.25)", color: "#dc8cff", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>
+                      <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: "rgba(202, 70, 81,0.10)", border: "1px solid rgba(202, 70, 81,0.25)", color: "#df828a", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>
                         Verificação automática indisponível no momento. Use a verificação manual.
                       </div>
                     )}
@@ -1500,7 +1500,7 @@ export default function ProfissionalNovoPage() {
                       <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, fontSize: 12, fontWeight: 700 }}>
                         {form.kycProvider === "DIDIT" ? "Verificação Didit" : form.kycProvider === "PERSONA" ? "Verificação facial com Persona" : "Verificação manual"}: {form.kycStatus}
                         {form.kycExpiresAt && (
-                          <span style={{ display: "block", color: "#b9adbf", fontWeight: 500, marginTop: 4 }}>
+                          <span style={{ display: "block", color: "#b4adb0", fontWeight: 500, marginTop: 4 }}>
                             Expira em {new Date(form.kycExpiresAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                           </span>
                         )}
@@ -1512,7 +1512,7 @@ export default function ProfissionalNovoPage() {
             </div>
 
             {form.verificationUrl && form.verificationType === "biometria" && (
-              <div style={{ marginTop: 8, padding: "10px 14px", background: "#0f0a13", border: `1px solid ${GOLD_MID}`, borderRadius: 8, fontSize: 12, color: GOLD }}>
+              <div style={{ marginTop: 8, padding: "10px 14px", background: "#080808", border: `1px solid ${GOLD_MID}`, borderRadius: 8, fontSize: 12, color: GOLD }}>
                 {form.kycProvider === "DIDIT" ? "Verificação Didit iniciada" : "Verificação facial iniciada"}
               </div>
             )}
@@ -1520,7 +1520,7 @@ export default function ProfissionalNovoPage() {
             {/* Zona segura explicação */}
             <div style={{ marginTop: 20, background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 10, padding: "14px 16px" }}>
               <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "#22c55e" }}>Ambiente seguro</p>
-              <p style={{ margin: 0, fontSize: 12, color: "#b9adbf", lineHeight: 1.6 }}>
+              <p style={{ margin: 0, fontSize: 12, color: "#b4adb0", lineHeight: 1.6 }}>
                 A validação facial é usada apenas para análise de autenticidade e segurança. A aprovação do perfil continua dependendo da revisão da equipe.
               </p>
             </div>
@@ -1538,16 +1538,16 @@ export default function ProfissionalNovoPage() {
                 ["Verificação", form.kycSessionId ? "✓ Concluída" : "Não iniciada"],
                 ["WhatsApp", form.whatsapp || "—"],
               ].map(([label, value]) => (
-                <div key={label} style={{ background: "#0f0a13", border: `1px solid ${GOLD_DIM}`, borderRadius: 8, padding: "10px 12px" }}>
+                <div key={label} style={{ background: "#080808", border: `1px solid ${GOLD_DIM}`, borderRadius: 8, padding: "10px 12px" }}>
                   <div style={{ fontSize: 10, color: "#aaa0b2", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>{label}</div>
-                  <div style={{ fontSize: 13, color: String(value).startsWith("✓") ? "#22c55e" : "#f8f5fa", fontWeight: String(value).startsWith("✓") ? 700 : 400 }}>{value}</div>
+                  <div style={{ fontSize: 13, color: String(value).startsWith("✓") ? "#22c55e" : "#fff7f8", fontWeight: String(value).startsWith("✓") ? 700 : 400 }}>{value}</div>
                 </div>
               ))}
             </div>
           </Section>
 
           <div style={{ padding: "14px 18px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 10, marginTop: 8 }}>
-            <p style={{ margin: 0, fontSize: 12, color: "#b9adbf", lineHeight: 1.7 }}>
+            <p style={{ margin: 0, fontSize: 12, color: "#b4adb0", lineHeight: 1.7 }}>
               Ao enviar, você confirma ter <strong>18 anos ou mais</strong> e concorda com os Termos de Uso da plataforma. Seu perfil fica em análise por até <strong>3 dias úteis</strong> e só ficará visível após aprovação.
             </p>
           </div>
@@ -1557,18 +1557,18 @@ export default function ProfissionalNovoPage() {
       {/* ── Navegação entre etapas ── */}
       <div className="model-step-actions" style={{ display: "flex", justifyContent: "space-between", marginTop: 36, paddingTop: 20, borderTop: `1px solid ${GOLD_DIM}` }}>
         <button onClick={back} disabled={step === 0}
-          style={{ padding: "12px 24px", background: "transparent", border: `1px solid ${step === 0 ? "#2d1d35" : GOLD_MID}`, borderRadius: 10, color: step === 0 ? "#66566f" : GOLD, fontSize: 14, cursor: step === 0 ? "default" : "pointer", fontWeight: 600 }}>
+          style={{ padding: "12px 24px", background: "transparent", border: `1px solid ${step === 0 ? "#251f20" : GOLD_MID}`, borderRadius: 10, color: step === 0 ? "#676064" : GOLD, fontSize: 14, cursor: step === 0 ? "default" : "pointer", fontWeight: 600 }}>
           ← Voltar
         </button>
 
         {!isLast ? (
           <button onClick={next}
-            style={{ padding: "12px 32px", background: GOLD, border: "none", borderRadius: 10, color: "#08050b", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
+            style={{ padding: "12px 32px", background: GOLD, border: "none", borderRadius: 10, color: "#080808", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
             Continuar →
           </button>
         ) : (
           <button onClick={submit} disabled={loading || emailVerified === false}
-            style={{ padding: "12px 32px", background: loading || emailVerified === false ? "#6900a3" : GOLD, border: "none", borderRadius: 10, color: "#08050b", fontSize: 14, fontWeight: 800, cursor: loading || emailVerified === false ? "not-allowed" : "pointer" }}>
+            style={{ padding: "12px 32px", background: loading || emailVerified === false ? "#8e2f38" : GOLD, border: "none", borderRadius: 10, color: "#080808", fontSize: 14, fontWeight: 800, cursor: loading || emailVerified === false ? "not-allowed" : "pointer" }}>
             {loading ? "Enviando..." : emailVerified === false ? "Confirme o email para enviar" : "Enviar para aprovação ✦"}
           </button>
         )}
@@ -1583,7 +1583,7 @@ export default function ProfissionalNovoPage() {
           margin: 0 auto !important;
           padding: max(18px, env(safe-area-inset-top)) 16px calc(144px + env(safe-area-inset-bottom)) !important;
           overflow-x: hidden;
-          background: radial-gradient(circle at 16% 8%, rgba(156,36,218,0.20), transparent 31%), radial-gradient(circle at 88% 34%, rgba(108,0,164,0.16), transparent 36%), #030204;
+          background: radial-gradient(circle at 16% 8%, rgba(183, 57, 70,0.20), transparent 31%), radial-gradient(circle at 88% 34%, rgba(142, 47, 56,0.16), transparent 36%), #080808;
           color: #fff;
         }
         .model-flow-header {
@@ -1597,10 +1597,10 @@ export default function ProfissionalNovoPage() {
         .model-flow-header button {
           width: 44px;
           height: 44px;
-          border: 1px solid rgba(183,44,255,0.30);
+          border: 1px solid rgba(202, 70, 81,0.30);
           border-radius: 999px;
           background: rgba(11,11,13,0.82);
-          color: #d266ff;
+          color: #df828a;
           font-size: 18px;
           font-weight: 900;
           cursor: pointer;
@@ -1620,14 +1620,14 @@ export default function ProfissionalNovoPage() {
           text-wrap: balance;
         }
         .model-flow-page h3 { color: #fff !important; }
-        .model-flow-page label, .model-flow-page [style*="uppercase"] { color: #d58cff !important; }
+        .model-flow-page label, .model-flow-page [style*="uppercase"] { color: #df828a !important; }
         .model-flow-page input,
         .model-flow-page textarea,
         .model-flow-page select {
           min-height: 58px !important;
-          border: 1px solid rgba(183,44,255,0.30) !important;
+          border: 1px solid rgba(202, 70, 81,0.30) !important;
           border-radius: 18px !important;
-          background: rgba(11,8,15,0.96) !important;
+          background: rgba(8, 8, 8,0.96) !important;
           color: #fff !important;
           padding: 15px 16px !important;
           outline: none !important;
@@ -1635,15 +1635,15 @@ export default function ProfissionalNovoPage() {
           scroll-margin-bottom: 160px;
         }
         .model-flow-page textarea { min-height: 154px !important; }
-        .model-flow-page input::placeholder, .model-flow-page textarea::placeholder { color: rgba(210,198,218,0.70) !important; }
+        .model-flow-page input::placeholder, .model-flow-page textarea::placeholder { color: rgba(242, 200, 204,0.70) !important; }
         .model-flow-page input:focus, .model-flow-page textarea:focus, .model-flow-page select:focus {
-          border-color: rgba(213,108,255,0.82) !important;
-          box-shadow: 0 0 0 4px rgba(183,44,255,0.14) !important;
+          border-color: rgba(223, 130, 138,0.82) !important;
+          box-shadow: 0 0 0 4px rgba(202, 70, 81,0.14) !important;
         }
         .model-flow-page button { border-radius: 18px !important; }
         .model-flow-page button:disabled {
           opacity: 0.72 !important;
-          color: #d6ccdc !important;
+          color: #ded8da !important;
           cursor: not-allowed !important;
         }
         .model-chip-group {
@@ -1658,7 +1658,7 @@ export default function ProfissionalNovoPage() {
           white-space: normal;
           overflow-wrap: anywhere;
           color: #d4d8df !important;
-          border-color: rgba(183,44,255,0.30) !important;
+          border-color: rgba(202, 70, 81,0.30) !important;
           background: rgba(11,11,13,0.74) !important;
         }
         .model-tag {
@@ -1671,13 +1671,13 @@ export default function ProfissionalNovoPage() {
         }
         .model-tag[data-active="true"] {
           color: #fff !important;
-          border-color: rgba(222,129,255,0.90) !important;
-          background: linear-gradient(135deg, #d653ff, #9a18e7 54%, #6900a3) !important;
-          box-shadow: 0 12px 30px rgba(183,44,255,0.24), inset 0 1px 0 rgba(255,255,255,0.20) !important;
+          border-color: rgba(223, 130, 138,0.90) !important;
+          background: linear-gradient(135deg, #df828a, #b73946 54%, #8e2f38) !important;
+          box-shadow: 0 12px 30px rgba(202, 70, 81,0.24), inset 0 1px 0 rgba(255,255,255,0.20) !important;
         }
         .model-tag[data-active="false"] {
           color: #d4d8df !important;
-          border-color: rgba(183,44,255,0.30) !important;
+          border-color: rgba(202, 70, 81,0.30) !important;
           background: rgba(11,11,13,0.74) !important;
         }
         .model-tag-check {
@@ -1694,7 +1694,7 @@ export default function ProfissionalNovoPage() {
         }
         .model-subsection-label {
           margin: 0 0 8px !important;
-          color: #d58cff !important;
+          color: #df828a !important;
           font-size: 11px !important;
           font-weight: 800 !important;
           text-transform: uppercase;
@@ -1704,7 +1704,7 @@ export default function ProfissionalNovoPage() {
           display: grid;
           grid-template-columns: 86px minmax(0, 1fr);
           min-height: 58px;
-          border: 1px solid rgba(183,44,255,0.30);
+          border: 1px solid rgba(202, 70, 81,0.30);
           border-radius: 18px;
           background: rgba(11,11,13,0.94);
           overflow: hidden;
@@ -1715,8 +1715,8 @@ export default function ProfissionalNovoPage() {
           justify-content: center;
           gap: 7px;
           min-width: 0;
-          border-right: 1px solid rgba(183,44,255,0.22);
-          color: #dc8cff;
+          border-right: 1px solid rgba(202, 70, 81,0.22);
+          color: #df828a;
           font-size: 13px;
           font-weight: 900;
           user-select: none;
@@ -1727,12 +1727,12 @@ export default function ProfissionalNovoPage() {
           width: 27px;
           height: 20px;
           border-radius: 4px;
-          background: linear-gradient(135deg, #16a34a, #b72cff);
+          background: linear-gradient(135deg, #16a34a, #ca4651);
           color: #fff;
           font-size: 10px;
           font-weight: 950;
         }
-        .whatsapp-prefix strong { color: #dc8cff; font-size: 13px; }
+        .whatsapp-prefix strong { color: #df828a; font-size: 13px; }
         .whatsapp-field input {
           width: 100%;
           min-width: 0;
@@ -1744,14 +1744,14 @@ export default function ProfissionalNovoPage() {
           box-shadow: none !important;
         }
         .whatsapp-field:focus-within {
-          border-color: rgba(213,108,255,0.82);
-          box-shadow: 0 0 0 4px rgba(183,44,255,0.14);
+          border-color: rgba(223, 130, 138,0.82);
+          box-shadow: 0 0 0 4px rgba(202, 70, 81,0.14);
         }
         .instagram-field {
           display: grid;
           grid-template-columns: 48px minmax(0, 1fr);
           min-height: 58px;
-          border: 1px solid rgba(183,44,255,0.30);
+          border: 1px solid rgba(202, 70, 81,0.30);
           border-radius: 18px;
           background: rgba(11,11,13,0.94);
           overflow: hidden;
@@ -1760,8 +1760,8 @@ export default function ProfissionalNovoPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          border-right: 1px solid rgba(183,44,255,0.22);
-          color: #dc8cff;
+          border-right: 1px solid rgba(202, 70, 81,0.22);
+          color: #df828a;
           font-size: 16px;
           font-weight: 950;
           user-select: none;
@@ -1777,14 +1777,14 @@ export default function ProfissionalNovoPage() {
           box-shadow: none !important;
         }
         .instagram-field:focus-within {
-          border-color: rgba(213,108,255,0.82);
-          box-shadow: 0 0 0 4px rgba(183,44,255,0.14);
+          border-color: rgba(223, 130, 138,0.82);
+          box-shadow: 0 0 0 4px rgba(202, 70, 81,0.14);
         }
         .money-field {
           display: grid;
           grid-template-columns: 64px minmax(0, 1fr);
           min-height: 58px;
-          border: 1px solid rgba(183,44,255,0.30);
+          border: 1px solid rgba(202, 70, 81,0.30);
           border-radius: 18px;
           background: rgba(11,11,13,0.94);
           overflow: hidden;
@@ -1793,8 +1793,8 @@ export default function ProfissionalNovoPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          border-right: 1px solid rgba(183,44,255,0.22);
-          color: #dc8cff;
+          border-right: 1px solid rgba(202, 70, 81,0.22);
+          color: #df828a;
           font-size: 14px;
           font-weight: 950;
           user-select: none;
@@ -1812,8 +1812,8 @@ export default function ProfissionalNovoPage() {
         }
         .money-field input::placeholder { color: rgba(184,184,184,0.55) !important; }
         .money-field:focus-within {
-          border-color: rgba(213,108,255,0.82);
-          box-shadow: 0 0 0 4px rgba(183,44,255,0.14);
+          border-color: rgba(223, 130, 138,0.82);
+          box-shadow: 0 0 0 4px rgba(202, 70, 81,0.14);
         }
         .birth-date-grid {
           grid-template-columns: minmax(0, 0.78fr) minmax(0, 0.78fr) minmax(0, 1.25fr) !important;
@@ -1831,7 +1831,7 @@ export default function ProfissionalNovoPage() {
           grid-template-columns: minmax(0, 1fr) auto;
           align-items: center;
           gap: 10px;
-          border: 1px solid rgba(183,44,255,0.30);
+          border: 1px solid rgba(202, 70, 81,0.30);
           border-radius: 18px;
           background: rgba(11,11,13,0.94);
           padding: 9px 10px 9px 16px;
@@ -1843,17 +1843,17 @@ export default function ProfissionalNovoPage() {
         }
         .birth-date-confirmed button {
           min-height: 40px;
-          border: 1px solid rgba(183,44,255,0.30) !important;
+          border: 1px solid rgba(202, 70, 81,0.30) !important;
           border-radius: 12px !important;
-          background: rgba(183,44,255,0.12) !important;
-          color: #dc8cff !important;
+          background: rgba(202, 70, 81,0.12) !important;
+          color: #df828a !important;
           padding: 0 12px;
           font-size: 12px;
           font-weight: 900;
         }
         .model-flow-page > div:nth-of-type(2) {
           margin-bottom: 30px !important;
-          border: 1px solid rgba(183,44,255,0.28);
+          border: 1px solid rgba(202, 70, 81,0.28);
           border-radius: 20px;
           background: rgba(16,16,20,0.74);
           padding: 16px;
@@ -1864,7 +1864,7 @@ export default function ProfissionalNovoPage() {
           background: rgba(255,255,255,0.10) !important;
           overflow: hidden;
         }
-        .model-flow-page > div:nth-of-type(2) > div:nth-child(2) > div { background: linear-gradient(90deg, #8f16db, #e06aff) !important; }
+        .model-flow-page > div:nth-of-type(2) > div:nth-child(2) > div { background: linear-gradient(90deg, #b73946, #df828a) !important; }
         .model-flow-page > div:nth-of-type(2) > div:nth-child(3) {
           gap: 8px !important;
           padding-bottom: 4px;
@@ -1890,12 +1890,12 @@ export default function ProfissionalNovoPage() {
           scroll-snap-align: center;
         }
         .model-step-bubbles > div[data-current="true"] span {
-          color: #e2a0ff !important;
+          color: #f2c8cc !important;
           font-weight: 950 !important;
         }
         .model-step-bubbles > div[data-current="true"] button {
           transform: scale(1.08);
-          box-shadow: 0 0 0 4px rgba(183,44,255,0.16), 0 12px 24px rgba(183,44,255,0.22) !important;
+          box-shadow: 0 0 0 4px rgba(202, 70, 81,0.16), 0 12px 24px rgba(202, 70, 81,0.22) !important;
         }
         @media (max-width: 520px) {
           .model-step-bubbles {
@@ -1923,7 +1923,7 @@ export default function ProfissionalNovoPage() {
           z-index: 9999;
           margin-top: 0 !important;
           padding: 14px 16px calc(14px + env(safe-area-inset-bottom)) !important;
-          border-top: 1px solid rgba(183,44,255,0.28) !important;
+          border-top: 1px solid rgba(202, 70, 81,0.28) !important;
           background: rgba(5,5,5,0.96);
           display: flex !important;
           justify-content: space-between !important;
@@ -1932,15 +1932,15 @@ export default function ProfissionalNovoPage() {
         }
         .model-step-actions button { min-height: 56px !important; flex: 1; font-weight: 900 !important; }
         .model-step-actions button:first-child {
-          border: 1px solid rgba(183,44,255,0.28) !important;
+          border: 1px solid rgba(202, 70, 81,0.28) !important;
           background: rgba(16,16,20,0.88) !important;
           color: #fff !important;
         }
         .model-step-actions button:last-child {
           border: 0 !important;
-          background: linear-gradient(135deg, #d653ff, #9414e8 45%, #6900a3) !important;
+          background: linear-gradient(135deg, #df828a, #b73946 45%, #8e2f38) !important;
           color: #fff !important;
-          box-shadow: 0 18px 46px rgba(183,44,255,0.26) !important;
+          box-shadow: 0 18px 46px rgba(202, 70, 81,0.26) !important;
         }
         @media (max-width: 430px) {
           .model-flow-page [style*="gridTemplateColumns"] { grid-template-columns: 1fr !important; }

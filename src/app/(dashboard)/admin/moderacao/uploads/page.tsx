@@ -53,7 +53,7 @@ export default async function AdminUploadModerationPage() {
       <div style={{ display: "grid", gap: 14 }}>
         {assets.length === 0 ? (
           <AdminPanel>
-            <p style={{ margin: 0, color: "#b9adbf" }}>Nenhum upload aguardando análise.</p>
+            <p style={{ margin: 0, color: "#b4adb0" }}>Nenhum upload aguardando análise.</p>
           </AdminPanel>
         ) : assets.map((asset) => (
           <AdminPanel key={asset.id}>
@@ -64,7 +64,7 @@ export default async function AdminUploadModerationPage() {
                 ) : asset.category === "video" ? (
                   <video src={`/api/admin/uploads/${asset.id}/preview`} controls preload="metadata" style={{ width: "100%", height: 220 }} />
                 ) : (
-                  <a href={`/api/admin/uploads/${asset.id}/preview`} target="_blank" rel="noreferrer" style={{ color: "#e1a6ff", display: "grid", minHeight: 180, placeItems: "center" }}>
+                  <a href={`/api/admin/uploads/${asset.id}/preview`} target="_blank" rel="noreferrer" style={{ color: "#f2c8cc", display: "grid", minHeight: 180, placeItems: "center" }}>
                     Abrir documento privado
                   </a>
                 )}
@@ -76,7 +76,7 @@ export default async function AdminUploadModerationPage() {
                   <StatusPill tone={tone(asset.moderationStatus)}>Conteúdo: {asset.moderationStatus}</StatusPill>
                 </div>
                 <h2 style={{ color: "#fff", fontSize: 16, margin: "0 0 8px", overflowWrap: "anywhere" }}>{asset.originalName}</h2>
-                <p style={{ color: "#b9adbf", fontSize: 13, lineHeight: 1.6, margin: "0 0 12px" }}>
+                <p style={{ color: "#b4adb0", fontSize: 13, lineHeight: 1.6, margin: "0 0 12px" }}>
                   {asset.folder} · {asset.detectedMimeType} · {(asset.sizeBytes / 1024 / 1024).toFixed(2)} MB
                   <br />
                   AV: {asset.malwareProvider || "pendente"} · Moderação: {asset.moderationProvider || "pendente"}
@@ -98,7 +98,7 @@ export default async function AdminUploadModerationPage() {
                     <button name="action" value="REJECT" style={{ border: "1px solid rgba(239,68,68,.4)", borderRadius: 8, background: "rgba(239,68,68,.12)", color: "#fca5a5", padding: "9px 12px", fontWeight: 800 }}>
                       Rejeitar
                     </button>
-                    <button name="action" value="APPROVE" disabled={asset.malwareStatus !== "CLEAN"} style={{ border: 0, borderRadius: 8, background: "#b72cff", color: "#080704", padding: "9px 12px", fontWeight: 950, opacity: asset.malwareStatus === "CLEAN" ? 1 : 0.45 }}>
+                    <button name="action" value="APPROVE" disabled={asset.malwareStatus !== "CLEAN"} style={{ border: 0, borderRadius: 8, background: "#ca4651", color: "#080704", padding: "9px 12px", fontWeight: 950, opacity: asset.malwareStatus === "CLEAN" ? 1 : 0.45 }}>
                       Aprovar
                     </button>
                   </div>

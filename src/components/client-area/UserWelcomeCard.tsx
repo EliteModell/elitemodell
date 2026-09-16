@@ -33,11 +33,11 @@ export default function UserWelcomeCard({
     <section className="client-dashboard-welcome">
       <div className="flex items-center gap-3.5">
         <div className="relative h-[56px] w-[56px] shrink-0">
-          <div className="h-full w-full overflow-hidden rounded-full border-2 border-[#b72cff]/52 bg-[#1b1d1f] shadow-[0_0_28px_rgba(183,44,255,0.14)]">
+          <div className="h-full w-full overflow-hidden rounded-full border-2 border-[#ca4651]/52 bg-[#1b1d1f] shadow-[0_0_28px_rgba(202, 70, 81,0.14)]">
             {image ? (
               <img src={image} alt={name ?? "Avatar"} className="h-full w-full object-cover" />
             ) : (
-              <div className="grid h-full w-full place-items-center text-[16px] font-black text-[#b72cff]">
+              <div className="grid h-full w-full place-items-center text-[16px] font-black text-[#ca4651]">
                 {initials(name)}
               </div>
             )}
@@ -49,7 +49,7 @@ export default function UserWelcomeCard({
 
         <div className="min-w-0 flex-1">
           <p
-            style={{ color: "#b72cff", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em" }}
+            style={{ color: "#ca4651", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em" }}
           >
             AREA CLIENTE
           </p>
@@ -71,8 +71,8 @@ export default function UserWelcomeCard({
           href="/dashboard/perfil"
           className="grid h-10 w-10 shrink-0 place-items-center rounded-[8px]"
           style={{
-            border: "1px solid rgba(183,44,255,0.22)",
-            background: "rgba(183,44,255,0.10)",
+            border: "1px solid rgba(202, 70, 81,0.22)",
+            background: "rgba(202, 70, 81,0.10)",
             color: "rgba(245,240,228,0.72)",
           }}
           aria-label="Abrir perfil"

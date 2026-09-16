@@ -112,7 +112,7 @@ export default async function AdminConfiguracoesPage() {
       <AdminPanel>
         <h2 style={{ color: "#fff", margin: "0 0 14px", fontSize: 16 }}>Ambiente operacional</h2>
         <div style={{ display: "grid", gap: 10 }}>
-          <div style={{ color: "#b9adbf" }}>Cargo desta sessao: <strong style={{ color: "#fff" }}>{adminRole}</strong></div>
+          <div style={{ color: "#b4adb0" }}>Cargo desta sessao: <strong style={{ color: "#fff" }}>{adminRole}</strong></div>
           {envStatus.map(([name, value]) => (
             <div key={name} style={{ display: "flex", justifyContent: "space-between", gap: 12, borderBottom: "1px solid rgba(255,255,255,.08)", paddingBottom: 10 }}>
               <span style={{ color: "#fff", fontWeight: 800 }}>{name}</span>
@@ -124,7 +124,7 @@ export default async function AdminConfiguracoesPage() {
       <div style={{ height: 16 }} />
       <AdminPanel>
         <h2 style={{ color: "#fff", margin: "0 0 8px", fontSize: 16 }}>Quarentena, antimalware e moderação</h2>
-        <p style={{ color: "#b9adbf", margin: "0 0 16px", lineHeight: 1.6, fontSize: 13 }}>
+        <p style={{ color: "#b4adb0", margin: "0 0 16px", lineHeight: 1.6, fontSize: 13 }}>
           Arquivos sem decisão explícita permanecem privados. Selecionar revisão manual ou desativar a automação nunca libera mídia automaticamente.
         </p>
         <form action={updateUploadSecurity} style={{ display: "grid", gap: 14, maxWidth: 620 }}>
@@ -151,7 +151,7 @@ export default async function AdminConfiguracoesPage() {
               <option value="MANUAL">Revisão humana</option>
             </select>
           </label>
-          <button type="submit" style={{ justifySelf: "start", border: 0, borderRadius: 8, background: "#b72cff", color: "#080704", padding: "10px 16px", fontWeight: 950, cursor: "pointer" }}>
+          <button type="submit" style={{ justifySelf: "start", border: 0, borderRadius: 8, background: "#ca4651", color: "#080704", padding: "10px 16px", fontWeight: 950, cursor: "pointer" }}>
             Salvar segurança de uploads
           </button>
         </form>
@@ -159,7 +159,7 @@ export default async function AdminConfiguracoesPage() {
       <div style={{ height: 16 }} />
       <AdminPanel>
         <h2 style={{ color: "#fff", margin: "0 0 8px", fontSize: 16 }}>Acesso gratuito das profissionais</h2>
-        <p style={{ color: "#b9adbf", margin: "0 0 16px", lineHeight: 1.6, fontSize: 13 }}>
+        <p style={{ color: "#b4adb0", margin: "0 0 16px", lineHeight: 1.6, fontSize: 13 }}>
           O prazo começa somente na primeira aprovação do perfil. Contas já cadastradas permanecem com acesso legado.
           Alterar este valor afeta apenas profissionais aprovadas depois da mudança.
         </p>
@@ -172,10 +172,10 @@ export default async function AdminConfiguracoesPage() {
                 name="presetDays"
                 value={days}
                 style={{
-                  border: "1px solid rgba(183,44,255,.24)",
+                  border: "1px solid rgba(202, 70, 81,.24)",
                   borderRadius: 8,
-                  background: professionalFreeTrialDays === days ? "rgba(183,44,255,.22)" : "rgba(255,255,255,.03)",
-                  color: "#e1a6ff",
+                  background: professionalFreeTrialDays === days ? "rgba(202, 70, 81,.22)" : "rgba(255,255,255,.03)",
+                  color: "#f2c8cc",
                   padding: "10px 14px",
                   fontWeight: 900,
                   cursor: "pointer",
@@ -197,7 +197,7 @@ export default async function AdminConfiguracoesPage() {
                 required
                 style={{ minWidth: 0, flex: 1, border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, background: "#050506", color: "#fff", padding: "11px 12px" }}
               />
-              <button type="submit" style={{ border: 0, borderRadius: 8, background: "#b72cff", color: "#080704", padding: "10px 16px", fontWeight: 950, cursor: "pointer" }}>
+              <button type="submit" style={{ border: 0, borderRadius: 8, background: "#ca4651", color: "#080704", padding: "10px 16px", fontWeight: 950, cursor: "pointer" }}>
                 Salvar
               </button>
             </div>
