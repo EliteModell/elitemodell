@@ -7,7 +7,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Gem, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowRight, Crown, ShieldCheck, UserRound } from "lucide-react";
 import toast from "react-hot-toast";
 import { BrandMark } from "@/components/BrandMark";
 import { CaptchaField, type CaptchaFieldHandle } from "@/components/auth/CaptchaField";
@@ -884,7 +884,7 @@ export default function CadastroPage() {
         title: "Quero anunciar como acompanhante",
         desc: "Comece pelo telefone e siga para maioridade, termos, documentos, fotos e análise da equipe.",
         action: "Cadastre-se como acompanhante",
-        icon: Gem,
+        icon: Crown,
         directHref: ACCOUNT_ROUTES.cadastroAcompanhante,
       },
     ];
