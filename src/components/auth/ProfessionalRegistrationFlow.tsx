@@ -406,35 +406,42 @@ export function ProfessionalRegistrationFlow({
           <div className={styles.heroVisual}>
             <div className={styles.heroGlow} aria-hidden="true" />
             <div className={styles.heroOverlay} />
+            <div className={styles.heroIntro}>
+              <span className={styles.eyebrow}>
+                <Sparkles size={16} aria-hidden="true" />
+                Liberdade • discrição • segurança
+              </span>
+              <h1 id="professional-register-title" ref={headingRef} tabIndex={-1}>
+                Cadastre-se grátis <em>como acompanhante</em>
+              </h1>
+              <p className={styles.lead}>
+                Anuncie com segurança, controle seu perfil e acompanhe sua verificação em cada etapa.
+              </p>
+            </div>
             <div className={styles.heroCard}>
-              <span>Elite Modell</span>
-              <strong>Anuncie com segurança</strong>
-              <p>Controle seu perfil e acompanhe sua verificação em cada etapa.</p>
+              <span>Mais que um anúncio</span>
+              <strong>Seu perfil, suas escolhas</strong>
+              <p>Um ambiente exclusivo para você apresentar seu trabalho com autonomia e respeito.</p>
             </div>
             <div className={styles.heroSteps} aria-label="Etapas do cadastro">
-              <span>Telefone</span>
-              <span>Código</span>
-              <span>Cadastro completo</span>
+              <p>Seu cadastro em 3 etapas</p>
+              <span data-step="1">Telefone</span>
+              <span data-step="2">Código</span>
+              <span data-step="3">Cadastro completo</span>
             </div>
             <div className={styles.heroMessage}>
-              <span>Seu perfil, suas escolhas</span>
-              <strong>Entrada simples para criar seu anúncio com discrição.</strong>
+              <span>Entrada simples e protegida</span>
+              <strong>Comece pelo telefone. A análise completa acontece nas próximas etapas.</strong>
             </div>
           </div>
 
           <div className={styles.phoneContent}>
-            <span className={styles.eyebrow}>
-              <Sparkles size={16} aria-hidden="true" />
-              Entrada de acompanhante Elite Modell
-            </span>
-            <h1 id="professional-register-title" ref={headingRef} tabIndex={-1}>
-              Cadastre-se grátis como acompanhante
-            </h1>
-            <p className={styles.lead}>
-              Anuncie com segurança, controle seu perfil e acompanhe sua verificação.
-            </p>
-
             <div className={styles.formCard}>
+              <div className={styles.formIntro}>
+                <span>Primeiro passo</span>
+                <strong>Crie seu acesso com segurança</strong>
+                <p>Informe um número válido para receber o código de confirmação.</p>
+              </div>
               <label htmlFor="professional-phone">Qual seu número de telefone?</label>
               <div className={styles.inputShell}>
                 <Phone size={20} aria-hidden="true" />
@@ -702,6 +709,24 @@ export function ProfessionalRegistrationFlow({
                   <p>{description}</p>
                 </article>
               ))}
+            </div>
+          </section>
+
+          <section className={styles.trustSection} aria-labelledby="trust-title">
+            <div className={styles.trustCopy}>
+              <span className={styles.eyebrow}>
+                <LockKeyhole size={16} aria-hidden="true" />
+                Segurança e confiança
+              </span>
+              <h2 id="trust-title">Privacidade em todas as etapas</h2>
+              <p>
+                Seus dados são usados para validar a titularidade do perfil, proteger sua conta e manter a comunidade mais segura.
+              </p>
+            </div>
+            <div className={styles.trustPoints}>
+              <p><BadgeCheck size={20} aria-hidden="true" /><span><strong>Verificação responsável</strong>Documentos, maioridade e fotos passam por análise.</span></p>
+              <p><LockKeyhole size={20} aria-hidden="true" /><span><strong>Dados protegidos</strong>Tratamento alinhado à Política de Privacidade.</span></p>
+              <p><Headphones size={20} aria-hidden="true" /><span><strong>Suporte humano</strong>Orientação para concluir e manter seu anúncio.</span></p>
             </div>
           </section>
 
