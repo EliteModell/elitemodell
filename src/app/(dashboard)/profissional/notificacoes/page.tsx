@@ -99,9 +99,9 @@ export default async function ProfessionalNotificationsPage() {
           place-items: center;
           border: 1px solid rgba(242, 200, 204,0.34);
           border-radius: 999px;
-          background: radial-gradient(circle, rgba(242, 200, 204,0.22), rgba(202, 70, 81,0.06) 62%, transparent);
+          background: radial-gradient(circle, rgba(242, 200, 204,0.22), rgba(183, 44, 255,0.06) 62%, transparent);
           color: var(--elite-gold-light);
-          box-shadow: 0 0 28px rgba(202, 70, 81,0.12);
+          box-shadow: 0 0 28px rgba(183, 44, 255,0.12);
         }
         .professional-empty-icon::after {
           content: "";
@@ -162,7 +162,7 @@ export default async function ProfessionalNotificationsPage() {
           place-items: center;
           border: 1px solid rgba(242, 200, 204,0.34);
           border-radius: 999px;
-          background: rgba(202, 70, 81,0.10);
+          background: rgba(183, 44, 255,0.10);
           color: var(--elite-gold-light);
           font-size: 14px;
           font-weight: 950;

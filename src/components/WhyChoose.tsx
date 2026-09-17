@@ -56,7 +56,7 @@ export default function WhyChoose() {
             fontSize: 12,
             fontWeight: 700,
             letterSpacing: 3,
-            color: "#cc0000",
+            color: "#b72cff",
             textTransform: "uppercase",
             marginBottom: 12,
             textAlign: "center",
@@ -95,7 +95,7 @@ export default function WhyChoose() {
                 transition: "border-color 0.2s, transform 0.2s",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = "#cc0000";
+                (e.currentTarget as HTMLElement).style.borderColor = "#b72cff";
                 (e.currentTarget as HTMLElement).style.transform = "translateY(-3px)";
               }}
               onMouseLeave={(e) => {
@@ -108,13 +108,13 @@ export default function WhyChoose() {
                   width: 60,
                   height: 60,
                   borderRadius: 12,
-                  background: "rgba(204,0,0,0.1)",
-                  border: "1px solid rgba(204,0,0,0.2)",
+                  background: "rgba(183,44,255,0.1)",
+                  border: "1px solid rgba(183,44,255,0.2)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   margin: "0 auto 20px",
-                  color: "#cc0000",
+                  color: "#b72cff",
                 }}
               >
                 {r.icon}

@@ -7,10 +7,10 @@ import { CLIENT_PLANS, type ClientPlan, type ClientPlanId } from "@/lib/client-p
 
 const PixPaymentModal = dynamic(() => import("@/components/payments/PixPaymentModal"), { ssr: false });
 
-const GOLD = "#ca4651";
-const GOLD_DIM = "rgba(202, 70, 81,0.12)";
-const GOLD_MID = "rgba(202, 70, 81,0.28)";
-const GOLD_TEXT = "#f2c8cc";
+const GOLD = "#b72cff";
+const GOLD_DIM = "rgba(183, 44, 255,0.12)";
+const GOLD_MID = "rgba(183, 44, 255,0.28)";
+const GOLD_TEXT = "#e1a6ff";
 
 const BENEFITS = [
   "Mais de 10 mil avaliações para ver",
@@ -62,7 +62,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
           textAlign: "left",
         }}
       >
-        <span style={{ fontSize: 14, fontWeight: 600, color: "#fff7f8", lineHeight: 1.4 }}>{q}</span>
+        <span style={{ fontSize: 14, fontWeight: 600, color: "#fcf7ff", lineHeight: 1.4 }}>{q}</span>
         {open
           ? <ChevronUp style={{ width: 16, height: 16, color: GOLD, flexShrink: 0 }} />
           : <ChevronDown style={{ width: 16, height: 16, color: "#968a9e", flexShrink: 0 }} />}
@@ -96,7 +96,7 @@ function PlanCard({
         width: "100%",
         textAlign: "left",
         background: selected
-          ? "linear-gradient(135deg, rgba(202, 70, 81,0.14) 0%, rgba(202, 70, 81,0.06) 100%)"
+          ? "linear-gradient(135deg, rgba(183, 44, 255,0.14) 0%, rgba(183, 44, 255,0.06) 100%)"
           : "rgba(255,255,255,0.03)",
         border: `2px solid ${selected ? GOLD : "rgba(255,255,255,0.08)"}`,
         borderRadius: 16,
@@ -144,7 +144,7 @@ function PlanCard({
 
         {/* Duração */}
         <div style={{ flex: 1 }}>
-          <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: selected ? GOLD_TEXT : "#fff7f8" }}>
+          <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: selected ? GOLD_TEXT : "#fcf7ff" }}>
             {plan.label}
           </p>
           {showFirstPurchaseBadge && (
@@ -156,7 +156,7 @@ function PlanCard({
 
         {/* Preço */}
         <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <p style={{ margin: 0, fontSize: 18, fontWeight: 900, color: selected ? GOLD_TEXT : "#fff7f8" }}>
+          <p style={{ margin: 0, fontSize: 18, fontWeight: 900, color: selected ? GOLD_TEXT : "#fcf7ff" }}>
             {resolvedPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
           </p>
           {plan.pricePerMonthLabel && (
@@ -304,7 +304,7 @@ export default function PlanosPage() {
 
         {/* Benefícios */}
         <div style={{
-          background: "rgba(202, 70, 81,0.07)",
+          background: "rgba(183, 44, 255,0.07)",
           border: `1px solid ${GOLD_MID}`,
           borderRadius: 18,
           padding: "20px 22px",
@@ -320,7 +320,7 @@ export default function PlanosPage() {
                   width: 22,
                   height: 22,
                   borderRadius: "50%",
-                  background: "rgba(202, 70, 81,0.18)",
+                  background: "rgba(183, 44, 255,0.18)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -372,7 +372,7 @@ export default function PlanosPage() {
         }}>
           <QrCode style={{ width: 18, height: 18, color: GOLD, flexShrink: 0 }} />
           <div>
-            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#fff7f8" }}>Pagamento via Pix</p>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#fcf7ff" }}>Pagamento via Pix</p>
             <p style={{ margin: "2px 0 0", fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
               Instantâneo · sem taxas · QR Code seguro
             </p>
@@ -427,7 +427,7 @@ export default function PlanosPage() {
         .planos-cta-btn {
           flex-shrink: 0;
           padding: 13px 28px;
-          background: #ca4651;
+          background: #b72cff;
           color: #080808;
           border: none;
           border-radius: 12px;

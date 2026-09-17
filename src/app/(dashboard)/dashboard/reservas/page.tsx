@@ -58,7 +58,7 @@ export default function ReservasPage() {
 
       <section className="client-card mt-8 p-6">
         <h2 className="flex items-center gap-3 text-[25px] font-black text-[#f5f0e4]">
-          <CalendarCheck className="h-7 w-7 text-[#f2c8cc]" />
+          <CalendarCheck className="h-7 w-7 text-[#e1a6ff]" />
           Agendamentos
         </h2>
 
@@ -66,7 +66,7 @@ export default function ReservasPage() {
           <div className="premium-skeleton mt-7 h-36 rounded-[8px]" />
         ) : appointments.length === 0 ? (
           <div className="py-14 text-center">
-            <Compass className="mx-auto h-16 w-16 text-[#f2c8cc]" />
+            <Compass className="mx-auto h-16 w-16 text-[#e1a6ff]" />
             <p className="mt-6 text-[21px] font-black text-[#f5f0e4]">Nenhum agendamento ainda</p>
             <p className="mt-3 text-[15px] leading-6 text-[#f5f0e4]/58">Explore perfis e inicie contato quando encontrar alguém alinhado ao seu momento.</p>
             <Link href="/dashboard/acompanhantes" className="client-primary-button mt-7 flex items-center justify-center text-[16px] no-underline">
@@ -86,7 +86,7 @@ export default function ReservasPage() {
                   <Clock3 className="h-4 w-4" />
                   {dateLabel(appointment.date)} · {appointment.duration} min
                 </p>
-                <p className="mt-2 text-sm font-black text-[#f2c8cc]">{statusLabel(appointment.status)}</p>
+                <p className="mt-2 text-sm font-black text-[#e1a6ff]">{statusLabel(appointment.status)}</p>
               </Link>
             ))}
           </div>
@@ -95,7 +95,7 @@ export default function ReservasPage() {
 
       <section className="client-panel mt-7 p-6">
         <h2 className="flex items-center gap-3 text-[25px] font-black text-[#f5f0e4]">
-          <Star className="h-7 w-7 text-[#f2c8cc]" />
+          <Star className="h-7 w-7 text-[#e1a6ff]" />
           Avaliações
         </h2>
         <p className="mt-5 text-[16px] leading-7 text-[#f5f0e4]/58">Você ainda não fez nenhuma avaliação.</p>

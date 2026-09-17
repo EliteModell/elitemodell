@@ -7,8 +7,8 @@ function HexBadge({ children, done }: { children: React.ReactNode; done?: boolea
       <svg viewBox="0 0 60 60" className="absolute inset-0 h-full w-full" fill="none">
         <polygon
           points="30,3 54,16 54,44 30,57 6,44 6,16"
-          fill={done ? "rgba(202, 70, 81,0.12)" : "rgba(255,255,255,0.06)"}
-          stroke={done ? "rgba(202, 70, 81,0.5)" : "rgba(255,255,255,0.15)"}
+          fill={done ? "rgba(183, 44, 255,0.12)" : "rgba(255,255,255,0.06)"}
+          stroke={done ? "rgba(183, 44, 255,0.5)" : "rgba(255,255,255,0.15)"}
           strokeWidth="1.5"
         />
       </svg>
@@ -42,21 +42,21 @@ function AchievementCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
             <h3 className="min-w-0 flex-1 text-[21px] font-black leading-7 text-[var(--text-primary)]">{title}</h3>
-            <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[#f2c8cc]" />
+            <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[#e1a6ff]" />
           </div>
           <p className="mt-2 text-[15px] leading-7 text-[var(--text-secondary)]">{text}</p>
           <p className="mt-3 text-[15px] font-black text-[var(--text-primary)]">0 de {total} concluídos</p>
-          <button type="button" className="mt-2 text-[13px] font-bold underline underline-offset-2 text-[#f2c8cc]">
+          <button type="button" className="mt-2 text-[13px] font-bold underline underline-offset-2 text-[#e1a6ff]">
             Mostrar progresso
           </button>
         </div>
       </div>
       <div className="mt-5 flex items-end gap-3">
         <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-white/10">
-          <div className="h-full w-[8%] rounded-full bg-[#ca4651]" />
+          <div className="h-full w-[8%] rounded-full bg-[#b72cff]" />
         </div>
         <div className="text-center">
-          <div className="grid h-8 w-8 place-items-center rounded-full bg-[#ca4651]/14">
+          <div className="grid h-8 w-8 place-items-center rounded-full bg-[#b72cff]/14">
             {rewardIcon}
           </div>
         <p className="mt-1 text-[10px] font-semibold text-[var(--text-secondary)]">Nível 1</p>
@@ -77,8 +77,8 @@ export default function AchievementsSection() {
             Manter sua conta ativa adiciona conquistas ao seu perfil e aumenta o seu nível.
           </p>
         </div>
-        <div className="grid h-[68px] w-[68px] shrink-0 place-items-center rounded-[8px] bg-[#ca4651]/10 shadow-[0_0_40px_rgba(202, 70, 81,0.18)]">
-          <Star className="h-8 w-8 fill-[#ca4651] text-[#ca4651]" />
+        <div className="grid h-[68px] w-[68px] shrink-0 place-items-center rounded-[8px] bg-[#b72cff]/10 shadow-[0_0_40px_rgba(183, 44, 255,0.18)]">
+          <Star className="h-8 w-8 fill-[#b72cff] text-[#b72cff]" />
         </div>
       </div>
 
@@ -88,14 +88,14 @@ export default function AchievementsSection() {
           title="Escreva avaliações"
           text="Avalie 5 perfis de acompanhantes para chegar ao Nível 1"
           total={5}
-          rewardIcon={<Star className="h-4 w-4 fill-[#ca4651] text-[#ca4651]" />}
+          rewardIcon={<Star className="h-4 w-4 fill-[#b72cff] text-[#b72cff]" />}
         />
         <AchievementCard
           icon={<ThumbsUp className="h-6 w-6 text-[#7a8e95]" />}
           title="Curta avaliações"
           text="Curta 10 avaliações para chegar ao Nível 1"
           total={10}
-          rewardIcon={<ThumbsUp className="h-4 w-4 fill-[#ca4651] text-[#ca4651]" />}
+          rewardIcon={<ThumbsUp className="h-4 w-4 fill-[#b72cff] text-[#b72cff]" />}
         />
       </div>
 

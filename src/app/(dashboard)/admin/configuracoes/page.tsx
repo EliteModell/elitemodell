@@ -151,7 +151,7 @@ export default async function AdminConfiguracoesPage() {
               <option value="MANUAL">Revisão humana</option>
             </select>
           </label>
-          <button type="submit" style={{ justifySelf: "start", border: 0, borderRadius: 8, background: "#ca4651", color: "#080704", padding: "10px 16px", fontWeight: 950, cursor: "pointer" }}>
+          <button type="submit" style={{ justifySelf: "start", border: 0, borderRadius: 8, background: "#b72cff", color: "#080704", padding: "10px 16px", fontWeight: 950, cursor: "pointer" }}>
             Salvar segurança de uploads
           </button>
         </form>
@@ -172,10 +172,10 @@ export default async function AdminConfiguracoesPage() {
                 name="presetDays"
                 value={days}
                 style={{
-                  border: "1px solid rgba(202, 70, 81,.24)",
+                  border: "1px solid rgba(183, 44, 255,.24)",
                   borderRadius: 8,
-                  background: professionalFreeTrialDays === days ? "rgba(202, 70, 81,.22)" : "rgba(255,255,255,.03)",
-                  color: "#f2c8cc",
+                  background: professionalFreeTrialDays === days ? "rgba(183, 44, 255,.22)" : "rgba(255,255,255,.03)",
+                  color: "#e1a6ff",
                   padding: "10px 14px",
                   fontWeight: 900,
                   cursor: "pointer",
@@ -197,7 +197,7 @@ export default async function AdminConfiguracoesPage() {
                 required
                 style={{ minWidth: 0, flex: 1, border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, background: "#050506", color: "#fff", padding: "11px 12px" }}
               />
-              <button type="submit" style={{ border: 0, borderRadius: 8, background: "#ca4651", color: "#080704", padding: "10px 16px", fontWeight: 950, cursor: "pointer" }}>
+              <button type="submit" style={{ border: 0, borderRadius: 8, background: "#b72cff", color: "#080704", padding: "10px 16px", fontWeight: 950, cursor: "pointer" }}>
                 Salvar
               </button>
             </div>

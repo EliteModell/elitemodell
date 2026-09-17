@@ -57,7 +57,7 @@ type ProductMeta = {
   exampleTitle: string;
 };
 
-const GOLD = "#ca4651";
+const GOLD = "#b72cff";
 
 const PRODUCT_META: Record<ProfessionalPlanId, ProductMeta> = {
   "one-hour-top": {
@@ -929,7 +929,7 @@ export default function PlanosPage() {
           width: min(100%, 1120px);
           margin: 0 auto;
           padding: 8px 0 calc(120px + env(safe-area-inset-bottom));
-          color: #fff7f8;
+          color: #fcf7ff;
           position: relative;
           isolation: isolate;
           overflow-x: clip;
@@ -967,7 +967,7 @@ export default function PlanosPage() {
           top: 6%;
           width: 48%;
           height: 88%;
-          background: radial-gradient(ellipse at center, rgba(242, 200, 204,0.24), rgba(202, 70, 81,0.10) 42%, transparent 72%);
+          background: radial-gradient(ellipse at center, rgba(242, 200, 204,0.24), rgba(183, 44, 255,0.10) 42%, transparent 72%);
           filter: blur(4px);
           pointer-events: none;
           z-index: 0;
@@ -1028,7 +1028,7 @@ export default function PlanosPage() {
           grid-template-columns: 112px minmax(0, 1fr) auto;
           gap: 22px;
           align-items: center;
-          border: 1px solid rgba(202, 70, 81,0.26);
+          border: 1px solid rgba(183, 44, 255,0.26);
           border-radius: 24px;
           background:
             radial-gradient(circle at 13% 50%, rgba(242, 200, 204,0.12), transparent 28%),
@@ -1048,15 +1048,15 @@ export default function PlanosPage() {
           place-items: center;
           border: 1px solid rgba(242, 200, 204,0.42);
           border-radius: 999px;
-          color: #f2c8cc;
+          color: #e1a6ff;
           background:
-            radial-gradient(circle at 50% 42%, rgba(242, 200, 204,0.30), rgba(202, 70, 81,0.08) 56%, rgba(0,0,0,0.24)),
-            linear-gradient(145deg, rgba(202, 70, 81,0.16), rgba(0,0,0,0.32));
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 0 28px rgba(202, 70, 81,0.13);
+            radial-gradient(circle at 50% 42%, rgba(242, 200, 204,0.30), rgba(183, 44, 255,0.08) 56%, rgba(0,0,0,0.24)),
+            linear-gradient(145deg, rgba(183, 44, 255,0.16), rgba(0,0,0,0.32));
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 0 28px rgba(183, 44, 255,0.13);
         }
         .plans-benefit-card strong {
           display: block;
-          color: #f2c8cc;
+          color: #e1a6ff;
           font-family: Georgia, "Times New Roman", serif;
           font-size: 24px;
           line-height: 1.05;
@@ -1070,7 +1070,7 @@ export default function PlanosPage() {
           line-height: 1.35;
         }
         .plans-benefit-card > svg {
-          color: #f2c8cc;
+          color: #e1a6ff;
         }
         .plan-showcase {
           margin-top: 22px;
@@ -1091,7 +1091,7 @@ export default function PlanosPage() {
           display: inline-flex;
           align-items: center;
           gap: 10px;
-          color: #f2c8cc;
+          color: #e1a6ff;
           font-size: 13px;
           font-weight: 950;
           letter-spacing: 0.24em;
@@ -1112,7 +1112,7 @@ export default function PlanosPage() {
           display: flex;
           flex-direction: column;
           gap: 13px;
-          border: 1px solid rgba(202, 70, 81,0.30);
+          border: 1px solid rgba(183, 44, 255,0.30);
           border-radius: 24px;
           background:
             radial-gradient(circle at 50% 0%, rgba(242, 200, 204,0.10), transparent 36%),
@@ -1122,7 +1122,7 @@ export default function PlanosPage() {
         }
         .showcase-plan-card.featured {
           border-color: rgba(242, 200, 204,0.82);
-          box-shadow: 0 24px 62px rgba(0,0,0,0.50), 0 0 34px rgba(202, 70, 81,0.22);
+          box-shadow: 0 24px 62px rgba(0,0,0,0.50), 0 0 34px rgba(183, 44, 255,0.22);
         }
         .showcase-plan-card.diamond {
           border-color: rgba(190,231,255,0.48);
@@ -1134,7 +1134,7 @@ export default function PlanosPage() {
           transform: translateX(-50%);
           min-width: 128px;
           border-radius: 0 0 14px 14px;
-          background: linear-gradient(135deg, #f2c8cc, #ca4651);
+          background: linear-gradient(135deg, #e1a6ff, #b72cff);
           color: #111;
           padding: 7px 12px;
           font-size: 11px;
@@ -1149,11 +1149,11 @@ export default function PlanosPage() {
           place-items: center;
           margin: 8px auto 0;
           border-radius: 999px;
-          color: #f2c8cc;
+          color: #e1a6ff;
           background:
-            radial-gradient(circle, rgba(242, 200, 204,0.26), rgba(202, 70, 81,0.08) 60%, transparent),
+            radial-gradient(circle, rgba(242, 200, 204,0.26), rgba(183, 44, 255,0.08) 60%, transparent),
             rgba(255,255,255,0.035);
-          filter: drop-shadow(0 0 20px rgba(202, 70, 81,0.18));
+          filter: drop-shadow(0 0 20px rgba(183, 44, 255,0.18));
         }
         .showcase-plan-card.diamond .showcase-plan-icon {
           color: #bee7ff;
@@ -1180,7 +1180,7 @@ export default function PlanosPage() {
           display: grid;
           gap: 3px;
           justify-items: center;
-          color: #f2c8cc;
+          color: #e1a6ff;
           font-size: 20px;
           line-height: 1;
         }
@@ -1195,7 +1195,7 @@ export default function PlanosPage() {
           list-style: none;
           margin: 2px 0 0;
           padding: 14px 0 0;
-          border-top: 1px solid rgba(202, 70, 81,0.18);
+          border-top: 1px solid rgba(183, 44, 255,0.18);
           display: grid;
           gap: 10px;
         }
@@ -1208,7 +1208,7 @@ export default function PlanosPage() {
           line-height: 1.25;
         }
         .showcase-benefits svg {
-          color: #f2c8cc;
+          color: #e1a6ff;
           flex: 0 0 auto;
         }
         .showcase-plan-card .period-box {
@@ -1220,19 +1220,19 @@ export default function PlanosPage() {
         }
         .showcase-plan-button {
           min-height: 52px;
-          border: 1px solid rgba(202, 70, 81,0.38);
+          border: 1px solid rgba(183, 44, 255,0.38);
           border-radius: 16px;
-          background: rgba(202, 70, 81,0.08);
-          color: #f2c8cc;
+          background: rgba(183, 44, 255,0.08);
+          color: #e1a6ff;
           font-size: 14px;
           font-weight: 950;
           cursor: pointer;
         }
         .showcase-plan-button.featured {
           border-color: rgba(255,255,255,0.18);
-          background: linear-gradient(135deg, #f2c8cc, ${GOLD} 48%, #8e2f38);
+          background: linear-gradient(135deg, #e1a6ff, ${GOLD} 48%, #65009b);
           color: #080704;
-          box-shadow: 0 16px 36px rgba(202, 70, 81,0.24);
+          box-shadow: 0 16px 36px rgba(183, 44, 255,0.24);
         }
         .secure-strip {
           position: relative;
@@ -1244,7 +1244,7 @@ export default function PlanosPage() {
           gap: 16px;
           align-items: center;
           margin-top: 18px;
-          border: 1px solid rgba(202, 70, 81,0.26);
+          border: 1px solid rgba(183, 44, 255,0.26);
           border-radius: 22px;
           background:
             radial-gradient(circle at 6% 50%, rgba(242, 200, 204,0.12), transparent 24%),
@@ -1257,8 +1257,8 @@ export default function PlanosPage() {
           display: grid;
           place-items: center;
           border-radius: 999px;
-          color: #f2c8cc;
-          background: rgba(202, 70, 81,0.12);
+          color: #e1a6ff;
+          background: rgba(183, 44, 255,0.12);
           border: 1px solid rgba(242, 200, 204,0.28);
         }
         .secure-strip strong,
@@ -1277,7 +1277,7 @@ export default function PlanosPage() {
           line-height: 1.45;
         }
         .secure-strip > svg {
-          color: #f2c8cc;
+          color: #e1a6ff;
         }
         .plans-extra-heading {
           margin-top: 18px;
@@ -1309,7 +1309,7 @@ export default function PlanosPage() {
           display: flex;
           flex-direction: column;
           justify-content: center;
-          border: 1px solid rgba(202, 70, 81,0.28);
+          border: 1px solid rgba(183, 44, 255,0.28);
           border-radius: 8px;
           background: linear-gradient(145deg, rgba(24,22,18,0.98), rgba(7,7,8,0.98));
           padding: 30px;
@@ -1340,18 +1340,18 @@ export default function PlanosPage() {
           align-items: center;
           gap: 10px;
           min-height: 92px;
-          border: 1px solid rgba(202, 70, 81,0.18);
+          border: 1px solid rgba(183, 44, 255,0.18);
           border-radius: 8px;
           background: rgba(255,255,255,0.035);
           padding: 16px;
-          color: #fff7f8;
+          color: #fcf7ff;
           font-size: 14px;
           font-weight: 850;
           line-height: 1.25;
         }
         .hero-summary svg,
         .info-grid svg {
-          color: #f2c8cc;
+          color: #e1a6ff;
           flex: 0 0 auto;
         }
         .opportunity-band {
@@ -1362,7 +1362,7 @@ export default function PlanosPage() {
           margin: 0 0 16px;
           border: 1px solid rgba(242, 200, 204,0.30);
           border-radius: 8px;
-          background: linear-gradient(135deg, rgba(202, 70, 81,0.16), rgba(255,255,255,0.035));
+          background: linear-gradient(135deg, rgba(183, 44, 255,0.16), rgba(255,255,255,0.035));
           padding: 15px 16px;
         }
         .opportunity-band span,
@@ -1373,7 +1373,7 @@ export default function PlanosPage() {
           border: 1px solid rgba(242, 200, 204,0.32);
           border-radius: 999px;
           background: rgba(0,0,0,0.22);
-          color: #f2c8cc;
+          color: #e1a6ff;
           padding: 8px 11px;
           font-size: 12px;
           font-weight: 950;
@@ -1407,7 +1407,7 @@ export default function PlanosPage() {
         .section-copy {
           position: sticky;
           top: 16px;
-          border: 1px solid rgba(202, 70, 81,0.16);
+          border: 1px solid rgba(183, 44, 255,0.16);
           border-radius: 8px;
           background: rgba(255,255,255,0.035);
           padding: 20px;
@@ -1445,7 +1445,7 @@ export default function PlanosPage() {
           position: relative;
           overflow: hidden;
           isolation: isolate;
-          border: 1px solid rgba(202, 70, 81,0.22);
+          border: 1px solid rgba(183, 44, 255,0.22);
           border-radius: 8px;
           background: linear-gradient(145deg, rgba(22,22,22,0.98), rgba(7,7,8,0.98));
           padding: 18px;
@@ -1457,7 +1457,7 @@ export default function PlanosPage() {
           position: absolute;
           inset: 0 0 auto;
           height: 3px;
-          background: linear-gradient(90deg, transparent, rgba(202, 70, 81,0.72), transparent);
+          background: linear-gradient(90deg, transparent, rgba(183, 44, 255,0.72), transparent);
           pointer-events: none;
           z-index: 0;
         }
@@ -1491,8 +1491,8 @@ export default function PlanosPage() {
           width: fit-content;
           border-radius: 999px;
           border: 1px solid rgba(242, 200, 204,0.35);
-          background: rgba(202, 70, 81,0.14);
-          color: #f2c8cc;
+          background: rgba(183, 44, 255,0.14);
+          color: #e1a6ff;
           padding: 7px 10px;
           font-size: 11px;
           font-weight: 950;
@@ -1508,10 +1508,10 @@ export default function PlanosPage() {
           height: 46px;
           display: grid;
           place-items: center;
-          border: 1px solid rgba(202, 70, 81,0.24);
+          border: 1px solid rgba(183, 44, 255,0.24);
           border-radius: 8px;
-          background: rgba(202, 70, 81,0.10);
-          color: #f2c8cc;
+          background: rgba(183, 44, 255,0.10);
+          color: #e1a6ff;
           flex: 0 0 auto;
         }
         .product-heading h2 {
@@ -1524,7 +1524,7 @@ export default function PlanosPage() {
         }
         .product-heading p {
           margin: 7px 0 0;
-          color: #fff7f8;
+          color: #fcf7ff;
           font-size: 15px;
           line-height: 1.35;
           font-weight: 750;
@@ -1551,7 +1551,7 @@ export default function PlanosPage() {
         .benefit-grid li,
         .checkout-benefits li {
           min-height: 42px;
-          border: 1px solid rgba(202, 70, 81,0.14);
+          border: 1px solid rgba(183, 44, 255,0.14);
           border-radius: 8px;
           background: rgba(255,255,255,0.035);
           color: #d7dde6;
@@ -1566,7 +1566,7 @@ export default function PlanosPage() {
         }
         .benefit-grid li::before {
           content: "✓";
-          color: #f2c8cc;
+          color: #e1a6ff;
           margin-right: 6px;
           font-weight: 950;
         }
@@ -1578,17 +1578,17 @@ export default function PlanosPage() {
         }
         .points-control button {
           height: 50px;
-          border: 1px solid rgba(202, 70, 81,0.28);
+          border: 1px solid rgba(183, 44, 255,0.28);
           border-radius: 8px;
-          background: rgba(202, 70, 81,0.10);
-          color: #f2c8cc;
+          background: rgba(183, 44, 255,0.10);
+          color: #e1a6ff;
           font-weight: 950;
           cursor: pointer;
         }
         .points-control input {
           height: 50px;
           min-width: 0;
-          border: 1px solid rgba(202, 70, 81,0.28);
+          border: 1px solid rgba(183, 44, 255,0.28);
           border-radius: 8px;
           background: #080808;
           color: #fff;
@@ -1607,13 +1607,13 @@ export default function PlanosPage() {
           align-items: flex-end;
           margin: 18px 0 13px;
           padding-top: 16px;
-          border-top: 1px solid rgba(202, 70, 81,0.14);
+          border-top: 1px solid rgba(183, 44, 255,0.14);
         }
         .compact-price {
           margin-top: 12px;
         }
         .price-row span {
-          color: #f2c8cc;
+          color: #e1a6ff;
           font-size: 34px;
           line-height: 0.95;
           font-weight: 950;
@@ -1638,7 +1638,7 @@ export default function PlanosPage() {
         .period-box select {
           width: 100%;
           min-height: 50px;
-          border: 1px solid rgba(202, 70, 81,0.28);
+          border: 1px solid rgba(183, 44, 255,0.28);
           border-radius: 8px;
           background: #080808;
           color: #fff;
@@ -1659,9 +1659,9 @@ export default function PlanosPage() {
           margin-bottom: 12px;
           border: 1px solid rgba(242, 200, 204,0.28);
           border-radius: 8px;
-          background: rgba(202, 70, 81,0.10);
+          background: rgba(183, 44, 255,0.10);
           padding: 12px;
-          color: #fff7f8;
+          color: #fcf7ff;
           font-size: 13px;
         }
         .simulation-box span {
@@ -1685,9 +1685,9 @@ export default function PlanosPage() {
         .primary-action {
           flex: 1;
           border: 0;
-          background: linear-gradient(135deg, #f2c8cc, ${GOLD} 48%, #8e2f38);
+          background: linear-gradient(135deg, #e1a6ff, ${GOLD} 48%, #65009b);
           color: #080704;
-          box-shadow: 0 18px 44px rgba(202, 70, 81,0.20);
+          box-shadow: 0 18px 44px rgba(183, 44, 255,0.20);
         }
         .primary-action:disabled {
           opacity: 0.46;
@@ -1695,9 +1695,9 @@ export default function PlanosPage() {
           box-shadow: none;
         }
         .ghost-action {
-          border: 1px solid rgba(202, 70, 81,0.28);
+          border: 1px solid rgba(183, 44, 255,0.28);
           background: rgba(255,255,255,0.035);
-          color: #f2c8cc;
+          color: #e1a6ff;
           padding: 0 16px;
         }
         .info-grid {
@@ -1711,7 +1711,7 @@ export default function PlanosPage() {
           position: relative;
           overflow: hidden;
           isolation: isolate;
-          border: 1px solid rgba(202, 70, 81,0.18);
+          border: 1px solid rgba(183, 44, 255,0.18);
           border-radius: 8px;
           background: rgba(255,255,255,0.035);
           padding: 22px;
@@ -1735,10 +1735,10 @@ export default function PlanosPage() {
           grid-template-columns: auto minmax(0, 1fr);
           gap: 13px;
           align-content: start;
-          border: 1px solid rgba(202, 70, 81,0.20);
+          border: 1px solid rgba(183, 44, 255,0.20);
           border-radius: 18px;
           background:
-            radial-gradient(circle at top right, rgba(202, 70, 81,0.10), transparent 44%),
+            radial-gradient(circle at top right, rgba(183, 44, 255,0.10), transparent 44%),
             linear-gradient(145deg, rgba(22,22,22,0.96), rgba(8,8,8,0.98));
           padding: 16px;
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
@@ -1750,8 +1750,8 @@ export default function PlanosPage() {
           place-items: center;
           border-radius: 999px;
           border: 1px solid rgba(242, 200, 204,0.32);
-          background: rgba(202, 70, 81,0.12);
-          color: #f2c8cc;
+          background: rgba(183, 44, 255,0.12);
+          color: #e1a6ff;
         }
         .advantage-copy {
           min-width: 0;
@@ -1774,10 +1774,10 @@ export default function PlanosPage() {
           grid-column: 1 / -1;
           width: fit-content;
           align-self: end;
-          border: 1px solid rgba(202, 70, 81,0.35);
+          border: 1px solid rgba(183, 44, 255,0.35);
           border-radius: 999px;
-          background: rgba(202, 70, 81,0.12);
-          color: #f2c8cc;
+          background: rgba(183, 44, 255,0.12);
+          color: #e1a6ff;
           padding: 7px 10px;
           font-size: 10px;
           font-weight: 950;
@@ -1790,10 +1790,10 @@ export default function PlanosPage() {
           margin-top: 16px;
         }
         .faq-list details {
-          border: 1px solid rgba(202, 70, 81,0.22);
+          border: 1px solid rgba(183, 44, 255,0.22);
           border-radius: 18px;
           background:
-            radial-gradient(circle at top right, rgba(202, 70, 81,0.08), transparent 48%),
+            radial-gradient(circle at top right, rgba(183, 44, 255,0.08), transparent 48%),
             rgba(0,0,0,0.24);
           padding: 16px;
           overflow: hidden;
@@ -1808,7 +1808,7 @@ export default function PlanosPage() {
           line-height: 1.35;
         }
         .faq-list summary::marker {
-          color: #f2c8cc;
+          color: #e1a6ff;
         }
         .faq-list p {
           margin: 12px 0 0;
@@ -1831,7 +1831,7 @@ export default function PlanosPage() {
           width: min(100%, 500px);
           max-height: min(90dvh, 760px);
           overflow-y: auto;
-          border: 1px solid rgba(202, 70, 81,0.35);
+          border: 1px solid rgba(183, 44, 255,0.35);
           border-radius: 8px;
           background: #090909;
           padding: 22px;
@@ -1873,14 +1873,14 @@ export default function PlanosPage() {
           justify-content: space-between;
           align-items: center;
           margin: 18px 0;
-          border: 1px solid rgba(202, 70, 81,0.18);
+          border: 1px solid rgba(183, 44, 255,0.18);
           border-radius: 8px;
           background: rgba(255,255,255,0.035);
           padding: 14px;
           color: #aeb6c2;
         }
         .checkout-summary strong {
-          color: #f2c8cc;
+          color: #e1a6ff;
           font-size: 22px;
         }
         .checkout-field {
@@ -1898,7 +1898,7 @@ export default function PlanosPage() {
         .checkout-field input {
           width: 100%;
           min-height: 50px;
-          border: 1px solid rgba(202, 70, 81,0.28);
+          border: 1px solid rgba(183, 44, 255,0.28);
           border-radius: 8px;
           background: #080808;
           color: #fff;
@@ -1909,7 +1909,7 @@ export default function PlanosPage() {
         }
         .checkout-field input:focus {
           border-color: rgba(242, 200, 204,0.72);
-          box-shadow: 0 0 0 3px rgba(202, 70, 81,0.14);
+          box-shadow: 0 0 0 3px rgba(183, 44, 255,0.14);
         }
         .checkout-field input:disabled {
           opacity: 0.58;
@@ -1954,7 +1954,7 @@ export default function PlanosPage() {
         }
         .preview-card {
           min-height: 248px;
-          border: 1px solid rgba(202, 70, 81,0.16);
+          border: 1px solid rgba(183, 44, 255,0.16);
           border-radius: 8px;
           background: rgba(255,255,255,0.035);
           padding: 14px;
@@ -1963,7 +1963,7 @@ export default function PlanosPage() {
           gap: 10px;
         }
         .preview-card span {
-          color: #f2c8cc;
+          color: #e1a6ff;
           font-size: 11px;
           font-weight: 950;
           text-transform: uppercase;
@@ -1973,10 +1973,10 @@ export default function PlanosPage() {
         .mini-gallery {
           min-height: 104px;
           border-radius: 8px;
-          background: linear-gradient(135deg, rgba(202, 70, 81,0.18), rgba(255,255,255,0.05));
+          background: linear-gradient(135deg, rgba(183, 44, 255,0.18), rgba(255,255,255,0.05));
           display: grid;
           place-items: center;
-          color: #f2c8cc;
+          color: #e1a6ff;
           font-weight: 950;
         }
         .mini-gallery {

@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { BrandMark } from "@/components/BrandMark";
 
-const GOLD = "#CA4651";
+const GOLD = "#b72cff";
 
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
@@ -46,7 +46,7 @@ export function PasswordRecoveryClient() {
 
   return (
     <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#f7f7fa", color: "#141212", padding: 24 }}>
-      <section style={{ width: "100%", maxWidth: 430, background: "#fff", border: "1px solid #fff7f8", borderRadius: 20, padding: 30, boxShadow: "0 24px 70px rgba(37, 31, 32,0.12)" }}>
+      <section style={{ width: "100%", maxWidth: 430, background: "#fff", border: "1px solid #fcf7ff", borderRadius: 20, padding: 30, boxShadow: "0 24px 70px rgba(37, 31, 32,0.12)" }}>
         <Link href="/" aria-label="Elite Modell" style={{ display: "inline-flex", width: 176, alignItems: "center", textDecoration: "none", marginBottom: 24 }}>
           <BrandMark priority />
         </Link>
@@ -57,8 +57,8 @@ export function PasswordRecoveryClient() {
         </p>
 
         {sent ? (
-          <div style={{ border: "1px solid rgba(202, 70, 81,0.28)", background: "rgba(202, 70, 81,0.08)", borderRadius: 14, padding: 16, marginBottom: 18 }}>
-            <p style={{ color: "#f2c8cc", fontWeight: 800, margin: "0 0 6px" }}>Confira sua caixa de entrada.</p>
+          <div style={{ border: "1px solid rgba(183, 44, 255,0.28)", background: "rgba(183, 44, 255,0.08)", borderRadius: 14, padding: 16, marginBottom: 18 }}>
+            <p style={{ color: "#e1a6ff", fontWeight: 800, margin: "0 0 6px" }}>Confira sua caixa de entrada.</p>
             <p style={{ color: "#b4adb0", fontSize: 14, lineHeight: 1.55, margin: 0 }}>
               Se houver conta para esse email, o link chegou ou chegara em instantes. Veja tambem a pasta de spam.
             </p>
@@ -74,7 +74,7 @@ export function PasswordRecoveryClient() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="seu@email.com"
-              style={{ minHeight: 54, borderRadius: 14, border: "1px solid #f2c8cc", background: "#fff", color: "#141212", padding: "13px 15px", fontSize: 15, outline: "none" }}
+              style={{ minHeight: 54, borderRadius: 14, border: "1px solid #e1a6ff", background: "#fff", color: "#141212", padding: "13px 15px", fontSize: 15, outline: "none" }}
             />
           </label>
 

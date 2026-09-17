@@ -359,7 +359,7 @@ export default function EditarPerfilPage() {
       <section className="premium-section-card">
         <div style={{ display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", gap: 18, alignItems: "center" }}>
           <div className="premium-avatar" style={{ width: 112, height: 112 }}>
-            {profileImage ? <img src={profileImage} alt={form.displayName} /> : <UserRound size={52} color="#f2c8cc" />}
+            {profileImage ? <img src={profileImage} alt={form.displayName} /> : <UserRound size={52} color="#e1a6ff" />}
           </div>
           <div>
             <span className="premium-badge" style={{ color: profileStatus === "ACTIVE" ? "var(--elite-success)" : "var(--elite-gold-light)" }}>
@@ -396,7 +396,7 @@ export default function EditarPerfilPage() {
           <span className="premium-badge">{profileProgress === 100 ? "Perfil completo" : "Orientação"}</span>
         </div>
         <div style={{ height: 10, overflow: "hidden", borderRadius: 999, background: "rgba(255,255,255,0.10)", marginTop: 18 }}>
-          <div style={{ width: `${profileProgress}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#ca4651,#f2c8cc)" }} />
+          <div style={{ width: `${profileProgress}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#b72cff,#e1a6ff)" }} />
         </div>
         <div className="premium-grid premium-grid-3" style={{ marginTop: 18 }}>
           {profileSignals.map((item) => (

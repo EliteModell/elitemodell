@@ -86,12 +86,12 @@ export function buildAuthEmail(payload: AuthEmailPayload): AuthEmail | null {
   const redirectTo = redirect_to || siteUrl;
 
   const base = `
-    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#0a0a0a;color:#fff7f8;border:1px solid rgba(212,168,67,0.25);border-radius:12px;overflow:hidden">
-      <div style="height:3px;background:linear-gradient(90deg,transparent,#ca4651,#f2c8cc,#ca4651,transparent)"></div>
+    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#0a0a0a;color:#fcf7ff;border:1px solid rgba(212,168,67,0.25);border-radius:12px;overflow:hidden">
+      <div style="height:3px;background:linear-gradient(90deg,transparent,#b72cff,#e1a6ff,#b72cff,transparent)"></div>
       <div style="padding:40px 32px">
         <div style="margin-bottom:28px;text-align:center">
           <span style="font-weight:900;font-size:24px">
-            <span style="background:linear-gradient(135deg,#fff7f8,#ca4651,#f2c8cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent">elite</span><span style="color:#fff7f8">modell</span>
+            <span style="background:linear-gradient(135deg,#fcf7ff,#b72cff,#e1a6ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent">elite</span><span style="color:#fcf7ff">modell</span>
           </span>
         </div>
         CONTENT
@@ -103,14 +103,14 @@ export function buildAuthEmail(payload: AuthEmailPayload): AuthEmail | null {
   `;
 
   const btn = (url: string, text: string) =>
-    `<a href="${escapeHtml(url)}" style="display:inline-block;margin-top:24px;padding:14px 28px;background:linear-gradient(135deg,#ca4651,#f2c8cc,#ca4651);color:#0a0a0a;font-weight:700;font-size:15px;text-decoration:none;border-radius:8px">${escapeHtml(text)}</a>`;
+    `<a href="${escapeHtml(url)}" style="display:inline-block;margin-top:24px;padding:14px 28px;background:linear-gradient(135deg,#b72cff,#e1a6ff,#b72cff);color:#0a0a0a;font-weight:700;font-size:15px;text-decoration:none;border-radius:8px">${escapeHtml(text)}</a>`;
 
   if (email_action_type === "signup") {
     const url = actionUrl(payload, token_hash, "signup", redirectTo);
     return {
       subject: "Confirme seu cadastro - Elite Modell",
       html: base.replace("CONTENT", `
-        <h2 style="color:#fff7f8;font-size:22px;margin:0 0 12px">Confirme seu cadastro</h2>
+        <h2 style="color:#fcf7ff;font-size:22px;margin:0 0 12px">Confirme seu cadastro</h2>
         <p style="color:#b4adb0;line-height:1.7;margin:0">Clique no botao abaixo para ativar sua conta na Elite Modell.</p>
         <div style="text-align:center">${btn(url, "Confirmar minha conta")}</div>
         <p style="color:#aaa0b2;font-size:12px;margin-top:20px">Se voce nao criou esta conta, ignore este e-mail.</p>
@@ -123,7 +123,7 @@ export function buildAuthEmail(payload: AuthEmailPayload): AuthEmail | null {
     return {
       subject: "Redefinir senha - Elite Modell",
       html: base.replace("CONTENT", `
-        <h2 style="color:#fff7f8;font-size:22px;margin:0 0 12px">Redefinir senha</h2>
+        <h2 style="color:#fcf7ff;font-size:22px;margin:0 0 12px">Redefinir senha</h2>
         <p style="color:#b4adb0;line-height:1.7;margin:0">Recebemos um pedido para redefinir a senha de <strong>${userEmail}</strong>.</p>
         <div style="text-align:center">${btn(url, "Redefinir minha senha")}</div>
         <p style="color:#aaa0b2;font-size:12px;margin-top:20px">Este link expira em 1 hora. Se nao foi voce, ignore este e-mail.</p>
@@ -136,7 +136,7 @@ export function buildAuthEmail(payload: AuthEmailPayload): AuthEmail | null {
     return {
       subject: "Voce foi convidado - Elite Modell",
       html: base.replace("CONTENT", `
-        <h2 style="color:#fff7f8;font-size:22px;margin:0 0 12px">Convite Elite Modell</h2>
+        <h2 style="color:#fcf7ff;font-size:22px;margin:0 0 12px">Convite Elite Modell</h2>
         <p style="color:#b4adb0;line-height:1.7;margin:0">Voce recebeu um convite para criar sua conta na Elite Modell.</p>
         <div style="text-align:center">${btn(url, "Aceitar convite")}</div>
       `),
@@ -148,7 +148,7 @@ export function buildAuthEmail(payload: AuthEmailPayload): AuthEmail | null {
     return {
       subject: "Confirme seu novo e-mail - Elite Modell",
       html: base.replace("CONTENT", `
-        <h2 style="color:#fff7f8;font-size:22px;margin:0 0 12px">Confirme seu novo e-mail</h2>
+        <h2 style="color:#fcf7ff;font-size:22px;margin:0 0 12px">Confirme seu novo e-mail</h2>
         <p style="color:#b4adb0;line-height:1.7;margin:0">Clique abaixo para confirmar a alteracao do seu endereco de e-mail.</p>
         <div style="text-align:center">${btn(url, "Confirmar novo e-mail")}</div>
         <p style="color:#aaa0b2;font-size:12px;margin-top:20px">Se nao foi voce, entre em contato com o suporte.</p>
@@ -161,7 +161,7 @@ export function buildAuthEmail(payload: AuthEmailPayload): AuthEmail | null {
     return {
       subject: "Seu link de acesso - Elite Modell",
       html: base.replace("CONTENT", `
-        <h2 style="color:#fff7f8;font-size:22px;margin:0 0 12px">Link de acesso</h2>
+        <h2 style="color:#fcf7ff;font-size:22px;margin:0 0 12px">Link de acesso</h2>
         <p style="color:#b4adb0;line-height:1.7;margin:0">Clique no botao abaixo para entrar na sua conta.</p>
         <div style="text-align:center">${btn(url, "Entrar na minha conta")}</div>
         <p style="color:#aaa0b2;font-size:12px;margin-top:20px">Este link expira em 1 hora e so pode ser usado uma vez.</p>
@@ -202,19 +202,19 @@ export async function sendAuthEmail(to: string, email: AuthEmail) {
 
 export async function sendProfessionalApprovalEmail(to: string): Promise<void> {
   const base = `
-    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#0a0a0a;color:#fff7f8;border:1px solid rgba(212,168,67,0.25);border-radius:12px;overflow:hidden">
-      <div style="height:3px;background:linear-gradient(90deg,transparent,#ca4651,#f2c8cc,#ca4651,transparent)"></div>
+    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#0a0a0a;color:#fcf7ff;border:1px solid rgba(212,168,67,0.25);border-radius:12px;overflow:hidden">
+      <div style="height:3px;background:linear-gradient(90deg,transparent,#b72cff,#e1a6ff,#b72cff,transparent)"></div>
       <div style="padding:40px 32px">
         <div style="margin-bottom:28px;text-align:center">
           <span style="font-weight:900;font-size:24px">
-            <span style="background:linear-gradient(135deg,#fff7f8,#ca4651,#f2c8cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent">elite</span><span style="color:#fff7f8">modell</span>
+            <span style="background:linear-gradient(135deg,#fcf7ff,#b72cff,#e1a6ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent">elite</span><span style="color:#fcf7ff">modell</span>
           </span>
         </div>
-        <h2 style="color:#fff7f8;font-size:22px;margin:0 0 12px">Cadastro aprovado</h2>
+        <h2 style="color:#fcf7ff;font-size:22px;margin:0 0 12px">Cadastro aprovado</h2>
         <p style="color:#b4adb0;line-height:1.7;margin:0">Olá,</p>
         <p style="color:#b4adb0;line-height:1.7;margin:12px 0">Seu cadastro na Elite Modell foi aprovado.</p>
         <p style="color:#b4adb0;line-height:1.7;margin:0">Seu perfil já pode ficar disponível na plataforma conforme as regras de segurança e moderação.</p>
-        <p style="color:#b4adb0;line-height:1.7;margin:24px 0 0">Atenciosamente,<br><strong style="color:#fff7f8">Equipe Elite Modell</strong></p>
+        <p style="color:#b4adb0;line-height:1.7;margin:24px 0 0">Atenciosamente,<br><strong style="color:#fcf7ff">Equipe Elite Modell</strong></p>
         <div style="margin-top:32px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.08);text-align:center;color:#aaa0b2;font-size:12px">
           Elite Modell - Plataforma premium adulta - Brasil
         </div>

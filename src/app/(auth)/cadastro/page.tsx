@@ -43,13 +43,13 @@ const PENDING_REGISTRATION_COOKIE = "elitemodell_pending_registration";
 const REGISTRATION_STATE_MAX_AGE_SECONDS = 60 * 60 * 24;
 type AuthError = { code?: string; name?: string; message?: string };
 
-const GOLD = "#CA4651";
+const GOLD = "#b72cff";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "11px 14px",
   background: "#fff",
-  border: "1px solid rgba(202, 70, 81,0.16)",
+  border: "1px solid rgba(183, 44, 255,0.16)",
   borderRadius: 8,
   color: "#141212",
   fontSize: 14,
@@ -62,7 +62,7 @@ const focusGold = (e: React.FocusEvent<HTMLInputElement>) => {
   e.target.style.borderColor = GOLD;
 };
 const blurGray = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.target.style.borderColor = "rgba(202, 70, 81,0.16)";
+  e.target.style.borderColor = "rgba(183, 44, 255,0.16)";
 };
 
 function onlyDigits(value: string, maxLength: number) {
@@ -137,7 +137,7 @@ function isValidEmail(value: string) {
 }
 
 const GoldLine = () => (
-  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, borderRadius: "16px 16px 0 0", background: "linear-gradient(90deg, transparent 0%, #ca4651 30%, #f2c8cc 50%, #ca4651 70%, transparent 100%)" }} />
+  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, borderRadius: "16px 16px 0 0", background: "linear-gradient(90deg, transparent 0%, #b72cff 30%, #e1a6ff 50%, #b72cff 70%, transparent 100%)" }} />
 );
 
 const Logo = () => (
@@ -176,7 +176,7 @@ function AuthMethodButton({
       style={{
         width: "100%",
         height: 56,
-        background: "#fff7f8",
+        background: "#fcf7ff",
         border: "1px solid rgba(255,255,255,0.86)",
         borderRadius: 8,
         color: "#080808",
@@ -194,7 +194,7 @@ function AuthMethodButton({
       }}
       onMouseEnter={(e) => {
         if (disabled) return;
-        e.currentTarget.style.borderColor = "rgba(202, 70, 81,0.5)";
+        e.currentTarget.style.borderColor = "rgba(183, 44, 255,0.5)";
         e.currentTarget.style.background = "#fff7df";
         e.currentTarget.style.color = "#080808";
         e.currentTarget.style.transform = "translateY(-1px)";
@@ -202,12 +202,12 @@ function AuthMethodButton({
       onMouseLeave={(e) => {
         if (disabled) return;
         e.currentTarget.style.borderColor = "rgba(255,255,255,0.86)";
-        e.currentTarget.style.background = "#fff7f8";
+        e.currentTarget.style.background = "#fcf7ff";
         e.currentTarget.style.color = "#080808";
         e.currentTarget.style.transform = "translateY(0)";
       }}
     >
-      <span style={{ width: 22, height: 22, display: "grid", placeItems: "center", color: "#ca4651" }}>
+      <span style={{ width: 22, height: 22, display: "grid", placeItems: "center", color: "#b72cff" }}>
         {icon}
       </span>
       {label}
@@ -256,7 +256,7 @@ function AuthInfoFooter() {
         }
         .auth-info-card,
         .auth-link-groups {
-          border: 1px solid rgba(202, 70, 81,0.25);
+          border: 1px solid rgba(183, 44, 255,0.25);
           border-radius: 24px;
           background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(11,11,13,0.98));
           box-shadow: 0 24px 70px rgba(0,0,0,0.34);
@@ -273,10 +273,10 @@ function AuthInfoFooter() {
         }
         .auth-restricted-badge {
           width: fit-content;
-          border: 1px solid rgba(202, 70, 81,0.24);
+          border: 1px solid rgba(183, 44, 255,0.24);
           border-radius: 14px;
-          background: rgba(202, 70, 81,0.12);
-          color: #f2c8cc;
+          background: rgba(183, 44, 255,0.12);
+          color: #e1a6ff;
           padding: 10px 12px;
           font-size: 12px;
           font-weight: 900;
@@ -977,7 +977,7 @@ export default function CadastroPage() {
   if (step === "verify") {
     return (
       <main style={{ width: "100%", maxWidth: 440, padding: "max(18px, env(safe-area-inset-top)) 0 0" }}>
-      <div style={{ width: "100%", maxWidth: 420, background: "#fff", border: "1px solid #fff7f8", borderRadius: 20, padding: "48px 36px", position: "relative", zIndex: 1, textAlign: "center", boxShadow: "0 12px 36px rgba(37, 31, 32,.08)" }}>
+      <div style={{ width: "100%", maxWidth: 420, background: "#fff", border: "1px solid #fcf7ff", borderRadius: 20, padding: "48px 36px", position: "relative", zIndex: 1, textAlign: "center", boxShadow: "0 12px 36px rgba(37, 31, 32,.08)" }}>
         <GoldLine />
         <h2 style={{ color: "#141212", fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>Verifique seu email</h2>
         <p style={{ color: "#8d8578", fontSize: 14, lineHeight: 1.6, margin: "0 0 8px" }}>Enviamos uma verificação para</p>
@@ -994,7 +994,7 @@ export default function CadastroPage() {
           type="button"
           onClick={handleResendVerificationEmail}
           disabled={loading}
-          style={{ width: "100%", marginTop: 12, padding: "13px", background: "rgba(202, 70, 81,0.08)", color: GOLD, border: "1px solid rgba(202, 70, 81,0.3)", borderRadius: 8, fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}
+          style={{ width: "100%", marginTop: 12, padding: "13px", background: "rgba(183, 44, 255,0.08)", color: GOLD, border: "1px solid rgba(183, 44, 255,0.3)", borderRadius: 8, fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}
         >
           {loading ? "Reenviando..." : "Reenviar email"}
         </button>
@@ -1006,7 +1006,7 @@ export default function CadastroPage() {
 
   return (
     <main style={{ width: "100%", maxWidth: 440, padding: "max(18px, env(safe-area-inset-top)) 0 0" }}>
-    <div style={{ width: "100%", maxWidth: 440, background: "#fff", border: "1px solid #fff7f8", borderRadius: 20, padding: "42px 34px", position: "relative", zIndex: 1, boxShadow: "0 12px 36px rgba(37, 31, 32,.08)" }}>
+    <div style={{ width: "100%", maxWidth: 440, background: "#fff", border: "1px solid #fcf7ff", borderRadius: 20, padding: "42px 34px", position: "relative", zIndex: 1, boxShadow: "0 12px 36px rgba(37, 31, 32,.08)" }}>
       <GoldLine />
       <Logo />
       <p style={{ color: "#8d8578", fontSize: 14, textAlign: "center", marginTop: -18, marginBottom: accountHint ? 8 : 26 }}>{accountSubtitle}</p>
@@ -1024,10 +1024,10 @@ export default function CadastroPage() {
                 onClick={() => setForm({ ...form, category: c.value as Category })}
                 style={{
                   padding: "11px 8px",
-                  background: form.category === c.value ? "rgba(202, 70, 81,0.08)" : "#080808",
-                  border: `1.5px solid ${form.category === c.value ? "rgba(202, 70, 81,0.5)" : "#251f20"}`,
+                  background: form.category === c.value ? "rgba(183, 44, 255,0.08)" : "#080808",
+                  border: `1.5px solid ${form.category === c.value ? "rgba(183, 44, 255,0.5)" : "#251f20"}`,
                   borderRadius: 8,
-                  color: form.category === c.value ? "#fff7f8" : "#aaa0b2",
+                  color: form.category === c.value ? "#fcf7ff" : "#aaa0b2",
                   cursor: "pointer",
                   fontSize: 13,
                   fontWeight: 700,
@@ -1041,12 +1041,12 @@ export default function CadastroPage() {
           <p style={{ color: "#676064", fontSize: 11, margin: "8px 0 0", lineHeight: 1.5 }}>
             Para publicar, será obrigatório enviar documento com foto, fotos reais e biometria facial. A idade exibida deve ser confirmada por documento.
           </p>
-          <div style={{ marginTop: 12, padding: 12, border: "1px solid rgba(202, 70, 81,0.18)", borderRadius: 8, background: "rgba(202, 70, 81,0.06)" }}>
-            <p style={{ color: "#ca4651", fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", margin: "0 0 8px" }}>Fases do cadastro</p>
+          <div style={{ marginTop: 12, padding: 12, border: "1px solid rgba(183, 44, 255,0.18)", borderRadius: 8, background: "rgba(183, 44, 255,0.06)" }}>
+            <p style={{ color: "#b72cff", fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", margin: "0 0 8px" }}>Fases do cadastro</p>
             <div style={{ display: "grid", gap: 6 }}>
               {professionalOnboardingSteps.map((item, index) => (
                 <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, color: "#b4adb0", fontSize: 12 }}>
-                  <span style={{ width: 18, height: 18, borderRadius: 999, border: "1px solid rgba(202, 70, 81,0.35)", color: "#f2c8cc", display: "grid", placeItems: "center", fontSize: 10, fontWeight: 800 }}>{index + 1}</span>
+                  <span style={{ width: 18, height: 18, borderRadius: 999, border: "1px solid rgba(183, 44, 255,0.35)", color: "#e1a6ff", display: "grid", placeItems: "center", fontSize: 10, fontWeight: 800 }}>{index + 1}</span>
                   {item}
                 </div>
               ))}
@@ -1056,8 +1056,8 @@ export default function CadastroPage() {
       )}
 
       {isLoggedUpgradeFlow ? (
-        <div style={{ marginBottom: 20, padding: 14, borderRadius: 8, border: "1px solid rgba(202, 70, 81,0.24)", background: "rgba(15,23,42,0.72)" }}>
-          <p style={{ color: "#fff7f8", fontSize: 14, fontWeight: 800, margin: "0 0 6px" }}>
+        <div style={{ marginBottom: 20, padding: 14, borderRadius: 8, border: "1px solid rgba(183, 44, 255,0.24)", background: "rgba(15,23,42,0.72)" }}>
+          <p style={{ color: "#fcf7ff", fontSize: 14, fontWeight: 800, margin: "0 0 6px" }}>
             Continuar cadastro de {form.accountType === "PROFESSIONAL" ? "acompanhante" : "anunciante de espaço"}
           </p>
           <p style={{ color: "#968a9e", fontSize: 12, lineHeight: 1.5, margin: "0 0 12px" }}>
@@ -1141,7 +1141,7 @@ export default function CadastroPage() {
             type="button"
             onClick={handleContinueExistingAccount}
             disabled={loading}
-            style={{ width: "100%", padding: "13px", background: loading ? "#8e2f38" : GOLD, color: "#080808", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}
+            style={{ width: "100%", padding: "13px", background: loading ? "#65009b" : GOLD, color: "#080808", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}
           >
             {loading ? "Preparando cadastro..." : form.accountType === "PROFESSIONAL" ? "Ir para as fases do cadastro" : "Voltar ao anúncio"}
           </button>
@@ -1157,9 +1157,9 @@ export default function CadastroPage() {
           />
 
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-            <div style={{ flex: 1, height: 1, background: "rgba(202, 70, 81,0.12)" }} />
+            <div style={{ flex: 1, height: 1, background: "rgba(183, 44, 255,0.12)" }} />
             <span style={{ color: "#8d8578", fontSize: 13 }}>ou cadastre com email</span>
-            <div style={{ flex: 1, height: 1, background: "rgba(202, 70, 81,0.12)" }} />
+            <div style={{ flex: 1, height: 1, background: "rgba(183, 44, 255,0.12)" }} />
           </div>
         </>
       )}
@@ -1253,7 +1253,7 @@ export default function CadastroPage() {
           </span>
         </label>
 
-        <button type="submit" disabled={loading} style={{ padding: "13px", background: loading ? "#8e2f38" : GOLD, color: "#080808", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer", marginTop: 4 }}>
+        <button type="submit" disabled={loading} style={{ padding: "13px", background: loading ? "#65009b" : GOLD, color: "#080808", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer", marginTop: 4 }}>
           {loading ? "Criando conta..." : "Criar conta"}
         </button>
       </form>}
@@ -1266,9 +1266,9 @@ export default function CadastroPage() {
           width: "100%",
           marginTop: 16,
           padding: "11px 13px",
-          border: "1px solid rgba(202, 70, 81,0.24)",
+          border: "1px solid rgba(183, 44, 255,0.24)",
           borderRadius: 8,
-          background: "rgba(202, 70, 81,0.06)",
+          background: "rgba(183, 44, 255,0.06)",
           color: GOLD,
           fontSize: 13,
           fontWeight: 800,

@@ -27,7 +27,7 @@ const CALLBACK_TIMEOUT_MS = 5000;
 const NEXTAUTH_SIGNIN_TIMEOUT_MS = 45000;
 const CALLBACK_SLOW_MESSAGE_MS = 2500;
 const CALLBACK_STILL_WORKING_MESSAGE_MS = 9000;
-const GOLD = "#ca4651";
+const GOLD = "#b72cff";
 
 function hasPropertyDraft() {
   return Boolean(localStorage.getItem(PROPERTY_DRAFT_KEY));
@@ -427,7 +427,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
         width: "100%",
         maxWidth: 420,
         background: "#fff",
-        border: error ? "1px solid rgba(248,113,113,0.4)" : "1px solid rgba(202, 70, 81,0.28)",
+        border: error ? "1px solid rgba(248,113,113,0.4)" : "1px solid rgba(183, 44, 255,0.28)",
         borderRadius: 16,
         padding: "40px 32px 36px",
         textAlign: "center",
@@ -445,7 +445,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
           borderRadius: "16px 16px 0 0",
           background: error
             ? "linear-gradient(90deg, transparent 0%, #f87171 30%, #fca5a5 50%, #f87171 70%, transparent 100%)"
-            : "linear-gradient(90deg, transparent 0%, #ca4651 30%, #f2c8cc 50%, #ca4651 70%, transparent 100%)",
+            : "linear-gradient(90deg, transparent 0%, #b72cff 30%, #e1a6ff 50%, #b72cff 70%, transparent 100%)",
         }} />
 
         {/* Logo */}
@@ -478,7 +478,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
               width: 48,
               height: 48,
               borderRadius: "50%",
-              border: "2.5px solid rgba(202, 70, 81,0.15)",
+              border: "2.5px solid rgba(183, 44, 255,0.15)",
               borderTopColor: GOLD,
               animation: "em-spin 0.9s linear infinite",
             }} />
@@ -491,7 +491,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
             <div style={{
               width: 48, height: 48,
               borderRadius: "50%",
-              background: "rgba(202, 70, 81,0.12)",
+              background: "rgba(183, 44, 255,0.12)",
               border: `1.5px solid ${GOLD}`,
               display: "grid",
               placeItems: "center",
@@ -542,7 +542,7 @@ function CallbackCard({ message, success, error, retryHref = "/login" }: { messa
               style={{
                 display: "inline-block",
                 padding: "10px 18px",
-                background: "rgba(202, 70, 81,0.12)",
+                background: "rgba(183, 44, 255,0.12)",
                 border: `1px solid ${GOLD}`,
                 borderRadius: 8,
                 color: GOLD,

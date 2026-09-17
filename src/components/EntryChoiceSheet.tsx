@@ -111,7 +111,7 @@ export function EntryChoiceStyles() {
         gap: 12px;
         min-height: 88px;
         padding: 14px;
-        border: 1px solid rgba(202, 70, 81,0.25);
+        border: 1px solid rgba(183, 44, 255,0.25);
         border-radius: 18px;
         background: linear-gradient(180deg, rgba(20,20,20,0.98), rgba(10,10,12,0.98));
         color: #fff;
@@ -124,9 +124,9 @@ export function EntryChoiceStyles() {
         border-radius: 16px;
         display: grid;
         place-items: center;
-        color: #df828a;
-        background: rgba(223, 130, 138,0.10);
-        border: 1px solid rgba(202, 70, 81,0.22);
+        color: #d77bff;
+        background: rgba(225, 166, 255,0.10);
+        border: 1px solid rgba(183, 44, 255,0.22);
       }
       .entry-choice-copy {
         min-width: 0;
@@ -146,7 +146,7 @@ export function EntryChoiceStyles() {
         line-height: 1.45;
       }
       .entry-choice-arrow {
-        color: #df828a;
+        color: #d77bff;
       }
       .entry-choice-overlay {
         position: fixed;
@@ -167,7 +167,7 @@ export function EntryChoiceStyles() {
         width: min(100% - 16px, 430px);
         margin: 0 auto calc(8px + env(safe-area-inset-bottom));
         padding: 18px;
-        border: 1px solid rgba(202, 70, 81,0.28);
+        border: 1px solid rgba(183, 44, 255,0.28);
         border-radius: 26px;
         background: #050505;
         box-shadow: 0 -24px 70px rgba(0,0,0,0.64);
@@ -181,7 +181,7 @@ export function EntryChoiceStyles() {
       }
       .entry-choice-head span {
         display: block;
-        color: #df828a;
+        color: #d77bff;
         font-size: 11px;
         font-weight: 950;
         letter-spacing: 0.16em;
@@ -203,10 +203,10 @@ export function EntryChoiceStyles() {
       .entry-choice-head button {
         width: 42px;
         height: 42px;
-        border: 1px solid rgba(202, 70, 81,0.28);
+        border: 1px solid rgba(183, 44, 255,0.28);
         border-radius: 14px;
         background: #101014;
-        color: #df828a;
+        color: #d77bff;
         display: grid;
         place-items: center;
       }

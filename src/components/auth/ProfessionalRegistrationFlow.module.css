@@ -1,16 +1,16 @@
 .page {
-  --gold: #ca4651;
-  --gold-light: #f2c8cc;
-  --gold-dark: #b73946;
+  --gold: #b72cff;
+  --gold-light: #e1a6ff;
+  --gold-dark: #8f1fd1;
   --ink: #060708;
   --surface: #0d0f12;
   --surface-strong: #13161a;
-  --line: rgba(202, 70, 81, 0.22);
+  --line: rgba(183, 44, 255, 0.22);
   min-height: 100vh;
   overflow-x: hidden;
-  color: #fff7f8;
+  color: #fcf7ff;
   background:
-    radial-gradient(circle at 15% 4%, rgba(202, 70, 81, 0.1), transparent 24rem),
+    radial-gradient(circle at 15% 4%, rgba(183, 44, 255, 0.1), transparent 24rem),
     linear-gradient(180deg, #050607 0%, #090a0c 52%, #050607 100%);
 }
 
@@ -24,7 +24,7 @@
   gap: 14px;
   min-height: 68px;
   padding: 12px clamp(20px, 5vw, 72px);
-  border-bottom: 1px solid rgba(202, 70, 81, 0.14);
+  border-bottom: 1px solid rgba(183, 44, 255, 0.14);
   background: rgba(5, 6, 7, 0.9);
   backdrop-filter: blur(18px);
 }
@@ -76,8 +76,8 @@
 }
 
 .loginLink:hover {
-  border-color: rgba(202, 70, 81, 0.55);
-  background: rgba(202, 70, 81, 0.08);
+  border-color: rgba(183, 44, 255, 0.55);
+  background: rgba(183, 44, 255, 0.08);
   transform: translateY(-1px);
 }
 
@@ -109,7 +109,7 @@
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--gold-dark), var(--gold-light));
-  box-shadow: 0 0 16px rgba(202, 70, 81, 0.6);
+  box-shadow: 0 0 16px rgba(183, 44, 255, 0.6);
   transition: width 400ms ease;
 }
 
@@ -123,7 +123,7 @@
   background: rgba(13, 15, 18, 0.92);
   box-shadow:
     0 28px 80px rgba(0, 0, 0, 0.34),
-    0 0 40px rgba(202, 70, 81, 0.04);
+    0 0 40px rgba(183, 44, 255, 0.04);
 }
 
 .heroVisual {
@@ -136,7 +136,7 @@
   padding: 24px;
   background:
     radial-gradient(circle at 22% 18%, rgba(242, 200, 204, 0.22), transparent 18rem),
-    radial-gradient(circle at 82% 0, rgba(202, 70, 81, 0.12), transparent 16rem),
+    radial-gradient(circle at 82% 0, rgba(183, 44, 255, 0.12), transparent 16rem),
     linear-gradient(145deg, #0d0e0f 0%, #080808 48%, #070809 100%);
 }
 
@@ -156,7 +156,7 @@
   width: 210px;
   height: 210px;
   border-radius: 999px;
-  background: rgba(202, 70, 81, 0.16);
+  background: rgba(183, 44, 255, 0.16);
   filter: blur(10px);
 }
 
@@ -191,7 +191,7 @@
 .heroCard strong {
   display: block;
   margin-top: 10px;
-  color: #fff7f8;
+  color: #fcf7ff;
   font-family: var(--font-playfair), Georgia, serif;
   font-size: clamp(1.65rem, 7vw, 2.7rem);
   line-height: 1.02;
@@ -214,8 +214,8 @@
   border: 1px solid rgba(242, 200, 204, 0.22);
   border-radius: 999px;
   padding: 8px 10px;
-  color: #f2c8cc;
-  background: rgba(202, 70, 81, 0.08);
+  color: #e1a6ff;
+  background: rgba(183, 44, 255, 0.08);
   font-size: 0.7rem;
   font-weight: 850;
 }
@@ -235,7 +235,7 @@
 
 .heroMessage strong {
   max-width: 430px;
-  color: #fff7f8;
+  color: #fcf7ff;
   font-family: var(--font-playfair), Georgia, serif;
   font-size: clamp(1.45rem, 6vw, 2.25rem);
   line-height: 1.08;
@@ -294,14 +294,14 @@
   gap: 12px;
   margin-top: 28px;
   padding: 20px;
-  border: 1px solid rgba(202, 70, 81, 0.16);
+  border: 1px solid rgba(183, 44, 255, 0.16);
   border-radius: 18px;
   background: rgba(5, 6, 7, 0.66);
 }
 
 .formCard > label,
 .codeArea > label {
-  color: #fff7f8;
+  color: #fcf7ff;
   font-size: 0.9rem;
   font-weight: 750;
 }
@@ -312,7 +312,7 @@
   align-items: center;
   min-height: 58px;
   overflow: hidden;
-  border: 1px solid rgba(202, 70, 81, 0.32);
+  border: 1px solid rgba(183, 44, 255, 0.32);
   border-radius: 14px;
   background: #0d0f11;
   color: var(--gold);
@@ -323,7 +323,7 @@
 
 .inputShell:focus-within {
   border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(202, 70, 81, 0.13);
+  box-shadow: 0 0 0 3px rgba(183, 44, 255, 0.13);
 }
 
 .inputShell > svg {
@@ -392,9 +392,9 @@
 
 .primaryConsent {
   padding: 13px;
-  border: 1px solid rgba(202, 70, 81, 0.16);
+  border: 1px solid rgba(183, 44, 255, 0.16);
   border-radius: 14px;
-  background: rgba(202, 70, 81, 0.055);
+  background: rgba(183, 44, 255, 0.055);
 }
 
 .primaryButton,
@@ -404,12 +404,12 @@
   justify-content: center;
   gap: 10px;
   min-height: 54px;
-  border: 1px solid #f2c8cc;
+  border: 1px solid #e1a6ff;
   border-radius: 14px;
   padding: 0 22px;
   color: #fff;
-  background: linear-gradient(135deg, #df828a, #b73946);
-  box-shadow: 0 12px 34px rgba(183, 57, 70, 0.28);
+  background: linear-gradient(135deg, #d77bff, #8f1fd1);
+  box-shadow: 0 12px 34px rgba(101, 0, 155, 0.28);
   font: inherit;
   font-weight: 850;
   cursor: pointer;
@@ -449,7 +449,7 @@
 .primaryButton:hover,
 .finalButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 16px 38px rgba(202, 70, 81, 0.38);
+  box-shadow: 0 16px 38px rgba(183, 44, 255, 0.38);
   filter: brightness(1.04);
 }
 
@@ -511,7 +511,7 @@
   border-radius: 24px;
   padding: clamp(24px, 7vw, 52px);
   background:
-    radial-gradient(circle at 100% 0, rgba(202, 70, 81, 0.1), transparent 20rem),
+    radial-gradient(circle at 100% 0, rgba(183, 44, 255, 0.1), transparent 20rem),
     var(--surface);
   box-shadow: 0 30px 70px rgba(0, 0, 0, 0.32);
 }
@@ -530,7 +530,7 @@
 }
 
 .verificationCard > p strong {
-  color: #f2c8cc;
+  color: #e1a6ff;
 }
 
 .channelList {
@@ -545,10 +545,10 @@
   gap: 14px;
   align-items: center;
   width: 100%;
-  border: 1px solid rgba(202, 70, 81, 0.2);
+  border: 1px solid rgba(183, 44, 255, 0.2);
   border-radius: 16px;
   padding: 18px;
-  color: #fff7f8;
+  color: #fcf7ff;
   background: #111317;
   text-align: left;
   cursor: pointer;
@@ -559,7 +559,7 @@
 }
 
 .channelList button:hover {
-  border-color: rgba(202, 70, 81, 0.58);
+  border-color: rgba(183, 44, 255, 0.58);
   background: #15171a;
   transform: translateY(-2px);
 }
@@ -570,7 +570,7 @@
 }
 
 .channelList button:disabled:hover {
-  border-color: rgba(202, 70, 81, 0.2);
+  border-color: rgba(183, 44, 255, 0.2);
   background: #111317;
   transform: none;
 }
@@ -580,10 +580,10 @@
   width: 48px;
   height: 48px;
   place-items: center;
-  border: 1px solid rgba(202, 70, 81, 0.25);
+  border: 1px solid rgba(183, 44, 255, 0.25);
   border-radius: 14px;
   color: var(--gold);
-  background: rgba(202, 70, 81, 0.07);
+  background: rgba(183, 44, 255, 0.07);
 }
 
 .channelList button > span:nth-child(2) {
@@ -612,17 +612,17 @@
   align-items: center;
   gap: 8px;
   padding: 12px 14px;
-  border: 1px solid rgba(202, 70, 81, 0.18);
+  border: 1px solid rgba(183, 44, 255, 0.18);
   border-radius: 12px;
-  color: #f2c8cc;
-  background: rgba(202, 70, 81, 0.06);
+  color: #e1a6ff;
+  background: rgba(183, 44, 255, 0.06);
   font-size: 0.82rem;
 }
 
 .codeInput {
   width: 100%;
   min-height: 68px;
-  border: 1px solid rgba(202, 70, 81, 0.35);
+  border: 1px solid rgba(183, 44, 255, 0.35);
   border-radius: 14px;
   outline: 0;
   padding: 0 16px;
@@ -637,7 +637,7 @@
 
 .codeInput:focus {
   border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(202, 70, 81, 0.12);
+  box-shadow: 0 0 0 3px rgba(183, 44, 255, 0.12);
 }
 
 .resendRow {
@@ -716,7 +716,7 @@
 .benefitsSection,
 .faqSection {
   padding: clamp(52px, 9vw, 92px) 0;
-  border-top: 1px solid rgba(202, 70, 81, 0.12);
+  border-top: 1px solid rgba(183, 44, 255, 0.12);
 }
 
 .sectionHeading {
@@ -790,8 +790,8 @@
   padding: clamp(24px, 6vw, 40px);
   background:
     radial-gradient(circle at 90% 10%, rgba(255, 235, 165, 0.22), transparent 15rem),
-    linear-gradient(145deg, #8e2f38 0%, #ca4651 48%, #251f20 100%);
-  box-shadow: 0 24px 60px rgba(183, 57, 70, 0.28);
+    linear-gradient(145deg, #65009b 0%, #b72cff 48%, #251f20 100%);
+  box-shadow: 0 24px 60px rgba(101, 0, 155, 0.28);
   color: #fff;
 }
 
@@ -834,11 +834,11 @@
 
 .benefitCard {
   min-height: 190px;
-  border: 1px solid rgba(202, 70, 81, 0.15);
+  border: 1px solid rgba(183, 44, 255, 0.15);
   border-radius: 18px;
   padding: 22px;
   background:
-    linear-gradient(145deg, rgba(202, 70, 81, 0.035), transparent 45%),
+    linear-gradient(145deg, rgba(183, 44, 255, 0.035), transparent 45%),
     var(--surface);
   transition:
     border-color 180ms ease,
@@ -846,7 +846,7 @@
 }
 
 .benefitCard:hover {
-  border-color: rgba(202, 70, 81, 0.42);
+  border-color: rgba(183, 44, 255, 0.42);
   transform: translateY(-3px);
 }
 
@@ -855,15 +855,15 @@
   width: 48px;
   height: 48px;
   place-items: center;
-  border: 1px solid rgba(202, 70, 81, 0.22);
+  border: 1px solid rgba(183, 44, 255, 0.22);
   border-radius: 14px;
   color: var(--gold);
-  background: rgba(202, 70, 81, 0.07);
+  background: rgba(183, 44, 255, 0.07);
 }
 
 .benefitCard h3 {
   margin: 18px 0 0;
-  color: #fff7f8;
+  color: #fcf7ff;
   font-size: 1rem;
 }
 
@@ -882,7 +882,7 @@
 
 .faqList details {
   overflow: hidden;
-  border: 1px solid rgba(202, 70, 81, 0.16);
+  border: 1px solid rgba(183, 44, 255, 0.16);
   border-radius: 15px;
   background: var(--surface);
 }
@@ -894,7 +894,7 @@
   gap: 16px;
   min-height: 64px;
   padding: 17px 18px;
-  color: #fff7f8;
+  color: #fcf7ff;
   font-size: 0.9rem;
   font-weight: 750;
   cursor: pointer;
@@ -928,11 +928,11 @@
   justify-items: center;
   margin-top: 20px;
   margin-bottom: 80px;
-  border: 1px solid rgba(202, 70, 81, 0.34);
+  border: 1px solid rgba(183, 44, 255, 0.34);
   border-radius: 24px;
   padding: clamp(42px, 9vw, 82px) clamp(22px, 7vw, 70px);
   background:
-    radial-gradient(circle at 50% -20%, rgba(202, 70, 81, 0.2), transparent 27rem),
+    radial-gradient(circle at 50% -20%, rgba(183, 44, 255, 0.2), transparent 27rem),
     var(--surface);
   text-align: center;
   box-shadow: 0 28px 70px rgba(0, 0, 0, 0.35);
@@ -944,11 +944,11 @@
   height: 68px;
   margin-bottom: 20px;
   place-items: center;
-  border: 1px solid rgba(202, 70, 81, 0.38);
+  border: 1px solid rgba(183, 44, 255, 0.38);
   border-radius: 20px;
   color: var(--gold-light);
-  background: rgba(202, 70, 81, 0.08);
-  box-shadow: 0 0 30px rgba(202, 70, 81, 0.1);
+  background: rgba(183, 44, 255, 0.08);
+  box-shadow: 0 0 30px rgba(183, 44, 255, 0.1);
 }
 
 .finalSection p {
@@ -976,7 +976,7 @@
   display: grid;
   gap: 18px;
   padding: 28px clamp(20px, 5vw, 72px) 36px;
-  border-top: 1px solid rgba(202, 70, 81, 0.12);
+  border-top: 1px solid rgba(183, 44, 255, 0.12);
   color: #918796;
   background: #050607;
   font-size: 0.76rem;
@@ -1020,21 +1020,21 @@
 
 /* Elite Modell 2026 — camada clara compartilhada do cadastro profissional. */
 .page {
-  --gold: #ca4651;
-  --gold-light: #ca4651;
-  --gold-dark: #b73946;
+  --gold: #b72cff;
+  --gold-light: #b72cff;
+  --gold-dark: #8f1fd1;
   --ink: #141212;
   --surface: #ffffff;
   --surface-strong: #faf9fc;
-  --line: #fff7f8;
+  --line: #fcf7ff;
   color: #141212;
   background: #f7f7fa;
 }
-.header { border-color: #fff7f8; background: rgba(255,255,255,.96); }
+.header { border-color: #fcf7ff; background: rgba(255,255,255,.96); }
 .backHome { color: #62687a; }
 .progressMeta { color: #57515c; letter-spacing: 0; text-transform: none; }
-.progressTrack { background: #fff7f8; }
-.progressTrack span { background: #ca4651; box-shadow: none; }
+.progressTrack { background: #fcf7ff; }
+.progressTrack span { background: #b72cff; box-shadow: none; }
 .phoneStage,
 .formCard,
 .verificationCard,
@@ -1048,12 +1048,12 @@
 .heroMessage,
 .benefitCard,
 .faqList details {
-  border-color: #fff7f8;
+  border-color: #fcf7ff;
   background: #fff;
   color: #141212;
   box-shadow: 0 10px 32px rgba(37, 31, 32,.07);
 }
-.heroVisual { background: #fff0f2; }
+.heroVisual { background: #faf0ff; }
 .heroOverlay,
 .heroGlow { display: none; }
 .phoneContent h1,
@@ -1076,7 +1076,7 @@
 .inputShell,
 .codeInput,
 .channelList button {
-  border-color: #f2c8cc;
+  border-color: #e1a6ff;
   background: #fff;
   color: #141212;
   box-shadow: none;
@@ -1087,14 +1087,14 @@
 .entryLinks,
 .checkRow { color: #57515c; }
 .primaryButton,
-.finalButton { background: #ca4651; color: #fff; box-shadow: 0 10px 24px rgba(202,70,81,.2); }
+.finalButton { background: #b72cff; color: #fff; box-shadow: 0 10px 24px rgba(183, 44, 255,.2); }
 .quickBenefits svg,
 .benefitCard > span,
 .finalIcon { display: none; }
 .quickBenefits span { border-color: #ddd2d5; background: #fff; color: #514b54; }
-.heroSteps span { border-color: #e3c6ca; background: #fff7f8; color: #8d3440; }
+.heroSteps span { border-color: #e1a6ff; background: #faf0ff; color: #65009b; }
 .heroCard span,
-.heroMessage span { color: #a23844; }
+.heroMessage span { color: #8f1fd1; }
 .heroCard strong,
 .heroMessage strong { color: #141212; }
 .heroCard p { color: #57515c; }
@@ -1102,9 +1102,9 @@
 .primaryButton:disabled,
 .finalButton:disabled,
 .channelList button:disabled { opacity: .72; }
-.revenueCard { border-color: #eccbd0; background: #fff4f5; box-shadow: none; }
+.revenueCard { border-color: #e7cbf5; background: #faf0ff; box-shadow: none; }
 .simulatorControls label { color: #57515c; }
-.simulatorControls label strong { color: #a23844; }
+.simulatorControls label strong { color: #8f1fd1; }
 .simulatorControls input[type="range"] { background: #e5dadd; }
 .revenueCard,
 .revenueCard > span,
@@ -1114,7 +1114,7 @@
 .revenueCard > div { border-top-color: #dfc8cc; }
 .revenueCard p { color: #57515c; }
 .faqList summary { color: #2d2830; }
-.footer { border-color: #fff7f8; background: #fff; color: #737684; }
+.footer { border-color: #fcf7ff; background: #fff; color: #737684; }
 .loadingPage { background: #f7f7fa; }
 .loadingHeader,
 .loadingImage,
@@ -1122,7 +1122,7 @@
 .loadingTitle,
 .loadingLine,
 .loadingInput,
-.loadingButton { background: #fff7f8; }
+.loadingButton { background: #fcf7ff; }
 
 .loadingHeader {
   width: min(100%, 1080px);
@@ -1135,7 +1135,7 @@
   width: min(100%, 1080px);
   margin: auto;
   overflow: hidden;
-  border: 1px solid rgba(202, 70, 81, 0.14);
+  border: 1px solid rgba(183, 44, 255, 0.14);
   border-radius: 24px;
   background: #0d0f12;
 }
@@ -1251,11 +1251,11 @@
   }
 }
 
-.loadingHero { border-color: #fff7f8; background: #fff; }
+.loadingHero { border-color: #fcf7ff; background: #fff; }
 .loadingHeader,
 .loadingImage,
 .loadingLineShort,
 .loadingTitle,
 .loadingLine,
 .loadingInput,
-.loadingButton { background: #fff7f8; }
+.loadingButton { background: #fcf7ff; }

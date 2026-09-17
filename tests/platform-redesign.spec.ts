@@ -383,7 +383,7 @@ test("gera a captura do painel profissional quando a conta E2E permite acesso", 
 test("rotas principais não têm overflow nos breakpoints aprovados", async ({ page, context }) => {
   await acceptAdultGate(context);
   await mockPublicProfessionals(page);
-  for (const width of [320, 360, 375, 390, 430, 768, 1024, 1280, 1440]) {
+  for (const width of [320, 360, 375, 390, 393, 414, 430, 768, 1024, 1280, 1440]) {
     await page.setViewportSize({ width, height: width < 768 ? 844 : 900 });
     for (const route of ["/", "/login", "/cadastro?tipo=cliente", "/cadastro/acompanhante", "/buscar?tab=acompanhantes", "/buscar?tab=acompanhantes&selecionarCidade=1", "/profissionais/victoria"]) {
       await page.goto(route, { waitUntil: "domcontentloaded" });

@@ -14,7 +14,7 @@ function ListCard({
   return (
     <article className="client-card p-5">
       <div className="flex items-start gap-4">
-        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#ca4651]/18 bg-[#ca4651]/10 text-[#f2c8cc]">
+        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#b72cff]/18 bg-[#b72cff]/10 text-[#e1a6ff]">
           {icon}
         </span>
         <div className="min-w-0 flex-1">
@@ -37,7 +37,7 @@ export default function ListsSection() {
         </div>
         <Link
           href="/dashboard/favoritos"
-          className="shrink-0 text-[13px] font-bold text-[#f2c8cc] no-underline"
+          className="shrink-0 text-[13px] font-bold text-[#e1a6ff] no-underline"
         >
           Ver tudo
         </Link>

@@ -86,8 +86,8 @@ export default async function AdminMfaPage({
 
   return (
     <main style={{ minHeight: "100vh", background: "#050506", color: "#fff", padding: "48px 20px" }}>
-      <section style={{ maxWidth: 560, margin: "0 auto", border: "1px solid rgba(202, 70, 81,.28)", borderRadius: 8, background: "#101012", padding: 28 }}>
-        <p style={{ color: "#ca4651", fontWeight: 900, textTransform: "uppercase", fontSize: 12 }}>Seguranca administrativa</p>
+      <section style={{ maxWidth: 560, margin: "0 auto", border: "1px solid rgba(183, 44, 255,.28)", borderRadius: 8, background: "#101012", padding: 28 }}>
+        <p style={{ color: "#b72cff", fontWeight: 900, textTransform: "uppercase", fontSize: 12 }}>Seguranca administrativa</p>
         <h1 style={{ margin: "8px 0 12px", fontSize: 30 }}>Verificacao em duas etapas</h1>
         <p style={{ color: "#b8b1a6", lineHeight: 1.6 }}>
           {enrollment.verifiedAt
@@ -98,7 +98,7 @@ export default async function AdminMfaPage({
         {!enrollment.verifiedAt ? (
           <div style={{ margin: "20px 0", padding: 16, background: "#080809", border: "1px solid rgba(255,255,255,.12)", borderRadius: 8 }}>
             <strong>Chave manual</strong>
-            <code style={{ display: "block", marginTop: 10, color: "#f2c8cc", overflowWrap: "anywhere", fontSize: 16 }}>{secret}</code>
+            <code style={{ display: "block", marginTop: 10, color: "#e1a6ff", overflowWrap: "anywhere", fontSize: 16 }}>{secret}</code>
             <details style={{ marginTop: 14, color: "#8d8578" }}>
               <summary>URI para configuracao</summary>
               <code style={{ display: "block", marginTop: 8, overflowWrap: "anywhere", fontSize: 11 }}>{uri}</code>
@@ -116,10 +116,10 @@ export default async function AdminMfaPage({
             pattern="[0-9]{6}"
             maxLength={6}
             required
-            style={{ minHeight: 52, borderRadius: 8, border: "1px solid rgba(202, 70, 81,.34)", background: "#050506", color: "#fff", padding: "0 14px", fontSize: 22, letterSpacing: 0 }}
+            style={{ minHeight: 52, borderRadius: 8, border: "1px solid rgba(183, 44, 255,.34)", background: "#050506", color: "#fff", padding: "0 14px", fontSize: 22, letterSpacing: 0 }}
           />
           {erro ? <p style={{ color: "#ef4444", margin: 0 }}>Codigo invalido ou expirado.</p> : null}
-          <button type="submit" style={{ minHeight: 50, border: 0, borderRadius: 8, background: "#ca4651", color: "#080704", fontWeight: 900, cursor: "pointer" }}>
+          <button type="submit" style={{ minHeight: 50, border: 0, borderRadius: 8, background: "#b72cff", color: "#080704", fontWeight: 900, cursor: "pointer" }}>
             Verificar e acessar
           </button>
         </form>

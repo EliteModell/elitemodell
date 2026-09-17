@@ -4,7 +4,7 @@ import { useState } from "react";
 import { validateBirthDate } from "@/lib/age-validation";
 import { BrandMark } from "@/components/BrandMark";
 
-const GOLD = "#CA4651";
+const GOLD = "#b72cff";
 
 function maskBirthDate(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 8);
@@ -107,7 +107,7 @@ export default function CompletarCadastroClient() {
           width: "100%",
           maxWidth: 420,
           background: "#fff",
-          border: "1px solid #fff7f8",
+          border: "1px solid #fcf7ff",
           borderRadius: 16,
           padding: "40px 32px 36px",
           position: "relative",
@@ -122,7 +122,7 @@ export default function CompletarCadastroClient() {
             height: 2,
             borderRadius: "16px 16px 0 0",
             background:
-              "linear-gradient(90deg, transparent 0%, #CA4651 30%, #efabb1 50%, #CA4651 70%, transparent 100%)",
+              "linear-gradient(90deg, transparent 0%, #b72cff 30%, #e1a6ff 50%, #b72cff 70%, transparent 100%)",
           }}
         />
 
@@ -174,7 +174,7 @@ export default function CompletarCadastroClient() {
               required
               style={{
                 background: "#fff",
-                border: "1px solid #f2c8cc",
+                border: "1px solid #e1a6ff",
                 borderRadius: 8,
                 padding: "10px 14px",
                 color: "#141212",
@@ -281,8 +281,8 @@ export default function CompletarCadastroClient() {
             disabled={!canSubmit}
             style={{
               background: !canSubmit
-                ? "rgba(202,70,81,0.4)"
-                : "linear-gradient(135deg, #CA4651 0%, #df7b84 50%, #CA4651 100%)",
+                ? "rgba(183, 44, 255,0.4)"
+                : "linear-gradient(135deg, #b72cff 0%, #c85eff 50%, #b72cff 100%)",
               border: "none",
               borderRadius: 8,
               padding: "13px 24px",

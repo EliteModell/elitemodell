@@ -79,7 +79,7 @@ await Promise.all([
 const appleIcon = await renderSymbol(180, { scale: 0.82 });
 const android192 = await renderSymbol(192, { scale: 0.84 });
 const android512 = await renderSymbol(512, { scale: 0.84 });
-const maskable512 = await renderSymbol(512, { background: "#FDE7E9", scale: 0.64 });
+const maskable512 = await renderSymbol(512, { background: "#f3e2ff", scale: 0.64 });
 
 await Promise.all([
   writeFile(path.join(publicDir, "apple-touch-icon.png"), appleIcon),
@@ -106,8 +106,8 @@ const socialBackground = Buffer.from(`
     <defs>
       <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0" stop-color="#FFFFFF"/>
-        <stop offset="0.62" stop-color="#FFF7F8"/>
-        <stop offset="1" stop-color="#FDE7E9"/>
+        <stop offset="0.62" stop-color="#fcf7ff"/>
+        <stop offset="1" stop-color="#f3e2ff"/>
       </linearGradient>
     </defs>
     <rect width="1200" height="630" fill="url(#background)"/>
@@ -125,8 +125,8 @@ const socialOverlay = Buffer.from(`
     <text x="575" y="365" fill="#1F1F1F" font-family="Arial, sans-serif" font-size="42" font-weight="700">Conexões discretas e seguras</text>
     <text x="575" y="425" fill="#625C65" font-family="Arial, sans-serif" font-size="25">Perfis verificados, privacidade e liberdade</text>
     <text x="575" y="461" fill="#625C65" font-family="Arial, sans-serif" font-size="25">para escolher do seu jeito.</text>
-    <rect x="575" y="516" width="270" height="3" rx="1.5" fill="#CA4651"/>
-    <text x="575" y="560" fill="#CA4651" font-family="Arial, sans-serif" font-size="22" font-weight="700">elitemodell.com.br</text>
+    <rect x="575" y="516" width="270" height="3" rx="1.5" fill="#b72cff"/>
+    <text x="575" y="560" fill="#b72cff" font-family="Arial, sans-serif" font-size="22" font-weight="700">elitemodell.com.br</text>
   </svg>
 `);
 

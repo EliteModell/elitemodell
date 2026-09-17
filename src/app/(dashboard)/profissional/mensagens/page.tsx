@@ -119,9 +119,9 @@ export default async function ProfessionalMessagesPage() {
           place-items: center;
           border: 1px solid rgba(242, 200, 204,0.34);
           border-radius: 999px;
-          background: radial-gradient(circle, rgba(242, 200, 204,0.22), rgba(202, 70, 81,0.06) 62%, transparent);
+          background: radial-gradient(circle, rgba(242, 200, 204,0.22), rgba(183, 44, 255,0.06) 62%, transparent);
           color: var(--elite-gold-light);
-          box-shadow: 0 0 28px rgba(202, 70, 81,0.12);
+          box-shadow: 0 0 28px rgba(183, 44, 255,0.12);
         }
         .professional-empty-icon span {
           color: var(--elite-gold-light);
@@ -171,7 +171,7 @@ export default async function ProfessionalMessagesPage() {
           place-items: center;
           border: 1px solid rgba(242, 200, 204,0.38);
           border-radius: 999px;
-          background: rgba(202, 70, 81,0.12);
+          background: rgba(183, 44, 255,0.12);
           color: var(--elite-gold-light);
           font-size: 15px;
           font-weight: 950;
@@ -207,7 +207,7 @@ export default async function ProfessionalMessagesPage() {
           align-items: center;
           justify-content: center;
           gap: 8px;
-          border: 1px solid rgba(202, 70, 81,0.32);
+          border: 1px solid rgba(183, 44, 255,0.32);
           border-radius: 16px;
           color: var(--elite-gold-light);
           padding: 0 14px;

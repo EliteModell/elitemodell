@@ -14,9 +14,9 @@ import {
   SUPPORTED_PUBLIC_LOCATIONS,
 } from "@/lib/brazilian-location";
 
-const GOLD = "#CA4651";
-const GOLD_DIM = "rgba(202,70,81,0.12)";
-const GOLD_MID = "rgba(202,70,81,0.28)";
+const GOLD = "#b72cff";
+const GOLD_DIM = "rgba(183, 44, 255,0.12)";
+const GOLD_MID = "rgba(183, 44, 255,0.28)";
 const PLAYFAIR = "var(--font-playfair), serif";
 
 type MainTab = "acompanhantes";
@@ -514,12 +514,12 @@ function BuscarContent() {
           grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
           gap: 14px;
         }
-        .perfil-card { border-radius: 16px; overflow: hidden; background: #fff; border: 1px solid #fff7f8; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; cursor: pointer; box-shadow: 0 10px 30px rgba(37, 31, 32,.07); contain: layout paint; }
-        .perfil-card:hover { transform: translateY(-3px); border-color: rgba(202, 70, 81,.3); box-shadow: 0 16px 40px rgba(37, 31, 32,.11); }
+        .perfil-card { border-radius: 16px; overflow: hidden; background: #fff; border: 1px solid #fcf7ff; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; cursor: pointer; box-shadow: 0 10px 30px rgba(37, 31, 32,.07); contain: layout paint; }
+        .perfil-card:hover { transform: translateY(-3px); border-color: rgba(183, 44, 255,.3); box-shadow: 0 16px 40px rgba(37, 31, 32,.11); }
         .perfil-card:active { transform: translateY(1px) scale(0.995); }
         .perfil-foto { position: relative; padding-top: 130%; }
         .perfil-info { padding: 14px 16px; }
-        .search-shell { margin-top: 88px; background: #fff; border-bottom: 1px solid #fff7f8; }
+        .search-shell { margin-top: 88px; background: #fff; border-bottom: 1px solid #fcf7ff; }
         .location-bar {
           width: 100%;
           min-height: 52px;
@@ -541,8 +541,8 @@ function BuscarContent() {
         .stories-strip { display: flex; gap: 12px; overflow-x: auto; padding: 2px 0 18px; margin-bottom: 6px; -webkit-overflow-scrolling: touch; }
         .stories-strip::-webkit-scrollbar, .filtros-scroll::-webkit-scrollbar, .action-scroll::-webkit-scrollbar { display: none; }
         .story-item { width: 72px; flex: 0 0 auto; color: #514b59; text-align: center; text-decoration: none; }
-        .story-avatar { width: 64px; height: 64px; margin: 0 auto 7px; border-radius: 999px; padding: 2px; background: linear-gradient(135deg, #f2c8cc, #ca4651, #8e2f38); position: relative; }
-        .story-avatar-inner { position: relative; width: 100%; height: 100%; border-radius: 999px; overflow: hidden; background: #fff7f8; border: 2px solid #fff; }
+        .story-avatar { width: 64px; height: 64px; margin: 0 auto 7px; border-radius: 999px; padding: 2px; background: linear-gradient(135deg, #e1a6ff, #b72cff, #65009b); position: relative; }
+        .story-avatar-inner { position: relative; width: 100%; height: 100%; border-radius: 999px; overflow: hidden; background: #fcf7ff; border: 2px solid #fff; }
         .dynamic-title { margin: 0 0 16px; max-width: 920px; color: #141212; font-family: var(--font-inter), Inter, sans-serif; font-size: clamp(1.75rem, 5vw, 3.7rem); line-height: 1.08; letter-spacing: -.03em; }
         .dynamic-title strong { color: ${GOLD}; font-weight: 900; }
         .filtros-scroll, .action-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; align-items: center; -webkit-overflow-scrolling: touch; }
@@ -550,7 +550,7 @@ function BuscarContent() {
           min-height: 36px;
           padding: 0 14px;
           background: #fff;
-          border: 1px solid #f2c8cc;
+          border: 1px solid #e1a6ff;
           border-radius: 999px;
           color: #62687a;
           font-size: 12px;
@@ -559,7 +559,7 @@ function BuscarContent() {
           transition: all 0.2s;
           flex-shrink: 0;
         }
-        .filter-chip.active { background: #fff7f8; border-color: ${GOLD}; color: #b73946; font-weight: 800; }
+        .filter-chip.active { background: #fcf7ff; border-color: ${GOLD}; color: #8f1fd1; font-weight: 800; }
         .action-select {
           min-height: 38px;
           border-radius: 999px;
@@ -609,7 +609,7 @@ function BuscarContent() {
           cursor: pointer;
           text-align: left;
         }
-        .location-option:hover { border-color: #ddb8bd; background: var(--surface-soft); }
+        .location-option:hover { border-color: #d9b8eb; background: var(--surface-soft); }
         .location-option.active { border-color: var(--primary); background: var(--primary-soft); color: var(--text-primary); }
         .location-modal-header { padding: 18px 18px 14px; border-bottom: 1px solid var(--border); }
         .location-modal-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
@@ -624,7 +624,7 @@ function BuscarContent() {
         .location-modal-empty { color: var(--text-secondary); font-size: 13px; }
         .location-modal-footer { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; padding: 14px 18px 18px; border-top: 1px solid var(--border); }
         .location-modal-secondary, .location-modal-primary { min-height: 46px; border-radius: 999px; font-weight: 800; cursor: pointer; }
-        .location-modal-secondary { border: 1px solid #ddb8bd; background: #fff; color: var(--primary); }
+        .location-modal-secondary { border: 1px solid #d9b8eb; background: #fff; color: var(--primary); }
         .location-modal-primary { border: 1px solid var(--primary); background: var(--primary); color: var(--text-on-primary); font-weight: 900; }
         .location-modal-primary:disabled { border-color: #dfc9cc; background: #eadde0; color: #6c6266; cursor: not-allowed; opacity: 1; }
         .profiles-empty, .rooms-coming-soon {
@@ -632,7 +632,7 @@ function BuscarContent() {
           display: grid;
           place-items: center;
           text-align: center;
-          border: 1px solid rgba(202, 70, 81,0.16);
+          border: 1px solid rgba(183, 44, 255,0.16);
           border-radius: 18px;
           background: #fff;
           padding: 42px 22px;
@@ -645,14 +645,14 @@ function BuscarContent() {
           align-items: center;
           justify-content: center;
           padding: 6px 12px;
-          border: 1px solid rgba(202, 70, 81,0.26);
+          border: 1px solid rgba(183, 44, 255,0.26);
           border-radius: 999px;
           color: ${GOLD};
           font-size: 10px;
           font-weight: 900;
           letter-spacing: 0.16em;
           text-transform: uppercase;
-          background: rgba(202, 70, 81,0.08);
+          background: rgba(183, 44, 255,0.08);
         }
         .profiles-empty h2, .rooms-coming-soon h2 {
           margin: 16px 0 10px;
@@ -692,13 +692,13 @@ function BuscarContent() {
         }
         .profiles-empty-actions button, .coming-actions .primary {
           border: 1px solid transparent;
-          background: linear-gradient(135deg, #f2c8cc, #ca4651 50%, #8e2f38);
+          background: linear-gradient(135deg, #e1a6ff, #b72cff 50%, #65009b);
           color: #fff;
         }
         .profiles-empty-actions a, .coming-actions .secondary {
-          border: 1px solid rgba(202, 70, 81,0.22);
+          border: 1px solid rgba(183, 44, 255,0.22);
           background: #fff;
-          color: #b73946;
+          color: #8f1fd1;
         }
         @media (max-width: 640px) {
           .search-shell { margin-top: 72px; }
@@ -741,7 +741,7 @@ function BuscarContent() {
       <Navbar />
 
       <div className="search-shell">
-        <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${GOLD}, rgba(202, 70, 81,0.3), transparent)` }} />
+        <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${GOLD}, rgba(183, 44, 255,0.3), transparent)` }} />
         <div style={{ maxWidth: 1280, margin: "0 auto", padding: "12px 16px 14px" }}>
           <button type="button" className="location-bar" onClick={openLocationModal}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 10, minWidth: 0 }}>
@@ -780,7 +780,7 @@ function BuscarContent() {
             <div style={{ display: "flex", marginBottom: 16, borderBottom: `1px solid ${GOLD_DIM}`, overflowX: "auto" }}>
               {([["mulheres", "Mulheres"], ["trans", "Trans"], ["homens", "Homens"]] as const).map(([tab, label]) => (
                 <button key={tab} onClick={() => setCategory(tab)}
-                  style={{ padding: "11px 20px", border: "none", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 14, color: subTab === tab ? "#fff7f8" : "#968a9e", borderBottom: `2px solid ${subTab === tab ? GOLD : "transparent"}`, transition: "all 0.2s", whiteSpace: "nowrap" }}>
+                  style={{ padding: "11px 20px", border: "none", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 14, color: subTab === tab ? "#fcf7ff" : "#968a9e", borderBottom: `2px solid ${subTab === tab ? GOLD : "transparent"}`, transition: "all 0.2s", whiteSpace: "nowrap" }}>
                   {label}
                 </button>
               ))}
@@ -1041,7 +1041,7 @@ function ProfileCard({ profile }: { profile: CardPerfil }) {
 
           <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: profile.contactAvailable ? 10 : 0 }}>
             {profile.servicos.slice(0, 3).map((service) => (
-              <span key={service} style={{ fontSize: 10, background: GOLD_DIM, border: "1px solid rgba(202, 70, 81,0.15)", color: "#b4adb0", padding: "3px 8px", borderRadius: 10 }}>{service}</span>
+              <span key={service} style={{ fontSize: 10, background: GOLD_DIM, border: "1px solid rgba(183, 44, 255,0.15)", color: "#b4adb0", padding: "3px 8px", borderRadius: 10 }}>{service}</span>
             ))}
           </div>
 

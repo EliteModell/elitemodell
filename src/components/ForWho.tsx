@@ -57,7 +57,7 @@ export default function ForWho() {
             fontSize: 12,
             fontWeight: 700,
             letterSpacing: 3,
-            color: "#cc0000",
+            color: "#b72cff",
             textTransform: "uppercase",
             marginBottom: 12,
           }}
@@ -98,7 +98,7 @@ export default function ForWho() {
                 cursor: "default",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = "#cc0000";
+                (e.currentTarget as HTMLElement).style.borderColor = "#b72cff";
                 (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
               }}
               onMouseLeave={(e) => {
@@ -106,7 +106,7 @@ export default function ForWho() {
                 (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
               }}
             >
-              <div style={{ color: "#cc0000", marginBottom: 16 }}>{card.icon}</div>
+              <div style={{ color: "#b72cff", marginBottom: 16 }}>{card.icon}</div>
               <h3
                 style={{
                   fontSize: 17,

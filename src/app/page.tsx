@@ -19,7 +19,7 @@ const trustItems = [
 
 export default function HomePage() {
   return <div className={styles.shell}>
-    <Navbar tone="light" accent="coral" />
+    <Navbar tone="light" accent="purple" />
     <main>
       <section className={styles.hero}>
         <div className={styles.model}>

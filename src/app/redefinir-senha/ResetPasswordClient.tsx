@@ -9,7 +9,7 @@ import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { supabaseAuth } from "@/lib/supabase-client";
 import { BrandMark } from "@/components/BrandMark";
 
-const GOLD = "#CA4651";
+const GOLD = "#b72cff";
 
 type SessionState = "checking" | "ready" | "invalid";
 
@@ -80,7 +80,7 @@ export function ResetPasswordClient() {
 
   return (
     <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#f7f7fa", color: "#141212", padding: 24 }}>
-      <section style={{ width: "100%", maxWidth: 430, background: "#fff", border: "1px solid #fff7f8", borderRadius: 20, padding: 30, boxShadow: "0 24px 70px rgba(37, 31, 32,0.12)" }}>
+      <section style={{ width: "100%", maxWidth: 430, background: "#fff", border: "1px solid #fcf7ff", borderRadius: 20, padding: 30, boxShadow: "0 24px 70px rgba(37, 31, 32,0.12)" }}>
         <Link href="/" aria-label="Elite Modell" style={{ display: "inline-flex", width: 176, alignItems: "center", textDecoration: "none", marginBottom: 24 }}>
           <BrandMark priority />
         </Link>
@@ -113,7 +113,7 @@ export function ResetPasswordClient() {
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="Minimo 6 caracteres"
-                  style={{ minHeight: 54, borderRadius: 14, border: "1px solid #f2c8cc", background: "#fff", color: "#141212", padding: "13px 15px", fontSize: 15, outline: "none" }}
+                  style={{ minHeight: 54, borderRadius: 14, border: "1px solid #e1a6ff", background: "#fff", color: "#141212", padding: "13px 15px", fontSize: 15, outline: "none" }}
                 />
               </label>
 
@@ -125,7 +125,7 @@ export function ResetPasswordClient() {
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   placeholder="Digite novamente"
-                  style={{ minHeight: 54, borderRadius: 14, border: "1px solid #f2c8cc", background: "#fff", color: "#141212", padding: "13px 15px", fontSize: 15, outline: "none" }}
+                  style={{ minHeight: 54, borderRadius: 14, border: "1px solid #e1a6ff", background: "#fff", color: "#141212", padding: "13px 15px", fontSize: 15, outline: "none" }}
                 />
               </label>
 

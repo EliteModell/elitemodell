@@ -13,7 +13,7 @@ export default function ToastHost() {
           border: "1px solid #2a2a2a",
           borderRadius: "8px",
         },
-        success: { iconTheme: { primary: "#cc0000", secondary: "#fff" } },
+        success: { iconTheme: { primary: "#b72cff", secondary: "#fff" } },
       }}
     />
   );

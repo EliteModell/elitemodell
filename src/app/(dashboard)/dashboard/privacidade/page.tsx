@@ -48,7 +48,7 @@ export default async function PrivacyCenterPage() {
           <section className="rounded-[8px] border border-white/10 bg-white/[.035] p-5">
             <h2 className="text-lg font-black">Copia dos dados</h2>
             <p className="mt-2 text-sm text-white/60">Arquivo JSON estruturado, sem credenciais ou dados de terceiros.</p>
-            <a href="/api/users/me/export" className="mt-4 inline-flex rounded-[8px] bg-[#ca4651] px-4 py-3 font-black text-black no-underline">Baixar meus dados</a>
+            <a href="/api/users/me/export" className="mt-4 inline-flex rounded-[8px] bg-[#b72cff] px-4 py-3 font-black text-black no-underline">Baixar meus dados</a>
           </section>
           <section className="rounded-[8px] border border-white/10 bg-white/[.035] p-5">
             <h2 className="text-lg font-black">Marketing opcional</h2>
@@ -73,7 +73,7 @@ export default async function PrivacyCenterPage() {
             {requests.map((item) => <li key={item.id}>{item.protocol} - {item.type} - {item.status}</li>)}
             {!requests.length ? <li>Nenhuma solicitacao aberta.</li> : null}
           </ul>
-          <Link href="/dashboard/configuracoes/excluir-conta" className="mt-4 inline-flex text-[#f2c8cc]">Solicitar exclusao da conta</Link>
+          <Link href="/dashboard/configuracoes/excluir-conta" className="mt-4 inline-flex text-[#e1a6ff]">Solicitar exclusao da conta</Link>
         </section>
       </div>
     </main>

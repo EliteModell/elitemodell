@@ -37,7 +37,7 @@ export default function HowItWorks() {
             fontSize: 12,
             fontWeight: 700,
             letterSpacing: 3,
-            color: "#cc0000",
+            color: "#b72cff",
             textTransform: "uppercase",
             marginBottom: 12,
             textAlign: "center",
@@ -86,7 +86,7 @@ export default function HowItWorks() {
                     left: "50%",
                     width: "100%",
                     height: 1,
-                    background: "linear-gradient(to right, #cc0000, #333)",
+                    background: "linear-gradient(to right, #b72cff, #333)",
                     zIndex: 0,
                   }}
                   className="connector-line"
@@ -99,14 +99,14 @@ export default function HowItWorks() {
                   width: 56,
                   height: 56,
                   borderRadius: "50%",
-                  background: "#cc0000",
+                  background: "#b72cff",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   marginBottom: 24,
                   position: "relative",
                   zIndex: 1,
-                  boxShadow: "0 0 24px rgba(204,0,0,0.3)",
+                  boxShadow: "0 0 24px rgba(183,44,255,0.3)",
                 }}
               >
                 <span

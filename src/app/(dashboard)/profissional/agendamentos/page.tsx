@@ -111,8 +111,8 @@ export default function AgendamentosPage() {
               onClick={() => setFilter(t.key)}
               style={{
                 padding: "8px 16px",
-                background: filter === t.key ? "rgba(204,0,0,0.12)" : "#111",
-                border: `1.5px solid ${filter === t.key ? "#cc0000" : "#1e1e1e"}`,
+                background: filter === t.key ? "rgba(183,44,255,0.12)" : "#111",
+                border: `1.5px solid ${filter === t.key ? "#b72cff" : "#1e1e1e"}`,
                 borderRadius: 12,
                 color: filter === t.key ? "#fff" : "#777",
                 fontSize: 13,
@@ -125,7 +125,7 @@ export default function AgendamentosPage() {
             >
               {t.label}
               {count > 0 && (
-                <span style={{ background: filter === t.key ? "#cc0000" : "#222", color: "#fff", fontSize: 11, fontWeight: 700, width: 18, height: 18, borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ background: filter === t.key ? "#b72cff" : "#222", color: "#fff", fontSize: 11, fontWeight: 700, width: 18, height: 18, borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
                   {count}
                 </span>
               )}
@@ -150,7 +150,7 @@ export default function AgendamentosPage() {
       {!loading && !error && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {filtered.length === 0 && (
-            <div style={{ background: "#111", border: "1px solid rgba(202, 70, 81,.16)", borderRadius: 18, padding: 40, textAlign: "center" }}>
+            <div style={{ background: "#111", border: "1px solid rgba(183, 44, 255,.16)", borderRadius: 18, padding: 40, textAlign: "center" }}>
               <p style={{ color: "#555", fontSize: 14 }}>Nenhum agendamento neste status.</p>
             </div>
           )}
@@ -160,10 +160,10 @@ export default function AgendamentosPage() {
             const date = new Date(a.date);
             const label = clientName(a);
             return (
-              <div key={a.id} style={{ background: "#111", border: "1px solid rgba(202, 70, 81,.16)", borderRadius: 18, padding: "20px 22px" }}>
+              <div key={a.id} style={{ background: "#111", border: "1px solid rgba(183, 44, 255,.16)", borderRadius: 18, padding: "20px 22px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
                   <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-                    <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#cc0000", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+                    <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#b72cff", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
                       {a.client.image ? <img src={a.client.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : label[0]?.toUpperCase()}
                     </div>
                     <div>

@@ -95,10 +95,10 @@ export default function ProfissionaisPage() {
       <Navbar tone="light" />
 
       {/* Hero */}
-      <div style={{ paddingTop: 88, background: "#fff", borderBottom: "1px solid #fff7f8" }}>
+      <div style={{ paddingTop: 88, background: "#fff", borderBottom: "1px solid #fcf7ff" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "48px 24px 32px" }}>
           <h1 style={{ fontSize: "clamp(28px, 5vw, 52px)", fontWeight: 800, color: "#141212", marginBottom: 12, letterSpacing: "-1px" }}>
-            Profissionais <span style={{ color: "#ca4651" }}>Elite Modell</span>
+            Profissionais <span style={{ color: "#b72cff" }}>Elite Modell</span>
           </h1>
           <p style={{ color: "#686d7d", fontSize: 17, marginBottom: 32, maxWidth: 540 }}>
             Perfis verificados com documentos e biometria. Discreção e segurança em cada contato.
@@ -114,9 +114,9 @@ export default function ProfissionaisPage() {
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 placeholder="Nome, cidade ou serviço..."
-                style={{ width: "100%", padding: "12px 14px 12px 38px", background: "#fff", border: "1px solid #f2c8cc", borderRadius: 12, color: "#141212", fontSize: 15, outline: "none", boxSizing: "border-box" }}
-                onFocus={(e) => ((e.target as HTMLElement).style.borderColor = "#ca4651")}
-                onBlur={(e) => ((e.target as HTMLElement).style.borderColor = "#f2c8cc")}
+                style={{ width: "100%", padding: "12px 14px 12px 38px", background: "#fff", border: "1px solid #e1a6ff", borderRadius: 12, color: "#141212", fontSize: 15, outline: "none", boxSizing: "border-box" }}
+                onFocus={(e) => ((e.target as HTMLElement).style.borderColor = "#b72cff")}
+                onBlur={(e) => ((e.target as HTMLElement).style.borderColor = "#e1a6ff")}
               />
             </div>
 
@@ -124,7 +124,7 @@ export default function ProfissionaisPage() {
             <select
               value={category}
               onChange={(e) => { setCategory(e.target.value); setPage(1); }}
-              style={{ padding: "12px 14px", background: "#fff", border: "1px solid #f2c8cc", borderRadius: 12, color: category ? "#141212" : "#737684", fontSize: 14, outline: "none", cursor: "pointer" }}
+              style={{ padding: "12px 14px", background: "#fff", border: "1px solid #e1a6ff", borderRadius: 12, color: category ? "#141212" : "#737684", fontSize: 14, outline: "none", cursor: "pointer" }}
             >
               <option value="">Todas as categorias</option>
               <option value="MULHER">Mulher</option>
@@ -134,7 +134,7 @@ export default function ProfissionaisPage() {
 
             <button
               onClick={() => setFilterOpen(!filterOpen)}
-              style={{ padding: "12px 16px", background: filterOpen ? "#fff7f8" : "#fff", border: `1px solid ${filterOpen ? "#ca4651" : "#f2c8cc"}`, borderRadius: 12, color: filterOpen ? "#b73946" : "#514b59", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+              style={{ padding: "12px 16px", background: filterOpen ? "#fcf7ff" : "#fff", border: `1px solid ${filterOpen ? "#b72cff" : "#e1a6ff"}`, borderRadius: 12, color: filterOpen ? "#8f1fd1" : "#514b59", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
@@ -145,7 +145,7 @@ export default function ProfissionaisPage() {
             <select
               value={sortBy}
               onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
-              style={{ padding: "12px 14px", background: "#fff", border: "1px solid #f2c8cc", borderRadius: 12, color: "#514b59", fontSize: 14, outline: "none", cursor: "pointer" }}
+              style={{ padding: "12px 14px", background: "#fff", border: "1px solid #e1a6ff", borderRadius: 12, color: "#514b59", fontSize: 14, outline: "none", cursor: "pointer" }}
             >
               <option value="rating">Mais avaliados</option>
               <option value="reviews">Mais avaliações</option>
@@ -156,18 +156,18 @@ export default function ProfissionaisPage() {
 
           {/* Painel de filtros */}
           {filterOpen && (
-            <div style={{ marginTop: 16, padding: "20px", background: "#faf9fc", border: "1px solid #fff7f8", borderRadius: 16 }}>
+            <div style={{ marginTop: 16, padding: "20px", background: "#faf9fc", border: "1px solid #fcf7ff", borderRadius: 16 }}>
               <div style={{ display: "flex", gap: 40, flexWrap: "wrap" }}>
                 <div>
                   <label style={{ fontSize: 13, color: "#514b59", fontWeight: 600, display: "block", marginBottom: 12 }}>
-                    Preço máximo: <span style={{ color: "#ca4651" }}>R$ {priceMax.toLocaleString("pt-BR")}</span>
+                    Preço máximo: <span style={{ color: "#b72cff" }}>R$ {priceMax.toLocaleString("pt-BR")}</span>
                   </label>
-                  <input type="range" min={200} max={6000} step={100} value={priceMax} onChange={(e) => { setPriceMax(Number(e.target.value)); setPage(1); }} style={{ accentColor: "#ca4651", width: 220 }} />
+                  <input type="range" min={200} max={6000} step={100} value={priceMax} onChange={(e) => { setPriceMax(Number(e.target.value)); setPage(1); }} style={{ accentColor: "#b72cff", width: 220 }} />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <label style={{ fontSize: 13, color: "#514b59", fontWeight: 600 }}>Outros</label>
                   <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                    <input type="checkbox" checked={onlyVerified} onChange={(e) => { setOnlyVerified(e.target.checked); setPage(1); }} style={{ accentColor: "#ca4651" }} />
+                    <input type="checkbox" checked={onlyVerified} onChange={(e) => { setOnlyVerified(e.target.checked); setPage(1); }} style={{ accentColor: "#b72cff" }} />
                     <span style={{ fontSize: 13, color: "#686270" }}>Apenas verificadas</span>
                   </label>
                 </div>
@@ -183,7 +183,7 @@ export default function ProfissionaisPage() {
         {loading ? <ProfessionalGridSkeleton /> : null}
         {!loading && error && (
           <div className="premium-empty-state premium-enter" style={{ textAlign: "center", padding: "46px 22px", borderRadius: 8 }}>
-            <p style={{ margin: "0 0 8px", color: "#ca4651", fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase" }}>Instabilidade temporaria</p>
+            <p style={{ margin: "0 0 8px", color: "#b72cff", fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase" }}>Instabilidade temporaria</p>
             <h2 style={{ margin: "0 0 10px", color: "#f4f1ea", fontSize: 26, fontWeight: 850 }}>Não conseguimos atualizar a lista.</h2>
             <p style={{ margin: "0 auto 20px", maxWidth: 460, color: "#b8b1a6", lineHeight: 1.6 }}>{error}</p>
             <button
@@ -203,8 +203,8 @@ export default function ProfissionaisPage() {
             {featured.length > 0 && !search && !category && (
               <div style={{ marginBottom: 40 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "#ca4651", textTransform: "uppercase", letterSpacing: 2 }}>Em destaque</span>
-                  <div style={{ flex: 1, height: 1, background: "#fff7f8" }} />
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#b72cff", textTransform: "uppercase", letterSpacing: 2 }}>Em destaque</span>
+                  <div style={{ flex: 1, height: 1, background: "#fcf7ff" }} />
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 20 }}>
                   {featured.map((p) => <ProfCard key={p.id} pro={p} featured />)}
@@ -216,7 +216,7 @@ export default function ProfissionaisPage() {
               <p style={{ color: "#666", fontSize: 14 }}>
                 {total} profissional{total !== 1 ? "is" : ""} encontrado{total !== 1 ? "s" : ""}
               </p>
-              <Link href={ACCOUNT_ROUTES.cadastroAcompanhante} style={{ fontSize: 14, color: "#ca4651", textDecoration: "none", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+              <Link href={ACCOUNT_ROUTES.cadastroAcompanhante} style={{ fontSize: 14, color: "#b72cff", textDecoration: "none", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                 Anunciar como acompanhante
               </Link>
@@ -235,7 +235,7 @@ export default function ProfissionaisPage() {
                   <button
                     key={p}
                     onClick={() => setPage(p)}
-                    style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${p === page ? "#ca4651" : "#f2c8cc"}`, background: p === page ? "#fff7f8" : "#fff", color: p === page ? "#b73946" : "#686270", fontSize: 14, fontWeight: p === page ? 700 : 400, cursor: "pointer" }}
+                    style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${p === page ? "#b72cff" : "#e1a6ff"}`, background: p === page ? "#fcf7ff" : "#fff", color: p === page ? "#8f1fd1" : "#686270", fontSize: 14, fontWeight: p === page ? 700 : 400, cursor: "pointer" }}
                   >
                     {p}
                   </button>
@@ -249,7 +249,7 @@ export default function ProfissionaisPage() {
                 <p style={{ color: "#666", fontSize: 16, marginBottom: 16 }}>Nenhum profissional encontrado com esses filtros.</p>
                 <button
                   onClick={() => { setSearch(""); setCategory(""); setPriceMax(6000); setOnlyVerified(false); setPage(1); }}
-                  style={{ padding: "10px 24px", background: "#ca4651", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 700 }}
+                  style={{ padding: "10px 24px", background: "#b72cff", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 700 }}
                 >
                   Limpar filtros
                 </button>
@@ -261,18 +261,18 @@ export default function ProfissionaisPage() {
 
       <style>{`
         .prof-card {
-          border-color: #fff7f8;
+          border-color: #fcf7ff;
           transform: translateY(0);
           will-change: transform;
           box-shadow: 0 16px 42px rgba(37, 31, 32, 0.08);
           contain: layout paint;
         }
         .prof-card.featured {
-          border-color: rgba(202, 70, 81,0.15);
+          border-color: rgba(183, 44, 255,0.15);
         }
         @media (hover: hover) and (pointer: fine) {
           .prof-card:hover {
-            border-color: rgba(202, 70, 81,0.4);
+            border-color: rgba(183, 44, 255,0.4);
             transform: translateY(-3px);
             box-shadow: 0 20px 52px rgba(37, 31, 32, 0.14);
           }
@@ -332,13 +332,13 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
         }}
       >
         {featured && (
-          <div style={{ position: "absolute", top: 12, left: 12, zIndex: 2, padding: "3px 10px", background: "#ca4651", color: "#fff", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
+          <div style={{ position: "absolute", top: 12, left: 12, zIndex: 2, padding: "3px 10px", background: "#b72cff", color: "#fff", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
             ★ Destaque
           </div>
         )}
 
         {/* Foto de capa */}
-        <div style={{ height: 180, background: "linear-gradient(135deg, #fff7f8 0%, #fbfaff 60%, #fff7f8 100%)", position: "relative", overflow: "hidden" }}>
+        <div style={{ height: 180, background: "linear-gradient(135deg, #fcf7ff 0%, #fbfaff 60%, #fcf7ff 100%)", position: "relative", overflow: "hidden" }}>
           {coverPhoto ? (
             <Image
               src={coverPhoto}
@@ -350,7 +350,7 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
             />
           ) : (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
-              <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(202, 70, 81,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 800, color: "#ca4651", border: "3px solid rgba(202, 70, 81,0.3)" }}>
+              <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(183, 44, 255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 800, color: "#b72cff", border: "3px solid rgba(183, 44, 255,0.3)" }}>
                 {pro.displayName.split(" ").map((n) => n[0]).slice(0, 2).join("")}
               </div>
             </div>
@@ -361,15 +361,15 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
             </div>
           )}
           {pro.escortCategory && (
-            <div style={{ position: "absolute", top: featured ? 40 : 12, right: 12, padding: "3px 10px", background: "rgba(6,14,27,0.8)", border: "1px solid rgba(202, 70, 81,0.3)", borderRadius: 20, fontSize: 11, color: "#ca4651", fontWeight: 600 }}>
+            <div style={{ position: "absolute", top: featured ? 40 : 12, right: 12, padding: "3px 10px", background: "rgba(6,14,27,0.8)", border: "1px solid rgba(183, 44, 255,0.3)", borderRadius: 20, fontSize: 11, color: "#b72cff", fontWeight: 600 }}>
               {CATEGORY_LABELS[pro.escortCategory] ?? pro.escortCategory}
             </div>
           )}
-          <div style={{ position: "absolute", left: 14, bottom: -28, width: 64, height: 64, borderRadius: "50%", border: "3px solid #ca4651", overflow: "hidden", background: "#fff", boxShadow: "0 10px 26px rgba(37, 31, 32,0.18)" }}>
+          <div style={{ position: "absolute", left: 14, bottom: -28, width: 64, height: 64, borderRadius: "50%", border: "3px solid #b72cff", overflow: "hidden", background: "#fff", boxShadow: "0 10px 26px rgba(37, 31, 32,0.18)" }}>
             {profilePhoto ? (
               <Image src={profilePhoto} alt={pro.displayName} fill sizes="64px" style={{ objectFit: "cover", objectPosition: "top" }} />
             ) : (
-              <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", color: "#ca4651", fontWeight: 900 }}>
+              <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", color: "#b72cff", fontWeight: 900 }}>
                 {pro.displayName.split(" ").map((n) => n[0]).slice(0, 2).join("")}
               </div>
             )}
@@ -383,14 +383,14 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <h3 style={{ fontSize: 16, fontWeight: 700, color: "#141212", margin: 0 }}>{pro.displayName}</h3>
                 {pro.verified && (
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="#ca4651"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="#b72cff"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
                 )}
               </div>
               <p style={{ fontSize: 13, color: "#666", margin: "2px 0 0" }}>{pro.city}, {pro.state}</p>
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
-                <span style={{ color: "#ca4651" }}>★</span>
+                <span style={{ color: "#b72cff" }}>★</span>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "#141212" }}>{(pro.rating ?? 0).toFixed(1)}</span>
               </div>
               <span style={{ fontSize: 12, color: "#555" }}>({pro.totalReviews ?? 0})</span>
@@ -404,12 +404,12 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
           {/* Especialidades */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
             {specialtyNames.slice(0, 2).map((s) => (
-              <span key={s} style={{ padding: "3px 10px", background: "rgba(202, 70, 81,0.08)", border: "1px solid rgba(202, 70, 81,0.2)", borderRadius: 20, fontSize: 11, color: "#ca4651", fontWeight: 500 }}>
+              <span key={s} style={{ padding: "3px 10px", background: "rgba(183, 44, 255,0.08)", border: "1px solid rgba(183, 44, 255,0.2)", borderRadius: 20, fontSize: 11, color: "#b72cff", fontWeight: 500 }}>
                 {s}
               </span>
             ))}
             {specialtyNames.length > 2 && (
-              <span style={{ padding: "3px 10px", background: "#fff7f8", border: "1px solid #fff7f8", borderRadius: 20, fontSize: 11, color: "#686270" }}>
+              <span style={{ padding: "3px 10px", background: "#fcf7ff", border: "1px solid #fcf7ff", borderRadius: 20, fontSize: 11, color: "#686270" }}>
                 +{specialtyNames.length - 2}
               </span>
             )}
@@ -419,11 +419,11 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
             <div>
               {(pro.priceMin ?? pro.pricePerHour) && (
                 <span style={{ fontSize: 14, color: "#888" }}>
-                  A partir de <span style={{ color: "#ca4651", fontWeight: 700, fontSize: 16 }}>R$ {(pro.priceMin ?? pro.pricePerHour)!.toLocaleString("pt-BR")}</span>
+                  A partir de <span style={{ color: "#b72cff", fontWeight: 700, fontSize: 16 }}>R$ {(pro.priceMin ?? pro.pricePerHour)!.toLocaleString("pt-BR")}</span>
                 </span>
               )}
             </div>
-            <div style={{ padding: "7px 14px", background: "#ca4651", color: "#fff", borderRadius: 9, fontSize: 13, fontWeight: 700 }}>
+            <div style={{ padding: "7px 14px", background: "#b72cff", color: "#fff", borderRadius: 9, fontSize: 13, fontWeight: 700 }}>
               Ver perfil
             </div>
           </div>

@@ -12,7 +12,7 @@ import styles from "./Navbar.module.css";
 
 const NavbarSessionControls = dynamic(() => import("@/components/NavbarSessionControls"), { ssr: false });
 
-export default function Navbar({ tone = "light", accent = "coral" }: { tone?: "dark" | "light"; accent?: "default" | "coral" }) {
+export default function Navbar({ tone = "light", accent = "purple" }: { tone?: "dark" | "light"; accent?: "default" | "purple" }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [entryChoice, setEntryChoice] = useState<"login" | null>(null);
   const router = useRouter();
@@ -22,7 +22,7 @@ export default function Navbar({ tone = "light", accent = "coral" }: { tone?: "d
     setEntryChoice("login");
   }
 
-  return <nav className={`${styles.nav} ${tone === "light" ? styles.light : ""} ${accent === "coral" ? styles.coral : ""}`} aria-label="Navegação principal">
+  return <nav className={`${styles.nav} ${tone === "light" ? styles.light : ""} ${accent === "purple" ? styles.purple : ""}`} aria-label="Navegação principal">
     <div className={styles.inner}>
       <Link href="/" className={styles.brand} aria-label="Elite Modell — início">
         <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={2172} height={724} priority className={styles.logo}/>

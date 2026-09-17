@@ -91,7 +91,7 @@ export default function Solution() {
                 fontSize: 12,
                 fontWeight: 700,
                 letterSpacing: 3,
-                color: "#cc0000",
+                color: "#b72cff",
                 textTransform: "uppercase",
                 marginBottom: 12,
               }}
@@ -118,7 +118,7 @@ export default function Solution() {
               style={{
                 display: "inline-block",
                 padding: "13px 28px",
-                background: "#cc0000",
+                background: "#b72cff",
                 color: "#fff",
                 borderRadius: 8,
                 textDecoration: "none",
@@ -148,13 +148,13 @@ export default function Solution() {
                   transition: "border-color 0.2s",
                 }}
                 onMouseEnter={(e) =>
-                  ((e.currentTarget as HTMLElement).style.borderColor = "#cc000050")
+                  ((e.currentTarget as HTMLElement).style.borderColor = "#b72cff50")
                 }
                 onMouseLeave={(e) =>
                   ((e.currentTarget as HTMLElement).style.borderColor = "#1e1e1e")
                 }
               >
-                <div style={{ color: "#cc0000", flexShrink: 0, marginTop: 2 }}>
+                <div style={{ color: "#b72cff", flexShrink: 0, marginTop: 2 }}>
                   {f.icon}
                 </div>
                 <div>

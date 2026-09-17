@@ -14,7 +14,7 @@ export default function MensagensPage() {
 
       <section className="client-card mt-6 p-5">
         <div className="flex items-start gap-4">
-          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#ca4651]/16 bg-white/[0.045] text-[#f2c8cc]">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#b72cff]/16 bg-white/[0.045] text-[#e1a6ff]">
             <MessageCircle className="h-7 w-7" />
           </span>
           <div>

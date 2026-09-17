@@ -16,9 +16,9 @@ const ActionAuthModal = dynamic(() => import("@/components/auth/ActionAuthModal"
 const PremiumUpsellModal = dynamic(() => import("@/components/premium/PremiumUpsellModal"));
 const ReviewForm = dynamic(() => import("@/components/ReviewForm"));
 
-const GOLD = "#CA4651";
-const GOLD_DIM = "rgba(202,70,81,0.12)";
-const GOLD_MID = "rgba(202,70,81,0.28)";
+const GOLD = "#b72cff";
+const GOLD_DIM = "rgba(183, 44, 255,0.12)";
+const GOLD_MID = "rgba(183, 44, 255,0.28)";
 const PLAYFAIR = "var(--font-inter), 'Segoe UI', sans-serif";
 
 type GaleriaFiltro = "todas" | "fotos" | "videos";
@@ -367,7 +367,7 @@ export default function ProfissionalProfilePage() {
     return (
       <div style={{ background: "#f7f7fa", minHeight: "100vh", color: "#141212", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
         <Navbar />
-        <p style={{ color: "#fff7f8", fontSize: 20, fontWeight: 700 }}>Perfil não encontrado</p>
+        <p style={{ color: "#fcf7ff", fontSize: 20, fontWeight: 700 }}>Perfil não encontrado</p>
         <Link href="/buscar" style={{ color: GOLD, textDecoration: "none" }}>← Voltar para a busca</Link>
       </div>
     );
@@ -457,14 +457,14 @@ export default function ProfissionalProfilePage() {
               style={{ objectFit: "cover", objectPosition: "center 15%" }}
             />
           ) : (
-            <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #080808, #1a0a0a)" }} />
+            <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #080808, #160022)" }} />
           )}
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(6,14,27,0.1) 0%, rgba(6,14,27,0.5) 45%, rgba(6,14,27,0.93) 100%)" }} />
           <div className={styles.coverIdentity}>
-            <h1 style={{ fontSize: "clamp(34px, 9vw, 56px)", fontWeight: 700, color: "#fff7f8", margin: 0, fontFamily: PLAYFAIR, letterSpacing: "-1px", lineHeight: 1, textShadow: "0 2px 16px rgba(0,0,0,0.6)" }}>
+            <h1 style={{ fontSize: "clamp(34px, 9vw, 56px)", fontWeight: 700, color: "#fcf7ff", margin: 0, fontFamily: PLAYFAIR, letterSpacing: "-1px", lineHeight: 1, textShadow: "0 2px 16px rgba(0,0,0,0.6)" }}>
               {pro.displayName}
             </h1>
-            <p data-testid="profile-tier" style={{ fontSize: 10, color: "rgba(202, 70, 81,0.8)", fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", margin: "7px 0 0" }}>
+            <p data-testid="profile-tier" style={{ fontSize: 10, color: "rgba(183, 44, 255,0.8)", fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", margin: "7px 0 0" }}>
               {pro.verified ? "Verificada · " : ""}Premium
             </p>
           </div>
@@ -494,7 +494,7 @@ export default function ProfissionalProfilePage() {
             <div className={styles.summaryDetails}>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
                 {pro.verified && <span style={{ padding: "3px 10px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 20, fontSize: 11, color: GOLD, fontWeight: 700 }}>✓ Verificada</span>}
-                {pro.featured && <span style={{ padding: "3px 10px", background: "rgba(204,0,0,0.15)", border: "1px solid rgba(204,0,0,0.3)", borderRadius: 20, fontSize: 11, color: "#cc0000", fontWeight: 700 }}>★ Destaque</span>}
+                {pro.featured && <span style={{ padding: "3px 10px", background: "rgba(183,44,255,0.15)", border: "1px solid rgba(183,44,255,0.3)", borderRadius: 20, fontSize: 11, color: "#b72cff", fontWeight: 700 }}>★ Destaque</span>}
                 {pro.boostActive && <span style={{ padding: "3px 10px", background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.28)", borderRadius: 20, fontSize: 11, color: "#22c55e", fontWeight: 700 }}>Impulsionado</span>}
                 <span style={{ padding: "3px 10px", background: pro.online ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,.04)", border: `1px solid ${pro.online ? "rgba(34,197,94,.28)" : "rgba(255,255,255,.08)"}`, borderRadius: 20, fontSize: 11, color: pro.online ? "#34d399" : "#968a9e", fontWeight: 700 }}>{pro.online ? "Online agora" : "Offline"}</span>
                 <button type="button" onClick={() => void beginFavorite()} disabled={favoriteSaving} style={{ padding: "3px 10px", background: favoriteSaved ? GOLD : GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 20, fontSize: 11, color: favoriteSaved ? "#080808" : GOLD, fontWeight: 800, cursor: "pointer" }}>
@@ -530,7 +530,7 @@ export default function ProfissionalProfilePage() {
               <div style={{ fontSize: 20, fontWeight: 900, color: GOLD, fontFamily: PLAYFAIR }}>{preco ? `R$ ${preco.toLocaleString("pt-BR")}/h` : "Consulte"}</div>
               {pro.attendanceTypes && <div style={{ fontSize: 11, color: "#aaa0b2", marginTop: 4 }}>{pro.attendanceTypes.join(", ")}</div>}
             </div>
-            <div style={{ background: "#fff", border: "1px solid #fff7f8", borderRadius: 12, padding: "14px 16px", boxShadow: "0 10px 28px rgba(37, 31, 32,.06)" }}>
+            <div style={{ background: "#fff", border: "1px solid #fcf7ff", borderRadius: 12, padding: "14px 16px", boxShadow: "0 10px 28px rgba(37, 31, 32,.06)" }}>
               <div style={{ fontSize: 10, color: GOLD, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>📍 Localização</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: "#141212", fontFamily: PLAYFAIR }}>{pro.city}</div>
               <div style={{ fontSize: 12, color: "#968a9e", marginTop: 2 }}>{pro.state}{pro.bairro ? ` · ${pro.bairro}` : ""}</div>
@@ -547,7 +547,7 @@ export default function ProfissionalProfilePage() {
           {pro.stories && pro.stories.length > 0 ? (
             <div style={{ display: "flex", gap: 10, overflowX: "auto", padding: "18px 0 4px" }}>
               {pro.stories.map((story) => (
-                <a key={story.id} href={story.mediaUrl} target="_blank" rel="noreferrer" style={{ position: "relative", width: 74, height: 100, flex: "0 0 auto", overflow: "hidden", borderRadius: 12, border: `2px solid ${GOLD}`, background: "#fff7f8" }}>
+                <a key={story.id} href={story.mediaUrl} target="_blank" rel="noreferrer" style={{ position: "relative", width: 74, height: 100, flex: "0 0 auto", overflow: "hidden", borderRadius: 12, border: `2px solid ${GOLD}`, background: "#fcf7ff" }}>
                   <Image src={story.thumbnail ?? story.mediaUrl} alt={`Story de ${pro.displayName}`} fill sizes="74px" quality={60} style={{ objectFit: "cover" }} />
                 </a>
               ))}
@@ -557,7 +557,7 @@ export default function ProfissionalProfilePage() {
       </div>
 
       {/* STICKY NAV */}
-      <div style={{ position: "sticky", top: 64, zIndex: 40, background: "rgba(255,255,255,0.94)", backdropFilter: "blur(12px)", borderBottom: "1px solid #fff7f8", marginTop: 16 }}>
+      <div style={{ position: "sticky", top: 64, zIndex: 40, background: "rgba(255,255,255,0.94)", backdropFilter: "blur(12px)", borderBottom: "1px solid #fcf7ff", marginTop: 16 }}>
         <div style={{ maxWidth: 720, margin: "0 auto", display: "flex", padding: "0 16px" }}>
           {[
             { label: `Fotos (${allPhotos.length})`, ref: refGaleria },
@@ -582,16 +582,16 @@ export default function ProfissionalProfilePage() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              <span style={{ fontSize: 15, fontWeight: 700, color: "#fff7f8", fontFamily: PLAYFAIR }}>Galeria de fotos e vídeos</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: "#fcf7ff", fontFamily: PLAYFAIR }}>Galeria de fotos e vídeos</span>
             </div>
           </div>
 
-          <div style={{ background: "#fff", border: "1px solid #fff7f8", borderRadius: 12, padding: "14px 16px", marginBottom: 14, display: "flex", gap: 12, alignItems: "center" }}>
+          <div style={{ background: "#fff", border: "1px solid #fcf7ff", borderRadius: 12, padding: "14px 16px", marginBottom: 14, display: "flex", gap: 12, alignItems: "center" }}>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
             </div>
             <div>
-              <p style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 700, color: "#fff7f8" }}>Mídias Verificadas</p>
+              <p style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 700, color: "#fcf7ff" }}>Mídias Verificadas</p>
               <p style={{ margin: 0, fontSize: 11, color: "#aaa0b2" }}>Fotos e vídeos verificados pela Elite Modell garantem autenticidade.</p>
             </div>
           </div>
@@ -636,7 +636,7 @@ export default function ProfissionalProfilePage() {
             <div style={{ marginBottom: 24 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "#fff7f8", fontFamily: PLAYFAIR }}>Video de apresentacao</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#fcf7ff", fontFamily: PLAYFAIR }}>Video de apresentacao</span>
               </div>
               <video
                 src={premiumVideoUrl ?? pro.presentationVideoUrl ?? undefined}
@@ -653,10 +653,10 @@ export default function ProfissionalProfilePage() {
                 setPremiumFeature("o vídeo exclusivo desta profissional");
                 setPremiumOpen(true);
               }}
-              style={{ width: "100%", marginBottom: 24, padding: 22, borderRadius: 16, border: `1px solid ${GOLD_MID}`, background: "#fff7f8", color: "#b73946", cursor: "pointer", textAlign: "left" }}
+              style={{ width: "100%", marginBottom: 24, padding: 22, borderRadius: 16, border: `1px solid ${GOLD_MID}`, background: "#fcf7ff", color: "#8f1fd1", cursor: "pointer", textAlign: "left" }}
             >
               <span style={{ display: "block", color: GOLD, fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>Conteúdo Premium</span>
-              <strong style={{ display: "block", marginTop: 8, color: "#fff7f8", fontSize: 18, fontFamily: PLAYFAIR }}>Vídeo exclusivo disponível</strong>
+              <strong style={{ display: "block", marginTop: 8, color: "#fcf7ff", fontSize: 18, fontFamily: PLAYFAIR }}>Vídeo exclusivo disponível</strong>
               <span style={{ display: "block", marginTop: 7, color: "#968a9e", fontSize: 13 }}>Toque para conhecer os planos e desbloquear este conteúdo.</span>
             </button>
           )}
@@ -665,7 +665,7 @@ export default function ProfissionalProfilePage() {
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "#fff7f8", fontFamily: PLAYFAIR }}>Mídia de verificação</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#fcf7ff", fontFamily: PLAYFAIR }}>Mídia de verificação</span>
               </div>
               <div style={{ position: "relative", aspectRatio: "16/9", borderRadius: 14, overflow: "hidden", border: `1px solid ${GOLD_MID}` }}>
                 <Image
@@ -698,7 +698,7 @@ export default function ProfissionalProfilePage() {
           <section style={{ marginBottom: 28, paddingBottom: 28, borderBottom: `1px solid ${GOLD_DIM}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff7f8", margin: 0, fontFamily: PLAYFAIR }}>Descrição</h2>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fcf7ff", margin: 0, fontFamily: PLAYFAIR }}>Descrição</h2>
             </div>
             <p style={{ color: "#968a9e", fontSize: 14, lineHeight: 1.85, margin: 0, whiteSpace: "pre-line" }}>{pro.bio}</p>
           </section>
@@ -706,12 +706,12 @@ export default function ProfissionalProfilePage() {
           <section style={{ marginBottom: 28, paddingBottom: 28, borderBottom: `1px solid ${GOLD_DIM}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff7f8", margin: 0, fontFamily: PLAYFAIR }}>Atendimento</h2>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fcf7ff", margin: 0, fontFamily: PLAYFAIR }}>Atendimento</h2>
             </div>
             {(pro.attendanceTypes?.length || pro.servesGenders?.length) ? (
               <div style={{ background: "#080808", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, padding: "12px 16px", marginBottom: 14 }}>
-                {pro.servesGenders?.length && <p style={{ fontSize: 13, color: "#b4adb0", margin: "0 0 4px" }}><strong style={{ color: "#fff7f8" }}>Atende:</strong> {pro.servesGenders.join(" e ")}</p>}
-                {pro.attendanceTypes?.length && <p style={{ fontSize: 13, color: "#b4adb0", margin: 0 }}><strong style={{ color: "#fff7f8" }}>Local:</strong> {pro.attendanceTypes.join(", ")}</p>}
+                {pro.servesGenders?.length && <p style={{ fontSize: 13, color: "#b4adb0", margin: "0 0 4px" }}><strong style={{ color: "#fcf7ff" }}>Atende:</strong> {pro.servesGenders.join(" e ")}</p>}
+                {pro.attendanceTypes?.length && <p style={{ fontSize: 13, color: "#b4adb0", margin: 0 }}><strong style={{ color: "#fcf7ff" }}>Local:</strong> {pro.attendanceTypes.join(", ")}</p>}
               </div>
             ) : null}
             {allServices.length > 0 && (
@@ -745,9 +745,9 @@ export default function ProfissionalProfilePage() {
             ) : null}
             {(pro.amenities?.length || pro.serviceCities?.length || pro.approximateLocation) ? (
               <div style={{ marginTop: 16, display: "grid", gap: 10, border: `1px solid ${GOLD_DIM}`, borderRadius: 10, padding: "14px 16px", background: "#080808" }}>
-                {pro.approximateLocation ? <p style={{ margin: 0, color: "#b4adb0", fontSize: 13 }}><strong style={{ color: "#fff7f8" }}>Localização aproximada:</strong> {pro.approximateLocation}</p> : null}
-                {pro.amenities?.length ? <p style={{ margin: 0, color: "#b4adb0", fontSize: 13 }}><strong style={{ color: "#fff7f8" }}>Comodidades:</strong> {pro.amenities.join(", ")}</p> : null}
-                {pro.serviceCities?.length ? <p style={{ margin: 0, color: "#b4adb0", fontSize: 13 }}><strong style={{ color: "#fff7f8" }}>Cidades atendidas:</strong> {pro.serviceCities.join(", ")}</p> : null}
+                {pro.approximateLocation ? <p style={{ margin: 0, color: "#b4adb0", fontSize: 13 }}><strong style={{ color: "#fcf7ff" }}>Localização aproximada:</strong> {pro.approximateLocation}</p> : null}
+                {pro.amenities?.length ? <p style={{ margin: 0, color: "#b4adb0", fontSize: 13 }}><strong style={{ color: "#fcf7ff" }}>Comodidades:</strong> {pro.amenities.join(", ")}</p> : null}
+                {pro.serviceCities?.length ? <p style={{ margin: 0, color: "#b4adb0", fontSize: 13 }}><strong style={{ color: "#fcf7ff" }}>Cidades atendidas:</strong> {pro.serviceCities.join(", ")}</p> : null}
               </div>
             ) : null}
           </section>
@@ -756,7 +756,7 @@ export default function ProfissionalProfilePage() {
           <section style={{ marginBottom: 28, paddingBottom: 28, borderBottom: `1px solid ${GOLD_DIM}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><path d="M12 16h.01"/></svg>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff7f8", margin: 0, fontFamily: PLAYFAIR }}>Valores</h2>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fcf7ff", margin: 0, fontFamily: PLAYFAIR }}>Valores</h2>
             </div>
             <div style={{ border: `1px solid ${GOLD_DIM}`, borderRadius: 12, overflow: "hidden" }}>
               {[
@@ -769,7 +769,7 @@ export default function ProfissionalProfilePage() {
               ].map((row, i, arr) => (
                 <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: i % 2 === 0 ? "#080808" : "#080808", borderBottom: i < arr.length - 1 ? `1px solid ${GOLD_DIM}` : "none" }}>
                   <span style={{ fontSize: 13, color: "#b4adb0", fontStyle: "italic" }}>{row.label}</span>
-                  <span style={{ fontSize: 14, color: row.value ? "#fff7f8" : "#676064", fontWeight: row.value ? 700 : 400 }}>
+                  <span style={{ fontSize: 14, color: row.value ? "#fcf7ff" : "#676064", fontWeight: row.value ? 700 : 400 }}>
                     {row.value ? `R$ ${row.value.toLocaleString("pt-BR")}` : "Não realiza"}
                   </span>
                 </div>
@@ -791,13 +791,13 @@ export default function ProfissionalProfilePage() {
           <section style={{ marginBottom: 28, paddingBottom: 28, borderBottom: `1px solid ${GOLD_DIM}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff7f8", margin: 0, fontFamily: PLAYFAIR }}>Horário de expediente</h2>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fcf7ff", margin: 0, fontFamily: PLAYFAIR }}>Horário de expediente</h2>
             </div>
             <div style={{ border: `1px solid ${GOLD_DIM}`, borderRadius: 12, overflow: "hidden" }}>
               {schedule.map((s, i) => (
                 <div key={s.day} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 16px", background: i % 2 === 0 ? "#080808" : "#080808", borderBottom: i < schedule.length - 1 ? `1px solid ${GOLD_DIM}` : "none" }}>
                   <span style={{ fontSize: 13, color: s.available ? "#b4adb0" : "#676064", fontStyle: "italic", width: 90 }}>{s.day}</span>
-                  <span style={{ fontSize: 13, color: s.available ? "#fff7f8" : "#676064", fontWeight: s.available ? 600 : 400 }}>
+                  <span style={{ fontSize: 13, color: s.available ? "#fcf7ff" : "#676064", fontWeight: s.available ? 600 : 400 }}>
                     {s.available ? s.time : "Indisponível"}
                   </span>
                 </div>
@@ -812,7 +812,7 @@ export default function ProfissionalProfilePage() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 7h8M8 12h6"/></svg>
-                  <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff7f8", margin: 0, fontFamily: PLAYFAIR }}>Características físicas</h2>
+                  <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fcf7ff", margin: 0, fontFamily: PLAYFAIR }}>Características físicas</h2>
                 </div>
                 <button onClick={() => setCaracteristicasAbertas(!caracteristicasAbertas)}
                   style={{ background: "none", border: "none", color: "#aaa0b2", cursor: "pointer", fontSize: 14 }}>
@@ -824,7 +824,7 @@ export default function ProfissionalProfilePage() {
                   {fisico.map(([k, v]) => (
                     <div key={k} style={{ background: "#080808", border: `1px solid ${GOLD_DIM}`, borderRadius: 8, padding: "10px 14px" }}>
                       <p style={{ margin: "0 0 2px", fontSize: 11, color: "#aaa0b2", textTransform: "capitalize" }}>{k}</p>
-                      <p style={{ margin: 0, fontSize: 14, color: "#fff7f8", fontWeight: 600 }}>{v}</p>
+                      <p style={{ margin: 0, fontSize: 14, color: "#fcf7ff", fontWeight: 600 }}>{v}</p>
                     </div>
                   ))}
                 </div>
@@ -841,7 +841,7 @@ export default function ProfissionalProfilePage() {
         <div ref={refAvaliacoes} style={{ scrollMarginTop: 120, marginBottom: 40 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff7f8", margin: 0, fontFamily: PLAYFAIR }}>Avaliações de {pro.displayName}</h2>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fcf7ff", margin: 0, fontFamily: PLAYFAIR }}>Avaliações de {pro.displayName}</h2>
           </div>
 
           <div style={{ display: "flex", gap: 16, marginBottom: 20, padding: "16px", background: "#080808", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, alignItems: "center" }}>
@@ -871,7 +871,7 @@ export default function ProfissionalProfilePage() {
                       {r.author[0]?.toUpperCase()}
                     </div>
                     <div>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#fff7f8" }}>{r.author}</p>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#fcf7ff" }}>{r.author}</p>
                       <p style={{ margin: 0, fontSize: 11, color: "#aaa0b2" }}>{r.date}</p>
                     </div>
                   </div>
@@ -897,14 +897,14 @@ export default function ProfissionalProfilePage() {
                 setPremiumFeature("todas as avaliações");
                 setPremiumOpen(true);
               }}
-              style={{ width: "100%", minHeight: 48, margin: "-6px 0 20px", borderRadius: 12, border: `1px solid ${GOLD_MID}`, background: GOLD_DIM, color: "#f2c8cc", fontWeight: 900, cursor: "pointer" }}
+              style={{ width: "100%", minHeight: 48, margin: "-6px 0 20px", borderRadius: 12, border: `1px solid ${GOLD_MID}`, background: GOLD_DIM, color: "#e1a6ff", fontWeight: 900, cursor: "pointer" }}
             >
               Ver todas as {pro.totalReviews} avaliações com Premium
             </button>
           )}
 
           <div style={{ background: "#080808", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "18px 16px", textAlign: "center", marginBottom: 32 }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: "#fff7f8", margin: "0 0 6px", fontFamily: PLAYFAIR }}>Foi atendido por {pro.displayName}?</p>
+            <p style={{ fontSize: 14, fontWeight: 700, color: "#fcf7ff", margin: "0 0 6px", fontFamily: PLAYFAIR }}>Foi atendido por {pro.displayName}?</p>
             <p style={{ fontSize: 12, color: "#aaa0b2", margin: "0 0 14px" }}>Deixe sua avaliação gratuita</p>
             <button type="button" onClick={beginReview} style={{ display: "inline-block", padding: "10px 28px", border: 0, background: GOLD, color: "#080808", borderRadius: 10, fontSize: 13, fontWeight: 800, fontFamily: PLAYFAIR, cursor: "pointer" }}>
               Avaliar perfil
@@ -916,7 +916,7 @@ export default function ProfissionalProfilePage() {
         {similar.length > 0 && (
           <section style={{ marginBottom: 32 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fff7f8", margin: 0, fontFamily: PLAYFAIR }}>Mais acompanhantes em {pro.city}</h2>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fcf7ff", margin: 0, fontFamily: PLAYFAIR }}>Mais acompanhantes em {pro.city}</h2>
               <Link href="/buscar?tab=acompanhantes" style={{ fontSize: 12, color: GOLD, textDecoration: "none", fontWeight: 600 }}>Ver todas →</Link>
             </div>
             <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }}>
@@ -934,13 +934,13 @@ export default function ProfissionalProfilePage() {
                           style={{ objectFit: "cover", objectPosition: "top" }}
                         />
                       ) : (
-                        <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #080808, #1a0a0a)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, color: GOLD }}>
+                        <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #080808, #160022)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, color: GOLD }}>
                           {p.displayName[0]}
                         </div>
                       )}
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(6,14,27,0.85) 0%, transparent 50%)" }} />
                       <div style={{ position: "absolute", bottom: 8, left: 8 }}>
-                        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#fff7f8", fontFamily: PLAYFAIR }}>{p.displayName}</p>
+                        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#fcf7ff", fontFamily: PLAYFAIR }}>{p.displayName}</p>
                         {(p.priceMin ?? p.pricePerHour) && <p style={{ margin: "2px 0 0", fontSize: 11, color: GOLD, fontWeight: 700 }}>R${(p.priceMin ?? p.pricePerHour)!.toLocaleString("pt-BR")}/h</p>}
                       </div>
                     </div>
@@ -958,7 +958,7 @@ export default function ProfissionalProfilePage() {
             <div style={{ padding: 18, borderBottom: `1px solid ${GOLD_DIM}`, display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
               <div>
                 <p style={{ margin: "0 0 6px", color: GOLD, fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase" }}>Agendamento Elite</p>
-                <h2 style={{ margin: 0, color: "#fff7f8", fontSize: 24, fontFamily: PLAYFAIR }}>Agendar com {pro.displayName}</h2>
+                <h2 style={{ margin: 0, color: "#fcf7ff", fontSize: 24, fontFamily: PLAYFAIR }}>Agendar com {pro.displayName}</h2>
                 <p style={{ margin: "8px 0 0", color: "#b4adb0", fontSize: 13, lineHeight: 1.5 }}>Confirme os detalhes diretamente com a profissional antes de solicitar o atendimento.</p>
               </div>
               <button onClick={() => setBookingOpen(false)} aria-label="Fechar agendamento" style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "rgba(255,255,255,0.03)", color: GOLD, cursor: "pointer", fontSize: 18 }}>×</button>
@@ -967,7 +967,7 @@ export default function ProfissionalProfilePage() {
             {authStatus !== "authenticated" ? (
               <div style={{ padding: 18, display: "grid", gap: 12 }}>
                 <div style={{ border: `1px solid ${GOLD_DIM}`, background: "#080808", borderRadius: 12, padding: 14 }}>
-                  <p style={{ margin: "0 0 6px", color: "#fff7f8", fontWeight: 800 }}>Confirme sua conta para agendar</p>
+                  <p style={{ margin: "0 0 6px", color: "#fcf7ff", fontWeight: 800 }}>Confirme sua conta para agendar</p>
                   <p style={{ margin: 0, color: "#b4adb0", fontSize: 13, lineHeight: 1.55 }}>Entre ou conclua um cadastro simples para solicitar o atendimento com segurança.</p>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -977,22 +977,22 @@ export default function ProfissionalProfilePage() {
               </div>
             ) : (
               <form onSubmit={submitBooking} style={{ padding: 18, display: "grid", gap: 14 }}>
-                <label style={{ display: "grid", gap: 6, color: "#fff7f8", fontSize: 13, fontWeight: 800 }}>
+                <label style={{ display: "grid", gap: 6, color: "#fcf7ff", fontSize: 13, fontWeight: 800 }}>
                   Data e horário
                   <input
                     type="datetime-local"
                     value={bookingDate}
                     onChange={(event) => setBookingDate(event.target.value)}
-                    style={{ minHeight: 44, borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "#080808", color: "#fff7f8", padding: "0 12px" }}
+                    style={{ minHeight: 44, borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "#080808", color: "#fcf7ff", padding: "0 12px" }}
                   />
                 </label>
 
-                <label style={{ display: "grid", gap: 6, color: "#fff7f8", fontSize: 13, fontWeight: 800 }}>
+                <label style={{ display: "grid", gap: 6, color: "#fcf7ff", fontSize: 13, fontWeight: 800 }}>
                   Duração
                   <select
                     value={bookingDuration}
                     onChange={(event) => setBookingDuration(Number(event.target.value))}
-                    style={{ minHeight: 44, borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "#080808", color: "#fff7f8", padding: "0 12px" }}
+                    style={{ minHeight: 44, borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "#080808", color: "#fcf7ff", padding: "0 12px" }}
                   >
                     <option value={30}>30 minutos</option>
                     <option value={60}>1 hora</option>
@@ -1003,17 +1003,17 @@ export default function ProfissionalProfilePage() {
                 <div style={{ border: `1px solid ${GOLD_DIM}`, borderRadius: 12, background: "#080808", padding: 14 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12, color: "#b4adb0", fontSize: 13 }}>
                     <span>Valor do atendimento</span>
-                    <strong style={{ color: "#fff7f8" }}>R$ {bookingBasePrice.toLocaleString("pt-BR")}</strong>
+                    <strong style={{ color: "#fcf7ff" }}>R$ {bookingBasePrice.toLocaleString("pt-BR")}</strong>
                   </div>
                 </div>
 
-                <label style={{ display: "grid", gap: 6, color: "#fff7f8", fontSize: 13, fontWeight: 800 }}>
+                <label style={{ display: "grid", gap: 6, color: "#fcf7ff", fontSize: 13, fontWeight: 800 }}>
                   Observação
                   <textarea
                     value={bookingNotes}
                     onChange={(event) => setBookingNotes(event.target.value)}
                     placeholder="Mensagem opcional para a profissional"
-                    style={{ minHeight: 86, resize: "vertical", borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "#080808", color: "#fff7f8", padding: 12 }}
+                    style={{ minHeight: 86, resize: "vertical", borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "#080808", color: "#fcf7ff", padding: 12 }}
                   />
                 </label>
 
@@ -1039,7 +1039,7 @@ export default function ProfissionalProfilePage() {
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 14 }}>
               <div>
                 <p style={{ margin: 0, color: GOLD, fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: 2 }}>Avaliação verificada</p>
-                <h2 style={{ margin: "5px 0 0", color: "#fff7f8", fontFamily: PLAYFAIR }}>Avaliar {pro.displayName}</h2>
+                <h2 style={{ margin: "5px 0 0", color: "#fcf7ff", fontFamily: PLAYFAIR }}>Avaliar {pro.displayName}</h2>
               </div>
               <button type="button" onClick={() => setReviewOpen(false)} style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "transparent", color: GOLD, cursor: "pointer" }}>×</button>
             </div>
@@ -1049,7 +1049,7 @@ export default function ProfissionalProfilePage() {
               <ReviewForm professionalId={pro.id} appointmentId={eligibleAppointmentId} onSubmitted={() => window.location.reload()} />
             ) : (
               <div style={{ border: `1px solid ${GOLD_DIM}`, borderRadius: 12, background: "#080808", padding: 16 }}>
-                <p style={{ margin: "0 0 8px", color: "#fff7f8", fontWeight: 800 }}>Avaliações são vinculadas a atendimentos reais.</p>
+                <p style={{ margin: "0 0 8px", color: "#fcf7ff", fontWeight: 800 }}>Avaliações são vinculadas a atendimentos reais.</p>
                 <p style={{ margin: 0, color: "#b4adb0", fontSize: 13, lineHeight: 1.6 }}>Quando um agendamento com esta profissional estiver concluído, a avaliação será liberada aqui automaticamente.</p>
               </div>
             )}
@@ -1075,7 +1075,7 @@ export default function ProfissionalProfilePage() {
       ) : null}
 
       {/* CTA FIXO */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 55, background: "rgba(255,255,255,0.96)", backdropFilter: "blur(12px)", borderTop: "1px solid #fff7f8", boxShadow: "0 -10px 30px rgba(37, 31, 32,.08)", padding: "10px 16px calc(10px + env(safe-area-inset-bottom))", display: "flex", gap: 10, alignItems: "center" }}>
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 55, background: "rgba(255,255,255,0.96)", backdropFilter: "blur(12px)", borderTop: "1px solid #fcf7ff", boxShadow: "0 -10px 30px rgba(37, 31, 32,.08)", padding: "10px 16px calc(10px + env(safe-area-inset-bottom))", display: "flex", gap: 10, alignItems: "center" }}>
         <div style={{ flexShrink: 0 }}>
           <p style={{ margin: 0, fontSize: 9, color: "#aaa0b2" }}>a partir de</p>
           <p style={{ margin: 0, fontSize: 17, fontWeight: 900, color: GOLD, fontFamily: PLAYFAIR, lineHeight: 1.1 }}>{preco ? `R$ ${preco.toLocaleString("pt-BR")}/h` : "Consulte"}</p>

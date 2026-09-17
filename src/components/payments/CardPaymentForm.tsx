@@ -36,7 +36,7 @@ const inputStyle = {
   width: "100%",
   padding: "12px 14px",
   background: "#fff",
-  border: "1px solid #f2c8cc",
+  border: "1px solid #e1a6ff",
   borderRadius: 10,
   color: "#141212",
   fontSize: 14,
@@ -126,14 +126,14 @@ export default function CardPaymentForm({ planId, creditAmount, bookingId, amoun
       role="dialog"
       aria-modal="true"
     >
-      <div className="payment-light-modal relative w-full max-w-[420px] overflow-hidden rounded-[24px] border border-[#ca4651]/25 bg-white shadow-[0_28px_90px_rgba(37, 31, 32,0.24)]">
-        <div className="h-[2px] bg-[linear-gradient(90deg,transparent,#df828a,#ca4651,transparent)]" />
+      <div className="payment-light-modal relative w-full max-w-[420px] overflow-hidden rounded-[24px] border border-[#b72cff]/25 bg-white shadow-[0_28px_90px_rgba(37, 31, 32,0.24)]">
+        <div className="h-[2px] bg-[linear-gradient(90deg,transparent,#d77bff,#b72cff,transparent)]" />
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-2">
           <div className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4 text-[#ca4651]" />
-            <p className="text-[13px] font-bold uppercase tracking-widest text-[#ca4651]">Cartão de Crédito</p>
+            <CreditCard className="h-4 w-4 text-[#b72cff]" />
+            <p className="text-[13px] font-bold uppercase tracking-widest text-[#b72cff]">Cartão de Crédito</p>
           </div>
           {stage !== "paid" && (
             <button
@@ -258,7 +258,7 @@ export default function CardPaymentForm({ planId, creditAmount, bookingId, amoun
         {/* Processando */}
         {stage === "loading" && (
           <div className="flex flex-col items-center gap-4 px-6 pb-10 pt-6">
-            <Loader className="h-12 w-12 animate-spin text-[#ca4651]" />
+            <Loader className="h-12 w-12 animate-spin text-[#b72cff]" />
             <p className="text-[15px] text-white/60">Processando pagamento...</p>
           </div>
         )}

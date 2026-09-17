@@ -1,9 +1,9 @@
 "use client";
 import { useState } from "react";
 
-const GOLD = "#ca4651";
-const GOLD_DIM = "rgba(202, 70, 81,0.12)";
-const GOLD_MID = "rgba(202, 70, 81,0.25)";
+const GOLD = "#b72cff";
+const GOLD_DIM = "rgba(183, 44, 255,0.12)";
+const GOLD_MID = "rgba(183, 44, 255,0.25)";
 const PLAYFAIR = "var(--font-playfair), serif";
 
 type Props = { onClose: () => void; onApply: (f: Filters) => void };
@@ -32,7 +32,7 @@ function Tag({ label, active, onClick }: { label: string; active: boolean; onCli
       padding: "7px 14px", borderRadius: 20,
       border: `1.5px solid ${active ? GOLD : "#251f20"}`,
       background: active ? GOLD_DIM : "transparent",
-      color: active ? "#fff7f8" : "#968a9e",
+      color: active ? "#fcf7ff" : "#968a9e",
       fontSize: 13, cursor: "pointer", transition: "all 0.15s", fontWeight: active ? 600 : 400,
     }}>
       {label}
@@ -65,7 +65,7 @@ function SectionTitle({ children }: { children: string }) {
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ width: 28, height: 2, background: GOLD, borderRadius: 2, marginBottom: 8 }} />
-      <h3 style={{ color: "#fff7f8", fontSize: 14, fontWeight: 700, margin: 0, fontFamily: PLAYFAIR }}>{children}</h3>
+      <h3 style={{ color: "#fcf7ff", fontSize: 14, fontWeight: 700, margin: 0, fontFamily: PLAYFAIR }}>{children}</h3>
     </div>
   );
 }
@@ -119,8 +119,8 @@ export default function FiltersModal({ onClose, onApply }: Props) {
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 24px", borderBottom: `1px solid ${GOLD_DIM}` }}>
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#fff7f8", fontFamily: PLAYFAIR }}>Filtros avançados</h2>
-          <button onClick={onClose} style={{ background: "rgba(202, 70, 81,0.08)", border: `1px solid ${GOLD_DIM}`, color: "#b4adb0", cursor: "pointer", width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✕</button>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#fcf7ff", fontFamily: PLAYFAIR }}>Filtros avançados</h2>
+          <button onClick={onClose} style={{ background: "rgba(183, 44, 255,0.08)", border: `1px solid ${GOLD_DIM}`, color: "#b4adb0", cursor: "pointer", width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✕</button>
         </div>
 
         <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
@@ -131,7 +131,7 @@ export default function FiltersModal({ onClose, onApply }: Props) {
                 width: "100%", padding: "11px 20px", textAlign: "left",
                 background: section === s.id ? GOLD_DIM : "transparent",
                 border: "none", borderLeft: `3px solid ${section === s.id ? GOLD : "transparent"}`,
-                color: section === s.id ? "#fff7f8" : "#aaa0b2",
+                color: section === s.id ? "#fcf7ff" : "#aaa0b2",
                 fontSize: 13, fontWeight: section === s.id ? 700 : 400, cursor: "pointer", transition: "all 0.15s",
               }}>
                 {s.label}
@@ -249,7 +249,7 @@ export default function FiltersModal({ onClose, onApply }: Props) {
           </button>
           <button onClick={() => { onApply(filters); onClose(); }}
             style={{ padding: "11px 32px", background: GOLD, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: PLAYFAIR, transition: "background 0.2s" }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#df828a")}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#d77bff")}
             onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = GOLD)}>
             Ver resultados
           </button>

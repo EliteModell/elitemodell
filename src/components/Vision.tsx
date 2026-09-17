@@ -39,7 +39,7 @@ export default function Vision() {
                 fontSize: 12,
                 fontWeight: 700,
                 letterSpacing: 3,
-                color: "#cc0000",
+                color: "#b72cff",
                 textTransform: "uppercase",
                 marginBottom: 12,
               }}
@@ -74,7 +74,7 @@ export default function Vision() {
                       width: 22,
                       height: 22,
                       borderRadius: 4,
-                      background: "#cc0000",
+                      background: "#b72cff",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -108,7 +108,7 @@ export default function Vision() {
                 marginBottom: 24,
                 height: 200,
                 background:
-                  "linear-gradient(135deg, #0a0a1a 0%, #1a0a0a 50%, #0d0d0d 100%)",
+                  "linear-gradient(135deg, #0a0a1a 0%, #160022 50%, #0d0d0d 100%)",
                 position: "relative",
                 display: "flex",
                 alignItems: "center",
@@ -121,7 +121,7 @@ export default function Vision() {
                   position: "absolute",
                   inset: 0,
                   background:
-                    "radial-gradient(ellipse at center bottom, rgba(204,0,0,0.15) 0%, transparent 70%)",
+                    "radial-gradient(ellipse at center bottom, rgba(183,44,255,0.15) 0%, transparent 70%)",
                 }}
               />
               <span
@@ -158,7 +158,7 @@ export default function Vision() {
                     style={{
                       fontSize: 28,
                       fontWeight: 800,
-                      color: "#cc0000",
+                      color: "#b72cff",
                       lineHeight: 1,
                       marginBottom: 6,
                     }}

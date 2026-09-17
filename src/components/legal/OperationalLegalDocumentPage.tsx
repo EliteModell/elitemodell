@@ -26,7 +26,7 @@ export async function OperationalLegalDocumentPage({ documentKey }: { documentKe
   return (
     <main className="legal-document-page" style={{ minHeight: "100vh", background: "#f7f7fa", color: "#141212", padding: "72px 20px" }}>
       <section style={{ maxWidth: 920, margin: "0 auto" }}>
-        <Link href="/" style={{ color: "#ca4651", textDecoration: "none", fontWeight: 800 }}>
+        <Link href="/" style={{ color: "#b72cff", textDecoration: "none", fontWeight: 800 }}>
           Voltar para Elite Modell
         </Link>
 
@@ -34,7 +34,7 @@ export async function OperationalLegalDocumentPage({ documentKey }: { documentKe
           className="legal-document-card"
           style={{
             marginTop: 28,
-            border: "1px solid rgba(202, 70, 81,0.22)",
+            border: "1px solid rgba(183, 44, 255,0.22)",
             borderRadius: 24,
             background: "#ffffff",
             padding: "32px",
@@ -66,7 +66,7 @@ export async function OperationalLegalDocumentPage({ documentKey }: { documentKe
               <article
                 style={{
                   marginTop: 24,
-                  borderTop: "1px solid #fff7f8",
+                  borderTop: "1px solid #fcf7ff",
                   paddingTop: 24,
                   color: "#45414c",
                   lineHeight: 1.75,
@@ -111,15 +111,15 @@ export async function OperationalLegalDocumentPage({ documentKey }: { documentKe
 
 function Notice({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section style={{ borderTop: "1px solid #fff7f8", paddingTop: 18, marginTop: 18 }}>
-      <h2 style={{ margin: "0 0 8px", fontSize: 18, color: "#f2c8cc" }}>{title}</h2>
+    <section style={{ borderTop: "1px solid #fcf7ff", paddingTop: 18, marginTop: 18 }}>
+      <h2 style={{ margin: "0 0 8px", fontSize: 18, color: "#e1a6ff" }}>{title}</h2>
       <p style={{ margin: 0, color: "#62687a", lineHeight: 1.7 }}>{children}</p>
     </section>
   );
 }
 
 const linkStyle: CSSProperties = {
-  color: "#f2c8cc",
+  color: "#e1a6ff",
   textDecoration: "none",
   fontWeight: 800,
 };

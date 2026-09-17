@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./theme-v2.css";
-import "./coral-design-system.css";
+import "./brand-design-system.css";
 import Providers from "@/components/Providers";
 import AgeGateLoader from "@/components/AgeGateLoader";
 import CookiePreferences from "@/components/privacy/CookiePreferences";
@@ -69,8 +69,8 @@ export const metadata: Metadata = {
     description: publicBrandDescription,
   },
   other: {
-    "theme-color": "#CA4651",
-    "msapplication-TileColor": "#FDE7E9",
+    "theme-color": "#b72cff",
+    "msapplication-TileColor": "#f3e2ff",
     "msapplication-TileImage": "/android-chrome-512x512.png",
   },
 };
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#CA4651",
+  themeColor: "#b72cff",
   colorScheme: "light",
 };
 

@@ -771,15 +771,15 @@ function createHtml(title, blocks, principal) {
 * { box-sizing: border-box; }
 body { color: #1f2937; font-family: Arial, sans-serif; font-size: 10.5pt; line-height: 1.38; }
 .cover { break-after: page; text-align: center; padding-top: 4.6cm; min-height: 24cm; }
-.brand { color: #7a1f3d; font-size: 15pt; font-weight: bold; letter-spacing: 1px; margin-bottom: 1.8cm; }
+.brand { color: #65009b; font-size: 15pt; font-weight: bold; letter-spacing: 1px; margin-bottom: 1.8cm; }
 .cover h1 { color: #172554; font-size: 25pt; line-height: 1.15; margin: 0 0 1.1cm; }
 .metadata { font-size: 11.5pt; line-height: 1.7; }
-.status { border: 2px solid #7a1f3d; color: #7a1f3d; font-weight: bold; margin: 1.4cm auto 0; padding: 12pt; width: 82%; }
+.status { border: 2px solid #65009b; color: #65009b; font-weight: bold; margin: 1.4cm auto 0; padding: 12pt; width: 82%; }
 h1, h2, h3 { color: #172554; break-after: avoid; }
 h1 { font-size: 18pt; border-bottom: 1px solid #9ca3af; padding-bottom: 5pt; margin-top: 22pt; }
 h2 { font-size: 14pt; margin-top: 18pt; }
 h3 { font-size: 11.5pt; margin-top: 14pt; }
-.minute-title { break-before: page; border-bottom: 2px solid #7a1f3d; padding-bottom: 6pt; }
+.minute-title { break-before: page; border-bottom: 2px solid #65009b; padding-bottom: 6pt; }
 p { margin: 0 0 8pt; text-align: justify; orphans: 3; widows: 3; }
 ul, ol { margin: 0 0 10pt 20pt; }
 li { margin-bottom: 3pt; }
@@ -788,8 +788,8 @@ tr { break-inside: avoid; }
 th { background: #172554; color: white; font-weight: bold; padding: 5pt; border: 1px solid #9ca3af; }
 td { padding: 4pt; border: 1px solid #9ca3af; vertical-align: top; }
 tr:nth-child(even) td { background: #f3f4f6; }
-code { background: #f3f4f6; color: #7a1f3d; font-family: Consolas, monospace; font-size: 9pt; }
-pre { background: #f3f4f6; border-left: 4px solid #7a1f3d; font-family: Consolas, monospace; font-size: 8.5pt; padding: 9pt; white-space: pre-wrap; }
+code { background: #f3f4f6; color: #65009b; font-family: Consolas, monospace; font-size: 9pt; }
+pre { background: #f3f4f6; border-left: 4px solid #65009b; font-family: Consolas, monospace; font-size: 8.5pt; padding: 9pt; white-space: pre-wrap; }
 .notice { background: #fff7ed; border: 1px solid #c2410c; margin: 0 0 18pt; padding: 12pt; }
 hr { border: 0; border-top: 1px solid #d1d5db; margin: 14pt 0; }
 a { color: #1d4ed8; text-decoration: none; }

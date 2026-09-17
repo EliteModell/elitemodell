@@ -32,7 +32,7 @@ export default function Problems() {
             fontSize: 12,
             fontWeight: 700,
             letterSpacing: 3,
-            color: "#cc0000",
+            color: "#b72cff",
             textTransform: "uppercase",
             marginBottom: 12,
           }}
@@ -75,7 +75,7 @@ export default function Problems() {
                   width: 28,
                   height: 28,
                   borderRadius: "50%",
-                  border: "1.5px solid #cc0000",
+                  border: "1.5px solid #b72cff",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -88,7 +88,7 @@ export default function Problems() {
                   height="14"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#cc0000"
+                  stroke="#b72cff"
                   strokeWidth="2.5"
                 >
                   <line x1="18" y1="6" x2="6" y2="18" />

@@ -110,9 +110,9 @@ export default function Stories() {
           {canPostStory && (
             <div onClick={() => fileRef.current?.click()}
               style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: uploading ? "wait" : "pointer", flexShrink: 0, opacity: uploading ? 0.6 : 1 }}>
-              <div style={{ width: 70, height: 70, borderRadius: "50%", background: "#080808", border: "2px dashed rgba(202, 70, 81,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: "#aaa0b2" }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#ca4651")}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(202, 70, 81,0.3)")}>
+              <div style={{ width: 70, height: 70, borderRadius: "50%", background: "#080808", border: "2px dashed rgba(183, 44, 255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: "#aaa0b2" }}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#b72cff")}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(183, 44, 255,0.3)")}>
                 {uploading ? "..." : "+"}
               </div>
               <span style={{ fontSize: 10, color: "#aaa0b2", fontWeight: 600, fontFamily: "var(--font-playfair), serif" }}>Seu story</span>
@@ -126,7 +126,7 @@ export default function Stories() {
             return (
               <div key={g.userId} onClick={() => abrirGrupo(g)}
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer", flexShrink: 0 }}>
-                <div style={{ width: 70, height: 70, borderRadius: "50%", padding: 2.5, background: visto ? "linear-gradient(135deg,#676064,#aaa0b2)" : "linear-gradient(135deg,#fff7f8,#ca4651,#f0c060,#8e2f38)" }}>
+                <div style={{ width: 70, height: 70, borderRadius: "50%", padding: 2.5, background: visto ? "linear-gradient(135deg,#676064,#aaa0b2)" : "linear-gradient(135deg,#fcf7ff,#b72cff,#f0c060,#65009b)" }}>
                   <div style={{ width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden", border: "2.5px solid #080808", background: "#080808", position: "relative" }}>
                     {g.foto
                       ? <Image src={g.foto} alt={g.nome} fill sizes="70px" style={{ objectFit: "cover", objectPosition: "top" }} />
@@ -144,8 +144,8 @@ export default function Stories() {
         </div>
 
         {/* Setas navegação */}
-        <button onClick={() => scroll("left")} style={{ position: "absolute", left: 0, top: "40%", transform: "translateY(-50%)", width: 28, height: 28, borderRadius: "50%", background: "rgba(6,14,27,0.9)", border: "1px solid rgba(202, 70, 81,0.2)", color: "#ca4651", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>‹</button>
-        <button onClick={() => scroll("right")} style={{ position: "absolute", right: 0, top: "40%", transform: "translateY(-50%)", width: 28, height: 28, borderRadius: "50%", background: "rgba(6,14,27,0.9)", border: "1px solid rgba(202, 70, 81,0.2)", color: "#ca4651", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>›</button>
+        <button onClick={() => scroll("left")} style={{ position: "absolute", left: 0, top: "40%", transform: "translateY(-50%)", width: 28, height: 28, borderRadius: "50%", background: "rgba(6,14,27,0.9)", border: "1px solid rgba(183, 44, 255,0.2)", color: "#b72cff", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>‹</button>
+        <button onClick={() => scroll("right")} style={{ position: "absolute", right: 0, top: "40%", transform: "translateY(-50%)", width: 28, height: 28, borderRadius: "50%", background: "rgba(6,14,27,0.9)", border: "1px solid rgba(183, 44, 255,0.2)", color: "#b72cff", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>›</button>
       </div>
 
       {/* Viewer */}
@@ -156,7 +156,7 @@ export default function Stories() {
             <div style={{ position: "absolute", top: 8, left: 8, right: 8, display: "flex", gap: 3, zIndex: 3 }}>
               {aberto.grupo.stories.map((s, i) => (
                 <div key={s.id} style={{ flex: 1, height: 2, background: "#333", borderRadius: 2 }}>
-                  <div style={{ height: "100%", borderRadius: 2, background: "linear-gradient(90deg,#ca4651,#cc0000)", width: i < aberto.idx ? "100%" : i === aberto.idx ? `${progresso}%` : "0%", transition: i === aberto.idx ? "width 0.05s linear" : "none" }} />
+                  <div style={{ height: "100%", borderRadius: 2, background: "linear-gradient(90deg,#e1a6ff,#b72cff)", width: i < aberto.idx ? "100%" : i === aberto.idx ? `${progresso}%` : "0%", transition: i === aberto.idx ? "width 0.05s linear" : "none" }} />
                 </div>
               ))}
             </div>
@@ -173,7 +173,7 @@ export default function Stories() {
             {/* Header */}
             <div style={{ position: "absolute", top: 20, left: 12, right: 12, display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 2 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", border: "2px solid #ca4651", background: "#1a1a1a", position: "relative" }}>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", border: "2px solid #b72cff", background: "#1a1a1a", position: "relative" }}>
                   {aberto.grupo.foto && <Image src={aberto.grupo.foto} alt="" fill sizes="32px" style={{ objectFit: "cover" }} />}
                 </div>
                 <div>
@@ -188,7 +188,7 @@ export default function Stories() {
             <div style={{ position: "absolute", bottom: 14, left: 14, zIndex: 2, display: "flex", alignItems: "center", gap: 4 }}>
               <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>👁 {story.views} visualizações</span>
             </div>
-            <a href={`/profissionais/${aberto.grupo.slug}`} style={{ position: "absolute", right: 14, bottom: 12, zIndex: 3, borderRadius: 999, background: "#ca4651", color: "#080808", padding: "7px 12px", textDecoration: "none", fontSize: 11, fontWeight: 900 }}>
+            <a href={`/profissionais/${aberto.grupo.slug}`} style={{ position: "absolute", right: 14, bottom: 12, zIndex: 3, borderRadius: 999, background: "#b72cff", color: "#080808", padding: "7px 12px", textDecoration: "none", fontSize: 11, fontWeight: 900 }}>
               Ver perfil
             </a>
           </div>

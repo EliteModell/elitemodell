@@ -1,5 +1,5 @@
 .shell {
-  --coral-accent: #ca4651;
+  --brand-accent: #b72cff;
   --ink: #111018;
   --muted: #626a86;
   min-height: 100vh;
@@ -31,7 +31,7 @@
   z-index: 0;
   inset: 0 0 0 38%;
   overflow: hidden;
-  background: #f2c8cc;
+  background: #e1a6ff;
 }
 
 .modelImage {
@@ -73,7 +73,7 @@
 }
 
 .heroCopy h1 strong {
-  color: var(--coral-accent);
+  color: var(--brand-accent);
   font-weight: inherit;
 }
 
@@ -96,8 +96,8 @@
   justify-content: space-between;
   gap: 28px;
   color: #fff;
-  background: linear-gradient(115deg, #ca4651, #b73946);
-  box-shadow: 0 16px 34px rgba(183, 57, 70, .22);
+  background: linear-gradient(115deg, #b72cff, #8f1fd1);
+  box-shadow: 0 16px 34px rgba(101, 0, 155, .22);
   text-decoration: none;
   font-size: 19px;
   font-weight: 750;
@@ -107,7 +107,7 @@
 .heroCta:hover,
 .cta:hover {
   transform: translateY(-2px);
-  box-shadow: 0 20px 42px rgba(183, 57, 70, .28);
+  box-shadow: 0 20px 42px rgba(101, 0, 155, .28);
 }
 
 .ageNotice {
@@ -164,7 +164,7 @@
 }
 
 .eyebrow {
-  color: var(--coral-accent);
+  color: var(--brand-accent);
 }
 
 .quick > h2 {
@@ -192,17 +192,17 @@
 .entryCard {
   min-height: 330px;
   padding: 38px 40px 34px;
-  border: 1px solid #fff7f8;
+  border: 1px solid #fcf7ff;
   border-radius: 28px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  background: linear-gradient(135deg, #fbf9ff, #fff7f8);
-  box-shadow: 0 18px 45px rgba(142, 47, 56, .06);
+  background: linear-gradient(135deg, #fbf9ff, #fcf7ff);
+  box-shadow: 0 18px 45px rgba(101, 0, 155, .06);
 }
 
 .tag {
-  color: var(--coral-accent);
+  color: var(--brand-accent);
   font-size: 12px;
   font-weight: 850;
   letter-spacing: .25em;
@@ -233,13 +233,13 @@
   min-height: 64px;
   margin-top: auto;
   padding: 0 32px;
-  border: 1.5px solid var(--coral-accent);
+  border: 1.5px solid var(--brand-accent);
   border-radius: 18px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 20px;
-  color: var(--coral-accent);
+  color: var(--brand-accent);
   background: #fff;
   text-decoration: none;
   font-size: 17px;
@@ -249,7 +249,7 @@
 
 .entryCard:first-child .cta {
   color: #fff;
-  background: linear-gradient(115deg, #ca4651, #b73946);
+  background: linear-gradient(115deg, #b72cff, #8f1fd1);
 }
 
 @media (max-width: 900px) {
@@ -299,23 +299,23 @@
   .cta { transition: none; }
 }
 
-/* Home visual da campanha coral — mantém a estrutura e as rotas existentes. */
-.shell { --coral: #ca4651; --coral-accent: var(--coral); }
+/* Home visual aprovada — somente a identidade cromática usa o roxo oficial. */
+.shell { --brand-purple: #b72cff; --brand-accent: var(--brand-purple); }
 .hero { min-height: 760px; background: #fff6f7; }
 .hero::after { background: linear-gradient(90deg, #fff 0%, #fff 33%, rgba(255,255,255,.94) 42%, rgba(255,247,248,.4) 58%, transparent 72%); }
 .model { inset: 0 0 0 36%; background: #f1dfe3; }
 .modelImage { object-position: 50% 34%; }
 .heroCopy { width: min(49%, 620px); min-height: 760px; padding: 64px 0 42px; }
 .heroCopy h1 { font-size: clamp(56px, 5.1vw, 78px); }
-.heroCopy h1 strong, .eyebrow, .tag { color: var(--coral); }
+.heroCopy h1 strong, .eyebrow, .tag { color: var(--brand-purple); }
 .heroActions { width: min(100%, 510px); margin-top: 20px; display: grid; gap: 12px; }
-.heroCta { width: 100%; min-width: 0; min-height: 58px; margin-top: 0; border: 1.5px solid var(--coral); border-radius: 999px; padding: 0 28px; background: var(--coral); box-shadow: 0 12px 28px rgba(183,57,70,.18); font-size: 17px; }
-.heroCtaSecondary { color: var(--coral); background: rgba(255,255,255,.96); box-shadow: none; }
-.heroCta:hover, .cta:hover { box-shadow: 0 17px 34px rgba(183,57,70,.22); }
+.heroCta { width: 100%; min-width: 0; min-height: 58px; margin-top: 0; border: 1.5px solid var(--brand-purple); border-radius: 999px; padding: 0 28px; background: var(--brand-purple); box-shadow: 0 12px 28px rgba(183,44,255,.18); font-size: 17px; }
+.heroCtaSecondary { color: var(--brand-purple); background: rgba(255,255,255,.96); box-shadow: none; }
+.heroCta:hover, .cta:hover { box-shadow: 0 17px 34px rgba(183,44,255,.22); }
 .ageNotice { margin-top: 22px; }
 .entryCard { border-color: #f0e5e7; background: #fff9fa; box-shadow: 0 18px 45px rgba(77,49,58,.06); }
-.cta { border-color: var(--coral); color: var(--coral); }
-.entryCard:first-child .cta { background: var(--coral); }
+.cta { border-color: var(--brand-purple); color: var(--brand-purple); }
+.entryCard:first-child .cta { background: var(--brand-purple); }
 
 @media (max-width: 900px) {
   .hero { min-height: 700px; }

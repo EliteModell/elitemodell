@@ -98,13 +98,13 @@ export default function ProfessionalContactAction({
           alignItems: "center",
           justifyContent: "center",
           gap: 8,
-          border: visibility === "PREMIUM" ? "1px solid rgba(202, 70, 81,.42)" : 0,
+          border: visibility === "PREMIUM" ? "1px solid rgba(183, 44, 255,.42)" : 0,
           borderRadius: compact ? 10 : 13,
           padding: compact ? "9px 12px" : "12px 16px",
           background: visibility === "PREMIUM"
-            ? "linear-gradient(135deg,rgba(202, 70, 81,.18),rgba(88,64,20,.22))"
-            : "#ca4651",
-          color: visibility === "PREMIUM" ? "#f2c8cc" : "#080704",
+            ? "linear-gradient(135deg,rgba(183, 44, 255,.18),rgba(88,64,20,.22))"
+            : "#b72cff",
+          color: visibility === "PREMIUM" ? "#e1a6ff" : "#080704",
           fontWeight: 900,
           cursor: loading ? "wait" : "pointer",
           opacity: loading ? 0.68 : 1,

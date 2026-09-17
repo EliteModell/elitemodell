@@ -16,13 +16,13 @@ export default function VerificationSection({ steps }: { steps: VerificationStep
     <section className="client-page-tight client-dashboard-section">
       <Link href="/dashboard/perfil" className="client-card block p-5 no-underline">
         <div className="flex items-start gap-4">
-          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-[8px] border border-[#ca4651]/18 bg-[#ca4651]/10 text-[#f2c8cc]">
+          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-[8px] border border-[#b72cff]/18 bg-[#b72cff]/10 text-[#e1a6ff]">
             <ShieldCheck className="h-7 w-7" />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
           <h2 className="min-w-0 flex-1 text-[28px] font-black leading-8 text-[var(--text-primary)]">Verificação</h2>
-              <span className="rounded-full border border-[#ca4651]/18 bg-[#ca4651]/10 px-2.5 py-1 text-[14px] font-black text-[#f2c8cc]">
+              <span className="rounded-full border border-[#b72cff]/18 bg-[#b72cff]/10 px-2.5 py-1 text-[14px] font-black text-[#e1a6ff]">
                 {doneCount}/{steps.length}
               </span>
             </div>
@@ -30,12 +30,12 @@ export default function VerificationSection({ steps }: { steps: VerificationStep
               Complete dados essenciais para manter acesso e suporte mais seguros.
             </p>
           </div>
-          <ChevronRight className="mt-2 h-5 w-5 shrink-0 text-[#f2c8cc]" />
+          <ChevronRight className="mt-2 h-5 w-5 shrink-0 text-[#e1a6ff]" />
         </div>
 
         <div className="mt-5 h-[6px] overflow-hidden rounded-full bg-white/10">
           <div
-            className="h-full rounded-full bg-[#ca4651] transition-all duration-500"
+            className="h-full rounded-full bg-[#b72cff] transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>

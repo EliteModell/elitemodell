@@ -1,17 +1,17 @@
 .form { position: relative; width: min(100%, 510px); margin-top: 26px; }
 .label { display: block; margin-bottom: 9px; color: #141212; font-size: 14px; font-weight: 800; }
-.control { min-height: 60px; padding: 5px; border: 1px solid #e4d9dc; border-radius: 999px; display: flex; align-items: stretch; background: rgba(255,255,255,.97); box-shadow: 0 10px 28px rgba(94,35,45,.08); transition: border-color .18s, box-shadow .18s; }
-.control.focused { border-color: #cc4652; box-shadow: 0 0 0 3px rgba(201,65,78,.1), 0 10px 28px rgba(94,35,45,.08); }
+.control { min-height: 60px; padding: 5px; border: 1px solid #eadff0; border-radius: 999px; display: flex; align-items: stretch; background: rgba(255,255,255,.97); box-shadow: 0 10px 28px rgba(61,42,72,.08); transition: border-color .18s, box-shadow .18s; }
+.control.focused { border-color: #b72cff; box-shadow: 0 0 0 3px rgba(183,44,255,.1), 0 10px 28px rgba(61,42,72,.08); }
 .control input { min-width: 0; flex: 1; border: 0; padding: 0 17px; color: #141212; background: transparent; outline: 0; font: inherit; font-size: 15px; }
 .control input::placeholder { color: #85818d; }
 .control input::-webkit-search-cancel-button { display: none; }
-.control > button { width: 50px; min-width: 50px; border: 0; border-radius: 50%; display: grid; place-items: center; color: #fff; background: #ca4651; cursor: pointer; transition: background .18s, transform .18s; }
-.control > button:hover { background: #b63845; }
+.control > button { width: 50px; min-width: 50px; border: 0; border-radius: 50%; display: grid; place-items: center; color: #fff; background: #b72cff; cursor: pointer; transition: background .18s, transform .18s; }
+.control > button:hover { background: #8f1fd1; }
 .control > button:active { transform: scale(.97); }
 .suggestions { position: absolute; z-index: 30; top: calc(100% + 8px); left: 0; right: 0; max-height: 270px; margin: 0; padding: 6px; overflow-y: auto; border: 1px solid #e7dcde; border-radius: 15px; list-style: none; background: #fff; box-shadow: 0 20px 45px rgba(49,27,36,.16); }
 .suggestions li + li { border-top: 1px solid #f2e9ea; }
 .suggestions button { width: 100%; border: 0; border-radius: 10px; padding: 11px 13px; display: flex; align-items: baseline; justify-content: space-between; gap: 14px; color: #211a20; background: transparent; cursor: pointer; text-align: left; }
-.suggestions button:hover, .suggestions button:focus-visible { background: #fff2f3; outline: none; }
+.suggestions button:hover, .suggestions button:focus-visible { background: #faf0ff; outline: none; }
 .suggestions strong { font-size: 14px; }
 .suggestions span { overflow: hidden; color: #746c72; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .status, .error { position: absolute; top: calc(100% + 7px); left: 4px; color: #625b61; font-size: 12px; }

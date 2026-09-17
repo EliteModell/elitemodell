@@ -121,7 +121,7 @@ const pendingList: React.CSSProperties = {
 };
 
 const documentStyle: React.CSSProperties = {
-  background: "#fff7f8",
+  background: "#fcf7ff",
   borderRadius: 8,
   color: "#080808",
   marginTop: 20,

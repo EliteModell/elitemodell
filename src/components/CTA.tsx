@@ -5,8 +5,8 @@ export default function CTA() {
       id="contato"
       style={{
         padding: "96px 24px",
-        background: "linear-gradient(135deg, #1a0000 0%, #0d0d0d 60%)",
-        borderTop: "1px solid #2a0000",
+        background: "linear-gradient(135deg, #1b002c 0%, #0d0d0d 60%)",
+        borderTop: "1px solid #31004d",
         position: "relative",
         overflow: "hidden",
       }}
@@ -21,7 +21,7 @@ export default function CTA() {
           width: 600,
           height: 300,
           borderRadius: "50%",
-          background: "rgba(204,0,0,0.08)",
+          background: "rgba(183,44,255,0.08)",
           filter: "blur(60px)",
           pointerEvents: "none",
         }}
@@ -41,7 +41,7 @@ export default function CTA() {
             fontSize: 12,
             fontWeight: 700,
             letterSpacing: 3,
-            color: "#cc0000",
+            color: "#b72cff",
             textTransform: "uppercase",
             marginBottom: 16,
           }}
@@ -83,7 +83,7 @@ export default function CTA() {
             href="mailto:contato@elitemodell.com"
             style={{
               padding: "15px 32px",
-              background: "#cc0000",
+              background: "#b72cff",
               color: "#fff",
               borderRadius: 8,
               textDecoration: "none",
@@ -93,11 +93,11 @@ export default function CTA() {
               display: "inline-block",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "#e00000";
+              (e.currentTarget as HTMLElement).style.background = "#8f1fd1";
               (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "#cc0000";
+              (e.currentTarget as HTMLElement).style.background = "#b72cff";
               (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
             }}
           >

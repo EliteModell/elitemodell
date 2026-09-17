@@ -53,15 +53,15 @@ export default function PublicReportButton({ targetType, targetId, initialOpen =
             <p className="mt-2 text-sm text-[#686270]">Possivel menor, coercao, exploracao, trafico ou risco fisico recebem prioridade maxima.</p>
             <label className="mt-4 grid gap-2 text-sm font-bold">
               Motivo
-              <select value={reason} onChange={(event) => setReason(event.target.value as typeof reason)} className="rounded-[8px] border border-[#f2c8cc] bg-white p-3 text-[#141212]">
+              <select value={reason} onChange={(event) => setReason(event.target.value as typeof reason)} className="rounded-[8px] border border-[#e1a6ff] bg-white p-3 text-[#141212]">
                 {reasons.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
             <label className="mt-3 grid gap-2 text-sm font-bold">
               Descricao
-              <textarea value={description} onChange={(event) => setDescription(event.target.value)} minLength={20} maxLength={2000} className="min-h-28 rounded-[8px] border border-[#f2c8cc] bg-white p-3 text-[#141212]" />
+              <textarea value={description} onChange={(event) => setDescription(event.target.value)} minLength={20} maxLength={2000} className="min-h-28 rounded-[8px] border border-[#e1a6ff] bg-white p-3 text-[#141212]" />
             </label>
-            {result ? <p className="mt-3 text-sm text-[#f2c8cc]">{result}</p> : null}
+            {result ? <p className="mt-3 text-sm text-[#e1a6ff]">{result}</p> : null}
             <button type="button" disabled={sending || description.trim().length < 20} onClick={submit} className="mt-4 min-h-11 rounded-[8px] bg-red-500 px-4 font-black text-white disabled:opacity-50">
               {sending ? "Enviando..." : "Enviar denuncia"}
             </button>

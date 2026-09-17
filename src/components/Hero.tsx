@@ -78,7 +78,7 @@ export default function Hero() {
           style={{
             display: "block",
             padding: "14px 20px",
-            background: "#cc0000",
+            background: "#b72cff",
             color: "#fff",
             borderRadius: 10,
             textDecoration: "none",

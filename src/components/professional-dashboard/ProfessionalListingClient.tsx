@@ -75,7 +75,7 @@ export function ProfessionalListingClient({ data }: { data: ProfessionalListingV
             const Icon = item.icon;
             return (
               <div key={item.label} className="premium-check-card" style={{ alignItems: "flex-start" }}>
-                <span style={{ width: 34, height: 34, borderRadius: 999, display: "grid", placeItems: "center", flex: "0 0 auto", border: "1px solid rgba(202, 70, 81,0.28)", background: "rgba(202, 70, 81,0.10)" }}>
+                <span style={{ width: 34, height: 34, borderRadius: 999, display: "grid", placeItems: "center", flex: "0 0 auto", border: "1px solid rgba(183, 44, 255,0.28)", background: "rgba(183, 44, 255,0.10)" }}>
                   <Icon size={17} />
                 </span>
                 <span style={{ minWidth: 0 }}>
