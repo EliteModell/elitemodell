@@ -29,7 +29,7 @@ import styles from "./ProfessionalRegistrationFlow.module.css";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { readJsonResponse } from "@/lib/safe-json-response";
 type RegistrationStage = "phone" | "verification";
-type VerificationChannel = "sms";
+type VerificationChannel = "sms" | "whatsapp";
 
 type ConsentState = {
   ageConfirmed: boolean;
@@ -47,6 +47,19 @@ type VerifyCodeResponse = {
 
 type ProfessionalRegistrationFlowProps = {
   startAtVerification?: boolean;
+  whatsAppVerifyEnabled?: boolean;
+};
+
+type SendCodeResponse = {
+  ok?: boolean;
+  code?:
+    | "WHATSAPP_NOT_CONFIGURED"
+    | "WHATSAPP_SENDER_ERROR"
+    | "TWILIO_RATE_LIMIT"
+    | "INVALID_PHONE"
+    | "SMS_SEND_FAILED"
+    | "WHATSAPP_SEND_FAILED";
+  error?: string;
 };
 
 const PHONE_STORAGE_KEY = "elitemodell.professional-registration.phone";
@@ -160,6 +173,7 @@ function isValidBrazilianPhone(value: string) {
 
 export function ProfessionalRegistrationFlow({
   startAtVerification = false,
+  whatsAppVerifyEnabled = false,
 }: ProfessionalRegistrationFlowProps) {
   const router = useRouter();
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -169,7 +183,9 @@ export function ProfessionalRegistrationFlow({
   );
   const [phone, setPhone] = useState("");
   const [consents, setConsents] = useState<ConsentState>(initialConsent);
-  const [channel, setChannel] = useState<VerificationChannel | null>(null);
+  const [channel, setChannel] = useState<VerificationChannel>("sms");
+  const [whatsAppConsent, setWhatsAppConsent] = useState(false);
+  const [smsFallbackAvailable, setSmsFallbackAvailable] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
   const [code, setCode] = useState("");
   const [resendSeconds, setResendSeconds] = useState(0);
@@ -186,7 +202,10 @@ export function ProfessionalRegistrationFlow({
     consents.ownershipConfirmed &&
     consents.termsConsent &&
     consents.lgpdConsent;
-  const canContinueFromPhone = isValidBrazilianPhone(phone) && mandatoryConsentsAccepted;
+  const canContinueFromPhone =
+    isValidBrazilianPhone(phone) &&
+    mandatoryConsentsAccepted &&
+    (channel !== "whatsapp" || whatsAppConsent);
 
   const progress = stage === "phone" ? 1 : 2;
 
@@ -262,7 +281,7 @@ export function ProfessionalRegistrationFlow({
     setStage("verification");
   }
 
-  async function sendCode() {
+  async function sendCode(channelOverride?: VerificationChannel) {
     if (!isValidBrazilianPhone(phone)) {
       toast.error("Informe novamente o telefone profissional.");
       setStage("phone");
@@ -272,6 +291,16 @@ export function ProfessionalRegistrationFlow({
     if (!mandatoryConsentsAccepted) {
       toast.error("Os consentimentos obrigatórios precisam ser confirmados.");
       setStage("phone");
+      return;
+    }
+
+    const requestedChannel = channelOverride ?? channel;
+    if (requestedChannel === "whatsapp" && (!whatsAppVerifyEnabled || !whatsAppConsent)) {
+      toast.error(
+        whatsAppVerifyEnabled
+          ? "Confirme que deseja receber o código pelo WhatsApp."
+          : "O WhatsApp ainda não está disponível. Use o envio por SMS.",
+      );
       return;
     }
 
@@ -286,7 +315,7 @@ export function ProfessionalRegistrationFlow({
         body: JSON.stringify({
           phone: normalizedPhone,
           accountType: "model",
-          channel: "sms",
+          channel: requestedChannel,
           termsConsent: consents.termsConsent,
           lgpdConsent: consents.lgpdConsent,
           ageConfirmed: consents.ageConfirmed,
@@ -294,25 +323,45 @@ export function ProfessionalRegistrationFlow({
           marketingConsent: consents.marketingConsent,
         }),
       });
-      const data = await readJsonResponse<{ ok?: boolean; error?: string }>(response);
+      const data = await readJsonResponse<SendCodeResponse>(response);
 
       if (!data) {
         throw new Error(friendlyError);
       }
       if (!response.ok || !data.ok) {
+        if (
+          requestedChannel === "whatsapp" &&
+          ["WHATSAPP_NOT_CONFIGURED", "WHATSAPP_SENDER_ERROR", "WHATSAPP_SEND_FAILED"].includes(
+            data.code ?? "",
+          )
+        ) {
+          setSmsFallbackAvailable(true);
+        }
         throw new Error(data.error || friendlyError);
       }
 
-      setChannel("sms");
+      setChannel(requestedChannel);
+      setSmsFallbackAvailable(false);
       setCodeSent(true);
       setCode("");
       setResendSeconds(RESEND_SECONDS);
-      toast.success("SMS enviado! Pode levar até 1 minuto para chegar.");
+      toast.success(
+        requestedChannel === "whatsapp"
+          ? "Código enviado pelo WhatsApp."
+          : "SMS enviado! Pode levar até 1 minuto para chegar.",
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : friendlyError);
     } finally {
       setSendingCode(false);
     }
+  }
+
+  function chooseResendChannel(nextChannel: VerificationChannel) {
+    setChannel(nextChannel);
+    setCodeSent(false);
+    setCode("");
+    setSmsFallbackAvailable(false);
   }
 
   async function verifyCode() {
@@ -461,6 +510,56 @@ export function ProfessionalRegistrationFlow({
                 Usaremos esse número para proteger sua conta e continuar seu cadastro.
               </p>
 
+              <fieldset className={styles.deliveryChoice}>
+                <legend>Como deseja receber seu código?</legend>
+                <div className={styles.deliveryOptions}>
+                  {whatsAppVerifyEnabled && (
+                    <button
+                      className={channel === "whatsapp" ? styles.deliveryOptionSelected : undefined}
+                      type="button"
+                      role="radio"
+                      aria-checked={channel === "whatsapp"}
+                      onClick={() => {
+                        setChannel("whatsapp");
+                        setSmsFallbackAvailable(false);
+                      }}
+                    >
+                      <MessageCircle size={20} aria-hidden="true" />
+                      <span>
+                        <strong>WhatsApp</strong>
+                        <small>Receber código pelo WhatsApp</small>
+                      </span>
+                    </button>
+                  )}
+                  <button
+                    className={channel === "sms" ? styles.deliveryOptionSelected : undefined}
+                    type="button"
+                    role="radio"
+                    aria-checked={channel === "sms"}
+                    onClick={() => {
+                      setChannel("sms");
+                      setSmsFallbackAvailable(false);
+                    }}
+                  >
+                    <Phone size={20} aria-hidden="true" />
+                    <span>
+                      <strong>SMS</strong>
+                      <small>Receber código por mensagem de texto</small>
+                    </span>
+                  </button>
+                </div>
+                {channel === "whatsapp" && (
+                  <label className={styles.whatsAppConsent}>
+                    <input
+                      type="checkbox"
+                      checked={whatsAppConsent}
+                      onChange={(event) => setWhatsAppConsent(event.target.checked)}
+                    />
+                    <span>Quero receber meu código de verificação pelo WhatsApp.</span>
+                  </label>
+                )}
+              </fieldset>
+
               <div className={styles.consentList}>
                 <label className={`${styles.checkRow} ${styles.primaryConsent}`}>
                   <input
@@ -548,27 +647,73 @@ export function ProfessionalRegistrationFlow({
                 Valide seu telefone para continuar
               </h1>
               <p>
-                Enviaremos um código de 6 dígitos para <strong>{formatPhone(phone)}</strong>.
+                Enviaremos um código de 6 dígitos por {channel === "whatsapp" ? "WhatsApp" : "SMS"} para{" "}
+                <strong>{formatPhone(phone)}</strong>.
               </p>
 
               {!codeSent ? (
-                <div className={styles.channelList}>
-                  <button type="button" disabled={sendingCode} onClick={sendCode}>
-                    <span className={styles.channelIcon}>
-                      <Phone size={25} aria-hidden="true" />
-                    </span>
-                    <span>
-                      <strong>Receber código via SMS</strong>
-                      <small>Receba uma mensagem de texto no celular.</small>
-                    </span>
-                    <ChevronRight size={22} aria-hidden="true" />
+                <div className={styles.channelSendPanel}>
+                  <div className={styles.verificationChannels} role="radiogroup" aria-label="Canal de entrega">
+                    {whatsAppVerifyEnabled && (
+                      <button
+                        className={channel === "whatsapp" ? styles.verificationChannelSelected : undefined}
+                        type="button"
+                        role="radio"
+                        aria-checked={channel === "whatsapp"}
+                        onClick={() => setChannel("whatsapp")}
+                      >
+                        <MessageCircle size={18} aria-hidden="true" /> WhatsApp
+                      </button>
+                    )}
+                    <button
+                      className={channel === "sms" ? styles.verificationChannelSelected : undefined}
+                      type="button"
+                      role="radio"
+                      aria-checked={channel === "sms"}
+                      onClick={() => setChannel("sms")}
+                    >
+                      <Phone size={18} aria-hidden="true" /> SMS
+                    </button>
+                  </div>
+                  {channel === "whatsapp" && (
+                    <label className={styles.whatsAppConsent}>
+                      <input
+                        type="checkbox"
+                        checked={whatsAppConsent}
+                        onChange={(event) => setWhatsAppConsent(event.target.checked)}
+                      />
+                      <span>Quero receber meu código de verificação pelo WhatsApp.</span>
+                    </label>
+                  )}
+                  {smsFallbackAvailable && (
+                    <div className={styles.fallbackNotice} role="alert">
+                      <p>Não foi possível enviar pelo WhatsApp. Você pode receber o código por SMS.</p>
+                      <button type="button" disabled={sendingCode} onClick={() => sendCode("sms")}>
+                        Enviar por SMS
+                      </button>
+                    </div>
+                  )}
+                  <button
+                    className={styles.primaryButton}
+                    type="button"
+                    disabled={
+                      sendingCode ||
+                      resendSeconds > 0 ||
+                      (channel === "whatsapp" && !whatsAppConsent)
+                    }
+                    onClick={() => sendCode()}
+                  >
+                    {sendingCode
+                      ? "Enviando..."
+                      : `Enviar código por ${channel === "whatsapp" ? "WhatsApp" : "SMS"}`}
+                    <ChevronRight size={20} aria-hidden="true" />
                   </button>
                 </div>
               ) : (
                 <div className={styles.codeArea}>
                   <div className={styles.sentNotice}>
                     <Check size={18} aria-hidden="true" />
-                    Código solicitado por SMS. Pode levar até 1 minuto para chegar.
+                    Código solicitado por {channel === "whatsapp" ? "WhatsApp" : "SMS"}. Pode levar até 1 minuto para chegar.
                   </div>
                   <label htmlFor="verification-code">Código de 6 dígitos</label>
                   <input
@@ -597,13 +742,20 @@ export function ProfessionalRegistrationFlow({
                         Reenviar em {resendSeconds}s
                       </span>
                     ) : (
-                      <button
-                        type="button"
-                        disabled={sendingCode || !channel}
-                        onClick={sendCode}
-                      >
-                        Reenviar código
-                      </button>
+                      <div className={styles.resendActions}>
+                        <button type="button" disabled={sendingCode} onClick={() => sendCode(channel)}>
+                          Reenviar por {channel === "whatsapp" ? "WhatsApp" : "SMS"}
+                        </button>
+                        {channel === "whatsapp" ? (
+                          <button type="button" disabled={sendingCode} onClick={() => sendCode("sms")}>
+                            Enviar por SMS
+                          </button>
+                        ) : whatsAppVerifyEnabled ? (
+                          <button type="button" disabled={sendingCode} onClick={() => chooseResendChannel("whatsapp")}>
+                            Usar WhatsApp
+                          </button>
+                        ) : null}
+                      </div>
                     )}
                     <button type="button" onClick={() => setStage("phone")}>
                       Corrigir telefone

@@ -1124,6 +1124,134 @@
 .loadingInput,
 .loadingButton { background: #fcf7ff; }
 
+.deliveryChoice {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin: 20px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.deliveryChoice legend {
+  margin-bottom: 10px;
+  color: #fff;
+  font-size: .86rem;
+  font-weight: 760;
+}
+
+.deliveryOptions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.deliveryOptions button {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 11px;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid rgba(225,166,255,.25);
+  border-radius: 15px;
+  padding: 14px;
+  color: rgba(255,255,255,.72);
+  background: rgba(255,255,255,.045);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+
+.deliveryOptions button:hover {
+  border-color: rgba(225,166,255,.62);
+  background: rgba(183,44,255,.1);
+  transform: translateY(-1px);
+}
+
+.deliveryOptions button > svg { color: #d77bff; }
+.deliveryOptions button > span { display: grid; gap: 3px; min-width: 0; }
+.deliveryOptions strong { color: #fff; font-size: .86rem; }
+.deliveryOptions small { color: rgba(255,255,255,.55); font-size: .68rem; line-height: 1.35; }
+.deliveryOptions .deliveryOptionSelected {
+  border-color: #d77bff;
+  background: linear-gradient(135deg, rgba(143,31,209,.25), rgba(215,123,255,.1));
+  box-shadow: 0 0 0 1px rgba(215,123,255,.12) inset;
+}
+
+.whatsAppConsent {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: rgba(255,255,255,.7);
+  font-size: .76rem;
+  line-height: 1.5;
+}
+
+.whatsAppConsent input {
+  width: 17px;
+  height: 17px;
+  margin-top: 1px;
+  accent-color: #b72cff;
+}
+
+.channelSendPanel {
+  display: grid;
+  gap: 16px;
+  margin-top: 26px;
+}
+
+.verificationChannels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.verificationChannels button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid rgba(225,166,255,.28);
+  border-radius: 999px;
+  padding: 10px 15px;
+  color: rgba(255,255,255,.72);
+  background: rgba(255,255,255,.05);
+  cursor: pointer;
+}
+
+.verificationChannels .verificationChannelSelected {
+  border-color: #d77bff;
+  color: #fff;
+  background: rgba(183,44,255,.2);
+}
+
+.fallbackNotice {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(255,194,111,.38);
+  border-radius: 14px;
+  padding: 14px;
+  color: #ffe8c7;
+  background: rgba(126,75,16,.18);
+}
+
+.fallbackNotice p { margin: 0; font-size: .8rem; line-height: 1.5; }
+.fallbackNotice button {
+  justify-self: start;
+  border: 0;
+  padding: 0;
+  color: #fff;
+  background: transparent;
+  font-weight: 800;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.resendActions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+@media (max-width: 430px) {
+  .deliveryOptions { grid-template-columns: 1fr; }
+}
+
 /* Companion registration — premium apartment experience. This module is not used by /cadastro. */
 .page {
   --registration-purple: #b72cff;

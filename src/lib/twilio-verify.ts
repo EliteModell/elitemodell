@@ -4,6 +4,10 @@ import {
 } from "@/lib/phone-otp";
 
 export const TWILIO_NOT_CONFIGURED_ERROR = "Twilio não configurado no servidor";
+export const TWILIO_WHATSAPP_NOT_CONFIGURED_ERROR =
+  "O envio pelo WhatsApp ainda não está disponível. Você pode receber o código por SMS.";
+
+export type TwilioVerifyChannel = "sms" | "whatsapp";
 
 type TwilioVerifyPayload = {
   sid?: string;
@@ -25,6 +29,13 @@ export class TwilioVerifyConfigurationError extends Error {
   }
 }
 
+export class TwilioWhatsAppVerifyConfigurationError extends Error {
+  constructor() {
+    super(TWILIO_WHATSAPP_NOT_CONFIGURED_ERROR);
+    this.name = "TwilioWhatsAppVerifyConfigurationError";
+  }
+}
+
 export class TwilioVerifyProviderError extends Error {
   readonly status: number;
   readonly providerCode?: number;
@@ -42,7 +53,13 @@ export function twilioVerifyEnvironmentStatus() {
     hasAccountSid: Boolean(process.env.TWILIO_ACCOUNT_SID?.trim()),
     hasAuthToken: Boolean(process.env.TWILIO_AUTH_TOKEN?.trim()),
     hasVerifyServiceSid: Boolean(process.env.TWILIO_VERIFY_SERVICE_SID?.trim()),
+    hasMessagingServiceSid: Boolean(process.env.TWILIO_MESSAGING_SERVICE_SID?.trim()),
+    whatsAppVerifyEnabled: isTwilioWhatsAppVerifyEnabled(),
   };
+}
+
+export function isTwilioWhatsAppVerifyEnabled() {
+  return process.env.TWILIO_WHATSAPP_VERIFY_ENABLED?.trim().toLowerCase() === "true";
 }
 
 function getTwilioVerifyConfig(): TwilioVerifyConfig {
@@ -122,13 +139,20 @@ async function twilioVerifyRequest(path: string, body: URLSearchParams) {
   return payload;
 }
 
-export async function sendTwilioSmsVerification(phone: string) {
+export async function sendTwilioVerification(
+  phone: string,
+  channel: TwilioVerifyChannel,
+) {
+  if (channel === "whatsapp" && !isTwilioWhatsAppVerifyEnabled()) {
+    throw new TwilioWhatsAppVerifyConfigurationError();
+  }
+
   const to = toBrazilianE164(phone);
   const payload = await twilioVerifyRequest(
     "Verifications",
     new URLSearchParams({
       To: to,
-      Channel: "sms",
+      Channel: channel,
       Locale: "pt-BR",
       // Contingência para bloqueios 60238 do Fraud Guard. A API mantém
       // limites próprios por IP e telefone antes de chegar à Twilio.
@@ -143,7 +167,11 @@ export async function sendTwilioSmsVerification(phone: string) {
   };
 }
 
-export async function checkTwilioSmsVerification(phone: string, code: string) {
+export function sendTwilioSmsVerification(phone: string) {
+  return sendTwilioVerification(phone, "sms");
+}
+
+export async function checkTwilioVerification(phone: string, code: string) {
   const to = toBrazilianE164(phone);
   const payload = await twilioVerifyRequest(
     "VerificationCheck",
@@ -156,4 +184,8 @@ export async function checkTwilioSmsVerification(phone: string, code: string) {
     status: payload.status ?? "unknown",
     to,
   };
+}
+
+export function checkTwilioSmsVerification(phone: string, code: string) {
+  return checkTwilioVerification(phone, code);
 }

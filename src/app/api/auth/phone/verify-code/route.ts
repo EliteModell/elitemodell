@@ -28,7 +28,7 @@ import {
   TWILIO_NOT_CONFIGURED_ERROR,
   TwilioVerifyConfigurationError,
   TwilioVerifyProviderError,
-  checkTwilioSmsVerification,
+  checkTwilioVerification,
   maskPhone,
   toBrazilianE164,
 } from "@/lib/twilio-verify";
@@ -336,7 +336,10 @@ export async function POST(req: NextRequest) {
     });
 
     if (!verification) {
-      return NextResponse.json({ error: "Codigo expirado. Solicite um novo codigo." }, { status: 400 });
+      return NextResponse.json(
+        { code: "EXPIRED_CODE", error: "Código expirado. Solicite um novo código." },
+        { status: 400 },
+      );
     }
 
     if (verification.attempts >= OTP_MAX_ATTEMPTS) {
@@ -351,14 +354,14 @@ export async function POST(req: NextRequest) {
       console.info("[phone/verify-code] twilio_check_request", {
         endpoint: "/api/auth/phone/verify-code",
         phone: maskPhone(toBrazilianE164(phone)),
-        channel: "sms",
+        channel: verification.channel,
       });
-      const check = await checkTwilioSmsVerification(phone, body.code);
+      const check = await checkTwilioVerification(phone, body.code);
       matches = check.approved;
       console.info("[phone/verify-code] twilio_check_response", {
         endpoint: "/api/auth/phone/verify-code",
         phone: maskPhone(check.to),
-        channel: "sms",
+        channel: verification.channel,
         status: check.status,
         verificationSidSuffix: check.sid?.slice(-6),
       });
@@ -372,7 +375,10 @@ export async function POST(req: NextRequest) {
         where: { id: verification.id },
         data: { attempts: { increment: 1 } },
       });
-      return NextResponse.json({ error: "Codigo incorreto. Confira e tente novamente." }, { status: 400 });
+      return NextResponse.json(
+        { code: "INVALID_CODE", error: "Código incorreto. Confira e tente novamente." },
+        { status: 400 },
+      );
     }
 
     if (!verification.termsConsent || !verification.lgpdConsent) {
@@ -451,8 +457,10 @@ export async function POST(req: NextRequest) {
         message: err.message,
       });
       return NextResponse.json(
-        { ok: false, error: "Não foi possível validar o código agora. Tente novamente." },
-        { status: 502 },
+        err.status === 404 || err.providerCode === 20404 || err.providerCode === 60202
+          ? { ok: false, code: "EXPIRED_CODE", error: "Código expirado. Solicite um novo código." }
+          : { ok: false, code: "INVALID_CODE", error: "Código inválido. Confira e tente novamente." },
+        { status: err.status === 404 ? 400 : 502 },
       );
     }
     console.error("[phone/verify-code]", err);

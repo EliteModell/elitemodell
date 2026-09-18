@@ -43,8 +43,12 @@ test("apresenta conversão original e validação por canal", async ({ page }) =
   await expect(
     page.getByRole("heading", { name: "Valide seu telefone para continuar" }),
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: /Receber código via SMS/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /WhatsApp/i })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Enviar código por SMS/ })).toBeVisible();
+  if (process.env.TWILIO_WHATSAPP_VERIFY_ENABLED === "true") {
+    await expect(page.getByRole("radio", { name: /WhatsApp/i })).toBeVisible();
+  } else {
+    await expect(page.getByRole("button", { name: /WhatsApp/i })).toHaveCount(0);
+  }
 });
 
 test("envia código profissional somente por SMS", async ({ page }) => {
@@ -61,7 +65,7 @@ test("envia código profissional somente por SMS", async ({ page }) => {
   await page.getByLabel("Qual seu número de telefone?").fill("31999999999");
   await page.getByLabel(/Ao continuar, confirmo que tenho 18 anos ou mais/).check();
   await page.getByRole("button", { name: "Continuar" }).click();
-  await page.getByRole("button", { name: /Receber código via SMS/ }).click();
+  await page.getByRole("button", { name: /Enviar código por SMS/ }).click();
 
   await expect(page.getByLabel("Código de 6 dígitos")).toBeVisible();
   expect(payload).toMatchObject({
@@ -69,6 +73,51 @@ test("envia código profissional somente por SMS", async ({ page }) => {
     accountType: "model",
     channel: "sms",
   });
+});
+
+test("falha no WhatsApp oferece fallback explícito por SMS", async ({ page }) => {
+  test.skip(
+    process.env.TWILIO_WHATSAPP_VERIFY_ENABLED !== "true",
+    "Executado no cenário com a feature flag de WhatsApp ativa.",
+  );
+
+  const channels: string[] = [];
+  await page.route("**/api/auth/phone/send-code", async (route) => {
+    const payload = route.request().postDataJSON() as { channel?: string };
+    channels.push(payload.channel ?? "");
+    if (payload.channel === "whatsapp") {
+      await route.fulfill({
+        status: 502,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: false,
+          code: "WHATSAPP_SENDER_ERROR",
+          error: "Não foi possível enviar pelo WhatsApp. Você pode receber o código por SMS.",
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, message: "Código enviado por SMS" }),
+    });
+  });
+
+  await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
+  await page.getByLabel("Qual seu número de telefone?").fill("31999999999");
+  await page.getByRole("radio", { name: /WhatsApp/i }).first().click();
+  await page.getByLabel("Quero receber meu código de verificação pelo WhatsApp.").first().check();
+  await page.getByLabel(/Ao continuar, confirmo que tenho 18 anos ou mais/).check();
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await page.getByRole("button", { name: /Enviar código por WhatsApp/ }).click();
+
+  await expect(
+    page.getByRole("region", { name: /Valide seu telefone para continuar/ }).getByRole("alert"),
+  ).toContainText("Você pode receber o código por SMS");
+  await page.getByRole("button", { name: "Enviar por SMS" }).click();
+  await expect(page.getByLabel("Código de 6 dígitos")).toBeVisible();
+  expect(channels).toEqual(["whatsapp", "sms"]);
 });
 
 test("HTML inesperado da API mostra erro amigável sem quebrar a tela", async ({ page }) => {
@@ -83,7 +132,7 @@ test("HTML inesperado da API mostra erro amigável sem quebrar a tela", async ({
   await page.getByLabel("Qual seu número de telefone?").fill("31999999999");
   await page.getByLabel(/Ao continuar, confirmo que tenho 18 anos ou mais/).check();
   await page.getByRole("button", { name: "Continuar" }).click();
-  await page.getByRole("button", { name: /Receber código via SMS/ }).click();
+  await page.getByRole("button", { name: /Enviar código por SMS/ }).click();
 
   await expect(page.getByText("Não foi possível enviar o código agora. Tente novamente.")).toBeVisible();
   await expect(page.getByLabel("Código de 6 dígitos")).toHaveCount(0);
@@ -119,7 +168,7 @@ test("após validar o código abre a ativação profissional completa", async ({
   await page.getByLabel("Qual seu número de telefone?").fill("31999999999");
   await page.getByLabel(/Ao continuar, confirmo que tenho 18 anos ou mais/).check();
   await page.getByRole("button", { name: "Continuar" }).first().click();
-  await page.getByRole("button", { name: /Receber código via SMS/ }).click();
+  await page.getByRole("button", { name: /Enviar código por SMS/ }).click();
   await page.getByLabel("Código de 6 dígitos").fill("123456");
   await page.getByRole("button", { name: "Validar e continuar" }).click();
 

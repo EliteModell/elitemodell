@@ -4,6 +4,7 @@ import { POST as sendPhoneCode } from "../src/app/api/auth/phone/send-code/route
 import { prisma } from "../src/lib/prisma";
 import { readJsonResponse } from "../src/lib/safe-json-response";
 import {
+  checkTwilioVerification,
   sendTwilioSmsVerification,
   toBrazilianE164,
   TwilioVerifyProviderError,
@@ -130,6 +131,7 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     accountSid: process.env.TWILIO_ACCOUNT_SID,
     authToken: process.env.TWILIO_AUTH_TOKEN,
     serviceSid: process.env.TWILIO_VERIFY_SERVICE_SID,
+    whatsAppEnabled: process.env.TWILIO_WHATSAPP_VERIFY_ENABLED,
   };
   const repository = prisma.phoneVerificationCode as unknown as {
     findFirst: (...args: unknown[]) => Promise<unknown>;
@@ -150,7 +152,7 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     process.env.TWILIO_VERIFY_SERVICE_SID = "VA_test";
   }
 
-  function request() {
+  function request(channel = "sms") {
     return new NextRequest("http://localhost/api/auth/phone/send-code", {
       method: "POST",
       headers: {
@@ -160,7 +162,7 @@ test.describe("Twilio Verify no cadastro profissional", () => {
       body: JSON.stringify({
         phone: "(11) 91793-4340",
         accountType: "model",
-        channel: "sms",
+        channel,
         termsConsent: true,
         lgpdConsent: true,
         ageConfirmed: true,
@@ -189,6 +191,8 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     else process.env.TWILIO_AUTH_TOKEN = originalEnvironment.authToken;
     if (originalEnvironment.serviceSid === undefined) delete process.env.TWILIO_VERIFY_SERVICE_SID;
     else process.env.TWILIO_VERIFY_SERVICE_SID = originalEnvironment.serviceSid;
+    if (originalEnvironment.whatsAppEnabled === undefined) delete process.env.TWILIO_WHATSAPP_VERIFY_ENABLED;
+    else process.env.TWILIO_WHATSAPP_VERIFY_ENABLED = originalEnvironment.whatsAppEnabled;
   });
 
   test("envio SMS retorna JSON de sucesso e usa E.164 sem CustomCode", async () => {
@@ -231,7 +235,8 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     expect(response.headers.get("content-type")).toContain("application/json");
     expect(data).toEqual({
       ok: false,
-      error: "Não foi possível enviar o código agora. Tente novamente.",
+      code: "SMS_SEND_FAILED",
+      error: "Não foi possível enviar o código por SMS agora. Tente novamente.",
     });
     expect(JSON.stringify(data)).not.toContain("917934340");
   });
@@ -251,6 +256,7 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     expect(response.headers.get("content-type")).toContain("application/json");
     expect(await response.json()).toEqual({
       ok: false,
+      code: "SMS_SEND_FAILED",
       error: "Twilio não configurado no servidor",
     });
     expect(called).toBe(false);
@@ -259,6 +265,102 @@ test.describe("Twilio Verify no cadastro profissional", () => {
   test("normaliza telefone brasileiro para E.164", () => {
     expect(toBrazilianE164("(11) 91793-4340")).toBe("+5511917934340");
     expect(toBrazilianE164("+55 11 91793-4340")).toBe("+5511917934340");
+  });
+
+  test("envio WhatsApp usa o mesmo Twilio Verify Service quando a flag está ativa", async () => {
+    configureTwilio();
+    process.env.TWILIO_WHATSAPP_VERIFY_ENABLED = "true";
+    let twilioBody = "";
+    globalThis.fetch = async (input, init) => {
+      expect(String(input)).toContain("/Services/VA_test/Verifications");
+      twilioBody = String(init?.body ?? "");
+      return new Response(JSON.stringify({ sid: "VE_whatsapp", status: "pending" }), {
+        status: 201,
+        headers: { "content-type": "application/json" },
+      });
+    };
+
+    const response = await sendPhoneCode(request("whatsapp"));
+    const data = await response.json();
+    const params = new URLSearchParams(twilioBody);
+
+    expect(response.status).toBe(200);
+    expect(data).toMatchObject({
+      ok: true,
+      message: "Código enviado por WhatsApp",
+      delivery: { provider: "twilio-verify", channel: "whatsapp" },
+    });
+    expect(params.get("To")).toBe("+5511917934340");
+    expect(params.get("Channel")).toBe("whatsapp");
+    expect(params.has("CustomCode")).toBe(false);
+  });
+
+  test("WhatsApp desativado não chama a Twilio e mantém SMS disponível", async () => {
+    configureTwilio();
+    delete process.env.TWILIO_WHATSAPP_VERIFY_ENABLED;
+    let called = false;
+    globalThis.fetch = async () => {
+      called = true;
+      throw new Error("não deveria chamar");
+    };
+
+    const response = await sendPhoneCode(request("whatsapp"));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({
+      ok: false,
+      code: "WHATSAPP_NOT_CONFIGURED",
+    });
+    expect(called).toBe(false);
+  });
+
+  test("canal inválido é rejeitado antes de chamar a Twilio", async () => {
+    configureTwilio();
+    let called = false;
+    globalThis.fetch = async () => {
+      called = true;
+      throw new Error("não deveria chamar");
+    };
+
+    const response = await sendPhoneCode(request("email"));
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ ok: false, error: "Dados inválidos." });
+    expect(called).toBe(false);
+  });
+
+  test("limite por telefone continua bloqueando novos envios", async () => {
+    configureTwilio();
+    repository.count = async () => 20;
+    let called = false;
+    globalThis.fetch = async () => {
+      called = true;
+      throw new Error("não deveria chamar");
+    };
+
+    const response = await sendPhoneCode(request());
+    expect(response.status).toBe(429);
+    expect(await response.json()).toMatchObject({ code: "TWILIO_RATE_LIMIT" });
+    expect(called).toBe(false);
+  });
+
+  test("SMS e WhatsApp compartilham a mesma VerificationCheck", async () => {
+    configureTwilio();
+    let requestUrl = "";
+    let requestBody = "";
+    globalThis.fetch = async (input, init) => {
+      requestUrl = String(input);
+      requestBody = String(init?.body ?? "");
+      return new Response(JSON.stringify({ sid: "VE_check", status: "approved" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    };
+
+    const result = await checkTwilioVerification("11917934340", "123456");
+    const params = new URLSearchParams(requestBody);
+    expect(requestUrl).toContain("/Services/VA_test/VerificationCheck");
+    expect(params.get("To")).toBe("+5511917934340");
+    expect(params.get("Code")).toBe("123456");
+    expect(result.approved).toBe(true);
   });
 
   test("parser do frontend rejeita HTML sem executar response.json", async () => {
