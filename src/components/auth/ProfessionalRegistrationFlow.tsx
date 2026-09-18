@@ -4,29 +4,23 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  BadgeCheck,
   CalendarClock,
   Check,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   CircleDollarSign,
   Clock3,
-  Eye,
-  Headphones,
   Laptop,
   LockKeyhole,
   MessageCircle,
   Phone,
   SlidersHorizontal,
   Sparkles,
-  WalletCards,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 import styles from "./ProfessionalRegistrationFlow.module.css";
-import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { readJsonResponse } from "@/lib/safe-json-response";
 type RegistrationStage = "phone" | "verification";
 type VerificationChannel = "sms" | "whatsapp";
@@ -90,54 +84,6 @@ const benefits = [
     title: "Atendimento presencial ou virtual",
     description: "Apresente as modalidades que fazem sentido para a sua atuação.",
     icon: Laptop,
-  },
-  {
-    title: "Perfil verificado",
-    description: "Conclua a verificação para transmitir mais confiança aos visitantes.",
-    icon: BadgeCheck,
-  },
-  {
-    title: "Mais visibilidade",
-    description: "Use os recursos da plataforma para ampliar o alcance do seu anúncio.",
-    icon: Eye,
-  },
-  {
-    title: "Suporte da plataforma",
-    description: "Receba orientação para usar os recursos e manter seu anúncio atualizado.",
-    icon: Headphones,
-  },
-];
-
-const faqs = [
-  {
-    question: "Como funciona o cadastro?",
-    answer:
-      "Você confirma seu telefone, cria sua conta e completa o perfil de acompanhante com suas próprias informações. Antes da publicação, documentos, fotos, biometria e dados obrigatórios passam por análise.",
-  },
-  {
-    question: "Quanto custa anunciar?",
-    answer:
-      "O cadastro inicial é gratuito. Planos e recursos opcionais de visibilidade, quando disponíveis, apresentam preço e condições antes de qualquer contratação.",
-  },
-  {
-    question: "Como recebo dos clientes?",
-    answer:
-      "Você informa no perfil as formas de pagamento aceitas. Quando houver um recurso de pagamento intermediado pela plataforma, as condições específicas serão exibidas antes do uso.",
-  },
-  {
-    question: "Posso definir meus horários?",
-    answer:
-      "Sim. Você controla os horários informados no perfil e pode ajustar sua disponibilidade conforme sua rotina.",
-  },
-  {
-    question: "Como funciona a verificação?",
-    answer:
-      "A publicação exige confirmação de telefone, identidade, maioridade, titularidade do perfil, fotos reais e biometria facial. Os dados são tratados conforme a Política de Privacidade.",
-  },
-  {
-    question: "Preciso ter experiência?",
-    answer:
-      "Não existe exigência de tempo mínimo de experiência. É importante apresentar informações verdadeiras, compreender as regras e manter uma comunicação profissional.",
   },
 ];
 
@@ -421,503 +367,211 @@ export function ProfessionalRegistrationFlow({
 
   return (
     <main className={styles.page}>
-      <header className={styles.header}>
-        <Link className={styles.backHome} href="/">
-          <ChevronLeft size={18} aria-hidden="true" />
-          Voltar
-        </Link>
-        <Link className={styles.brand} href="/" aria-label="Elite Modell - página inicial">
-          <Image
-            src="/brand/elite-modell-logo.png"
-            alt="Elite Modell"
-            width={2172}
-            height={724}
-            priority
-          />
-        </Link>
-        <Link className={styles.loginLink} href="/login">
-          Já tenho conta
-        </Link>
-      </header>
+      <div className={styles.background} aria-hidden="true" />
+      <div className={styles.shell}>
+        <header className={styles.header}>
+          <Link className={styles.backHome} href="/">
+            <ChevronLeft size={18} aria-hidden="true" />
+            Voltar
+          </Link>
+          <Link className={styles.brand} href="/" aria-label="Elite Modell - página inicial">
+            <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={2172} height={724} priority />
+          </Link>
+          <Link className={styles.loginLink} href="/login">Já tenho conta</Link>
+        </header>
 
-      <div className={styles.progressWrap} aria-label={`Etapa ${progress} de 3`}>
-        <div className={styles.progressMeta}>
-          <span>Cadastro de acompanhante</span>
-          <span>Etapa {progress} de 3</span>
+        <div className={styles.progressWrap} aria-label={`Etapa ${progress} de 3`}>
+          <div className={styles.progressMeta}>
+            <span>Cadastro de acompanhante</span>
+            <span>Etapa {progress} de 3</span>
+          </div>
+          <div className={styles.progressTrack}><span style={{ width: `${(progress / 3) * 100}%` }} /></div>
         </div>
-        <div className={styles.progressTrack}>
-          <span style={{ width: `${(progress / 3) * 100}%` }} />
-        </div>
-      </div>
 
-      {stage === "phone" && (
-        <section className={styles.phoneStage} aria-labelledby="professional-register-title">
-          <div className={styles.heroVisual}>
-            <div className={styles.heroGlow} aria-hidden="true" />
-            <div className={styles.heroOverlay} />
-            <div className={styles.heroIntro}>
-              <span className={styles.eyebrow}>
-                <Sparkles size={16} aria-hidden="true" />
-                Liberdade • discrição • segurança
-              </span>
+        {stage === "phone" ? (
+          <div className={styles.phoneStage}>
+            <section className={styles.hero} aria-labelledby="professional-register-title">
+              <span className={styles.eyebrow}><Sparkles size={17} aria-hidden="true" /> Liberdade • discrição • segurança</span>
               <h1 id="professional-register-title" ref={headingRef} tabIndex={-1}>
                 Cadastre-se grátis <em>como acompanhante</em>
               </h1>
-              <p className={styles.lead}>
-                Anuncie com segurança, controle seu perfil e acompanhe sua verificação em cada etapa.
-              </p>
-            </div>
-            <div className={styles.heroCard}>
-              <span>Mais que um anúncio</span>
-              <strong>Seu perfil, suas escolhas</strong>
-              <p>Um ambiente exclusivo para você apresentar seu trabalho com autonomia e respeito.</p>
-            </div>
-            <div className={styles.heroSteps} aria-label="Etapas do cadastro">
-              <p>Seu cadastro em 3 etapas</p>
-              <span data-step="1">Telefone</span>
-              <span data-step="2">Código</span>
-              <span data-step="3">Cadastro completo</span>
-            </div>
-            <div className={styles.heroMessage}>
-              <span>Entrada simples e protegida</span>
-              <strong>Comece pelo telefone. A análise completa acontece nas próximas etapas.</strong>
-            </div>
-          </div>
+              <p>Anuncie com segurança, controle seu perfil e acompanhe sua verificação em cada etapa.</p>
+              <div className={styles.heroSteps} aria-label="Seu cadastro em três etapas">
+                <div><b>1</b><span><strong>Telefone</strong><small>Informe seu número</small></span></div>
+                <div><b>2</b><span><strong>Código</strong><small>Confirme sua identidade</small></span></div>
+                <div><b>3</b><span><strong>Cadastro completo</strong><small>Crie seu perfil</small></span></div>
+              </div>
+            </section>
 
-          <div className={styles.phoneContent}>
-            <div className={styles.formCard}>
-              <div className={styles.formIntro}>
-                <span>Primeiro passo</span>
-                <strong>Crie seu acesso com segurança</strong>
-                <p>Informe um número válido para receber o código de confirmação.</p>
+            <section className={styles.benefitsSection} aria-labelledby="benefits-title">
+              <div className={styles.sectionHeading}>
+                <span>Seu perfil do seu jeito</span>
+                <h2 id="benefits-title">Ferramentas para você brilhar</h2>
+                <p>Tenha autonomia, organize sua rotina e apresente seu trabalho com clareza.</p>
               </div>
-              <label htmlFor="professional-phone">Qual seu número de telefone?</label>
-              <div className={styles.inputShell}>
-                <Phone size={20} aria-hidden="true" />
-                <span className={styles.countryCode}>+55</span>
-                <input
-                  id="professional-phone"
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  placeholder="Digite seu telefone profissional"
-                  value={formatPhone(phone)}
-                  onChange={(event) => setPhone(onlyDigits(event.target.value))}
-                  aria-describedby="phone-help"
-                />
+              <div className={styles.benefitGrid}>
+                {benefits.map(({ title, description, icon: Icon }) => (
+                  <article key={title} className={styles.benefitCard}>
+                    <span><Icon size={23} aria-hidden="true" /></span>
+                    <h3>{title}</h3>
+                    <p>{description}</p>
+                  </article>
+                ))}
               </div>
-              <p id="phone-help" className={styles.inputHelp}>
-                Usaremos esse número para proteger sua conta e continuar seu cadastro.
-              </p>
+            </section>
+
+            <section className={styles.validationSection} aria-labelledby="validation-title">
+              <div className={styles.validationIntro}>
+                <span className={styles.eyebrow}><LockKeyhole size={16} aria-hidden="true" /> Validação segura</span>
+                <h2 id="validation-title">Valide seu telefone para continuar</h2>
+                <p>Enviaremos um código de 6 dígitos para o seu celular.</p>
+                <label htmlFor="professional-phone">Seu número de telefone</label>
+                <div className={styles.inputShell}>
+                  <span className={styles.countryCode}>+55</span>
+                  <input
+                    id="professional-phone"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="(11) 99999-9999"
+                    value={formatPhone(phone)}
+                    onChange={(event) => setPhone(onlyDigits(event.target.value))}
+                    aria-describedby="phone-help"
+                  />
+                </div>
+                <p id="phone-help" className={styles.inputHelp}>Use um número brasileiro com DDD.</p>
+              </div>
 
               <fieldset className={styles.deliveryChoice}>
-                <legend>Como deseja receber seu código?</legend>
+                <legend>Como deseja receber?</legend>
                 <div className={styles.deliveryOptions}>
-                  {whatsAppVerifyEnabled && (
-                    <button
-                      className={channel === "whatsapp" ? styles.deliveryOptionSelected : undefined}
-                      type="button"
-                      role="radio"
-                      aria-checked={channel === "whatsapp"}
-                      onClick={() => {
-                        setChannel("whatsapp");
-                        setSmsFallbackAvailable(false);
-                      }}
-                    >
-                      <MessageCircle size={20} aria-hidden="true" />
-                      <span>
-                        <strong>WhatsApp</strong>
-                        <small>Receber código pelo WhatsApp</small>
-                      </span>
-                    </button>
-                  )}
                   <button
                     className={channel === "sms" ? styles.deliveryOptionSelected : undefined}
                     type="button"
                     role="radio"
                     aria-checked={channel === "sms"}
-                    onClick={() => {
-                      setChannel("sms");
-                      setSmsFallbackAvailable(false);
-                    }}
+                    onClick={() => { setChannel("sms"); setSmsFallbackAvailable(false); }}
                   >
-                    <Phone size={20} aria-hidden="true" />
-                    <span>
-                      <strong>SMS</strong>
-                      <small>Receber código por mensagem de texto</small>
-                    </span>
+                    <span className={styles.channelIcon}><MessageCircle size={25} aria-hidden="true" /></span>
+                    <span><strong>Receber código via SMS</strong><small>Receba uma mensagem de texto no seu celular.</small></span>
+                    <ChevronRight size={22} aria-hidden="true" />
+                  </button>
+                  <button
+                    className={channel === "whatsapp" ? styles.deliveryOptionSelected : undefined}
+                    type="button"
+                    role="radio"
+                    aria-checked={channel === "whatsapp"}
+                    disabled={!whatsAppVerifyEnabled}
+                    onClick={() => { setChannel("whatsapp"); setSmsFallbackAvailable(false); }}
+                  >
+                    <span className={styles.channelIcon}><MessageCircle size={25} aria-hidden="true" /></span>
+                    <span><strong>Receber código via WhatsApp</strong><small>Receba seu código pelo WhatsApp.</small></span>
+                    {!whatsAppVerifyEnabled && <em>Em breve</em>}
+                    {whatsAppVerifyEnabled && <ChevronRight size={22} aria-hidden="true" />}
                   </button>
                 </div>
-                {channel === "whatsapp" && (
+                {channel === "whatsapp" && whatsAppVerifyEnabled && (
                   <label className={styles.whatsAppConsent}>
-                    <input
-                      type="checkbox"
-                      checked={whatsAppConsent}
-                      onChange={(event) => setWhatsAppConsent(event.target.checked)}
-                    />
+                    <input type="checkbox" checked={whatsAppConsent} onChange={(event) => setWhatsAppConsent(event.target.checked)} />
                     <span>Quero receber meu código de verificação pelo WhatsApp.</span>
                   </label>
                 )}
               </fieldset>
+            </section>
 
-              <div className={styles.consentList}>
-                <label className={`${styles.checkRow} ${styles.primaryConsent}`}>
-                  <input
-                    type="checkbox"
-                    checked={mandatoryConsentsAccepted}
-                    onChange={(event) => setMandatoryConsent(event.target.checked)}
-                  />
-                  <span>
-                    Ao continuar, confirmo que tenho 18 anos ou mais, que o perfil será criado
-                    para mim e concordo com os{" "}
-                    <Link href="/terms" target="_blank">
-                      Termos de Uso
-                    </Link>
-                    ,{" "}
-                    <Link href="/privacy" target="_blank">
-                      Política de Privacidade
-                    </Link>{" "}
-                    e regras de cadastro da Elite Modell.
-                  </span>
-                </label>
+            <section className={styles.simulatorSection} aria-labelledby="simulator-title">
+              <div className={styles.sectionHeading}>
+                <span><CircleDollarSign size={16} aria-hidden="true" /> Simulador Elite Modell</span>
+                <h2 id="simulator-title">Quanto você pode faturar?</h2>
+                <p>Ajuste os dados para visualizar uma estimativa personalizada.</p>
               </div>
+              <div className={styles.simulatorGrid}>
+                <div className={styles.simulatorControls}>
+                  <label htmlFor="attendance-value"><span>Valor por atendimento</span><strong>{formatCurrency(attendanceValue)}</strong></label>
+                  <input id="attendance-value" type="range" min={50} max={3000} step={50} value={attendanceValue} onChange={(event) => setAttendanceValue(Number(event.target.value))} />
+                  <small>Defina quanto você cobra por atendimento.</small>
+                  <label htmlFor="appointments-per-day"><span>Atendimentos por dia</span><strong>{appointmentsPerDay}</strong></label>
+                  <input id="appointments-per-day" type="range" min={1} max={10} value={appointmentsPerDay} onChange={(event) => setAppointmentsPerDay(Number(event.target.value))} />
+                  <small>Quantos atendimentos você realiza por dia?</small>
+                  <label htmlFor="days-per-week"><span>Dias por semana</span><strong>{daysPerWeek}</strong></label>
+                  <input id="days-per-week" type="range" min={1} max={7} value={daysPerWeek} onChange={(event) => setDaysPerWeek(Number(event.target.value))} />
+                  <small>Em quantos dias da semana você trabalha?</small>
+                </div>
+                <div className={styles.revenueCard} aria-live="polite">
+                  <span>Estimativa mensal</span>
+                  <strong>{formatCurrency(monthlyRevenue)}</strong>
+                  <div><span>Receita semanal</span><b>{formatCurrency(weeklyRevenue)}</b></div>
+                  <div><span>Receita mensal</span><b>{formatCurrency(monthlyRevenue)}</b></div>
+                  <p>Valores estimados. Ganhos dependem da região, demanda e disponibilidade.</p>
+                </div>
+              </div>
+            </section>
 
-              <button
-                className={styles.primaryButton}
-                type="button"
-                disabled={!canContinueFromPhone}
-                onClick={continueToVerification}
-              >
-                Continuar
-                <ChevronRight size={20} aria-hidden="true" />
-              </button>
-              <div className={styles.entryLinks}>
-                <Link href="/login">Já tenho conta</Link>
-                <Link href={ACCOUNT_ROUTES.cadastroCliente}>
-                  Quer contratar? Cadastre-se como cliente.
-                </Link>
-              </div>
+            <div className={styles.consentList}>
+              <label className={styles.checkRow}>
+                <input type="checkbox" checked={mandatoryConsentsAccepted} onChange={(event) => setMandatoryConsent(event.target.checked)} />
+                <span>Confirmo que tenho 18 anos ou mais, que o perfil será criado para mim e concordo com os <Link href="/terms" target="_blank">Termos de Uso</Link> e a <Link href="/privacy" target="_blank">Política de Privacidade</Link>.</span>
+              </label>
             </div>
 
-            <div className={styles.quickBenefits} aria-label="Benefícios do cadastro">
-              {[
-                "Cadastro gratuito",
-                "Controle do próprio perfil",
-                "Perfil verificado",
-                "Suporte da plataforma",
-              ].map((item) => (
-                <span key={item}>
-                  <Check size={16} aria-hidden="true" />
-                  {item}
-                </span>
-              ))}
+            <div className={styles.continueArea}>
+              <button className={styles.primaryButton} type="button" disabled={!canContinueFromPhone} onClick={continueToVerification}>
+                Continuar meu cadastro <ChevronRight size={21} aria-hidden="true" />
+              </button>
+              <span><LockKeyhole size={14} aria-hidden="true" /> Seus dados estão protegidos e em total sigilo.</span>
             </div>
           </div>
-        </section>
-      )}
-
-      {stage === "verification" && (
-        <section className={styles.verificationStage} aria-labelledby="verification-title">
-          <button className={styles.backButton} type="button" onClick={() => setStage("phone")}>
-            <ChevronLeft size={20} aria-hidden="true" />
-            Alterar telefone
-          </button>
-
-          {!isValidBrazilianPhone(phone) ? (
-            <div className={styles.emptyVerification}>
-              <Phone size={34} aria-hidden="true" />
-              <h1 id="verification-title" ref={headingRef} tabIndex={-1}>
-                Confirme seu telefone
-              </h1>
-              <p>
-                Para receber o código por SMS, informe primeiro o telefone e aceite os termos
-                obrigatórios.
-              </p>
-              <button className={styles.primaryButton} type="button" onClick={() => setStage("phone")}>
-                Informar telefone
-              </button>
-            </div>
-          ) : (
-            <div className={styles.verificationCard}>
-              <span className={styles.eyebrow}>
-                <LockKeyhole size={16} aria-hidden="true" />
-                Validação segura
-              </span>
-              <h1 id="verification-title" ref={headingRef} tabIndex={-1}>
-                Valide seu telefone para continuar
-              </h1>
-              <p>
-                Enviaremos um código de 6 dígitos por {channel === "whatsapp" ? "WhatsApp" : "SMS"} para{" "}
-                <strong>{formatPhone(phone)}</strong>.
-              </p>
-
-              {!codeSent ? (
-                <div className={styles.channelSendPanel}>
-                  <div className={styles.verificationChannels} role="radiogroup" aria-label="Canal de entrega">
-                    {whatsAppVerifyEnabled && (
-                      <button
-                        className={channel === "whatsapp" ? styles.verificationChannelSelected : undefined}
-                        type="button"
-                        role="radio"
-                        aria-checked={channel === "whatsapp"}
-                        onClick={() => setChannel("whatsapp")}
-                      >
-                        <MessageCircle size={18} aria-hidden="true" /> WhatsApp
-                      </button>
-                    )}
-                    <button
-                      className={channel === "sms" ? styles.verificationChannelSelected : undefined}
-                      type="button"
-                      role="radio"
-                      aria-checked={channel === "sms"}
-                      onClick={() => setChannel("sms")}
-                    >
-                      <Phone size={18} aria-hidden="true" /> SMS
-                    </button>
-                  </div>
-                  {channel === "whatsapp" && (
-                    <label className={styles.whatsAppConsent}>
-                      <input
-                        type="checkbox"
-                        checked={whatsAppConsent}
-                        onChange={(event) => setWhatsAppConsent(event.target.checked)}
-                      />
-                      <span>Quero receber meu código de verificação pelo WhatsApp.</span>
-                    </label>
-                  )}
-                  {smsFallbackAvailable && (
-                    <div className={styles.fallbackNotice} role="alert">
-                      <p>Não foi possível enviar pelo WhatsApp. Você pode receber o código por SMS.</p>
-                      <button type="button" disabled={sendingCode} onClick={() => sendCode("sms")}>
-                        Enviar por SMS
-                      </button>
+        ) : (
+          <section className={styles.verificationStage} aria-labelledby="verification-title">
+            <button className={styles.backButton} type="button" onClick={() => setStage("phone")}>
+              <ChevronLeft size={20} aria-hidden="true" /> Alterar telefone
+            </button>
+            {!isValidBrazilianPhone(phone) ? (
+              <div className={styles.verificationCard}>
+                <Phone size={34} aria-hidden="true" />
+                <h1 id="verification-title" ref={headingRef} tabIndex={-1}>Confirme seu telefone</h1>
+                <p>Informe primeiro o telefone e aceite os termos obrigatórios.</p>
+                <button className={styles.primaryButton} type="button" onClick={() => setStage("phone")}>Informar telefone</button>
+              </div>
+            ) : (
+              <div className={styles.verificationCard}>
+                <span className={styles.eyebrow}><LockKeyhole size={16} aria-hidden="true" /> Validação segura</span>
+                <h1 id="verification-title" ref={headingRef} tabIndex={-1}>Valide seu telefone para continuar</h1>
+                <p>Enviaremos um código de 6 dígitos por {channel === "whatsapp" ? "WhatsApp" : "SMS"} para <strong>{formatPhone(phone)}</strong>.</p>
+                {!codeSent ? (
+                  <div className={styles.channelSendPanel}>
+                    <div className={styles.verificationChannels} role="radiogroup" aria-label="Canal de entrega">
+                      <button className={channel === "sms" ? styles.verificationChannelSelected : undefined} type="button" role="radio" aria-checked={channel === "sms"} onClick={() => setChannel("sms")}><Phone size={18} aria-hidden="true" /> SMS</button>
+                      {whatsAppVerifyEnabled && <button className={channel === "whatsapp" ? styles.verificationChannelSelected : undefined} type="button" role="radio" aria-checked={channel === "whatsapp"} onClick={() => setChannel("whatsapp")}><MessageCircle size={18} aria-hidden="true" /> WhatsApp</button>}
                     </div>
-                  )}
-                  <button
-                    className={styles.primaryButton}
-                    type="button"
-                    disabled={
-                      sendingCode ||
-                      resendSeconds > 0 ||
-                      (channel === "whatsapp" && !whatsAppConsent)
-                    }
-                    onClick={() => sendCode()}
-                  >
-                    {sendingCode
-                      ? "Enviando..."
-                      : `Enviar código por ${channel === "whatsapp" ? "WhatsApp" : "SMS"}`}
-                    <ChevronRight size={20} aria-hidden="true" />
-                  </button>
-                </div>
-              ) : (
-                <div className={styles.codeArea}>
-                  <div className={styles.sentNotice}>
-                    <Check size={18} aria-hidden="true" />
-                    Código solicitado por {channel === "whatsapp" ? "WhatsApp" : "SMS"}. Pode levar até 1 minuto para chegar.
-                  </div>
-                  <label htmlFor="verification-code">Código de 6 dígitos</label>
-                  <input
-                    id="verification-code"
-                    className={styles.codeInput}
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={6}
-                    value={code}
-                    onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                    placeholder="000000"
-                  />
-                  <button
-                    className={styles.primaryButton}
-                    type="button"
-                    disabled={verifyingCode || code.length !== 6}
-                    onClick={verifyCode}
-                  >
-                    {verifyingCode ? "Validando..." : "Validar e continuar"}
-                  </button>
-                  <div className={styles.resendRow} aria-live="polite">
-                    {resendSeconds > 0 ? (
-                      <span>
-                        <Clock3 size={16} aria-hidden="true" />
-                        Reenviar em {resendSeconds}s
-                      </span>
-                    ) : (
-                      <div className={styles.resendActions}>
-                        <button type="button" disabled={sendingCode} onClick={() => sendCode(channel)}>
-                          Reenviar por {channel === "whatsapp" ? "WhatsApp" : "SMS"}
-                        </button>
-                        {channel === "whatsapp" ? (
-                          <button type="button" disabled={sendingCode} onClick={() => sendCode("sms")}>
-                            Enviar por SMS
-                          </button>
-                        ) : whatsAppVerifyEnabled ? (
-                          <button type="button" disabled={sendingCode} onClick={() => chooseResendChannel("whatsapp")}>
-                            Usar WhatsApp
-                          </button>
-                        ) : null}
-                      </div>
-                    )}
-                    <button type="button" onClick={() => setStage("phone")}>
-                      Corrigir telefone
+                    {channel === "whatsapp" && <label className={styles.whatsAppConsent}><input type="checkbox" checked={whatsAppConsent} onChange={(event) => setWhatsAppConsent(event.target.checked)} /><span>Quero receber meu código de verificação pelo WhatsApp.</span></label>}
+                    {smsFallbackAvailable && <div className={styles.fallbackNotice} role="alert"><p>Não foi possível enviar pelo WhatsApp. Você pode receber o código por SMS.</p><button type="button" disabled={sendingCode} onClick={() => sendCode("sms")}>Enviar por SMS</button></div>}
+                    <button className={styles.primaryButton} type="button" disabled={sendingCode || resendSeconds > 0 || (channel === "whatsapp" && !whatsAppConsent)} onClick={() => sendCode()}>
+                      {sendingCode ? "Enviando..." : `Enviar código por ${channel === "whatsapp" ? "WhatsApp" : "SMS"}`} <ChevronRight size={20} aria-hidden="true" />
                     </button>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
-        </section>
-      )}
-
-      {stage === "phone" && (
-        <div className={styles.experienceStage}>
-          <section className={styles.simulatorSection} aria-labelledby="simulator-title">
-            <div className={styles.sectionHeading}>
-              <span className={styles.eyebrow}>
-                <CircleDollarSign size={16} aria-hidden="true" />
-                Simulador Elite Modell
-              </span>
-              <h2 id="simulator-title">Quanto você pode faturar?</h2>
-              <p>Ajuste os dados para visualizar uma estimativa personalizada.</p>
-            </div>
-
-            <div className={styles.simulatorGrid}>
-              <div className={styles.simulatorControls}>
-                <label htmlFor="attendance-value">
-                  <span>Valor por atendimento</span>
-                  <strong>{formatCurrency(attendanceValue)}</strong>
-                </label>
-                <input
-                  id="attendance-value"
-                  type="range"
-                  min={50}
-                  max={3000}
-                  step={50}
-                  value={attendanceValue}
-                  onChange={(event) => setAttendanceValue(Number(event.target.value))}
-                />
-
-                <label htmlFor="appointments-per-day">
-                  <span>Atendimentos por dia</span>
-                  <strong>{appointmentsPerDay}</strong>
-                </label>
-                <input
-                  id="appointments-per-day"
-                  type="range"
-                  min={1}
-                  max={10}
-                  value={appointmentsPerDay}
-                  onChange={(event) => setAppointmentsPerDay(Number(event.target.value))}
-                />
-
-                <label htmlFor="days-per-week">
-                  <span>Dias por semana</span>
-                  <strong>{daysPerWeek}</strong>
-                </label>
-                <input
-                  id="days-per-week"
-                  type="range"
-                  min={1}
-                  max={7}
-                  value={daysPerWeek}
-                  onChange={(event) => setDaysPerWeek(Number(event.target.value))}
-                />
+                ) : (
+                  <div className={styles.codeArea}>
+                    <div className={styles.sentNotice}><Check size={18} aria-hidden="true" /> Código solicitado por {channel === "whatsapp" ? "WhatsApp" : "SMS"}. Pode levar até 1 minuto.</div>
+                    <label htmlFor="verification-code">Código de 6 dígitos</label>
+                    <input id="verification-code" className={styles.codeInput} type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" />
+                    <button className={styles.primaryButton} type="button" disabled={verifyingCode || code.length !== 6} onClick={verifyCode}>{verifyingCode ? "Validando..." : "Validar e continuar"}</button>
+                    <div className={styles.resendRow} aria-live="polite">
+                      {resendSeconds > 0 ? <span><Clock3 size={16} aria-hidden="true" /> Reenviar em {resendSeconds}s</span> : <div className={styles.resendActions}><button type="button" disabled={sendingCode} onClick={() => sendCode(channel)}>Reenviar por {channel === "whatsapp" ? "WhatsApp" : "SMS"}</button>{channel === "whatsapp" ? <button type="button" disabled={sendingCode} onClick={() => sendCode("sms")}>Enviar por SMS</button> : whatsAppVerifyEnabled ? <button type="button" disabled={sendingCode} onClick={() => chooseResendChannel("whatsapp")}>Usar WhatsApp</button> : null}</div>}
+                      <button type="button" onClick={() => setStage("phone")}>Corrigir telefone</button>
+                    </div>
+                  </div>
+                )}
               </div>
-
-              <div className={styles.revenueCard} aria-live="polite">
-                <span>Estimativa mensal</span>
-                <strong>{formatCurrency(monthlyRevenue)}</strong>
-                <div>
-                  <span>Receita semanal</span>
-                  <b>{formatCurrency(weeklyRevenue)}</b>
-                </div>
-                <div>
-                  <span>Receita mensal</span>
-                  <b>{formatCurrency(monthlyRevenue)}</b>
-                </div>
-                <p>
-                  Valores estimados. Ganhos dependem da região, demanda e disponibilidade.
-                </p>
-              </div>
-            </div>
+            )}
           </section>
+        )}
 
-          <section className={styles.benefitsSection} aria-labelledby="benefits-title">
-            <div className={styles.sectionHeading}>
-              <span className={styles.eyebrow}>
-                <Sparkles size={16} aria-hidden="true" />
-                Liberdade com organização
-              </span>
-              <h2 id="benefits-title">Seu perfil do seu jeito</h2>
-              <p>Ferramentas para apresentar seu trabalho com clareza, segurança e autonomia.</p>
-            </div>
-
-            <div className={styles.benefitGrid}>
-              {benefits.map(({ title, description, icon: Icon }) => (
-                <article key={title} className={styles.benefitCard}>
-                  <span>
-                    <Icon size={24} aria-hidden="true" />
-                  </span>
-                  <h3>{title}</h3>
-                  <p>{description}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <section className={styles.trustSection} aria-labelledby="trust-title">
-            <div className={styles.trustCopy}>
-              <span className={styles.eyebrow}>
-                <LockKeyhole size={16} aria-hidden="true" />
-                Segurança e confiança
-              </span>
-              <h2 id="trust-title">Privacidade em todas as etapas</h2>
-              <p>
-                Seus dados são usados para validar a titularidade do perfil, proteger sua conta e manter a comunidade mais segura.
-              </p>
-            </div>
-            <div className={styles.trustPoints}>
-              <p><BadgeCheck size={20} aria-hidden="true" /><span><strong>Verificação responsável</strong>Documentos, maioridade e fotos passam por análise.</span></p>
-              <p><LockKeyhole size={20} aria-hidden="true" /><span><strong>Dados protegidos</strong>Tratamento alinhado à Política de Privacidade.</span></p>
-              <p><Headphones size={20} aria-hidden="true" /><span><strong>Suporte humano</strong>Orientação para concluir e manter seu anúncio.</span></p>
-            </div>
-          </section>
-
-          <section className={styles.faqSection} aria-labelledby="faq-title">
-            <div className={styles.sectionHeading}>
-              <span className={styles.eyebrow}>
-                <MessageCircle size={16} aria-hidden="true" />
-                Informações importantes
-              </span>
-              <h2 id="faq-title">Dúvidas frequentes</h2>
-            </div>
-
-            <div className={styles.faqList}>
-              {faqs.map(({ question, answer }) => (
-                <details key={question}>
-                  <summary>
-                    <span>{question}</span>
-                    <ChevronDown size={20} aria-hidden="true" />
-                  </summary>
-                  <p>{answer}</p>
-                </details>
-              ))}
-            </div>
-          </section>
-
-        </div>
-      )}
-
-      <footer className={styles.footer}>
-        <div>
-          <WalletCards size={18} aria-hidden="true" />
-          Nenhuma cobrança é realizada nesta etapa.
-        </div>
-        <nav aria-label="Links jurídicos do cadastro">
-          <Link href="/terms">Termos de Uso</Link>
-          <Link href="/privacy">Privacidade</Link>
-          <a href="mailto:privacidade@elitemodell.com.br">Canal de Privacidade</a>
-        </nav>
-      </footer>
+        <footer className={styles.footer}>
+          <span>© Elite Modell</span>
+          <nav aria-label="Links jurídicos do cadastro"><Link href="/terms">Termos de Uso</Link><Link href="/privacy">Privacidade</Link></nav>
+        </footer>
+      </div>
     </main>
   );
 }

@@ -22,33 +22,34 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     sessionStorage.setItem("elite_modell_adult_consent_session", "accepted");
     localStorage.setItem("elite_modell_ageConsentAccepted", "true");
+    localStorage.setItem("elite_cookie_consent", "necessary");
   });
 });
 
-test("apresenta conversão original e validação por canal", async ({ page }) => {
+test("apresenta a experiência premium e validação por canal", async ({ page }) => {
   await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("heading", { name: "Cadastre-se grátis como acompanhante" })).toBeVisible();
-  await expect(page.getByText("Cadastro gratuito", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Perfil verificado" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ferramentas para você brilhar" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Valide seu telefone para continuar" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Quanto você pode faturar?" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Dúvidas frequentes" })).toBeVisible();
   await expect(page.locator("body")).not.toContainText("fatalmodel");
+  if (process.env.TWILIO_WHATSAPP_VERIFY_ENABLED === "true") {
+    await expect(page.getByRole("radio", { name: /WhatsApp/i }).first()).toBeVisible();
+  } else {
+    await expect(page.getByRole("radio", { name: /WhatsApp/i })).toBeDisabled();
+    await expect(page.getByText("Em breve", { exact: true })).toBeVisible();
+  }
 
-  await expect(page.getByRole("button", { name: "Continuar" })).toBeDisabled();
-  await page.getByLabel("Qual seu número de telefone?").fill("31999999999");
-  await page.getByLabel(/Ao continuar, confirmo que tenho 18 anos ou mais/).check();
-  await page.getByRole("button", { name: "Continuar" }).click();
+  await expect(page.getByRole("button", { name: /Continuar meu cadastro/ })).toBeDisabled();
+  await page.getByLabel("Seu número de telefone").fill("31999999999");
+  await page.getByLabel(/Confirmo que tenho 18 anos ou mais/).check();
+  await page.getByRole("button", { name: /Continuar meu cadastro/ }).click();
 
   await expect(
     page.getByRole("heading", { name: "Valide seu telefone para continuar" }),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: /Enviar código por SMS/ })).toBeVisible();
-  if (process.env.TWILIO_WHATSAPP_VERIFY_ENABLED === "true") {
-    await expect(page.getByRole("radio", { name: /WhatsApp/i })).toBeVisible();
-  } else {
-    await expect(page.getByRole("button", { name: /WhatsApp/i })).toHaveCount(0);
-  }
 });
 
 test("envia código profissional somente por SMS", async ({ page }) => {
@@ -62,9 +63,9 @@ test("envia código profissional somente por SMS", async ({ page }) => {
     });
   });
   await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
-  await page.getByLabel("Qual seu número de telefone?").fill("31999999999");
-  await page.getByLabel(/Ao continuar, confirmo que tenho 18 anos ou mais/).check();
-  await page.getByRole("button", { name: "Continuar" }).click();
+  await page.getByLabel("Seu número de telefone").fill("31999999999");
+  await page.getByLabel(/Confirmo que tenho 18 anos ou mais/).check();
+  await page.getByRole("button", { name: /Continuar meu cadastro/ }).click();
   await page.getByRole("button", { name: /Enviar código por SMS/ }).click();
 
   await expect(page.getByLabel("Código de 6 dígitos")).toBeVisible();
@@ -105,11 +106,11 @@ test("falha no WhatsApp oferece fallback explícito por SMS", async ({ page }) =
   });
 
   await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
-  await page.getByLabel("Qual seu número de telefone?").fill("31999999999");
+  await page.getByLabel("Seu número de telefone").fill("31999999999");
   await page.getByRole("radio", { name: /WhatsApp/i }).first().click();
   await page.getByLabel("Quero receber meu código de verificação pelo WhatsApp.").first().check();
-  await page.getByLabel(/Ao continuar, confirmo que tenho 18 anos ou mais/).check();
-  await page.getByRole("button", { name: "Continuar" }).click();
+  await page.getByLabel(/Confirmo que tenho 18 anos ou mais/).check();
+  await page.getByRole("button", { name: /Continuar meu cadastro/ }).click();
   await page.getByRole("button", { name: /Enviar código por WhatsApp/ }).click();
 
   await expect(
@@ -129,9 +130,9 @@ test("HTML inesperado da API mostra erro amigável sem quebrar a tela", async ({
     });
   });
   await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
-  await page.getByLabel("Qual seu número de telefone?").fill("31999999999");
-  await page.getByLabel(/Ao continuar, confirmo que tenho 18 anos ou mais/).check();
-  await page.getByRole("button", { name: "Continuar" }).click();
+  await page.getByLabel("Seu número de telefone").fill("31999999999");
+  await page.getByLabel(/Confirmo que tenho 18 anos ou mais/).check();
+  await page.getByRole("button", { name: /Continuar meu cadastro/ }).click();
   await page.getByRole("button", { name: /Enviar código por SMS/ }).click();
 
   await expect(page.getByText("Não foi possível enviar o código agora. Tente novamente.")).toBeVisible();
@@ -165,9 +166,9 @@ test("após validar o código abre a ativação profissional completa", async ({
   });
   await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
 
-  await page.getByLabel("Qual seu número de telefone?").fill("31999999999");
-  await page.getByLabel(/Ao continuar, confirmo que tenho 18 anos ou mais/).check();
-  await page.getByRole("button", { name: "Continuar" }).first().click();
+  await page.getByLabel("Seu número de telefone").fill("31999999999");
+  await page.getByLabel(/Confirmo que tenho 18 anos ou mais/).check();
+  await page.getByRole("button", { name: /Continuar meu cadastro/ }).click();
   await page.getByRole("button", { name: /Enviar código por SMS/ }).click();
   await page.getByLabel("Código de 6 dígitos").fill("123456");
   await page.getByRole("button", { name: "Validar e continuar" }).click();
