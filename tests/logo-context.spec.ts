@@ -34,7 +34,7 @@ test.describe("logo por contexto", () => {
       };
     });
     expect(presentation).toEqual({
-      filter: "none",
+      filter: "saturate(0.58) brightness(0.78)",
       opacity: "1",
       objectFit: "contain",
       background: "rgba(0, 0, 0, 0)",

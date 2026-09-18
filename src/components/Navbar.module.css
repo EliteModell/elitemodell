@@ -24,13 +24,24 @@
   border-bottom-color: #efe3f5;
   box-shadow: 0 8px 28px rgba(61, 42, 72, .06);
 }
-.purple .center a:hover { color: #8f1fd1; background: #faf0ff; }
-.purple .menuButton { border-color: #e1c6ef; color: #8f1fd1; background: #fcf7ff; }
-.purple .actions :global(.nav-auth-link.signup-link) { color: #fff !important; background: #b72cff !important; }
-.purple .actions :global(.nav-auth-link.login-link) { color: #8f1fd1 !important; border-color: #b72cff !important; background: #fff !important; }
-.purple .mobileMenu { border-color: #e8daf0; }
-.purple .mobileMenu > a { border-color: #f0e3f5; background: #fcf7ff; }
-.purple .menuLabel { color: #8f1fd1; }
+.purple .center a:hover { color: var(--brand-primary-hover, #8f1fd1); background: var(--brand-primary-soft, #faf0ff); }
+.purple .menuButton { border-color: var(--brand-border, #e1c6ef); color: var(--brand-primary, #8f1fd1); background: var(--brand-primary-soft, #fcf7ff); }
+.purple .actions :global(.nav-auth-link.signup-link) { color: #fff !important; background: var(--brand-primary, #b72cff) !important; }
+.purple .actions :global(.nav-auth-link.login-link) { color: var(--brand-primary, #8f1fd1) !important; border-color: var(--brand-primary, #b72cff) !important; background: #fff !important; }
+.purple .actions :global(.nav-auth-link.signup-link:hover) { background: var(--brand-primary-hover, #8f1fd1) !important; }
+.purple .actions :global(.nav-auth-link.login-link:hover) { color: var(--brand-primary-hover, #8f1fd1) !important; border-color: var(--brand-primary-hover, #8f1fd1) !important; }
+.purple .mobileMenu { border-color: var(--brand-border, #e8daf0); }
+.purple .mobileMenu > a { border-color: var(--brand-border, #f0e3f5); background: var(--brand-primary-soft, #fcf7ff); }
+.purple .menuLabel { color: var(--brand-primary, #8f1fd1); }
+.purple .menuButton:hover { border-color: var(--brand-primary, #8f1fd1); color: var(--brand-primary-hover, #8f1fd1); }
+.purple .logo { filter: var(--brand-logo-filter, none); }
+.purple .center a:focus-visible,
+.purple .menuButton:focus-visible,
+.purple .actions :global(.nav-auth-link:focus-visible),
+.purple .mobileMenu > a:focus-visible {
+  outline: 3px solid var(--brand-focus, rgba(183, 44, 255, .2));
+  outline-offset: 3px;
+}
 .inner {
   height: 100%;
   max-width: 1440px;
