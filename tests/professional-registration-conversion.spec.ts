@@ -60,6 +60,13 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("apresenta a experiência premium e validação por canal", async ({ page }) => {
+  await page.route("**/api/auth/phone/send-code", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, message: "Código enviado por SMS" }),
+    });
+  });
   await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("heading", { name: "Cadastre-se grátis como acompanhante" })).toBeVisible();
@@ -74,15 +81,15 @@ test("apresenta a experiência premium e validação por canal", async ({ page }
     await expect(page.getByText("Em breve", { exact: true })).toBeVisible();
   }
 
-  await expect(page.getByRole("button", { name: /Continuar meu cadastro/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /^Enviar código$/ })).toBeDisabled();
   await page.getByLabel("Seu número de telefone").fill("31999999999");
   await page.getByLabel(/Confirmo que tenho 18 anos ou mais/).check();
-  await page.getByRole("button", { name: /Continuar meu cadastro/ }).click();
+  await page.getByRole("button", { name: /^Enviar código$/ }).click();
 
   await expect(
     page.getByRole("heading", { name: "Valide seu telefone para continuar" }),
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: /Enviar código por SMS/ })).toBeVisible();
+  await expect(page.getByLabel("Código de 6 dígitos")).toBeVisible();
 });
 
 test("telefone permanece legível e sem overflow nos viewports críticos", async ({ page }) => {
@@ -120,6 +127,39 @@ test("telefone permanece legível e sem overflow nos viewports críticos", async
     expect(styles.caretColor).not.toBe(styles.backgroundColor);
     expect(styles.fontSize).toBeGreaterThanOrEqual(16);
 
+    if ([375, 390, 430].includes(width)) {
+      const validationSection = page.getByRole("region", { name: "Valide seu telefone para continuar" });
+      await expect(validationSection.getByRole("radio", { name: /SMS/i })).toBeVisible();
+      await expect(validationSection.getByLabel(/Confirmo que tenho 18 anos ou mais/)).toBeVisible();
+      await expect(validationSection.getByRole("button", { name: /^Enviar código$/ })).toBeVisible();
+
+      const hierarchy = await page.evaluate(() => {
+        const validation = document.querySelector<HTMLElement>('section[aria-labelledby="validation-title"]');
+        const benefits = document.querySelector<HTMLElement>('section[aria-labelledby="benefits-title"]');
+        const simulator = document.querySelector<HTMLElement>('section[aria-labelledby="simulator-title"]');
+        const checkbox = validation?.querySelector<HTMLInputElement>('input[type="checkbox"]');
+        const cta = validation?.querySelector<HTMLButtonElement>('button:not([role="radio"])');
+        return {
+          validationTop: validation?.offsetTop ?? 0,
+          validationBottom: (validation?.offsetTop ?? 0) + (validation?.offsetHeight ?? 0),
+          benefitsTop: benefits?.offsetTop ?? 0,
+          simulatorTop: simulator?.offsetTop ?? 0,
+          checkboxTop: checkbox?.getBoundingClientRect().top ?? 0,
+          ctaTop: cta?.getBoundingClientRect().top ?? 0,
+        };
+      });
+      expect(hierarchy.ctaTop).toBeGreaterThan(hierarchy.checkboxTop);
+      expect(hierarchy.benefitsTop).toBeGreaterThanOrEqual(hierarchy.validationBottom);
+      expect(hierarchy.simulatorTop).toBeGreaterThan(hierarchy.benefitsTop);
+
+      if (width === 390) {
+        await validationSection.getByLabel(/Confirmo que tenho 18 anos ou mais/).check();
+        await validationSection.screenshot({
+          path: "artifacts/visual-review/professional-registration-first-step-reorganized.png",
+        });
+      }
+    }
+
     const layout = await page.evaluate(() => {
       const back = document.querySelector<HTMLAnchorElement>('a[href="/"]');
       const logo = document.querySelector<HTMLImageElement>('a[aria-label*="Elite Modell"] img');
@@ -130,6 +170,8 @@ test("telefone permanece legível e sem overflow nos viewports críticos", async
         backFontSize: back ? Number.parseFloat(getComputedStyle(back).fontSize) : 0,
         backRight: back?.getBoundingClientRect().right ?? 0,
         logoOpacity: logo ? Number.parseFloat(getComputedStyle(logo).opacity) : 0,
+        logoFilter: logo ? getComputedStyle(logo).filter : "missing",
+        decorativeHeroIcon: Boolean(document.querySelector('[aria-labelledby="professional-register-title"] > span svg')),
       };
     });
     expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth + 1);
@@ -137,6 +179,8 @@ test("telefone permanece legível e sem overflow nos viewports críticos", async
     expect(layout.backFontSize).toBeGreaterThanOrEqual(11);
     expect(layout.backRight).toBeLessThanOrEqual(width);
     expect(layout.logoOpacity).toBe(1);
+    expect(layout.logoFilter).toBe("none");
+    expect(layout.decorativeHeroIcon).toBe(false);
   }
 
   const hasScopedAutofillProtection = await page.evaluate(() => {
@@ -224,8 +268,7 @@ test("envia código profissional somente por SMS", async ({ page }) => {
   await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
   await page.getByLabel("Seu número de telefone").fill("31999999999");
   await page.getByLabel(/Confirmo que tenho 18 anos ou mais/).check();
-  await page.getByRole("button", { name: /Continuar meu cadastro/ }).click();
-  await page.getByRole("button", { name: /Enviar código por SMS/ }).click();
+  await page.getByRole("button", { name: /^Enviar código$/ }).click();
 
   const codeInput = page.getByLabel("Código de 6 dígitos");
   await expect(codeInput).toBeVisible();
@@ -289,8 +332,7 @@ test("falha no WhatsApp oferece fallback explícito por SMS", async ({ page }) =
   await page.getByRole("radio", { name: /WhatsApp/i }).first().click();
   await page.getByLabel("Quero receber meu código de verificação pelo WhatsApp.").first().check();
   await page.getByLabel(/Confirmo que tenho 18 anos ou mais/).check();
-  await page.getByRole("button", { name: /Continuar meu cadastro/ }).click();
-  await page.getByRole("button", { name: /Enviar código por WhatsApp/ }).click();
+  await page.getByRole("button", { name: /^Enviar código$/ }).click();
 
   await expect(
     page.getByRole("region", { name: /Valide seu telefone para continuar/ }).getByRole("alert"),
@@ -311,8 +353,7 @@ test("HTML inesperado da API mostra erro amigável sem quebrar a tela", async ({
   await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
   await page.getByLabel("Seu número de telefone").fill("31999999999");
   await page.getByLabel(/Confirmo que tenho 18 anos ou mais/).check();
-  await page.getByRole("button", { name: /Continuar meu cadastro/ }).click();
-  await page.getByRole("button", { name: /Enviar código por SMS/ }).click();
+  await page.getByRole("button", { name: /^Enviar código$/ }).click();
 
   await expect(page.getByText("Não foi possível enviar o código agora. Tente novamente.")).toBeVisible();
   await expect(page.getByLabel("Código de 6 dígitos")).toHaveCount(0);
@@ -347,8 +388,7 @@ test("após validar o código abre a ativação profissional completa", async ({
 
   await page.getByLabel("Seu número de telefone").fill("31999999999");
   await page.getByLabel(/Confirmo que tenho 18 anos ou mais/).check();
-  await page.getByRole("button", { name: /Continuar meu cadastro/ }).click();
-  await page.getByRole("button", { name: /Enviar código por SMS/ }).click();
+  await page.getByRole("button", { name: /^Enviar código$/ }).click();
   await page.getByLabel("Código de 6 dígitos").fill("123456");
   await page.getByRole("button", { name: "Validar e continuar" }).click();
 

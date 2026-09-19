@@ -15,7 +15,6 @@ import {
   MessageCircle,
   Phone,
   SlidersHorizontal,
-  Sparkles,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
@@ -212,7 +211,7 @@ export function ProfessionalRegistrationFlow({
     }));
   }
 
-  function continueToVerification() {
+  async function continueToVerification() {
     if (!isValidBrazilianPhone(phone)) {
       toast.error("Informe um telefone brasileiro válido com DDD.");
       return;
@@ -225,6 +224,7 @@ export function ProfessionalRegistrationFlow({
 
     persistRegistrationData();
     setStage("verification");
+    await sendCode();
   }
 
   async function sendCode(channelOverride?: VerificationChannel) {
@@ -375,7 +375,11 @@ export function ProfessionalRegistrationFlow({
             Voltar
           </Link>
           <Link className={styles.brand} href="/" aria-label="Elite Modell - página inicial">
-            <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={2172} height={724} priority />
+            <Image className={styles.brandSymbol} src="/brand/elite-modell-symbol.png" alt="" width={1536} height={1536} priority />
+            <span className={styles.brandWords} aria-hidden="true">
+              <strong>ELITE</strong>
+              <small>— MODELL —</small>
+            </span>
           </Link>
           <Link className={styles.loginLink} href="/login">Já tenho conta</Link>
         </header>
@@ -391,7 +395,7 @@ export function ProfessionalRegistrationFlow({
         {stage === "phone" ? (
           <div className={styles.phoneStage}>
             <section className={styles.hero} aria-labelledby="professional-register-title">
-              <span className={styles.eyebrow}><Sparkles size={17} aria-hidden="true" /> Liberdade • discrição • segurança</span>
+              <span className={styles.eyebrow}>Liberdade • discrição • segurança</span>
               <h1 id="professional-register-title" ref={headingRef} tabIndex={-1}>
                 Cadastre-se grátis <em>como acompanhante</em>
               </h1>
@@ -400,23 +404,6 @@ export function ProfessionalRegistrationFlow({
                 <div><b>1</b><span><strong>Telefone</strong><small>Informe seu número</small></span></div>
                 <div><b>2</b><span><strong>Código</strong><small>Confirme sua identidade</small></span></div>
                 <div><b>3</b><span><strong>Cadastro completo</strong><small>Crie seu perfil</small></span></div>
-              </div>
-            </section>
-
-            <section className={styles.benefitsSection} aria-labelledby="benefits-title">
-              <div className={styles.sectionHeading}>
-                <span>Seu perfil do seu jeito</span>
-                <h2 id="benefits-title">Ferramentas para você brilhar</h2>
-                <p>Tenha autonomia, organize sua rotina e apresente seu trabalho com clareza.</p>
-              </div>
-              <div className={styles.benefitGrid}>
-                {benefits.map(({ title, description, icon: Icon }) => (
-                  <article key={title} className={styles.benefitCard}>
-                    <span><Icon size={23} aria-hidden="true" /></span>
-                    <h3>{title}</h3>
-                    <p>{description}</p>
-                  </article>
-                ))}
               </div>
             </section>
 
@@ -443,41 +430,74 @@ export function ProfessionalRegistrationFlow({
                 <p id="phone-help" className={styles.inputHelp}>Use um número brasileiro com DDD.</p>
               </div>
 
-              <fieldset className={styles.deliveryChoice}>
-                <legend>Como deseja receber?</legend>
-                <div className={styles.deliveryOptions}>
-                  <button
-                    className={channel === "sms" ? styles.deliveryOptionSelected : undefined}
-                    type="button"
-                    role="radio"
-                    aria-checked={channel === "sms"}
-                    onClick={() => { setChannel("sms"); setSmsFallbackAvailable(false); }}
-                  >
-                    <span className={styles.channelIcon}><MessageCircle size={25} aria-hidden="true" /></span>
-                    <span><strong>Receber código via SMS</strong><small>Receba uma mensagem de texto no seu celular.</small></span>
-                    <ChevronRight size={22} aria-hidden="true" />
-                  </button>
-                  <button
-                    className={channel === "whatsapp" ? styles.deliveryOptionSelected : undefined}
-                    type="button"
-                    role="radio"
-                    aria-checked={channel === "whatsapp"}
-                    disabled={!whatsAppVerifyEnabled}
-                    onClick={() => { setChannel("whatsapp"); setSmsFallbackAvailable(false); }}
-                  >
-                    <span className={styles.channelIcon}><MessageCircle size={25} aria-hidden="true" /></span>
-                    <span><strong>Receber código via WhatsApp</strong><small>Receba seu código pelo WhatsApp.</small></span>
-                    {!whatsAppVerifyEnabled && <em>Em breve</em>}
-                    {whatsAppVerifyEnabled && <ChevronRight size={22} aria-hidden="true" />}
-                  </button>
-                </div>
-                {channel === "whatsapp" && whatsAppVerifyEnabled && (
-                  <label className={styles.whatsAppConsent}>
-                    <input type="checkbox" checked={whatsAppConsent} onChange={(event) => setWhatsAppConsent(event.target.checked)} />
-                    <span>Quero receber meu código de verificação pelo WhatsApp.</span>
+              <div className={styles.validationControls}>
+                <fieldset className={styles.deliveryChoice}>
+                  <legend>Como deseja receber?</legend>
+                  <div className={styles.deliveryOptions}>
+                    <button
+                      className={channel === "sms" ? styles.deliveryOptionSelected : undefined}
+                      type="button"
+                      role="radio"
+                      aria-checked={channel === "sms"}
+                      onClick={() => { setChannel("sms"); setSmsFallbackAvailable(false); }}
+                    >
+                      <span className={styles.channelIcon}><MessageCircle size={25} aria-hidden="true" /></span>
+                      <span><strong>Receber código via SMS</strong><small>Receba uma mensagem de texto no seu celular.</small></span>
+                      <ChevronRight size={22} aria-hidden="true" />
+                    </button>
+                    <button
+                      className={channel === "whatsapp" ? styles.deliveryOptionSelected : undefined}
+                      type="button"
+                      role="radio"
+                      aria-checked={channel === "whatsapp"}
+                      disabled={!whatsAppVerifyEnabled}
+                      onClick={() => { setChannel("whatsapp"); setSmsFallbackAvailable(false); }}
+                    >
+                      <span className={styles.channelIcon}><MessageCircle size={25} aria-hidden="true" /></span>
+                      <span><strong>Receber código via WhatsApp</strong><small>Receba seu código pelo WhatsApp.</small></span>
+                      {!whatsAppVerifyEnabled && <em>Em breve</em>}
+                      {whatsAppVerifyEnabled && <ChevronRight size={22} aria-hidden="true" />}
+                    </button>
+                  </div>
+                  {channel === "whatsapp" && whatsAppVerifyEnabled && (
+                    <label className={styles.whatsAppConsent}>
+                      <input type="checkbox" checked={whatsAppConsent} onChange={(event) => setWhatsAppConsent(event.target.checked)} />
+                      <span>Quero receber meu código de verificação pelo WhatsApp.</span>
+                    </label>
+                  )}
+                </fieldset>
+
+                <div className={styles.consentList}>
+                  <label className={styles.checkRow}>
+                    <input type="checkbox" checked={mandatoryConsentsAccepted} onChange={(event) => setMandatoryConsent(event.target.checked)} />
+                    <span>Confirmo que tenho 18 anos ou mais, que o perfil será criado para mim e concordo com os <Link href="/terms" target="_blank">Termos de Uso</Link> e a <Link href="/privacy" target="_blank">Política de Privacidade</Link>.</span>
                   </label>
-                )}
-              </fieldset>
+                </div>
+
+                <div className={styles.continueArea}>
+                  <button className={styles.primaryButton} type="button" disabled={!canContinueFromPhone || sendingCode} onClick={continueToVerification}>
+                    {sendingCode ? "Enviando código..." : "Enviar código"} <ChevronRight size={21} aria-hidden="true" />
+                  </button>
+                  <span><LockKeyhole size={14} aria-hidden="true" /> Seus dados estão protegidos e em total sigilo.</span>
+                </div>
+              </div>
+            </section>
+
+            <section className={styles.benefitsSection} aria-labelledby="benefits-title">
+              <div className={styles.sectionHeading}>
+                <span>Seu perfil do seu jeito</span>
+                <h2 id="benefits-title">Ferramentas para você brilhar</h2>
+                <p>Tenha autonomia, organize sua rotina e apresente seu trabalho com clareza.</p>
+              </div>
+              <div className={styles.benefitGrid}>
+                {benefits.map(({ title, description, icon: Icon }) => (
+                  <article key={title} className={styles.benefitCard}>
+                    <span><Icon size={23} aria-hidden="true" /></span>
+                    <h3>{title}</h3>
+                    <p>{description}</p>
+                  </article>
+                ))}
+              </div>
             </section>
 
             <section className={styles.simulatorSection} aria-labelledby="simulator-title">
@@ -508,19 +528,6 @@ export function ProfessionalRegistrationFlow({
               </div>
             </section>
 
-            <div className={styles.consentList}>
-              <label className={styles.checkRow}>
-                <input type="checkbox" checked={mandatoryConsentsAccepted} onChange={(event) => setMandatoryConsent(event.target.checked)} />
-                <span>Confirmo que tenho 18 anos ou mais, que o perfil será criado para mim e concordo com os <Link href="/terms" target="_blank">Termos de Uso</Link> e a <Link href="/privacy" target="_blank">Política de Privacidade</Link>.</span>
-              </label>
-            </div>
-
-            <div className={styles.continueArea}>
-              <button className={styles.primaryButton} type="button" disabled={!canContinueFromPhone} onClick={continueToVerification}>
-                Continuar meu cadastro <ChevronRight size={21} aria-hidden="true" />
-              </button>
-              <span><LockKeyhole size={14} aria-hidden="true" /> Seus dados estão protegidos e em total sigilo.</span>
-            </div>
           </div>
         ) : (
           <section className={styles.verificationStage} aria-labelledby="verification-title">
