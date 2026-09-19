@@ -5,6 +5,39 @@ import {
   verifyPendingProfessionalPhoneToken,
 } from "../src/lib/phone-otp";
 
+const MOBILE_WIDTHS = [320, 360, 375, 390, 393, 414, 430, 768, 1024];
+
+function colorChannels(value: string) {
+  const channels = value.match(/[\d.]+/g)?.map(Number) ?? [];
+  return {
+    red: channels[0] ?? 0,
+    green: channels[1] ?? 0,
+    blue: channels[2] ?? 0,
+    alpha: channels[3] ?? 1,
+  };
+}
+
+function contrastRatio(foreground: string, background: string) {
+  const fg = colorChannels(foreground);
+  const bg = colorChannels(background);
+  const composite = [fg.red, fg.green, fg.blue].map(
+    (channel, index) => channel * fg.alpha + [bg.red, bg.green, bg.blue][index] * (1 - fg.alpha),
+  );
+  const luminance = (channels: number[]) => {
+    const linear = channels.map((channel) => {
+      const normalized = channel / 255;
+      return normalized <= 0.03928
+        ? normalized / 12.92
+        : ((normalized + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+  };
+  const foregroundLuminance = luminance(composite);
+  const backgroundLuminance = luminance([bg.red, bg.green, bg.blue]);
+  return (Math.max(foregroundLuminance, backgroundLuminance) + 0.05)
+    / (Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
+}
+
 test("rota profissional pública sempre começa na landing", () => {
   expect(cadastroHrefForRole("profissional")).toBe("/cadastro/acompanhante");
 });
@@ -52,6 +85,132 @@ test("apresenta a experiência premium e validação por canal", async ({ page }
   await expect(page.getByRole("button", { name: /Enviar código por SMS/ })).toBeVisible();
 });
 
+test("telefone permanece legível e sem overflow nos viewports críticos", async ({ page }) => {
+  for (const width of MOBILE_WIDTHS) {
+    await page.setViewportSize({ width, height: width <= 430 ? 844 : 900 });
+    await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
+
+    const phoneInput = page.getByLabel("Seu número de telefone");
+    await phoneInput.fill("31999999999");
+    await expect(phoneInput).toHaveValue("(31) 99999-9999");
+    await expect(phoneInput).toHaveAttribute("type", "tel");
+    await expect(phoneInput).toHaveAttribute("inputmode", "numeric");
+    await expect(phoneInput).toHaveAttribute("autocomplete", "tel");
+
+    const styles = await phoneInput.evaluate((element) => {
+      const input = getComputedStyle(element);
+      const placeholder = getComputedStyle(element, "::placeholder");
+      const shell = getComputedStyle(element.parentElement as HTMLElement);
+      const prefix = getComputedStyle(element.previousElementSibling as HTMLElement);
+      return {
+        color: input.color,
+        textFillColor: input.webkitTextFillColor,
+        caretColor: input.caretColor,
+        fontSize: Number.parseFloat(input.fontSize),
+        placeholderColor: placeholder.color,
+        backgroundColor: shell.backgroundColor,
+        prefixColor: prefix.color,
+      };
+    });
+
+    expect(contrastRatio(styles.color, styles.backgroundColor)).toBeGreaterThanOrEqual(7);
+    expect(contrastRatio(styles.textFillColor, styles.backgroundColor)).toBeGreaterThanOrEqual(7);
+    expect(contrastRatio(styles.placeholderColor, styles.backgroundColor)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(styles.prefixColor, styles.backgroundColor)).toBeGreaterThanOrEqual(7);
+    expect(styles.caretColor).not.toBe(styles.backgroundColor);
+    expect(styles.fontSize).toBeGreaterThanOrEqual(16);
+
+    const layout = await page.evaluate(() => {
+      const back = document.querySelector<HTMLAnchorElement>('a[href="/"]');
+      const logo = document.querySelector<HTMLImageElement>('a[aria-label*="Elite Modell"] img');
+      return {
+        clientWidth: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        backText: back?.textContent?.trim(),
+        backFontSize: back ? Number.parseFloat(getComputedStyle(back).fontSize) : 0,
+        backRight: back?.getBoundingClientRect().right ?? 0,
+        logoOpacity: logo ? Number.parseFloat(getComputedStyle(logo).opacity) : 0,
+      };
+    });
+    expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth + 1);
+    expect(layout.backText).toBe("Voltar");
+    expect(layout.backFontSize).toBeGreaterThanOrEqual(11);
+    expect(layout.backRight).toBeLessThanOrEqual(width);
+    expect(layout.logoOpacity).toBe(1);
+  }
+
+  const hasScopedAutofillProtection = await page.evaluate(() => {
+    const rules = Array.from(document.styleSheets).flatMap((sheet) => {
+      try {
+        return Array.from(sheet.cssRules, (rule) => rule.cssText);
+      } catch {
+        return [];
+      }
+    });
+    return rules.some(
+      (rule) => rule.includes("input:-webkit-autofill") && rule.includes("-webkit-text-fill-color"),
+    );
+  });
+  expect(hasScopedAutofillProtection).toBe(true);
+});
+
+test("formulários públicos principais mantêm texto legível no mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const routes = ["/login?role=cliente", "/esqueci-senha", "/cadastro?tipo=cliente"];
+
+  for (const route of routes) {
+    await page.goto(route, { waitUntil: "domcontentloaded" });
+    const inputs = page.locator(
+      'input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"])',
+    );
+    await expect(
+      inputs.first(),
+      `A rota ${route} deve renderizar ao menos um campo textual visível`,
+    ).toBeVisible();
+    const count = await inputs.count();
+    let visibleCount = 0;
+
+    for (let index = 0; index < count; index += 1) {
+      const input = inputs.nth(index);
+      if (!(await input.isVisible())) continue;
+      visibleCount += 1;
+      const styles = await input.evaluate((element) => {
+        const inputStyle = getComputedStyle(element);
+        const placeholder = getComputedStyle(element, "::placeholder");
+        let backgroundElement: Element | null = element;
+        let backgroundColor = inputStyle.backgroundColor;
+        while (backgroundElement?.parentElement && colorChannelsForBrowser(backgroundColor).alpha < 0.9) {
+          backgroundElement = backgroundElement.parentElement;
+          backgroundColor = getComputedStyle(backgroundElement).backgroundColor;
+        }
+        return {
+          color: inputStyle.color,
+          textFillColor: inputStyle.webkitTextFillColor,
+          fontSize: Number.parseFloat(inputStyle.fontSize),
+          backgroundColor,
+          placeholder: element.getAttribute("placeholder") ? placeholder.color : null,
+        };
+
+        function colorChannelsForBrowser(value: string) {
+          const channels = value.match(/[\d.]+/g)?.map(Number) ?? [];
+          return { alpha: channels[3] ?? (channels.length >= 3 ? 1 : 0) };
+        }
+      });
+      expect(styles.fontSize, `${route}, campo ${index}`).toBeGreaterThanOrEqual(16);
+      expect(contrastRatio(styles.color, styles.backgroundColor), `${route}, campo ${index}`).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(styles.textFillColor, styles.backgroundColor), `${route}, campo ${index}`).toBeGreaterThanOrEqual(4.5);
+      if (styles.placeholder) {
+        expect(contrastRatio(styles.placeholder, styles.backgroundColor), `${route}, placeholder ${index}`).toBeGreaterThanOrEqual(4.5);
+      }
+
+      await input.focus();
+      const focusedColor = await input.evaluate((element) => getComputedStyle(element).color);
+      expect(contrastRatio(focusedColor, styles.backgroundColor), `${route}, foco ${index}`).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(visibleCount, `Nenhum campo textual visível em ${route}`).toBeGreaterThan(0);
+  }
+});
+
 test("envia código profissional somente por SMS", async ({ page }) => {
   let payload: Record<string, unknown> | undefined;
   await page.route("**/api/auth/phone/send-code", async (route) => {
@@ -68,7 +227,27 @@ test("envia código profissional somente por SMS", async ({ page }) => {
   await page.getByRole("button", { name: /Continuar meu cadastro/ }).click();
   await page.getByRole("button", { name: /Enviar código por SMS/ }).click();
 
-  await expect(page.getByLabel("Código de 6 dígitos")).toBeVisible();
+  const codeInput = page.getByLabel("Código de 6 dígitos");
+  await expect(codeInput).toBeVisible();
+  await expect(codeInput).toHaveAttribute("inputmode", "numeric");
+  await expect(codeInput).toHaveAttribute("autocomplete", "one-time-code");
+  await expect(codeInput).toHaveAttribute("maxlength", "6");
+  await codeInput.fill("123456");
+  await expect(codeInput).toHaveValue("123456");
+  const codeStyles = await codeInput.evaluate((element) => {
+    const input = getComputedStyle(element);
+    return {
+      color: input.color,
+      textFillColor: input.webkitTextFillColor,
+      caretColor: input.caretColor,
+      backgroundColor: input.backgroundColor,
+      fontSize: Number.parseFloat(input.fontSize),
+    };
+  });
+  expect(contrastRatio(codeStyles.color, codeStyles.backgroundColor)).toBeGreaterThanOrEqual(7);
+  expect(contrastRatio(codeStyles.textFillColor, codeStyles.backgroundColor)).toBeGreaterThanOrEqual(7);
+  expect(codeStyles.caretColor).not.toBe(codeStyles.backgroundColor);
+  expect(codeStyles.fontSize).toBeGreaterThanOrEqual(16);
   expect(payload).toMatchObject({
     phone: "31999999999",
     accountType: "model",

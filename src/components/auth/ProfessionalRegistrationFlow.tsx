@@ -431,7 +431,8 @@ export function ProfessionalRegistrationFlow({
                   <input
                     id="professional-phone"
                     type="tel"
-                    inputMode="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     autoComplete="tel"
                     placeholder="(11) 99999-9999"
                     value={formatPhone(phone)}

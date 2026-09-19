@@ -70,6 +70,15 @@ select:disabled {
   -webkit-text-fill-color: #625c65;
 }
 
+/* Evita o zoom automático do Safari iOS sem alterar checkboxes, sliders ou uploads. */
+@media (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 ::selection { background: rgba(183, 44, 255, .24); color: #141212; }
 ::-webkit-scrollbar-track { background: #f5f1f2; }
 ::-webkit-scrollbar-thumb { background: #d9bcc1; }

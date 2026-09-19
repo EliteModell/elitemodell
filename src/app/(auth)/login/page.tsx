@@ -700,6 +700,7 @@ const loginPageStyles = (
         .gold-line { display: none; }
         .auth-form label > span { color: #5c5464; letter-spacing: 0; text-transform: none; }
         .auth-form input { border-color: #e1a6ff !important; background: #fff !important; color: #141212 !important; }
+        .auth-form input::placeholder { color: #6f6875; opacity: 1; }
         .security-box { border-color: #e1a6ff; border-left-color: #b72cff; background: #fcf7ff; color: #514a59; }
         .primary-auth-button { background: #b72cff; color: #fff; box-shadow: 0 10px 24px rgba(183, 44, 255,.2); }
         .signup-block a { color: #8f1fd1; border-color: #e1a6ff; }
