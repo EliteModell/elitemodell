@@ -54,19 +54,19 @@ export default function NavbarSessionControls({
       <>
         {status === "loading" ? null : hasValidSession ? (
           <>
-            <Link href={accountHref} onClick={onNavigate} style={{ padding: "10px 14px", borderRadius: 8, color: "#b72cff", textDecoration: "none", fontSize: 14, border: "1px solid rgba(183, 44, 255,0.2)" }}>
+            <Link className={`elite-button ${incompleteProfessional ? "elite-button--resume" : "elite-button--outline"}`} href={accountHref} onClick={onNavigate} style={{ padding: "10px 14px", fontSize: 14 }}>
               Minha área
             </Link>
-            <button type="button" onClick={handleSignOut} style={{ padding: "10px 14px", borderRadius: 8, color: "#b72cff", background: "transparent", fontSize: 14, border: "1px solid rgba(183, 44, 255,0.2)", textAlign: "left" }}>
+            <button className="elite-button elite-button--outline" type="button" onClick={handleSignOut} style={{ padding: "10px 14px", fontSize: 14, textAlign: "left" }}>
               Sair
             </button>
           </>
         ) : showGuestActions ? (
           <>
-            <button type="button" onClick={onLoginChoice} style={{ padding: "10px 14px", borderRadius: 8, color: "#b72cff", background: "transparent", textDecoration: "none", fontSize: 14, border: "1px solid rgba(183, 44, 255,0.2)", textAlign: "left" }}>
+            <button className="elite-button elite-button--outline" type="button" onClick={onLoginChoice} style={{ padding: "10px 14px", fontSize: 14, textAlign: "left" }}>
               Entrar
             </button>
-            <button type="button" onClick={onRegisterChoice} style={{ padding: "10px 14px", borderRadius: 8, background: "#b72cff", color: "#080704", textDecoration: "none", fontSize: 14, fontWeight: 800, textAlign: "center", border: 0 }}>
+            <button className="elite-button elite-button--primary" type="button" onClick={onRegisterChoice} style={{ padding: "10px 14px", fontSize: 14, textAlign: "center" }}>
               Cadastrar
             </button>
           </>
@@ -82,10 +82,10 @@ export default function NavbarSessionControls({
   if (hasValidSession) {
     return (
       <>
-        <Link className="nav-auth-link" href={accountHref} style={{ padding: "8px 18px", borderRadius: 8, color: "#b8b1a6", textDecoration: "none", fontSize: 14, fontWeight: 500, border: "1px solid rgba(183, 44, 255,0.2)" }}>
+        <Link className={`nav-auth-link elite-button ${incompleteProfessional ? "elite-button--resume" : "elite-button--outline"}`} href={accountHref} style={{ padding: "8px 18px", fontSize: 14 }}>
           {incompleteProfessional ? "Continuar cadastro" : session.user?.name?.split(" ")[0] ?? "Explorar"}
         </Link>
-        <button className="nav-auth-link" onClick={handleSignOut} style={{ padding: "8px 18px", borderRadius: 8, background: "transparent", border: "1px solid rgba(183, 44, 255,0.3)", color: "#b72cff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+        <button className="nav-auth-link elite-button elite-button--outline" onClick={handleSignOut} style={{ padding: "8px 18px", fontSize: 14, cursor: "pointer" }}>
           Sair
         </button>
       </>

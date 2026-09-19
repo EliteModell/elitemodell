@@ -342,7 +342,7 @@ function FaceCapture({
   useEffect(() => () => stopCamera(), []);
 
   return (
-    <div style={{ background: "#080808", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: 14, marginBottom: 18 }}>
+    <div className="model-info-panel" style={{ background: "#080808", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: 14, marginBottom: 18 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
         <div>
           <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 800, color: "#fcf7ff" }}>Captura pela câmera</p>
@@ -1481,7 +1481,7 @@ export default function ProfissionalNovoPage() {
         <div>
           <Section title="Verificação facial" desc="Para proteger a segurança da plataforma, realizamos uma validação facial para confirmar autenticidade, maioridade e evitar perfis falsos.">
 
-            <div style={{ background: "#080808", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "16px", marginBottom: 20 }}>
+            <div className="model-info-panel" style={{ background: "#080808", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "16px", marginBottom: 20 }}>
               <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#fcf7ff" }}>Validação facial segura</p>
               <p style={{ margin: "0 0 14px", fontSize: 12, color: "#b4adb0", lineHeight: 1.6 }}>
                 O processo é feito em ambiente protegido e leva poucos minutos. Após o envio, seu cadastro permanece em análise até a revisão final da equipe.
@@ -1520,7 +1520,7 @@ export default function ProfissionalNovoPage() {
             </div>
 
             {form.verificationUrl && form.verificationType === "biometria" && (
-              <div style={{ marginTop: 8, padding: "10px 14px", background: "#080808", border: `1px solid ${GOLD_MID}`, borderRadius: 8, fontSize: 12, color: GOLD }}>
+              <div className="model-status-panel" style={{ marginTop: 8, padding: "10px 14px", background: "#080808", border: `1px solid ${GOLD_MID}`, borderRadius: 8, fontSize: 12, color: GOLD }}>
                 {form.kycProvider === "DIDIT" ? "Verificação Didit iniciada" : "Verificação facial iniciada"}
               </div>
             )}
@@ -1546,7 +1546,7 @@ export default function ProfissionalNovoPage() {
                 ["Verificação", form.kycSessionId ? "✓ Concluída" : "Não iniciada"],
                 ["WhatsApp", form.whatsapp || "—"],
               ].map(([label, value]) => (
-                <div key={label} style={{ background: "#080808", border: `1px solid ${GOLD_DIM}`, borderRadius: 8, padding: "10px 12px" }}>
+                <div className="model-summary-tile" key={label} style={{ background: "#080808", border: `1px solid ${GOLD_DIM}`, borderRadius: 8, padding: "10px 12px" }}>
                   <div style={{ fontSize: 10, color: "#aaa0b2", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>{label}</div>
                   <div style={{ fontSize: 13, color: String(value).startsWith("✓") ? "#22c55e" : "#fcf7ff", fontWeight: String(value).startsWith("✓") ? 700 : 400 }}>{value}</div>
                 </div>
@@ -2035,6 +2035,163 @@ export default function ProfissionalNovoPage() {
             margin: 28px -16px calc(-144px - env(safe-area-inset-bottom)) !important;
             transform: none;
           }
+        }
+
+        /* Tema claro oficial do onboarding. Mantido por último para impedir
+           que estilos escuros legados disputem com os tokens globais. */
+        .model-flow-page {
+          --flow-brand: var(--brand-primary, #7d179f);
+          --flow-brand-hover: var(--brand-primary-hover, #651080);
+          --flow-soft: var(--brand-primary-soft, #f8eaff);
+          --flow-page: var(--surface-light, #f8f7fb);
+          --flow-card: var(--surface-card-light, #fff);
+          --flow-text: var(--text-on-light, #141212);
+          --flow-muted: var(--text-muted-on-light, #625c68);
+          --flow-placeholder: var(--input-placeholder-light, #6f6875);
+          --flow-border: var(--border-light, #d8c9df);
+          background: radial-gradient(circle at 16% 8%, rgba(183,44,255,.09), transparent 31%), var(--flow-page) !important;
+          color: var(--flow-text) !important;
+        }
+        .model-flow-page h1,
+        .model-flow-page h2,
+        .model-flow-page h3,
+        .model-flow-page strong { color: var(--flow-text) !important; }
+        .model-flow-page p { color: var(--flow-muted) !important; }
+        .model-flow-page label,
+        .model-flow-page [style*="uppercase"] { color: var(--flow-brand) !important; }
+        .model-flow-header,
+        .model-progress-card,
+        .model-step-content,
+        .model-info-panel,
+        .model-status-panel,
+        .model-summary-tile {
+          border-color: var(--flow-border) !important;
+          background: var(--flow-card) !important;
+          color: var(--flow-text) !important;
+          box-shadow: 0 16px 42px rgba(59,31,83,.09) !important;
+        }
+        .model-flow-header button {
+          border-color: var(--flow-border) !important;
+          background: var(--flow-card) !important;
+          color: var(--flow-brand) !important;
+          box-shadow: none !important;
+        }
+        .model-email-warning {
+          border-color: #c59bd8 !important;
+          background: var(--flow-soft) !important;
+          color: var(--flow-text) !important;
+        }
+        .model-flow-page input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="range"]),
+        .model-flow-page textarea,
+        .model-flow-page select,
+        .whatsapp-field,
+        .instagram-field,
+        .money-field,
+        .birth-date-confirmed {
+          border-color: var(--flow-border) !important;
+          background: var(--flow-card) !important;
+          color: var(--flow-text) !important;
+          -webkit-text-fill-color: var(--flow-text) !important;
+          color-scheme: light;
+          box-shadow: none !important;
+        }
+        .model-flow-page input::placeholder,
+        .model-flow-page textarea::placeholder,
+        .money-field input::placeholder {
+          color: var(--flow-placeholder) !important;
+          -webkit-text-fill-color: var(--flow-placeholder) !important;
+          opacity: 1 !important;
+        }
+        .model-flow-page input:-webkit-autofill,
+        .model-flow-page input:-webkit-autofill:hover,
+        .model-flow-page input:-webkit-autofill:focus {
+          -webkit-text-fill-color: var(--flow-text) !important;
+          box-shadow: 0 0 0 1000px var(--flow-card) inset !important;
+        }
+        .model-flow-page input:focus,
+        .model-flow-page textarea:focus,
+        .model-flow-page select:focus,
+        .whatsapp-field:focus-within,
+        .instagram-field:focus-within,
+        .money-field:focus-within {
+          border-color: var(--flow-brand) !important;
+          box-shadow: 0 0 0 4px rgba(125,23,159,.14) !important;
+        }
+        .model-tag,
+        .model-category-option {
+          border-color: var(--flow-border) !important;
+          background: var(--flow-card) !important;
+          color: var(--flow-text) !important;
+          box-shadow: none !important;
+        }
+        .model-tag[data-active="true"],
+        .model-category-option[data-selected="true"] {
+          border-color: var(--flow-brand) !important;
+          background: var(--flow-brand) !important;
+          color: #fff !important;
+          box-shadow: 0 10px 24px rgba(125,23,159,.22) !important;
+        }
+        .model-flow-page .model-step-content .model-tag[data-active="false"],
+        .model-flow-page .model-step-content .model-chip-group button:not([data-active="true"]) {
+          border-color: var(--flow-border) !important;
+          background: var(--flow-card) !important;
+          color: var(--flow-text) !important;
+        }
+        .model-info-panel [style*="color: rgb(252, 247, 255)"],
+        .model-info-panel [style*="color: #fcf7ff"],
+        .model-summary-tile [style*="color: rgb(252, 247, 255)"],
+        .model-summary-tile [style*="color: #fcf7ff"] {
+          color: var(--flow-text) !important;
+        }
+        .model-info-panel [style*="color: rgb(180, 173, 176)"],
+        .model-info-panel [style*="color: #b4adb0"],
+        .model-summary-tile [style*="color: rgb(170, 160, 178)"],
+        .model-summary-tile [style*="color: #aaa0b2"],
+        .model-summary-tile [style*="color: rgb(180, 173, 176)"],
+        .model-summary-tile [style*="color: #b4adb0"] {
+          color: var(--flow-muted) !important;
+        }
+        .model-summary-tile [style*="color: rgb(34, 197, 94)"],
+        .model-summary-tile [style*="color: #22c55e"] {
+          color: #17733b !important;
+        }
+        .model-flow-page .model-summary-tile > div:last-child {
+          color: var(--flow-text) !important;
+        }
+        .model-step-bubbles button {
+          border: 1px solid var(--flow-border) !important;
+          background: var(--flow-card) !important;
+          color: var(--flow-muted) !important;
+        }
+        .model-step-bubbles > div[data-current="true"] button,
+        .model-step-bubbles button:not(:disabled) {
+          border-color: var(--flow-brand) !important;
+          background: var(--flow-brand) !important;
+          color: #fff !important;
+        }
+        .model-step-bubbles span { color: var(--flow-muted) !important; }
+        .model-step-bubbles > div[data-current="true"] span { color: var(--flow-brand) !important; }
+        .model-step-actions {
+          border-top-color: var(--flow-border) !important;
+          background: rgba(255,255,255,.97) !important;
+          box-shadow: 0 -12px 34px rgba(59,31,83,.1);
+        }
+        .model-step-actions button:first-child {
+          border-color: var(--flow-border) !important;
+          background: var(--flow-card) !important;
+          color: #4e4652 !important;
+        }
+        .model-step-actions button:last-child {
+          background: var(--flow-brand) !important;
+          color: #fff !important;
+          box-shadow: 0 12px 30px rgba(125,23,159,.23) !important;
+        }
+        .model-step-actions button:disabled {
+          border-color: #cfc6d2 !important;
+          background: #e9e4eb !important;
+          color: #5f5962 !important;
+          opacity: 1 !important;
+          box-shadow: none !important;
         }
       `}</style>
     </div>

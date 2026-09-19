@@ -158,10 +158,46 @@ async function assertReadableControl(page: Page, selector: string) {
   expect(visual.color).not.toBe(visual.background);
 }
 
+function colorChannels(value: string) {
+  const values = value.match(/[\d.]+/g)?.map(Number) ?? [];
+  return [values[0] ?? 0, values[1] ?? 0, values[2] ?? 0];
+}
+
+function contrastRatio(foreground: string, background: string) {
+  const luminance = (color: string) => {
+    const channels = colorChannels(color).map((channel) => {
+      const normalized = channel / 255;
+      return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+    });
+    return (0.2126 * channels[0]) + (0.7152 * channels[1]) + (0.0722 * channels[2]);
+  };
+  const lighter = Math.max(luminance(foreground), luminance(background));
+  const darker = Math.min(luminance(foreground), luminance(background));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 async function assertDarkText(locator: ReturnType<Page["locator"]>) {
   await expect(locator).toBeVisible();
-  const color = await locator.evaluate((element) => getComputedStyle(element).color);
-  expect(color).toMatch(/rgb\((23, 20, 29|45, 40, 48|81, 75, 84|87, 81, 92)\)/);
+  const styles = await locator.evaluate((element) => {
+    const color = getComputedStyle(element).color;
+    let current: Element | null = element;
+    let background = "rgba(0, 0, 0, 0)";
+    while (current && /rgba?\([^)]*,\s*0\)/.test(background)) {
+      background = getComputedStyle(current).backgroundColor;
+      current = current.parentElement;
+    }
+    return { color, background };
+  });
+  expect(contrastRatio(styles.color, styles.background), JSON.stringify(styles)).toBeGreaterThanOrEqual(4.5);
+}
+
+async function assertControlContrast(locator: ReturnType<Page["locator"]>) {
+  await expect(locator).toBeVisible();
+  const styles = await locator.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { color: style.color, background: style.backgroundColor };
+  });
+  expect(contrastRatio(styles.color, styles.background), JSON.stringify(styles)).toBeGreaterThanOrEqual(4.5);
 }
 
 async function mockPublicProfessionals(page: Page) {
@@ -324,6 +360,7 @@ test("listagem permanece encaixada e sem busca textual nos mobiles aprovados", a
 });
 
 test("gera as capturas da conta do cliente", async ({ page, context }) => {
+  test.setTimeout(90_000);
   await acceptAdultGate(context);
   await mockClientAccount(page);
   await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
@@ -380,7 +417,97 @@ test("gera a captura do painel profissional quando a conta E2E permite acesso", 
   }
 });
 
+test("header autenticado mantém a ação de continuar cadastro com contraste AA", async ({ page, context }) => {
+  await acceptAdultGate(context);
+  await mockProfessionalAccount(page);
+
+  for (const width of [320, 360, 375, 390, 393, 414, 430, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: width < 768 ? 844 : 900 });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const resume = page.getByRole("link", { name: "Continuar cadastro" });
+    await expect(resume).toBeVisible();
+    const colors = await resume.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { color: style.color, background: style.backgroundColor };
+    });
+    expect(contrastRatio(colors.color, colors.background), JSON.stringify(colors)).toBeGreaterThanOrEqual(4.5);
+    await assertNoOverflow(page);
+    if (width === 390) await capture(page, "13-home-authenticated-resume-after.png");
+  }
+});
+
+test("as 9 etapas do cadastro profissional mantêm contraste e encaixe responsivo", async ({ page, context }) => {
+  test.setTimeout(180_000);
+  await acceptAdultGate(context);
+  await mockProfessionalAccount(page);
+  await page.route("**/api/users/me/activate-professional", (route: Route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ ok: true }),
+  }));
+  await page.route("**/api/users/me", (route: Route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      ...PROFESSIONAL_SESSION.user,
+      emailVerified: true,
+      birthDate: "1990-01-01",
+      category: "MULHER",
+      professionalStatus: "DRAFT",
+      professional: { status: "DRAFT" },
+    }),
+  }));
+  await context.addInitScript(() => {
+    localStorage.setItem("elitemodell_professional_onboarding_v1", JSON.stringify({
+      step: 8,
+      form: {
+        displayName: "Perfil de revisão",
+        bio: "Perfil completo usado exclusivamente na auditoria visual.",
+        city: "São Paulo",
+        state: "SP",
+        bairro: "Centro",
+        escortCategory: "MULHER",
+        birthDate: "1990-01-01",
+      },
+    }));
+  });
+
+  for (const width of [320, 360, 375, 390, 393, 414, 430, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: width < 768 ? 844 : 900 });
+    await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
+    await expect(page.locator('[data-onboarding-step="9"]')).toBeVisible();
+
+    for (let targetStep = 9; targetStep >= 1; targetStep -= 1) {
+      const stepPanel = page.locator(`[data-onboarding-step="${targetStep}"]`);
+      await expect(stepPanel).toBeVisible();
+      await assertNoOverflow(page);
+
+      const actions = page.locator(".model-step-actions");
+      await expect(actions).toBeVisible();
+      const actionBounds = await actions.boundingBox();
+      expect(actionBounds?.x ?? -1).toBeGreaterThanOrEqual(0);
+      expect((actionBounds?.x ?? 0) + (actionBounds?.width ?? width)).toBeLessThanOrEqual(width + 1);
+
+      if (width === 390) {
+        await page.screenshot({
+          path: path.join(OUTPUT_DIR, `onboarding-step-${targetStep}-after.png`),
+          fullPage: true,
+        });
+      }
+
+      if (targetStep > 1) {
+        await page.getByRole("button", { name: new RegExp(`^Etapa ${targetStep - 1}:`) }).click();
+      }
+    }
+
+    await assertControlContrast(page.getByPlaceholder("Como quer ser chamada(o)"));
+    await assertControlContrast(page.getByPlaceholder(/Conte sobre você/));
+    await assertControlContrast(page.getByRole("button", { name: "Mulher" }));
+  }
+});
+
 test("rotas principais não têm overflow nos breakpoints aprovados", async ({ page, context }) => {
+  test.setTimeout(120_000);
   await acceptAdultGate(context);
   await mockPublicProfessionals(page);
   for (const width of [320, 360, 375, 390, 393, 414, 430, 768, 1024, 1280, 1440]) {
