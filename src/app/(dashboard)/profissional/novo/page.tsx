@@ -973,7 +973,7 @@ export default function ProfissionalNovoPage() {
       </div>
 
       {emailVerified === false && (
-        <div style={{
+        <div className="model-email-warning" role="status" style={{
           margin: "0 0 22px",
           padding: "14px 16px",
           borderRadius: 14,
@@ -989,10 +989,10 @@ export default function ProfissionalNovoPage() {
       )}
 
       {/* ── Progresso ── */}
-      <div style={{ marginBottom: 28 }}>
+      <div className="model-progress-card" style={{ marginBottom: 28 }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
           <span style={{ fontSize: 12, color: "#968a9e", fontWeight: 600 }}>Etapa {step + 1} de {STEPS.length} — {STEPS[step]}</span>
-          <span style={{ fontSize: 12, color: GOLD, fontWeight: 700 }}>{Math.round(progress)}%</span>
+          <span aria-live="polite" style={{ fontSize: 12, color: GOLD, fontWeight: 700 }}>{Math.round(progress)}%</span>
         </div>
         <div style={{ height: 3, background: "#251f20", borderRadius: 3 }}>
           <div style={{ height: "100%", width: `${progress}%`, background: GOLD, borderRadius: 3, transition: "width 0.4s ease" }} />
@@ -1007,8 +1007,11 @@ export default function ProfissionalNovoPage() {
               style={{ flex: 1, textAlign: "center", minWidth: 48 }}
             >
               <button
+                type="button"
                 onClick={() => i < step && setStep(i)}
                 aria-current={i === step ? "step" : undefined}
+                aria-label={`Etapa ${i + 1}: ${s}${i === step ? ", atual" : i < step ? ", concluída" : ", ainda não disponível"}`}
+                disabled={i > step}
                 style={{
                   width: 28, height: 28, borderRadius: "50%", border: "none",
                   background: i <= step ? GOLD : "#141212",
@@ -1031,6 +1034,7 @@ export default function ProfissionalNovoPage() {
       {/* ══════════════════════════════════════════════
           ETAPA 1 — DADOS BÁSICOS
       ══════════════════════════════════════════════ */}
+      <div className="model-step-content" data-onboarding-step={step + 1}>
       {step === 0 && (
         <div>
           <Section title="Dados básicos" desc="Essas informações aparecem no seu perfil público.">
@@ -1068,9 +1072,12 @@ export default function ProfissionalNovoPage() {
           </Section>
 
           <Section title="Categoria *">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+            <div className="model-category-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               {CATEGORIAS.map(([val, label]) => (
                 <button key={val} type="button" onClick={() => toggleSingle("escortCategory", val)}
+                  className="model-category-option"
+                  data-selected={form.escortCategory === val}
+                  aria-pressed={form.escortCategory === val}
                   style={{
                     padding: "16px 8px", borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 14,
                     border: `2px solid ${form.escortCategory === val ? GOLD : "rgba(183, 44, 255,0.24)"}`,
@@ -1078,7 +1085,8 @@ export default function ProfissionalNovoPage() {
                     color: form.escortCategory === val ? "#ffffff" : "#b4adb0",
                     display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
                   }}>
-                  {label}
+                  <span>{label}</span>
+                  {form.escortCategory === val && <span className="model-category-check" aria-hidden="true">✓</span>}
                 </button>
               ))}
             </div>
@@ -1555,6 +1563,8 @@ export default function ProfissionalNovoPage() {
       )}
 
       {/* ── Navegação entre etapas ── */}
+      </div>
+
       <div className="model-step-actions" style={{ display: "flex", justifyContent: "space-between", marginTop: 36, paddingTop: 20, borderTop: `1px solid ${GOLD_DIM}` }}>
         <button onClick={back} disabled={step === 0}
           style={{ padding: "12px 24px", background: "transparent", border: `1px solid ${step === 0 ? "#251f20" : GOLD_MID}`, borderRadius: 10, color: step === 0 ? "#676064" : GOLD, fontSize: 14, cursor: step === 0 ? "default" : "pointer", fontWeight: 600 }}>
@@ -1621,7 +1631,7 @@ export default function ProfissionalNovoPage() {
         }
         .model-flow-page h3 { color: #fff !important; }
         .model-flow-page label, .model-flow-page [style*="uppercase"] { color: #d77bff !important; }
-        .model-flow-page input,
+        .model-flow-page input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="range"]),
         .model-flow-page textarea,
         .model-flow-page select {
           min-height: 58px !important;
@@ -1629,16 +1639,42 @@ export default function ProfissionalNovoPage() {
           border-radius: 18px !important;
           background: rgba(8, 8, 8,0.96) !important;
           color: #fff !important;
+          -webkit-text-fill-color: #fff !important;
+          caret-color: #e1a6ff;
+          font-size: 16px !important;
           padding: 15px 16px !important;
           outline: none !important;
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.03) !important;
           scroll-margin-bottom: 160px;
         }
         .model-flow-page textarea { min-height: 154px !important; }
-        .model-flow-page input::placeholder, .model-flow-page textarea::placeholder { color: rgba(242, 200, 204,0.70) !important; }
+        .model-flow-page select { color-scheme: dark; }
+        .model-flow-page select option { background: #111; color: #fff; }
+        .model-flow-page input::placeholder, .model-flow-page textarea::placeholder { color: rgba(242, 220, 244,0.68) !important; -webkit-text-fill-color: rgba(242, 220, 244,0.68) !important; }
         .model-flow-page input:focus, .model-flow-page textarea:focus, .model-flow-page select:focus {
           border-color: rgba(225, 166, 255,0.82) !important;
           box-shadow: 0 0 0 4px rgba(183, 44, 255,0.14) !important;
+        }
+        .model-flow-page input:-webkit-autofill,
+        .model-flow-page input:-webkit-autofill:hover,
+        .model-flow-page input:-webkit-autofill:focus {
+          -webkit-text-fill-color: #fff !important;
+          box-shadow: 0 0 0 1000px #080808 inset !important;
+          transition: background-color 9999s ease-out 0s;
+        }
+        .model-flow-page input[type="checkbox"],
+        .model-flow-page input[type="radio"] {
+          width: 21px !important;
+          height: 21px !important;
+          min-width: 21px;
+          flex: 0 0 auto;
+          accent-color: #b72cff;
+        }
+        .model-flow-page input[type="checkbox"]:focus-visible,
+        .model-flow-page input[type="radio"]:focus-visible,
+        .model-flow-page button:focus-visible {
+          outline: 3px solid rgba(225, 166, 255, .65) !important;
+          outline-offset: 3px !important;
         }
         .model-flow-page button { border-radius: 18px !important; }
         .model-flow-page button:disabled {
@@ -1851,7 +1887,10 @@ export default function ProfissionalNovoPage() {
           font-size: 12px;
           font-weight: 900;
         }
-        .model-flow-page > div:nth-of-type(2) {
+        .model-email-warning {
+          box-shadow: 0 16px 40px rgba(0,0,0,.22);
+        }
+        .model-progress-card {
           margin-bottom: 30px !important;
           border: 1px solid rgba(183, 44, 255,0.28);
           border-radius: 20px;
@@ -1859,31 +1898,37 @@ export default function ProfissionalNovoPage() {
           padding: 16px;
           box-shadow: 0 22px 60px rgba(0,0,0,0.26);
         }
-        .model-flow-page > div:nth-of-type(2) > div:nth-child(2) {
+        .model-progress-card > div:nth-child(2) {
           height: 5px !important;
           background: rgba(255,255,255,0.10) !important;
           overflow: hidden;
         }
-        .model-flow-page > div:nth-of-type(2) > div:nth-child(2) > div { background: linear-gradient(90deg, #8f1fd1, #d77bff) !important; }
-        .model-flow-page > div:nth-of-type(2) > div:nth-child(3) {
+        .model-progress-card > div:nth-child(2) > div { background: linear-gradient(90deg, #8f1fd1, #d77bff) !important; }
+        .model-progress-card > div:nth-child(3) {
           gap: 8px !important;
           padding-bottom: 4px;
           scrollbar-width: none;
         }
-        .model-flow-page > div:nth-of-type(2) > div:nth-child(3)::-webkit-scrollbar { display: none; }
-        .model-flow-page > div:nth-of-type(2) > div:nth-child(3) > div {
+        .model-progress-card > div:nth-child(3)::-webkit-scrollbar { display: none; }
+        .model-progress-card > div:nth-child(3) > div {
           flex: 0 0 58px !important;
           min-width: 58px !important;
         }
-        .model-flow-page > div:nth-of-type(2) > div:nth-child(3) span {
+        .model-progress-card > div:nth-child(3) span {
           color: #aeb6c2 !important;
           line-height: 1.15 !important;
           white-space: normal !important;
           word-break: keep-all;
         }
         .model-step-bubbles {
+          display: flex;
+          width: 100%;
+          gap: 8px;
+          margin-top: 14px;
+          padding: 0 6px 4px;
+          overflow-x: auto;
           scroll-snap-type: x proximity;
-          scroll-padding-inline: 42%;
+          scroll-padding-inline: 8px;
           overscroll-behavior-x: contain;
         }
         .model-step-bubbles > div {
@@ -1901,7 +1946,8 @@ export default function ProfissionalNovoPage() {
           .model-step-bubbles {
             margin-left: -8px !important;
             margin-right: -8px !important;
-            padding: 0 44% 4px !important;
+            width: calc(100% + 16px);
+            padding: 0 8px 4px !important;
           }
           .model-step-bubbles > div {
             flex: 0 0 64px !important;
@@ -1910,6 +1956,39 @@ export default function ProfissionalNovoPage() {
           .model-step-bubbles > div span {
             font-size: 8px !important;
           }
+        }
+        .model-step-content {
+          min-width: 0;
+          padding: 20px 16px;
+          border: 1px solid rgba(183, 44, 255, .22);
+          border-radius: 22px;
+          background: rgba(13, 12, 16, .72);
+          box-shadow: 0 24px 68px rgba(0, 0, 0, .25);
+        }
+        .model-step-content > div { min-width: 0; }
+        .model-category-option {
+          min-height: 58px;
+          position: relative;
+          flex-direction: row !important;
+          justify-content: center;
+          color: #e8e2eb !important;
+        }
+        .model-category-option[data-selected="true"] {
+          border-color: #e1a6ff !important;
+          background: linear-gradient(135deg, #c332ff, #7500ae) !important;
+          color: #fff !important;
+          box-shadow: 0 12px 28px rgba(183, 44, 255, .28);
+        }
+        .model-category-check {
+          display: grid;
+          width: 18px;
+          height: 18px;
+          place-items: center;
+          border-radius: 999px;
+          background: rgba(0, 0, 0, .22);
+          color: #fff;
+          font-size: 11px;
+          font-weight: 950;
         }
         .model-flow-page img { max-width: 100%; height: auto; }
         .model-step-actions {
@@ -1942,8 +2021,20 @@ export default function ProfissionalNovoPage() {
           color: #fff !important;
           box-shadow: 0 18px 46px rgba(183, 44, 255,0.26) !important;
         }
-        @media (max-width: 430px) {
-          .model-flow-page [style*="gridTemplateColumns"] { grid-template-columns: 1fr !important; }
+        @media (max-width: 380px) {
+          .model-step-content { padding-inline: 13px; }
+          .model-category-grid { gap: 7px !important; }
+          .model-category-option { padding-inline: 5px !important; font-size: 12px !important; }
+        }
+        @media (max-height: 620px) and (pointer: coarse) {
+          .model-step-actions {
+            position: sticky;
+            left: auto;
+            bottom: 0;
+            width: calc(100% + 32px);
+            margin: 28px -16px calc(-144px - env(safe-area-inset-bottom)) !important;
+            transform: none;
+          }
         }
       `}</style>
     </div>

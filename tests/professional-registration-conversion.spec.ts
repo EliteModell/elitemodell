@@ -394,8 +394,16 @@ test("após validar o código abre a ativação profissional completa", async ({
 
   await page.waitForURL(/\/cadastro\?tipo=acompanhante&telefoneValidado=1/);
   await expect(page.getByText("Cadastro de acompanhante +18", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Cadastrar com Google" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cadastrar com Google" })).toHaveCount(0);
   await expect(page.getByPlaceholder("seu@email.com")).toBeVisible();
+  const womanCategory = page.getByRole("button", { name: "Mulher" });
+  await womanCategory.click();
+  await expect(womanCategory).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Mostrar senha" })).toBeVisible();
+  await page.getByPlaceholder("Mínimo 6 caracteres").fill("senha123");
+  await page.getByRole("button", { name: "Mostrar senha" }).click();
+  await expect(page.getByPlaceholder("Mínimo 6 caracteres")).toHaveAttribute("type", "text");
+  await expect(page.getByRole("button", { name: "Ocultar senha" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText("Data de nascimento", { exact: true })).toBeVisible();
   for (const step of ["Dados", "Aparência", "Atendimento", "Serviços", "Valores", "Contato", "Fotos", "Verificação", "Enviar"]) {
     await expect(page.locator("body")).toContainText(step);
@@ -485,4 +493,33 @@ test("não cria rolagem horizontal no mobile", async ({ page }) => {
     scrollWidth: document.documentElement.scrollWidth,
   }));
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
+});
+
+test("conta profissional mantém seleção, senha e checkboxes responsivos", async ({ page }) => {
+  for (const width of [375, 390, 430]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/cadastro?tipo=acompanhante&telefoneValidado=1", { waitUntil: "domcontentloaded" });
+
+    await expect(page.getByRole("button", { name: "Cadastrar com Google" })).toHaveCount(0);
+    const category = page.getByRole("button", { name: "Trans" });
+    await category.click();
+    await expect(category).toHaveAttribute("aria-pressed", "true");
+
+    const password = page.getByPlaceholder("Mínimo 6 caracteres");
+    await password.fill("senha-segura");
+    await page.getByRole("button", { name: "Mostrar senha" }).click();
+    await expect(password).toHaveAttribute("type", "text");
+    await page.getByRole("button", { name: "Ocultar senha" }).click();
+    await expect(password).toHaveAttribute("type", "password");
+
+    const terms = page.getByLabel(/Termos de Uso/);
+    await terms.check();
+    await expect(terms).toBeChecked();
+
+    const dimensions = await page.evaluate(() => ({
+      clientWidth: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
+  }
 });

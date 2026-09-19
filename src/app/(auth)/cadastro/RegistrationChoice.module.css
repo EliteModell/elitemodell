@@ -457,3 +457,129 @@
 @media (prefers-reduced-motion: reduce) {
   .choicePage .choicePanel .optionCard { transition: none; }
 }
+
+/* Professional account form */
+.accountCard {
+  overflow: hidden;
+}
+
+.professionalCategoryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.professionalCategoryOption {
+  display: flex;
+  min-width: 0;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 8px;
+  border: 1.5px solid rgba(183, 44, 255, .34);
+  border-radius: 11px;
+  background: #fff;
+  color: #332a36;
+  box-shadow: 0 3px 12px rgba(54, 21, 69, .06);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+.professionalCategoryOption[data-selected="true"] {
+  border-color: #a20dde;
+  background: linear-gradient(135deg, #c332ff 0%, #8500c4 100%);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(163, 13, 222, .28);
+}
+
+.professionalCategoryOption:focus-visible,
+.passwordToggle:focus-visible,
+.consentRow input:focus-visible {
+  outline: 3px solid rgba(183, 44, 255, .28);
+  outline-offset: 3px;
+}
+
+.professionalCategoryOption:active {
+  transform: scale(.98);
+}
+
+.categoryCheck {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  stroke-width: 3;
+}
+
+.accountForm input:not([type="checkbox"]) {
+  min-height: 48px;
+  font-size: 16px !important;
+}
+
+.accountField,
+.passwordField {
+  position: relative;
+}
+
+.passwordField input {
+  padding-right: 52px !important;
+}
+
+.passwordToggle {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  transform: translateY(-50%);
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #5c4b62;
+  cursor: pointer;
+}
+
+.passwordToggle:hover {
+  background: rgba(183, 44, 255, .08);
+  color: #8500c4;
+}
+
+.passwordToggle svg {
+  width: 21px;
+  height: 21px;
+}
+
+.consentRow {
+  border-radius: 9px;
+}
+
+.consentRow input {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  margin: 0 !important;
+}
+
+@media (max-width: 480px) {
+  .accountCard {
+    border-radius: 18px 18px 0 0 !important;
+    padding: 34px 20px calc(30px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .accountCard {
+    padding-inline: 16px !important;
+  }
+
+  .professionalCategoryOption {
+    padding-inline: 5px;
+    font-size: 12px;
+  }
+}

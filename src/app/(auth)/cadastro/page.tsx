@@ -7,7 +7,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Crown, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowRight, Check, Crown, Eye, EyeOff, ShieldCheck, UserRound } from "lucide-react";
 import toast from "react-hot-toast";
 import { BrandMark } from "@/components/BrandMark";
 import { CaptchaField, type CaptchaFieldHandle } from "@/components/auth/CaptchaField";
@@ -316,6 +316,7 @@ export default function CadastroPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [accountTypeSelected, setAccountTypeSelected] = useState(false);
   const [continueIntent, setContinueIntent] = useState<EntryAccountRole | null>(null);
@@ -1006,7 +1007,7 @@ export default function CadastroPage() {
 
   return (
     <main style={{ width: "100%", maxWidth: 440, padding: "max(18px, env(safe-area-inset-top)) 0 0" }}>
-    <div style={{ width: "100%", maxWidth: 440, background: "#fff", border: "1px solid #fcf7ff", borderRadius: 20, padding: "42px 34px", position: "relative", zIndex: 1, boxShadow: "0 12px 36px rgba(37, 31, 32,.08)" }}>
+    <div className={styles.accountCard} style={{ width: "100%", maxWidth: 440, background: "#fff", border: "1px solid #fcf7ff", borderRadius: 20, padding: "42px 34px", position: "relative", zIndex: 1, boxShadow: "0 12px 36px rgba(37, 31, 32,.08)" }}>
       <GoldLine />
       <Logo />
       <p style={{ color: "#8d8578", fontSize: 14, textAlign: "center", marginTop: -18, marginBottom: accountHint ? 8 : 26 }}>{accountSubtitle}</p>
@@ -1016,24 +1017,18 @@ export default function CadastroPage() {
       {form.accountType === "PROFESSIONAL" && (
         <div style={{ marginBottom: 18 }}>
           <label style={{ display: "block", fontSize: 13, color: "#b4adb0", marginBottom: 8, fontWeight: 500 }}>Categoria do anúncio</label>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+          <div className={styles.professionalCategoryGrid}>
             {categories.map((c) => (
               <button
                 key={c.value}
                 type="button"
                 onClick={() => setForm({ ...form, category: c.value as Category })}
-                style={{
-                  padding: "11px 8px",
-                  background: form.category === c.value ? "rgba(183, 44, 255,0.08)" : "#080808",
-                  border: `1.5px solid ${form.category === c.value ? "rgba(183, 44, 255,0.5)" : "#251f20"}`,
-                  borderRadius: 8,
-                  color: form.category === c.value ? "#fcf7ff" : "#aaa0b2",
-                  cursor: "pointer",
-                  fontSize: 13,
-                  fontWeight: 700,
-                }}
+                className={styles.professionalCategoryOption}
+                data-selected={form.category === c.value}
+                aria-pressed={form.category === c.value}
               >
-                {c.label}
+                <span>{c.label}</span>
+                {form.category === c.value && <Check className={styles.categoryCheck} aria-hidden="true" />}
               </button>
             ))}
           </div>
@@ -1149,22 +1144,26 @@ export default function CadastroPage() {
       ) : (
         <>
           <CaptchaField ref={captchaRef} />
-          <AuthMethodButton
-            disabled={loading}
-            icon={GoogleIcon}
-            label="Cadastrar com Google"
-            onClick={handleGoogle}
-          />
+          {form.accountType !== "PROFESSIONAL" && (
+            <>
+              <AuthMethodButton
+                disabled={loading}
+                icon={GoogleIcon}
+                label="Cadastrar com Google"
+                onClick={handleGoogle}
+              />
 
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-            <div style={{ flex: 1, height: 1, background: "rgba(183, 44, 255,0.12)" }} />
-            <span style={{ color: "#8d8578", fontSize: 13 }}>ou cadastre com email</span>
-            <div style={{ flex: 1, height: 1, background: "rgba(183, 44, 255,0.12)" }} />
-          </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                <div style={{ flex: 1, height: 1, background: "rgba(183, 44, 255,0.12)" }} />
+                <span style={{ color: "#8d8578", fontSize: 13 }}>ou cadastre com email</span>
+                <div style={{ flex: 1, height: 1, background: "rgba(183, 44, 255,0.12)" }} />
+              </div>
+            </>
+          )}
         </>
       )}
 
-      {!isLoggedUpgradeFlow && <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      {!isLoggedUpgradeFlow && <form className={styles.accountForm} onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {[
           { key: "name", label: "Nome completo", type: "text", placeholder: "Seu nome" },
           { key: "email", label: "Email", type: "email", placeholder: "seu@email.com" },
@@ -1172,7 +1171,30 @@ export default function CadastroPage() {
         ].map((field) => (
           <div key={field.key}>
             <label style={{ display: "block", fontSize: 13, color: "#b4adb0", marginBottom: 6, fontWeight: 500 }}>{field.label}</label>
-            <input type={field.type} required placeholder={field.placeholder} value={(form as any)[field.key]} onChange={(e) => setForm({ ...form, [field.key]: e.target.value })} style={inputStyle} onFocus={focusGold} onBlur={blurGray} />
+            <div className={field.key === "password" ? styles.passwordField : styles.accountField}>
+              <input
+                type={field.key === "password" && showPassword ? "text" : field.type}
+                required
+                autoComplete={field.key === "password" ? "new-password" : field.key === "email" ? "email" : "name"}
+                placeholder={field.placeholder}
+                value={(form as any)[field.key]}
+                onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                style={inputStyle}
+                onFocus={focusGold}
+                onBlur={blurGray}
+              />
+              {field.key === "password" && (
+                <button
+                  type="button"
+                  className={styles.passwordToggle}
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                </button>
+              )}
+            </div>
             {errors[field.key] && <p data-auth-required-error="true" style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors[field.key]}</p>}
           </div>
         ))}
@@ -1228,7 +1250,7 @@ export default function CadastroPage() {
           {errors.birthDate && <p data-auth-required-error="true" style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors.birthDate}</p>}
         </div>
 
-        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#968a9e", fontSize: 12, lineHeight: 1.5 }}>
+        <label className={styles.consentRow} style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#655c68", fontSize: 12, lineHeight: 1.5 }}>
           <input type="checkbox" checked={form.termsConsent} onChange={(e) => setForm({ ...form, termsConsent: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
           <span>
             Li e aceito os <Link href="/terms" style={{ color: GOLD, textDecoration: "none" }}>Termos de Uso</Link> e li o{" "}
@@ -1237,7 +1259,7 @@ export default function CadastroPage() {
           </span>
         </label>
 
-        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#968a9e", fontSize: 12, lineHeight: 1.5 }}>
+        <label className={styles.consentRow} style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#655c68", fontSize: 12, lineHeight: 1.5 }}>
           <input type="checkbox" checked={form.lgpdConsent} onChange={(e) => setForm({ ...form, lgpdConsent: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
           <span>
             Li e aceito a <Link href="/privacy" style={{ color: GOLD, textDecoration: "none" }}>Política de Privacidade</Link>.
@@ -1245,7 +1267,7 @@ export default function CadastroPage() {
           </span>
         </label>
 
-        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#968a9e", fontSize: 12, lineHeight: 1.5 }}>
+        <label className={styles.consentRow} style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#655c68", fontSize: 12, lineHeight: 1.5 }}>
           <input type="checkbox" checked={form.ageConfirmed} onChange={(e) => setForm({ ...form, ageConfirmed: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
           <span>
             Confirmo que sou maior de 18 anos e li a <Link href="/documentos/adult-declaration" style={{ color: GOLD, textDecoration: "none" }}>Confirmacao de Maioridade</Link>.
