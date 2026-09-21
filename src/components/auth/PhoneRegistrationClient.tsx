@@ -1,15 +1,12 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- The official transparent PNG is intentionally rendered at its intrinsic ratio. */
-
 import { useEffect, useMemo, useState } from "react";
 import type { ConfirmationResult, RecaptchaVerifier } from "firebase/auth";
-import { signInWithPhoneNumber } from "firebase/auth";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
+import Image from "next/image";
+import { NoPrefetchLink as Link } from "@/components/NoPrefetchLink";
 import toast from "react-hot-toast";
 import { ArrowLeft, CheckCircle2, Info, Menu, Phone, ShieldCheck } from "lucide-react";
-import { getFirebaseClientAuth } from "@/lib/firebase/client";
 import {
   prepareFirebaseSmsAudit,
   reportFirebaseSmsAccepted,
@@ -143,7 +140,7 @@ function safeInternalPath(value: string | null) {
 function Logo({ dark = false }: { dark?: boolean }) {
   return (
     <Link href="/" aria-label="Elite Modell" style={{ display: "inline-flex", alignItems: "center" }}>
-      <img src="/brand/elite-modell-logo.png" alt="Elite Modell" style={{ height: dark ? 44 : 38, width: "auto", objectFit: "contain", opacity: 1, filter: "none" }} />
+      <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={326} height={109} sizes="164px" quality={70} style={{ height: dark ? 44 : 38, width: "auto", objectFit: "contain", opacity: 1, filter: "none" }} />
     </Link>
   );
 }
@@ -472,7 +469,15 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
           },
         });
 
-        const { RecaptchaVerifier: FirebaseRecaptchaVerifier } = await import("firebase/auth");
+        const [firebaseAuthModule, firebaseClientModule] = await Promise.all([
+          import("firebase/auth"),
+          import("@/lib/firebase/client"),
+        ]);
+        const {
+          RecaptchaVerifier: FirebaseRecaptchaVerifier,
+          signInWithPhoneNumber,
+        } = firebaseAuthModule;
+        const { getFirebaseClientAuth } = firebaseClientModule;
         const auth = getFirebaseClientAuth();
 
         firebaseRecaptchaVerifier?.clear();

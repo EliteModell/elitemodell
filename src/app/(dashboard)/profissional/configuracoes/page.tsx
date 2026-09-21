@@ -217,7 +217,7 @@ export default function ProfissionalConfiguracoesPage() {
           <p style={{ ...muted, margin: "0 0 14px" }}>Envie um vídeo curto. Ele fica pendente até aprovação da equipe antes de aparecer publicamente.</p>
           {settings.presentationVideoUrl ? (
             <div style={{ display: "grid", gap: 12 }}>
-              <video src={settings.presentationVideoUrl} controls style={{ width: "100%", maxHeight: 360, borderRadius: 10, background: "#050506" }} />
+              <video src={settings.presentationVideoUrl} controls preload="none" style={{ width: "100%", maxHeight: 360, borderRadius: 10, background: "#050506" }} />
               <div style={{ color: settings.presentationVideoStatus === "APPROVED" ? "#22c55e" : settings.presentationVideoStatus === "REJECTED" ? "#ef4444" : "#e1a6ff", fontWeight: 800 }}>
                 Status: {settings.presentationVideoStatus === "APPROVED" ? "aprovado" : settings.presentationVideoStatus === "REJECTED" ? "reprovado" : "pendente de análise"}
               </div>

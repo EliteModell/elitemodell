@@ -5,15 +5,16 @@
 import { useEffect, useRef, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import dynamic from "next/dynamic";
+import { NoPrefetchLink as Link } from "@/components/NoPrefetchLink";
 import Image from "next/image";
 import { ArrowRight, Check, Crown, Eye, EyeOff, ShieldCheck, UserRound } from "lucide-react";
 import toast from "react-hot-toast";
 import { BrandMark } from "@/components/BrandMark";
-import { CaptchaField, type CaptchaFieldHandle } from "@/components/auth/CaptchaField";
+import type { CaptchaFieldHandle } from "@/components/auth/CaptchaField";
 import { validateBirthDate } from "@/lib/age-validation";
 import { buildAuthCallbackUrl } from "@/lib/auth-redirect";
-import { supabaseAuth } from "@/lib/supabase-client";
+import { loadSupabaseAuth } from "@/lib/supabase-auth-loader";
 import {
   ACCOUNT_ROUTES,
   type CadastroTipo,
@@ -23,6 +24,11 @@ import {
   normalizeEntryRole,
 } from "@/lib/account-routes";
 import styles from "./RegistrationChoice.module.css";
+
+const CaptchaField = dynamic(
+  () => import("@/components/auth/CaptchaField").then((module) => module.CaptchaField),
+  { loading: () => <div aria-hidden="true" style={{ minHeight: 78 }} /> },
+);
 
 type AccountType = "GUEST" | "PROFESSIONAL" | "PROPERTY_HOST";
 type Category = "MULHER" | "TRANS" | "HOMEM";
@@ -739,6 +745,7 @@ export default function CadastroPage() {
       const authError = asAuthError(err);
       if ((authError.code === "user_already_exists" || authError.name === "user_already_exists") && isValidEmail(form.email)) {
         try {
+          const supabaseAuth = await loadSupabaseAuth();
           const { data, error } = await supabaseAuth.auth.signInWithPassword({
             email: form.email.trim().toLowerCase(),
             password: form.password,
@@ -796,6 +803,7 @@ export default function CadastroPage() {
         provider: "google",
       });
       rememberCadastroOAuthState(registrationPayload(), intent);
+      const supabaseAuth = await loadSupabaseAuth();
       const { error } = await supabaseAuth.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo: buildAuthCallbackUrl(callbackParams()) },
@@ -835,6 +843,7 @@ export default function CadastroPage() {
       if (form.accountType === "PROFESSIONAL") {
         await postJsonOrThrow("/api/users/me/activate-professional", { category: form.category });
       } else {
+        const supabaseAuth = await loadSupabaseAuth();
         const { data } = await supabaseAuth.auth.getSession();
         const accessToken = data.session?.access_token;
         if (accessToken) {
@@ -845,6 +854,7 @@ export default function CadastroPage() {
         }
       }
 
+      const supabaseAuth = await loadSupabaseAuth();
       const { data } = await supabaseAuth.auth.getSession();
       const accessToken = data.session?.access_token;
       if (accessToken) {

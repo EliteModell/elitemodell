@@ -1,6 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
-/* eslint-disable @next/next/no-img-element -- Avatar may come from remote account storage. */
 import {
   ArrowRight,
   BarChart3,
@@ -262,7 +262,7 @@ export default async function ProfissionalDashPage() {
       <section className={styles.profileCard} aria-label="Perfil profissional">
         <Link href="/profissional/fotos" className={styles.avatarLink} aria-label="Editar foto de perfil">
           <span className={styles.avatar}>
-            {profilePhoto ? <img src={profilePhoto} alt={professional.displayName} /> : <CircleUserRound />}
+            {profilePhoto ? <Image src={profilePhoto} alt={professional.displayName} width={76} height={76} sizes="76px" /> : <CircleUserRound />}
           </span>
           <span className={styles.cameraBadge}><Camera /></span>
         </Link>

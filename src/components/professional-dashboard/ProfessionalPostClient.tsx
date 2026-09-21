@@ -1,7 +1,6 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- As imagens exibidas pertencem ao perfil e podem vir de URLs externas aprovadas. */
-
-import Link from "next/link";
+import { NoPrefetchLink as Link } from "@/components/NoPrefetchLink";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, ReactNode } from "react";
 import toast from "react-hot-toast";
@@ -182,7 +181,7 @@ export function ProfessionalPostClient() {
       <ContentCard className={styles.profileCard} icon={<UserRound />} badge="Imagem principal" title="Foto de perfil" description="Adicione ou troque a imagem principal do seu perfil.">
         <div className={styles.profileContent}>
           <div className={styles.avatarWrap}>
-            {profilePhoto ? <img src={profilePhoto} alt="Foto atual do perfil" /> : <UserRound aria-hidden="true" />}
+            {profilePhoto ? <Image src={profilePhoto} alt="Foto atual do perfil" width={116} height={116} sizes="116px" unoptimized={profilePhoto.startsWith("blob:") || profilePhoto.startsWith("data:")} /> : <UserRound aria-hidden="true" />}
             <span><Camera /></span>
           </div>
           <Link className={styles.primaryButton} href="/profissional/fotos">Editar foto</Link>
@@ -190,14 +189,14 @@ export function ProfessionalPostClient() {
       </ContentCard>
 
       <ContentCard icon={<ImageIcon />} badge="Topo do anúncio" title="Foto de capa" description="Escolha uma imagem de destaque para o topo do seu anúncio.">
-        <div className={styles.coverPreview}>{coverPhoto ? <img src={coverPhoto} alt="Foto de capa atual" /> : <EmptyMedia icon={<ImageIcon />} label="Sua capa aparecerá aqui" />}</div>
+        <div className={styles.coverPreview}>{coverPhoto ? <Image src={coverPhoto} alt="Foto de capa atual" fill sizes="(max-width: 760px) 100vw, 760px" unoptimized={coverPhoto.startsWith("blob:") || coverPhoto.startsWith("data:")} /> : <EmptyMedia icon={<ImageIcon />} label="Sua capa aparecerá aqui" />}</div>
         <Link className={styles.primaryButton} href="/profissional/fotos">Editar capa</Link>
       </ContentCard>
 
       <ContentCard icon={<Images />} badge="Portfólio" title="Galeria de fotos" description="Publique fotos recentes para aumentar confiança e conversão.">
         <div className={styles.galleryGrid}>
           {Array.from({ length: 4 }, (_, index) => gallery[index] ? (
-            <div className={styles.galleryImage} key={gallery[index]}><img src={gallery[index]} alt={`Foto ${index + 1} da galeria`} /></div>
+            <div className={styles.galleryImage} key={gallery[index]}><Image src={gallery[index]} alt={`Foto ${index + 1} da galeria`} fill sizes="(max-width: 760px) 30vw, 150px" unoptimized={gallery[index].startsWith("blob:") || gallery[index].startsWith("data:")} /></div>
           ) : <div className={styles.galleryPlaceholder} key={`empty-${index}`}><ImageIcon aria-hidden="true" /></div>)}
           <div className={styles.galleryMore}><strong>{gallery.length > 4 ? `+${gallery.length - 4}` : "+"}</strong><span>{gallery.length > 4 ? "mais fotos" : "adicionar"}</span></div>
         </div>
@@ -208,7 +207,7 @@ export function ProfessionalPostClient() {
         <input ref={videoInputRef} type="file" accept="video/mp4,video/webm,video/quicktime" hidden onChange={handleVideoInput} />
         <div className={styles.videoGrid}>
           <div className={styles.videoPreview}>
-            {activeVideo ? <video src={activeVideo} controls playsInline preload="metadata" onLoadedMetadata={(event) => { if (!pendingVideo) setVideoLength(event.currentTarget.duration || null); }} /> : <EmptyMedia icon={<Play />} label="Seu vídeo aparecerá aqui" />}
+            {activeVideo ? <video src={activeVideo} controls playsInline preload="none" onLoadedMetadata={(event) => { if (!pendingVideo) setVideoLength(event.currentTarget.duration || null); }} /> : <EmptyMedia icon={<Play />} label="Seu vídeo aparecerá aqui" />}
             {activeDuration ? <span className={styles.duration}>{formatDuration(activeDuration)}</span> : null}
           </div>
           <div className={styles.videoDetails}>
@@ -230,7 +229,7 @@ export function ProfessionalPostClient() {
       <ContentCard icon={<Camera />} badge="Conteúdo rápido" title="Stories" description="Publique conteúdos rápidos que aparecem para clientes.">
         <div className={styles.storiesRow}>
           <Link href="/profissional/stories" className={styles.newStory}><span><Plus /></span><small>Novo story</small></Link>
-          {stories.slice(0, 5).map((story, index) => <div className={styles.storyItem} key={story.id}><span>{story.mediaType === "image" || story.thumbnail ? <img src={story.thumbnail ?? story.mediaUrl} alt={`Story ${index + 1}`} /> : <Play aria-label="Story em vídeo" />}</span><small>Story</small></div>)}
+          {stories.slice(0, 5).map((story, index) => { const storyImage = story.thumbnail ?? story.mediaUrl; return <div className={styles.storyItem} key={story.id}><span>{story.mediaType === "image" || story.thumbnail ? <Image src={storyImage} alt={`Story ${index + 1}`} width={72} height={72} sizes="72px" /> : <Play aria-label="Story em vídeo" />}</span><small>Story</small></div>; })}
           {stories.length === 0 ? <p className={styles.emptyStories}>Seus stories ativos aparecem aqui.</p> : null}
         </div>
         <Link className={styles.primaryButton} href="/profissional/stories">Postar story</Link>

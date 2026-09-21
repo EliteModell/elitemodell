@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { accountHomePathFromSession } from "@/lib/account-routes";
-import { supabaseAuth } from "@/lib/supabase-client";
+import { loadSupabaseAuth } from "@/lib/supabase-auth-loader";
 
 type Variant = "desktopLinks" | "authActions" | "mobileMenu";
 
@@ -41,6 +41,7 @@ export default function NavbarSessionControls({
   const incompleteProfessional = isIncompleteProfessionalSession(safeSession);
 
   async function handleSignOut() {
+    const supabaseAuth = await loadSupabaseAuth();
     await supabaseAuth.auth.signOut();
     await signOut({ callbackUrl: "/" });
   }

@@ -2,15 +2,23 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Bell, Menu, Search, ShieldCheck, Sparkles } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
-import DashSidebar from "@/components/DashSidebar";
-import ClientAreaShell from "@/components/client-area/ClientAreaShell";
-import { ProfessionalBottomNav } from "@/components/professional-dashboard/ProfessionalBottomNav";
-import { ProfessionalPremiumStyles } from "@/components/professional-dashboard/ProfessionalPremium";
-import { ProfessionalTopHeader } from "@/components/professional-dashboard/ProfessionalTopHeader";
 import { BrandMark } from "@/components/BrandMark";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+
+const DashSidebar = dynamic(() => import("@/components/DashSidebar"));
+const ClientAreaShell = dynamic(() => import("@/components/client-area/ClientAreaShell"));
+const ProfessionalBottomNav = dynamic(() =>
+  import("@/components/professional-dashboard/ProfessionalBottomNav").then((module) => module.ProfessionalBottomNav),
+);
+const ProfessionalPremiumStyles = dynamic(() =>
+  import("@/components/professional-dashboard/ProfessionalPremium").then((module) => module.ProfessionalPremiumStyles),
+);
+const ProfessionalTopHeader = dynamic(() =>
+  import("@/components/professional-dashboard/ProfessionalTopHeader").then((module) => module.ProfessionalTopHeader),
+);
 
 function LoadingScreen() {
   return (
@@ -183,10 +191,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           }
         }
         .professional-shell {
-          background:
-            radial-gradient(circle at 20% 10%, rgba(183, 44, 255,0.16), transparent 32%),
-            radial-gradient(circle at 85% 35%, rgba(183, 44, 255,0.10), transparent 34%),
-            #050505;
+          min-height: 100dvh;
+          background-color: #100614;
+          background-image:
+            radial-gradient(circle at 14% 8%, rgba(190, 62, 255, 0.16), transparent 34%),
+            radial-gradient(circle at 88% 34%, rgba(126, 35, 170, 0.10), transparent 40%),
+            linear-gradient(180deg, #25102e 0%, #16081d 46%, #0e0613 100%);
+          background-repeat: no-repeat;
         }
         .host-shell {
           background:
@@ -540,13 +551,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
         /* Identidade roxa oficial: sobrepõe somente a camada visual profissional. */
         .professional-shell {
-          background: #f8f7fb !important;
-          color: #141212 !important;
+          color: #f8f2fb !important;
         }
         .professional-shell .professional-header {
-          border-bottom-color: #eadff0 !important;
-          background: rgba(255,255,255,.97) !important;
-          box-shadow: 0 10px 28px rgba(61,42,72,.08) !important;
+          border-bottom-color: rgba(220, 158, 255, .18) !important;
+          background: rgba(19, 7, 25, .94) !important;
+          box-shadow: 0 8px 24px rgba(5, 0, 9, .16) !important;
         }
         .professional-shell .professional-content h1,
         .professional-shell .professional-content h2,
@@ -557,6 +567,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .professional-shell .professional-content p,
         .professional-shell .professional-content li {
           color: #67636f !important;
+        }
+        .professional-shell .professional-content > h1,
+        .professional-shell .professional-content > h2,
+        .professional-shell .professional-content > h3,
+        .professional-shell .professional-content > p,
+        .professional-shell .professional-content > div > h1,
+        .professional-shell .professional-content > div > h2,
+        .professional-shell .professional-content > div > h3,
+        .professional-shell .professional-content > div > p,
+        .professional-shell .professional-premium-page > h1,
+        .professional-shell .professional-premium-page > h2,
+        .professional-shell .professional-premium-page > h3,
+        .professional-shell .professional-premium-page > p {
+          color: #f8f2fb !important;
         }
         .professional-shell .professional-content > div > div,
         .professional-shell .professional-content section,
@@ -632,8 +656,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
         .professional-shell .professional-header button,
         .professional-shell .professional-header svg {
-          border-color: #eadff0 !important;
-          color: #b72cff !important;
+          border-color: rgba(220, 158, 255, .24) !important;
+          color: #efd9ff !important;
           box-shadow: none !important;
         }
         .admin-shell * {

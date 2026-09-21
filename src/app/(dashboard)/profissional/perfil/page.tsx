@@ -1,7 +1,6 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- A foto do perfil pode vir do armazenamento remoto aprovado da profissional. */
-
-import Link from "next/link";
+import { NoPrefetchLink as Link } from "@/components/NoPrefetchLink";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
@@ -338,7 +337,7 @@ export default function EditarPerfilPage() {
       <section className={styles.overviewCard} aria-label="Visão geral do perfil">
         <div className={styles.overviewTop}>
           <Link href="/profissional/fotos" className={styles.avatarLink} aria-label="Editar foto de perfil">
-            <span className={styles.avatar}>{profileImage ? <img src={profileImage} alt={form.displayName || "Foto do perfil"} /> : <UserRound />}</span>
+            <span className={styles.avatar}>{profileImage ? <Image src={profileImage} alt={form.displayName || "Foto do perfil"} width={174} height={174} sizes="174px" /> : <UserRound />}</span>
             <span className={styles.onlineDot} /><span className={styles.cameraBadge}><Camera /></span>
           </Link>
           <div className={styles.identity}>
@@ -382,7 +381,7 @@ export default function EditarPerfilPage() {
       <section id="dados-principais" className={styles.formSection}>
         <SectionHeading eyebrow="Dados principais" title="Dados principais" description="Mantenha seus dados sempre atualizados para transmitir mais confiança e atrair melhores oportunidades." icon={UserRound} />
         <div className={styles.identityStrip}>
-          <span className={styles.miniAvatar}>{profileImage ? <img src={profileImage} alt="" /> : <UserRound />}</span>
+          <span className={styles.miniAvatar}>{profileImage ? <Image src={profileImage} alt="" width={62} height={62} sizes="62px" /> : <UserRound />}</span>
           <div><strong>{form.displayName || "Perfil Elite"}</strong><small><MapPin /> {form.city || "Cidade"}{form.state ? `, ${form.state}` : ""}</small></div>
           <span className={`${styles.liveBadge} ${profileStatus === "ACTIVE" ? styles.live : styles.inactive}`}><i /> {statusLabel(profileStatus)}</span>
           <span className={styles.summaryBadge}><BadgeCheck /> {facts.verified ? "Verificado" : "Em análise"}</span>

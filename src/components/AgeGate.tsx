@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { NoPrefetchLink as Link } from "@/components/NoPrefetchLink";
 import { usePathname } from "next/navigation";
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { AlertTriangle, ShieldCheck } from "lucide-react";

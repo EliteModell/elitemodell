@@ -24,10 +24,9 @@
   z-index: 30;
   top: 0;
   padding: max(12px, env(safe-area-inset-top)) 16px 12px;
-  border-bottom: 1px solid #eee7f6;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 8px 24px rgba(49, 31, 72, 0.05);
-  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(220, 158, 255, 0.18);
+  background: rgba(19, 7, 25, 0.94);
+  box-shadow: 0 8px 24px rgba(5, 0, 9, 0.16);
 }
 
 .topHeaderInner {
@@ -49,11 +48,11 @@
   width: 46px;
   height: 46px;
   place-items: center;
-  border: 1px solid #eadff7;
+  border: 1px solid rgba(220, 158, 255, 0.24);
   border-radius: 15px;
-  background: #fff;
-  color: #7416c8 !important;
-  box-shadow: 0 5px 14px rgba(66, 34, 91, 0.05);
+  background: rgba(255, 255, 255, 0.055);
+  color: #efd9ff !important;
+  box-shadow: none;
 }
 
 button.headerIconButton {
@@ -72,7 +71,7 @@ button.headerIconButton {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #7513c8;
+  background: #d965ff;
 }
 
 .headerLogo {
@@ -85,6 +84,8 @@ button.headerIconButton {
   display: grid;
   width: 164px;
   max-width: 100%;
+  filter: brightness(0) invert(1);
+  opacity: 0.96;
 }
 
 .headerActions {
@@ -103,7 +104,6 @@ button.headerIconButton {
   border-top: 1px solid #ebe3f2;
   background: rgba(255, 255, 255, 0.97);
   box-shadow: 0 -8px 24px rgba(39, 25, 52, 0.06);
-  backdrop-filter: blur(18px);
 }
 
 .bottomNavInner {

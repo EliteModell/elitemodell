@@ -5,12 +5,12 @@
 import { Suspense, useState } from "react";
 import { signIn, signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { NoPrefetchLink as Link } from "@/components/NoPrefetchLink";
 import toast from "react-hot-toast";
 import { ArrowLeft, BadgeCheck, Eye, EyeOff, Globe2, LockKeyhole, Sparkles } from "lucide-react";
 import { EntryChoiceCards, EntryChoiceStyles } from "@/components/EntryChoiceSheet";
 import { BrandMark } from "@/components/BrandMark";
-import { supabaseAuth } from "@/lib/supabase-client";
+import { loadSupabaseAuth } from "@/lib/supabase-auth-loader";
 import { ACCOUNT_ROUTES, normalizeEntryRole, postLoginPathFromUser } from "@/lib/account-routes";
 import { buildAuthCallbackUrl } from "@/lib/auth-redirect";
 
@@ -90,6 +90,7 @@ async function getPostLoginPath(returnUrl: string | null, roleIntent: ReturnType
 }
 
 async function clearInvalidAuthState() {
+  const supabaseAuth = await loadSupabaseAuth();
   await supabaseAuth.auth.signOut().catch(() => undefined);
   await signOut({ redirect: false }).catch(() => undefined);
 }
@@ -151,6 +152,7 @@ function LoginContent() {
     setLoading(true);
     try {
       const email = form.email.trim().toLowerCase();
+      const supabaseAuth = await loadSupabaseAuth();
       const { data, error } = await supabaseAuth.auth.signInWithPassword({
         email,
         password: form.password,
@@ -188,6 +190,7 @@ function LoginContent() {
         roleIntent ? `role=${roleIntent}` : "",
       ].filter(Boolean).join("&");
       rememberRoleIntent(roleIntent);
+      const supabaseAuth = await loadSupabaseAuth();
       const { error } = await supabaseAuth.auth.signInWithOAuth({
         provider: "google",
         options: {

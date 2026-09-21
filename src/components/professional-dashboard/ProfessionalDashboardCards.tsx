@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- Fotos de perfil podem vir do Supabase ou OAuth remoto. */
 
-import Link from "next/link";
+import { NoPrefetchLink as Link } from "@/components/NoPrefetchLink";
 import {
   BadgeCheck,
   CalendarClock,

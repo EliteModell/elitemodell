@@ -197,7 +197,7 @@ export function ProfessionalStoriesClient() {
             <div style={{ aspectRatio: "9 / 16", borderRadius: 24, overflow: "hidden", border: "1px solid var(--elite-border-soft)", background: "rgba(255,255,255,0.035)", display: "grid", placeItems: "center" }}>
               {pending ? (
                 pending.mediaType === "video" ? (
-                  <video src={pending.preview} controls playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <video src={pending.preview} controls playsInline preload="none" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
                   <img src={pending.preview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 )
@@ -251,7 +251,7 @@ export function ProfessionalStoriesClient() {
               <article key={story.id} className="premium-card" style={{ padding: 10 }}>
                 <div style={{ aspectRatio: "9 / 16", borderRadius: 18, overflow: "hidden", background: "rgba(255,255,255,0.04)", position: "relative" }}>
                   {story.mediaType === "video" ? (
-                    <video src={story.mediaUrl} poster={story.thumbnail ?? undefined} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <video src={story.mediaUrl} poster={story.thumbnail ?? undefined} muted playsInline preload="none" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     <img src={story.mediaUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   )}

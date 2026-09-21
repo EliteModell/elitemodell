@@ -30,7 +30,7 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
-import { supabaseAuth } from "@/lib/supabase-client";
+import { loadSupabaseAuth } from "@/lib/supabase-auth-loader";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 type NavItem = { label: string; href: string; icon: React.ReactNode; accent?: string };
@@ -127,6 +127,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
   const [professionalProfile, setProfessionalProfile] = useState<ProfessionalMenuProfile | null>(null);
 
   async function handleSignOut() {
+    const supabaseAuth = await loadSupabaseAuth();
     await supabaseAuth.auth.signOut();
     await signOut({ callbackUrl: "/" });
   }

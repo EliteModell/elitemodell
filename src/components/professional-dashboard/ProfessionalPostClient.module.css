@@ -83,7 +83,7 @@
 .emptyMedia small { color: #896ba1 !important; font-size: 12px; }
 
 .galleryGrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
-.galleryImage, .galleryPlaceholder, .galleryMore { min-width: 0; aspect-ratio: 1 / 0.86; overflow: hidden; border-radius: 14px; }
+.galleryImage, .galleryPlaceholder, .galleryMore { position: relative; min-width: 0; aspect-ratio: 1 / 0.86; overflow: hidden; border-radius: 14px; }
 .galleryImage img { width: 100%; height: 100%; object-fit: cover; }
 .galleryPlaceholder { display: grid; place-items: center; color: #b47add !important; background: linear-gradient(145deg, #f5eaff, #ebe0fa) !important; }
 .galleryPlaceholder svg { width: 29px; height: 29px; }

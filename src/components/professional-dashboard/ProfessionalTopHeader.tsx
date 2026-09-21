@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
+import { NoPrefetchLink as Link } from "@/components/NoPrefetchLink";
 import { usePathname } from "next/navigation";
 import { Bell, Mail, Menu } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";

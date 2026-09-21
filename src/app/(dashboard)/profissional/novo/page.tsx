@@ -2,13 +2,19 @@
 /* eslint-disable @next/next/no-img-element -- Upload previews can be blob/data/private URLs before the final hosted image is available. */
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import toast from "react-hot-toast";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { validateBirthDate } from "@/lib/age-validation";
-import { supabaseAuth } from "@/lib/supabase-client";
+import { loadSupabaseAuth } from "@/lib/supabase-auth-loader";
 import ProfessionalCityAutocomplete from "@/components/professional-onboarding/ProfessionalCityAutocomplete";
+
+const ProfessionalVerificationSteps = dynamic(
+  () => import("@/components/professional-onboarding/ProfessionalVerificationSteps"),
+  { loading: () => <div aria-hidden="true" style={{ minHeight: 280 }} /> },
+);
 
 /* ── constantes de tema ─────────────────────────────────── */
 const GOLD = "#b72cff";
@@ -392,13 +398,17 @@ export default function ProfissionalNovoPage() {
       kycStatus: "NOT_STARTED",
     };
 
-    try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({ step, form: draftForm, updatedAt: new Date().toISOString() }));
-      window.setTimeout(() => setDraftSaveError(false), 0);
-    } catch (err) {
+    const saveTimer = window.setTimeout(() => {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ step, form: draftForm, updatedAt: new Date().toISOString() }));
+        window.setTimeout(() => setDraftSaveError(false), 0);
+      } catch (err) {
       console.warn("[professional-onboarding] Não foi possível salvar o rascunho local.", err);
-      window.setTimeout(() => setDraftSaveError(true), 0);
-    }
+        window.setTimeout(() => setDraftSaveError(true), 0);
+      }
+    }, 300);
+
+    return () => window.clearTimeout(saveTimer);
   }, [form, step]);
 
   useEffect(() => {
@@ -470,26 +480,7 @@ export default function ProfissionalNovoPage() {
       }
     }
 
-    async function loadDigitAvailability() {
-      const res = await fetch("/api/didit/session", { method: "GET" });
-      const data = await res.json().catch(() => ({})) as DiditStatusResponse;
-      if (!active) return;
-      setDigitAvailable(Boolean(data.available));
-      setDigitMessage(data.message ?? null);
-      setDigitRetryAllowed(Boolean(data.retryAllowed));
-      if (data.sessionId || data.status === "NOT_STARTED") {
-        setForm((current) => ({
-          ...current,
-          kycProvider: data.sessionId ? "DIDIT" : "",
-          kycSessionId: data.sessionId ?? "",
-          kycStatus: data.status ?? "NOT_STARTED",
-          verificationUrl: data.url ?? "",
-        }));
-      }
-    }
-
     loadUserDefaults().catch(() => {});
-    loadDigitAvailability().catch(() => { if (active) setDigitAvailable(false); });
     return () => {
       active = false;
     };
@@ -936,6 +927,7 @@ export default function ProfissionalNovoPage() {
   function back() { setStep((s) => Math.max(s - 1, 0)); window.scrollTo({ top: 0, behavior: "smooth" }); }
 
   async function handleExit() {
+    const supabaseAuth = await loadSupabaseAuth();
     await supabaseAuth.auth.signOut();
     await signOut({ callbackUrl: "/" });
   }
@@ -1453,135 +1445,27 @@ export default function ProfissionalNovoPage() {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════
-          ETAPA 8 — VERIFICAÇÃO DE IDENTIDADE
-      ══════════════════════════════════════════════ */}
-      {step === 7 && (
-        <div>
-          <Section title="Revise seus dados" desc="Confira as informações principais antes de verificar sua identidade.">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
-              {[
-                ["Nome artístico", form.displayName || "—"],
-                ["Categoria", form.escortCategory || "—"],
-                ["Localização", `${form.city}${form.state ? ", " + form.state : ""}` || "—"],
-                ["Fotos", `${1 + form.galleryUrls.length} foto(s)`],
-                ["Contato", form.whatsapp || "—"],
-              ].map(([label, value]) => (
-                <div className="model-summary-tile" key={label} style={{ background: "#080808", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, padding: "12px 14px" }}>
-                  <div style={{ fontSize: 10, color: "#aaa0b2", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 }}>{label}</div>
-                  <div style={{ fontSize: 13, color: "#fcf7ff" }}>{value}</div>
-                </div>
-              ))}
-            </div>
-          </Section>
-
-          <Section
-            title="🔐 Verifique sua identidade"
-            desc="Para aumentar a segurança da Elite Modell, precisamos confirmar sua identidade antes de enviar seu cadastro para análise."
-          >
-            <div style={{ display: "flex", gap: 14, alignItems: "flex-start", background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 12, padding: "16px 18px", marginBottom: 24 }}>
-              <span style={{ fontSize: 22, flexShrink: 0, marginTop: 1 }}>🛡️</span>
-              <div>
-                <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 800, color: "#22c55e" }}>Verificação segura pela Didit</p>
-                <p style={{ margin: 0, fontSize: 12, color: "#b4adb0", lineHeight: 1.65 }}>
-                  Você será direcionada para a verificação segura da Didit. Será necessário apresentar seu documento e realizar a verificação solicitada. Clientes nunca verão seus documentos.
-                </p>
-              </div>
-            </div>
-
-            {diditApproved ? (
-              <div data-field="kycSessionId" style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e", fontSize: 15, fontWeight: 800 }}>
-                ✓ Identidade verificada
-              </div>
-            ) : (
-              <>
-                <button
-                  data-field="kycSessionId"
-                  type="button"
-                  onClick={startDigitVerification}
-                  disabled={uploadingIdx === 100 || !diditAvailable}
-                  style={{
-                    width: "100%", minHeight: 52, padding: "14px 16px", borderRadius: 12, border: "none",
-                    background: !diditAvailable ? "#676064" : GOLD,
-                    color: !diditAvailable ? "#e7e0ea" : "#080808",
-                    fontSize: 15, fontWeight: 800,
-                    cursor: uploadingIdx === 100 || !diditAvailable ? "not-allowed" : "pointer",
-                    marginBottom: 14,
-                  }}
-                >
-                  {uploadingIdx === 100
-                    ? "Iniciando verificação..."
-                    : diditPending
-                      ? form.verificationUrl ? "Retomar verificação" : "Verificação em análise"
-                      : diditRejected && diditRetryAllowed
-                        ? "Tentar novamente"
-                        : "Verificar minha identidade"}
-                </button>
-
-                {diditPending && (
-                  <div style={{ padding: "12px 14px", borderRadius: 10, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, fontSize: 13, fontWeight: 700, lineHeight: 1.55 }}>
-                    Verificação em análise
-                    <span style={{ display: "block", color: "#d8cfdd", fontSize: 12, fontWeight: 500, marginTop: 4 }}>
-                      Seu cadastro ainda não será considerado verificado até recebermos o resultado final da Didit.
-                    </span>
-                  </div>
-                )}
-
-                {diditRejected && (
-                  <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", color: "#ff8b8b", fontSize: 13, fontWeight: 700, lineHeight: 1.55 }}>
-                    Não foi possível concluir sua verificação de identidade.
-                    {diditRetryAllowed && <span style={{ display: "block", color: "#d8cfdd", fontSize: 12, fontWeight: 500, marginTop: 4 }}>Você pode tentar novamente pelo botão acima.</span>}
-                  </div>
-                )}
-
-                {!diditAvailable && (
-                  <div style={{ padding: "12px 14px", borderRadius: 10, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: "#e8b8ff", fontSize: 13, fontWeight: 700, lineHeight: 1.5 }}>
-                    A verificação Didit está temporariamente indisponível. Seu cadastro permanece salvo; tente novamente em alguns minutos.
-                  </div>
-                )}
-
-                {diditMessage && !diditPending && !diditRejected && (
-                  <p style={{ margin: "10px 0 0", color: "#d8cfdd", fontSize: 12 }}>{diditMessage}</p>
-                )}
-              </>
-            )}
-          </Section>
-        </div>
+      {(step === 7 || step === 8) && (
+        <ProfessionalVerificationSteps
+          mode={step === 7 ? "verification" : "summary"}
+          displayName={form.displayName}
+          escortCategory={form.escortCategory}
+          city={form.city}
+          state={form.state}
+          galleryCount={form.galleryUrls.length}
+          mainPhotoUrl={form.mainPhotoUrl}
+          whatsapp={form.whatsapp}
+          diditApproved={diditApproved}
+          diditPending={diditPending}
+          diditRejected={diditRejected}
+          diditRetryAllowed={diditRetryAllowed}
+          diditAvailable={diditAvailable}
+          diditMessage={diditMessage}
+          verificationUrl={form.verificationUrl}
+          startingVerification={uploadingIdx === 100}
+          onStartVerification={startDigitVerification}
+        />
       )}
-
-      {/* ══════════════════════════════════════════════
-          ETAPA 9 — REVISÃO E ENVIO
-      ══════════════════════════════════════════════ */}
-      {step === 8 && (
-        <div>
-          {/* Resumo final antes de enviar */}
-          <Section title="Resumo do perfil">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              {[
-                ["Nome artístico", form.displayName || "—"],
-                ["Categoria", form.escortCategory || "—"],
-                ["Cidade", `${form.city}${form.state ? ", " + form.state : ""}` || "—"],
-                ["Foto principal", form.mainPhotoUrl ? "✓ Enviada" : "Não enviada"],
-                ["Fotos na galeria", `${form.galleryUrls.length} foto(s)`],
-                ["Identidade", diditApproved ? "✓ Verificada pela Didit" : "Não verificada"],
-                ["WhatsApp", form.whatsapp || "—"],
-              ].map(([label, value]) => (
-                <div className="model-summary-tile" key={label} style={{ background: "#080808", border: `1px solid ${GOLD_DIM}`, borderRadius: 8, padding: "10px 12px" }}>
-                  <div style={{ fontSize: 10, color: "#aaa0b2", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>{label}</div>
-                  <div style={{ fontSize: 13, color: String(value).startsWith("✓") ? "#22c55e" : "#fcf7ff", fontWeight: String(value).startsWith("✓") ? 700 : 400 }}>{value}</div>
-                </div>
-              ))}
-            </div>
-          </Section>
-
-          <div style={{ padding: "14px 18px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 10, marginTop: 8 }}>
-            <p style={{ margin: 0, fontSize: 12, color: "#b4adb0", lineHeight: 1.7 }}>
-              Ao enviar, você confirma ter <strong>18 anos ou mais</strong> e concorda com os Termos de Uso da plataforma. Seu perfil fica em análise por até <strong>3 dias úteis</strong> e só ficará visível após aprovação.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* ── Navegação entre etapas ── */}
       </div>
 

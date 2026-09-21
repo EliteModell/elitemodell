@@ -51,13 +51,6 @@ export function ProfessionalPremiumStyles() {
         --elite-warning: #FFB84D;
       }
 
-      .professional-shell {
-        background:
-          radial-gradient(circle at top right, rgba(183, 44, 255,0.13), transparent 34%),
-          radial-gradient(circle at top left, rgba(183, 44, 255,0.06), transparent 28%),
-          linear-gradient(180deg, #050505 0%, #090806 45%, #050505 100%) !important;
-      }
-
       .professional-page {
         padding-left: 16px !important;
         padding-right: 16px !important;
@@ -1226,7 +1219,7 @@ export function ProfessionalPremiumStyles() {
         --elite-border: #e1a6ff;
         --elite-border-soft: #fcf7ff;
       }
-      .professional-shell { background: #f7f7fa !important; color: var(--elite-text) !important; }
+      .professional-shell { color: var(--elite-text) !important; }
       .professional-premium-page { color: var(--elite-text) !important; }
       .premium-card,
       .premium-hero,

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { NoPrefetchLink as Link } from "@/components/NoPrefetchLink";
 import type { ComponentType } from "react";
 import { ChevronRight, ShieldCheck, UserRound, X } from "lucide-react";
 import {

@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import * as Sentry from "@sentry/nextjs";
 
 export default function ProfessionalOnboardingError({
   error,
@@ -12,7 +11,9 @@ export default function ProfessionalOnboardingError({
   unstable_retry: () => void;
 }) {
   useEffect(() => {
-    Sentry.captureException(error, { tags: { flow: "professional-onboarding" } });
+    void import("@sentry/nextjs").then((Sentry) => {
+      Sentry.captureException(error, { tags: { flow: "professional-onboarding" } });
+    });
   }, [error]);
 
   return (

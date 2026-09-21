@@ -29,7 +29,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { supabaseAuth } from "@/lib/supabase-client";
+import { loadSupabaseAuth } from "@/lib/supabase-auth-loader";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 function initials(name?: string | null) {
@@ -258,6 +258,7 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   const pathname = usePathname();
 
   async function handleSignOut() {
+    const supabaseAuth = await loadSupabaseAuth();
     await supabaseAuth.auth.signOut();
     await signOut({ callbackUrl: "/" });
   }

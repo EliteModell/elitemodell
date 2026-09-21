@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { NoPrefetchLink as Link } from "@/components/NoPrefetchLink";
 import { usePathname } from "next/navigation";
 import { Crown, Grid2X2, List, PlusCircle, UserRound } from "lucide-react";
 import styles from "@/app/(dashboard)/profissional/professional-dashboard.module.css";
