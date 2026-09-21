@@ -1,29 +1,40 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import { prisma } from "@/lib/prisma";
+import { resolveDigitCallbackDestination, verifyDigitCallbackState } from "@/lib/didit-callback";
 
 export const dynamic = "force-dynamic";
 
-// Persona redirects here after the user completes or abandons the flow.
-// The real decision arrives by webhook; this page only returns to the correct account flow.
-export default async function VerificacaoCallbackPage() {
+// Identity providers redirect here after the user completes or abandons the flow.
+// The real decision is validated server-side; this page only returns to the correct account flow.
+export default async function VerificacaoCallbackPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ state?: string | string[] }>;
+}) {
+  const query = await searchParams;
   const session = await getServerSession(authOptions);
   const user = session?.user;
+  const callbackSecret = process.env.DIDIT_WEBHOOK_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim() || "";
+  const professionalStateValid = verifyDigitCallbackState(
+    typeof query.state === "string" ? query.state : null,
+    callbackSecret,
+  );
+  const activeProfessionalDigit = user
+    ? await prisma.professional.findFirst({
+      where: {
+        userId: user.id,
+        kycProvider: "DIDIT",
+        OR: [{ kycSessionId: { not: null } }, { verificationUrl: { not: null } }],
+      },
+      select: { id: true },
+    })
+    : null;
 
-  if (user?.activeProfileType === "CLIENTE") {
-    redirect("/dashboard/verificacao-idade");
-  }
-
-  if (
-    user?.activeProfileType === "PROFESSIONAL" ||
-    (!user?.activeProfileType &&
-      (user?.accountType === "model" ||
-        user?.accountType === "professional" ||
-        user?.isProfessional))
-  ) {
-    redirect(ACCOUNT_ROUTES.analiseAcompanhante);
-  }
-
-  redirect("/dashboard/verificacao-idade");
+  redirect(resolveDigitCallbackDestination({
+    user: user ?? null,
+    hasActiveProfessionalDigit: Boolean(activeProfessionalDigit),
+    professionalStateValid,
+  }));
 }

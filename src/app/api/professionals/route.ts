@@ -6,8 +6,8 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
-import { MANUAL_PENDING_STATUS, PERSONA_PENDING_STATUS } from "@/lib/persona";
 import { DIDIT_PROVIDER } from "@/lib/professional-verification";
+import { ProfessionalDiditError, requireApprovedProfessionalDidit } from "@/lib/professional-didit";
 import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
 import { activeProfessionalAccessWhere } from "@/lib/professional-access";
 import { createProfessionalSchema } from "@/lib/professional-profile-schema";
@@ -235,6 +235,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const diditVerification = await requireApprovedProfessionalDidit(session.user.id);
+
     const { specialties, services, phone, whatsapp, image, galleryUrls, ...profileData } = data;
     await assertApprovedMediaUrls({
       urls: [image, ...galleryUrls].filter((url): url is string => Boolean(url)),
@@ -246,13 +248,6 @@ export async function POST(req: NextRequest) {
     const normalizedGalleryUrls = galleryUrls
       .map((url) => normalizeControlledMediaUrl(url))
       .filter((url): url is string => Boolean(url));
-    const hasManualMedia =
-      Boolean(profileData.verificationUrl) &&
-      profileData.kycProvider !== "PERSONA";
-    const normalizedKycProvider = hasManualMedia ? "MANUAL" : profileData.kycProvider;
-    const normalizedKycStatus = hasManualMedia
-      ? MANUAL_PENDING_STATUS
-      : profileData.kycStatus ?? (profileData.kycSessionId ? PERSONA_PENDING_STATUS : "NOT_STARTED");
     const escortCategory = profileData.escortCategory
       || (user?.category && ["MULHER", "TRANS", "HOMEM"].includes(user.category) ? user.category : undefined);
 
@@ -272,16 +267,19 @@ export async function POST(req: NextRequest) {
       galleryUrls: [],
       phone:     phone ? normalizePhone(phone) : undefined,
       whatsapp:  whatsapp ? normalizePhone(whatsapp) : undefined,
-      kycProvider: normalizedKycProvider,
-      kycStatus: normalizedKycStatus,
+      verificationUrl: null,
+      verificationType: "biometria",
+      kycProvider: DIDIT_PROVIDER,
+      kycSessionId: diditVerification.sessionId,
+      kycStatus: diditVerification.status,
       escortCategory,
       slug,
       bio:       profileData.bio ?? "",
       birthDate: profileData.birthDate ? new Date(profileData.birthDate) : undefined,
       status:    "PENDING_REVIEW" as const,
       verified:  false,
-      docStatus:  normalizedKycStatus === "APPROVED" ? "APPROVED" : profileData.docFrenteUrl || normalizedKycProvider === DIDIT_PROVIDER ? "PENDING" : "NOT_SENT",
-      verifStatus: normalizedKycStatus === "APPROVED" ? "APPROVED" : profileData.verificationUrl || profileData.kycSessionId ? "PENDING" : "NOT_SENT",
+      docStatus: "APPROVED",
+      verifStatus: "APPROVED",
     };
     const initialPhotos = [normalizedImage, ...normalizedGalleryUrls]
       .filter((url): url is string => Boolean(url))
@@ -336,6 +334,9 @@ export async function POST(req: NextRequest) {
       receiptStatus,
     }, { status: existing ? 200 : 201 });
   } catch (err) {
+    if (err instanceof ProfessionalDiditError) {
+      return NextResponse.json({ error: err.message, code: err.code }, { status: err.httpStatus });
+    }
     if (err instanceof z.ZodError) {
       return NextResponse.json({
         error: err.issues[0]?.message ?? "Revise os campos obrigatórios.",

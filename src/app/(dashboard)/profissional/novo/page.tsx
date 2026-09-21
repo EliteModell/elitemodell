@@ -29,15 +29,18 @@ const labelStyle: React.CSSProperties = {
 type ArrayFormField = "attendanceTypes" | "servesGenders" | "idiomas" | "diasDisponiveis" | "services" | "fetishes" | "paymentMethods";
 type SingleFormField = "escortCategory" | "hairColor" | "eyeColor" | "ethnicity" | "signo" | "depilationStyle" | "bodyType";
 type PriceFormField = "price15min" | "price30min" | "pricePerHour" | "price2h" | "priceOvernight" | "priceWebcam";
-type PersonaAvailability = {
-  checked: boolean;
-  available: boolean;
-  message?: string;
-  missing?: string[];
-  templateInvalid?: boolean;
-};
 type ValidationIssue = { field: string; message: string };
 type SubmissionResult = { status: string; receiptStatus?: string };
+type DiditStatusResponse = {
+  available?: boolean;
+  provider?: string;
+  sessionId?: string | null;
+  status?: string;
+  retryAllowed?: boolean;
+  message?: string | null;
+  url?: string | null;
+  error?: string;
+};
 
 /* ── listas de opções ───────────────────────────────────── */
 const CABELOS   = ["Loira", "Morena", "Ruiva", "Castanho", "Colorido", "Preto", "Sem cabelo"];
@@ -66,7 +69,6 @@ const SERVICOS  = ["Acompanhamento", "Jantar a dois", "Viagens", "Festas e event
 const FETICHES  = ["Striptease", "Dominação", "Roleplay", "Bondage", "Fantasias/uniformes", "Acessórios eróticos", "Ativo", "Passivo", "Versátil", "Permite filmagem", "Faz sexo virtual"];
 const PAGAMENTO = ["Pix", "Dinheiro", "Cartão de crédito", "Cartão de débito", "Transferência"];
 const DIAS_SEMANA = ["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"];
-const DOCS_ACEITOS = ["RG / DNI", "CNH", "Passaporte", "CTPS", "OAB / CRM / CRO"];
 const ESTADOS_BR = ["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN","RO","RR","RS","SC","SE","SP","TO"];
 const CATEGORIAS = [
   ["MULHER", "Mulher"],
@@ -266,133 +268,15 @@ function MoneyInput({ value, onChange }: { value: string; onChange: (value: stri
   );
 }
 
-function FaceCapture({
-  challenge,
-  loading,
-  onCapture,
-}: {
-  challenge: string;
-  loading?: boolean;
-  onCapture: (file: File) => void;
-}) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [cameraOn, setCameraOn] = useState(false);
-  const [recording, setRecording] = useState(false);
-  const [error, setError] = useState("");
-
-  async function startCamera() {
-    setError("");
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 960 } },
-        audio: true,
-      });
-      streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
-      setCameraOn(true);
-    } catch {
-      setError("Não foi possível acessar a câmera. Use o upload manual abaixo.");
-    }
-  }
-
-  function stopCamera() {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-    setCameraOn(false);
-    setRecording(false);
-  }
-
-  function takeSelfie() {
-    const video = videoRef.current;
-    if (!video || !video.videoWidth) return;
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      onCapture(new File([blob], `selfie-verificacao-${Date.now()}.jpg`, { type: "image/jpeg" }));
-    }, "image/jpeg", 0.9);
-  }
-
-  function startRecording() {
-    const stream = streamRef.current;
-    if (!stream) return;
-    chunksRef.current = [];
-    const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus") ? "video/webm;codecs=vp8,opus" : "video/webm";
-    const recorder = new MediaRecorder(stream, { mimeType });
-    recorderRef.current = recorder;
-    recorder.ondataavailable = (event) => {
-      if (event.data.size > 0) chunksRef.current.push(event.data);
-    };
-    recorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: "video/webm" });
-      onCapture(new File([blob], `liveness-verificacao-${Date.now()}.webm`, { type: "video/webm" }));
-    };
-    recorder.start();
-    setRecording(true);
-  }
-
-  function stopRecording() {
-    recorderRef.current?.stop();
-    setRecording(false);
-  }
-
-  useEffect(() => () => stopCamera(), []);
-
-  return (
-    <div className="model-info-panel" style={{ background: "#080808", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: 14, marginBottom: 18 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
-        <div>
-          <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 800, color: "#fcf7ff" }}>Captura pela câmera</p>
-          <p style={{ margin: 0, fontSize: 12, color: "#b4adb0", lineHeight: 1.5 }}>Desafio: <strong style={{ color: GOLD }}>{challenge}</strong></p>
-        </div>
-        <button type="button" onClick={cameraOn ? stopCamera : startCamera}
-          style={{ padding: "9px 12px", borderRadius: 8, border: `1px solid ${GOLD_MID}`, background: cameraOn ? "transparent" : GOLD, color: cameraOn ? GOLD : "#080808", fontWeight: 800, cursor: "pointer", fontSize: 12 }}>
-          {cameraOn ? "Fechar câmera" : "Abrir câmera"}
-        </button>
-      </div>
-
-      <div style={{ aspectRatio: "4 / 3", borderRadius: 10, overflow: "hidden", background: "#080808", border: "1px solid #251f20", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        {cameraOn ? (
-          <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }} />
-        ) : (
-          <p style={{ color: "#aaa0b2", fontSize: 12, margin: 0 }}>A câmera aparece aqui quando autorizada.</p>
-        )}
-      </div>
-
-      {error && <p style={{ color: "#ef4444", fontSize: 12, margin: "8px 0 0" }}>{error}</p>}
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
-        <button type="button" onClick={takeSelfie} disabled={!cameraOn || loading}
-          style={{ padding: "11px", borderRadius: 8, border: "none", background: !cameraOn || loading ? "#676064" : GOLD, color: "#080808", fontWeight: 800, cursor: !cameraOn || loading ? "not-allowed" : "pointer" }}>
-          Enviar selfie
-        </button>
-        <button type="button" onClick={recording ? stopRecording : startRecording} disabled={!cameraOn || loading}
-          style={{ padding: "11px", borderRadius: 8, border: `1px solid ${recording ? "rgba(239,68,68,0.5)" : GOLD_MID}`, background: recording ? "rgba(239,68,68,0.12)" : "#080808", color: recording ? "#ef4444" : GOLD, fontWeight: 800, cursor: !cameraOn || loading ? "not-allowed" : "pointer" }}>
-          {recording ? "Parar vídeo" : "Gravar vídeo"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 /* ── componente principal ───────────────────────────────── */
 export default function ProfissionalNovoPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
-  const [personaAvailability, setPersonaAvailability] = useState<PersonaAvailability>({
-    checked: false,
-    available: false,
-  });
   const [diditAvailable, setDigitAvailable] = useState(false);
+  const [diditMessage, setDigitMessage] = useState<string | null>(null);
+  const [diditRetryAllowed, setDigitRetryAllowed] = useState(false);
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [emailVerified, setEmailVerified] = useState<boolean | null>(null);
   const [emailBusy, setEmailBusy] = useState(false);
@@ -410,6 +294,7 @@ export default function ProfissionalNovoPage() {
   const draftLoadedRef = useRef(false);
   const skipInitialDraftSaveRef = useRef(true);
   const submittingRef = useRef(false);
+  const diditStartingRef = useRef(false);
 
   /* ── estado do formulário ─────────────────────────────── */
   const [form, setForm] = useState({
@@ -450,9 +335,14 @@ export default function ProfissionalNovoPage() {
 
       const parsed = JSON.parse(rawDraft) as { step?: number; form?: Partial<typeof form> };
       if (parsed?.form && typeof parsed.form === "object") {
+        const safeDraftForm = { ...parsed.form };
+        delete safeDraftForm.verificationUrl;
+        delete safeDraftForm.kycProvider;
+        delete safeDraftForm.kycSessionId;
+        delete safeDraftForm.kycStatus;
         setForm((current) => ({
           ...current,
-          ...parsed.form,
+          ...safeDraftForm,
           galleryUrls: Array.isArray(parsed.form?.galleryUrls) ? parsed.form.galleryUrls.filter((url) => !String(url).startsWith("blob:")) : current.galleryUrls,
           mainPhotoUrl: parsed.form?.mainPhotoUrl && !String(parsed.form.mainPhotoUrl).startsWith("blob:") ? parsed.form.mainPhotoUrl : current.mainPhotoUrl,
           docFrenteFile: null,
@@ -496,6 +386,10 @@ export default function ProfissionalNovoPage() {
       docFrenteFile: null,
       docVersoFile: null,
       verificationFile: null,
+      verificationUrl: "",
+      kycProvider: "",
+      kycSessionId: "",
+      kycStatus: "NOT_STARTED",
     };
 
     try {
@@ -576,55 +470,67 @@ export default function ProfissionalNovoPage() {
       }
     }
 
-    async function loadPersonaAvailability() {
-      const res = await fetch("/api/kyc/sessions", { method: "GET" });
-      const data = await res.json().catch(() => ({}));
-      if (!active) return;
-
-      if (!res.ok) {
-        console.warn("[KYC] Não foi possível consultar disponibilidade da Persona.", {
-          status: res.status,
-          data,
-        });
-        setPersonaAvailability({
-          checked: true,
-          available: false,
-          message: "Verificação automática indisponível no momento. Use a verificação manual.",
-        });
-        return;
-      }
-
-      setPersonaAvailability({
-        checked: true,
-        available: Boolean(data.available),
-        message: data.message,
-        missing: data.missing,
-        templateInvalid: data.templateInvalid,
-      });
-    }
-
     async function loadDigitAvailability() {
       const res = await fetch("/api/didit/session", { method: "GET" });
-      const data = await res.json().catch(() => ({}));
-      if (active) setDigitAvailable(Boolean(data.available));
+      const data = await res.json().catch(() => ({})) as DiditStatusResponse;
+      if (!active) return;
+      setDigitAvailable(Boolean(data.available));
+      setDigitMessage(data.message ?? null);
+      setDigitRetryAllowed(Boolean(data.retryAllowed));
+      if (data.sessionId || data.status === "NOT_STARTED") {
+        setForm((current) => ({
+          ...current,
+          kycProvider: data.sessionId ? "DIDIT" : "",
+          kycSessionId: data.sessionId ?? "",
+          kycStatus: data.status ?? "NOT_STARTED",
+          verificationUrl: data.url ?? "",
+        }));
+      }
     }
 
     loadUserDefaults().catch(() => {});
-    loadPersonaAvailability().catch((err) => {
-      console.warn("[KYC] Erro ao consultar disponibilidade da Persona.", err);
-      if (active) {
-        setPersonaAvailability({
-          checked: true,
-          available: false,
-          message: "Verificação automática indisponível no momento. Use a verificação manual.",
-        });
-      }
-    });
     loadDigitAvailability().catch(() => { if (active) setDigitAvailable(false); });
     return () => {
       active = false;
     };
   }, [router]);
+
+  useEffect(() => {
+    if (step < 7) return;
+    let active = true;
+
+    const refreshDigitStatus = async () => {
+      try {
+        const response = await fetch("/api/didit/session", { cache: "no-store" });
+        const data = await response.json().catch(() => ({})) as DiditStatusResponse;
+        if (!active || !response.ok) return;
+        setDigitAvailable(Boolean(data.available));
+        setDigitMessage(data.message ?? null);
+        setDigitRetryAllowed(Boolean(data.retryAllowed));
+        setForm((current) => ({
+          ...current,
+          kycProvider: data.sessionId ? "DIDIT" : "",
+          kycSessionId: data.sessionId ?? "",
+          kycStatus: data.status ?? "NOT_STARTED",
+          verificationUrl: data.url ?? "",
+        }));
+      } catch {
+        // Mantém o estado local e tenta novamente quando a página recuperar foco.
+      }
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void refreshDigitStatus();
+    };
+    void refreshDigitStatus();
+    window.addEventListener("focus", refreshDigitStatus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refreshDigitStatus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [step]);
 
   function set<K extends keyof typeof form>(field: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -761,54 +667,36 @@ export default function ProfissionalNovoPage() {
     }
   }
 
-  /* upload de documento (privado) */
-  async function handleDocUpload(file: File, side: "frente" | "verso") {
-    setUploadingIdx(side === "frente" ? 90 : 91);
-    try {
-      const url = await uploadFile(file, "documentos");
-      if (side === "frente") { set("docFrenteUrl", url); set("docFrenteFile", file); }
-      else { set("docVersoUrl", url); set("docVersoFile", file); }
-      toast.success(`Documento (${side}) enviado com segurança.`);
-    } catch { toast.error("Erro ao enviar documento."); }
-    finally { setUploadingIdx(null); }
-  }
-
-  /* upload da mídia de verificação */
-  async function handleVerifMedia(file: File) {
-    setUploadingIdx(99);
-    try {
-      const url = await uploadFile(file, "verificacao");
-      set("verificationUrl", url);
-      set("verificationFile", file);
-      set("verificationType", file.type.startsWith("video/") ? "video" : "foto");
-      set("kycProvider", "MANUAL");
-      set("kycStatus", "KYC_MANUAL_PENDENTE");
-      if (!form.kycSessionId) set("kycSessionId", `manual_upload_${Date.now()}`);
-      toast.success("Mídia de verificação enviada!");
-    } catch { toast.error("Erro ao enviar mídia."); }
-    finally { setUploadingIdx(null); }
-  }
-
   /* ── verificação Didit ────────────────────────────────── */
   async function startDigitVerification() {
+    if (diditStartingRef.current || uploadingIdx === 100) return;
+    if (form.kycStatus === "APPROVED") return;
+
+    diditStartingRef.current = true;
     setUploadingIdx(100);
     try {
       const res = await fetch("/api/didit/session", { method: "POST" });
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({})) as DiditStatusResponse & { reused?: boolean };
       if (!res.ok) {
         console.error("[Didit] Falha ao iniciar verificacao.", { status: res.status, data });
         toast.error(data.error ?? "Não foi possível iniciar a verificação. Tente novamente.");
         return;
       }
 
-      set("kycProvider", data.provider);
-      set("kycSessionId", data.sessionId);
-      set("kycStatus", data.status);
+      set("kycProvider", data.provider ?? "DIDIT");
+      set("kycSessionId", data.sessionId ?? "");
+      set("kycStatus", data.status ?? "PENDING");
+      setDigitMessage(data.message ?? null);
+      setDigitRetryAllowed(Boolean(data.retryAllowed));
       set("verificationType", "biometria");
       if (data.url) set("verificationUrl", data.url);
 
       if (data.url?.startsWith("http")) {
         window.location.href = data.url;
+      } else if (data.status === "APPROVED") {
+        toast.success("Identidade verificada.");
+      } else if (data.reused) {
+        toast.success("Sua verificação já está em andamento. Atualizamos o status.");
       } else {
         toast.success("Verificação iniciada.");
       }
@@ -816,54 +704,12 @@ export default function ProfissionalNovoPage() {
       console.error("[Didit] Erro de rede ao iniciar verificacao.", err);
       toast.error("Não foi possível iniciar a verificação. Tente novamente.");
     } finally {
+      diditStartingRef.current = false;
       setUploadingIdx(null);
     }
   }
 
   /* ── submit final ─────────────────────────────────────── */
-  async function startFaceBiometry() {
-    if (personaAvailability.checked && !personaAvailability.available) {
-      toast.error("Verificação automática indisponível no momento. Use a verificação manual.");
-      return;
-    }
-
-    setUploadingIdx(100);
-    try {
-      const res = await fetch("/api/kyc/sessions", { method: "POST" });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        console.error("[KYC] Falha ao iniciar verificação facial com Persona.", {
-          status: res.status,
-          data,
-        });
-        toast.error(data.error ?? "Não foi possível iniciar a verificação facial com Persona. Tente novamente ou use a verificação manual.");
-        return;
-      }
-
-      set("kycProvider", data.provider);
-      set("kycSessionId", data.sessionId);
-      set("kycStatus", data.status);
-      set("kycChallenge", data.challenge ?? "");
-      set("kycExpiresAt", data.expiresAt ?? "");
-      if (data.url) set("verificationUrl", data.url);
-      if (!data.fallback) set("verificationType", "biometria");
-
-      if (data.fallback || data.provider === "MANUAL" || data.provider === "LOCAL_MANUAL") {
-        toast.error(data.message ?? "Verificação manual pendente. Envie sua selfie ou vídeo de verificação abaixo para análise manual.");
-        return;
-      } else if (data.url?.startsWith("http")) {
-        window.location.href = data.url;
-      } else {
-        toast.success("Verificação facial com Persona iniciada.");
-      }
-    } catch (err) {
-      console.error("[KYC] Erro de rede ao iniciar verificação facial com Persona.", err);
-      toast.error("Não foi possível iniciar a verificação facial com Persona. Tente novamente ou use a verificação manual.");
-    } finally {
-      setUploadingIdx(null);
-    }
-  }
-
   function maskEmail(value: string | null) {
     if (!value || !value.includes("@")) return "seu e-mail";
     const [local, domain] = value.split("@");
@@ -998,7 +844,6 @@ export default function ProfissionalNovoPage() {
         phone: form.phone, whatsapp: form.whatsapp, instagram: form.instagram, website: form.website,
         image: form.mainPhotoUrl || undefined,
         galleryUrls: form.galleryUrls,
-        verificationUrl: form.verificationUrl,
         verificationType: form.verificationType,
         verificationCode: generateVerificationCode(),
         kycProvider: form.kycProvider,
@@ -1068,7 +913,16 @@ export default function ProfissionalNovoPage() {
       if (form.mainPhotoUrl.startsWith("blob:")) return { field: "mainPhotoUrl", message: "A foto está sendo processada, aguarde um momento." };
       if (!form.mainPhotoUrl || !REMOTE_IMAGE_RE.test(form.mainPhotoUrl)) return { field: "mainPhotoUrl", message: "Selecione e envie a foto principal do perfil para continuar." };
     }
-    if (targetStep === 8 && !form.kycSessionId) return { field: "kycSessionId", message: "Inicie a verificação de identidade para continuar." };
+    if (targetStep === 7 && form.kycStatus !== "APPROVED") {
+      return {
+        field: "kycSessionId",
+        message: form.kycStatus === "REJECTED"
+          ? "Não foi possível concluir sua verificação de identidade. Tente novamente."
+          : form.kycSessionId
+            ? "Sua verificação de identidade ainda está em análise."
+            : "Verifique sua identidade com a Didit para continuar.",
+      };
+    }
     return null;
   }
 
@@ -1086,10 +940,9 @@ export default function ProfissionalNovoPage() {
     await signOut({ callbackUrl: "/" });
   }
 
-  const personaButtonDisabled =
-    uploadingIdx === 100 || (personaAvailability.checked && !personaAvailability.available);
-  const personaUnavailable =
-    personaAvailability.checked && !personaAvailability.available;
+  const diditApproved = form.kycStatus === "APPROVED";
+  const diditRejected = form.kycStatus === "REJECTED";
+  const diditPending = Boolean(form.kycSessionId) && !diditApproved && !diditRejected;
 
   if (submissionResult) {
     return (
@@ -1605,137 +1458,102 @@ export default function ProfissionalNovoPage() {
       ══════════════════════════════════════════════ */}
       {step === 7 && (
         <div>
+          <Section title="Revise seus dados" desc="Confira as informações principais antes de verificar sua identidade.">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
+              {[
+                ["Nome artístico", form.displayName || "—"],
+                ["Categoria", form.escortCategory || "—"],
+                ["Localização", `${form.city}${form.state ? ", " + form.state : ""}` || "—"],
+                ["Fotos", `${1 + form.galleryUrls.length} foto(s)`],
+                ["Contato", form.whatsapp || "—"],
+              ].map(([label, value]) => (
+                <div className="model-summary-tile" key={label} style={{ background: "#080808", border: `1px solid ${GOLD_DIM}`, borderRadius: 10, padding: "12px 14px" }}>
+                  <div style={{ fontSize: 10, color: "#aaa0b2", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 13, color: "#fcf7ff" }}>{value}</div>
+                </div>
+              ))}
+            </div>
+          </Section>
+
           <Section
-            title="Verificação de identidade"
-            desc="Para manter a segurança da plataforma, sua identidade será verificada por um processo seguro com documento e reconhecimento facial."
+            title="🔐 Verifique sua identidade"
+            desc="Para aumentar a segurança da Elite Modell, precisamos confirmar sua identidade antes de enviar seu cadastro para análise."
           >
-            {/* Card de privacidade */}
             <div style={{ display: "flex", gap: 14, alignItems: "flex-start", background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 12, padding: "16px 18px", marginBottom: 24 }}>
               <span style={{ fontSize: 22, flexShrink: 0, marginTop: 1 }}>🛡️</span>
               <div>
-                <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "#22c55e" }}>Seus dados são protegidos</p>
+                <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 800, color: "#22c55e" }}>Verificação segura pela Didit</p>
                 <p style={{ margin: 0, fontSize: 12, color: "#b4adb0", lineHeight: 1.65 }}>
-                  Clientes nunca verão seus documentos. A verificação é usada apenas para análise de segurança da plataforma.
+                  Você será direcionada para a verificação segura da Didit. Será necessário apresentar seu documento e realizar a verificação solicitada. Clientes nunca verão seus documentos.
                 </p>
               </div>
             </div>
 
-            {/* Botão de verificação – Didit (primário) ou Persona (fallback) */}
-            {(() => {
-              const kycUnavailable = !diditAvailable && personaUnavailable;
-              const startVerification = diditAvailable ? startDigitVerification : startFaceBiometry;
-              const buttonDisabled = uploadingIdx === 100 || kycUnavailable;
+            {diditApproved ? (
+              <div data-field="kycSessionId" style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e", fontSize: 15, fontWeight: 800 }}>
+                ✓ Identidade verificada
+              </div>
+            ) : (
+              <>
+                <button
+                  data-field="kycSessionId"
+                  type="button"
+                  onClick={startDigitVerification}
+                  disabled={uploadingIdx === 100 || !diditAvailable}
+                  style={{
+                    width: "100%", minHeight: 52, padding: "14px 16px", borderRadius: 12, border: "none",
+                    background: !diditAvailable ? "#676064" : GOLD,
+                    color: !diditAvailable ? "#e7e0ea" : "#080808",
+                    fontSize: 15, fontWeight: 800,
+                    cursor: uploadingIdx === 100 || !diditAvailable ? "not-allowed" : "pointer",
+                    marginBottom: 14,
+                  }}
+                >
+                  {uploadingIdx === 100
+                    ? "Iniciando verificação..."
+                    : diditPending
+                      ? form.verificationUrl ? "Retomar verificação" : "Verificação em análise"
+                      : diditRejected && diditRetryAllowed
+                        ? "Tentar novamente"
+                        : "Verificar minha identidade"}
+                </button>
 
-              return (
-                <>
-                  <button
-                    type="button"
-                    onClick={startVerification}
-                    disabled={buttonDisabled}
-                    style={{
-                      width: "100%", padding: "14px 16px", borderRadius: 12, border: "none",
-                      background: kycUnavailable ? "#676064" : GOLD,
-                      color: kycUnavailable ? "#b4adb0" : "#080808",
-                      fontSize: 15, fontWeight: 800,
-                      cursor: buttonDisabled ? "not-allowed" : "pointer",
-                      marginBottom: 14,
-                    }}
-                  >
-                    {uploadingIdx === 100
-                      ? "Iniciando verificação..."
-                      : kycUnavailable
-                        ? "Verificação indisponível no momento"
-                        : form.kycSessionId
-                          ? form.kycStatus === "APPROVED" ? "✓ Verificação aprovada" : "Continuar verificação"
-                          : "Iniciar verificação"}
-                  </button>
+                {diditPending && (
+                  <div style={{ padding: "12px 14px", borderRadius: 10, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, fontSize: 13, fontWeight: 700, lineHeight: 1.55 }}>
+                    Verificação em análise
+                    <span style={{ display: "block", color: "#d8cfdd", fontSize: 12, fontWeight: 500, marginTop: 4 }}>
+                      Seu cadastro ainda não será considerado verificado até recebermos o resultado final da Didit.
+                    </span>
+                  </div>
+                )}
 
-                  {form.kycSessionId && (
-                    <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 14, fontWeight: 700, fontSize: 13,
-                      background: form.kycStatus === "APPROVED" ? "rgba(34,197,94,0.10)" : GOLD_DIM,
-                      border: `1px solid ${form.kycStatus === "APPROVED" ? "rgba(34,197,94,0.3)" : GOLD_MID}`,
-                      color: form.kycStatus === "APPROVED" ? "#22c55e" : GOLD,
-                    }}>
-                      {form.kycStatus === "APPROVED"
-                        ? "Verificação aprovada"
-                        : form.kycStatus === "NEEDS_REVIEW"
-                          ? "Verificação precisa de atenção"
-                          : "Verificação em análise"}
-                    </div>
-                  )}
+                {diditRejected && (
+                  <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", color: "#ff8b8b", fontSize: 13, fontWeight: 700, lineHeight: 1.55 }}>
+                    Não foi possível concluir sua verificação de identidade.
+                    {diditRetryAllowed && <span style={{ display: "block", color: "#d8cfdd", fontSize: 12, fontWeight: 500, marginTop: 4 }}>Você pode tentar novamente pelo botão acima.</span>}
+                  </div>
+                )}
 
-                  {kycUnavailable && (
-                    <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(183, 44, 255,0.10)", border: "1px solid rgba(183, 44, 255,0.25)", color: "#d77bff", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>
-                      A verificação automática está temporariamente indisponível. Tente novamente em alguns minutos.
-                    </div>
-                  )}
-                </>
-              );
-            })()}
+                {!diditAvailable && (
+                  <div style={{ padding: "12px 14px", borderRadius: 10, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: "#e8b8ff", fontSize: 13, fontWeight: 700, lineHeight: 1.5 }}>
+                    A verificação Didit está temporariamente indisponível. Seu cadastro permanece salvo; tente novamente em alguns minutos.
+                  </div>
+                )}
+
+                {diditMessage && !diditPending && !diditRejected && (
+                  <p style={{ margin: "10px 0 0", color: "#d8cfdd", fontSize: 12 }}>{diditMessage}</p>
+                )}
+              </>
+            )}
           </Section>
         </div>
       )}
 
       {/* ══════════════════════════════════════════════
-          ETAPA 9 — MÍDIA DE VERIFICAÇÃO
+          ETAPA 9 — REVISÃO E ENVIO
       ══════════════════════════════════════════════ */}
       {step === 8 && (
         <div>
-          <Section title="Verificação facial" desc="Para proteger a segurança da plataforma, realizamos uma validação facial para confirmar autenticidade, maioridade e evitar perfis falsos.">
-
-            <div className="model-info-panel" style={{ background: "#080808", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "16px", marginBottom: 20 }}>
-              <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 800, color: "#fcf7ff" }}>Validação facial segura</p>
-              <p style={{ margin: "0 0 14px", fontSize: 12, color: "#b4adb0", lineHeight: 1.6 }}>
-                O processo é feito em ambiente protegido e leva poucos minutos. Após o envio, seu cadastro permanece em análise até a revisão final da equipe.
-              </p>
-              {(() => {
-                const kycUnavailable9 = !diditAvailable && personaUnavailable;
-                const startVerification9 = diditAvailable ? startDigitVerification : startFaceBiometry;
-                return (
-                  <>
-                    <button
-                      type="button"
-                      onClick={startVerification9}
-                      disabled={uploadingIdx === 100 || kycUnavailable9}
-                      style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "none", background: kycUnavailable9 ? "#676064" : GOLD, color: kycUnavailable9 ? "#b4adb0" : "#080808", fontSize: 14, fontWeight: 800, cursor: (uploadingIdx === 100 || kycUnavailable9) ? "not-allowed" : "pointer" }}
-                    >
-                      {uploadingIdx === 100 ? "Iniciando..." : kycUnavailable9 ? "Verificação automática indisponível" : "Iniciar verificação facial"}
-                    </button>
-                    {kycUnavailable9 && (
-                      <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: "rgba(183, 44, 255,0.10)", border: "1px solid rgba(183, 44, 255,0.25)", color: "#d77bff", fontSize: 12, fontWeight: 700, lineHeight: 1.5 }}>
-                        Verificação automática indisponível no momento. Use a verificação manual.
-                      </div>
-                    )}
-                    {form.kycSessionId && (
-                      <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, fontSize: 12, fontWeight: 700 }}>
-                        {form.kycProvider === "DIDIT" ? "Verificação Didit" : form.kycProvider === "PERSONA" ? "Verificação facial com Persona" : "Verificação manual"}: {form.kycStatus}
-                        {form.kycExpiresAt && (
-                          <span style={{ display: "block", color: "#b4adb0", fontWeight: 500, marginTop: 4 }}>
-                            Expira em {new Date(form.kycExpiresAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
-            </div>
-
-            {form.verificationUrl && form.verificationType === "biometria" && (
-              <div className="model-status-panel" style={{ marginTop: 8, padding: "10px 14px", background: "#080808", border: `1px solid ${GOLD_MID}`, borderRadius: 8, fontSize: 12, color: GOLD }}>
-                {form.kycProvider === "DIDIT" ? "Verificação Didit iniciada" : "Verificação facial iniciada"}
-              </div>
-            )}
-
-            {/* Zona segura explicação */}
-            <div style={{ marginTop: 20, background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 10, padding: "14px 16px" }}>
-              <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "#22c55e" }}>Ambiente seguro</p>
-              <p style={{ margin: 0, fontSize: 12, color: "#b4adb0", lineHeight: 1.6 }}>
-                A validação facial é usada apenas para análise de autenticidade e segurança. A aprovação do perfil continua dependendo da revisão da equipe.
-              </p>
-            </div>
-          </Section>
-
           {/* Resumo final antes de enviar */}
           <Section title="Resumo do perfil">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -1745,7 +1563,7 @@ export default function ProfissionalNovoPage() {
                 ["Cidade", `${form.city}${form.state ? ", " + form.state : ""}` || "—"],
                 ["Foto principal", form.mainPhotoUrl ? "✓ Enviada" : "Não enviada"],
                 ["Fotos na galeria", `${form.galleryUrls.length} foto(s)`],
-                ["Verificação", form.kycSessionId ? "✓ Concluída" : "Não iniciada"],
+                ["Identidade", diditApproved ? "✓ Verificada pela Didit" : "Não verificada"],
                 ["WhatsApp", form.whatsapp || "—"],
               ].map(([label, value]) => (
                 <div className="model-summary-tile" key={label} style={{ background: "#080808", border: `1px solid ${GOLD_DIM}`, borderRadius: 8, padding: "10px 12px" }}>
@@ -1779,9 +1597,9 @@ export default function ProfissionalNovoPage() {
             Continuar →
           </button>
         ) : (
-          <button onClick={submit} disabled={loading || emailVerified === false}
-            style={{ padding: "12px 32px", background: loading || emailVerified === false ? "#65009b" : GOLD, border: "none", borderRadius: 10, color: "#080808", fontSize: 14, fontWeight: 800, cursor: loading || emailVerified === false ? "not-allowed" : "pointer" }}>
-            {loading ? "Enviando..." : emailVerified === false ? "Confirme o email para enviar" : "Enviar para aprovação ✦"}
+          <button onClick={submit} disabled={loading || emailVerified === false || !diditApproved}
+            style={{ padding: "12px 32px", background: loading || emailVerified === false || !diditApproved ? "#65009b" : GOLD, border: "none", borderRadius: 10, color: "#080808", fontSize: 14, fontWeight: 800, cursor: loading || emailVerified === false || !diditApproved ? "not-allowed" : "pointer" }}>
+            {loading ? "Enviando..." : emailVerified === false ? "Confirme o email para enviar" : !diditApproved ? "Verifique sua identidade" : "Enviar cadastro para análise"}
           </button>
         )}
       </div>
