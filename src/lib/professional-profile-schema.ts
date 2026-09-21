@@ -1,12 +1,13 @@
 import { z } from "zod";
+import { isAgeOfMajority, isValidBirthDate } from "@/lib/age-validation";
 
 export const createProfessionalSchema = z.object({
   displayName: z.string().min(2),
   bio: z.string().optional().default(""),
   city: z.string().min(2),
   state: z.string().min(2),
-  bairro: z.string().min(2),
-  region: z.string().min(2),
+  bairro: z.string().trim().min(2).optional(),
+  region: z.string().trim().min(2).optional(),
   address: z.string().optional(),
   placeId: z.string().optional(),
   latitude: z.number().optional(),
@@ -17,6 +18,7 @@ export const createProfessionalSchema = z.object({
   website: z.string().optional(),
   priceMin: z.number().positive().optional(),
   priceMax: z.number().positive().optional(),
+  price15min: z.number().positive().optional(),
   pricePerHour: z.number().positive().optional(),
   price30min: z.number().positive().optional(),
   price2h: z.number().positive().optional(),
@@ -75,9 +77,9 @@ export const createProfessionalSchema = z.object({
     if ((data.bio ?? "").trim().length < 80) {
     addIssue(["bio"], "A biografia deve ter pelo menos 80 caracteres.");
   }
-  if (!data.bairro.trim()) addIssue(["bairro"], "Bairro obrigatorio.");
-  if (!data.region.trim()) addIssue(["region"], "Regiao obrigatoria.");
   if (!data.birthDate) addIssue(["birthDate"], "Data de nascimento obrigatoria.");
+  else if (!isValidBirthDate(data.birthDate)) addIssue(["birthDate"], "Data de nascimento invalida.");
+  else if (!isAgeOfMajority(data.birthDate)) addIssue(["birthDate"], "A pessoa deve ter 18 anos ou mais.");
   if (data.attendanceTypes.length === 0) {
     addIssue(["attendanceTypes"], "Informe o tipo de atendimento.");
   }
@@ -87,6 +89,7 @@ export const createProfessionalSchema = z.object({
   }
   if (data.services.length === 0) addIssue(["services"], "Informe pelo menos um servico.");
   if (
+    !data.price15min &&
     !data.pricePerHour &&
     !data.price30min &&
     !data.price2h &&

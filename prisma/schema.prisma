@@ -876,6 +876,7 @@ model Professional {
   profileEvents   ProfessionalProfileEvent[]
   favorites       Favorite[]
   voucherSettings ProfessionalVoucherSettings?
+  submissionReceipt ProfessionalSubmissionReceipt?
 
   @@index([status, featured, rating, totalReviews, createdAt])
   @@index([status, accessGrandfathered, freeAccessEndsAt])
@@ -888,6 +889,22 @@ model Professional {
   @@index([kycStatus])
   @@index([status, escortCategory])
   @@index([status, priceMin])
+}
+
+model ProfessionalSubmissionReceipt {
+  id             String   @id @default(cuid())
+  professionalId String   @unique
+  status         String   @default("PENDING")
+  attempts       Int      @default(0)
+  providerId     String?
+  lastError      String?  @db.Text
+  sentAt         DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@index([status, updatedAt])
 }
 
 model PlatformSettings {

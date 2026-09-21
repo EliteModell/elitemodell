@@ -29,6 +29,12 @@ test.describe("validacao do perfil profissional", () => {
     expect(createProfessionalSchema.safeParse(validProfile).success).toBe(true);
   });
 
+  test("aceita bairro e regiao ausentes e valor de 15 minutos", () => {
+    const profile = { ...validProfile, price15min: 120 } as Record<string, unknown>;
+    delete profile.pricePerHour;
+    expect(createProfessionalSchema.safeParse(profile).success).toBe(true);
+  });
+
   test("rejeita biografia com menos de 80 caracteres", () => {
     expect(issuePaths({ ...validProfile, bio: "curta" })).toContain("bio");
   });
@@ -43,5 +49,19 @@ test.describe("validacao do perfil profissional", () => {
     const withoutKyc: Record<string, unknown> = { ...validProfile };
     delete withoutKyc.kycSessionId;
     expect(issuePaths(withoutKyc)).toContain("kycSessionId");
+  });
+
+  test("rejeita data impossivel", () => {
+    expect(issuePaths({ ...validProfile, birthDate: "2000-02-31" })).toContain("birthDate");
+  });
+
+  test("rejeita data futura", () => {
+    expect(issuePaths({ ...validProfile, birthDate: "2999-01-01" })).toContain("birthDate");
+  });
+
+  test("rejeita menor de 18 anos", () => {
+    const today = new Date();
+    const minorDate = `${today.getFullYear() - 17}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    expect(issuePaths({ ...validProfile, birthDate: minorDate })).toContain("birthDate");
   });
 });

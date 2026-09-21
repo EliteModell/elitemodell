@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import toast from "react-hot-toast";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import { validateBirthDate } from "@/lib/age-validation";
 import { supabaseAuth } from "@/lib/supabase-client";
+import ProfessionalCityAutocomplete from "@/components/professional-onboarding/ProfessionalCityAutocomplete";
 
 /* ── constantes de tema ─────────────────────────────────── */
 const GOLD = "#b72cff";
@@ -34,6 +36,8 @@ type PersonaAvailability = {
   missing?: string[];
   templateInvalid?: boolean;
 };
+type ValidationIssue = { field: string; message: string };
+type SubmissionResult = { status: string; receiptStatus?: string };
 
 /* ── listas de opções ───────────────────────────────────── */
 const CABELOS   = ["Loira", "Morena", "Ruiva", "Castanho", "Colorido", "Preto", "Sem cabelo"];
@@ -391,6 +395,13 @@ export default function ProfissionalNovoPage() {
   const [diditAvailable, setDigitAvailable] = useState(false);
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [emailVerified, setEmailVerified] = useState<boolean | null>(null);
+  const [emailBusy, setEmailBusy] = useState(false);
+  const [emailCooldown, setEmailCooldown] = useState(0);
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [replacementEmail, setReplacementEmail] = useState("");
+  const [validationIssue, setValidationIssue] = useState<ValidationIssue | null>(null);
+  const [draftSaveError, setDraftSaveError] = useState(false);
+  const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const [birthDateLockedFromAccount, setBirthDateLockedFromAccount] = useState(false);
   const [birthParts, setBirthParts] = useState({ day: "", month: "", year: "" });
   const birthMonthRef = useRef<HTMLInputElement>(null);
@@ -398,11 +409,12 @@ export default function ProfissionalNovoPage() {
   const progressStepRefs = useRef<Array<HTMLDivElement | null>>([]);
   const draftLoadedRef = useRef(false);
   const skipInitialDraftSaveRef = useRef(true);
+  const submittingRef = useRef(false);
 
   /* ── estado do formulário ─────────────────────────────── */
   const [form, setForm] = useState({
     /* etapa 1 */
-    displayName: "", bio: "", city: "", state: "", bairro: "", escortCategory: "", birthDate: "", signo: "",
+    displayName: "", bio: "", city: "", state: "", bairro: "", placeId: "", escortCategory: "", birthDate: "", signo: "",
     /* etapa 2 */
     height: "", weight: "", hairColor: "", eyeColor: "", ethnicity: "",
     hasTattoos: false, hasPiercing: false, hasSilicone: false, isDepilada: true,
@@ -488,10 +500,43 @@ export default function ProfissionalNovoPage() {
 
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify({ step, form: draftForm, updatedAt: new Date().toISOString() }));
+      window.setTimeout(() => setDraftSaveError(false), 0);
     } catch (err) {
       console.warn("[professional-onboarding] Não foi possível salvar o rascunho local.", err);
+      window.setTimeout(() => setDraftSaveError(true), 0);
     }
   }, [form, step]);
+
+  useEffect(() => {
+    if (emailCooldown <= 0) return;
+    const timer = window.setInterval(() => setEmailCooldown((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearInterval(timer);
+  }, [emailCooldown]);
+
+  useEffect(() => {
+    if (emailVerified !== false) return;
+    let active = true;
+    const refreshStatus = async () => {
+      try {
+        const response = await fetch("/api/users/me", { cache: "no-store" });
+        if (!response.ok) return;
+        const user = await response.json() as { email?: string; emailVerified?: string | boolean | null };
+        if (!active) return;
+        setAccountEmail(user.email ?? null);
+        if (user.emailVerified) setEmailVerified(true);
+      } catch {
+        // Mantém o aviso e permite uma nova tentativa quando a conexão voltar.
+      }
+    };
+    const onVisibility = () => { if (document.visibilityState === "visible") void refreshStatus(); };
+    window.addEventListener("focus", refreshStatus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refreshStatus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [emailVerified]);
 
   useEffect(() => {
     let active = true;
@@ -583,6 +628,7 @@ export default function ProfissionalNovoPage() {
 
   function set<K extends keyof typeof form>(field: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [field]: value }));
+    if (validationIssue?.field === field) setValidationIssue(null);
   }
 
   function handleBirthPart(part: "day" | "month" | "year", value: string) {
@@ -818,17 +864,108 @@ export default function ProfissionalNovoPage() {
     }
   }
 
+  function maskEmail(value: string | null) {
+    if (!value || !value.includes("@")) return "seu e-mail";
+    const [local, domain] = value.split("@");
+    return `${local.slice(0, 2)}${"*".repeat(Math.max(3, local.length - 2))}@${domain}`;
+  }
+
+  async function requestEmailConfirmation(action: "resend" | "change") {
+    if (emailBusy || (action === "resend" && emailCooldown > 0)) return;
+    setEmailBusy(true);
+    try {
+      const response = await fetch("/api/auth/email-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(action === "change" ? { action, email: replacementEmail } : { action }),
+      });
+      const data = await response.json().catch(() => ({})) as { error?: unknown; maskedEmail?: string; verified?: boolean };
+      if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Não foi possível solicitar a confirmação agora.");
+      if (data.verified) {
+        setEmailVerified(true);
+        toast.success("Seu e-mail já está confirmado.");
+        return;
+      }
+      if (action === "change") {
+        setAccountEmail(replacementEmail.trim().toLowerCase());
+        setReplacementEmail("");
+        setEditingEmail(false);
+      }
+      setEmailCooldown(60);
+      toast.success(`Solicitação aceita. Confira ${data.maskedEmail ?? "seu e-mail"} e a pasta de spam.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível solicitar a confirmação agora.");
+    } finally {
+      setEmailBusy(false);
+    }
+  }
+
+  async function checkEmailConfirmation() {
+    setEmailBusy(true);
+    try {
+      const response = await fetch("/api/users/me", { cache: "no-store" });
+      const user = response.ok ? await response.json() as { emailVerified?: string | boolean | null } : null;
+      if (user?.emailVerified) {
+        setEmailVerified(true);
+        toast.success("E-mail confirmado. Você já pode concluir o envio.");
+      } else {
+        toast.error("A confirmação ainda não foi identificada. Abra o link recebido e tente novamente.");
+      }
+    } finally {
+      setEmailBusy(false);
+    }
+  }
+
+  function showValidationIssue(issue: ValidationIssue, targetStep = step) {
+    setValidationIssue(issue);
+    if (targetStep !== step) setStep(targetStep);
+    toast.error(issue.message);
+    window.setTimeout(() => {
+      const element = document.querySelector<HTMLElement>(`[data-field="${issue.field}"]`);
+      element?.scrollIntoView({ behavior: "smooth", block: "center" });
+      element?.focus();
+    }, targetStep === step ? 0 : 120);
+  }
+
+  function responseError(data: unknown) {
+    if (!data || typeof data !== "object") return "Erro ao criar perfil.";
+    const record = data as { error?: unknown; fields?: Array<{ message?: unknown }> };
+    if (typeof record.error === "string") return record.error;
+    const firstMessage = record.fields?.find((item) => typeof item.message === "string")?.message;
+    return typeof firstMessage === "string" ? firstMessage : "Não foi possível enviar o perfil.";
+  }
+
+  async function recoverSubmittedProfile() {
+    try {
+      const response = await fetch("/api/users/me", { cache: "no-store" });
+      if (!response.ok) return false;
+      const user = await response.json() as { professional?: { status?: string } };
+      if (user.professional?.status === "PENDING_REVIEW") {
+        localStorage.removeItem(DRAFT_KEY);
+        setSubmissionResult({ status: "PENDING_REVIEW" });
+        return true;
+      }
+    } catch {
+      // A mensagem de tentativa segura é exibida abaixo.
+    }
+    return false;
+  }
+
   async function submit() {
-    const error = validateStep(step);
-    if (error) {
-      toast.error(error);
-      return;
+    if (submittingRef.current) return;
+    for (let currentStep = 0; currentStep < STEPS.length; currentStep += 1) {
+      const issue = validateStep(currentStep);
+      if (issue) {
+        showValidationIssue(issue, currentStep);
+        return;
+      }
     }
     if (emailVerified === false) {
-      toast.error("Confirme seu email antes de enviar para analise. Voce pode continuar preenchendo o rascunho.");
+      toast.error("Confirme seu e-mail antes de enviar para análise. Seu rascunho está preservado.");
       return;
     }
 
+    submittingRef.current = true;
     setLoading(true);
     try {
       const payload = {
@@ -837,6 +974,7 @@ export default function ProfissionalNovoPage() {
         city: form.city,
         state: form.state,
         bairro: form.bairro || undefined,
+        placeId: form.placeId && !form.placeId.startsWith("local-") ? form.placeId : undefined,
         escortCategory: form.escortCategory,
         birthDate: form.birthDate,
         height: form.height ? Number(form.height) : undefined,
@@ -873,16 +1011,20 @@ export default function ProfissionalNovoPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      const data = await res.json().catch(() => ({})) as { error?: unknown; status?: string; receiptStatus?: string };
       if (!res.ok) {
-        const d = await res.json();
-        toast.error(d.error ?? "Erro ao criar perfil.");
+        toast.error(responseError(data));
         return;
       }
       localStorage.removeItem(DRAFT_KEY);
-      toast.success("Perfil enviado! Aguarde a aprovação em até 3 dias úteis.");
-      router.push(ACCOUNT_ROUTES.verificacaoAcompanhante);
-    } catch { toast.error("Erro ao enviar perfil."); }
-    finally { setLoading(false); }
+      setSubmissionResult({ status: data.status ?? "PENDING_REVIEW", receiptStatus: data.receiptStatus });
+    } catch {
+      const recovered = await recoverSubmittedProfile();
+      if (!recovered) toast.error("Não foi possível confirmar o envio. Seu rascunho foi preservado; tente novamente com segurança.");
+    } finally {
+      submittingRef.current = false;
+      setLoading(false);
+    }
   }
 
   const progress = ((step + 1) / STEPS.length) * 100;
@@ -896,45 +1038,44 @@ export default function ProfissionalNovoPage() {
     });
   }, [step]);
 
-  function validateStep(targetStep: number) {
+  function validateStep(targetStep: number): ValidationIssue | null {
     if (targetStep === 0) {
-      if (!form.displayName.trim()) return "Informe seu nome artístico.";
-      if (form.bio.trim().length < 80) return "Escreva uma biografia com pelo menos 80 caracteres.";
-      if (!form.escortCategory) return "Selecione uma categoria.";
-      if (!form.city.trim()) return "Informe sua cidade.";
-      if (!form.state) return "Selecione o estado.";
+      if (!form.displayName.trim()) return { field: "displayName", message: "Informe seu nome artístico." };
+      if (form.bio.trim().length < 80) return { field: "bio", message: "Escreva uma biografia com pelo menos 80 caracteres." };
+      if (!form.escortCategory) return { field: "escortCategory", message: "Selecione uma categoria." };
+      if (!form.city.trim()) return { field: "city", message: "Informe sua cidade." };
+      if (!form.state) return { field: "state", message: "Selecione o estado." };
     }
     if (targetStep === 1) {
-      if (!form.birthDate) return "Informe sua data de nascimento.";
-      if (form.height && (Number(form.height) < 120 || Number(form.height) > 230)) return "Confira a altura informada.";
-      if (form.weight && (Number(form.weight) < 35 || Number(form.weight) > 250)) return "Confira o peso informado.";
+      const birthDate = validateBirthDate(form.birthDate);
+      if (!birthDate.isValid || !birthDate.isOfAge) return { field: "birthDate", message: birthDate.errors[0] || "Confira sua data de nascimento." };
+      if (form.height && (Number(form.height) < 120 || Number(form.height) > 230)) return { field: "height", message: "Confira a altura informada." };
+      if (form.weight && (Number(form.weight) < 35 || Number(form.weight) > 250)) return { field: "weight", message: "Confira o peso informado." };
     }
     if (targetStep === 2) {
-      if (form.attendanceTypes.length === 0) return "Selecione pelo menos um tipo de atendimento.";
-      if (form.servesGenders.length === 0) return "Selecione quem você atende.";
-      if (form.diasDisponiveis.length === 0) return "Selecione pelo menos um dia disponível.";
+      if (form.attendanceTypes.length === 0) return { field: "attendanceTypes", message: "Selecione pelo menos um tipo de atendimento." };
+      if (form.servesGenders.length === 0) return { field: "servesGenders", message: "Selecione quem você atende." };
+      if (form.diasDisponiveis.length === 0) return { field: "diasDisponiveis", message: "Selecione pelo menos um dia disponível." };
     }
-    if (targetStep === 3 && form.services.length === 0) return "Selecione pelo menos um serviço.";
+    if (targetStep === 3 && form.services.length === 0) return { field: "services", message: "Selecione pelo menos um serviço." };
     if (targetStep === 4) {
-      if (!form.price15min && !form.pricePerHour && !form.price30min && !form.price2h && !form.priceOvernight && !form.priceWebcam) return "Informe pelo menos um valor.";
-      if (form.paymentMethods.length === 0) return "Selecione pelo menos uma forma de pagamento.";
+      if (!form.price15min && !form.pricePerHour && !form.price30min && !form.price2h && !form.priceOvernight && !form.priceWebcam) return { field: "pricePerHour", message: "Informe pelo menos um valor." };
+      if (form.paymentMethods.length === 0) return { field: "paymentMethods", message: "Selecione pelo menos uma forma de pagamento." };
     }
-    if (targetStep === 5 && form.whatsapp.replace(/\D/g, "").length < 10) return "Informe um WhatsApp válido com DDD.";
+    if (targetStep === 5 && form.whatsapp.replace(/\D/g, "").length < 10) return { field: "whatsapp", message: "Informe um WhatsApp válido com DDD." };
     if (targetStep === 6) {
-      if (uploadingIdx === -1) return "Aguarde o envio da foto principal terminar.";
-      if (form.mainPhotoUrl.startsWith("blob:")) return "A foto está sendo processada, aguarde um momento.";
-      if (!form.mainPhotoUrl || !REMOTE_IMAGE_RE.test(form.mainPhotoUrl)) return "Selecione e envie a foto principal do perfil para continuar.";
+      if (uploadingIdx === -1) return { field: "mainPhotoUrl", message: "Aguarde o envio da foto principal terminar." };
+      if (form.mainPhotoUrl.startsWith("blob:")) return { field: "mainPhotoUrl", message: "A foto está sendo processada, aguarde um momento." };
+      if (!form.mainPhotoUrl || !REMOTE_IMAGE_RE.test(form.mainPhotoUrl)) return { field: "mainPhotoUrl", message: "Selecione e envie a foto principal do perfil para continuar." };
     }
-    if (targetStep === 8 && !form.kycSessionId) return "Inicie a verificação de identidade para continuar.";
+    if (targetStep === 8 && !form.kycSessionId) return { field: "kycSessionId", message: "Inicie a verificação de identidade para continuar." };
     return null;
   }
 
   function next() {
-    const error = validateStep(step);
-    if (error) { toast.error(error); return; }
-    if (step === 0 && !form.displayName) { toast.error("Informe seu nome artístico."); return; }
-    if (step === 0 && !form.escortCategory) { toast.error("Selecione uma categoria."); return; }
-    if (step === 0 && !form.city) { toast.error("Informe sua cidade."); return; }
+    const issue = validateStep(step);
+    if (issue) { showValidationIssue(issue); return; }
+    setValidationIssue(null);
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -949,6 +1090,34 @@ export default function ProfissionalNovoPage() {
     uploadingIdx === 100 || (personaAvailability.checked && !personaAvailability.available);
   const personaUnavailable =
     personaAvailability.checked && !personaAvailability.available;
+
+  if (submissionResult) {
+    return (
+      <main className="model-submission-success">
+        <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={184} height={61} priority />
+        <div aria-hidden="true" className="model-success-check">✓</div>
+        <p className="model-success-eyebrow">Cadastro recebido</p>
+        <h1>Seu cadastro foi enviado para análise</h1>
+        <p>A equipe fará a revisão do perfil. Você pode acompanhar o andamento sem reenviar os dados.</p>
+        {submissionResult.receiptStatus === "SENT" ? (
+          <p className="model-receipt-status">Enviamos um comprovante discreto para o seu e-mail.</p>
+        ) : (
+          <p className="model-receipt-status">O cadastro está salvo. Se o comprovante não chegar, confira também a pasta de spam.</p>
+        )}
+        <a href={ACCOUNT_ROUTES.verificacaoAcompanhante}>Acompanhar verificação</a>
+        <style>{`
+          .model-submission-success { min-height:100dvh; max-width:430px; margin:0 auto; padding:calc(44px + env(safe-area-inset-top)) 24px calc(40px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:radial-gradient(circle at 50% 20%,rgba(183,44,255,.16),transparent 38%),#faf8fc; color:#171219; }
+          .model-submission-success img { width:184px; height:auto; margin-bottom:34px; }
+          .model-success-check { display:grid; place-items:center; width:72px; height:72px; border-radius:999px; background:#7d179f; color:#fff; font-size:36px; font-weight:900; box-shadow:0 14px 36px rgba(125,23,159,.25); }
+          .model-success-eyebrow { margin:24px 0 8px; color:#7d179f; font-size:12px; font-weight:900; letter-spacing:2px; text-transform:uppercase; }
+          .model-submission-success h1 { margin:0; max-width:360px; font-size:32px; line-height:1.08; }
+          .model-submission-success p:not(.model-success-eyebrow) { max-width:350px; color:#625c68; line-height:1.6; }
+          .model-receipt-status { padding:12px 14px; border:1px solid #d8c9df; border-radius:14px; background:#fff; font-size:13px; }
+          .model-submission-success a { width:100%; margin-top:16px; padding:16px 20px; border-radius:16px; background:#7d179f; color:#fff; font-weight:900; text-decoration:none; }
+        `}</style>
+      </main>
+    );
+  }
 
   /* ── render ───────────────────────────────────────────── */
   return (
@@ -983,8 +1152,29 @@ export default function ProfissionalNovoPage() {
           fontSize: 12,
           lineHeight: 1.6,
         }}>
-          <strong style={{ display: "block", color: GOLD, marginBottom: 4 }}>Email pendente de confirmacao</strong>
-          Voce pode preencher as 9 etapas agora. Para enviar para analise, confirme o link enviado para {accountEmail ?? "seu email"}.
+          <strong style={{ display: "block", color: GOLD, marginBottom: 4 }}>E-mail pendente de confirmação</strong>
+          <p style={{ margin: "0 0 10px" }}>Você pode preencher as 9 etapas agora. Para enviar para análise, confirme o link solicitado para <strong>{maskEmail(accountEmail)}</strong>. Confira também a pasta de spam.</p>
+          {editingEmail ? (
+            <div className="model-email-actions">
+              <input type="email" autoComplete="email" value={replacementEmail} onChange={(event) => setReplacementEmail(event.target.value)} placeholder="novo@email.com" />
+              <button type="button" disabled={emailBusy || !replacementEmail.trim()} onClick={() => requestEmailConfirmation("change")}>Salvar e solicitar confirmação</button>
+              <button type="button" className="secondary" onClick={() => setEditingEmail(false)}>Cancelar</button>
+            </div>
+          ) : (
+            <div className="model-email-actions">
+              <button type="button" disabled={emailBusy || emailCooldown > 0} onClick={() => requestEmailConfirmation("resend")}>
+                {emailCooldown > 0 ? `Reenviar em ${emailCooldown}s` : emailBusy ? "Solicitando..." : "Reenviar confirmação"}
+              </button>
+              <button type="button" className="secondary" disabled={emailBusy} onClick={checkEmailConfirmation}>Já confirmei</button>
+              <button type="button" className="secondary" onClick={() => setEditingEmail(true)}>Corrigir e-mail</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {draftSaveError && (
+        <div className="model-draft-warning" role="alert">
+          Não foi possível salvar este rascunho no aparelho. Mantenha esta aba aberta e tente novamente antes de sair.
         </div>
       )}
 
@@ -1035,44 +1225,55 @@ export default function ProfissionalNovoPage() {
           ETAPA 1 — DADOS BÁSICOS
       ══════════════════════════════════════════════ */}
       <div className="model-step-content" data-onboarding-step={step + 1}>
+      {validationIssue && <p className="model-validation-summary" role="alert">{validationIssue.message}</p>}
       {step === 0 && (
         <div>
           <Section title="Dados básicos" desc="Essas informações aparecem no seu perfil público.">
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
                 <label style={labelStyle}>Nome artístico *</label>
-                <input value={form.displayName} onChange={(e) => set("displayName", e.target.value)} style={inputStyle} placeholder="Como quer ser chamada(o)" />
+                <input data-field="displayName" aria-invalid={validationIssue?.field === "displayName" || undefined} value={form.displayName} onChange={(e) => set("displayName", e.target.value)} style={inputStyle} placeholder="Como quer ser chamada(o)" />
               </div>
               <div>
                 <label style={labelStyle}>Biografia</label>
-                <textarea value={form.bio} onChange={(e) => set("bio", e.target.value)} rows={5}
+                <textarea data-field="bio" aria-invalid={validationIssue?.field === "bio" || undefined} value={form.bio} onChange={(e) => set("bio", e.target.value)} rows={5}
                   style={{ ...inputStyle, resize: "vertical", lineHeight: 1.65 }}
                   placeholder="Conte sobre você, seus diferenciais, o que oferece de especial. Perfis com bio completa recebem até 3x mais contatos." />
                 <div style={{ fontSize: 11, color: "#94899d", marginTop: 4 }}>{form.bio.length} / 800 caracteres</div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 80px", gap: 12 }}>
+              <div className="model-location-grid">
                 <div>
                   <label style={labelStyle}>Cidade *</label>
-                  <input value={form.city} onChange={(e) => set("city", e.target.value)} style={inputStyle} placeholder="São Paulo" />
+                  <ProfessionalCityAutocomplete
+                    city={form.city}
+                    state={form.state}
+                    placeId={form.placeId}
+                    invalid={validationIssue?.field === "city"}
+                    onChange={(location) => {
+                      setForm((current) => ({ ...current, ...location }));
+                      if (validationIssue?.field === "city" || validationIssue?.field === "state") setValidationIssue(null);
+                    }}
+                  />
                 </div>
                 <div>
                   <label style={labelStyle}>Estado *</label>
-                  <select value={form.state} onChange={(e) => set("state", e.target.value)}
+                  <select data-field="state" aria-invalid={validationIssue?.field === "state" || undefined} value={form.state} disabled={Boolean(form.placeId)} onChange={(e) => set("state", e.target.value)}
                     style={{ ...inputStyle, cursor: "pointer" }}>
-                    <option value="">UF</option>
+                    <option value="">Selecione a UF</option>
                     {ESTADOS_BR.map((e) => <option key={e} value={e}>{e}</option>)}
                   </select>
+                  {form.placeId && <span className="city-status">UF definida pela cidade selecionada.</span>}
                 </div>
                 <div>
                   <label style={labelStyle}>Bairro</label>
-                  <input value={form.bairro} onChange={(e) => set("bairro", e.target.value)} style={inputStyle} placeholder="Centro" />
+                  <input value={form.bairro} onChange={(e) => set("bairro", e.target.value)} style={inputStyle} placeholder="Digite seu bairro" />
                 </div>
               </div>
             </div>
           </Section>
 
           <Section title="Categoria *">
-            <div className="model-category-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+            <div data-field="escortCategory" className="model-category-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               {CATEGORIAS.map(([val, label]) => (
                 <button key={val} type="button" onClick={() => toggleSingle("escortCategory", val)}
                   className="model-category-option"
@@ -1100,8 +1301,8 @@ export default function ProfissionalNovoPage() {
       {step === 1 && (
         <div>
           <Section title="Medidas e data de nascimento">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-              <div>
+            <div className="model-measures-grid">
+              <div data-field="birthDate" className="model-birth-date-field">
                 <label style={labelStyle}>Data de nascimento *</label>
                 {birthDateLockedFromAccount && form.birthDate ? (
                   <div className="birth-date-confirmed">
@@ -1152,13 +1353,14 @@ export default function ProfissionalNovoPage() {
               </div>
               <div>
                 <label style={labelStyle}>Altura (cm)</label>
-                <input type="number" value={form.height} onChange={(e) => set("height", e.target.value)} style={inputStyle} placeholder="170" min={140} max={220} />
+                <input data-field="height" type="number" value={form.height} onChange={(e) => set("height", e.target.value)} style={inputStyle} placeholder="170" min={140} max={220} />
               </div>
               <div>
                 <label style={labelStyle}>Peso (kg)</label>
-                <input type="number" value={form.weight} onChange={(e) => set("weight", e.target.value)} style={inputStyle} placeholder="60" min={40} max={200} />
+                <input data-field="weight" type="number" value={form.weight} onChange={(e) => set("weight", e.target.value)} style={inputStyle} placeholder="60" min={40} max={200} />
               </div>
             </div>
+            {validationIssue && ["birthDate", "height", "weight"].includes(validationIssue.field) && <p className="model-field-error" role="alert">{validationIssue.message}</p>}
           </Section>
 
           <Section title="Cabelo">
@@ -1890,6 +2092,30 @@ export default function ProfissionalNovoPage() {
         .model-email-warning {
           box-shadow: 0 16px 40px rgba(0,0,0,.22);
         }
+        .model-location-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1.6fr) minmax(110px, .8fr);
+          gap: 12px;
+        }
+        .model-location-grid > div:last-child { grid-column: 1 / -1; }
+        .professional-city-autocomplete { position: relative; }
+        .professional-city-autocomplete > input { width: 100%; min-height: 58px; padding: 12px 14px; border: 1px solid rgba(183,44,255,.28); border-radius: 16px; background: #080808; color: #fff; font-size: 14px; outline: none; }
+        .professional-city-autocomplete ul { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; right: 0; max-height: 260px; overflow-y: auto; margin: 0; padding: 6px; list-style: none; border: 1px solid var(--flow-border); border-radius: 14px; background: var(--flow-card); box-shadow: 0 18px 40px rgba(49,25,65,.18); }
+        .professional-city-autocomplete li button { width: 100%; padding: 11px 12px; border: 0; border-radius: 10px; background: transparent; color: var(--flow-text); text-align: left; cursor: pointer; }
+        .professional-city-autocomplete li button:hover, .professional-city-autocomplete li button:focus { background: var(--flow-soft); outline: none; }
+        .professional-city-autocomplete li strong, .professional-city-autocomplete li span { display: block; }
+        .professional-city-autocomplete li span, .city-status { color: var(--flow-muted); font-size: 11px; }
+        .city-status { display: block; margin-top: 6px; line-height: 1.4; }
+        .model-measures-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) 1fr 1fr; gap: 12px; }
+        .model-validation-summary, .model-field-error, .model-draft-warning { padding: 10px 12px; border: 1px solid #ca4555; border-radius: 12px; background: #fff2f4; color: #861d2a !important; font-size: 12px; line-height: 1.45; }
+        .model-validation-summary { margin: 0 0 18px; }
+        .model-field-error { margin: 10px 0 0; }
+        .model-draft-warning { margin: 0 0 20px; }
+        .model-email-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+        .model-email-actions input { min-width: 0; flex: 1 1 190px; padding: 10px 12px; border: 1px solid #c59bd8; border-radius: 10px; background: #fff; color: #171219; }
+        .model-email-actions button { padding: 9px 12px; border: 0; border-radius: 10px; background: #7d179f; color: #fff; font-size: 12px; font-weight: 800; cursor: pointer; }
+        .model-email-actions button.secondary { border: 1px solid #c59bd8; background: #fff; color: #7d179f; }
+        .model-email-actions button:disabled { opacity: .65; cursor: not-allowed; }
         .model-progress-card {
           margin-bottom: 30px !important;
           border: 1px solid rgba(183, 44, 255,0.28);
@@ -1943,6 +2169,9 @@ export default function ProfissionalNovoPage() {
           box-shadow: 0 0 0 4px rgba(183, 44, 255,0.16), 0 12px 24px rgba(183, 44, 255,0.22) !important;
         }
         @media (max-width: 520px) {
+          .model-measures-grid { grid-template-columns: 1fr 1fr; }
+          .model-birth-date-field { grid-column: 1 / -1; }
+          .birth-date-confirmed { width: 100%; }
           .model-step-bubbles {
             margin-left: -8px !important;
             margin-right: -8px !important;

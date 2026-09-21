@@ -7,6 +7,7 @@ import { buildAuthEmail, sendAuthEmail } from "@/lib/auth-email";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import { createSignupDraftToken } from "@/lib/signup-draft-token";
+import { canonicalizeRequestedEmailCallback } from "@/lib/email-auth-callback";
 
 const schema = z.object({
   email: z.string().email(),
@@ -92,6 +93,12 @@ export async function POST(req: NextRequest) {
   try {
     const body = schema.parse(await req.json());
     const email = body.email.trim().toLowerCase();
+    let redirectTo: string;
+    try {
+      redirectTo = canonicalizeRequestedEmailCallback(body.redirectTo);
+    } catch {
+      throw new EmailSignupError("URL de confirmação inválida.", 400, "invalid_redirect");
+    }
 
     if (!isAgeOfMajority(body.birthDate) || !body.ageConfirmed) {
       return NextResponse.json({ error: "Voce deve ter 18 anos ou mais para se registrar." }, { status: 400 });
@@ -108,7 +115,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Selecione a categoria do anuncio." }, { status: 400 });
     }
 
-    const generated = await generateSignupLink({ ...body, email });
+    const generated = await generateSignupLink({ ...body, email, redirectTo });
     const properties = generated.data.properties;
     const tokenHash = properties?.hashed_token;
     if (!tokenHash) {
@@ -124,7 +131,7 @@ export async function POST(req: NextRequest) {
       email_data: {
         token: "",
         token_hash: tokenHash,
-        redirect_to: properties.redirect_to || body.redirectTo,
+        redirect_to: properties.redirect_to || redirectTo,
         email_action_type: generated.actionType,
         site_url: process.env.NEXT_PUBLIC_APP_URL || "https://www.elitemodell.com.br",
         action_link: properties.action_link,
@@ -149,8 +156,8 @@ export async function POST(req: NextRequest) {
       })
       : undefined;
 
-    console.info("[email-signup] email enviado", {
-      email,
+    console.info("[email-signup] solicitacao aceita pelo provedor", {
+      emailDomain: email.split("@")[1] ?? "unknown",
       actionType: generated.actionType,
       draftSession: Boolean(draftSessionToken),
       requestIp,

@@ -1,4 +1,5 @@
 import "server-only";
+import { professionalSubmissionReceiptIdempotencyKey } from "@/lib/email-idempotency";
 
 export type AuthEmailActionType =
   | "signup"
@@ -79,7 +80,7 @@ function actionUrl(payload: AuthEmailPayload, tokenHash: string, type: AuthEmail
   return confirmationUrl(tokenHash, type, redirectTo);
 }
 
-export function buildAuthEmail(payload: AuthEmailPayload): AuthEmail | null {
+export function buildAuthEmail(payload: AuthEmailPayload, options?: { confirmationCopy?: boolean }): AuthEmail | null {
   const { email_action_type, token_hash, token_hash_new, redirect_to, site_url } = payload.email_data;
   const userEmail = escapeHtml(payload.user.email);
   const siteUrl = getPublicSiteUrl(site_url);
@@ -158,6 +159,17 @@ export function buildAuthEmail(payload: AuthEmailPayload): AuthEmail | null {
 
   if (email_action_type === "magiclink") {
     const url = actionUrl(payload, token_hash, "magiclink", redirectTo);
+    if (options?.confirmationCopy) {
+      return {
+        subject: "Confirme seu e-mail - Elite Modell",
+        html: base.replace("CONTENT", `
+          <h2 style="color:#fcf7ff;font-size:22px;margin:0 0 12px">Confirme seu endereço de e-mail</h2>
+          <p style="color:#b4adb0;line-height:1.7;margin:0">Clique no botão abaixo para confirmar que você tem acesso ao endereço informado.</p>
+          <div style="text-align:center">${btn(url, "Confirmar meu e-mail")}</div>
+          <p style="color:#aaa0b2;font-size:12px;margin-top:20px">Este link expira e só pode ser usado uma vez. Se você não solicitou esta confirmação, ignore a mensagem.</p>
+        `),
+      };
+    }
     return {
       subject: "Seu link de acesso - Elite Modell",
       html: base.replace("CONTENT", `
@@ -172,7 +184,11 @@ export function buildAuthEmail(payload: AuthEmailPayload): AuthEmail | null {
   return null;
 }
 
-export async function sendAuthEmail(to: string, email: AuthEmail) {
+export async function sendAuthEmail(
+  to: string,
+  email: AuthEmail,
+  options?: { idempotencyKey?: string; timeoutMs?: number },
+) {
   const resendKey = process.env.RESEND_API_KEY;
   if (!resendKey) {
     console.error("[auth-email] RESEND_API_KEY ausente");
@@ -184,7 +200,9 @@ export async function sendAuthEmail(to: string, email: AuthEmail) {
     headers: {
       Authorization: `Bearer ${resendKey}`,
       "Content-Type": "application/json",
+      ...(options?.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : {}),
     },
+    signal: AbortSignal.timeout(options?.timeoutMs ?? 12_000),
     body: JSON.stringify({
       from: process.env.EMAIL_FROM?.trim() || "Elite Modell <noreply@elitemodell.com.br>",
       to: [to],
@@ -194,10 +212,34 @@ export async function sendAuthEmail(to: string, email: AuthEmail) {
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    console.error("[auth-email] Resend error:", err);
+    console.error("[auth-email] Resend recusou a mensagem.", { status: res.status });
     throw new Error("Failed to send email");
   }
+
+  const payload = await res.json().catch(() => ({})) as { id?: string };
+  return payload.id ?? null;
+}
+
+export async function sendProfessionalSubmissionReceipt(to: string, professionalId: string): Promise<string | null> {
+  return sendAuthEmail(to, {
+    subject: "Recebemos seu cadastro — Elite Modell",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#ffffff;color:#17131a;border:1px solid #dfd1e5;border-radius:16px;overflow:hidden">
+        <div style="height:4px;background:#7d179f"></div>
+        <div style="padding:36px 30px">
+          <div style="color:#7d179f;font-size:22px;font-weight:900;margin-bottom:24px">ELITE MODELL</div>
+          <h1 style="font-size:22px;margin:0 0 14px">Recebemos seu cadastro</h1>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Olá!</p>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Seu perfil foi encaminhado para análise da nossa equipe.</p>
+          <p style="color:#625c68;line-height:1.7;margin:0">Você poderá acompanhar o andamento pela sua área na plataforma.</p>
+          <div style="margin-top:28px;padding-top:18px;border-top:1px solid #eee6f1;color:#77707b;font-size:12px">Esta mensagem não contém fotos, documentos, dados biométricos ou informações financeiras.</div>
+        </div>
+      </div>
+    `,
+  }, {
+    idempotencyKey: professionalSubmissionReceiptIdempotencyKey(professionalId),
+    timeoutMs: 10_000,
+  });
 }
 
 export async function sendProfessionalApprovalEmail(to: string): Promise<void> {

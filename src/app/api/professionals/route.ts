@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
 import { MANUAL_PENDING_STATUS, PERSONA_PENDING_STATUS } from "@/lib/persona";
-import { DIDIT_PROVIDER, KYC_PENDING_STATUS } from "@/lib/professional-verification";
+import { DIDIT_PROVIDER } from "@/lib/professional-verification";
 import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
 import { activeProfessionalAccessWhere } from "@/lib/professional-access";
 import { createProfessionalSchema } from "@/lib/professional-profile-schema";
@@ -21,6 +21,7 @@ import {
 } from "@/lib/public-professional-profile";
 import { citySearchVariants } from "@/lib/brazilian-location";
 import { normalizeControlledMediaUrl } from "@/lib/public-professional-media";
+import { deliverProfessionalSubmissionReceipt } from "@/lib/professional-submission-receipt";
 
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
@@ -199,9 +200,19 @@ export async function POST(req: NextRequest) {
 
   const existing = await prisma.professional.findUnique({
     where: { userId: session.user.id },
-    select: { id: true, status: true },
+    select: { id: true, status: true, user: { select: { email: true } } },
   });
   if (existing && existing.status !== "DRAFT") {
+    if (existing.status === "PENDING_REVIEW") {
+      const receiptStatus = await deliverProfessionalSubmissionReceipt(existing.id, existing.user.email);
+      return NextResponse.json({
+        ok: true,
+        professionalId: existing.id,
+        status: existing.status,
+        alreadySubmitted: true,
+        receiptStatus,
+      });
+    }
     return NextResponse.json({ error: "Você já tem um perfil profissional." }, { status: 409 });
   }
 
@@ -217,7 +228,7 @@ export async function POST(req: NextRequest) {
     if (!user?.emailVerified) {
       return NextResponse.json(
         {
-          error: `Confirme seu email${user?.email ? ` (${user.email})` : ""} antes de enviar o cadastro para analise.`,
+          error: "Confirme seu e-mail antes de enviar o cadastro para análise.",
           code: "email_not_verified",
         },
         { status: 428 },
@@ -276,43 +287,66 @@ export async function POST(req: NextRequest) {
       .filter((url): url is string => Boolean(url))
       .filter((url, index, values) => values.indexOf(url) === index);
 
-    const professional = existing
-      ? await prisma.professional.update({
-        where: { userId: session.user.id },
-        data: {
-          ...professionalData,
-          specialties: {
-            deleteMany: {},
-            create: allSpecialties.map((name) => ({ name })),
+    const professional = await prisma.$transaction(async (tx) => {
+      const saved = existing
+        ? await tx.professional.update({
+          where: { userId: session.user.id },
+          data: {
+            ...professionalData,
+            specialties: {
+              deleteMany: {},
+              create: allSpecialties.map((name) => ({ name })),
+            },
+            photos: {
+              deleteMany: {},
+              create: initialPhotos.map((url, order) => ({ url, order, cover: order === 0 })),
+            },
           },
-          photos: {
-            deleteMany: {},
-            create: initialPhotos.map((url, order) => ({ url, order, cover: order === 0 })),
+          include: { specialties: true },
+        })
+        : await tx.professional.create({
+          data: {
+            ...professionalData,
+            userId: session.user.id,
+            accessGrandfathered: false,
+            specialties: {
+              create: allSpecialties.map((name) => ({ name })),
+            },
+            photos: {
+              create: initialPhotos.map((url, order) => ({ url, order, cover: order === 0 })),
+            },
           },
-        },
-        include: { specialties: true },
-      })
-      : await prisma.professional.create({
-      data: {
-        ...professionalData,
-        userId:    session.user.id,
-        accessGrandfathered: false,
-        specialties: {
-          create: allSpecialties.map((name) => ({ name })),
-        },
-        photos: {
-          create: initialPhotos.map((url, order) => ({ url, order, cover: order === 0 })),
-        },
-      },
-      include: { specialties: true },
+          include: { specialties: true },
+        });
+
+      await tx.professionalSubmissionReceipt.upsert({
+        where: { professionalId: saved.id },
+        create: { professionalId: saved.id, status: "PENDING" },
+        update: {},
+      });
+      return saved;
     });
 
-    return NextResponse.json(professional, { status: existing ? 200 : 201 });
+    const receiptStatus = await deliverProfessionalSubmissionReceipt(professional.id, user.email);
+    return NextResponse.json({
+      ok: true,
+      professionalId: professional.id,
+      status: professional.status,
+      alreadySubmitted: false,
+      receiptStatus,
+    }, { status: existing ? 200 : 201 });
   } catch (err) {
     if (err instanceof z.ZodError) {
-      return NextResponse.json({ error: err.issues }, { status: 400 });
+      return NextResponse.json({
+        error: err.issues[0]?.message ?? "Revise os campos obrigatórios.",
+        code: "validation_error",
+        fields: err.issues.map((issue) => ({ field: issue.path.join("."), message: issue.message })),
+      }, { status: 400 });
     }
-    console.error(err);
+    console.error("[professionals] falha ao salvar cadastro", {
+      userId: session.user.id,
+      reason: err instanceof Error ? err.name : "unknown",
+    });
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });
   }
 }
