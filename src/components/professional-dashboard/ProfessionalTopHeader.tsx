@@ -1,63 +1,17 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- Avatar can come from remote OAuth/Supabase URLs. */
-
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Camera, ChevronRight, Mail, MapPin, Menu, UserRound } from "lucide-react";
+import { Bell, Mail, Menu } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
-
-type HeaderProfile = {
-  name: string;
-  email: string;
-  image: string | null;
-  city: string | null;
-  state: string | null;
-};
-
-type MeResponse = {
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-  professional?: {
-    displayName?: string | null;
-    image?: string | null;
-    city?: string | null;
-    state?: string | null;
-  } | null;
-};
+import styles from "@/app/(dashboard)/profissional/professional-dashboard.module.css";
 
 export function ProfessionalTopHeader({ onMenuClick }: { onMenuClick: () => void }) {
-  const [profile, setProfile] = useState<HeaderProfile | null>(null);
   const pathname = usePathname() ?? "";
   const inProfessionalArea = pathname.startsWith("/profissional");
   const messagesHref = inProfessionalArea ? "/profissional/mensagens" : "/dashboard/mensagens";
   const notificationsHref = inProfessionalArea ? "/profissional/notificacoes" : "/notifications";
-
-  useEffect(() => {
-    const controller = new AbortController();
-    async function loadProfile() {
-      try {
-        const res = await fetch("/api/users/me", { signal: controller.signal });
-        if (!res.ok) return;
-        const data = (await res.json()) as MeResponse | null;
-        if (!data) return;
-        const professional = data.professional;
-        setProfile({
-          name: professional?.displayName ?? data.name ?? "Profissional Elite",
-          email: data.email ?? "Conta profissional",
-          image: professional?.image ?? data.image ?? null,
-          city: professional?.city ?? null,
-          state: professional?.state ?? null,
-        });
-      } catch {
-        if (!controller.signal.aborted) setProfile(null);
-      }
-    }
-    void loadProfile();
-    return () => controller.abort();
-  }, []);
 
   useEffect(() => {
     if (!inProfessionalArea) return;
@@ -75,60 +29,41 @@ export function ProfessionalTopHeader({ onMenuClick }: { onMenuClick: () => void
     };
   }, [inProfessionalArea]);
 
-  const location = profile?.city && profile.state ? `${profile.city}, ${profile.state}` : profile?.email ?? "Conta profissional";
-
   return (
-    <header className="professional-header sticky top-0 z-30 border-b border-[#fcf7ff] bg-white/95 px-4 pb-4 pt-[max(18px,env(safe-area-inset-top))] backdrop-blur-2xl sm:px-6 md:px-8">
-      <div className="mx-auto flex w-full max-w-[960px] flex-col gap-5">
-        <div className="grid h-[64px] grid-cols-[58px_minmax(0,1fr)_116px] items-center gap-3">
+    <header className={styles.topHeader}>
+      <div className={styles.topHeaderInner}>
+        <div className={styles.topHeaderGrid}>
           <button
             onClick={onMenuClick}
-            className="grid h-14 w-14 place-items-center rounded-2xl border border-[#e1a6ff] bg-white text-[#b72cff] shadow-[0_8px_22px_rgba(37, 31, 32,0.07)]"
+            className={styles.headerIconButton}
             aria-label="Abrir menu"
           >
-            <Menu className="h-7 w-7" />
+            <Menu />
           </button>
 
-          <Link href="/profissional" className="relative flex min-w-0 items-center justify-center no-underline" aria-label="Elite Modell">
-            <span className="inline-grid w-[168px] sm:w-[196px]"><BrandMark priority /></span>
+          <Link href="/profissional" className={styles.headerLogo} aria-label="Elite Modell">
+            <span><BrandMark priority /></span>
           </Link>
 
-          <div className="flex justify-end gap-3">
+          <div className={styles.headerActions}>
             <Link
               href={messagesHref}
-              className="grid h-14 w-14 place-items-center rounded-2xl border border-[#e1a6ff] bg-white text-[#b72cff] no-underline shadow-[0_8px_22px_rgba(37, 31, 32,0.07)]"
+              className={styles.headerIconButton}
               aria-label="Mensagens"
             >
-              <Mail className="h-6 w-6" />
+              <Mail />
+              <i aria-hidden="true" />
             </Link>
             <Link
               href={notificationsHref}
-              className="relative grid h-14 w-14 place-items-center rounded-2xl border border-[#e1a6ff] bg-white text-[#b72cff] no-underline shadow-[0_8px_22px_rgba(37, 31, 32,0.07)]"
+              className={styles.headerIconButton}
               aria-label="Notificações"
             >
-              <Bell className="h-6 w-6" />
+              <Bell />
+              <i aria-hidden="true" />
             </Link>
           </div>
         </div>
-
-        <Link href="/profissional/perfil" className="premium-profile-row">
-          <span className="premium-avatar">
-            {profile?.image ? <img src={profile.image} alt={profile.name} /> : <UserRound size={42} color="#e1a6ff" />}
-            <span className="premium-avatar-camera">
-              <Camera size={16} />
-            </span>
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate text-[28px] font-bold text-[#141212] sm:text-[34px]">
-              Olá, {profile?.name ?? "Profissional Elite"}
-            </span>
-            <span className="mt-2 flex min-w-0 items-center gap-2 text-[16px] text-[#686d7d]">
-              <MapPin className="h-5 w-5 shrink-0 text-[#b72cff]" />
-              <span className="truncate">{location}</span>
-            </span>
-          </span>
-          <ChevronRight className="h-7 w-7 text-[#8a8d98]" />
-        </Link>
       </div>
     </header>
   );

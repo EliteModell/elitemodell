@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Crown, Grid2X2, List, PlusCircle, UserRound } from "lucide-react";
+import styles from "@/app/(dashboard)/profissional/professional-dashboard.module.css";
 
 const items = [
   { label: "Painel", href: "/profissional", icon: Grid2X2 },
@@ -16,8 +17,8 @@ export function ProfessionalBottomNav() {
   const pathname = usePathname() ?? "";
 
   return (
-    <nav className="professional-bottom-nav md:hidden" aria-label="Atalhos profissionais">
-      <div className="professional-bottom-nav-inner">
+    <nav className={styles.bottomNav} aria-label="Atalhos profissionais">
+      <div className={styles.bottomNavInner}>
         {items.map((item) => {
           const Icon = item.icon;
           const active = item.href === "/profissional"
@@ -25,7 +26,7 @@ export function ProfessionalBottomNav() {
             : pathname.startsWith(item.href);
 
           return (
-            <Link key={item.href} href={item.href} className={active ? "active" : ""}>
+            <Link key={item.href} href={item.href} className={active ? styles.bottomNavActive : ""}>
               <Icon />
               <span>{item.label}</span>
             </Link>
