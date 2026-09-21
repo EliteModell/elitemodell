@@ -423,6 +423,48 @@ test.describe("Dashboard da profissional", () => {
     }
   });
 
+  test("página de postagem permanece íntegra nos viewports prioritários", async ({ page }, testInfo) => {
+    test.skip(
+      process.env.RUN_PROFESSIONAL_DASHBOARD_VISUAL !== "1" || !process.env.TEST_USER_EMAIL,
+      "Validação visual com conta profissional não solicitada nesta execução.",
+    );
+    await installMockSessionCookie(page.context(), {
+      ...MOCK_MODEL_SESSION.user,
+      professionalStatus: "ACTIVE",
+      isProfessional: true,
+      activeProfileType: "PROFESSIONAL",
+      availableProfiles: ["PROFESSIONAL"],
+      adultVerified: true,
+    });
+    await page.addInitScript(() => {
+      sessionStorage.setItem("elite_modell_adult_consent_session", "accepted");
+      localStorage.setItem("elite_modell_ageConsentAccepted", "true");
+    });
+
+    for (const width of [360, 375, 390, 393, 414, 430, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/profissional/postar", { waitUntil: "domcontentloaded" });
+      const acceptCookies = page.getByRole("button", { name: "Aceitar todos" });
+      if (await acceptCookies.isVisible().catch(() => false)) await acceptCookies.click();
+      await expect(page.getByRole("heading", { name: "Postar conteúdo" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Foto de perfil" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Vídeo de apresentação" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Minha listagem" })).toBeVisible();
+
+      const hasHorizontalOverflow = await page.evaluate(
+        () => document.documentElement.scrollWidth > window.innerWidth,
+      );
+      expect(hasHorizontalOverflow, `overflow horizontal em ${width}px`).toBe(false);
+
+      if (width === 390) {
+        await page.screenshot({
+          path: testInfo.outputPath("professional-post-390.png"),
+          fullPage: true,
+        });
+      }
+    }
+  });
+
   test("/profissional/fotos carrega sem 404", async ({ page }) => {
     await mockActiveModelAuth(page);
     const resp = await page.goto("/profissional/fotos", { waitUntil: "domcontentloaded" });
