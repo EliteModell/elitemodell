@@ -1,15 +1,16 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- A foto do perfil pode vir do armazenamento remoto aprovado da profissional. */
 
-/* eslint-disable @next/next/no-img-element -- Avatar/profile image can come from uploaded Supabase URLs. */
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { BadgeCheck, CalendarDays, Camera, CirclePlay, Eye, Images, MapPin, Save, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import {
-  PremiumHeroCard,
-  PremiumSection,
-} from "@/components/professional-dashboard/ProfessionalPremium";
+  ArrowRight, BadgeCheck, BarChart3, CalendarDays, Camera, Check, ChevronRight,
+  CircleAlert, CirclePlay, Clock3, Crown, Eye, FileImage, FileText, Images,
+  MapPin, Pencil, Save, Share2, ShieldCheck, Star, UserRound,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import styles from "./profile.module.css";
 
 type ProfileForm = {
   displayName: string;
@@ -40,6 +41,7 @@ type ProfileForm = {
   onlineVisible: boolean;
 };
 
+type ScheduleDay = { dayOfWeek: number; available: boolean; startTime: string; endTime: string };
 type MeResponse = {
   image?: string | null;
   premiumUntil?: string | null;
@@ -62,7 +64,7 @@ type MeResponse = {
     presentationVideoUrl?: string | null;
     presentationVideoStatus?: string | null;
     photos?: Array<{ id: string; url: string; cover: boolean; order: number }>;
-    schedule?: Array<{ dayOfWeek: number; available: boolean; startTime: string; endTime: string }>;
+    schedule?: ScheduleDay[];
     phone?: string | null;
     whatsapp?: string | null;
     instagram?: string | null;
@@ -83,47 +85,50 @@ type MeResponse = {
     serviceCities?: string[];
     approximateLocation?: string | null;
     onlineVisible?: boolean;
+    profileViews?: number;
+    contactClicks?: number;
   } | null;
 };
 
+type ProfileFacts = {
+  coverPhoto: boolean;
+  galleryCount: number;
+  hasVideo: boolean;
+  hasStories: boolean;
+  hasAgenda: boolean;
+  verified: boolean;
+  schedule: ScheduleDay[];
+  profileViews: number;
+  contactClicks: number;
+  premiumActive: boolean;
+};
+
+type SignalStatus = "complete" | "pending" | "recommended";
 type ProfileSignal = {
+  key: string;
   label: string;
+  description: string;
   done: boolean;
-  status: "completo" | "pendente" | "recomendado";
+  status: SignalStatus;
+  href: string;
+  icon: LucideIcon;
 };
 
 const emptyForm: ProfileForm = {
-  displayName: "",
-  escortCategory: "",
-  bio: "",
-  city: "",
-  state: "",
-  bairro: "",
-  phone: "",
-  whatsapp: "",
-  instagram: "",
-  website: "",
-  priceMin: "",
-  priceMax: "",
-  pricePerHour: "",
-  paymentMethods: "",
-  attendanceTypes: "",
-  servesGenders: "",
-  idiomas: "",
-  diasDisponiveis: "",
-  horarioInicio: "08:00",
-  horarioFim: "22:00",
-  services: "",
-  servicesNotOffered: "",
-  amenities: "",
-  serviceCities: "",
-  approximateLocation: "",
-  onlineVisible: true,
+  displayName: "", escortCategory: "", bio: "", city: "", state: "", bairro: "",
+  phone: "", whatsapp: "", instagram: "", website: "", priceMin: "", priceMax: "",
+  pricePerHour: "", paymentMethods: "", attendanceTypes: "", servesGenders: "", idiomas: "",
+  diasDisponiveis: "", horarioInicio: "08:00", horarioFim: "22:00", services: "",
+  servicesNotOffered: "", amenities: "", serviceCities: "", approximateLocation: "", onlineVisible: true,
+};
+
+const emptyFacts: ProfileFacts = {
+  coverPhoto: false, galleryCount: 0, hasVideo: false, hasStories: false, hasAgenda: false,
+  verified: false, schedule: [], profileViews: 0, contactClicks: 0, premiumActive: false,
 };
 
 function parseMoneyValue(value: string) {
-  const normalized = value.replace(/\./g, "").replace(",", ".");
-  const parsed = Number(normalized);
+  const parsed = Number(value.replace(/\./g, "").replace(",", "."));
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
@@ -139,15 +144,27 @@ function statusLabel(status?: string | null) {
   return "EM ANÁLISE";
 }
 
+function signalLabel(status: SignalStatus) {
+  if (status === "complete") return "Completo";
+  if (status === "pending") return "Pendente";
+  return "Recomendado";
+}
+
+function categoryLabel(value: ProfileForm["escortCategory"]) {
+  if (value === "MULHER") return "Mulheres";
+  if (value === "TRANS") return "Trans";
+  if (value === "HOMEM") return "Homens";
+  return "Não definida";
+}
+
 export default function EditarPerfilPage() {
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [profileSlug, setProfileSlug] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [profileStatus, setProfileStatus] = useState<string | null>(null);
-  const [verified, setVerified] = useState(false);
-  const [profileSignals, setProfileSignals] = useState<ProfileSignal[]>([]);
+  const [facts, setFacts] = useState<ProfileFacts>(emptyFacts);
   const [form, setForm] = useState<ProfileForm>(emptyForm);
 
   useEffect(() => {
@@ -156,8 +173,8 @@ export default function EditarPerfilPage() {
       setInitialLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/users/me", { signal: controller.signal });
-        if (!res.ok) throw new Error("Failed to load profile");
+        const res = await fetch("/api/users/me", { signal: controller.signal, cache: "no-store" });
+        if (!res.ok) throw new Error("load");
         const data: MeResponse = await res.json();
         const professional = data.professional;
         if (!professional) {
@@ -166,24 +183,23 @@ export default function EditarPerfilPage() {
         }
         const coverPhoto = professional.photos?.find((photo) => photo.cover)?.url ?? professional.image ?? null;
         const galleryCount = professional.photos?.filter((photo) => !photo.cover).length || (professional.galleryUrls ?? []).filter((url) => url !== coverPhoto).length;
-        const hasVideo = Boolean(professional.presentationVideoUrl && professional.presentationVideoStatus !== "REJECTED");
-        const hasStories = (data.stories?.length ?? 0) > 0;
-        const hasAgenda = Boolean(professional.schedule?.some((day) => day.available));
-        const hasVerification = Boolean(professional.verified || professional.kycStatus === "APPROVED" || professional.docStatus === "APPROVED" || professional.verifStatus === "APPROVED");
+        const verified = Boolean(professional.verified || professional.kycStatus === "APPROVED" || professional.docStatus === "APPROVED" || professional.verifStatus === "APPROVED");
+        const schedule = professional.schedule ?? [];
         setProfileSlug(professional.slug);
         setProfileImage(data.image ?? null);
         setProfileStatus(professional.status ?? null);
-        setVerified(hasVerification);
-        setProfileSignals([
-          { label: "Foto de perfil", done: Boolean(data.image), status: data.image ? "completo" : "pendente" },
-          { label: "Foto de capa", done: Boolean(coverPhoto), status: coverPhoto ? "completo" : "pendente" },
-          { label: "Galeria", done: galleryCount >= 3, status: galleryCount >= 3 ? "completo" : "pendente" },
-          { label: "Vídeo", done: hasVideo, status: hasVideo ? "completo" : "recomendado" },
-          { label: "Stories", done: hasStories, status: hasStories ? "completo" : "recomendado" },
-          { label: "Agenda", done: hasAgenda, status: hasAgenda ? "completo" : "pendente" },
-          { label: "Descrição", done: Boolean(professional.bio && professional.bio.trim().length >= 80), status: professional.bio && professional.bio.trim().length >= 80 ? "completo" : "pendente" },
-          { label: "Verificação", done: hasVerification, status: hasVerification ? "completo" : "pendente" },
-        ]);
+        setFacts({
+          coverPhoto: Boolean(coverPhoto),
+          galleryCount,
+          hasVideo: Boolean(professional.presentationVideoUrl && professional.presentationVideoStatus !== "REJECTED"),
+          hasStories: (data.stories?.length ?? 0) > 0,
+          hasAgenda: schedule.some((day) => day.available),
+          verified,
+          schedule,
+          profileViews: professional.profileViews ?? 0,
+          contactClicks: professional.contactClicks ?? 0,
+          premiumActive: Boolean(data.premiumUntil && new Date(data.premiumUntil) > new Date()),
+        });
         setForm({
           displayName: professional.displayName ?? "",
           escortCategory: professional.escortCategory ?? "",
@@ -222,13 +238,36 @@ export default function EditarPerfilPage() {
     return () => controller.abort();
   }, []);
 
-  async function handleSave() {
-    if (!profileSlug) {
-      toast.error("Perfil profissional não encontrado.");
-      return;
-    }
+  const signals = useMemo<ProfileSignal[]>(() => {
+    const hasDescription = form.bio.trim().length >= 80;
+    return [
+      { key: "profile", label: "Foto de perfil", description: "Sua foto principal no perfil.", done: Boolean(profileImage), status: profileImage ? "complete" : "pending", href: "/profissional/fotos", icon: UserRound },
+      { key: "cover", label: "Foto de capa", description: "Destaque seu perfil com uma imagem de capa.", done: facts.coverPhoto, status: facts.coverPhoto ? "complete" : "pending", href: "/profissional/fotos", icon: FileImage },
+      { key: "gallery", label: "Galeria", description: "Adicione mais fotos para mostrar seu trabalho.", done: facts.galleryCount >= 3, status: facts.galleryCount >= 3 ? "complete" : "pending", href: "/profissional/fotos", icon: Images },
+      { key: "video", label: "Vídeo", description: "Grave um vídeo curto de apresentação.", done: facts.hasVideo, status: facts.hasVideo ? "complete" : "recommended", href: "/profissional/postar#video-apresentacao", icon: CirclePlay },
+      { key: "stories", label: "Stories", description: "Conecte seus stories e mostre seu dia a dia.", done: facts.hasStories, status: facts.hasStories ? "complete" : "recommended", href: "/profissional/stories", icon: Camera },
+      { key: "agenda", label: "Agenda", description: "Mantenha seus horários atualizados.", done: facts.hasAgenda, status: facts.hasAgenda ? "complete" : "pending", href: "/profissional/agenda", icon: CalendarDays },
+      { key: "description", label: "Descrição", description: "Conte mais sobre você e seu trabalho.", done: hasDescription, status: hasDescription ? "complete" : "pending", href: "#dados-principais", icon: FileText },
+      { key: "verification", label: "Verificação", description: "Sua identidade verificada traz mais segurança.", done: facts.verified, status: facts.verified ? "complete" : "pending", href: "/profissional/analise", icon: ShieldCheck },
+    ];
+  }, [facts, form.bio, profileImage]);
 
-    setLoading(true);
+  const profileProgress = Math.round((signals.filter((item) => item.done).length / signals.length) * 100);
+  const pendingSignals = signals.filter((item) => !item.done);
+  const contentReady = facts.coverPhoto && facts.galleryCount >= 3 && form.bio.trim().length >= 80;
+  const firstSchedule = facts.schedule.find((day) => day.available);
+  const displayStart = firstSchedule?.startTime ?? form.horarioInicio;
+  const displayEnd = firstSchedule?.endTime ?? form.horarioFim;
+  const visibilityScores = [
+    { label: "Fotos e galeria", value: Math.round(([Boolean(profileImage), facts.coverPhoto, facts.galleryCount >= 3].filter(Boolean).length / 3) * 100) },
+    { label: "Descrição", value: Math.min(100, Math.round((form.bio.trim().length / 80) * 100)) },
+    { label: "Agenda", value: facts.hasAgenda ? 100 : 0 },
+    { label: "Plano", value: facts.premiumActive ? 100 : 0 },
+  ];
+
+  async function handleSave() {
+    if (!profileSlug) return toast.error("Perfil profissional não encontrado.");
+    setSaving(true);
     try {
       const res = await fetch(`/api/professionals/${profileSlug}`, {
         method: "PATCH",
@@ -262,311 +301,205 @@ export default function EditarPerfilPage() {
           onlineVisible: form.onlineVisible,
         }),
       });
-      if (!res.ok) throw new Error("Failed to update profile");
+      if (!res.ok) throw new Error("save");
       toast.success("Seu perfil foi atualizado.");
     } catch {
       toast.error("Não foi possível concluir agora. Tente novamente.");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   }
 
-  if (initialLoading) {
-    return (
-      <div className="professional-premium-page">
-        <div className="premium-section-card">
-          <div className="premium-skeleton" style={{ height: 28, width: 220, borderRadius: 999 }} />
-          <div className="premium-skeleton" style={{ height: 14, width: "70%", borderRadius: 999, marginTop: 16 }} />
-        </div>
-      </div>
-    );
+  async function shareProfile() {
+    if (!profileSlug) return;
+    const url = `${window.location.origin}/profissionais/${profileSlug}`;
+    try {
+      if (navigator.share) await navigator.share({ title: form.displayName || "Perfil Elite Modell", url });
+      else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link do perfil copiado.");
+      }
+    } catch (shareError) {
+      if (shareError instanceof DOMException && shareError.name === "AbortError") return;
+      toast.error("Não foi possível compartilhar o perfil agora.");
+    }
   }
 
-  if (error) {
-    return <div className="professional-premium-page"><div className="premium-section-card">{error}</div></div>;
-  }
-
-  const profileProgress = profileSignals.length
-    ? Math.round((profileSignals.filter((item) => item.done).length / profileSignals.length) * 100)
-    : 0;
-  const statusBadges = profileSignals.filter((item) => !item.done);
-  const lowerSections = [
-    {
-      eyebrow: "Mídia principal",
-      title: "Foto de perfil e capa",
-      description: "Revise as imagens que aparecem primeiro no seu anúncio.",
-      href: "/profissional/fotos",
-      action: "Editar fotos",
-      icon: Camera,
-      chips: ["Foto de perfil", "Foto de capa"],
-    },
-    {
-      eyebrow: "Galeria",
-      title: "Galeria",
-      description: "Organize fotos recentes para transmitir mais confiança e melhorar a apresentação.",
-      href: "/profissional/fotos",
-      action: "Gerenciar galeria",
-      icon: Images,
-      chips: ["Fotos recentes", "Ordem da galeria", "Capa"],
-    },
-    {
-      eyebrow: "Vídeos e stories",
-      title: "Vídeos e stories",
-      description: "Conteúdos recentes ajudam clientes a conhecerem melhor seu perfil.",
-      href: "/profissional/postar",
-      action: "Postar conteúdo",
-      icon: CirclePlay,
-      chips: ["Vídeo", "Stories", "Conteúdo recente"],
-    },
-    {
-      eyebrow: "Agenda",
-      title: "Agenda",
-      description: "Mantenha dias e horários disponíveis para reduzir atrito no contato.",
-      href: "/profissional/agenda",
-      action: "Atualizar agenda",
-      icon: CalendarDays,
-      chips: ["Dias", "Horários", "Disponibilidade"],
-    },
-    {
-      eyebrow: "Verificação",
-      title: "Verificação",
-      description: verified ? "Sua verificação está aprovada. Mantenha os dados alinhados ao perfil." : "Acompanhe sua análise para liberar sinais de confiança.",
-      href: "/profissional/analise",
-      action: verified ? "Ver status" : "Acompanhar análise",
-      icon: ShieldCheck,
-      chips: [verified ? "Aprovada" : "Em análise", "Documento", "Segurança"],
-    },
-    {
-      eyebrow: "Visibilidade",
-      title: "Visibilidade",
-      description: "Controle como o perfil aparece para clientes e quais recursos comerciais estão ativos.",
-      href: "/profissional/configuracoes",
-      action: "Configurar",
-      icon: Sparkles,
-      chips: [statusLabel(profileStatus), "Privacidade", "Boost"],
-    },
-  ];
+  if (initialLoading) return <ProfileLoading />;
+  if (error) return <div className={styles.page}><section className={styles.stateCard}>{error}</section></div>;
 
   return (
-    <div className="professional-premium-page premium-form">
-      <PremiumHeroCard
-        eyebrow="Meu perfil profissional"
-        title={<>Perfil <span className="gold">profissional</span></>}
-        subtitle="Mantenha seus dados, descrição, contato e visibilidade atualizados com acabamento premium."
-        illustration="profile"
-      />
+    <div className={styles.page}>
+      <section className={styles.hero} aria-labelledby="profile-title">
+        <div><span className={styles.eyebrow}>Meu perfil profissional</span><h1 id="profile-title">Perfil profissional</h1><p>Mantenha seus dados, descrição, contato e visibilidade atualizados com acabamento premium.</p></div>
+        <div className={styles.heroCrown} aria-hidden="true"><Crown /></div>
+      </section>
 
-      <section className="premium-section-card">
-        <div style={{ display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", gap: 18, alignItems: "center" }}>
-          <div className="premium-avatar" style={{ width: 112, height: 112 }}>
-            {profileImage ? <img src={profileImage} alt={form.displayName} /> : <UserRound size={52} color="#e1a6ff" />}
-          </div>
-          <div>
-            <span className="premium-badge" style={{ color: profileStatus === "ACTIVE" ? "var(--elite-success)" : "var(--elite-gold-light)" }}>
-              {statusLabel(profileStatus)}
-            </span>
-            <h2 className="premium-section-title" style={{ marginTop: 10 }}>{form.displayName || "Perfil Elite"}</h2>
-            <p className="premium-action-text" style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
-              <MapPin size={18} />
-              {form.city || "Cidade"}{form.state ? `, ${form.state}` : ""}
-            </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 14 }}>
-              {verified ? <span className="premium-badge"><BadgeCheck size={14} /> Verificação aprovada</span> : null}
-              <span className="premium-badge"><ShieldCheck size={14} /> Revisão manual</span>
-              <span className="premium-badge"><Eye size={14} /> Visibilidade</span>
+      <section className={styles.overviewCard} aria-label="Visão geral do perfil">
+        <div className={styles.overviewTop}>
+          <Link href="/profissional/fotos" className={styles.avatarLink} aria-label="Editar foto de perfil">
+            <span className={styles.avatar}>{profileImage ? <img src={profileImage} alt={form.displayName || "Foto do perfil"} /> : <UserRound />}</span>
+            <span className={styles.onlineDot} /><span className={styles.cameraBadge}><Camera /></span>
+          </Link>
+          <div className={styles.identity}>
+            <span className={`${styles.liveBadge} ${profileStatus === "ACTIVE" ? styles.live : styles.inactive}`}><i /> {statusLabel(profileStatus)}</span>
+            <h2>{form.displayName || "Perfil Elite"}</h2>
+            <p><MapPin /> {form.city || "Cidade"}{form.state ? `, ${form.state}` : ""}</p>
+            <div className={styles.trustBadges}>
+              <span><BadgeCheck /> {facts.verified ? "Verificação aprovada" : "Verificação em análise"}</span>
+              <span><ShieldCheck /> Revisão manual</span>
+              <span><Eye /> {form.onlineVisible ? "Visibilidade ativa" : "Visibilidade limitada"}</span>
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-              {statusBadges.length ? statusBadges.slice(0, 6).map((item) => (
-                <span key={item.label} className="premium-badge" style={{ color: item.status === "pendente" ? "var(--elite-warning)" : "var(--elite-gold-light)" }}>
-                  {item.label === "Galeria" ? "Adicione mais fotos" : `${item.label} ${item.status}`}
-                </span>
-              )) : <span className="premium-badge" style={{ color: "var(--elite-success)" }}>Perfil completo</span>}
+            <div className={styles.signalBadges}>
+              {pendingSignals.slice(0, 5).map((item) => <span key={item.key} className={item.status === "pending" ? styles.pendingChip : styles.recommendedChip}><item.icon /> {item.label} {signalLabel(item.status).toLowerCase()}</span>)}
+              {pendingSignals.length === 0 ? <span className={styles.completeChip}><Check /> Perfil completo</span> : null}
             </div>
           </div>
+        </div>
+        <div className={styles.overviewProgress}><div><strong>Perfil {profileProgress}% completo</strong><a href="#progresso">Ver detalhes <ArrowRight /></a></div><ProgressBar value={profileProgress} /></div>
+        <div className={styles.overviewActions}>
+          <a className={styles.primaryButton} href="#dados-principais"><Pencil /> Editar perfil</a>
+          {profileSlug ? <Link className={styles.secondaryButton} href={`/profissionais/${profileSlug}`}><Eye /> Ver anúncio</Link> : null}
+          <button className={styles.secondaryButton} type="button" onClick={shareProfile}><Share2 /> Compartilhar</button>
         </div>
       </section>
 
-      <section className="premium-section-card">
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
-          <div>
-            <p className="premium-eyebrow">Seu perfil profissional</p>
-            <h2 className="premium-section-title">Perfil {profileProgress}% completo</h2>
-            <p className="premium-action-text" style={{ marginTop: 10 }}>Veja o que está completo e o que ainda merece atenção.</p>
-          </div>
-          <span className="premium-badge">{profileProgress === 100 ? "Perfil completo" : "Orientação"}</span>
+      <section id="progresso" className={styles.progressSection}>
+        <div className={styles.progressHero}>
+          <div><span className={styles.eyebrow}>Seu perfil profissional</span><h2>Perfil <em>{profileProgress}%</em> completo</h2><p>Veja o que está completo e o que ainda merece atenção.</p></div>
+          <a href="#proximos-passos" className={styles.guidanceButton}><CircleAlert /> Orientação</a>
+          <div className={styles.progressCrown} aria-hidden="true"><Crown /></div>
+          <div className={styles.heroProgress}><ProgressBar value={profileProgress} /><strong>{profileProgress}%</strong></div>
         </div>
-        <div style={{ height: 10, overflow: "hidden", borderRadius: 999, background: "rgba(255,255,255,0.10)", marginTop: 18 }}>
-          <div style={{ width: `${profileProgress}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#b72cff,#e1a6ff)" }} />
-        </div>
-        <div className="premium-grid premium-grid-3" style={{ marginTop: 18 }}>
-          {profileSignals.map((item) => (
-            <div key={item.label} className="premium-check-card" style={{ justifyContent: "space-between" }}>
-              <span>{item.label}</span>
-              <span style={{ color: item.done ? "var(--elite-success)" : item.status === "pendente" ? "var(--elite-warning)" : "var(--elite-gold-light)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em" }}>
-                {item.status}
-              </span>
-            </div>
-          ))}
+        <div className={styles.checklist}>{signals.map((item) => <SignalRow key={item.key} signal={item} />)}</div>
+        <div className={styles.growthCard}>
+          <span className={styles.growthIcon}><BarChart3 /></span>
+          <div><span className={styles.eyebrow}>Mais oportunidades</span><h3>Perfis mais completos recebem mais visualizações e mais contatos.</h3><p>Quanto mais informações você adiciona, maiores são as chances de ser encontrada.</p></div>
+          <div className={styles.growthArt} aria-hidden="true"><ArrowRight /></div>
         </div>
       </section>
 
-      <PremiumSection eyebrow="Dados principais" title="Dados principais">
-        <div className="premium-grid premium-grid-2">
-          <div>
-            <label>Nome profissional</label>
-            <input value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} />
-          </div>
-          <div>
-            <label>Categoria pública</label>
-            <select
-              value={form.escortCategory}
-              onChange={(e) => setForm({ ...form, escortCategory: e.target.value as ProfileForm["escortCategory"] })}
-            >
-              <option value="">Selecione</option>
-              <option value="MULHER">Mulheres</option>
-              <option value="TRANS">Trans</option>
-              <option value="HOMEM">Homens</option>
-            </select>
-          </div>
-          <div>
-            <label>Cidade</label>
-            <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
-          </div>
-          <div>
-            <label>Estado</label>
-            <input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
-          </div>
-          <div>
-            <label>Bairro</label>
-            <input value={form.bairro} onChange={(e) => setForm({ ...form, bairro: e.target.value })} />
-          </div>
-          <div>
-            <label>WhatsApp</label>
-            <input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} />
-          </div>
+      <section id="dados-principais" className={styles.formSection}>
+        <SectionHeading eyebrow="Dados principais" title="Dados principais" description="Mantenha seus dados sempre atualizados para transmitir mais confiança e atrair melhores oportunidades." icon={UserRound} />
+        <div className={styles.identityStrip}>
+          <span className={styles.miniAvatar}>{profileImage ? <img src={profileImage} alt="" /> : <UserRound />}</span>
+          <div><strong>{form.displayName || "Perfil Elite"}</strong><small><MapPin /> {form.city || "Cidade"}{form.state ? `, ${form.state}` : ""}</small></div>
+          <span className={`${styles.liveBadge} ${profileStatus === "ACTIVE" ? styles.live : styles.inactive}`}><i /> {statusLabel(profileStatus)}</span>
+          <span className={styles.summaryBadge}><BadgeCheck /> {facts.verified ? "Verificado" : "Em análise"}</span>
+          <span className={styles.summaryBadge}><Eye /> {form.onlineVisible ? "Visível" : "Oculto"}</span>
         </div>
-      </PremiumSection>
 
-      <PremiumSection eyebrow="Bio/descrição" title="Bio e descrição">
-        <label>Descrição pública</label>
-        <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="Descreva seu atendimento, diferenciais e estilo de forma clara." />
-        <p className="premium-action-text" style={{ marginTop: 8 }}>{form.bio.length}/1000 caracteres</p>
-      </PremiumSection>
+        <form onSubmit={(event) => { event.preventDefault(); void handleSave(); }}>
+          <FormGroup title="Identidade e localização" description="Informações exibidas no seu anúncio público.">
+            <Field label="Nome profissional" help="Nome que clientes verão no perfil."><input value={form.displayName} onChange={(event) => setForm({ ...form, displayName: event.target.value })} /></Field>
+            <Field label="Categoria pública" help={`Categoria atual: ${categoryLabel(form.escortCategory)}.`}><select value={form.escortCategory} onChange={(event) => setForm({ ...form, escortCategory: event.target.value as ProfileForm["escortCategory"] })}><option value="">Selecione</option><option value="MULHER">Mulheres</option><option value="TRANS">Trans</option><option value="HOMEM">Homens</option></select></Field>
+            <Field label="Cidade" help="Ajuda clientes da sua região a encontrarem você."><input value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} /></Field>
+            <Field label="Estado"><input value={form.state} onChange={(event) => setForm({ ...form, state: event.target.value })} /></Field>
+            <Field label="Bairro"><input value={form.bairro} onChange={(event) => setForm({ ...form, bairro: event.target.value })} /></Field>
+            <Field label="Localização aproximada"><input value={form.approximateLocation} onChange={(event) => setForm({ ...form, approximateLocation: event.target.value })} placeholder="Região central, próximo ao bairro..." /></Field>
+          </FormGroup>
 
-      <PremiumSection eyebrow="Contato e valores" title="Contato e valores">
-        <div className="premium-grid premium-grid-2">
-          <div>
-            <label>Telefone</label>
-            <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+          <FormGroup title="Descrição do perfil" description="Apresente sua personalidade, seu estilo e seus diferenciais." wide>
+            <Field label="Sobre você" help="Esta descrição será exibida publicamente no seu perfil." counter={`${form.bio.length}/1000`} wide><textarea value={form.bio} onChange={(event) => setForm({ ...form, bio: event.target.value })} placeholder="Conte um pouco mais sobre você, seu estilo, interesses e o que torna seu atendimento único." /></Field>
+          </FormGroup>
+
+          <FormGroup title="Contato e valores" description="Mantenha seus canais e valores comerciais atualizados.">
+            <Field label="Telefone"><input value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></Field>
+            <Field label="WhatsApp"><input value={form.whatsapp} onChange={(event) => setForm({ ...form, whatsapp: event.target.value })} /></Field>
+            <Field label="Instagram"><input value={form.instagram} onChange={(event) => setForm({ ...form, instagram: event.target.value })} /></Field>
+            <Field label="Website"><input value={form.website} onChange={(event) => setForm({ ...form, website: event.target.value })} /></Field>
+            <Field label="Preço mínimo"><input inputMode="decimal" value={form.priceMin} onChange={(event) => setForm({ ...form, priceMin: event.target.value.replace(/[^\d,.]/g, "") })} /></Field>
+            <Field label="Preço máximo"><input inputMode="decimal" value={form.priceMax} onChange={(event) => setForm({ ...form, priceMax: event.target.value.replace(/[^\d,.]/g, "") })} /></Field>
+            <Field label="Valor por hora"><input inputMode="decimal" value={form.pricePerHour} onChange={(event) => setForm({ ...form, pricePerHour: event.target.value.replace(/[^\d,.]/g, "") })} /></Field>
+            <Field label="Formas de pagamento"><input value={form.paymentMethods} onChange={(event) => setForm({ ...form, paymentMethods: event.target.value })} placeholder="Pix, Dinheiro, Cartão" /></Field>
+          </FormGroup>
+
+          <FormGroup title="Atendimento e serviços" description="Separe vários itens com vírgulas para organizar seu anúncio.">
+            <Field label="Tipos de atendimento"><input value={form.attendanceTypes} onChange={(event) => setForm({ ...form, attendanceTypes: event.target.value })} placeholder="Com local, Hotel, Atendimento virtual" /></Field>
+            <Field label="Atende"><input value={form.servesGenders} onChange={(event) => setForm({ ...form, servesGenders: event.target.value })} placeholder="Homens, Mulheres, Casais" /></Field>
+            <Field label="Serviços oferecidos"><input value={form.services} onChange={(event) => setForm({ ...form, services: event.target.value })} /></Field>
+            <Field label="Serviços não oferecidos"><input value={form.servicesNotOffered} onChange={(event) => setForm({ ...form, servicesNotOffered: event.target.value })} /></Field>
+            <Field label="Comodidades"><input value={form.amenities} onChange={(event) => setForm({ ...form, amenities: event.target.value })} placeholder="Estacionamento, Ar-condicionado" /></Field>
+            <Field label="Cidades atendidas"><input value={form.serviceCities} onChange={(event) => setForm({ ...form, serviceCities: event.target.value })} /></Field>
+            <Field label="Idiomas"><input value={form.idiomas} onChange={(event) => setForm({ ...form, idiomas: event.target.value })} /></Field>
+            <Field label="Dias disponíveis"><input value={form.diasDisponiveis} onChange={(event) => setForm({ ...form, diasDisponiveis: event.target.value })} /></Field>
+            <Field label="Início do atendimento"><input type="time" value={form.horarioInicio} onChange={(event) => setForm({ ...form, horarioInicio: event.target.value })} /></Field>
+            <Field label="Fim do atendimento"><input type="time" value={form.horarioFim} onChange={(event) => setForm({ ...form, horarioFim: event.target.value })} /></Field>
+            <label className={styles.visibilityToggle}><input type="checkbox" checked={form.onlineVisible} onChange={(event) => setForm({ ...form, onlineVisible: event.target.checked })} /><span><strong>Exibir status online</strong><small>Mostre quando você estiver usando a área profissional.</small></span></label>
+          </FormGroup>
+
+          <div className={styles.formActions}>
+            <button type="submit" disabled={saving} className={styles.primaryButton}><Save /> {saving ? "Salvando..." : "Salvar alterações"}</button>
+            {profileSlug ? <Link href={`/profissionais/${profileSlug}`} className={styles.secondaryButton}><Eye /> Visualizar perfil</Link> : null}
           </div>
-          <div>
-            <label>Instagram</label>
-            <input value={form.instagram} onChange={(e) => setForm({ ...form, instagram: e.target.value })} />
-          </div>
-          <div>
-            <label>Preço mínimo</label>
-            <input inputMode="decimal" value={form.priceMin} onChange={(e) => setForm({ ...form, priceMin: e.target.value.replace(/[^\d,.]/g, "") })} />
-          </div>
-          <div>
-            <label>Preço máximo</label>
-            <input inputMode="decimal" value={form.priceMax} onChange={(e) => setForm({ ...form, priceMax: e.target.value.replace(/[^\d,.]/g, "") })} />
-          </div>
-          <div>
-            <label>Valor por hora</label>
-            <input inputMode="decimal" value={form.pricePerHour} onChange={(e) => setForm({ ...form, pricePerHour: e.target.value.replace(/[^\d,.]/g, "") })} />
-          </div>
+        </form>
+      </section>
+
+      <section className={styles.detailCard}>
+        <SectionHeading eyebrow="Apresentação" title="Descrição do perfil" description="Uma boa descrição destaca sua personalidade, serviços e diferenciais. Seja autêntica e mostre o que te torna única." icon={FileText} action={<a href="#dados-principais" className={styles.outlineButton}><Pencil /> Editar</a>} />
+        <div className={styles.bioPreview}>{form.bio.trim() || "Sua apresentação aparecerá aqui quando você adicionar uma descrição ao perfil."}</div>
+      </section>
+
+      <section className={styles.detailCard}>
+        <SectionHeading eyebrow="Confiança" title="Confiança e verificação" description={facts.verified ? "Seu perfil passou pelas verificações e está em conformidade com nossas diretrizes." : "Acompanhe as etapas de análise para fortalecer a confiança do seu perfil."} icon={ShieldCheck} />
+        <div className={styles.confidenceGrid}>
+          <ConfidenceItem complete={facts.verified} icon={BadgeCheck} title={facts.verified ? "Verificação aprovada" : "Verificação em análise"} description="Documento e identidade" />
+          <ConfidenceItem complete={facts.verified} icon={ShieldCheck} title="Revisão manual" description={facts.verified ? "Concluída" : "Em andamento"} />
+          <ConfidenceItem complete={contentReady} icon={Check} title={contentReady ? "Conteúdo em dia" : "Conteúdo incompleto"} description={contentReady ? "Em conformidade" : "Revise as pendências"} />
         </div>
-      </PremiumSection>
+      </section>
 
-      <PremiumSection eyebrow="Anúncio público" title="Atendimento e serviços" description="Estes dados alimentam automaticamente Home, cidade, busca e perfil público. Separe vários itens com vírgulas.">
-        <div className="premium-grid premium-grid-2">
-          <div>
-            <label>Tipos de atendimento</label>
-            <input value={form.attendanceTypes} onChange={(e) => setForm({ ...form, attendanceTypes: e.target.value })} placeholder="Com local, Hotel, Atendimento virtual" />
-          </div>
-          <div>
-            <label>Atende</label>
-            <input value={form.servesGenders} onChange={(e) => setForm({ ...form, servesGenders: e.target.value })} placeholder="Homens, Mulheres, Casais" />
-          </div>
-          <div>
-            <label>Serviços oferecidos</label>
-            <input value={form.services} onChange={(e) => setForm({ ...form, services: e.target.value })} />
-          </div>
-          <div>
-            <label>Serviços não oferecidos</label>
-            <input value={form.servicesNotOffered} onChange={(e) => setForm({ ...form, servicesNotOffered: e.target.value })} />
-          </div>
-          <div>
-            <label>Comodidades</label>
-            <input value={form.amenities} onChange={(e) => setForm({ ...form, amenities: e.target.value })} placeholder="Estacionamento, Ar-condicionado" />
-          </div>
-          <div>
-            <label>Cidades atendidas</label>
-            <input value={form.serviceCities} onChange={(e) => setForm({ ...form, serviceCities: e.target.value })} />
-          </div>
-          <div>
-            <label>Localização aproximada</label>
-            <input value={form.approximateLocation} onChange={(e) => setForm({ ...form, approximateLocation: e.target.value })} placeholder="Região central, próximo ao bairro..." />
-          </div>
-          <div>
-            <label>Formas de pagamento</label>
-            <input value={form.paymentMethods} onChange={(e) => setForm({ ...form, paymentMethods: e.target.value })} placeholder="Pix, Dinheiro, Cartão" />
-          </div>
-          <div>
-            <label>Idiomas</label>
-            <input value={form.idiomas} onChange={(e) => setForm({ ...form, idiomas: e.target.value })} />
-          </div>
-          <div>
-            <label>Dias disponíveis</label>
-            <input value={form.diasDisponiveis} onChange={(e) => setForm({ ...form, diasDisponiveis: e.target.value })} />
-          </div>
-          <div>
-            <label>Início do atendimento</label>
-            <input type="time" value={form.horarioInicio} onChange={(e) => setForm({ ...form, horarioInicio: e.target.value })} />
-          </div>
-          <div>
-            <label>Fim do atendimento</label>
-            <input type="time" value={form.horarioFim} onChange={(e) => setForm({ ...form, horarioFim: e.target.value })} />
-          </div>
+      <section className={styles.detailCard}>
+        <SectionHeading eyebrow="Desempenho" title="Visibilidade do anúncio" description="Seu posicionamento na plataforma é influenciado por conteúdo, agenda e planos." icon={BarChart3} action={<Link href="/profissional/listagem" className={styles.outlineButton}><Eye /> Abrir listagem</Link>} />
+        <div className={styles.visibilityLayout}>
+          <div className={styles.chart}>{visibilityScores.map((score) => <div key={score.label} className={styles.barItem}><strong>{score.value}%</strong><span className={styles.barTrack}><i style={{ height: `${Math.max(6, score.value)}%` }} /></span><small>{score.label}</small></div>)}</div>
+          <div className={styles.metricsCard}><Crown /><div><strong>{facts.profileViews.toLocaleString("pt-BR")}</strong><span>visualizações do perfil</span></div><div><strong>{facts.contactClicks.toLocaleString("pt-BR")}</strong><span>contatos recebidos</span></div></div>
         </div>
-        <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 18 }}>
-          <input type="checkbox" checked={form.onlineVisible} onChange={(e) => setForm({ ...form, onlineVisible: e.target.checked })} />
-          Exibir meu status online quando eu estiver usando a área profissional
-        </label>
-      </PremiumSection>
+      </section>
 
-      <div className="premium-grid">
-        {lowerSections.map((section) => {
-          const Icon = section.icon;
-          return (
-            <PremiumSection key={section.title} eyebrow={section.eyebrow} title={section.title} description={section.description}>
-              <div style={{ display: "flex", gap: 16, alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap" }}>
-                  <div style={{ display: "flex", gap: 14, alignItems: "flex-start", minWidth: 0 }}>
-                    <span className="premium-icon-orb" style={{ width: 58, height: 58, flex: "0 0 auto" }}>
-                      <Icon />
-                    </span>
-                    <div style={{ minWidth: 0 }}>
-                      <h3 className="premium-card-title">{section.title}</h3>
-                      <div className="premium-chip-row" style={{ marginTop: 12 }}>
-                        {section.chips.map((chip) => (
-                          <span key={chip} className="premium-chip">{chip}</span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <Link href={section.href} className="premium-button-secondary">
-                    {section.action}
-                  </Link>
-              </div>
-            </PremiumSection>
-          );
-        })}
-      </div>
+      <section className={styles.detailCard}>
+        <SectionHeading eyebrow="Organização" title="Atendimento e agenda" description="Mantenha seus horários atualizados para que os clientes encontrem você no momento certo." icon={CalendarDays} action={<Link href="/profissional/agenda" className={styles.outlineButton}><CalendarDays /> Atualizar agenda</Link>} />
+        <div className={styles.scheduleStrip}>
+          <span className={facts.hasAgenda ? styles.available : styles.unavailable}><i /> {facts.hasAgenda ? "Disponibilidade cadastrada" : "Agenda pendente"}</span>
+          <span>Das {displayStart} às {displayEnd}</span>
+          <span><Clock3 /> Fuso horário <strong>Brasília (GMT-3)</strong></span>
+        </div>
+      </section>
 
-      <button onClick={handleSave} disabled={loading} className="premium-button" style={{ width: "100%" }}>
-        <Save size={18} />
-        {loading ? "Salvando..." : "Salvar alterações"}
-      </button>
+      <section id="proximos-passos" className={`${styles.detailCard} ${styles.nextStepsCard}`}>
+        <SectionHeading eyebrow="Próximos passos" title={pendingSignals.length ? "Seu perfil está quase pronto!" : "Seu perfil está completo!"} description={pendingSignals.length ? "Complete os itens abaixo para aumentar sua visibilidade e atrair mais oportunidades." : "Continue mantendo seus dados e conteúdos atualizados."} icon={Star} />
+        <div className={styles.nextSteps}>{(pendingSignals.length ? pendingSignals.slice(0, 3) : signals.slice(0, 3)).map((item) => <Link key={item.key} href={item.href}><span><item.icon /></span><div><strong>{item.done ? `Revisar ${item.label.toLowerCase()}` : item.label}</strong><small>{item.description}</small></div><ChevronRight /></Link>)}</div>
+      </section>
     </div>
   );
+}
+
+function ProgressBar({ value }: { value: number }) {
+  return <div className={styles.progressTrack} role="progressbar" aria-label="Completude do perfil" aria-valuemin={0} aria-valuemax={100} aria-valuenow={value}><span style={{ width: `${value}%` }} /></div>;
+}
+
+function SignalRow({ signal }: { signal: ProfileSignal }) {
+  const Icon = signal.icon;
+  const StatusIcon = signal.status === "complete" ? Check : signal.status === "pending" ? CircleAlert : Star;
+  return <Link href={signal.href} className={styles.signalRow}><span className={`${styles.signalIcon} ${styles[`signal_${signal.status}`]}`}><Icon /></span><div><strong>{signal.label}</strong><small>{signal.description}</small></div><span className={`${styles.statusPill} ${styles[`status_${signal.status}`]}`}><StatusIcon /> {signalLabel(signal.status)}</span><ChevronRight /></Link>;
+}
+
+function SectionHeading({ eyebrow, title, description, icon: Icon, action }: { eyebrow: string; title: string; description: string; icon: LucideIcon; action?: React.ReactNode }) {
+  return <div className={styles.sectionHeading}><span className={styles.sectionIcon}><Icon /></span><div><span className={styles.eyebrow}>{eyebrow}</span><h2>{title}</h2><p>{description}</p></div>{action ? <div className={styles.headingAction}>{action}</div> : null}</div>;
+}
+
+function FormGroup({ title, description, wide = false, children }: { title: string; description: string; wide?: boolean; children: React.ReactNode }) {
+  return <fieldset className={`${styles.formGroup} ${wide ? styles.formGroupWide : ""}`}><legend>{title}</legend><p>{description}</p><div className={styles.fieldGrid}>{children}</div></fieldset>;
+}
+
+function Field({ label, help, counter, wide = false, children }: { label: string; help?: string; counter?: string; wide?: boolean; children: React.ReactNode }) {
+  return <label className={`${styles.field} ${wide ? styles.fieldWide : ""}`}><span>{label}{counter ? <small>{counter}</small> : null}</span>{children}{help ? <em>{help}</em> : null}</label>;
+}
+
+function ConfidenceItem({ complete, icon: Icon, title, description }: { complete: boolean; icon: LucideIcon; title: string; description: string }) {
+  return <div className={complete ? styles.confidenceComplete : styles.confidencePending}><span><Icon /></span><div><strong>{title}</strong><small>{description}</small></div></div>;
+}
+
+function ProfileLoading() {
+  return <div className={styles.page}><section className={styles.loadingCard}><span /><span /><span /></section><section className={styles.loadingCard}><span /><span /></section></div>;
 }

@@ -465,6 +465,59 @@ test.describe("Dashboard da profissional", () => {
     }
   });
 
+  test("área de perfil permanece íntegra nos viewports prioritários", async ({ page }, testInfo) => {
+    test.skip(
+      process.env.RUN_PROFESSIONAL_DASHBOARD_VISUAL !== "1" || !process.env.TEST_USER_EMAIL,
+      "Validação visual com conta profissional não solicitada nesta execução.",
+    );
+    await installMockSessionCookie(page.context(), {
+      ...MOCK_MODEL_SESSION.user,
+      professionalStatus: "ACTIVE",
+      isProfessional: true,
+      activeProfileType: "PROFESSIONAL",
+      availableProfiles: ["PROFESSIONAL"],
+      adultVerified: true,
+    });
+    await page.addInitScript(() => {
+      sessionStorage.setItem("elite_modell_adult_consent_session", "accepted");
+      localStorage.setItem("elite_modell_ageConsentAccepted", "true");
+    });
+
+    for (const width of [360, 375, 390, 393, 414, 430, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/profissional/perfil", { waitUntil: "domcontentloaded" });
+      const acceptCookies = page.getByRole("button", { name: "Aceitar todos" });
+      if (await acceptCookies.isVisible().catch(() => false)) await acceptCookies.click();
+      await expect(page.getByRole("heading", { name: "Perfil profissional", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Dados principais", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Confiança e verificação" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Atendimento e agenda" })).toBeVisible();
+
+      const hasHorizontalOverflow = await page.evaluate(
+        () => document.documentElement.scrollWidth > window.innerWidth,
+      );
+      expect(hasHorizontalOverflow, `overflow horizontal em ${width}px`).toBe(false);
+
+      if (width === 390) {
+        await page.screenshot({
+          path: testInfo.outputPath("professional-profile-top-390.png"),
+        });
+        await page.getByRole("heading", { name: "Dados principais", exact: true }).scrollIntoViewIfNeeded();
+        await page.screenshot({
+          path: testInfo.outputPath("professional-profile-form-390.png"),
+        });
+        await page.getByRole("heading", { name: "Confiança e verificação" }).scrollIntoViewIfNeeded();
+        await page.screenshot({
+          path: testInfo.outputPath("professional-profile-details-390.png"),
+        });
+        await page.screenshot({
+          path: testInfo.outputPath("professional-profile-390.png"),
+          fullPage: true,
+        });
+      }
+    }
+  });
+
   test("/profissional/fotos carrega sem 404", async ({ page }) => {
     await mockActiveModelAuth(page);
     const resp = await page.goto("/profissional/fotos", { waitUntil: "domcontentloaded" });
