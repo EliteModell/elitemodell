@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { NextRequest } from "next/server";
 import { POST as sendPhoneCode } from "../src/app/api/auth/phone/send-code/route";
+import { POST as prepareFirebasePhone } from "../src/app/api/auth/phone/firebase-send/route";
 import { prisma } from "../src/lib/prisma";
 import { readJsonResponse } from "../src/lib/safe-json-response";
 import {
@@ -212,7 +213,10 @@ test.describe("Twilio Verify no cadastro profissional", () => {
 
     expect(response.headers.get("content-type")).toContain("application/json");
     expect(response.status).toBe(200);
-    expect(data).toMatchObject({ ok: true, message: "Código enviado por SMS" });
+    expect(data).toMatchObject({
+      ok: true,
+      message: "Solicitação aceita pela Twilio para entrega via SMS",
+    });
     const params = new URLSearchParams(twilioBody);
     expect(params.get("To")).toBe("+5511917934340");
     expect(params.get("Channel")).toBe("sms");
@@ -267,6 +271,39 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     expect(toBrazilianE164("+55 11 91793-4340")).toBe("+5511917934340");
   });
 
+  test("erro 60203 informa limite temporário e recuperação automática", async () => {
+    configureTwilio();
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ code: 60203, message: "Max send attempts reached" }), {
+        status: 429,
+        headers: { "content-type": "application/json", "Retry-After": "120" },
+      });
+
+    const response = await sendPhoneCode(request());
+    const data = await response.json();
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("120");
+    expect(data).toMatchObject({
+      ok: false,
+      code: "TWILIO_MAX_SEND_ATTEMPTS",
+      resendInSeconds: 120,
+    });
+  });
+
+  test("bloqueio de entrega 60410 é diferenciado de indisponibilidade genérica", async () => {
+    configureTwilio();
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ code: 60410, message: "Delivery attempt blocked" }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
+
+    const response = await sendPhoneCode(request());
+    expect(response.status).toBe(502);
+    expect(await response.json()).toMatchObject({ code: "TWILIO_DELIVERY_BLOCKED" });
+  });
+
   test("envio WhatsApp usa o mesmo Twilio Verify Service quando a flag está ativa", async () => {
     configureTwilio();
     process.env.TWILIO_WHATSAPP_VERIFY_ENABLED = "true";
@@ -287,7 +324,7 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     expect(response.status).toBe(200);
     expect(data).toMatchObject({
       ok: true,
-      message: "Código enviado por WhatsApp",
+      message: "Solicitação aceita pela Twilio para entrega via WhatsApp",
       delivery: { provider: "twilio-verify", channel: "whatsapp" },
     });
     expect(params.get("To")).toBe("+5511917934340");
@@ -327,7 +364,7 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     expect(called).toBe(false);
   });
 
-  test("limite por telefone continua bloqueando novos envios", async () => {
+  test("limite antifraude por IP continua bloqueando abuso automatizado", async () => {
     configureTwilio();
     repository.count = async () => 20;
     let called = false;
@@ -340,6 +377,76 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     expect(response.status).toBe(429);
     expect(await response.json()).toMatchObject({ code: "TWILIO_RATE_LIMIT" });
     expect(called).toBe(false);
+  });
+
+  test("cadastro não aplica limite próprio de quantidade por telefone", async () => {
+    configureTwilio();
+    const countQueries: unknown[] = [];
+    repository.count = async (...args) => {
+      countQueries.push(args[0]);
+      return 0;
+    };
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ sid: "VE_test", status: "pending" }), {
+        status: 201,
+        headers: { "content-type": "application/json" },
+      });
+
+    const response = await sendPhoneCode(request());
+    expect(response.status).toBe(200);
+    expect(countQueries[0]).toMatchObject({
+      where: {
+        requestIp: "203.0.113.44",
+        sentAt: { not: null },
+        sendError: null,
+        createdAt: { gte: expect.any(Date) },
+      },
+    });
+    expect((countQueries[0] as { where: Record<string, unknown> }).where).not.toHaveProperty("phone");
+  });
+
+  test("cadastro de cliente no Firebase também não limita quantidade por telefone", async () => {
+    const countQueries: unknown[] = [];
+    repository.count = async (...args) => {
+      countQueries.push(args[0]);
+      return 0;
+    };
+
+    const response = await prepareFirebasePhone(new NextRequest("http://localhost/api/auth/phone/firebase-send", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-forwarded-for": "203.0.113.46" },
+      body: JSON.stringify({
+        action: "prepare",
+        phone: "11917934340",
+        accountType: "client",
+        termsConsent: true,
+        lgpdConsent: true,
+        ageConfirmed: true,
+      }),
+    }));
+
+    expect(response.status).toBe(200);
+    expect(countQueries).toHaveLength(1);
+    expect(countQueries[0]).toMatchObject({ where: { requestIp: "203.0.113.46" } });
+    expect((countQueries[0] as { where: Record<string, unknown> }).where).not.toHaveProperty("phone");
+  });
+
+  test("número volta a receber após o intervalo mínimo de reenvio", async () => {
+    configureTwilio();
+    repository.findFirst = async () => ({ createdAt: new Date(Date.now() - 61 * 1000) });
+    repository.count = async () => 0;
+    let called = false;
+    globalThis.fetch = async () => {
+      called = true;
+      return new Response(JSON.stringify({ sid: "VE_recovered", status: "pending" }), {
+        status: 201,
+        headers: { "content-type": "application/json" },
+      });
+    };
+
+    const response = await sendPhoneCode(request());
+    expect(response.status).toBe(200);
+    expect(called).toBe(true);
   });
 
   test("SMS e WhatsApp compartilham a mesma VerificationCheck", async () => {

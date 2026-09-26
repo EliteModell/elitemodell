@@ -53,6 +53,45 @@ type VerifiedConsent = {
   ownershipConfirmed: boolean;
 };
 
+async function existingPhoneAccountResponse(phone: string) {
+  const existing = await prisma.user.findFirst({
+    where: { phone },
+    select: {
+      id: true,
+      accountType: true,
+      blocked: true,
+      phoneVerifiedAt: true,
+    },
+  });
+  if (!existing) return null;
+
+  if (existing.blocked) {
+    return NextResponse.json(
+      { error: "Esta conta está indisponível. Entre em contato com o suporte." },
+      { status: 403 },
+    );
+  }
+
+  await prisma.user.update({
+    where: { id: existing.id },
+    data: {
+      phoneVerified: true,
+      phoneVerifiedAt: existing.phoneVerifiedAt ?? new Date(),
+    },
+  });
+
+  const accountType = PHONE_ACCOUNT_TYPES.find((type) => type === existing.accountType) ?? "model";
+  return NextResponse.json({
+    ok: true,
+    phone: formatBrazilianPhone(phone),
+    phoneVerified: true,
+    existingAccount: true,
+    registrationPending: false,
+    authToken: createPhoneAuthToken(existing.id, phone),
+    redirectTo: redirectForPhoneAccount(accountType),
+  });
+}
+
 async function recordPhoneLegalTrace(user: { id: string; accountType?: string | null }, req: NextRequest, marketingConsent?: boolean) {
   await recordUserAcceptances({
     userId: user.id,
@@ -271,6 +310,9 @@ export async function POST(req: NextRequest) {
           provider: "firebase-phone-auth",
         });
 
+        const existingAccountResponse = await existingPhoneAccountResponse(phone);
+        if (existingAccountResponse) return existingAccountResponse;
+
         const response = NextResponse.json({
           ok: true,
           phone: formatBrazilianPhone(phone),
@@ -400,6 +442,9 @@ export async function POST(req: NextRequest) {
         where: { id: verification.id },
         data: { usedAt: new Date(), attempts: { increment: 1 } },
       });
+
+      const existingAccountResponse = await existingPhoneAccountResponse(phone);
+      if (existingAccountResponse) return existingAccountResponse;
 
       const response = NextResponse.json({
         ok: true,

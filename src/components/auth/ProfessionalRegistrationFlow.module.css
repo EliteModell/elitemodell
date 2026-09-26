@@ -126,6 +126,7 @@
 .primaryButton:hover:not(:disabled) { filter: brightness(1.12); transform: translateY(-1px); }
 .primaryButton:disabled { opacity: .48; cursor: not-allowed; }
 .continueArea > span { display: inline-flex; align-items: center; gap: 6px; color: rgba(255,255,255,.72); font-size: 11px; }
+.retryNotice { margin: 0; color: #f0d2ff; font-size: 13px; font-weight: 800; text-align: center; }
 
 .verificationStage { width: min(100%, 670px); min-height: 68vh; margin: 0 auto; padding: 50px 0; }
 .backButton { display: inline-flex; align-items: center; gap: 5px; margin-bottom: 16px; border: 0; color: #efd8fb; background: transparent; font: inherit; font-weight: 800; cursor: pointer; }

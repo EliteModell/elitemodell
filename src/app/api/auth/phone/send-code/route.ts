@@ -18,8 +18,8 @@ import {
 } from "@/lib/twilio-verify";
 import {
   OTP_MAX_SENDS_PER_IP_PER_HOUR,
-  OTP_MAX_SENDS_PER_PHONE_PER_HOUR,
   OTP_RESEND_SECONDS,
+  OTP_SEND_WINDOW_MINUTES,
   OTP_TTL_MINUTES,
   PHONE_ACCOUNT_TYPES,
   formatBrazilianPhone,
@@ -43,6 +43,8 @@ type SendErrorCode =
   | "WHATSAPP_NOT_CONFIGURED"
   | "WHATSAPP_SENDER_ERROR"
   | "TWILIO_RATE_LIMIT"
+  | "TWILIO_MAX_SEND_ATTEMPTS"
+  | "TWILIO_DELIVERY_BLOCKED"
   | "INVALID_PHONE"
   | "SMS_SEND_FAILED"
   | "WHATSAPP_SEND_FAILED";
@@ -52,8 +54,19 @@ function jsonError(
   status: number,
   code?: SendErrorCode,
   headers?: HeadersInit,
+  details?: { retryAt?: Date; resendInSeconds?: number },
 ) {
-  return NextResponse.json({ ok: false, error, ...(code ? { code } : {}) }, { status, headers });
+  return NextResponse.json(
+    { ok: false, error, ...(code ? { code } : {}), ...details },
+    { status, headers },
+  );
+}
+
+function retryDetails(retryAt: Date) {
+  return {
+    retryAt,
+    resendInSeconds: Math.max(1, Math.ceil((retryAt.getTime() - Date.now()) / 1000)),
+  };
 }
 
 export async function POST(req: NextRequest) {
@@ -119,7 +132,6 @@ export async function POST(req: NextRequest) {
     const latest = await prisma.phoneVerificationCode.findFirst({
       where: {
         phone,
-        accountType: body.accountType,
         sentAt: { not: null },
         sendError: null,
       },
@@ -129,37 +141,28 @@ export async function POST(req: NextRequest) {
     if (latest) {
       const retryAt = new Date(latest.createdAt.getTime() + OTP_RESEND_SECONDS * 1000);
       if (retryAt > new Date()) {
-        return NextResponse.json(
-          {
-            ok: false,
-            error: "Aguarde alguns segundos para reenviar o código.",
-            retryAt,
-            resendInSeconds: Math.ceil((retryAt.getTime() - Date.now()) / 1000),
-          },
-          { status: 429 },
+        const details = retryDetails(retryAt);
+        return jsonError(
+          `Aguarde ${details.resendInSeconds}s para reenviar o código.`,
+          429,
+          "TWILIO_RATE_LIMIT",
+          { "Retry-After": String(details.resendInSeconds) },
+          details,
         );
       }
     }
 
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const [recentPhoneCount, recentIpCount] = await Promise.all([
-      prisma.phoneVerificationCode.count({
-        where: { phone, accountType: body.accountType, createdAt: { gte: oneHourAgo } },
-      }),
-      requestIp === "unknown"
-        ? Promise.resolve(0)
-        : prisma.phoneVerificationCode.count({
-            where: { requestIp, createdAt: { gte: oneHourAgo } },
-          }),
-    ]);
-
-    if (recentPhoneCount >= OTP_MAX_SENDS_PER_PHONE_PER_HOUR) {
-      return jsonError(
-        "Muitas solicitações para este telefone. Tente novamente mais tarde.",
-        429,
-        "TWILIO_RATE_LIMIT",
-      );
-    }
+    const recentIpCount = requestIp === "unknown"
+      ? 0
+      : await prisma.phoneVerificationCode.count({
+          where: {
+            requestIp,
+            createdAt: { gte: oneHourAgo },
+            sentAt: { not: null },
+            sendError: null,
+          },
+        });
     if (recentIpCount >= OTP_MAX_SENDS_PER_IP_PER_HOUR) {
       return jsonError(rateLimitMessage, 429, "TWILIO_RATE_LIMIT");
     }
@@ -202,7 +205,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      message: body.channel === "whatsapp" ? "Código enviado por WhatsApp" : "Código enviado por SMS",
+      message: body.channel === "whatsapp"
+        ? "Solicitação aceita pela Twilio para entrega via WhatsApp"
+        : "Solicitação aceita pela Twilio para entrega via SMS",
       phone: formatBrazilianPhone(phone),
       expiresInSeconds: OTP_TTL_MINUTES * 60,
       resendInSeconds: OTP_RESEND_SECONDS,
@@ -251,11 +256,33 @@ export async function POST(req: NextRequest) {
         status: err.status,
         providerCode: err.providerCode,
       });
-      if (err.status === 429 || err.providerCode === 20429) {
+      if (err.providerCode === 60203) {
+        const resendInSeconds = err.retryAfterSeconds ?? OTP_SEND_WINDOW_MINUTES * 60;
+        const retryAt = new Date(Date.now() + resendInSeconds * 1000);
         return jsonError(
-          "Muitas solicitações. Aguarde alguns minutos e tente novamente.",
+          `A Twilio atingiu o limite temporário deste número. Tente novamente em até ${OTP_SEND_WINDOW_MINUTES} minutos.`,
+          429,
+          "TWILIO_MAX_SEND_ATTEMPTS",
+          { "Retry-After": String(resendInSeconds) },
+          { retryAt, resendInSeconds },
+        );
+      }
+      if (err.status === 429 || err.providerCode === 20429) {
+        const resendInSeconds = err.retryAfterSeconds ?? 60;
+        const retryAt = new Date(Date.now() + resendInSeconds * 1000);
+        return jsonError(
+          `Muitas solicitações. Tente novamente em ${resendInSeconds}s.`,
           429,
           "TWILIO_RATE_LIMIT",
+          { "Retry-After": String(resendInSeconds) },
+          { retryAt, resendInSeconds },
+        );
+      }
+      if (err.providerCode === 60410) {
+        return jsonError(
+          "A Twilio bloqueou temporariamente esta tentativa de entrega. Aguarde e tente novamente.",
+          502,
+          "TWILIO_DELIVERY_BLOCKED",
         );
       }
       if (requestedChannel === "whatsapp") {

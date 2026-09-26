@@ -495,6 +495,64 @@ test("não cria rolagem horizontal no mobile", async ({ page }) => {
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
 });
 
+test("telefone de conta existente autentica por OTP sem criar duplicidade", async ({ page }) => {
+  let authPayload: string | null = null;
+  await page.route("**/api/auth/phone/send-code", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+  await page.route("**/api/auth/phone/verify-code", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        phoneVerified: true,
+        existingAccount: true,
+        registrationPending: false,
+        authToken: "existing-phone-auth-token",
+        redirectTo: "/profissional/novo",
+      }),
+    });
+  });
+  await page.route("**/api/auth/csrf**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ csrfToken: "csrf-token-for-tests" }),
+    });
+  });
+  await page.route("**/api/auth/callback/phone-otp-token**", async (route) => {
+    authPayload = route.request().postData();
+    const url = new URL("/profissional/novo", route.request().url()).toString();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ url }),
+    });
+  });
+  await page.route("**/profissional/novo**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "text/html",
+      body: "<!doctype html><html><body><h1>Conta profissional existente</h1></body></html>",
+    });
+  });
+
+  await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
+  await page.getByLabel("Seu número de telefone").fill("31999999999");
+  await page.getByLabel(/Confirmo que tenho 18 anos ou mais/).check();
+  await page.getByRole("button", { name: /^Enviar código$/ }).click();
+  await page.getByLabel("Código de 6 dígitos").fill("123456");
+  await page.getByRole("button", { name: "Validar e continuar" }).click();
+
+  await page.waitForURL(/\/profissional\/novo/);
+  expect(authPayload).toContain("existing-phone-auth-token");
+});
+
 test("conta profissional mantém seleção, senha e checkboxes responsivos", async ({ page }) => {
   for (const width of [375, 390, 430]) {
     await page.setViewportSize({ width, height: 844 });

@@ -2,6 +2,7 @@
 
 import { NoPrefetchLink as Link } from "@/components/NoPrefetchLink";
 import Image from "next/image";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   CalendarClock,
@@ -33,7 +34,9 @@ type ConsentState = {
 };
 
 type VerifyCodeResponse = {
+  authToken?: string;
   error?: string;
+  existingAccount?: boolean;
   registrationPending?: boolean;
   redirectTo?: string;
 };
@@ -49,10 +52,14 @@ type SendCodeResponse = {
     | "WHATSAPP_NOT_CONFIGURED"
     | "WHATSAPP_SENDER_ERROR"
     | "TWILIO_RATE_LIMIT"
+    | "TWILIO_MAX_SEND_ATTEMPTS"
+    | "TWILIO_DELIVERY_BLOCKED"
     | "INVALID_PHONE"
     | "SMS_SEND_FAILED"
     | "WHATSAPP_SEND_FAILED";
   error?: string;
+  retryAt?: string;
+  resendInSeconds?: number;
 };
 
 const PHONE_STORAGE_KEY = "elitemodell.professional-registration.phone";
@@ -100,6 +107,12 @@ function formatPhone(value: string) {
   }
 
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
+function maskPhone(value: string) {
+  const formatted = formatPhone(value);
+  if (onlyDigits(value).length !== 11) return formatted;
+  return `${formatted.slice(0, 5)}*****-${formatted.slice(-4)}`;
 }
 
 function formatCurrency(value: number) {
@@ -275,6 +288,9 @@ export function ProfessionalRegistrationFlow({
         throw new Error(friendlyError);
       }
       if (!response.ok || !data.ok) {
+        if (typeof data.resendInSeconds === "number" && data.resendInSeconds > 0) {
+          setResendSeconds(Math.ceil(data.resendInSeconds));
+        }
         if (
           requestedChannel === "whatsapp" &&
           ["WHATSAPP_NOT_CONFIGURED", "WHATSAPP_SENDER_ERROR", "WHATSAPP_SEND_FAILED"].includes(
@@ -293,8 +309,8 @@ export function ProfessionalRegistrationFlow({
       setResendSeconds(RESEND_SECONDS);
       toast.success(
         requestedChannel === "whatsapp"
-          ? "Código enviado pelo WhatsApp."
-          : "SMS enviado! Pode levar até 1 minuto para chegar.",
+          ? "Solicitação aceita para entrega pelo WhatsApp."
+          : "Solicitação aceita. O SMS pode levar até 1 minuto para chegar.",
       );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : friendlyError);
@@ -334,8 +350,26 @@ export function ProfessionalRegistrationFlow({
       if (!data) {
         throw new Error("Não foi possível validar o código agora. Tente novamente.");
       }
-      if (!response.ok || !data.registrationPending) {
+      if (!response.ok) {
         throw new Error(data.error || "Código inválido ou expirado.");
+      }
+
+      if (data.existingAccount && data.authToken && data.redirectTo) {
+        const auth = await signIn("phone-otp-token", {
+          token: data.authToken,
+          redirect: false,
+        });
+        if (auth?.error) {
+          throw new Error("Código validado, mas não foi possível iniciar a sessão.");
+        }
+        toast.success("Telefone confirmado. Acessando sua conta existente.");
+        router.replace(data.redirectTo);
+        router.refresh();
+        return;
+      }
+
+      if (!data.registrationPending) {
+        throw new Error(data.error || "Não foi possível continuar o cadastro.");
       }
 
       toast.success("Telefone confirmado com segurança.");
@@ -545,7 +579,7 @@ export function ProfessionalRegistrationFlow({
               <div className={styles.verificationCard}>
                 <span className={styles.eyebrow}><LockKeyhole size={16} aria-hidden="true" /> Validação segura</span>
                 <h1 id="verification-title" ref={headingRef} tabIndex={-1}>Valide seu telefone para continuar</h1>
-                <p>Enviaremos um código de 6 dígitos por {channel === "whatsapp" ? "WhatsApp" : "SMS"} para <strong>{formatPhone(phone)}</strong>.</p>
+                <p>Solicitaremos um código de 6 dígitos por {channel === "whatsapp" ? "WhatsApp" : "SMS"} para <strong>{maskPhone(phone)}</strong>.</p>
                 {!codeSent ? (
                   <div className={styles.channelSendPanel}>
                     <div className={styles.verificationChannels} role="radiogroup" aria-label="Canal de entrega">
@@ -554,13 +588,22 @@ export function ProfessionalRegistrationFlow({
                     </div>
                     {channel === "whatsapp" && <label className={styles.whatsAppConsent}><input type="checkbox" checked={whatsAppConsent} onChange={(event) => setWhatsAppConsent(event.target.checked)} /><span>Quero receber meu código de verificação pelo WhatsApp.</span></label>}
                     {smsFallbackAvailable && <div className={styles.fallbackNotice} role="alert"><p>Não foi possível enviar pelo WhatsApp. Você pode receber o código por SMS.</p><button type="button" disabled={sendingCode} onClick={() => sendCode("sms")}>Enviar por SMS</button></div>}
+                    {resendSeconds > 0 && (
+                      <p className={styles.retryNotice} role="status" aria-live="polite">
+                        Nova tentativa disponível em {resendSeconds}s para {maskPhone(phone)}.
+                      </p>
+                    )}
                     <button className={styles.primaryButton} type="button" disabled={sendingCode || resendSeconds > 0 || (channel === "whatsapp" && !whatsAppConsent)} onClick={() => sendCode()}>
-                      {sendingCode ? "Enviando..." : `Enviar código por ${channel === "whatsapp" ? "WhatsApp" : "SMS"}`} <ChevronRight size={20} aria-hidden="true" />
+                      {sendingCode
+                        ? "Solicitando..."
+                        : resendSeconds > 0
+                          ? `Reenviar em ${resendSeconds}s`
+                          : `Enviar código por ${channel === "whatsapp" ? "WhatsApp" : "SMS"}`} <ChevronRight size={20} aria-hidden="true" />
                     </button>
                   </div>
                 ) : (
                   <div className={styles.codeArea}>
-                    <div className={styles.sentNotice}><Check size={18} aria-hidden="true" /> Código solicitado por {channel === "whatsapp" ? "WhatsApp" : "SMS"}. Pode levar até 1 minuto.</div>
+                    <div className={styles.sentNotice}><Check size={18} aria-hidden="true" /> Solicitação aceita para {maskPhone(phone)} por {channel === "whatsapp" ? "WhatsApp" : "SMS"}. A entrega pode levar até 1 minuto.</div>
                     <label htmlFor="verification-code">Código de 6 dígitos</label>
                     <input id="verification-code" className={styles.codeInput} type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" />
                     <button className={styles.primaryButton} type="button" disabled={verifyingCode || code.length !== 6} onClick={verifyCode}>{verifyingCode ? "Validando..." : "Validar e continuar"}</button>

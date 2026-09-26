@@ -6,7 +6,6 @@ import { prisma } from "@/lib/prisma";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import {
   OTP_MAX_SENDS_PER_IP_PER_HOUR,
-  OTP_MAX_SENDS_PER_PHONE_PER_HOUR,
   OTP_RESEND_SECONDS,
   OTP_TTL_MINUTES,
   PHONE_ACCOUNT_TYPES,
@@ -154,23 +153,11 @@ export async function POST(req: NextRequest) {
     }
 
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const [recentPhoneCount, recentIpCount] = await Promise.all([
-      prisma.phoneVerificationCode.count({
-        where: { phone, accountType: body.accountType, createdAt: { gte: oneHourAgo } },
-      }),
-      requestIp === "unknown"
-        ? Promise.resolve(0)
-        : prisma.phoneVerificationCode.count({
-            where: { requestIp, createdAt: { gte: oneHourAgo } },
-          }),
-    ]);
-
-    if (recentPhoneCount >= OTP_MAX_SENDS_PER_PHONE_PER_HOUR) {
-      return NextResponse.json(
-        { error: "Muitas solicitacoes para este telefone. Tente novamente mais tarde." },
-        { status: 429 },
-      );
-    }
+    const recentIpCount = requestIp === "unknown"
+      ? 0
+      : await prisma.phoneVerificationCode.count({
+          where: { requestIp, createdAt: { gte: oneHourAgo } },
+        });
 
     if (recentIpCount >= OTP_MAX_SENDS_PER_IP_PER_HOUR) {
       return NextResponse.json(

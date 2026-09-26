@@ -39,12 +39,14 @@ export class TwilioWhatsAppVerifyConfigurationError extends Error {
 export class TwilioVerifyProviderError extends Error {
   readonly status: number;
   readonly providerCode?: number;
+  readonly retryAfterSeconds?: number;
 
-  constructor(message: string, status = 502, providerCode?: number) {
+  constructor(message: string, status = 502, providerCode?: number, retryAfterSeconds?: number) {
     super(message);
     this.name = "TwilioVerifyProviderError";
     this.status = status;
     this.providerCode = providerCode;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -129,10 +131,12 @@ async function twilioVerifyRequest(path: string, body: URLSearchParams) {
   const payload = await readTwilioPayload(response);
 
   if (!response.ok) {
+    const retryAfter = Number(response.headers.get("Retry-After"));
     throw new TwilioVerifyProviderError(
       safeProviderMessage(payload, "A Twilio recusou a solicitação de verificação."),
       response.status,
       payload.code,
+      Number.isFinite(retryAfter) && retryAfter > 0 ? Math.ceil(retryAfter) : undefined,
     );
   }
 
