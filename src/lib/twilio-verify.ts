@@ -16,6 +16,44 @@ type TwilioVerifyPayload = {
   message?: string;
 };
 
+type TwilioVerifyServicePayload = {
+  whatsapp?: {
+    msg_service_sid?: string | null;
+    from?: string | null;
+  } | null;
+};
+
+type TwilioWhatsAppSendersPayload = {
+  senders?: Array<{
+    sid?: string;
+    sender_id?: string;
+    status?: string;
+  }>;
+};
+
+type TwilioChannelSendersPayload = {
+  channel_senders?: Array<{
+    sid?: string;
+    sender?: string;
+    messaging_service_sid?: string;
+  }>;
+};
+
+export type TwilioWhatsAppAvailability = {
+  available: boolean;
+  verifyMessagingServiceMatches: boolean;
+  senderOnline: boolean;
+  senderInMessagingService: boolean;
+  reason:
+    | "available"
+    | "disabled"
+    | "missing-configuration"
+    | "provider-unavailable"
+    | "verify-service-mismatch"
+    | "sender-offline"
+    | "sender-not-associated";
+};
+
 type TwilioVerifyConfig = {
   accountSid: string;
   authToken: string;
@@ -169,6 +207,119 @@ export async function sendTwilioVerification(
     status: payload.status ?? "pending",
     to,
   };
+}
+
+async function twilioReadJson<T>(url: string, config: TwilioVerifyConfig): Promise<T> {
+  const response = await fetch(url, {
+    method: "GET",
+    headers: { Authorization: authorizationHeader(config.accountSid, config.authToken) },
+    cache: "no-store",
+    signal: AbortSignal.timeout(5_000),
+  });
+
+  if (!response.ok) {
+    throw new TwilioVerifyProviderError(
+      "Não foi possível confirmar a configuração do WhatsApp na Twilio.",
+      response.status,
+    );
+  }
+
+  return response.json() as Promise<T>;
+}
+
+export async function getTwilioWhatsAppAvailability(): Promise<TwilioWhatsAppAvailability> {
+  if (!isTwilioWhatsAppVerifyEnabled()) {
+    return {
+      available: false,
+      verifyMessagingServiceMatches: false,
+      senderOnline: false,
+      senderInMessagingService: false,
+      reason: "disabled",
+    };
+  }
+
+  const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID?.trim();
+  const whatsAppSender = process.env.TWILIO_WHATSAPP_SENDER?.trim();
+  const environment = twilioVerifyEnvironmentStatus();
+  if (
+    !messagingServiceSid ||
+    !whatsAppSender ||
+    !environment.hasAccountSid ||
+    !environment.hasAuthToken ||
+    !environment.hasVerifyServiceSid
+  ) {
+    return {
+      available: false,
+      verifyMessagingServiceMatches: false,
+      senderOnline: false,
+      senderInMessagingService: false,
+      reason: "missing-configuration",
+    };
+  }
+
+  const config = getTwilioVerifyConfig();
+
+  try {
+    const [verifyService, senders, channelSenders] = await Promise.all([
+      twilioReadJson<TwilioVerifyServicePayload>(
+        `https://verify.twilio.com/v2/Services/${config.serviceSid}`,
+        config,
+      ),
+      twilioReadJson<TwilioWhatsAppSendersPayload>(
+        "https://messaging.twilio.com/v2/Channels/Senders?Channel=whatsapp",
+        config,
+      ),
+      twilioReadJson<TwilioChannelSendersPayload>(
+        `https://messaging.twilio.com/v1/Services/${messagingServiceSid}/ChannelSenders`,
+        config,
+      ),
+    ]);
+
+    const verifyMessagingServiceMatches =
+      verifyService.whatsapp?.msg_service_sid === messagingServiceSid;
+    const senderOnline = Boolean(
+      senders.senders?.some(
+        (sender) => sender.sender_id === whatsAppSender && sender.status === "ONLINE",
+      ),
+    );
+    const senderInMessagingService = Boolean(
+      channelSenders.channel_senders?.some(
+        (sender) =>
+          sender.sender === whatsAppSender &&
+          sender.messaging_service_sid === messagingServiceSid,
+      ),
+    );
+
+    const available =
+      verifyMessagingServiceMatches && senderOnline && senderInMessagingService;
+    const reason: TwilioWhatsAppAvailability["reason"] = available
+      ? "available"
+      : !verifyMessagingServiceMatches
+        ? "verify-service-mismatch"
+        : !senderOnline
+          ? "sender-offline"
+          : "sender-not-associated";
+
+    return {
+      available,
+      verifyMessagingServiceMatches,
+      senderOnline,
+      senderInMessagingService,
+      reason,
+    };
+  } catch (error) {
+    console.warn("[twilio-verify] whatsapp_availability_check_failed", {
+      status: error instanceof TwilioVerifyProviderError ? error.status : undefined,
+      providerCode: error instanceof TwilioVerifyProviderError ? error.providerCode : undefined,
+    });
+    return {
+      available: false,
+      verifyMessagingServiceMatches: false,
+      senderOnline: false,
+      senderInMessagingService: false,
+      reason: "provider-unavailable",
+    };
+  }
 }
 
 export function sendTwilioSmsVerification(phone: string) {

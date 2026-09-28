@@ -6,6 +6,7 @@ import { prisma } from "../src/lib/prisma";
 import { readJsonResponse } from "../src/lib/safe-json-response";
 import {
   checkTwilioVerification,
+  getTwilioWhatsAppAvailability,
   sendTwilioSmsVerification,
   toBrazilianE164,
   TwilioVerifyProviderError,
@@ -133,6 +134,8 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     authToken: process.env.TWILIO_AUTH_TOKEN,
     serviceSid: process.env.TWILIO_VERIFY_SERVICE_SID,
     whatsAppEnabled: process.env.TWILIO_WHATSAPP_VERIFY_ENABLED,
+    messagingServiceSid: process.env.TWILIO_MESSAGING_SERVICE_SID,
+    whatsAppSender: process.env.TWILIO_WHATSAPP_SENDER,
   };
   const repository = prisma.phoneVerificationCode as unknown as {
     findFirst: (...args: unknown[]) => Promise<unknown>;
@@ -194,6 +197,10 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     else process.env.TWILIO_VERIFY_SERVICE_SID = originalEnvironment.serviceSid;
     if (originalEnvironment.whatsAppEnabled === undefined) delete process.env.TWILIO_WHATSAPP_VERIFY_ENABLED;
     else process.env.TWILIO_WHATSAPP_VERIFY_ENABLED = originalEnvironment.whatsAppEnabled;
+    if (originalEnvironment.messagingServiceSid === undefined) delete process.env.TWILIO_MESSAGING_SERVICE_SID;
+    else process.env.TWILIO_MESSAGING_SERVICE_SID = originalEnvironment.messagingServiceSid;
+    if (originalEnvironment.whatsAppSender === undefined) delete process.env.TWILIO_WHATSAPP_SENDER;
+    else process.env.TWILIO_WHATSAPP_SENDER = originalEnvironment.whatsAppSender;
   });
 
   test("envio SMS retorna JSON de sucesso e usa E.164 sem CustomCode", async () => {
@@ -307,9 +314,23 @@ test.describe("Twilio Verify no cadastro profissional", () => {
   test("envio WhatsApp usa o mesmo Twilio Verify Service quando a flag está ativa", async () => {
     configureTwilio();
     process.env.TWILIO_WHATSAPP_VERIFY_ENABLED = "true";
+    process.env.TWILIO_MESSAGING_SERVICE_SID = "MG_expected";
+    process.env.TWILIO_WHATSAPP_SENDER = "whatsapp:+14353753445";
     let twilioBody = "";
     globalThis.fetch = async (input, init) => {
-      expect(String(input)).toContain("/Services/VA_test/Verifications");
+      const url = String(input);
+      if (url.endsWith("/Services/VA_test")) {
+        return Response.json({ whatsapp: { msg_service_sid: "MG_expected", from: null } });
+      }
+      if (url.includes("/v2/Channels/Senders")) {
+        return Response.json({ senders: [{ sender_id: "whatsapp:+14353753445", status: "ONLINE" }] });
+      }
+      if (url.includes("/v1/Services/MG_expected/ChannelSenders")) {
+        return Response.json({
+          channel_senders: [{ sender: "whatsapp:+14353753445", messaging_service_sid: "MG_expected" }],
+        });
+      }
+      expect(url).toContain("/Services/VA_test/Verifications");
       twilioBody = String(init?.body ?? "");
       return new Response(JSON.stringify({ sid: "VE_whatsapp", status: "pending" }), {
         status: 201,
@@ -348,6 +369,116 @@ test.describe("Twilio Verify no cadastro profissional", () => {
       code: "WHATSAPP_NOT_CONFIGURED",
     });
     expect(called).toBe(false);
+  });
+
+  test("WhatsApp só fica disponível após confirmar Verify, Sender ONLINE e Sender Pool", async () => {
+    configureTwilio();
+    process.env.TWILIO_WHATSAPP_VERIFY_ENABLED = "true";
+    process.env.TWILIO_MESSAGING_SERVICE_SID = "MG_expected";
+    process.env.TWILIO_WHATSAPP_SENDER = "whatsapp:+14353753445";
+
+    globalThis.fetch = async (input) => {
+      const url = String(input);
+      if (url.includes("verify.twilio.com/v2/Services/VA_test")) {
+        return Response.json({
+          whatsapp: { msg_service_sid: "MG_expected", from: null },
+        });
+      }
+      if (url.includes("messaging.twilio.com/v2/Channels/Senders")) {
+        return Response.json({
+          senders: [{
+            sid: "XE_sender",
+            sender_id: "whatsapp:+14353753445",
+            status: "ONLINE",
+          }],
+        });
+      }
+      if (url.includes("/v1/Services/MG_expected/ChannelSenders")) {
+        return Response.json({
+          channel_senders: [{
+            sid: "XE_sender",
+            sender: "whatsapp:+14353753445",
+            messaging_service_sid: "MG_expected",
+          }],
+        });
+      }
+      return new Response(null, { status: 404 });
+    };
+
+    await expect(getTwilioWhatsAppAvailability()).resolves.toEqual({
+      available: true,
+      verifyMessagingServiceMatches: true,
+      senderOnline: true,
+      senderInMessagingService: true,
+      reason: "available",
+    });
+  });
+
+  test("WhatsApp sem credenciais retorna indisponibilidade sem quebrar a consulta de canais", async () => {
+    configureTwilio();
+    process.env.TWILIO_WHATSAPP_VERIFY_ENABLED = "true";
+    process.env.TWILIO_MESSAGING_SERVICE_SID = "MG_expected";
+    process.env.TWILIO_WHATSAPP_SENDER = "whatsapp:+14353753445";
+    delete process.env.TWILIO_AUTH_TOKEN;
+    let called = false;
+    globalThis.fetch = async () => {
+      called = true;
+      throw new Error("Não deve consultar o provedor sem credenciais");
+    };
+
+    await expect(getTwilioWhatsAppAvailability()).resolves.toMatchObject({
+      available: false,
+      reason: "missing-configuration",
+    });
+    expect(called).toBe(false);
+  });
+
+  test("whatsapp.from vazio não invalida uma associação correta", async () => {
+    configureTwilio();
+    process.env.TWILIO_WHATSAPP_VERIFY_ENABLED = "true";
+    process.env.TWILIO_MESSAGING_SERVICE_SID = "MG_expected";
+    process.env.TWILIO_WHATSAPP_SENDER = "whatsapp:+14353753445";
+
+    globalThis.fetch = async (input) => {
+      const url = String(input);
+      if (url.includes("verify.twilio.com")) {
+        return Response.json({ whatsapp: { msg_service_sid: "MG_expected", from: "" } });
+      }
+      if (url.includes("/v2/Channels/Senders")) {
+        return Response.json({ senders: [{ sender_id: "whatsapp:+14353753445", status: "ONLINE" }] });
+      }
+      return Response.json({
+        channel_senders: [{ sender: "whatsapp:+14353753445", messaging_service_sid: "MG_expected" }],
+      });
+    };
+
+    expect((await getTwilioWhatsAppAvailability()).available).toBe(true);
+  });
+
+  test("WhatsApp permanece oculto quando o Messaging Service do Verify diverge", async () => {
+    configureTwilio();
+    process.env.TWILIO_WHATSAPP_VERIFY_ENABLED = "true";
+    process.env.TWILIO_MESSAGING_SERVICE_SID = "MG_expected";
+    process.env.TWILIO_WHATSAPP_SENDER = "whatsapp:+14353753445";
+
+    globalThis.fetch = async (input) => {
+      const url = String(input);
+      if (url.includes("verify.twilio.com")) {
+        return Response.json({ whatsapp: { msg_service_sid: "MG_other", from: null } });
+      }
+      if (url.includes("/v2/Channels/Senders")) {
+        return Response.json({ senders: [{ sender_id: "whatsapp:+14353753445", status: "ONLINE" }] });
+      }
+      return Response.json({
+        channel_senders: [{ sender: "whatsapp:+14353753445", messaging_service_sid: "MG_expected" }],
+      });
+    };
+
+    await expect(getTwilioWhatsAppAvailability()).resolves.toMatchObject({
+      available: false,
+      verifyMessagingServiceMatches: false,
+      reason: "verify-service-mismatch",
+    });
   });
 
   test("canal inválido é rejeitado antes de chamar a Twilio", async () => {

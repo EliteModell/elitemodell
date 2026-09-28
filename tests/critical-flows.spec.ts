@@ -177,6 +177,13 @@ test.describe("Fluxo 1 — Cadastro", () => {
 
   test("cadastro cliente envia codigo por SMS via Firebase", async ({ page }) => {
     await bypassAgeGate(page);
+    await page.route("**/api/auth/phone/channels", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ sms: true, whatsapp: false }),
+      });
+    });
     await page.addInitScript(() => {
       const testWindow = window as unknown as {
         __elitePhoneAuthMock?: {
@@ -218,6 +225,16 @@ test.describe("Fluxo 1 — Cadastro", () => {
         page.evaluate(() => (window as unknown as { __sentClientSmsTo?: string }).__sentClientSmsTo ?? null),
       )
       .toBe("+5531999999999");
+  });
+
+  test("cadastro cliente mantém WhatsApp oculto mesmo quando o provedor está disponível", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.route("**/api/auth/phone/channels", (route) => route.fulfill({
+      json: { sms: true, whatsapp: true },
+    }));
+    await page.goto("/app/consumer/register", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("button", { name: "WhatsApp" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Enviar código via SMS/ })).toBeVisible();
   });
 
   test("/cadastro/acompanhante carrega sem 404", async ({ page }) => {

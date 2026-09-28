@@ -130,8 +130,15 @@ test.describe("verificacao Didit no onboarding profissional", () => {
       path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"),
       "utf8",
     );
-    expect(page.indexOf('title="Revise seus dados"')).toBeLessThan(page.indexOf('title="🔐 Verifique sua identidade"'));
-    expect(page.match(/Verificar minha identidade/g)).toHaveLength(1);
+    const verificationSteps = fs.readFileSync(
+      path.join(process.cwd(), "src/components/professional-onboarding/ProfessionalVerificationSteps.tsx"),
+      "utf8",
+    );
+    expect(verificationSteps.indexOf("Revise seus dados")).toBeLessThan(
+      verificationSteps.indexOf("Verifique sua identidade"),
+    );
+    expect(verificationSteps).toContain('props.mode === "summary"');
+    expect(verificationSteps.match(/Verificar minha identidade/g)).toHaveLength(1);
     expect(page).toContain("diditStartingRef.current");
     expect(page).toContain("localStorage.setItem(DRAFT_KEY");
     expect(page).toContain('form.kycStatus !== "APPROVED"');

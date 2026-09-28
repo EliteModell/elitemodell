@@ -1,9 +1,15 @@
 # OTP por WhatsApp com Twilio Verify
 
+## Estado atual do cadastro
+
+As telas de cadastro de cliente e profissional oferecem somente SMS. A opção WhatsApp foi ocultada após a restrição da conta pela Meta, e escolhas antigas salvas no navegador não reativam esse canal. Alterar a variável do servidor não volta a exibir a opção nas telas; uma futura reativação exige revisar também os componentes de cadastro.
+
 O envio por WhatsApp permanece desativado enquanto a variável abaixo estiver ausente ou diferente de `true`:
 
 ```env
 TWILIO_WHATSAPP_VERIFY_ENABLED=false
+TWILIO_MESSAGING_SERVICE_SID=MG...
+TWILIO_WHATSAPP_SENDER=whatsapp:+...
 ```
 
 Antes de alterar para `true` em produção:
@@ -19,4 +25,10 @@ Antes de alterar para `true` em produção:
 
 O endpoint usa o mesmo Twilio Verify Service para SMS e WhatsApp. A aplicação não cria nem armazena o OTP e a confirmação continua sendo feita por `VerificationCheck`.
 
-`TWILIO_MESSAGING_SERVICE_SID` não é necessário para este fluxo do Verify. Caso exista na conta, ele não substitui a configuração do canal WhatsApp dentro do Verify Service.
+Antes de mostrar a opção WhatsApp, a aplicação faz uma auditoria somente de leitura nas APIs oficiais e exige simultaneamente:
+
+- `whatsapp.msg_service_sid` do Verify igual a `TWILIO_MESSAGING_SERVICE_SID`;
+- `TWILIO_WHATSAPP_SENDER` com status `ONLINE`;
+- o mesmo Sender presente no Sender Pool desse Messaging Service.
+
+`whatsapp.from` é opcional e, isoladamente, não torna a configuração inválida. Qualquer falha de consulta ou divergência mantém a opção WhatsApp oculta e preserva o SMS.

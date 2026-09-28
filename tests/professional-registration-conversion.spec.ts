@@ -60,6 +60,13 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("apresenta a experiência premium e validação por canal", async ({ page }) => {
+  await page.route("**/api/auth/phone/channels", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ sms: true, whatsapp: false }),
+    });
+  });
   await page.route("**/api/auth/phone/send-code", async (route) => {
     await route.fulfill({
       status: 200,
@@ -74,17 +81,17 @@ test("apresenta a experiência premium e validação por canal", async ({ page }
   await expect(page.getByRole("heading", { name: "Valide seu telefone para continuar" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Quanto você pode faturar?" })).toBeVisible();
   await expect(page.locator("body")).not.toContainText("fatalmodel");
-  if (process.env.TWILIO_WHATSAPP_VERIFY_ENABLED === "true") {
-    await expect(page.getByRole("radio", { name: /WhatsApp/i }).first()).toBeVisible();
-  } else {
-    await expect(page.getByRole("radio", { name: /WhatsApp/i })).toBeDisabled();
-    await expect(page.getByText("Em breve", { exact: true })).toBeVisible();
-  }
+  await expect(page.getByRole("radio", { name: /WhatsApp/i })).toHaveCount(0);
+  await expect(page.getByText("Em breve", { exact: true })).toHaveCount(0);
 
-  await expect(page.getByRole("button", { name: /^Enviar código$/ })).toBeDisabled();
+  const sendButton = page.getByRole("button", { name: /^Enviar código$/ });
+  await expect(sendButton).toBeEnabled();
+  await expect(sendButton).toHaveAttribute("data-ready", "false");
+  await expect(sendButton).not.toHaveAttribute("aria-disabled");
   await page.getByLabel("Seu número de telefone").fill("31999999999");
   await page.getByLabel(/Confirmo que tenho 18 anos ou mais/).check();
-  await page.getByRole("button", { name: /^Enviar código$/ }).click();
+  await expect(sendButton).toHaveAttribute("data-ready", "true");
+  await sendButton.click();
 
   await expect(
     page.getByRole("heading", { name: "Valide seu telefone para continuar" }),
@@ -298,24 +305,45 @@ test("envia código profissional somente por SMS", async ({ page }) => {
   });
 });
 
-test("falha no WhatsApp oferece fallback explícito por SMS", async ({ page }) => {
-  test.skip(
-    process.env.TWILIO_WHATSAPP_VERIFY_ENABLED !== "true",
-    "Executado no cenário com a feature flag de WhatsApp ativa.",
-  );
-
-  const channels: string[] = [];
+test("explica por que o cadastro profissional ainda não pode avançar", async ({ page }) => {
+  let sendRequests = 0;
   await page.route("**/api/auth/phone/send-code", async (route) => {
-    const payload = route.request().postDataJSON() as { channel?: string };
-    channels.push(payload.channel ?? "");
-    if (payload.channel === "whatsapp") {
+    sendRequests += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+
+  await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
+  const sendButton = page.getByRole("button", { name: /^Enviar código$/ });
+
+  await expect(sendButton).toBeEnabled();
+  await expect(sendButton).toHaveAttribute("data-ready", "false");
+  await sendButton.click();
+  await expect(page.getByText("Informe um telefone brasileiro válido com DDD.")).toBeVisible();
+
+  await page.getByLabel("Seu número de telefone").fill("31999999999");
+  await sendButton.click();
+  await expect(page.getByText("Confirme os itens obrigatórios para continuar.")).toBeVisible();
+  expect(sendRequests).toBe(0);
+});
+
+test("limite temporário mostra contagem regressiva e libera o reenvio", async ({ page }) => {
+  let sendRequests = 0;
+  await page.route("**/api/auth/phone/send-code", async (route) => {
+    sendRequests += 1;
+    if (sendRequests === 1) {
       await route.fulfill({
-        status: 502,
+        status: 429,
         contentType: "application/json",
+        headers: { "Retry-After": "1" },
         body: JSON.stringify({
           ok: false,
-          code: "WHATSAPP_SENDER_ERROR",
-          error: "Não foi possível enviar pelo WhatsApp. Você pode receber o código por SMS.",
+          code: "TWILIO_RATE_LIMIT",
+          error: "Aguarde 1s para reenviar o código.",
+          resendInSeconds: 1,
         }),
       });
       return;
@@ -323,23 +351,42 @@ test("falha no WhatsApp oferece fallback explícito por SMS", async ({ page }) =
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ ok: true, message: "Código enviado por SMS" }),
+      body: JSON.stringify({ ok: true }),
     });
   });
 
   await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
   await page.getByLabel("Seu número de telefone").fill("31999999999");
-  await page.getByRole("radio", { name: /WhatsApp/i }).first().click();
-  await page.getByLabel("Quero receber meu código de verificação pelo WhatsApp.").first().check();
   await page.getByLabel(/Confirmo que tenho 18 anos ou mais/).check();
   await page.getByRole("button", { name: /^Enviar código$/ }).click();
 
-  await expect(
-    page.getByRole("region", { name: /Valide seu telefone para continuar/ }).getByRole("alert"),
-  ).toContainText("Você pode receber o código por SMS");
-  await page.getByRole("button", { name: "Enviar por SMS" }).click();
+  const retryNotice = page.getByText(/Nova tentativa disponível em/);
+  await expect(retryNotice).toContainText("Nova tentativa disponível");
+  await expect(retryNotice).toContainText("(31) *****-9999");
+  const resendButton = page.getByRole("button", { name: /Enviar código por SMS|Reenviar em/ });
+  await expect(resendButton).toBeEnabled({ timeout: 3_000 });
+  await resendButton.click();
   await expect(page.getByLabel("Código de 6 dígitos")).toBeVisible();
-  expect(channels).toEqual(["whatsapp", "sms"]);
+  expect(sendRequests).toBe(2);
+});
+
+test("cadastro profissional mantém somente SMS mesmo com WhatsApp disponível no provedor", async ({ page }) => {
+  const channels: string[] = [];
+  await page.route("**/api/auth/phone/channels", (route) => route.fulfill({
+    json: { sms: true, whatsapp: true },
+  }));
+  await page.route("**/api/auth/phone/send-code", async (route) => {
+    channels.push(route.request().postDataJSON().channel);
+    await route.fulfill({ json: { ok: true, message: "Código enviado por SMS" } });
+  });
+  await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("radio", { name: /WhatsApp/i })).toHaveCount(0);
+  await page.getByLabel("Seu número de telefone").fill("31999999999");
+  await page.getByLabel(/Confirmo que tenho 18 anos ou mais/).check();
+  await page.getByRole("button", { name: /^Enviar código$/ }).click();
+  await expect(page.getByLabel("Código de 6 dígitos")).toBeVisible();
+  await expect(page.getByRole("button", { name: /WhatsApp/i })).toHaveCount(0);
+  expect(channels).toEqual(["sms"]);
 });
 
 test("HTML inesperado da API mostra erro amigável sem quebrar a tela", async ({ page }) => {

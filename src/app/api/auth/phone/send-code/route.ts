@@ -10,6 +10,7 @@ import {
   TwilioVerifyConfigurationError,
   TwilioVerifyProviderError,
   TwilioWhatsAppVerifyConfigurationError,
+  getTwilioWhatsAppAvailability,
   isTwilioWhatsAppVerifyEnabled,
   maskPhone,
   sendTwilioVerification,
@@ -127,6 +128,23 @@ export async function POST(req: NextRequest) {
         503,
         "WHATSAPP_NOT_CONFIGURED",
       );
+    }
+
+    if (body.channel === "whatsapp") {
+      const availability = await getTwilioWhatsAppAvailability();
+      if (!availability.available) {
+        console.warn("[phone/send-code] whatsapp_configuration_not_ready", {
+          endpoint: "/api/auth/phone/send-code",
+          phone: maskedPhone,
+          channel: body.channel,
+          reason: availability.reason,
+        });
+        return jsonError(
+          TWILIO_WHATSAPP_NOT_CONFIGURED_ERROR,
+          503,
+          "WHATSAPP_NOT_CONFIGURED",
+        );
+      }
     }
 
     const latest = await prisma.phoneVerificationCode.findFirst({

@@ -6,17 +6,32 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { NoPrefetchLink as Link } from "@/components/NoPrefetchLink";
 import toast from "react-hot-toast";
-import { ArrowLeft, CheckCircle2, Info, Menu, Phone, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Info, Menu, MessageCircle, Phone, ShieldCheck } from "lucide-react";
 import {
   prepareFirebaseSmsAudit,
   reportFirebaseSmsAccepted,
   reportFirebaseSmsFailed,
   type FirebaseSmsAudit,
 } from "@/lib/firebase-phone-audit-client";
+import { readJsonResponse } from "@/lib/safe-json-response";
 
 type FlowMode = "client" | "model" | "host";
 type ScreenMode = "register" | "verify";
 type OtpStatus = "idle" | "sending" | "sent" | "verifying" | "verified" | "error";
+type VerificationChannel = "sms" | "whatsapp";
+
+type SendCodeResponse = {
+  ok?: boolean;
+  error?: string;
+  resendInSeconds?: number;
+  code?: string;
+};
+
+type VerifyCodeResponse = {
+  authToken?: string;
+  error?: string;
+  redirectTo?: string;
+};
 
 type StoredConsent = {
   termsConsent?: boolean;
@@ -50,6 +65,11 @@ const CONSENT_STORAGE_KEY: Record<FlowMode, string> = {
   client: "elitemodell_client_phone_consent",
   model: "elitemodell_model_phone_consent",
   host: "elitemodell_host_phone_consent",
+};
+const CHANNEL_STORAGE_KEY: Record<FlowMode, string> = {
+  client: "elitemodell_client_phone_channel",
+  model: "elitemodell_model_phone_channel",
+  host: "elitemodell_host_phone_channel",
 };
 const REGISTER_ROUTE: Record<FlowMode, string> = {
   client: "/app/consumer/register",
@@ -354,13 +374,20 @@ function StatusMessage({ status, message, premium = false }: { status: OtpStatus
   );
 }
 
-export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; screen: ScreenMode }) {
+export function PhoneRegistrationClient({
+  mode,
+  screen,
+}: {
+  mode: FlowMode;
+  screen: ScreenMode;
+}) {
   const router = useRouter();
   const params = useSearchParams();
   const { data: session } = useSession();
   const text = copy[mode];
   const storageKey = PHONE_STORAGE_KEY[mode];
   const consentKey = CONSENT_STORAGE_KEY[mode];
+  const channelKey = CHANNEL_STORAGE_KEY[mode];
   const returnUrl = safeInternalPath(params.get("returnUrl"));
   const isClient = mode === "client";
   const isHost = mode === "host";
@@ -374,6 +401,11 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
   const [adult, setAdult] = useState(false);
   const [ownProfile, setOwnProfile] = useState(false);
   const [promo, setPromo] = useState(false);
+  const [channel, setChannel] = useState<VerificationChannel>("sms");
+  // O cadastro oferece apenas SMS enquanto o WhatsApp estiver indispon?vel.
+  const [whatsAppAvailable] = useState(false);
+  const [whatsAppConsent, setWhatsAppConsent] = useState(false);
+  const [smsFallbackAvailable, setSmsFallbackAvailable] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [otpStatus, setOtpStatus] = useState<OtpStatus>("idle");
@@ -399,16 +431,18 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
       setAdult(Boolean(savedConsent.ageConfirmed));
       setOwnProfile(Boolean(savedConsent.ownershipConfirmed));
       setPromo(Boolean(savedConsent.marketingConsent));
+      sessionStorage.setItem(channelKey, "sms");
     }, 0);
     return () => window.clearTimeout(hydrate);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params, storageKey]);
+  }, [channelKey, params, storageKey]);
 
   useEffect(() => {
     if (timer <= 0) return;
     const tick = window.setInterval(() => setTimer((value) => Math.max(0, value - 1)), 1000);
     return () => window.clearInterval(tick);
   }, [timer]);
+
 
   function readStoredConsent(): StoredConsent {
     try {
@@ -431,13 +465,17 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
 
   const canSubmit = useMemo(() => {
     if (!isValidPhone(phone) || loading) return false;
-    if (isClient) return terms && privacyRead && adult;
-    return terms && privacyRead && adult && ownProfile;
-  }, [adult, isClient, loading, ownProfile, phone, privacyRead, terms]);
+    const channelReady = channel !== "whatsapp" || (whatsAppAvailable && whatsAppConsent);
+    if (isClient) return terms && privacyRead && adult && channelReady;
+    return terms && privacyRead && adult && ownProfile && channelReady;
+  }, [adult, channel, isClient, loading, ownProfile, phone, privacyRead, terms, whatsAppAvailable, whatsAppConsent]);
   const themedCheckStyle = isPremium ? { ...checkStyle, color: "#b8b8b8" } : checkStyle;
   const themedLinkStyle = isPremium ? { ...linkStyle, color: "#e1a6ff" } : linkStyle;
 
-  async function sendCode(nextPhone = phone) {
+  async function sendCode(
+    nextPhone = phone,
+    channelOverride?: VerificationChannel,
+  ) {
     const normalized = digits(nextPhone);
     if (!isValidPhone(normalized)) {
       const message = "Informe um celular brasileiro válido.";
@@ -447,64 +485,116 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
       return false;
     }
 
+    const requestedChannel = channelOverride ?? channel;
+    if (requestedChannel === "whatsapp" && (!whatsAppAvailable || !whatsAppConsent)) {
+      const message = whatsAppAvailable
+        ? "Confirme que deseja receber o código pelo WhatsApp."
+        : "O WhatsApp ainda não está disponível. Use o envio por SMS.";
+      setOtpStatus("error");
+      setStatusMessage(message);
+      toast.error(message);
+      return false;
+    }
+
     const consent = consentPayload();
     setLoading(true);
     setOtpStatus("sending");
-    setStatusMessage("Enviando código de verificação...");
+    setStatusMessage(`Solicitando código por ${requestedChannel === "whatsapp" ? "WhatsApp" : "SMS"}...`);
 
     let smsAudit: FirebaseSmsAudit | null = null;
 
     try {
-      if (window.__elitePhoneAuthMock?.sendCode) {
-        firebaseConfirmationResult = await window.__elitePhoneAuthMock.sendCode(e164BrazilianPhone(normalized));
-      } else {
-        smsAudit = await prepareFirebaseSmsAudit({
-          phone: normalized,
-          accountType: mode,
-          consent: {
-            termsConsent: consent.termsConsent,
-            lgpdConsent: consent.lgpdConsent,
-            ageConfirmed: consent.ageConfirmed,
-            ownershipConfirmed: consent.ownershipConfirmed,
-          },
-        });
-
-        const [firebaseAuthModule, firebaseClientModule] = await Promise.all([
-          import("firebase/auth"),
-          import("@/lib/firebase/client"),
-        ]);
-        const {
-          RecaptchaVerifier: FirebaseRecaptchaVerifier,
-          signInWithPhoneNumber,
-        } = firebaseAuthModule;
-        const { getFirebaseClientAuth } = firebaseClientModule;
-        const auth = getFirebaseClientAuth();
-
+      if (requestedChannel === "whatsapp") {
+        firebaseConfirmationResult = null;
         firebaseRecaptchaVerifier?.clear();
-        firebaseRecaptchaVerifier = new FirebaseRecaptchaVerifier(auth, "firebase-phone-recaptcha", {
-          size: "invisible",
-          callback: () => undefined,
-        });
+        firebaseRecaptchaVerifier = null;
 
-        firebaseConfirmationResult = await signInWithPhoneNumber(
-          auth,
-          e164BrazilianPhone(normalized),
-          firebaseRecaptchaVerifier,
-        );
-
-        void reportFirebaseSmsAccepted({
-          verificationId: smsAudit.verificationId,
-          phone: normalized,
-          accountType: mode,
+        const response = await fetch("/api/auth/phone/send-code", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: normalized,
+            accountType: mode,
+            channel: "whatsapp",
+            ...consent,
+          }),
         });
+        const data = await readJsonResponse<SendCodeResponse>(response);
+        if (!data) {
+          throw new Error("Não foi possível solicitar o código pelo WhatsApp.");
+        }
+        if (!response.ok || !data.ok) {
+          if (typeof data.resendInSeconds === "number" && data.resendInSeconds > 0) {
+            setTimer(Math.ceil(data.resendInSeconds));
+          }
+          if (["WHATSAPP_NOT_CONFIGURED", "WHATSAPP_SENDER_ERROR", "WHATSAPP_SEND_FAILED"].includes(data.code ?? "")) {
+            setSmsFallbackAvailable(true);
+          }
+          throw new Error(data.error ?? "Não foi possível enviar pelo WhatsApp. Use o SMS.");
+        }
+      } else {
+        if (window.__elitePhoneAuthMock?.sendCode) {
+          firebaseConfirmationResult = await window.__elitePhoneAuthMock.sendCode(e164BrazilianPhone(normalized));
+        } else {
+          smsAudit = await prepareFirebaseSmsAudit({
+            phone: normalized,
+            accountType: mode,
+            consent: {
+              termsConsent: consent.termsConsent,
+              lgpdConsent: consent.lgpdConsent,
+              ageConfirmed: consent.ageConfirmed,
+              ownershipConfirmed: consent.ownershipConfirmed,
+            },
+          });
+
+          const [firebaseAuthModule, firebaseClientModule] = await Promise.all([
+            import("firebase/auth"),
+            import("@/lib/firebase/client"),
+          ]);
+          const {
+            RecaptchaVerifier: FirebaseRecaptchaVerifier,
+            signInWithPhoneNumber,
+          } = firebaseAuthModule;
+          const { getFirebaseClientAuth } = firebaseClientModule;
+          const auth = getFirebaseClientAuth();
+
+          firebaseRecaptchaVerifier?.clear();
+          firebaseRecaptchaVerifier = new FirebaseRecaptchaVerifier(auth, "firebase-phone-recaptcha", {
+            size: "invisible",
+            callback: () => undefined,
+          });
+
+          firebaseConfirmationResult = await signInWithPhoneNumber(
+            auth,
+            e164BrazilianPhone(normalized),
+            firebaseRecaptchaVerifier,
+          );
+
+          void reportFirebaseSmsAccepted({
+            verificationId: smsAudit.verificationId,
+            phone: normalized,
+            accountType: mode,
+          });
+        }
       }
 
       sessionStorage.setItem(storageKey, normalized);
       sessionStorage.setItem(consentKey, JSON.stringify(consent));
+      sessionStorage.setItem(channelKey, requestedChannel);
+      setChannel(requestedChannel);
+      setSmsFallbackAvailable(false);
       setTimer(60);
       setOtpStatus("sent");
-      setStatusMessage("Código solicitado por SMS. Pode levar ate 1 minuto para chegar.");
-      toast.success("SMS solicitado pelo Firebase.");
+      setStatusMessage(
+        requestedChannel === "whatsapp"
+          ? "Código solicitado pelo WhatsApp. A entrega pode levar até 1 minuto."
+          : "Código solicitado por SMS. Pode levar até 1 minuto para chegar.",
+      );
+      toast.success(
+        requestedChannel === "whatsapp"
+          ? "Solicitação aceita para entrega pelo WhatsApp."
+          : "SMS solicitado pelo Firebase.",
+      );
       return true;
     } catch (err) {
       firebaseRecaptchaVerifier?.clear();
@@ -550,13 +640,17 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
     setOtpStatus("verifying");
     setStatusMessage("Validando código...");
     try {
-      if (!firebaseConfirmationResult) {
-        throw new Error("Sessão de verificação expirada. Solicite um novo código.");
-      }
-
-      const credential = await firebaseConfirmationResult.confirm(code);
-      const firebaseIdToken = await credential.user.getIdToken();
       const consent = consentPayload();
+      let firebaseIdToken: string | undefined;
+
+      if (channel === "sms") {
+        if (!firebaseConfirmationResult) {
+          throw new Error("Sessão de verificação expirada. Solicite um novo código.");
+        }
+
+        const credential = await firebaseConfirmationResult.confirm(code);
+        firebaseIdToken = await credential.user.getIdToken();
+      }
 
       const res = await fetch("/api/auth/phone/verify-code", {
         method: "POST",
@@ -565,17 +659,19 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
           phone: digits(phone),
           code,
           accountType: mode,
-          firebaseIdToken,
+          ...(firebaseIdToken ? { firebaseIdToken } : {}),
           ...consent,
         }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? "Não foi possível verificar o código.");
+      const data = await readJsonResponse<VerifyCodeResponse>(res);
+      if (!data || !res.ok) throw new Error(data?.error ?? "Não foi possível verificar o código.");
+      if (!data.authToken) throw new Error("Código validado, mas a sessão não pôde ser criada.");
 
       const auth = await signIn("phone-otp-token", { token: data.authToken, redirect: false });
       if (auth?.error) throw new Error("Código validado, mas não foi possível iniciar a sessão.");
 
       sessionStorage.removeItem(consentKey);
+      sessionStorage.removeItem(channelKey);
       firebaseConfirmationResult = null;
       setOtpStatus("verified");
       setStatusMessage("Telefone validado com sucesso.");
@@ -600,7 +696,7 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
         <section style={{ width: "100%", maxWidth: isPremium ? 430 : 680, margin: "0 auto", padding: "32px 24px 0" }}>
           <h1 style={{ fontSize: 32, lineHeight: 1.14, margin: "0 0 12px", color: INK }}>Digite o código enviado</h1>
           <p style={{ fontSize: 17, lineHeight: 1.5, color: isPremium ? "#b8b8b8" : "#5b656b", margin: "0 0 28px" }}>
-            Enviamos um código de verificação para {phone || "o telefone informado"}.
+            Enviamos um código por {channel === "whatsapp" ? "WhatsApp" : "SMS"} para {phone || "o telefone informado"}.
           </p>
           <form onSubmit={handleVerify}>
             <input
@@ -635,8 +731,24 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
             disabled={loading || timer > 0 || otpStatus === "verified"}
             style={{ marginTop: 22, width: "100%", border: "none", background: "transparent", color: isPremium ? "#b72cff" : INK, fontSize: 16, fontWeight: 800, cursor: timer > 0 ? "not-allowed" : "pointer" }}
           >
-            {timer > 0 ? `Reenviar código em ${timer}s` : "Reenviar código"}
+            {timer > 0
+              ? `Reenviar código em ${timer}s`
+              : `Reenviar por ${channel === "whatsapp" ? "WhatsApp" : "SMS"}`}
           </button>
+          {channel === "whatsapp" && (smsFallbackAvailable || timer === 0) && (
+            <button
+              type="button"
+              onClick={() => {
+                setChannel("sms");
+                setWhatsAppConsent(false);
+                void sendCode(phone, "sms");
+              }}
+              disabled={loading || timer > 0 || otpStatus === "verified"}
+              style={{ marginTop: 14, width: "100%", minHeight: 48, border: "1px solid rgba(183, 44, 255,0.28)", borderRadius: 14, background: "#fff", color: INK, fontSize: 15, fontWeight: 800, cursor: timer > 0 ? "not-allowed" : "pointer" }}
+            >
+              Receber por SMS
+            </button>
+          )}
           <button
             type="button"
             onClick={() => router.push(REGISTER_ROUTE[mode])}
@@ -691,6 +803,49 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
             />
           </div>
 
+          <fieldset style={{ border: 0, padding: 0, margin: "26px 0 0" }}>
+            <legend style={{ marginBottom: 12, color: INK, fontSize: 17, fontWeight: 950 }}>
+              Como deseja receber seu código?
+            </legend>
+            <div style={{ display: "grid", gridTemplateColumns: whatsAppAvailable ? "1fr 1fr" : "1fr", gap: 12 }}>
+              <button
+                type="button"
+                aria-pressed={channel === "sms"}
+                onClick={() => {
+                  setChannel("sms");
+                  setWhatsAppConsent(false);
+                }}
+                style={channelButtonStyle(channel === "sms")}
+              >
+                <Phone size={20} />
+                SMS
+              </button>
+              {whatsAppAvailable && (
+                <button
+                  type="button"
+                  aria-pressed={channel === "whatsapp"}
+                  onClick={() => setChannel("whatsapp")}
+                  style={channelButtonStyle(channel === "whatsapp")}
+                >
+                  <MessageCircle size={20} />
+                  WhatsApp
+                </button>
+              )}
+            </div>
+          </fieldset>
+
+          {channel === "whatsapp" && whatsAppAvailable && (
+            <label style={{ ...themedCheckStyle, marginTop: 18 }}>
+              <input
+                type="checkbox"
+                checked={whatsAppConsent}
+                onChange={(event) => setWhatsAppConsent(event.target.checked)}
+                style={nativeCheckStyle}
+              />
+              <span>Autorizo o envio deste código de segurança pelo WhatsApp.</span>
+            </label>
+          )}
+
           {!isClient && (
             <label style={{ ...themedCheckStyle, marginTop: 24 }}>
               <input type="checkbox" checked={promo} onChange={(e) => setPromo(e.target.checked)} style={nativeCheckStyle} />
@@ -735,7 +890,11 @@ export function PhoneRegistrationClient({ mode, screen }: { mode: FlowMode; scre
           <StatusMessage status={otpStatus} message={statusMessage} premium={isPremium} />
           <div style={{ height: 22 }} />
           <SubmitButton disabled={!canSubmit || loading} premium={isPremium}>
-            {otpStatus === "sending" ? "Enviando..." : otpStatus === "sent" ? "Código solicitado" : text.submit}
+            {otpStatus === "sending"
+              ? "Enviando..."
+              : otpStatus === "sent"
+                ? "Código solicitado"
+                : `Enviar código via ${channel === "whatsapp" ? "WhatsApp" : "SMS"}`}
           </SubmitButton>
         </form>
 
@@ -783,6 +942,23 @@ const nativeCheckStyle: React.CSSProperties = {
   accentColor: GOLD,
   marginTop: 1,
 };
+
+function channelButtonStyle(selected: boolean): React.CSSProperties {
+  return {
+    minHeight: 54,
+    border: selected ? "2px solid #b72cff" : "1px solid rgba(183, 44, 255,0.25)",
+    borderRadius: 16,
+    background: selected ? "rgba(183, 44, 255,0.10)" : "#fff",
+    color: selected ? "#65009b" : INK,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 9,
+    fontSize: 16,
+    fontWeight: 900,
+    cursor: "pointer",
+  };
+}
 
 const linkStyle: React.CSSProperties = {
   color: INK,
