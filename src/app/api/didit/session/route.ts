@@ -5,7 +5,6 @@ import { getServerSession } from "next-auth";
 import { randomUUID } from "crypto";
 import { authOptions } from "@/lib/auth";
 import {
-  canRetryDigitStatus,
   buildDigitVendorData,
   createDigitSession,
   createDigitIntentMarker,
@@ -14,16 +13,16 @@ import {
   DIDIT_APPROVED_STATUS,
   DIDIT_PENDING_STATUS,
   DIDIT_REJECTED_STATUS,
-  fetchDigitSessionDecision,
   findDigitSessionByVendorData,
   isSafeDigitVerificationUrl,
   isDigitAvailable,
   parseDigitIntentMarker,
-  type DiditVerificationStatus,
+  isDigitIntentInFlight,
 } from "@/lib/didit";
-import { assessProfessionalDiditDecision } from "@/lib/professional-didit";
+import { reconcileProfessionalDidit } from "@/lib/didit-reconciliation";
 import { prisma } from "@/lib/prisma";
 import { createDigitCallbackState } from "@/lib/didit-callback";
+import { professionalCompletion } from "@/lib/professional-completeness";
 
 const DIGIT_INTENT_LEASE_MS = 2 * 60_000;
 const DIGIT_INTENT_EXPIRATION_MS = 7 * 24 * 60 * 60_000;
@@ -53,36 +52,6 @@ function canUseProfessionalKyc(session: {
   );
 }
 
-async function persistStatus(userId: string, sessionId: string, status: DiditVerificationStatus, reason: string | null) {
-  const approved = status === DIDIT_APPROVED_STATUS;
-  const rejected = status === DIDIT_REJECTED_STATUS;
-
-  await prisma.$transaction([
-    prisma.user.updateMany({
-      where: { id: userId, kycSessionId: sessionId },
-      data: {
-        clientStatus: approved ? "VERIFIED" : rejected ? "REJECTED" : "PENDING_REVIEW",
-        kycSessionId: sessionId,
-        kycSubmittedAt: approved || rejected ? undefined : new Date(),
-        kycReviewedAt: approved || rejected ? new Date() : undefined,
-        kycRejectionReason: rejected ? reason : null,
-      },
-    }),
-    prisma.professional.updateMany({
-      where: { userId, kycProvider: "DIDIT", kycSessionId: sessionId },
-      data: {
-        kycProvider: "DIDIT",
-        kycSessionId: sessionId,
-        kycStatus: status,
-        verifStatus: approved ? "APPROVED" : rejected ? "REJECTED" : "PENDING",
-        docStatus: approved ? "APPROVED" : rejected ? "REJECTED" : "PENDING",
-        rejectReason: rejected ? reason : null,
-        verificationUrl: approved || rejected ? null : undefined,
-      },
-    }),
-  ]);
-}
-
 async function currentStatus(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -102,7 +71,7 @@ async function currentStatus(userId: string) {
     ? professional.verificationUrl ?? null
     : null;
   if (!sessionId) {
-    const starting = professional?.kycProvider === "DIDIT" && Boolean(parseDigitIntentMarker(professional.verificationUrl));
+    const starting = professional?.kycProvider === "DIDIT" && isDigitIntentInFlight(professional.verificationUrl);
     return {
       sessionId: null,
       status: starting ? DIDIT_PENDING_STATUS : "NOT_STARTED" as const,
@@ -115,25 +84,11 @@ async function currentStatus(userId: string) {
   }
 
   try {
-    const decision = await fetchDigitSessionDecision(sessionId);
-    if (!digitVendorDataBelongsToUser(decision.vendor_data, userId)) {
-      throw new Error("didit_session_owner_mismatch");
-    }
-    const assessment = assessProfessionalDiditDecision(decision);
-    await persistStatus(userId, sessionId, assessment.status, assessment.reason);
-    return {
-      sessionId,
-      status: assessment.status,
-      rawStatus: decision.status,
-      retryAllowed: assessment.status === DIDIT_REJECTED_STATUS || canRetryDigitStatus(decision.status),
-      message: assessment.reason,
-      url: assessment.status === DIDIT_PENDING_STATUS ? storedUrl : null,
-      starting: false,
-    };
+    return await reconcileProfessionalDidit(userId, sessionId);
   } catch (error) {
     console.warn("[Didit] Nao foi possivel atualizar o status da sessao.", {
       userId,
-      reason: error instanceof Error ? error.name : "unknown",
+      reason: error instanceof Error ? error.message : "unknown",
     });
     return {
       sessionId,
@@ -172,6 +127,22 @@ export async function POST() {
     return NextResponse.json({ error: "Apenas anunciantes podem iniciar verificacao." }, { status: 403 });
   }
 
+  const draft = await prisma.professional.findUnique({
+    where: { userId: session.user.id },
+    include: { photos: { select: { url: true, cover: true } }, specialties: { select: { name: true } } },
+  });
+  if (!draft) return NextResponse.json({ error: "Rascunho profissional não encontrado." }, { status: 409 });
+  const beforeIdentity = professionalCompletion({ ...draft, specialties: draft.specialties, emailVerified: true })
+    .profileIssues.filter((issue) => issue.step < 7);
+  if (beforeIdentity.length) {
+    return NextResponse.json({
+      error: "Complete as etapas anteriores antes da verificação de identidade.",
+      code: "PROFILE_INCOMPLETE",
+      firstIncompleteStep: Math.min(...beforeIdentity.map((issue) => issue.step)),
+      issues: beforeIdentity,
+    }, { status: 422 });
+  }
+
   if (!isDigitAvailable()) {
     return NextResponse.json(
       { error: "Verificacao Didit nao configurada.", code: "DIDIT_UNAVAILABLE", available: false },
@@ -185,6 +156,9 @@ export async function POST() {
       { error: "A verificacao esta sendo preparada. Tente novamente em instantes.", code: "DIDIT_STARTING" },
       { status: 409 },
     );
+  }
+  if (existing.sessionId && existing.status === DIDIT_REJECTED_STATUS && !existing.retryAllowed) {
+    return NextResponse.json({ error: existing.message, code: "DIDIT_SUPPORT_REQUIRED" }, { status: 409 });
   }
   if (existing.sessionId && existing.status !== DIDIT_REJECTED_STATUS) {
     return NextResponse.json({
@@ -348,7 +322,7 @@ export async function POST() {
   } catch (error) {
     console.error("[Didit] Falha ao criar ou salvar sessao.", {
       userId: session.user.id,
-      reason: error instanceof Error ? error.name : "unknown",
+      reason: error instanceof Error ? error.message : "unknown",
     });
     return NextResponse.json(
       { error: "Nao foi possivel iniciar a verificacao de identidade. Tente novamente." },

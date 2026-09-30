@@ -10,7 +10,7 @@ export default async function ProfessionalOnboardingLayout({
   const access = await requireAuthenticatedAccount();
 
   if (access.companionApproved) redirect(ACCOUNT_ROUTES.dashboardAcompanhante);
-  if (access.user.professional && access.companionStatus !== "DRAFT") {
+  if (access.user.professional && access.companionStatus !== "DRAFT" && access.user.professional.kycStatus === "APPROVED") {
     redirect(ACCOUNT_ROUTES.analiseAcompanhante);
   }
   if (access.isAdmin || access.hasCompanionRequest) return children;

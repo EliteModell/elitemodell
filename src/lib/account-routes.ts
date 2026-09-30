@@ -28,7 +28,7 @@ export const ACCOUNT_ROUTES = {
 
 export const PROFESSIONAL_CATEGORIES = ["MULHER", "HOMEM", "TRANS"] as const;
 const APPROVED_HOST_STATUSES = ["ACTIVE"] as const;
-const SUBMITTED_HOST_STATUSES = ["PENDING_REVIEW", "ACTIVE", "INACTIVE", "REJECTED"] as const;
+const SUBMITTED_HOST_STATUSES = ["PENDING_REVIEW", "CORRECTION_REQUIRED", "ACTIVE", "INACTIVE", "REJECTED"] as const;
 
 export function isProfessionalCategory(value: string | null | undefined) {
   return (PROFESSIONAL_CATEGORIES as readonly string[]).includes(value ?? "");

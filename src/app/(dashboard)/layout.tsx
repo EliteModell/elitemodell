@@ -9,6 +9,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
 const DashSidebar = dynamic(() => import("@/components/DashSidebar"));
+const AdminSidebar = dynamic(() => import("@/components/admin/AdminSidebar"));
 const ClientAreaShell = dynamic(() => import("@/components/client-area/ClientAreaShell"));
 const ProfessionalBottomNav = dynamic(() =>
   import("@/components/professional-dashboard/ProfessionalBottomNav").then((module) => module.ProfessionalBottomNav),
@@ -98,7 +99,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className={roleAreaClass ? `${roleAreaClass}-shell min-h-screen overflow-x-hidden bg-[#f7f7fa] text-[#141212]` : "min-h-screen overflow-x-hidden bg-[#f7f7fa] text-[#141212]"}>
       {isProfessionalArea ? <ProfessionalPremiumStyles /> : null}
 
-      {isProfessionalOnboarding ? null : <DashSidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />}
+      {isProfessionalOnboarding ? null : isAdminArea ? (
+        <AdminSidebar
+          mobileOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          name={session?.user?.name}
+          email={session?.user?.email}
+        />
+      ) : (
+        <DashSidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      )}
 
       <div className={`${layoutClass} z-10`}>
         {showProfessionalChrome ? (

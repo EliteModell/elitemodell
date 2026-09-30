@@ -37,6 +37,15 @@ type SingleFormField = "escortCategory" | "hairColor" | "eyeColor" | "ethnicity"
 type PriceFormField = "price15min" | "price30min" | "pricePerHour" | "price2h" | "priceOvernight" | "priceWebcam";
 type ValidationIssue = { field: string; message: string };
 type SubmissionResult = { status: string; receiptStatus?: string };
+type CompletionState = {
+  profilePercent: number;
+  profileComplete: boolean;
+  kycApproved: boolean;
+  readyToSubmit: boolean;
+  firstIncompleteStep: number;
+  issues: Array<{ field: string; label: string; step: number; stepLabel: string }>;
+  profileIssues: Array<{ field: string; label: string; step: number; stepLabel: string }>;
+};
 type DiditStatusResponse = {
   available?: boolean;
   provider?: string;
@@ -292,6 +301,9 @@ export default function ProfissionalNovoPage() {
   const [validationIssue, setValidationIssue] = useState<ValidationIssue | null>(null);
   const [draftSaveError, setDraftSaveError] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
+  const [correctionReason, setCorrectionReason] = useState<string | null>(null);
+  const [correctionFields, setCorrectionFields] = useState<Array<{ code: string; label: string; step: number }>>([]);
+  const [serverCompletion, setServerCompletion] = useState<CompletionState | null>(null);
   const [birthDateLockedFromAccount, setBirthDateLockedFromAccount] = useState(false);
   const [birthParts, setBirthParts] = useState({ day: "", month: "", year: "" });
   const birthMonthRef = useRef<HTMLInputElement>(null);
@@ -370,6 +382,7 @@ export default function ProfissionalNovoPage() {
       localStorage.removeItem(DRAFT_KEY);
     } finally {
       draftLoadedRef.current = true;
+      if (new URLSearchParams(window.location.search).get("didit") === "returned") setStep(7);
     }
     }, 0);
 
@@ -466,17 +479,91 @@ export default function ProfissionalNovoPage() {
         router.replace(ACCOUNT_ROUTES.dashboardAcompanhante);
         return;
       }
+      if (user.professional?.status === "PENDING_REVIEW") {
+        localStorage.removeItem(DRAFT_KEY);
+        setSubmissionResult({ status: "PENDING_REVIEW" });
+        return;
+      }
 
-      const loadedDate = user.birthDate ? String(user.birthDate).slice(0, 10) : "";
+      const professional = user.professional;
+      const isCorrection = professional?.status === "CORRECTION_REQUIRED";
+      const shouldRestore = isCorrection || professional?.status === "DRAFT";
+      const loadedDate = (professional?.birthDate ?? user.birthDate) ? String(professional?.birthDate ?? user.birthDate).slice(0, 10) : "";
+      if (isCorrection) {
+        setCorrectionReason(professional.rejectReason || "Revise os dados indicados pela equipe e reenvie o cadastro.");
+        setStep(0);
+      }
       setForm((current) => ({
         ...current,
-        escortCategory: current.escortCategory || (["MULHER", "TRANS", "HOMEM"].includes(user.category) ? user.category : ""),
-        birthDate: current.birthDate || loadedDate,
+        displayName: shouldRestore ? (professional.displayName ?? current.displayName) : current.displayName,
+        bio: shouldRestore ? (professional.bio ?? current.bio) : current.bio,
+        city: shouldRestore ? (professional.city ?? current.city) : current.city,
+        state: shouldRestore ? (professional.state ?? current.state) : current.state,
+        bairro: shouldRestore ? (professional.bairro ?? current.bairro) : current.bairro,
+        placeId: shouldRestore ? (professional.placeId ?? current.placeId) : current.placeId,
+        escortCategory: shouldRestore ? (professional.escortCategory ?? current.escortCategory) : (current.escortCategory || (["MULHER", "TRANS", "HOMEM"].includes(user.category) ? user.category : "")),
+        birthDate: shouldRestore ? loadedDate : (current.birthDate || loadedDate),
+        height: shouldRestore && professional.height != null ? String(professional.height) : current.height,
+        weight: shouldRestore && professional.weight != null ? String(professional.weight) : current.weight,
+        hairColor: shouldRestore ? (professional.hairColor ?? current.hairColor) : current.hairColor,
+        eyeColor: shouldRestore ? (professional.eyeColor ?? current.eyeColor) : current.eyeColor,
+        ethnicity: shouldRestore ? (professional.ethnicity ?? current.ethnicity) : current.ethnicity,
+        signo: shouldRestore ? (professional.signo ?? current.signo) : current.signo,
+        hasTattoos: shouldRestore ? Boolean(professional.hasTattoos) : current.hasTattoos,
+        hasPiercing: shouldRestore ? Boolean(professional.hasPiercing) : current.hasPiercing,
+        hasSilicone: shouldRestore ? Boolean(professional.hasSilicone) : current.hasSilicone,
+        isDepilada: shouldRestore ? Boolean(professional.isDepilada) : current.isDepilada,
+        depilationStyle: shouldRestore ? (professional.depilationStyle ?? current.depilationStyle) : current.depilationStyle,
+        bodyType: shouldRestore ? (professional.bodyType ?? current.bodyType) : current.bodyType,
+        attendanceTypes: shouldRestore ? (professional.attendanceTypes ?? []) : current.attendanceTypes,
+        servesGenders: shouldRestore ? (professional.servesGenders ?? []) : current.servesGenders,
+        idiomas: shouldRestore ? (professional.idiomas ?? []) : current.idiomas,
+        diasDisponiveis: shouldRestore ? (professional.diasDisponiveis ?? []) : current.diasDisponiveis,
+        horarioInicio: shouldRestore ? (professional.horarioInicio ?? current.horarioInicio) : current.horarioInicio,
+        horarioFim: shouldRestore ? (professional.horarioFim ?? current.horarioFim) : current.horarioFim,
+        services: shouldRestore ? (professional.services ?? []) : current.services,
+        fetishes: shouldRestore ? (professional.fetishes ?? []) : current.fetishes,
+        price15min: shouldRestore && professional.price15min != null ? String(professional.price15min) : current.price15min,
+        price30min: shouldRestore && professional.price30min != null ? String(professional.price30min) : current.price30min,
+        pricePerHour: shouldRestore && professional.pricePerHour != null ? String(professional.pricePerHour) : current.pricePerHour,
+        price2h: shouldRestore && professional.price2h != null ? String(professional.price2h) : current.price2h,
+        priceOvernight: shouldRestore && professional.priceOvernight != null ? String(professional.priceOvernight) : current.priceOvernight,
+        priceWebcam: shouldRestore && professional.priceWebcam != null ? String(professional.priceWebcam) : current.priceWebcam,
+        paymentMethods: shouldRestore ? (professional.paymentMethods ?? []) : current.paymentMethods,
+        phone: shouldRestore ? (professional.phone ?? user.phone ?? current.phone) : current.phone,
+        whatsapp: shouldRestore ? (professional.whatsapp ?? current.whatsapp) : current.whatsapp,
+        instagram: shouldRestore ? (professional.instagram ?? current.instagram) : current.instagram,
+        website: shouldRestore ? (professional.website ?? current.website) : current.website,
+        mainPhotoUrl: shouldRestore ? (professional.image ?? professional.photos?.find((photo: { cover?: boolean }) => photo.cover)?.url ?? professional.photos?.[0]?.url ?? current.mainPhotoUrl) : current.mainPhotoUrl,
+        galleryUrls: shouldRestore ? (professional.galleryUrls ?? professional.photos?.filter((photo: { cover?: boolean }) => !photo.cover).map((photo: { url: string }) => photo.url) ?? []) : current.galleryUrls,
       }));
       if (loadedDate) {
         const [y, m, d] = loadedDate.split("-");
         setBirthParts({ day: d ?? "", month: m ?? "", year: y ?? "" });
         setBirthDateLockedFromAccount(true);
+      }
+
+      if (shouldRestore) {
+        const draftResponse = await fetch("/api/professionals/draft", { cache: "no-store" });
+        if (draftResponse.ok && active) {
+          const draft = await draftResponse.json() as { completion?: CompletionState; correction?: { reason?: string | null; fields?: string[] } | null };
+          if (draft.completion) {
+            setServerCompletion(draft.completion);
+            const firstIncomplete = draft.completion.profileIssues?.[0]?.step;
+            if (typeof firstIncomplete === "number") setStep(firstIncomplete);
+          }
+          if (draft.correction) {
+            const map: Record<string, { label: string; step: number }> = {
+              mainPhoto: { label: "Foto principal", step: 6 }, bio: { label: "Biografia", step: 0 },
+              services: { label: "Serviços", step: 3 }, location: { label: "Localização", step: 0 },
+              prices: { label: "Valores", step: 4 }, kyc: { label: "Documento/KYC", step: 7 },
+              contact: { label: "Contato", step: 5 }, availability: { label: "Disponibilidade", step: 2 },
+              other: { label: "Outros dados", step: 0 },
+            };
+            setCorrectionReason(draft.correction.reason || professional.rejectReason || "Revise os itens indicados pela equipe.");
+            setCorrectionFields((draft.correction.fields ?? []).filter((code) => map[code]).map((code) => ({ code, ...map[code] })));
+          }
+        }
       }
     }
 
@@ -489,12 +576,18 @@ export default function ProfissionalNovoPage() {
   useEffect(() => {
     if (step < 7) return;
     let active = true;
+    let refreshing = false;
+    let awaitingResult = true;
+    const controller = new AbortController();
 
     const refreshDigitStatus = async () => {
+      if (refreshing || diditStartingRef.current || document.visibilityState === "hidden") return;
+      refreshing = true;
       try {
-        const response = await fetch("/api/didit/session", { cache: "no-store" });
+        const response = await fetch("/api/didit/session", { cache: "no-store", signal: controller.signal });
         const data = await response.json().catch(() => ({})) as DiditStatusResponse;
-        if (!active || !response.ok) return;
+        if (!active || !response.ok || diditStartingRef.current) return;
+        awaitingResult = data.status === "PENDING";
         setDigitAvailable(Boolean(data.available));
         setDigitMessage(data.message ?? null);
         setDigitRetryAllowed(Boolean(data.retryAllowed));
@@ -507,6 +600,8 @@ export default function ProfissionalNovoPage() {
         }));
       } catch {
         // Mantém o estado local e tenta novamente quando a página recuperar foco.
+      } finally {
+        refreshing = false;
       }
     };
 
@@ -514,14 +609,19 @@ export default function ProfissionalNovoPage() {
       if (document.visibilityState === "visible") void refreshDigitStatus();
     };
     void refreshDigitStatus();
+    const poll = window.setInterval(() => {
+      if (awaitingResult) void refreshDigitStatus();
+    }, 15_000);
     window.addEventListener("focus", refreshDigitStatus);
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
       active = false;
+      controller.abort();
+      window.clearInterval(poll);
       window.removeEventListener("focus", refreshDigitStatus);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [step]);
+  }, [step, form.kycSessionId]);
 
   function set<K extends keyof typeof form>(field: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -908,7 +1008,7 @@ export default function ProfissionalNovoPage() {
       return {
         field: "kycSessionId",
         message: form.kycStatus === "REJECTED"
-          ? "Não foi possível concluir sua verificação de identidade. Tente novamente."
+          ? diditMessage ?? "Confira a pendência na verificação de identidade antes de continuar."
           : form.kycSessionId
             ? "Sua verificação de identidade ainda está em análise."
             : "Verifique sua identidade com a Didit para continuar.",
@@ -917,12 +1017,33 @@ export default function ProfissionalNovoPage() {
     return null;
   }
 
-  function next() {
+  async function next() {
+    if (loading) return;
     const issue = validateStep(step);
     if (issue) { showValidationIssue(issue); return; }
     setValidationIssue(null);
-    setStep((s) => Math.min(s + 1, STEPS.length - 1));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setLoading(true);
+    try {
+      const response = await fetch("/api/professionals/draft", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ step, form }),
+      });
+      const result = await response.json().catch(() => ({})) as { error?: string; issues?: Array<{ field: string; label: string; step: number }>; completion?: CompletionState };
+      if (!response.ok) {
+        const first = result.issues?.[0];
+        if (first) showValidationIssue({ field: first.field, message: first.label });
+        else toast.error(result.error ?? "Não foi possível salvar esta etapa.");
+        return;
+      }
+      if (result.completion) setServerCompletion(result.completion);
+      setStep((current) => Math.min(current + 1, STEPS.length - 1));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch {
+      toast.error("Não foi possível salvar esta etapa. Verifique sua conexão e tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   }
   function back() { setStep((s) => Math.max(s - 1, 0)); window.scrollTo({ top: 0, behavior: "smooth" }); }
 
@@ -942,8 +1063,9 @@ export default function ProfissionalNovoPage() {
         <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={184} height={61} priority />
         <div aria-hidden="true" className="model-success-check">✓</div>
         <p className="model-success-eyebrow">Cadastro recebido</p>
-        <h1>Seu cadastro foi enviado para análise</h1>
-        <p>A equipe fará a revisão do perfil. Você pode acompanhar o andamento sem reenviar os dados.</p>
+        <h1>{"Cadastro 100% conclu\u00eddo"}</h1>
+        <p className="model-analysis-status">Status: <strong>{"Em an\u00e1lise"}</strong></p>
+        <p>{"A equipe revisar\u00e1 seus dados, documentos e fotos. Voc\u00ea receber\u00e1 um e-mail quando a an\u00e1lise for conclu\u00edda."}</p>
         {submissionResult.receiptStatus === "SENT" ? (
           <p className="model-receipt-status">Enviamos um comprovante discreto para o seu e-mail.</p>
         ) : (
@@ -957,6 +1079,7 @@ export default function ProfissionalNovoPage() {
           .model-success-eyebrow { margin:24px 0 8px; color:#7d179f; font-size:12px; font-weight:900; letter-spacing:2px; text-transform:uppercase; }
           .model-submission-success h1 { margin:0; max-width:360px; font-size:32px; line-height:1.08; }
           .model-submission-success p:not(.model-success-eyebrow) { max-width:350px; color:#625c68; line-height:1.6; }
+          .model-analysis-status { margin:16px 0 0; padding:8px 14px; border-radius:999px; background:#f2e5f7; color:#6f247f !important; }
           .model-receipt-status { padding:12px 14px; border:1px solid #d8c9df; border-radius:14px; background:#fff; font-size:13px; }
           .model-submission-success a { width:100%; margin-top:16px; padding:16px 20px; border-radius:16px; background:#7d179f; color:#fff; font-weight:900; text-decoration:none; }
         `}</style>
@@ -985,6 +1108,34 @@ export default function ProfissionalNovoPage() {
           Preencha com atenção. Seu perfil é revisado em até 3 dias úteis antes de aparecer publicamente.
         </p>
       </div>
+
+      <style>{`
+        .model-server-completion { margin:0 0 20px; padding:15px; border:1px solid rgba(183,44,255,.28); border-radius:16px; background:#0d0a10; color:#fff; }
+        .model-server-completion>div:first-child { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:12px; }
+        .model-server-completion span { color:#aaa0b2; }
+        .model-completion-bar { height:8px; margin-top:10px; overflow:hidden; border-radius:99px; background:#241b28; }
+        .model-completion-bar i { display:block; height:100%; border-radius:inherit; background:#b72cff; }
+        .model-completion-list { display:grid; gap:6px; margin-top:12px; }
+        .model-completion-list button { padding:9px 10px; border:1px solid rgba(239,68,68,.3); border-radius:9px; background:rgba(239,68,68,.08); color:#ffb4b4; text-align:left; }
+        .model-correction-warning { margin:0 0 22px; padding:16px; border:1px solid rgba(183,44,255,.45); border-radius:16px; background:rgba(183,44,255,.10); color:#f7eaff; }
+        .model-correction-warning strong { color:#e1a6ff; }
+        .model-correction-warning p { margin:8px 0 5px; line-height:1.5; }
+        .model-correction-warning span { color:#aaa0b2; font-size:12px; }
+        .model-correction-links { display:grid; gap:7px; margin-top:10px; }
+        .model-correction-links button { padding:9px 10px; border:1px solid rgba(225,166,255,.35); border-radius:9px; background:#17111b; color:#e9c7fa; text-align:left; font-weight:700; }
+      `}</style>
+
+      {correctionReason && (
+        <div className="model-correction-warning" role="alert">
+          <strong>{"Corre\u00e7\u00e3o solicitada pela equipe"}</strong>
+          <p>{correctionReason}</p>
+          {correctionFields.length > 0 ? (
+            <div className="model-correction-links">
+              {correctionFields.map((item) => <button type="button" key={item.code} onClick={() => setStep(item.step)}>{item.label} · ir para etapa {item.step + 1}</button>)}
+            </div>
+          ) : <span>{"Revise os itens indicados e envie novamente. Seus dados e fotos foram preservados."}</span>}
+        </div>
+      )}
 
       {emailVerified === false && (
         <div className="model-email-warning" role="status" style={{
@@ -1445,6 +1596,14 @@ export default function ProfissionalNovoPage() {
         </div>
       )}
 
+      {serverCompletion && (
+        <section className="model-server-completion" aria-label="Completude do cadastro">
+          <div><strong>Cadastro: {serverCompletion.profilePercent}% concluido</strong><span>{serverCompletion.profileComplete ? "Dados obrigatorios completos" : String(serverCompletion.issues.filter((issue) => issue.step < 7).length) + " pendencia(s) nos dados"}</span></div>
+          <div className="model-completion-bar"><i style={{ width: serverCompletion.profilePercent + "%" }} /></div>
+          {step === 8 && serverCompletion.issues.length > 0 && <div className="model-completion-list">{serverCompletion.issues.map((issue) => <button type="button" key={issue.field + ":" + issue.step} onClick={() => setStep(issue.step)}>X {issue.label} - etapa {issue.step + 1}</button>)}</div>}
+        </section>
+      )}
+
       {(step === 7 || step === 8) && (
         <ProfessionalVerificationSteps
           mode={step === 7 ? "verification" : "summary"}
@@ -1476,9 +1635,9 @@ export default function ProfissionalNovoPage() {
         </button>
 
         {!isLast ? (
-          <button onClick={next}
+          <button onClick={next} disabled={loading}
             style={{ padding: "12px 32px", background: GOLD, border: "none", borderRadius: 10, color: "#080808", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
-            Continuar →
+            {loading ? "Salvando..." : "Continuar →"}
           </button>
         ) : (
           <button onClick={submit} disabled={loading || emailVerified === false || !diditApproved}

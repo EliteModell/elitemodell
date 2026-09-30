@@ -11,8 +11,9 @@ import ProfessionalContactAction from "@/components/professionals/ProfessionalCo
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import {
   canonicalizeBrazilianLocation,
-  SUPPORTED_PUBLIC_LOCATIONS,
 } from "@/lib/brazilian-location";
+
+import { useCitySuggestions } from "@/lib/use-city-suggestions";
 
 const GOLD = "#b72cff";
 const GOLD_DIM = "rgba(183, 44, 255,0.12)";
@@ -100,10 +101,6 @@ const SORT_OPTIONS: Array<{ id: SortFilter; label: string }> = [
   { id: "price_desc", label: "Maior preço" },
   { id: "recent", label: "Mais recentes" },
 ];
-
-const SUGGESTED_LOCATIONS: LocationChoice[] = SUPPORTED_PUBLIC_LOCATIONS.map(
-  (location) => cityChoice(location.city, location.state),
-);
 
 function cityChoice(city: string, state: string): LocationChoice {
   const canonical = canonicalizeBrazilianLocation(city, state) ?? {
@@ -483,11 +480,8 @@ function BuscarContent() {
     router.replace("/buscar", { scroll: false });
   }
 
-  const filteredLocations = useMemo(() => {
-    const query = slugify(locationSearch.trim());
-    if (!query) return SUGGESTED_LOCATIONS;
-    return SUGGESTED_LOCATIONS.filter((item) => slugify(item.label).includes(query));
-  }, [locationSearch]);
+  const suggestedCities = useCitySuggestions(locationSearch, showLocationModal);
+  const filteredLocations = suggestedCities.map((item) => cityChoice(item.city, item.state));
 
   const lista = useMemo(() => perfis.filter((a) => {
     if (filtros.has("online") && !a.online) return false;
@@ -910,7 +904,7 @@ function LocationModal({
             <input
               value={locationSearch}
               onChange={(event) => onSearch(event.target.value)}
-              placeholder="Digite cidade, bairro ou região"
+              placeholder="Digite cidade ou UF"
             />
           </div>
         </div>

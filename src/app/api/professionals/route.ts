@@ -19,9 +19,13 @@ import {
   isProfessionalOnline,
   publicCacheHeaders,
 } from "@/lib/public-professional-profile";
-import { citySearchVariants } from "@/lib/brazilian-location";
+import { professionalCityFilter } from "@/lib/public-city-search";
+import { publicServiceLocation } from "@/lib/professional-location";
 import { normalizeControlledMediaUrl } from "@/lib/public-professional-media";
 import { deliverProfessionalSubmissionReceipt } from "@/lib/professional-submission-receipt";
+import { logAudit } from "@/lib/audit";
+import { professionalCompletion, issueChecklist } from "@/lib/professional-completeness";
+import { refreshExpiredTemporaryLocations } from "@/lib/professional-location-service";
 
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
@@ -41,6 +45,7 @@ function slugify(text: string) {
 }
 
 export async function GET(req: NextRequest) {
+  await refreshExpiredTemporaryLocations();
   const { searchParams } = new URL(req.url);
   const search    = searchParams.get("search");
   const specialty = searchParams.get("specialty");
@@ -72,12 +77,13 @@ export async function GET(req: NextRequest) {
     ];
   }
   if (city) {
-    const cityOptions = citySearchVariants(city);
-    andFilters.push({
-      OR: cityOptions.map((name) => ({ city: { contains: name, mode: "insensitive" } })),
-    });
+    andFilters.push(await professionalCityFilter(city, state ?? ""));
+  } else if (state) {
+    andFilters.push({ OR: [
+      { currentServiceState: { equals: state.toUpperCase(), mode: "insensitive" } },
+      { AND: [{ OR: [{ currentServiceState: null }, { currentServiceState: "" }] }, { state: { equals: state.toUpperCase(), mode: "insensitive" } }] },
+    ] });
   }
-  if (state) andFilters.push({ state: { equals: state.toUpperCase(), mode: "insensitive" } });
   if (virtual) {
     andFilters.push({
       attendanceTypes: {
@@ -115,6 +121,7 @@ export async function GET(req: NextRequest) {
         id: true, slug: true, displayName: true,
         bio: true,
         city: true, state: true, bairro: true,
+        currentServiceCity: true, currentServiceState: true, currentServiceNeighborhood: true,
         image: true, galleryUrls: true,
         escortCategory: true, birthDate: true,
         height: true, weight: true, hairColor: true, eyeColor: true, ethnicity: true,
@@ -154,13 +161,20 @@ export async function GET(req: NextRequest) {
     lastOnlineAt,
     activePlanId,
     planPriority,
+    currentServiceCity,
+    currentServiceState,
+    currentServiceNeighborhood,
     ...p
   }) => {
+    const serviceLocation = publicServiceLocation({ ...p, currentServiceCity, currentServiceState, currentServiceNeighborhood });
     const photos = canonicalProfessionalPhotos({ photos: p.photos, image: p.image, galleryUrls });
     const premiumActive = Boolean(p.user.premiumUntil && p.user.premiumUntil > now);
     const normalizedContactVisibility = normalizeContactVisibility(contactVisibility, hidePhone);
     return {
       ...p,
+      city: serviceLocation.city,
+      state: serviceLocation.state,
+      bairro: serviceLocation.neighborhood,
       image: photos.find((photo) => photo.cover)?.url ?? photos[0]?.url ?? null,
       avatar: stripLegacyPublicStorageUrl(p.user.image),
       user: { image: stripLegacyPublicStorageUrl(p.user.image) },
@@ -200,9 +214,9 @@ export async function POST(req: NextRequest) {
 
   const existing = await prisma.professional.findUnique({
     where: { userId: session.user.id },
-    select: { id: true, status: true, user: { select: { email: true } } },
+    select: { id: true, status: true, user: { select: { email: true, name: true } } },
   });
-  if (existing && existing.status !== "DRAFT") {
+  if (existing && !["DRAFT", "CORRECTION_REQUIRED"].includes(existing.status)) {
     if (existing.status === "PENDING_REVIEW") {
       const receiptStatus = await deliverProfessionalSubmissionReceipt(existing.id, existing.user.email);
       return NextResponse.json({
@@ -222,7 +236,7 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { category: true, email: true, emailVerified: true, clientStatus: true, kycSessionId: true },
+      select: { name: true, category: true, email: true, emailVerified: true, clientStatus: true, kycSessionId: true },
     });
 
     if (!user?.emailVerified) {
@@ -233,6 +247,16 @@ export async function POST(req: NextRequest) {
         },
         { status: 428 },
       );
+    }
+
+    const completion = professionalCompletion({ ...data, emailVerified: user.emailVerified });
+    if (completion.profileIssues.length) {
+      return NextResponse.json({
+        error: "Seu cadastro ainda não pode ser enviado.",
+        code: "profile_incomplete",
+        completion,
+        checklist: issueChecklist({ ...data, emailVerified: user.emailVerified }),
+      }, { status: 422 });
     }
 
     const diditVerification = await requireApprovedProfessionalDidit(session.user.id);
@@ -280,6 +304,13 @@ export async function POST(req: NextRequest) {
       verified:  false,
       docStatus: "APPROVED",
       verifStatus: "APPROVED",
+      registrationSubmittedAt: new Date(),
+      completionRulesVersion: 2,
+      currentServiceCity: profileData.city,
+      currentServiceState: profileData.state,
+      currentServiceNeighborhood: profileData.bairro ?? null,
+      locationUpdatedAt: new Date(),
+      locationVerificationStatus: "VERIFIED",
     };
     const initialPhotos = [normalizedImage, ...normalizedGalleryUrls]
       .filter((url): url is string => Boolean(url))
@@ -320,12 +351,31 @@ export async function POST(req: NextRequest) {
       await tx.professionalSubmissionReceipt.upsert({
         where: { professionalId: saved.id },
         create: { professionalId: saved.id, status: "PENDING" },
-        update: {},
+        update: existing?.status === "CORRECTION_REQUIRED"
+          ? { status: "PENDING", providerId: null, sentAt: null, lastError: null }
+          : {},
       });
       return saved;
     });
 
-    const receiptStatus = await deliverProfessionalSubmissionReceipt(professional.id, user.email);
+    await logAudit({
+      actorIdentifier: user.email,
+      action: "SETTINGS_CHANGED",
+      targetType: "PROFESSIONAL",
+      targetId: professional.id,
+      changes: { moderationAction: existing?.status === "CORRECTION_REQUIRED" ? "resubmit" : "submit", resultingStatus: "PENDING_REVIEW" },
+      reason: existing?.status === "CORRECTION_REQUIRED" ? "Cadastro corrigido e reenviado para análise" : "Cadastro enviado para análise",
+    });
+    const receiptStatus = await deliverProfessionalSubmissionReceipt(professional.id, user.email, user.name);
+    await prisma.notification.create({
+      data: {
+        userId: session.user.id,
+        type: existing?.status === "CORRECTION_REQUIRED" ? "PROFILE_RESUBMITTED" : "PROFILE_SUBMITTED",
+        title: existing?.status === "CORRECTION_REQUIRED" ? "Cadastro reenviado" : "Cadastro enviado para análise",
+        body: "Recebemos seu cadastro completo. Você será avisada quando a análise terminar.",
+        link: "/profissional/analise",
+      },
+    });
     return NextResponse.json({
       ok: true,
       professionalId: professional.id,

@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { buildAuthCallbackUrl } from "@/lib/auth-redirect";
-import { supabaseAuth } from "@/lib/supabase-client";
+import { loadSupabaseAuth } from "@/lib/supabase-auth-loader";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,6 +12,7 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError(null);
     try {
+      const supabaseAuth = await loadSupabaseAuth();
       const { error } = await supabaseAuth.auth.signInWithOAuth({
         provider: "google",
         options: {

@@ -29,6 +29,11 @@ const statusConfig: Record<string, { label: string; className: string; icon: Rea
     className: "border-red-400/30 bg-red-400/10 text-red-200",
     icon: <ShieldAlert className="h-3.5 w-3.5" />,
   },
+  CORRECTION_REQUIRED: {
+    label: "Corre\u00e7\u00e3o solicitada",
+    className: "border-amber-300/30 bg-amber-300/10 text-amber-100",
+    icon: <ShieldAlert className="h-3.5 w-3.5" />,
+  },
   REJECTED: {
     label: "Reprovado",
     className: "border-red-400/30 bg-red-400/10 text-red-200",

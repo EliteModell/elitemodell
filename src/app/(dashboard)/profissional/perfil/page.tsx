@@ -139,6 +139,7 @@ function statusLabel(status?: string | null) {
   if (status === "ACTIVE") return "ATIVO";
   if (status === "PAUSED") return "PAUSADO";
   if (status === "REJECTED") return "REPROVADO";
+  if (status === "CORRECTION_REQUIRED") return "CORREÃ‡ÃƒO SOLICITADA";
   if (status === "SUSPENDED") return "SUSPENSO";
   return "EM ANÁLISE";
 }
@@ -275,9 +276,6 @@ export default function EditarPerfilPage() {
           displayName: form.displayName,
           escortCategory: form.escortCategory || undefined,
           bio: form.bio,
-          city: form.city,
-          state: form.state,
-          bairro: form.bairro || undefined,
           phone: form.phone || undefined,
           whatsapp: form.whatsapp || undefined,
           instagram: form.instagram || undefined,
@@ -389,12 +387,13 @@ export default function EditarPerfilPage() {
         </div>
 
         <form onSubmit={(event) => { event.preventDefault(); void handleSave(); }}>
+          <Link href="/profissional/localizacao" className={styles.outlineButton}><MapPin /> Alterar cidade ou ativar modo viagem</Link>
           <FormGroup title="Identidade e localização" description="Informações exibidas no seu anúncio público.">
             <Field label="Nome profissional" help="Nome que clientes verão no perfil."><input value={form.displayName} onChange={(event) => setForm({ ...form, displayName: event.target.value })} /></Field>
             <Field label="Categoria pública" help={`Categoria atual: ${categoryLabel(form.escortCategory)}.`}><select value={form.escortCategory} onChange={(event) => setForm({ ...form, escortCategory: event.target.value as ProfileForm["escortCategory"] })}><option value="">Selecione</option><option value="MULHER">Mulheres</option><option value="TRANS">Trans</option><option value="HOMEM">Homens</option></select></Field>
-            <Field label="Cidade" help="Ajuda clientes da sua região a encontrarem você."><input value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} /></Field>
-            <Field label="Estado"><input value={form.state} onChange={(event) => setForm({ ...form, state: event.target.value })} /></Field>
-            <Field label="Bairro"><input value={form.bairro} onChange={(event) => setForm({ ...form, bairro: event.target.value })} /></Field>
+            <Field label="Cidade" help="Use “Alterar cidade ou ativar modo viagem” para manter o histórico de segurança."><input value={form.city} readOnly /></Field>
+            <Field label="Estado"><input value={form.state} readOnly /></Field>
+            <Field label="Bairro"><input value={form.bairro} readOnly /></Field>
             <Field label="Localização aproximada"><input value={form.approximateLocation} onChange={(event) => setForm({ ...form, approximateLocation: event.target.value })} placeholder="Região central, próximo ao bairro..." /></Field>
           </FormGroup>
 

@@ -1,17 +1,27 @@
-/* eslint-disable react/no-unescaped-entities */
 import Link from "next/link";
+import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
-import { personaProviderLabel } from "@/lib/persona";
 import { professionalApprovalAccessData } from "@/lib/professional-access";
 import { filterApprovedProfilePhotos, type PublicProfileAsset } from "@/lib/public-professional-media";
 import { sendProfessionalApprovalEmail } from "@/lib/auth-email";
-import { AdminHeader, AdminPagination, AdminPanel, AdminTable, StatusPill, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
+import { sendProfessionalCorrectionEmail, sendProfessionalRejectionEmail } from "@/lib/professional-review-email";
+import { digitVendorDataBelongsToUser, fetchDigitSessionDecision } from "@/lib/didit";
+import { assessProfessionalDiditDecision } from "@/lib/professional-didit";
+import { AdminHeader, AdminPagination, buttonStyle } from "../_components/AdminPrimitives";
+import { AdminProfessionalCard } from "./AdminProfessionalCard";
+import { professionalCompletion } from "@/lib/professional-completeness";
+import { deliverProfessionalCommunication } from "@/lib/professional-communications";
+import { sendProfessionalLocationEmail, sendProfessionalReminderEmail } from "@/lib/professional-extra-email";
 
 export const dynamic = "force-dynamic";
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 8;
+const CORRECTION_FIELD_LABELS: Record<string, string> = {
+  mainPhoto: "Foto principal", bio: "Biografia", services: "Serviços", location: "Localização",
+  prices: "Valores", kyc: "Documento/KYC", contact: "Contato", availability: "Disponibilidade", other: "Outro",
+};
 
 function pageNumber(value?: string) {
   const parsed = Number(value ?? "1");
@@ -21,100 +31,42 @@ function pageNumber(value?: string) {
 const statusLabel: Record<string, string> = {
   DRAFT: "Cadastro incompleto",
   PENDING_REVIEW: "Pendente de aprovação",
+  CORRECTION_REQUIRED: "Correção solicitada",
   ACTIVE: "Aprovada",
   PAUSED: "Pausada",
   SUSPENDED: "Suspensa",
   REJECTED: "Reprovada",
 };
 
-const technicalStatusLabel: Record<string, string> = {
-  NOT_STARTED: "Não iniciada",
-  NOT_SENT: "Não enviado",
-  PENDING: "Pendente",
-  PERSONA_PENDING: "Pendente na Persona",
-  KYC_MANUAL_PENDENTE: "Pendente de análise manual",
-  NEEDS_REVIEW: "Revisão necessária",
-  APPROVED: "Aprovado",
-  REJECTED: "Reprovado",
-  NONE: "Não enviado",
-};
-
 type ProfessionalApprovalReview = {
-  userId: string;
-  status: string;
-  bio: string;
-  city: string;
-  state: string;
-  escortCategory: string | null;
-  birthDate: Date | null;
-  attendanceTypes: string[];
-  servesGenders: string[];
-  diasDisponiveis: string[];
-  services: string[];
-  pricePerHour: number | null;
-  price30min: number | null;
-  price2h: number | null;
-  priceOvernight: number | null;
-  priceWebcam: number | null;
-  paymentMethods: string[];
-  whatsapp: string | null;
-  kycSessionId: string | null;
-  kycStatus: string;
-  verifStatus: string;
-  photos: Array<{ id?: string; url: string; cover?: boolean; order?: number }>;
-  specialties: unknown[];
+  userId: string; status: string; bio: string; city: string; state: string; escortCategory: string | null;
+  birthDate: Date | null; attendanceTypes: string[]; servesGenders: string[]; diasDisponiveis: string[];
+  services: string[]; price15min: number | null; pricePerHour: number | null; price30min: number | null; price2h: number | null;
+  priceOvernight: number | null; priceWebcam: number | null; paymentMethods: string[]; whatsapp: string | null;
+  kycSessionId: string | null; kycProvider?: string | null; kycStatus: string; verifStatus: string;
+  photos: Array<{ id?: string; url: string; cover?: boolean; order?: number }>; specialties: unknown[];
   user: { blocked: boolean; email: string | null; uploadedAssets: PublicProfileAsset[] };
 };
 
-function translatedTechnicalStatus(status?: string | null) {
-  if (!status) return "Não informado";
-  const normalized = status.trim().toUpperCase().replace(/[\s-]+/g, "_");
-  return technicalStatusLabel[normalized] ?? status;
-}
-
-function kycProviderLabel(provider?: string | null, sessionId?: string | null) {
-  if (provider?.toUpperCase() === "DIDIT") return "Didit";
-  return personaProviderLabel(provider, sessionId) === "PERSONA" ? "Persona" : "Manual";
-}
-
-function verificationTypeLabel(type?: string | null) {
-  if (!type) return "Arquivo";
-  return ({ foto: "Foto", video: "Vídeo", biometria: "Biometria" } as Record<string, string>)[type.toLowerCase()] ?? type;
-}
-
-function reviewReasonLabel(reason: string) {
-  const diditStatus = reason.match(/^Didit status:\s*(.+)$/i);
-  return diditStatus ? `Status Didit: ${translatedTechnicalStatus(diditStatus[1])}` : reason;
+function professionalProfileIssues(professional: ProfessionalApprovalReview) {
+  return professionalCompletion({ ...professional, emailVerified: true }).profileIssues.map((issue) => issue.label);
 }
 
 function professionalApprovalIssues(professional: ProfessionalApprovalReview) {
-  const issues: string[] = [];
-  if (professional.status !== "PENDING_REVIEW") issues.push("cadastro ainda não enviado para análise");
+  const issues = professionalProfileIssues(professional);
+  if (professional.status === "DRAFT") issues.unshift("cadastro ainda não enviado para análise");
+  else if (professional.status !== "PENDING_REVIEW") issues.unshift(`status ${statusLabel[professional.status] ?? professional.status} não permite aprovação`);
   if (professional.user.blocked) issues.push("conta bloqueada");
-  if (professional.bio.trim().length < 80) issues.push("biografia incompleta");
-  if (!professional.city.trim() || !professional.state.trim()) issues.push("localização incompleta");
-  if (!professional.escortCategory) issues.push("categoria não informada");
-  if (!professional.birthDate) issues.push("data de nascimento não informada");
-  if (!professional.attendanceTypes.length) issues.push("tipo de atendimento não informado");
-  if (!professional.servesGenders.length) issues.push("público atendido não informado");
-  if (!professional.diasDisponiveis.length) issues.push("dias disponíveis não informados");
-  if (!professional.services.length && !professional.specialties.length) issues.push("serviços não informados");
-  if (![professional.pricePerHour, professional.price30min, professional.price2h, professional.priceOvernight, professional.priceWebcam].some(Boolean)) issues.push("valores não informados");
-  if (!professional.paymentMethods.length) issues.push("forma de pagamento não informada");
-  if (!professional.whatsapp || professional.whatsapp.replace(/\D/g, "").length < 10) issues.push("WhatsApp inválido");
-  if (!professional.photos.length) issues.push("foto principal não enviada");
-  if (
-    professional.photos.length &&
-    filterApprovedProfilePhotos(
-      professional.photos,
-      professional.user.uploadedAssets,
-      professional.userId,
-    ).length !== professional.photos.length
-  ) issues.push("há mídia pendente, privada ou indisponível");
+  if (professional.photos.length && filterApprovedProfilePhotos(
+    professional.photos, professional.user.uploadedAssets, professional.userId,
+  ).length !== professional.photos.length) issues.push("há mídia pendente, privada ou indisponível");
   const kycInitiated = Boolean(professional.kycSessionId) ||
     !["NOT_STARTED", "NOT_SENT", ""].includes((professional.kycStatus ?? "").trim().toUpperCase()) ||
     !["NOT_STARTED", "NOT_SENT", ""].includes((professional.verifStatus ?? "").trim().toUpperCase());
   if (!kycInitiated) issues.push("verificação de identidade não iniciada");
+  if (professional.kycProvider === "DIDIT" && professional.kycStatus !== "APPROVED") {
+    issues.push("verificação de identidade ainda não aprovada pela Didit");
+  }
   return issues;
 }
 
@@ -124,22 +76,88 @@ async function reviewProfessional(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const action = String(formData.get("action") ?? "");
   const reason = String(formData.get("reason") ?? "");
-  const supportedActions = ["approve", "reject", "correction", "suspend", "block", "resume", "approveVideo", "rejectVideo", "disableBoost"];
+  const correctionFields = formData.getAll("correctionFields").map(String).filter((field) => field in CORRECTION_FIELD_LABELS);
+  const moderationReason = reason.trim() || (action === "correction"
+    ? "Corrija: " + correctionFields.map((field) => CORRECTION_FIELD_LABELS[field]).join(", ")
+    : "");
+  const supportedActions = ["approve", "reject", "correction", "suspend", "block", "resume", "approveVideo", "rejectVideo", "disableBoost", "reminder", "approveLocation", "rejectLocation"];
   if (!id || !supportedActions.includes(action)) return;
-  if (["reject", "correction", "suspend", "block", "rejectVideo"].includes(action) && reason.trim().length < 4) return;
+  if (action === "reminder" && formData.get("confirmReminder") !== "yes") return;
+  if (action === "correction" && correctionFields.length === 0) return;
+  if (["reject", "suspend", "block", "rejectVideo", "rejectLocation"].includes(action) && moderationReason.length < 4) return;
+
+  if (action === "reminder") {
+    const target = await prisma.professional.findUnique({
+      where: { id },
+      include: { photos: { select: { url: true, cover: true } }, specialties: { select: { name: true } }, user: { select: { id: true, email: true, name: true, emailVerified: true } } },
+    });
+    if (!target) return;
+    const missing = professionalCompletion({ ...target, specialties: target.specialties, emailVerified: target.user.emailVerified }).issues;
+    if (!missing.length) return;
+    const duplicate = await prisma.auditLog.findFirst({ where: {
+      targetType: "PROFESSIONAL", targetId: id, reason: { startsWith: "professional:reminder:" },
+      timestamp: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+    } });
+    if (duplicate) return;
+    const labels = missing.map((issue) => issue.label + " - etapa " + (issue.step + 1));
+    await deliverProfessionalCommunication({
+      professionalId: id, userId: target.user.id, email: target.user.email, adminId: session.user.id,
+      type: "REGISTRATION_REMINDER", notificationTitle: "Complete seu cadastro", notificationBody: labels.join("; "),
+      link: "/profissional/novo", send: () => sendProfessionalReminderEmail(target.user.email!, target.user.name, labels),
+    });
+    await logAudit({ adminId: session.user.id, action: "SETTINGS_CHANGED", targetType: "PROFESSIONAL", targetId: id,
+      changes: { moderationAction: "reminder", missingFields: missing.map((issue) => issue.code) }, reason: "professional:reminder:" + missing.map((issue) => issue.code).join(",") });
+    revalidatePath("/admin/profissionais");
+    return;
+  }
+
+  if (action === "approveLocation" || action === "rejectLocation") {
+    const target = await prisma.professional.findUnique({
+      where: { id },
+      select: { id: true, userId: true, city: true, state: true, bairro: true, currentServiceCity: true, currentServiceState: true, currentServiceNeighborhood: true, user: { select: { email: true, name: true } }, locationChanges: { where: { verificationStatus: "LOCATION_REVIEW_REQUIRED" }, orderBy: { createdAt: "desc" }, take: 1 } },
+    });
+    const change = target?.locationChanges[0];
+    if (!target || !change) return;
+    const approved = action === "approveLocation";
+    const temporary = change.changeType === "TEMPORARY";
+    const from = change.effectiveFrom ?? new Date();
+    const appliesNow = !temporary || from <= new Date();
+    await prisma.$transaction([
+      prisma.professionalLocationChange.update({ where: { id: change.id }, data: { verificationStatus: approved ? "VERIFIED" : "REJECTED", riskReason: approved ? change.riskReason : moderationReason } }),
+      prisma.professional.update({ where: { id }, data: approved ? {
+        city: appliesNow ? change.toCity : target.city, state: appliesNow ? change.toState : target.state, bairro: appliesNow ? change.toNeighborhood : target.bairro,
+        currentServiceCity: appliesNow ? change.toCity : target.currentServiceCity, currentServiceState: appliesNow ? change.toState : target.currentServiceState, currentServiceNeighborhood: appliesNow ? change.toNeighborhood : target.currentServiceNeighborhood,
+        locationVerificationStatus: "VERIFIED", locationUpdatedAt: appliesNow ? new Date() : undefined,
+        temporaryLocationFrom: temporary ? change.effectiveFrom : null, temporaryLocationUntil: temporary ? change.effectiveUntil : null,
+        previousServiceLocation: temporary ? { city: target.currentServiceCity || target.city, state: target.currentServiceState || target.state, neighborhood: target.currentServiceNeighborhood || target.bairro } : Prisma.DbNull,
+      } : { locationVerificationStatus: "VERIFIED" } }),
+    ]);
+    await deliverProfessionalCommunication({
+      professionalId: id, userId: target.userId, email: target.user.email, adminId: session.user.id,
+      type: approved ? "LOCATION_APPROVED" : "LOCATION_REJECTED",
+      notificationTitle: approved ? "Mudança de cidade aprovada" : "Mudança de cidade não aprovada",
+      notificationBody: approved ? `Sua localização de atendimento em ${change.toCity}/${change.toState} foi aprovada.` : moderationReason,
+      link: "/profissional/localizacao",
+      send: () => sendProfessionalLocationEmail(target.user.email!, target.user.name, { city: change.toCity, state: change.toState, approved, rejected: !approved }),
+    });
+    await logAudit({ adminId: session.user.id, action: "SETTINGS_CHANGED", targetType: "PROFESSIONAL", targetId: id, changes: { moderationAction: action, locationChangeId: change.id }, reason: moderationReason || `professional:${action}` });
+    revalidatePath("/admin/profissionais");
+    return;
+  }
 
   if (action === "approveVideo" || action === "rejectVideo") {
     await prisma.professional.update({
       where: { id },
       data: action === "approveVideo"
         ? { presentationVideoStatus: "APPROVED", presentationVideoRejectReason: null }
-        : { presentationVideoStatus: "REJECTED", presentationVideoRejectReason: reason },
+        : { presentationVideoStatus: "REJECTED", presentationVideoRejectReason: moderationReason },
     });
     await logAudit({
       adminId: session.user.id,
       action: "SETTINGS_CHANGED",
       targetType: "CONTENT",
       targetId: id,
+      changes: { moderationAction: action },
       reason: reason || `presentation-video:${action}`,
     });
     revalidatePath("/admin/profissionais");
@@ -156,6 +174,7 @@ async function reviewProfessional(formData: FormData) {
       action: "SETTINGS_CHANGED",
       targetType: "PROFESSIONAL",
       targetId: id,
+      changes: { moderationAction: action },
       reason: "boost:disabled-by-admin",
     });
     revalidatePath("/admin/profissionais");
@@ -164,10 +183,12 @@ async function reviewProfessional(formData: FormData) {
 
   const data =
     action === "resume"
-        ? { status: "ACTIVE" as const, pauseStartedAt: null, pauseUntil: null, pauseReason: null }
+      ? { status: "ACTIVE" as const, pauseStartedAt: null, pauseUntil: null, pauseReason: null }
       : action === "suspend"
-        ? { status: "SUSPENDED" as const, verified: false, rejectReason: reason }
-        : { status: "REJECTED" as const, verified: false, docStatus: "REJECTED", verifStatus: "REJECTED", kycStatus: "REJECTED", rejectReason: reason };
+        ? { status: "SUSPENDED" as const, verified: false, rejectReason: moderationReason }
+        : action === "correction"
+          ? { status: "CORRECTION_REQUIRED" as const, verified: false, rejectReason: moderationReason }
+          : { status: "REJECTED" as const, verified: false, rejectReason: moderationReason };
 
   const professional = action === "approve"
     ? await prisma.$transaction(async (tx) => {
@@ -185,6 +206,7 @@ async function reviewProfessional(formData: FormData) {
             servesGenders: true,
             diasDisponiveis: true,
             services: true,
+            price15min: true,
             pricePerHour: true,
             price30min: true,
             price2h: true,
@@ -193,6 +215,7 @@ async function reviewProfessional(formData: FormData) {
             paymentMethods: true,
             whatsapp: true,
             kycSessionId: true,
+            kycProvider: true,
             kycStatus: true,
             verifStatus: true,
             photos: { select: { id: true, url: true, cover: true, order: true } },
@@ -201,6 +224,7 @@ async function reviewProfessional(formData: FormData) {
               select: {
                 blocked: true,
                 email: true,
+                name: true,
                 uploadedAssets: {
                   where: { folder: { startsWith: "profiles" } },
                   select: {
@@ -216,6 +240,18 @@ async function reviewProfessional(formData: FormData) {
           },
         });
         if (professionalApprovalIssues(current).length) return null;
+        if (current.kycProvider === "DIDIT") {
+          await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`didit-professional:${current.userId}`}))`;
+          const active = await tx.professional.findUnique({ where: { id }, select: { kycSessionId: true, status: true } });
+          if (!current.kycSessionId || active?.kycSessionId !== current.kycSessionId || active.status !== "PENDING_REVIEW") return null;
+          try {
+            const decision = await fetchDigitSessionDecision(current.kycSessionId);
+            if (decision.session_id !== current.kycSessionId || !digitVendorDataBelongsToUser(decision.vendor_data, current.userId) || !assessProfessionalDiditDecision(decision).approved) return null;
+          } catch {
+            // A provider outage must not become a manual identity approval.
+            return null;
+          }
+        }
         const accessData = await professionalApprovalAccessData(tx, current);
         return tx.professional.update({
           where: { id },
@@ -228,27 +264,43 @@ async function reviewProfessional(formData: FormData) {
             rejectReason: null,
             ...accessData,
           },
-          select: { id: true, userId: true, user: { select: { email: true } } },
+          select: { id: true, userId: true, user: { select: { email: true, name: true } } },
         });
-      })
-    : await prisma.professional.update({ where: { id }, data, select: { id: true, userId: true, user: { select: { email: true } } } });
+      }, { maxWait: 5_000, timeout: 15_000 })
+    : await prisma.professional.update({ where: { id }, data, select: { id: true, userId: true, user: { select: { email: true, name: true } } } });
   if (!professional) return;
 
-  if (action === "approve" && professional.user?.email) {
-    sendProfessionalApprovalEmail(professional.user.email).catch((err) => {
-      console.error("[admin-approve] falha ao enviar e-mail de aprovação:", err);
+  if (action === "approve") {
+    await deliverProfessionalCommunication({
+      professionalId: id, userId: professional.userId, email: professional.user?.email, adminId: session.user.id,
+      type: "PROFILE_APPROVED", notificationTitle: "Perfil aprovado", notificationBody: "Seu perfil foi aprovado e já pode aparecer na plataforma.",
+      link: "/profissional", send: () => sendProfessionalApprovalEmail(professional.user!.email!, professional.user!.name),
+    });
+  } else if (action === "correction") {
+    await deliverProfessionalCommunication({
+      professionalId: id, userId: professional.userId, email: professional.user?.email, adminId: session.user.id,
+      type: "PROFILE_CORRECTION_REQUIRED", notificationTitle: "Seu cadastro precisa de " + correctionFields.length + " correcao(oes)",
+      notificationBody: moderationReason, link: "/profissional/novo?correction=1",
+      send: () => sendProfessionalCorrectionEmail(professional.user!.email!, professional.user!.name, moderationReason),
+    });
+  } else if (action === "reject" || action === "block") {
+    await deliverProfessionalCommunication({
+      professionalId: id, userId: professional.userId, email: professional.user?.email, adminId: session.user.id,
+      type: "PROFILE_REJECTED", notificationTitle: "Atualização sobre seu cadastro", notificationBody: moderationReason,
+      link: "/profissional/analise", send: () => sendProfessionalRejectionEmail(professional.user!.email!, professional.user!.name, moderationReason),
     });
   }
   if (action === "block") {
-    await prisma.user.update({ where: { id: professional.userId }, data: { blocked: true, blockReason: reason, blockedAt: new Date() } });
+    await prisma.user.update({ where: { id: professional.userId }, data: { blocked: true, blockReason: moderationReason, blockedAt: new Date() } });
   }
 
   await logAudit({
     adminId: session.user.id,
-    action: action === "approve" ? "PROFESSIONAL_APPROVED" : action === "resume" ? "SETTINGS_CHANGED" : "PROFESSIONAL_REJECTED",
+    action: action === "approve" ? "PROFESSIONAL_APPROVED" : action === "reject" || action === "block" ? "PROFESSIONAL_REJECTED" : "SETTINGS_CHANGED",
     targetType: "PROFESSIONAL",
     targetId: id,
-    reason: reason || `professional:${action}`,
+    changes: { moderationAction: action, correctionFields, resultingStatus: action === "approve" || action === "resume" ? "ACTIVE" : action === "suspend" ? "SUSPENDED" : action === "correction" ? "CORRECTION_REQUIRED" : "REJECTED" },
+    reason: moderationReason || `professional:${action}`,
   });
   revalidatePath("/admin/profissionais");
 }
@@ -258,7 +310,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
   const params = await searchParams;
   const status = params?.status;
   const page = pageNumber(params?.page);
-  const where = status && status !== "ALL" ? { status: status as "DRAFT" | "PENDING_REVIEW" | "ACTIVE" | "PAUSED" | "SUSPENDED" | "REJECTED" } : {};
+  const where = status && status !== "ALL" ? { status: status as "DRAFT" | "PENDING_REVIEW" | "CORRECTION_REQUIRED" | "ACTIVE" | "PAUSED" | "SUSPENDED" | "REJECTED" } : {};
 
   const [total, professionals] = await Promise.all([prisma.professional.count({ where }), prisma.professional.findMany({
     where,
@@ -272,6 +324,15 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
       displayName: true,
       city: true,
       state: true,
+      bairro: true,
+      region: true,
+      address: true,
+      placeId: true,
+      latitude: true,
+      longitude: true,
+      phone: true,
+      instagram: true,
+      website: true,
       escortCategory: true,
       whatsapp: true,
       hidePhone: true,
@@ -280,6 +341,8 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
       status: true,
       verified: true,
       docStatus: true,
+      docFrenteUrl: true,
+      docVersoUrl: true,
       verifStatus: true,
       verificationCode: true,
       verificationUrl: true,
@@ -305,20 +368,46 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
       totalReviews: true,
       bio: true,
       birthDate: true,
+      height: true,
       attendanceTypes: true,
       servesGenders: true,
+      idiomas: true,
       diasDisponiveis: true,
+      horarioInicio: true,
+      horarioFim: true,
       services: true,
+      servicesNotOffered: true,
+      amenities: true,
+      serviceCities: true,
+      approximateLocation: true,
+      priceMin: true,
+      priceMax: true,
+      price15min: true,
       pricePerHour: true,
       price30min: true,
       price2h: true,
       priceOvernight: true,
       priceWebcam: true,
       paymentMethods: true,
+      image: true,
+      registrationSubmittedAt: true,
+      completionRulesVersion: true,
+      currentServiceCity: true,
+      currentServiceState: true,
+      currentServiceNeighborhood: true,
+      additionalServiceNeighborhoods: true,
+      locationUpdatedAt: true,
+      locationVerificationStatus: true,
+      temporaryLocationFrom: true,
+      temporaryLocationUntil: true,
       createdAt: true,
+      updatedAt: true,
+      submissionReceipt: { select: { status: true, sentAt: true, createdAt: true, updatedAt: true } },
       user: {
         select: {
-          name: true, email: true, phone: true, blocked: true,
+          name: true, email: true, phone: true, city: true, state: true, birthDate: true, category: true,
+          blocked: true, blockReason: true, blockedAt: true, kycSubmittedAt: true, kycReviewedAt: true,
+          kycRejectionReason: true, createdAt: true, updatedAt: true,
           uploadedAssets: {
             where: { folder: { startsWith: "profiles" } },
             select: {
@@ -328,11 +417,29 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
           },
         },
       },
-      photos: { orderBy: { order: "asc" }, select: { id: true, url: true, cover: true, order: true } },
-      specialties: true,
+      photos: { orderBy: { order: "asc" }, select: { id: true, url: true, cover: true, order: true, caption: true, createdAt: true } },
+      specialties: { select: { id: true, name: true } },
+      locationChanges: { orderBy: { createdAt: "desc" }, take: 10, select: {
+        id: true, fromCity: true, fromState: true, fromNeighborhood: true, toCity: true, toState: true,
+        toNeighborhood: true, changeType: true, effectiveFrom: true, effectiveUntil: true,
+        verificationStatus: true, riskReason: true, createdAt: true,
+      } },
     },
   })]);
-  const now = new Date();
+  const auditEntries = professionals.length ? await prisma.auditLog.findMany({
+    where: { targetType: { in: ["PROFESSIONAL", "CONTENT"] }, targetId: { in: professionals.map((professional) => professional.id) } },
+    orderBy: { timestamp: "desc" },
+    select: {
+      id: true, targetId: true, action: true, reason: true, changes: true, actorIdentifier: true, timestamp: true,
+      admin: { select: { name: true, email: true } },
+    },
+  }) : [];
+  const auditsByProfessional = new Map<string, typeof auditEntries>();
+  for (const entry of auditEntries) {
+    const entries = auditsByProfessional.get(entry.targetId) ?? [];
+    if (entries.length < 6) entries.push(entry);
+    auditsByProfessional.set(entry.targetId, entries);
+  }
 
   return (
     <div>
@@ -343,7 +450,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
 
       {/* ── Filtros ── */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
-        {["ALL", "DRAFT", "PENDING_REVIEW", "ACTIVE", "PAUSED", "REJECTED", "SUSPENDED"].map((item) => {
+        {["ALL", "DRAFT", "PENDING_REVIEW", "CORRECTION_REQUIRED", "ACTIVE", "PAUSED", "REJECTED", "SUSPENDED"].map((item) => {
           const active = item === (status ?? "ALL");
           return (
             <Link
@@ -353,9 +460,9 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
               style={{
                 ...buttonStyle,
                 textDecoration: "none",
-                background: active ? "rgba(183, 44, 255,0.22)" : "rgba(255,255,255,0.03)",
-                border: active ? "1px solid rgba(183, 44, 255,0.5)" : "1px solid rgba(255,255,255,0.08)",
-                color: active ? "#e1a6ff" : "#b4adb0",
+                background: active ? "#f3dcff" : "#ffffff",
+                border: active ? "1px solid #c96aff" : "1px solid #e5dce9",
+                color: active ? "#8f1fd1" : "#676170",
               }}
             >
               {item === "ALL" ? "Todos" : statusLabel[item] ?? item}
@@ -366,281 +473,16 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
 
       {/* ── Cards ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {professionals.map((pro) => {
-          const approvalIssues = professionalApprovalIssues(pro);
-          const canApprove = approvalIssues.length === 0;
-
-          const statusTone: "success" | "danger" | "warning" | "neutral" =
-            pro.status === "ACTIVE" ? "success" :
-            pro.status === "REJECTED" || pro.status === "SUSPENDED" ? "danger" :
-            pro.status === "PENDING_REVIEW" ? "warning" : "neutral";
-
-          const accent =
-            pro.status === "ACTIVE" ? "#22c55e" :
-            pro.status === "REJECTED" || pro.status === "SUSPENDED" ? "#ef4444" :
-            pro.status === "PENDING_REVIEW" ? "#b72cff" : "#aaa0b2";
-
-          const kycColor =
-            (pro.kycStatus ?? "").toUpperCase() === "APPROVED" ? "#22c55e" :
-            (pro.kycStatus ?? "").toUpperCase() === "REJECTED" ? "#ef4444" :
-            pro.kycSessionId ? "#b72cff" : "#aaa0b2";
-
-          const label = (text: string) => (
-            <span style={{ fontSize: 11, color: "#968a9e", display: "block", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>{text}</span>
-          );
-
-          return (
-            <div
-              key={pro.id}
-              style={{
-                background: "rgba(255,255,255,0.025)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderLeft: `3px solid ${accent}`,
-                borderRadius: 12,
-                overflow: "hidden",
-              }}
-            >
-              {/* ── Cabeçalho do card ── */}
-              <div style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                flexWrap: "wrap", gap: 10,
-                padding: "13px 20px",
-                background: "rgba(255,255,255,0.02)",
-                borderBottom: "1px solid rgba(255,255,255,0.06)",
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
-                    background: `${accent}18`, border: `2px solid ${accent}44`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 17, fontWeight: 900, color: accent,
-                  }}>
-                    {(pro.displayName || "?")[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <Link href={`/profissionais/${pro.slug}`} style={{ color: "#fff", fontWeight: 900, fontSize: 15, textDecoration: "none" }}>
-                      {pro.displayName || "(sem nome)"}
-                    </Link>
-                    <div style={{ color: "#b4adb0", fontSize: 12, marginTop: 2 }}>
-                      {[pro.city, pro.state].filter(Boolean).join(", ") || "—"} · {pro.escortCategory ?? "sem categoria"}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                  <StatusPill tone={statusTone}>{statusLabel[pro.status] ?? pro.status}</StatusPill>
-                  <span style={{
-                    fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 999,
-                    background: `${kycColor}14`, color: kycColor, border: `1px solid ${kycColor}44`,
-                  }}>
-                    KYC: {kycProviderLabel(pro.kycProvider, pro.kycSessionId)} · {translatedTechnicalStatus(pro.kycStatus)}
-                  </span>
-                  <span style={{ fontSize: 11, color: "#aaa0b2" }}>
-                    Cadastro: {pro.createdAt.toLocaleDateString("pt-BR")}
-                  </span>
-                </div>
-              </div>
-
-              {/* ── Corpo: info à esquerda, ações à direita ── */}
-              <div style={{ display: "flex", gap: 0 }}>
-
-                {/* ── Área de info (flex 1) ── */}
-                <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", borderRight: "1px solid rgba(255,255,255,0.06)" }}>
-
-                  {/* Contato + KYC + Pendências */}
-                  <div style={{ padding: "20px 24px", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
-                    <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#aaa0b2", textTransform: "uppercase" }}>Contato</p>
-                    <div style={{ fontSize: 14, color: "#fcf7ff", marginBottom: 16, lineHeight: 1.7 }}>
-                      <div>{pro.user.email || "—"}</div>
-                      <div style={{ color: "#b4adb0" }}>{pro.whatsapp ?? pro.user.phone ?? "—"}</div>
-                    </div>
-
-                    <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#aaa0b2", textTransform: "uppercase" }}>KYC</p>
-                    <div style={{ fontSize: 13, color: "#b4adb0", marginBottom: 16, lineHeight: 1.7 }}>
-                      {pro.kycSessionId && (
-                        <div style={{ fontFamily: "monospace", fontSize: 11, color: "#aaa0b2" }}>
-                          {pro.kycSessionId.slice(0, 20)}…
-                        </div>
-                      )}
-                      <div>Doc: {translatedTechnicalStatus(pro.docStatus)} · Face: {translatedTechnicalStatus(pro.verifStatus)}</div>
-                      {pro.verificationUrl && <div>Verificação: {verificationTypeLabel(pro.verificationType)}</div>}
-                      {pro.presentationVideoUrl && (
-                        <div style={{ color: pro.presentationVideoStatus === "APPROVED" ? "#22c55e" : "#b72cff" }}>
-                          Vídeo: {translatedTechnicalStatus(pro.presentationVideoStatus)}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Pendências */}
-                    {approvalIssues.length > 0 ? (
-                      <>
-                        <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#ef4444", textTransform: "uppercase" }}>
-                          {approvalIssues.length} Pendência{approvalIssues.length > 1 ? "s" : ""}
-                        </p>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
-                          {approvalIssues.map((issue, i) => (
-                            <span key={i} style={{
-                              fontSize: 12, color: "#fca5a5",
-                              padding: "5px 10px", borderRadius: 6,
-                              background: "rgba(239,68,68,0.10)",
-                              border: "1px solid rgba(239,68,68,0.22)",
-                              lineHeight: 1.4,
-                            }}>
-                              {issue}
-                            </span>
-                          ))}
-                        </div>
-                      </>
-                    ) : (
-                      <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)" }}>
-                        <span style={{ fontSize: 13, color: "#4ade80", fontWeight: 700 }}>✓ Sem pendências — pronta para aprovar</span>
-                      </div>
-                    )}
-
-                    {pro.rejectReason && (
-                      <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 8, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.22)" }}>
-                        <span style={{ fontSize: 12, color: "#fca5a5" }}>Motivo: {reviewReasonLabel(pro.rejectReason)}</span>
-                      </div>
-                    )}
-                    {pro.pauseUntil && (
-                      <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 8, background: "rgba(183, 44, 255,0.08)", border: "1px solid rgba(183, 44, 255,0.22)" }}>
-                        <span style={{ fontSize: 12, color: "#e1a6ff" }}>Pausada até {pro.pauseUntil.toLocaleDateString("pt-BR")}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Métricas + Bio + Acesso */}
-                  <div style={{ padding: "20px 24px" }}>
-                    <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#aaa0b2", textTransform: "uppercase" }}>Perfil & Métricas</p>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px", fontSize: 13, marginBottom: 18 }}>
-                      {([
-                        ["Fotos", pro.photos.length, pro.photos.length === 0],
-                        ["Uploads", pro.user.uploadedAssets.length, false],
-                        ["Serviços", pro.services.length, pro.services.length === 0],
-                        ["Especialidades", pro.specialties.length, false],
-                        ["Views", pro.profileViews, false],
-                        ["Contatos", pro.contactClicks, false],
-                        ["Nota", `${pro.rating.toFixed(1)} (${pro.totalReviews})`, false],
-                        ["Boost", pro.boostActive ? "Ativo" : "Off", false],
-                      ] as [string, string | number, boolean][]).map(([lbl, val, warn]) => (
-                        <div key={lbl}>
-                          <span style={{ color: "#968a9e", fontSize: 12 }}>{lbl} </span>
-                          <span style={{ fontWeight: 800, color: warn ? "#ef4444" : lbl === "Boost" && pro.boostActive ? "#b72cff" : "#fcf7ff" }}>
-                            {String(val)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#aaa0b2", textTransform: "uppercase" }}>Bio</p>
-                    <div style={{ fontSize: 13, marginBottom: 16 }}>
-                      <span style={{ color: "#968a9e" }}>{pro.bio.length} caracteres</span>
-                      {pro.bio.trim().length > 0 ? (
-                        <p style={{ margin: "4px 0 0", color: "#b4adb0", lineHeight: 1.6, fontSize: 13 }}>
-                          "{pro.bio.trim().slice(0, 120)}{pro.bio.trim().length > 120 ? "…" : ""}"
-                        </p>
-                      ) : (
-                        <p style={{ margin: "4px 0 0", color: "#ef4444", fontSize: 13 }}>Vazia</p>
-                      )}
-                    </div>
-
-                    <p style={{ margin: "0 0 4px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#aaa0b2", textTransform: "uppercase" }}>Acesso</p>
-                    <div style={{ fontSize: 13, color: "#b4adb0", lineHeight: 1.6 }}>
-                      {pro.accessGrandfathered
-                        ? "Legado — sem bloqueio"
-                        : pro.freeAccessEndsAt
-                          ? `Gratuito até ${pro.freeAccessEndsAt.toLocaleDateString("pt-BR")}`
-                          : "Inicia na aprovação"}
-                      <div style={{ fontSize: 12, color: "#aaa0b2", marginTop: 4 }}>
-                        {pro.hidePhone ? "Tel oculto" : "Tel visível"} · {pro.hideAge ? "Idade oculta" : "Idade visível"}
-                        {pro.listingPhoneUntil && pro.listingPhoneUntil > now
-                          ? ` · Listagem ativa até ${pro.listingPhoneUntil.toLocaleDateString("pt-BR")}`
-                          : ""}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ── Painel de Ações (largura fixa) ── */}
-                <div style={{ width: 280, flexShrink: 0, padding: "20px 20px" }}>
-                  <p style={{ margin: "0 0 14px", fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: "#aaa0b2", textTransform: "uppercase" }}>Ações</p>
-                  <form action={reviewProfessional} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <input type="hidden" name="id" value={pro.id} />
-
-                    {/* Aprovar — destaque máximo */}
-                    <button
-                      name="action"
-                      value="approve"
-                      disabled={!canApprove}
-                      title={!canApprove ? `Pendências: ${approvalIssues.join(", ")}` : "Aprovar profissional"}
-                      style={{
-                        width: "100%", padding: "13px 16px",
-                        borderRadius: 10, border: "none",
-                        fontSize: 15, fontWeight: 900, letterSpacing: 0.3,
-                        cursor: canApprove ? "pointer" : "not-allowed",
-                        background: canApprove
-                          ? "linear-gradient(135deg, #15803d, #22c55e)"
-                          : "rgba(255,255,255,0.05)",
-                        color: canApprove ? "#fff" : "#aaa0b2",
-                        boxShadow: canApprove ? "0 4px 16px rgba(34,197,94,0.25)" : "none",
-                      }}
-                    >
-                      {canApprove ? "✓ Aprovar agora" : "Aprovar (bloqueado)"}
-                    </button>
-
-                    {/* Textarea */}
-                    <textarea
-                      name="reason"
-                      placeholder="Motivo (obrigatório para reprovar, corrigir, suspender ou bloquear)"
-                      style={{
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        borderRadius: 8, color: "#fcf7ff",
-                        padding: "10px 12px", fontSize: 13,
-                        minHeight: 64, resize: "vertical",
-                        width: "100%", boxSizing: "border-box",
-                        lineHeight: 1.5,
-                      }}
-                    />
-
-                    {/* Ações secundárias */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
-                      {pro.status === "PAUSED" && (
-                        <button name="action" value="resume" style={{ ...buttonStyle, fontSize: 13, padding: "9px 12px", gridColumn: "1/-1" }}>
-                          Reativar
-                        </button>
-                      )}
-                      <button name="action" value="reject" style={{ ...buttonStyle, fontSize: 13, padding: "9px 12px", color: "#ef4444", borderColor: "rgba(239,68,68,0.35)", background: "rgba(239,68,68,0.07)" }}>
-                        Reprovar
-                      </button>
-                      <button name="action" value="correction" style={{ ...buttonStyle, fontSize: 13, padding: "9px 12px", color: "#fb923c", borderColor: "rgba(251,146,60,0.35)", background: "rgba(251,146,60,0.07)" }}>
-                        Corrigir
-                      </button>
-                      <button name="action" value="suspend" style={{ ...buttonStyle, fontSize: 13, padding: "9px 12px", color: "#fb923c", borderColor: "rgba(251,146,60,0.35)", background: "rgba(251,146,60,0.07)" }}>
-                        Suspender
-                      </button>
-                      <button name="action" value="block" style={{ ...buttonStyle, fontSize: 13, padding: "9px 12px", color: "#ef4444", borderColor: "rgba(239,68,68,0.35)", background: "rgba(239,68,68,0.07)" }}>
-                        Bloquear
-                      </button>
-                      {pro.presentationVideoUrl ? (
-                        <>
-                          <button name="action" value="approveVideo" style={{ ...buttonStyle, fontSize: 13, padding: "9px 12px" }}>✓ Vídeo</button>
-                          <button name="action" value="rejectVideo" style={{ ...buttonStyle, fontSize: 13, padding: "9px 12px", color: "#ef4444", borderColor: "rgba(239,68,68,0.35)" }}>✗ Vídeo</button>
-                        </>
-                      ) : null}
-                      {pro.boostActive ? (
-                        <button name="action" value="disableBoost" style={{ ...buttonStyle, fontSize: 13, padding: "9px 12px", color: "#fb923c", borderColor: "rgba(251,146,60,0.35)", gridColumn: "1/-1" }}>
-                          Desativar boost
-                        </button>
-                      ) : null}
-                    </div>
-                  </form>
-                </div>
-
-              </div>
-            </div>
-          );
-        })}
+        {professionals.map((pro) => (
+          <AdminProfessionalCard
+            key={pro.id}
+            professional={pro}
+            profileIssues={professionalProfileIssues(pro)}
+            approvalIssues={professionalApprovalIssues(pro)}
+            audits={auditsByProfessional.get(pro.id) ?? []}
+            reviewAction={reviewProfessional}
+          />
+        ))}
 
         {!professionals.length && (
           <div style={{ textAlign: "center", padding: "48px 20px", color: "#aaa0b2", fontSize: 14 }}>
@@ -652,6 +494,39 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
       <div style={{ marginTop: 16 }}>
         <AdminPagination basePath="/admin/profissionais" page={page} pageSize={PAGE_SIZE} total={total} query={{ status }} />
       </div>
+      <style>{`
+        .pro-card { background:#fff; border:1px solid #e7dfe9; border-left:4px solid; border-radius:14px; overflow:hidden; content-visibility:auto; contain-intrinsic-size:720px; color:#27232c; }
+        .pro-card-head { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:14px 18px; background:#fcf9fd; }
+        .pro-identity,.pro-head-status { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .pro-identity img,.pro-identity>span { width:44px; height:44px; border-radius:50%; object-fit:cover; background:#f4e9f8; display:grid; place-items:center; font-weight:900; }
+        .pro-identity a { color:#18151b; font-weight:900; text-decoration:none; } .pro-identity p { margin:3px 0 0; color:#756e79; font-size:12px; }
+        .pro-head-status { justify-content:flex-end; } .pro-head-status small { color:#756e79; }
+        .pro-kyc { font-size:11px; font-weight:800; padding:5px 9px; border-radius:999px; border:1px solid; } .pro-kyc.ok { color:#168544; background:#edf9f1; border-color:#a9e6bf; } .pro-kyc.bad { color:#c52b2b; background:#fff1f1; border-color:#f2b5b5; } .pro-kyc.pending { color:#8620b8; background:#faf0ff; border-color:#dfb3f5; }
+        .admin-professional-details>summary { cursor:pointer; list-style:none; padding:11px 18px; border-top:1px solid #eee8f1; color:#8f1fd1; font-size:12px; font-weight:900; }
+        .admin-professional-details>summary::-webkit-details-marker { display:none; } .admin-professional-details>summary::after { content:"＋"; float:right; } .admin-professional-details[open]>summary::after { content:"−"; }
+        .pro-detail-layout { display:grid; grid-template-columns:minmax(0,1fr) 290px; border-top:1px solid #eee8f1; }
+        .pro-sections { padding:16px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; background:#faf9fb; }
+        .pro-section { min-width:0; padding:16px; border:1px solid #e8e0eb; border-radius:12px; background:#fff; } .pro-section h3,.pro-actions h3 { margin:0 0 13px; color:#6f247f; font-size:11px; letter-spacing:1.3px; }
+        .pro-row { display:grid; grid-template-columns:minmax(105px,42%) minmax(0,1fr); gap:8px; padding:5px 0; border-bottom:1px solid #f2edf4; font-size:12px; } .pro-row>span { color:#77707c; } .pro-row>strong { overflow-wrap:anywhere; color:#29242d; font-weight:700; }
+        .pro-subtitle { margin:14px 0 7px; color:#716978; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:1px; } .pro-subtitle.danger { color:#c52b2b; } .pro-empty { color:#8b838f; font-size:12px; margin:6px 0; }
+        .pro-tags { display:flex; gap:5px; flex-wrap:wrap; } .pro-tags span { background:#f6ecfa; border:1px solid #ead6f2; color:#68207c; padding:4px 7px; border-radius:6px; font-size:11px; font-weight:700; }
+        .pro-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:10px; } .pro-metrics b { text-align:center; padding:8px 3px; background:#faf5fc; border-radius:8px; color:#7d2097; } .pro-metrics span { display:block; font-size:9px; color:#7c747f; font-weight:600; margin-top:2px; }
+        .pro-cover { display:flex; align-items:center; gap:9px; font-size:11px; color:#6d6671; } .pro-cover img { width:58px; height:58px; border-radius:8px; object-fit:cover; } .pro-bio { color:#4d4651; font-size:12px; line-height:1.55; max-height:96px; overflow:auto; white-space:pre-wrap; }
+        .pro-alert { display:flex; flex-direction:column; gap:3px; margin-top:10px; padding:9px 10px; border:1px solid; border-radius:8px; font-size:11px; } .pro-alert.ok { color:#167440; background:#effaf3; border-color:#b7e7c8; } .pro-alert.bad { color:#b32626; background:#fff2f2; border-color:#f2bcbc; } .pro-alert.warn { color:#995515; background:#fff8eb; border-color:#f0d39d; } .pro-alert.neutral { color:#57505c; background:#f8f5f9; border-color:#dfd7e2; }
+        .pro-lifecycle,.pro-issues { display:flex; flex-wrap:wrap; gap:5px; } .pro-lifecycle span,.pro-issues span { padding:5px 7px; border-radius:6px; font-size:10px; border:1px solid #e2dce4; color:#908792; } .pro-lifecycle span.active { color:#15733d; border-color:#afe0c0; background:#effaf3; font-weight:800; } .pro-issues span { color:#bd2929; background:#fff2f2; border-color:#f1bbbb; }
+        .pro-history { margin:7px 0 0; padding-left:18px; } .pro-history li { padding:5px 0; font-size:11px; } .pro-history li span,.pro-history li small { display:block; color:#756e79; margin-top:2px; }
+        .pro-actions { padding:18px; border-left:1px solid #e8e0eb; } .pro-actions form { display:flex; flex-direction:column; gap:10px; position:sticky; top:16px; } .pro-actions textarea { width:100%; box-sizing:border-box; min-height:76px; resize:vertical; padding:10px; color:#29242d; background:#faf9fb; border:1px solid #dcd3df; border-radius:8px; }
+        .pro-approve { padding:12px; border:0; border-radius:9px; background:linear-gradient(135deg,#15803d,#22c55e); color:#fff; font-weight:900; } .pro-approve:disabled { background:#eee9f0; color:#8b838f; cursor:not-allowed; }
+        .pro-action-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; } .pro-action-grid button { padding:9px 7px; border-radius:8px; background:#fff; border:1px solid #dcd3df; color:#4b4450; font-weight:800; } .pro-action-grid .danger-button { color:#c52b2b; border-color:#f0b8b8; background:#fff6f6; } .pro-action-grid .warn-button { color:#b45d11; border-color:#efc897; background:#fff9f1; } .pro-action-grid .full { grid-column:1/-1; }
+        .pro-admin-meta { margin-top:18px; } code { font-size:10px; overflow-wrap:anywhere; }
+        .pro-gallery { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin-top:8px; } .pro-gallery a { position:relative; min-width:0; aspect-ratio:1; overflow:hidden; border:1px solid #e6dbe9; border-radius:9px; background:#f5eef7; } .pro-gallery a.cover { grid-column:span 2; grid-row:span 2; } .pro-gallery img { width:100%; height:100%; object-fit:cover; display:block; } .pro-gallery span { position:absolute; inset:auto 4px 4px; padding:3px 5px; border-radius:5px; background:rgba(20,14,23,.78); color:#fff; font-size:9px; text-align:center; }
+        .pro-admin-video { width:100%; max-height:260px; margin-top:8px; border-radius:9px; background:#161218; }
+        .admin-kyc-evidence { margin-top:12px; display:grid; gap:8px; } .admin-evidence-actions { display:flex; flex-wrap:wrap; gap:7px; } .admin-evidence-actions button,.admin-didit-load { padding:8px 10px; border:1px solid #d7c7dd; border-radius:8px; background:#faf5fc; color:#72218a; font-size:11px; font-weight:800; cursor:pointer; } .admin-evidence-actions button:disabled,.admin-didit-load:disabled { cursor:wait; opacity:.65; }
+        .admin-didit-result { display:grid; gap:7px; padding:10px; border:1px solid #e6dcea; border-radius:9px; background:#fcf9fd; } .didit-decision,.didit-block { display:grid; gap:3px; padding:8px; border-radius:7px; background:#fff; border:1px solid #eee7f0; font-size:10px; overflow-wrap:anywhere; } .didit-decision.ok { border-color:#afe0c0; background:#effaf3; } .didit-decision.bad { border-color:#f1bbbb; background:#fff2f2; } .didit-block span { color:#746c78; } .didit-block em,.admin-evidence-error { color:#bd2929; font-style:normal; }
+        .admin-evidence-modal { position:fixed; z-index:10000; inset:0; display:grid; place-items:center; padding:24px; background:rgba(13,9,15,.88); } .admin-evidence-modal>div { width:min(920px,100%); max-height:92dvh; overflow:auto; padding:14px; border-radius:14px; background:#fff; box-shadow:0 28px 90px rgba(0,0,0,.45); } .admin-evidence-modal header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; } .admin-evidence-modal button { border:0; border-radius:8px; padding:8px 11px; background:#761d91; color:#fff; font-weight:800; } .admin-evidence-modal img { display:block; width:100%; max-height:75dvh; object-fit:contain; background:#151217; border-radius:9px; }
+        @media (max-width:1150px) { .pro-detail-layout { grid-template-columns:1fr; } .pro-actions { border-left:0; border-top:1px solid #e8e0eb; } .pro-actions form { position:static; } }
+        @media (max-width:760px) { .pro-card-head { align-items:flex-start; } .pro-head-status { justify-content:flex-start; } .pro-sections { grid-template-columns:1fr; padding:10px; } .pro-section { padding:13px; } .pro-detail-layout { display:block; } .pro-row { grid-template-columns:1fr; gap:2px; } .pro-metrics { grid-template-columns:repeat(2,1fr); } }
+      `}</style>
     </div>
   );
 }

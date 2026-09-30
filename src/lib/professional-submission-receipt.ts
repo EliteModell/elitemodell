@@ -8,6 +8,7 @@ export type SubmissionReceiptStatus = "PENDING" | "SENDING" | "SENT" | "FAILED";
 export async function deliverProfessionalSubmissionReceipt(
   professionalId: string,
   email: string,
+  name?: string | null,
 ): Promise<SubmissionReceiptStatus> {
   await prisma.professionalSubmissionReceipt.upsert({
     where: { professionalId },
@@ -36,7 +37,8 @@ export async function deliverProfessionalSubmissionReceipt(
   }
 
   try {
-    const providerId = await sendProfessionalSubmissionReceipt(email, professionalId);
+    const receipt = await prisma.professionalSubmissionReceipt.findUnique({ where: { professionalId }, select: { attempts: true } });
+    const providerId = await sendProfessionalSubmissionReceipt(email, professionalId, name, receipt?.attempts ?? 1);
     await prisma.professionalSubmissionReceipt.update({
       where: { professionalId },
       data: { status: "SENT", providerId, sentAt: new Date(), lastError: null },

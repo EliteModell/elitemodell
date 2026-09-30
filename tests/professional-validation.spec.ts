@@ -3,6 +3,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { createProfessionalSchema } from "../src/lib/professional-profile-schema";
 import { assessProfessionalDiditDecision } from "../src/lib/professional-didit";
+import { reconcileProfessionalDidit } from "../src/lib/didit-reconciliation";
+import { handleDigitWebhook } from "../src/lib/didit-webhook-handler";
+import { prisma } from "../src/lib/prisma";
+import { NextRequest } from "next/server";
+import { createHmac } from "node:crypto";
 import {
   buildDigitVendorData,
   canRetryDigitStatus,
@@ -13,6 +18,7 @@ import {
   isSafeDigitVerificationUrl,
   normalizeDigitStatus,
   parseDigitIntentMarker,
+  isDigitIntentInFlight,
   type DiditDecision,
 } from "../src/lib/didit";
 import {
@@ -169,7 +175,7 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     const sessionRoute = fs.readFileSync(path.join(process.cwd(), "src/app/api/didit/session/route.ts"), "utf8");
     const page = fs.readFileSync(path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"), "utf8");
     expect(sessionRoute).toContain("verificationUrl: true");
-    expect(sessionRoute).toContain("url: assessment.status === DIDIT_PENDING_STATUS ? storedUrl : null");
+    expect(sessionRoute).toContain("reconcileProfessionalDidit(userId, sessionId)");
     expect(page).toContain('verificationUrl: data.url ?? ""');
     expect(page).not.toContain('form.kycStatus === "PENDING" && form.verificationUrl.startsWith("http")');
     expect(page).toContain('verificationUrl: ""');
@@ -275,5 +281,131 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     expect(handler).toContain("if (!claim.claimed)");
     expect(handler).toContain("duplicate: true");
     expect(idempotency).toContain("provider_eventId");
+  });
+});
+
+test.describe("reconciliacao Didit com respostas simuladas", () => {
+  const originalFetch = globalThis.fetch;
+  const originalTransaction = prisma.$transaction;
+  const originalFind = prisma.professional.findFirst;
+  const originalCreate = prisma.webhookEvent.create;
+  const originalUpdate = prisma.webhookEvent.update;
+  const originalSecret = process.env.DIDIT_WEBHOOK_SECRET;
+  let decision: DiditDecision;
+  let active = true;
+  let profileStatus = "DRAFT";
+  let writes: Array<{ target: string; data: Record<string, unknown> }>;
+
+  test.beforeEach(() => {
+    active = true;
+    profileStatus = "DRAFT";
+    writes = [];
+    decision = diditDecision("Approved");
+    process.env.DIDIT_WEBHOOK_SECRET = "test-didit-secret";
+    globalThis.fetch = async () => Response.json(decision);
+    const tx = {
+      $executeRaw: async () => 1,
+      professional: {
+        findFirst: async () => active ? { status: profileStatus, verificationUrl: "https://verify.didit.me/session-test" } : null,
+        updateMany: async ({ data }: { data: Record<string, unknown> }) => { writes.push({ target: "professional", data }); return { count: 1 }; },
+      },
+      user: {
+        updateMany: async ({ data }: { data: Record<string, unknown> }) => { writes.push({ target: "user", data }); return { count: 1 }; },
+      },
+    };
+    prisma.$transaction = (async (fn: (client: typeof tx) => Promise<unknown>) => fn(tx)) as unknown as typeof prisma.$transaction;
+    prisma.professional.findFirst = (async () => ({ userId: "user_test" })) as typeof prisma.professional.findFirst;
+    prisma.webhookEvent.create = (async () => ({ id: "event-test" })) as unknown as typeof prisma.webhookEvent.create;
+    prisma.webhookEvent.update = (async () => ({ id: "event-test" })) as unknown as typeof prisma.webhookEvent.update;
+  });
+
+  test.afterEach(() => {
+    globalThis.fetch = originalFetch;
+    prisma.$transaction = originalTransaction;
+    prisma.professional.findFirst = originalFind;
+    prisma.webhookEvent.create = originalCreate;
+    prisma.webhookEvent.update = originalUpdate;
+    if (originalSecret === undefined) delete process.env.DIDIT_WEBHOOK_SECRET;
+    else process.env.DIDIT_WEBHOOK_SECRET = originalSecret;
+  });
+
+  async function webhook(status: string) {
+    const body = JSON.stringify({ event_id: `event-${status}`, webhook_type: "status.updated",
+      session_id: "didit_session_test", vendor_data: "user_test", status,
+      timestamp: Math.floor(Date.now() / 1000), environment: "live" });
+    return handleDigitWebhook(new NextRequest("https://example.test/api/didit/webhook", {
+      method: "POST", body, headers: {
+        "x-signature": createHmac("sha256", "test-didit-secret").update(body).digest("hex"),
+        "x-timestamp": String(Math.floor(Date.now() / 1000)),
+      },
+    }));
+  }
+
+  test("evento pendente atrasado conserva a aprovacao atual e nao publica perfil", async () => {
+    expect((await webhook("In Progress")).status).toBe(200);
+    expect(writes.find(w => w.target === "professional")?.data).toMatchObject({ kycStatus: "APPROVED", rejectReason: null });
+    expect(writes.find(w => w.target === "professional")?.data).not.toHaveProperty("status");
+  });
+
+  test("evento antigo Approved nao aprova decisao atual Declined", async () => {
+    decision = diditDecision("Declined");
+    expect((await webhook("Approved")).status).toBe(200);
+    expect(writes.find(w => w.target === "professional")?.data.kycStatus).toBe("REJECTED");
+  });
+
+  test("erro do provedor pede reentrega do webhook sem alterar KYC", async () => {
+    globalThis.fetch = async () => new Response(null, { status: 503 });
+    expect((await webhook("Approved")).status).toBe(500);
+    expect(writes).toEqual([]);
+  });
+
+  test("sessao trocada ou pertencente a outro usuario nao grava resultado", async () => {
+    active = false;
+    await expect(reconcileProfessionalDidit("user_test", "didit_session_test")).rejects.toThrow("didit_active_session_changed");
+    active = true;
+    decision.vendor_data = "other_user";
+    await expect(reconcileProfessionalDidit("user_test", "didit_session_test")).rejects.toThrow("didit_session_owner_mismatch");
+    expect(writes).toEqual([]);
+  });
+
+  test("revisao pendente limpa aviso vermelho e nao oferece refazer documento", async () => {
+    decision = diditDecision("In Review");
+    const result = await reconcileProfessionalDidit("user_test", "didit_session_test");
+    expect(result).toMatchObject({ status: "PENDING", url: null, retryAllowed: false });
+    expect(result.message).toContain("não é necessário reenviá-los");
+    expect(writes.find(w => w.target === "professional")?.data.rejectReason).toBeNull();
+  });
+
+  test("etapa incompleta permite retomar a mesma sessao", async () => {
+    decision = diditDecision("In Progress");
+    const result = await reconcileProfessionalDidit("user_test", "didit_session_test");
+    expect(result.url).toBe("https://verify.didit.me/session-test");
+    expect(result.message).toContain("Retome");
+  });
+
+  test("mensagem explica documento vencido sem expor sinal antifraude", () => {
+    decision = diditDecision("Declined");
+    decision.id_verifications![0].warnings = [{ short_description: "Document expired" }, { short_description: "Possible duplicated user from other session" }];
+    const result = assessProfessionalDiditDecision(decision);
+    expect(result.reason).toContain("vencido");
+    expect(result.reason).not.toContain("duplicated");
+    expect(result.retryAllowed).toBe(true);
+  });
+
+  test("maioridade nao confirmada exige suporte sem liberar novas tentativas", () => {
+    expect(assessProfessionalDiditDecision(diditDecision("Approved", null))).toMatchObject({ status: "REJECTED", retryAllowed: false });
+    expect(assessProfessionalDiditDecision(diditDecision("Approved", "2020-01-01"))).toMatchObject({ status: "REJECTED", retryAllowed: false });
+  });
+
+  test("marcador vencido permite recuperar preparacao interrompida", () => {
+    const now = Date.now();
+    expect(isDigitIntentInFlight(createDigitIntentMarker("intent", now, now), now)).toBe(true);
+    expect(isDigitIntentInFlight(createDigitIntentMarker("intent", now - 180_000, now - 180_000), now)).toBe(false);
+  });
+
+  test("reconciliacao preserva motivo de moderacao manual", async () => {
+    profileStatus = "REJECTED";
+    await reconcileProfessionalDidit("user_test", "didit_session_test");
+    expect(writes.find(w => w.target === "professional")?.data.rejectReason).toBeUndefined();
   });
 });

@@ -54,6 +54,8 @@ function SummaryTiles({ items }: { items: Array<[string, string]> }) {
 
 export default function ProfessionalVerificationSteps(props: Props) {
   const location = `${props.city}${props.state ? `, ${props.state}` : ""}` || "—";
+  const cannotStart = props.startingVerification || !props.diditAvailable ||
+    (props.diditRejected && !props.diditRetryAllowed) || (props.diditPending && !props.verificationUrl);
 
   if (props.mode === "summary") {
     return (
@@ -103,12 +105,13 @@ export default function ProfessionalVerificationSteps(props: Props) {
           <div data-field="kycSessionId" style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e", fontSize: 15, fontWeight: 800 }}>✓ Identidade verificada</div>
         ) : (
           <>
-            <button data-field="kycSessionId" type="button" onClick={props.onStartVerification} disabled={props.startingVerification || !props.diditAvailable} style={{ width: "100%", minHeight: 52, padding: "14px 16px", borderRadius: 12, border: "none", background: !props.diditAvailable ? "#676064" : GOLD, color: !props.diditAvailable ? "#e7e0ea" : "#080808", fontSize: 15, fontWeight: 800, cursor: props.startingVerification || !props.diditAvailable ? "not-allowed" : "pointer", marginBottom: 14 }}>
-              {props.startingVerification ? "Iniciando verificação..." : props.diditPending ? props.verificationUrl ? "Retomar verificação" : "Verificação em análise" : props.diditRejected && props.diditRetryAllowed ? "Tentar novamente" : "Verificar minha identidade"}
+            <button data-field="kycSessionId" type="button" onClick={props.onStartVerification} disabled={cannotStart} style={{ width: "100%", minHeight: 52, padding: "14px 16px", borderRadius: 12, border: "none", background: cannotStart ? "#676064" : GOLD, color: cannotStart ? "#e7e0ea" : "#080808", fontSize: 15, fontWeight: 800, cursor: cannotStart ? "not-allowed" : "pointer", marginBottom: 14 }}>
+              {props.startingVerification ? "Iniciando verificação..." : props.diditPending ? props.verificationUrl ? "Retomar verificação" : "Verificação em análise" : props.diditRejected && props.diditRetryAllowed ? "Tentar novamente" : props.diditRejected ? "Fale com o suporte" : "Verificar minha identidade"}
             </button>
-            {props.diditPending ? <div style={{ padding: "12px 14px", borderRadius: 10, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, fontSize: 13, fontWeight: 700, lineHeight: 1.55 }}>Verificação em análise<span style={{ display: "block", color: "#d8cfdd", fontSize: 12, fontWeight: 500, marginTop: 4 }}>Seu cadastro ainda não será considerado verificado até recebermos o resultado final da Didit.</span></div> : null}
-            {props.diditRejected ? <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", color: "#ff8b8b", fontSize: 13, fontWeight: 700, lineHeight: 1.55 }}>Não foi possível concluir sua verificação de identidade.{props.diditRetryAllowed ? <span style={{ display: "block", color: "#d8cfdd", fontSize: 12, fontWeight: 500, marginTop: 4 }}>Você pode tentar novamente pelo botão acima.</span> : null}</div> : null}
+            {props.diditPending ? <div style={{ padding: "12px 14px", borderRadius: 10, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, fontSize: 13, fontWeight: 700, lineHeight: 1.55 }}>{props.verificationUrl ? "Verificação ainda não concluída" : "Verificação em análise"}<span style={{ display: "block", color: "#d8cfdd", fontSize: 12, fontWeight: 500, marginTop: 4 }}>{props.diditMessage ?? "Aguardamos o resultado final. Esta página será atualizada automaticamente."}</span></div> : null}
+            {props.diditRejected ? <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", color: "#ff8b8b", fontSize: 13, fontWeight: 700, lineHeight: 1.55 }} role="alert">{props.diditMessage ?? "Não foi possível concluir sua verificação de identidade."}{props.diditRetryAllowed ? <span style={{ display: "block", color: "#d8cfdd", fontSize: 12, fontWeight: 500, marginTop: 4 }}>Corrija o problema indicado antes de tentar novamente pelo botão acima.</span> : null}</div> : null}
             {!props.diditAvailable ? <div style={{ padding: "12px 14px", borderRadius: 10, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: "#e8b8ff", fontSize: 13, fontWeight: 700, lineHeight: 1.5 }}>A verificação Didit está temporariamente indisponível. Seu cadastro permanece salvo; tente novamente em alguns minutos.</div> : null}
+            {props.diditRejected && <p><a href="mailto:suporte@elitemodell.com.br" style={{ color: "#e8b8ff" }}>Falar com o suporte</a></p>}
             {props.diditMessage && !props.diditPending && !props.diditRejected ? <p style={{ margin: "10px 0 0", color: "#d8cfdd", fontSize: 12 }}>{props.diditMessage}</p> : null}
           </>
         )}

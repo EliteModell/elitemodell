@@ -17,7 +17,8 @@ export type AuditAction =
 
 export interface AuditLog {
   id: string;
-  adminId: string;
+  adminId?: string;
+  actorIdentifier?: string;
   action: AuditAction;
   targetType: "USER" | "PROFESSIONAL" | "PROPERTY" | "CONTENT" | "PAYMENT" | "SYSTEM";
   targetId: string;
@@ -33,6 +34,7 @@ export interface AuditLog {
  */
 export async function logAudit({
   adminId,
+  actorIdentifier,
   action,
   targetType,
   targetId,
@@ -45,7 +47,7 @@ export async function logAudit({
     await prisma.auditLog.create({
       data: {
         adminId,
-        actorIdentifier: adminId,
+        actorIdentifier: actorIdentifier ?? adminId,
         action,
         targetType,
         targetId,

@@ -513,6 +513,11 @@ export const authOptions: NextAuthOptions = {
               birthDate: true,
               professional: { select: { id: true, status: true, verified: true, kycStatus: true } },
               properties: { select: { status: true } },
+              adminAssignments: {
+                where: { active: true, revokedAt: null },
+                select: { id: true },
+                take: 1,
+              },
               blocked: true,
             },
           });
@@ -524,15 +529,16 @@ export const authOptions: NextAuthOptions = {
             token.name = dbUser.name;
             token.email = dbUser.email;
             token.picture = dbUser.image;
-            token.role = dbUser.role;
+            const effectiveRole = dbUser.adminAssignments.length > 0 ? "ADMIN" : dbUser.role;
+            token.role = effectiveRole;
             token.accountType = dbUser.accountType;
             token.clientStatus = dbUser.clientStatus;
             token.professionalStatus = dbUser.professional?.status ?? null;
             token.adultVerified =
               dbUser.clientStatus === "VERIFIED" ||
               Boolean(dbUser.professional?.verified && dbUser.professional?.kycStatus === "APPROVED") ||
-              dbUser.role === "ADMIN";
-            token.availableProfiles = deriveAvailableProfiles(dbUser);
+              effectiveRole === "ADMIN";
+            token.availableProfiles = deriveAvailableProfiles({ ...dbUser, role: effectiveRole });
             token.isProfessional = !!dbUser.professional || token.availableProfiles.includes("PROFESSIONAL");
             token.needsConsent = !dbUser.lgpdConsent || !dbUser.termsConsent || !dbUser.birthDate;
             token.hostStatus = getHostRegistrationStatus(dbUser);

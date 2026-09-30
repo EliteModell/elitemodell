@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isAgeOfMajority, isValidBirthDate } from "@/lib/age-validation";
+import { professionalCompletion } from "@/lib/professional-completeness";
 
 export const createProfessionalSchema = z.object({
   displayName: z.string().min(2),
@@ -67,43 +67,15 @@ export const createProfessionalSchema = z.object({
   kycSessionId: z.string().optional(),
   kycStatus: z.string().optional(),
 }).superRefine((data, ctx) => {
-  const addIssue = (path: string[], message: string) => {
-    ctx.addIssue({ code: "custom", path, message });
-  };
-
-  if (!["MULHER", "HOMEM", "TRANS"].includes(data.escortCategory ?? "")) {
-    addIssue(["escortCategory"], "Categoria invalida.");
+  const result = professionalCompletion({
+    ...data,
+    image: data.image,
+    emailVerified: true,
+  });
+  for (const issue of result.profileIssues) {
+    ctx.addIssue({ code: "custom", path: [issue.field], message: issue.label });
   }
-    if ((data.bio ?? "").trim().length < 80) {
-    addIssue(["bio"], "A biografia deve ter pelo menos 80 caracteres.");
+  if (!data.kycSessionId) {
+    ctx.addIssue({ code: "custom", path: ["kycSessionId"], message: "Verificação de identidade não iniciada" });
   }
-  if (!data.birthDate) addIssue(["birthDate"], "Data de nascimento obrigatoria.");
-  else if (!isValidBirthDate(data.birthDate)) addIssue(["birthDate"], "Data de nascimento invalida.");
-  else if (!isAgeOfMajority(data.birthDate)) addIssue(["birthDate"], "A pessoa deve ter 18 anos ou mais.");
-  if (data.attendanceTypes.length === 0) {
-    addIssue(["attendanceTypes"], "Informe o tipo de atendimento.");
-  }
-  if (data.servesGenders.length === 0) addIssue(["servesGenders"], "Informe quem atende.");
-  if (data.diasDisponiveis.length === 0) {
-    addIssue(["diasDisponiveis"], "Informe os dias disponiveis.");
-  }
-  if (data.services.length === 0) addIssue(["services"], "Informe pelo menos um servico.");
-  if (
-    !data.price15min &&
-    !data.pricePerHour &&
-    !data.price30min &&
-    !data.price2h &&
-    !data.priceOvernight &&
-    !data.priceWebcam
-  ) {
-    addIssue(["pricePerHour"], "Informe pelo menos um valor.");
-  }
-  if (data.paymentMethods.length === 0) {
-    addIssue(["paymentMethods"], "Informe uma forma de pagamento.");
-  }
-  if (!data.whatsapp || data.whatsapp.replace(/\D/g, "").length < 10) {
-    addIssue(["whatsapp"], "WhatsApp invalido.");
-  }
-  if (!data.image) addIssue(["image"], "Foto principal obrigatoria.");
-  if (!data.kycSessionId) addIssue(["kycSessionId"], "Verificacao de identidade obrigatoria.");
 });

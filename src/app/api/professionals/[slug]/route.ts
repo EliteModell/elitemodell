@@ -16,6 +16,7 @@ import {
   publicCacheHeaders,
 } from "@/lib/public-professional-profile";
 import { normalizeContactVisibility } from "@/lib/professional-contact";
+import { refreshExpiredTemporaryLocations } from "@/lib/professional-location-service";
 import {
   controlledMediaAssetId,
   filterApprovedProfilePhotos,
@@ -23,6 +24,7 @@ import {
 } from "@/lib/public-professional-media";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+  await refreshExpiredTemporaryLocations();
   const { slug } = await params;
   const now = new Date();
   const tokenPromise = getToken({
@@ -304,6 +306,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
   try {
     const body = await req.json();
     const data = updateSchema.parse(body);
+    if (session.user.role !== "ADMIN" && (data.city !== undefined || data.state !== undefined || data.bairro !== undefined)) {
+      return NextResponse.json({ error: "Altere cidade e bairro pela área de localização para preservar o histórico." }, { status: 409 });
+    }
     const { specialties, presentationVideoUrl, phone, whatsapp, photos, image, galleryUrls, escortCategory, ...profileData } = data;
     await assertApprovedMediaUrls({
       urls: [

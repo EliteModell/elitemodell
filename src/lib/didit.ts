@@ -51,6 +51,7 @@ export type DiditIdVerification = {
   date_of_birth?: string | null;
   full_name?: string | null;
   expiration_date?: string | null;
+  warnings?: Array<{ short_description?: string; log_type?: string }> | null;
 };
 
 export type DiditLivenessCheck = {
@@ -66,6 +67,8 @@ export type DiditDecision = {
   vendor_data: string | null;
   id_verifications: DiditIdVerification[] | null;
   liveness_checks: DiditLivenessCheck[] | null;
+  session_url?: string | null;
+  environment?: "live" | "sandbox";
 };
 
 export type DiditWebhookPayload = {
@@ -164,6 +167,11 @@ export function parseDigitIntentMarker(value: string | null | undefined) {
   return { intentId, createdAt: maybeCreatedAt, leaseAt };
 }
 
+export function isDigitIntentInFlight(value: string | null | undefined, now = Date.now()) {
+  const intent = parseDigitIntentMarker(value);
+  return Boolean(intent && now - intent.leaseAt < 2 * 60_000);
+}
+
 function getDigitConfig() {
   const apiKey = process.env.DIDIT_API_KEY?.trim() ?? "";
   const workflowId = process.env.DIDIT_WORKFLOW_ID?.trim() ?? "";
@@ -190,6 +198,7 @@ export async function createDigitSession(vendorData: string, callbackUrl: string
       callback: callbackUrl,
       language: "pt",
     }),
+    signal: AbortSignal.timeout(10_000),
   });
 
   if (!res.ok) {
@@ -204,7 +213,7 @@ export async function findDigitSessionByVendorData(vendorData: string): Promise<
   const url = new URL(`${DIDIT_API_BASE}/v2/sessions`);
   url.searchParams.set("vendor_data", vendorData);
 
-  const res = await fetch(url, { headers: { "x-api-key": apiKey } });
+  const res = await fetch(url, { headers: { "x-api-key": apiKey }, cache: "no-store", signal: AbortSignal.timeout(8_000) });
   if (!res.ok) {
     throw new Error(`Didit session reconciliation failed with status ${res.status}`);
   }
@@ -250,13 +259,19 @@ export async function fetchDigitSessionDecision(sessionId: string): Promise<Didi
 
   const res = await fetch(`${DIDIT_API_BASE}/v3/session/${sessionId}/decision/`, {
     headers: { "x-api-key": apiKey },
+    cache: "no-store",
+    signal: AbortSignal.timeout(8_000),
   });
 
   if (!res.ok) {
     throw new Error(`Didit fetch decision failed with status ${res.status}`);
   }
 
-  return res.json() as Promise<DiditDecision>;
+  const decision = await res.json() as DiditDecision;
+  if (process.env.NODE_ENV === "production" && decision.environment !== "live") {
+    throw new Error("didit_live_decision_required");
+  }
+  return decision;
 }
 
 function canonicalize(value: unknown): string {

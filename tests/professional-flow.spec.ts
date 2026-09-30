@@ -11,6 +11,9 @@
 
 import { test, expect, type Page, type Route } from "@playwright/test";
 import { installMockSessionCookie } from "./helpers/mock-auth";
+import { PrismaClient } from "@prisma/client";
+import { encode } from "next-auth/jwt";
+import { randomUUID } from "node:crypto";
 
 /* ─── Mock de sessão de acompanhante ──────────────────────────────────────── */
 
@@ -74,6 +77,97 @@ async function gotoWithModelSession(page: Page, path: string) {
   return page.goto(path, { waitUntil: "domcontentloaded" });
 }
 
+test.describe("Didit corrigida", () => {
+  const fixtureId = `didit-e2e-${randomUUID()}`;
+  const fixtureDb = new PrismaClient();
+  test.beforeAll(async () => {
+    test.skip(!/localhost|127\.0\.0\.1/.test(process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"), "Fixture apenas no servidor local");
+    await fixtureDb.user.create({ data: { id: fixtureId, email: `${fixtureId}@example.invalid`,
+      name: "Teste automatizado Didit", accountType: "model", role: "HOST",
+      lgpdConsent: true, termsConsent: true, birthDate: new Date("2000-01-01"),
+    } });
+  });
+  test.afterAll(async () => {
+    await fixtureDb.user.deleteMany({ where: { id: fixtureId, email: `${fixtureId}@example.invalid` } });
+    await fixtureDb.$disconnect();
+  });
+  test.beforeEach(async ({ page }) => {
+    await mockModelAuth(page);
+    const token = await encode({ secret: process.env.NEXTAUTH_SECRET!, token: {
+      ...MOCK_MODEL_SESSION.user, id: fixtureId, sub: fixtureId,
+    } });
+    await page.context().addCookies([{ name: "next-auth.session-token", value: token,
+      url: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000", httpOnly: true, sameSite: "Lax" }]);
+    await page.context().setExtraHTTPHeaders({ Authorization: `Bearer ${token}` });
+    await page.route("**/api/users/me**", route => route.fulfill({ json: {
+      ...MOCK_MODEL_SESSION.user, emailVerified: true, birthDate: "2000-01-01", professional: null,
+    } }));
+    await page.addInitScript(() => {
+      localStorage.setItem("elite_cookie_consent", "necessary");
+      localStorage.setItem("elitemodell_professional_onboarding_v1", JSON.stringify({ step: 7, form: {
+        displayName: "Modelo Teste", bio: "Apresentação de teste. ".repeat(8), city: "São Paulo", state: "SP",
+        escortCategory: "MULHER", birthDate: "2000-01-01", attendanceTypes: ["A domicílio"],
+        servesGenders: ["Homens"], diasDisponiveis: ["Segunda"], services: ["Acompanhamento"],
+        paymentMethods: ["Pix"], pricePerHour: "300", whatsapp: "11912345678",
+        mainPhotoUrl: "/api/media/test-cover", galleryUrls: [],
+      } }));
+    });
+  });
+
+  test("mostra motivo de recusa e orienta correcao antes de repetir", async ({ page }) => {
+    await page.route("**/api/didit/session", route => route.fulfill({ json: {
+      available: true, sessionId: "test-session", status: "REJECTED", retryAllowed: true,
+      message: "O documento foi identificado como vencido. Use um documento válido.", url: null,
+    } }));
+    await page.goto("/profissional/novo?didit=returned", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("alert").filter({ hasText: "vencido" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Tentar novamente" })).toBeEnabled();
+    await expect(page.getByRole("link", { name: "Falar com o suporte", exact: true })).toBeVisible();
+  });
+
+  test("maioridade pendente nao permite novas tentativas automaticas", async ({ page }) => {
+    await page.route("**/api/didit/session", route => route.fulfill({ json: {
+      available: true, sessionId: "test-session", status: "REJECTED", retryAllowed: false,
+      message: "Não foi possível confirmar a idade mínima de 18 anos. Fale com o suporte.", url: null,
+    } }));
+    await page.goto("/profissional/novo?didit=returned", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("button", { name: "Fale com o suporte" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Tentar novamente" })).toHaveCount(0);
+  });
+
+  test("atualiza resultado sem recarregar e permite enviar cadastro para analise", async ({ page }) => {
+    let approved = false;
+    let submission: Record<string, unknown> | null = null;
+    let savedStep: number | null = null;
+    // This browser scenario simulates Didit and submission, including the new
+    // server-side step persistence. The fake session is not a database KYC.
+    await page.route("**/api/professionals/draft", async route => {
+      if (route.request().method() === "PATCH") {
+        savedStep = route.request().postDataJSON().step;
+      }
+      await route.fulfill({ json: { completion: { issues: [], profileIssues: [], profilePercent: 100, profileComplete: true, readyToSubmit: approved } } });
+    });
+    await page.route("**/api/didit/session", route => route.fulfill({ json: {
+      available: true, sessionId: "test-session", status: approved ? "APPROVED" : "PENDING",
+      retryAllowed: false, message: approved ? null : "Seus documentos estão em análise de identidade.", url: null,
+    } }));
+    await page.route("**/api/professionals", async route => {
+      submission = route.request().postDataJSON();
+      await route.fulfill({ status: 201, json: { status: "PENDING_REVIEW", receiptStatus: "SENT" } });
+    });
+    await page.goto("/profissional/novo?didit=returned", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("button", { name: "Verificação em análise" })).toBeDisabled();
+    approved = true;
+    await expect(page.getByText("✓ Identidade verificada", { exact: true })).toBeVisible({ timeout: 25_000 });
+    await page.getByRole("button", { name: /Próximo|Continuar/ }).click();
+    expect(savedStep).toBe(7);
+    await page.getByRole("button", { name: "Enviar cadastro para análise" }).click();
+    await expect(page.getByRole("heading", { name: /Cadastro 100% conclu/ })).toBeVisible();
+    await expect(page.getByText(/Status: Em an/)).toBeVisible();
+    expect(submission).toMatchObject({ kycSessionId: "test-session" });
+  });
+});
+
 async function postProfessional(page: Page, data: Record<string, unknown>) {
   return page.evaluate(async (payload) => {
     const response = await fetch("/api/professionals", {
@@ -101,12 +195,9 @@ test.describe("Fluxo acompanhante — rotas", () => {
   test("/cadastro-modelo/verificar-telefone tem telefone e termos obrigatórios", async ({ page }) => {
     await page.addInitScript(() => { sessionStorage.setItem("elite_modell_adult_consent_session", "accepted"); localStorage.setItem("elite_modell_ageConsentAccepted", "true"); });
     await page.goto("/cadastro-modelo/verificar-telefone", { waitUntil: "domcontentloaded" });
-    await page.waitForLoadState("networkidle").catch(() => {});
-    const body = await page.textContent("body");
-    const hasTelefone = body?.toLowerCase().includes("telefone") || body?.toLowerCase().includes("celular");
-    const hasTermos = body?.toLowerCase().includes("termos") || body?.toLowerCase().includes("lgpd") || body?.toLowerCase().includes("confirmo");
-    expect(hasTelefone).toBe(true);
-    expect(hasTermos).toBe(true);
+    await expect(page.getByRole("heading", { name: "Confirme seu telefone" })).toBeVisible();
+    await expect(page.getByText("Informe primeiro o telefone e aceite os termos obrigatórios.")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Termos de Uso" })).toBeVisible();
   });
 
   test("/cadastro-modelo/verificar-telefone carrega sem 404", async ({ page }) => {
@@ -161,9 +252,7 @@ test.describe("Onboarding acompanhante — etapas UI", () => {
 
   test("Botão de avançar está presente", async ({ page }) => {
     await gotoWithModelSession(page, "/profissional/novo");
-    await page.waitForLoadState("networkidle").catch(() => {});
-    const buttons = await page.locator("button").count();
-    expect(buttons).toBeGreaterThan(0);
+    await expect(page.getByRole("button", { name: /Próximo|Continuar/ })).toBeVisible();
   });
 
 });

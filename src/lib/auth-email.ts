@@ -220,29 +220,36 @@ export async function sendAuthEmail(
   return payload.id ?? null;
 }
 
-export async function sendProfessionalSubmissionReceipt(to: string, professionalId: string): Promise<string | null> {
+export async function sendProfessionalSubmissionReceipt(
+  to: string,
+  professionalId: string,
+  name?: string | null,
+  deliveryAttempt = 1,
+): Promise<string | null> {
+  const safeName = name?.trim().replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character] ?? character));
   return sendAuthEmail(to, {
-    subject: "Recebemos seu cadastro — Elite Modell",
+    subject: "Seu cadastro na Elite Modell foi recebido",
     html: `
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#ffffff;color:#17131a;border:1px solid #dfd1e5;border-radius:16px;overflow:hidden">
         <div style="height:4px;background:#7d179f"></div>
         <div style="padding:36px 30px">
           <div style="color:#7d179f;font-size:22px;font-weight:900;margin-bottom:24px">ELITE MODELL</div>
-          <h1 style="font-size:22px;margin:0 0 14px">Recebemos seu cadastro</h1>
-          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Olá!</p>
-          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Seu perfil foi encaminhado para análise da nossa equipe.</p>
-          <p style="color:#625c68;line-height:1.7;margin:0">Você poderá acompanhar o andamento pela sua área na plataforma.</p>
+          <h1 style="font-size:22px;margin:0 0 14px">Seu cadastro foi recebido</h1>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Olá, ${safeName || "profissional"}.</p>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Recebemos seu cadastro e ele foi enviado para análise.</p>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Nossa equipe irá conferir seus dados, documentos, verificação de identidade e informações do perfil.</p>
+          <p style="color:#625c68;line-height:1.7;margin:0">Assim que a análise for concluída, enviaremos um novo e-mail informando a aprovação ou os itens que precisam ser corrigidos. Você não precisa realizar um novo cadastro.</p>
           <div style="margin-top:28px;padding-top:18px;border-top:1px solid #eee6f1;color:#77707b;font-size:12px">Esta mensagem não contém fotos, documentos, dados biométricos ou informações financeiras.</div>
         </div>
       </div>
     `,
   }, {
-    idempotencyKey: professionalSubmissionReceiptIdempotencyKey(professionalId),
+    idempotencyKey: `${professionalSubmissionReceiptIdempotencyKey(professionalId)}:attempt-${deliveryAttempt}`,
     timeoutMs: 10_000,
   });
 }
 
-export async function sendProfessionalApprovalEmail(to: string): Promise<void> {
+export async function sendProfessionalApprovalEmail(to: string, name?: string | null): Promise<void> {
   const base = `
     <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#0a0a0a;color:#fcf7ff;border:1px solid rgba(212,168,67,0.25);border-radius:12px;overflow:hidden">
       <div style="height:3px;background:linear-gradient(90deg,transparent,#b72cff,#e1a6ff,#b72cff,transparent)"></div>
@@ -253,7 +260,7 @@ export async function sendProfessionalApprovalEmail(to: string): Promise<void> {
           </span>
         </div>
         <h2 style="color:#fcf7ff;font-size:22px;margin:0 0 12px">Cadastro aprovado</h2>
-        <p style="color:#b4adb0;line-height:1.7;margin:0">Olá,</p>
+        <p style="color:#b4adb0;line-height:1.7;margin:0">Olá${name?.trim() ? `, ${name.trim()}` : ""}.</p>
         <p style="color:#b4adb0;line-height:1.7;margin:12px 0">Seu cadastro na Elite Modell foi aprovado.</p>
         <p style="color:#b4adb0;line-height:1.7;margin:0">Seu perfil já pode ficar disponível na plataforma conforme as regras de segurança e moderação.</p>
         <p style="color:#b4adb0;line-height:1.7;margin:24px 0 0">Atenciosamente,<br><strong style="color:#fcf7ff">Equipe Elite Modell</strong></p>
@@ -265,7 +272,7 @@ export async function sendProfessionalApprovalEmail(to: string): Promise<void> {
   `;
 
   await sendAuthEmail(to, {
-    subject: "Seu cadastro foi aprovado na Elite Modell",
+    subject: "Seu perfil foi aprovado",
     html: base,
   });
 }

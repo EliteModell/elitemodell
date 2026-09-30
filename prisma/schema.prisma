@@ -13,6 +13,7 @@ datasource db {
 enum ProfessionalStatus {
   DRAFT
   PENDING_REVIEW
+  CORRECTION_REQUIRED
   ACTIVE
   PAUSED
   SUSPENDED
@@ -841,41 +842,53 @@ model Professional {
   rejectReason     String?
 
   // Status e métricas
-  status              ProfessionalStatus @default(PENDING_REVIEW)
-  verified            Boolean            @default(false)
-  featured            Boolean            @default(false)
-  freeAccessStartedAt DateTime?
-  freeAccessEndsAt    DateTime?
-  accessGrandfathered Boolean            @default(true)
-  pauseStartedAt      DateTime?
-  pauseUntil          DateTime?
-  pauseReason         String?
-  boostActive         Boolean            @default(false)
-  boostStartedAt      DateTime?
-  boostUntil          DateTime?
-  boostSource         String?
-  activePlanId        String?
-  planPriority        Int                @default(0)
-  onlineVisible       Boolean            @default(true)
-  lastOnlineAt        DateTime?
-  profileViews        Int                @default(0)
-  contactClicks       Int                @default(0)
-  rating              Float              @default(0)
-  totalReviews        Int                @default(0)
-  totalAppointments   Int                @default(0)
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
+  status                         ProfessionalStatus @default(PENDING_REVIEW)
+  verified                       Boolean            @default(false)
+  featured                       Boolean            @default(false)
+  freeAccessStartedAt            DateTime?
+  freeAccessEndsAt               DateTime?
+  accessGrandfathered            Boolean            @default(true)
+  pauseStartedAt                 DateTime?
+  pauseUntil                     DateTime?
+  pauseReason                    String?
+  boostActive                    Boolean            @default(false)
+  boostStartedAt                 DateTime?
+  boostUntil                     DateTime?
+  boostSource                    String?
+  activePlanId                   String?
+  planPriority                   Int                @default(0)
+  onlineVisible                  Boolean            @default(true)
+  lastOnlineAt                   DateTime?
+  profileViews                   Int                @default(0)
+  contactClicks                  Int                @default(0)
+  rating                         Float              @default(0)
+  totalReviews                   Int                @default(0)
+  totalAppointments              Int                @default(0)
+  registrationSubmittedAt        DateTime?
+  completionRulesVersion         Int                @default(1)
+  currentServiceCity             String?
+  currentServiceState            String?
+  currentServiceNeighborhood     String?
+  additionalServiceNeighborhoods String[]           @default([])
+  locationUpdatedAt              DateTime?
+  locationVerificationStatus     String             @default("UNVERIFIED")
+  temporaryLocationFrom          DateTime?
+  temporaryLocationUntil         DateTime?
+  previousServiceLocation        Json?
+  createdAt                      DateTime           @default(now())
+  updatedAt                      DateTime           @updatedAt
 
-  user            User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  photos          ProfessionalPhoto[]
-  specialties     ProfessionalSpecialty[]
-  schedule        Schedule[]
-  appointments    Appointment[]
-  reviews         ProfessionalReview[]
-  reviewDisputes  ProfessionalReviewDispute[]
-  profileEvents   ProfessionalProfileEvent[]
-  favorites       Favorite[]
-  voucherSettings ProfessionalVoucherSettings?
+  user              User                           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photos            ProfessionalPhoto[]
+  specialties       ProfessionalSpecialty[]
+  schedule          Schedule[]
+  appointments      Appointment[]
+  reviews           ProfessionalReview[]
+  reviewDisputes    ProfessionalReviewDispute[]
+  profileEvents     ProfessionalProfileEvent[]
+  locationChanges   ProfessionalLocationChange[]
+  favorites         Favorite[]
+  voucherSettings   ProfessionalVoucherSettings?
   submissionReceipt ProfessionalSubmissionReceipt?
 
   @@index([status, featured, rating, totalReviews, createdAt])
@@ -886,21 +899,22 @@ model Professional {
   @@index([status, listingPhoneUntil])
   @@index([status, city])
   @@index([status, city, bairro])
+  @@index([currentServiceState, currentServiceCity])
   @@index([kycStatus])
   @@index([status, escortCategory])
   @@index([status, priceMin])
 }
 
 model ProfessionalSubmissionReceipt {
-  id             String   @id @default(cuid())
-  professionalId String   @unique
-  status         String   @default("PENDING")
-  attempts       Int      @default(0)
+  id             String    @id @default(cuid())
+  professionalId String    @unique
+  status         String    @default("PENDING")
+  attempts       Int       @default(0)
   providerId     String?
-  lastError      String?  @db.Text
+  lastError      String?   @db.Text
   sentAt         DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
 
@@ -1077,6 +1091,28 @@ model ProfessionalProfileEvent {
 
   @@index([professionalId, eventType, createdAt])
   @@index([createdAt])
+}
+
+model ProfessionalLocationChange {
+  id                 String    @id @default(cuid())
+  professionalId     String
+  fromCity           String?
+  fromState          String?
+  fromNeighborhood   String?
+  toCity             String
+  toState            String
+  toNeighborhood     String?
+  changeType         String
+  effectiveFrom      DateTime?
+  effectiveUntil     DateTime?
+  verificationStatus String    @default("VERIFIED")
+  riskReason         String?
+  createdAt          DateTime  @default(now())
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@index([professionalId, createdAt])
+  @@index([verificationStatus, createdAt])
 }
 
 model ProfessionalPhoto {

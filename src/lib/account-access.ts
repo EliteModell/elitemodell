@@ -32,6 +32,7 @@ export async function getCurrentAccountAccess() {
         select: {
           id: true,
           status: true,
+          kycStatus: true,
           rejectReason: true,
           accessGrandfathered: true,
           freeAccessStartedAt: true,
