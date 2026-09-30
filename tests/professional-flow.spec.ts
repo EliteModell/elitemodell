@@ -114,6 +114,16 @@ test.describe("Didit corrigida", () => {
     });
   });
 
+  test("Botão de avançar está presente", async ({ page }) => {
+    await page.addInitScript(() => {
+      const key = "elitemodell_professional_onboarding_v1";
+      const draft = JSON.parse(localStorage.getItem(key) || "{}");
+      localStorage.setItem(key, JSON.stringify({ ...draft, step: 0 }));
+    });
+    await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("button", { name: /Próximo|Continuar/ })).toBeVisible();
+  });
+
   test("mostra motivo de recusa e orienta correcao antes de repetir", async ({ page }) => {
     await page.route("**/api/didit/session", route => route.fulfill({ json: {
       available: true, sessionId: "test-session", status: "REJECTED", retryAllowed: true,
@@ -248,11 +258,6 @@ test.describe("Onboarding acompanhante — etapas UI", () => {
     const body = await page.textContent("body");
     const hasProgress = body?.includes("%") || body?.toLowerCase().includes("etapa") || body?.toLowerCase().includes("passo") || body?.toLowerCase().includes("step");
     expect(hasProgress).toBe(true);
-  });
-
-  test("Botão de avançar está presente", async ({ page }) => {
-    await gotoWithModelSession(page, "/profissional/novo");
-    await expect(page.getByRole("button", { name: /Próximo|Continuar/ })).toBeVisible();
   });
 
 });
