@@ -1,9 +1,13 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin-access";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
-import { getProfessionalBillingSettings, getProfessionalFreeTrialDays } from "@/lib/professional-access";
+import {
+  getProfessionalBillingSettings,
+  getProfessionalFreeTrialDays,
+  PROFESSIONAL_BILLING_SETTINGS_CACHE_TAG,
+} from "@/lib/professional-access";
 import { AdminHeader, AdminPanel, StatusPill, buttonStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +32,7 @@ async function updateProfessionalFreeTrial(formData: FormData) {
     changes: { previousDays, days },
     reason: "Prazo gratuito das novas profissionais atualizado.",
   });
+  updateTag(PROFESSIONAL_BILLING_SETTINGS_CACHE_TAG);
   revalidatePath("/admin/configuracoes");
 }
 

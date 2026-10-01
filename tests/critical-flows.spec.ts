@@ -22,8 +22,8 @@ const MOCK_CLIENT_SESSION = {
     clientStatus: "UNVERIFIED",
     isProfessional: false,
     needsConsent: false,
-    activeProfileType: "CLIENTE",
-    availableProfiles: ["CLIENTE"],
+    activeProfileType: "CLIENTE" as const,
+    availableProfiles: ["CLIENTE"] as Array<"CLIENTE" | "PROFESSIONAL" | "HOST">,
     adultVerified: true,
   },
   expires: new Date(Date.now() + 86_400_000).toISOString(),
@@ -556,6 +556,12 @@ test.describe("Fluxo público — Buscar prazer", () => {
 
   test("não carrega perfis antes de selecionar cidade", async ({ page }) => {
     await bypassAgeGate(page);
+    await installMockSessionCookie(page.context(), MOCK_CLIENT_SESSION.user);
+    await page.route("**/api/auth/session", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(MOCK_CLIENT_SESSION),
+    }));
     let professionalRequests = 0;
     await page.route("**/api/professionals**", (route) => {
       professionalRequests += 1;
@@ -588,6 +594,12 @@ test.describe("Fluxo público — Buscar prazer", () => {
 
   test("localização aproximada normaliza Itauna e libera a busca", async ({ page }) => {
     await bypassAgeGate(page);
+    await installMockSessionCookie(page.context(), MOCK_CLIENT_SESSION.user);
+    await page.route("**/api/auth/session", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(MOCK_CLIENT_SESSION),
+    }));
     await page.addInitScript(() => {
       Object.defineProperty(navigator, "geolocation", {
         configurable: true,
@@ -643,6 +655,7 @@ test.describe("Fluxo público — Buscar prazer", () => {
 test.describe("Perfil público mobile", () => {
   test("renderiza antes dos semelhantes e mantém selo separado do avatar", async ({ page }) => {
     await bypassAgeGate(page);
+    await installMockSessionCookie(page.context(), MOCK_CLIENT_SESSION.user);
     await page.setViewportSize({ width: 360, height: 800 });
     let similarRequestFinished = false;
 

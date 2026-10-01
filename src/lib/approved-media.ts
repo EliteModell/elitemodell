@@ -3,6 +3,7 @@ import "server-only";
 import { hasPublicStoragePath } from "@/lib/age-gate-policy";
 import { prisma } from "@/lib/prisma";
 import { controlledMediaAssetId } from "@/lib/public-professional-media";
+import { evaluateMediaPublicationGates } from "@/lib/media-security";
 
 export function controlledAssetId(value: string, requestUrl: string) {
   try {
@@ -46,15 +47,40 @@ export async function assertApprovedMediaUrls(input: {
 
   const assets = await prisma.uploadAsset.findMany({
     where: { id: { in: controlled.map((entry) => entry.id) } },
-    select: { id: true, userId: true, folder: true, status: true },
+    select: {
+      id: true,
+      userId: true,
+      folder: true,
+      status: true,
+      uploadCompletedAt: true,
+      malwareStatus: true,
+      moderationStatus: true,
+      ageIdentityStatus: true,
+      consentStatus: true,
+      adminReviewRequired: true,
+      adminReviewStatus: true,
+      takedownStatus: true,
+    },
   });
   const byId = new Map(assets.map((asset) => [asset.id, asset]));
   for (const entry of controlled) {
     const asset = byId.get(entry.id);
+    const gates = asset ? evaluateMediaPublicationGates({
+      uploadComplete: Boolean(asset.uploadCompletedAt),
+      malwareStatus: asset.malwareStatus,
+      moderationStatus: asset.moderationStatus,
+      ageIdentityStatus: asset.ageIdentityStatus,
+      consentStatus: asset.consentStatus,
+      adminReviewRequired: asset.adminReviewRequired,
+      adminReviewStatus: asset.adminReviewStatus,
+      takedownStatus: asset.takedownStatus,
+      ownerId: asset.userId,
+    }) : null;
     if (
       !asset ||
       asset.userId !== input.ownerId ||
       asset.status !== "APPROVED" ||
+      !gates?.publishable ||
       !input.allowedFolderPrefixes.some((prefix) => asset.folder.startsWith(prefix))
     ) {
       throw new Error("A midia informada esta pendente, rejeitada ou pertence a outra conta.");

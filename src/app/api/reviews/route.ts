@@ -6,8 +6,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { ageGateCacheHeaders } from "@/lib/age-gate-policy";
-import { publicCacheHeaders } from "@/lib/public-professional-profile";
-import { enforceRateLimit, sanitizeInput } from "@/lib/security";
+import { enforceRateLimitAsync, getClientIP, sanitizeInput } from "@/lib/security";
+import { authorizeAdultContentRequest } from "@/lib/adult-content-access";
 
 const createSchema = z.object({
   professionalId: z.string().cuid(),
@@ -17,6 +17,10 @@ const createSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  const limited = await enforceRateLimitAsync(`public-reviews:${getClientIP(req)}`, 180, 60 * 1000, "Muitas consultas de avaliações.");
+  if (limited) return limited;
+  const adultAccess = await authorizeAdultContentRequest();
+  if (!adultAccess.ok) return NextResponse.json({ error: adultAccess.error }, { status: adultAccess.status, headers: adultAccess.headers });
   const { searchParams } = new URL(req.url);
   const professionalId = searchParams.get("professionalId");
   if (!professionalId) {
@@ -53,14 +57,14 @@ export async function GET(req: NextRequest) {
     take: 50,
   });
 
-  return NextResponse.json(reviews, { headers: publicCacheHeaders() });
+  return NextResponse.json(reviews, { headers: ageGateCacheHeaders() });
 }
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
 
-  const limited = enforceRateLimit(`reviews:${session.user.id}`, 8, 60 * 60 * 1000, "Muitas avaliacoes em pouco tempo.");
+  const limited = await enforceRateLimitAsync(`reviews:${session.user.id}`, 8, 60 * 60 * 1000, "Muitas avaliacoes em pouco tempo.");
   if (limited) return limited;
 
   try {

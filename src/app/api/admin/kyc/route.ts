@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") ?? "PENDING_REVIEW";
+  const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit") ?? 50) || 50));
 
   const users = await prisma.user.findMany({
     where: { clientStatus: status as "UNVERIFIED" | "PENDING_REVIEW" | "VERIFIED" | "REJECTED" },
@@ -67,6 +68,7 @@ export async function GET(req: NextRequest) {
       createdAt: true,
     },
     orderBy: { kycSubmittedAt: "desc" },
+    take: limit,
   });
 
   return NextResponse.json(users);

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createPersonaInquiry, buildPersonaUrl, shouldUsePersonaProvider } from "@/lib/persona";
 import { KYC_LEGAL_KEYS, recordUserAcceptances } from "@/lib/legal-acceptance";
+import { enforceRateLimitAsync } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,8 @@ export async function POST(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
+  const limited = await enforceRateLimitAsync(`kyc-request:${session.user.id}`, 3, 60 * 60 * 1000, "Muitas tentativas de iniciar verificação.");
+  if (limited) return limited;
 
   const body = await req.json().catch(() => ({})) as { consentGiven?: boolean };
   if (!body.consentGiven) {

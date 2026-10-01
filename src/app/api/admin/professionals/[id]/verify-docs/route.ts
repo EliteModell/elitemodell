@@ -40,11 +40,23 @@ export async function POST(
     }
 
     let updated;
+    let changed = true;
 
     if (action === "APPROVE") {
-      updated = await prisma.$transaction(async (tx) => {
-        const accessData = await professionalApprovalAccessData(tx, professional);
-        return tx.professional.update({
+      const result = await prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`professional-approval:${professionalId}`}))`;
+        const current = await tx.professional.findUniqueOrThrow({ where: { id: professionalId } });
+        if (
+          current.status === "ACTIVE" &&
+          current.verified &&
+          current.docStatus === "APPROVED" &&
+          current.verifStatus === "APPROVED" &&
+          current.kycStatus === "APPROVED"
+        ) {
+          return { changed: false, professional: current };
+        }
+        const accessData = await professionalApprovalAccessData(tx, current);
+        const saved = await tx.professional.update({
           where: { id: professionalId },
           data: {
             docStatus: "APPROVED",
@@ -55,14 +67,19 @@ export async function POST(
             ...accessData,
           },
         });
+        return { changed: true, professional: saved };
       });
+      updated = result.professional;
+      changed = result.changed;
 
-      await logProfessionalApproved(
-        session.user.id,
-        professionalId,
-        "Documentos verificados",
-        getClientIP(req)
-      );
+      if (changed) {
+        await logProfessionalApproved(
+          session.user.id,
+          professionalId,
+          "Documentos verificados",
+          getClientIP(req)
+        );
+      }
     } else {
       updated = await prisma.professional.update({
         where: { id: professionalId },
@@ -83,7 +100,7 @@ export async function POST(
       );
     }
 
-    return NextResponse.json(updated);
+    return NextResponse.json({ ...updated, idempotentReplay: !changed });
   } catch (error: unknown) {
     console.error("[VERIFY DOCS ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

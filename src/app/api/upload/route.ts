@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { KYC_LEGAL_KEYS, PUBLICATION_LEGAL_KEYS, recordUserAcceptances } from "@/lib/legal-acceptance";
 import { requiresContentAuthorizationDeclaration } from "@/lib/legal-document-catalog";
 import { processUploadAsset, quarantineUpload } from "@/lib/upload-quarantine";
+import { isAgeOfMajority } from "@/lib/age-validation";
 
 // Tipos MIME permitidos por contexto. Alguns celulares enviam fotos validas com
 // MIME vazio ou application/octet-stream; nesses casos a assinatura binaria decide.
@@ -147,6 +148,43 @@ export async function POST(req: NextRequest) {
   const file = formData.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "Nenhum arquivo enviado." }, { status: 400 });
 
+  const contentRatingInput = String(formData.get("contentRating") ?? "STANDARD").toUpperCase();
+  const contentRating = (["STANDARD", "ADULT_SUGGESTIVE", "ADULT_EXPLICIT"] as const)
+    .find((value) => value === contentRatingInput) ?? "STANDARD";
+  const adultContent = contentRating !== "STANDARD";
+  const depictedPeopleMode = String(formData.get("depictedPeopleMode") ?? "SELF_ONLY").toUpperCase();
+  if (depictedPeopleMode !== "SELF_ONLY") {
+    return NextResponse.json(
+      { error: "Conteudo com outra pessoa permanece em quarentena ate verificacao individual de idade e consentimento." },
+      { status: 409 },
+    );
+  }
+
+  const owner = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      birthDate: true,
+      clientStatus: true,
+      kycSessionId: true,
+      professional: { select: { verified: true, kycStatus: true, kycSessionId: true } },
+    },
+  });
+  const birthDate = owner?.birthDate?.toISOString().slice(0, 10) ?? "";
+  const ownerIsAdult = Boolean(birthDate && isAgeOfMajority(birthDate));
+  const identityApproved = Boolean(
+    ownerIsAdult && (
+      owner?.clientStatus === "VERIFIED" ||
+      (owner?.professional?.verified && owner.professional.kycStatus === "APPROVED") ||
+      session.user.role === "ADMIN"
+    ),
+  );
+  if (adultContent && !identityApproved) {
+    return NextResponse.json(
+      { error: "Conteudo adulto exige identidade e maioridade aprovadas antes do upload." },
+      { status: 403 },
+    );
+  }
+
   const { isPrivate, maxBytes, allowedTypes } = resolveBucket(folder);
 
   const detectedKind = await detectFileKind(file);
@@ -201,6 +239,24 @@ export async function POST(req: NextRequest) {
       detectedMimeType: effectiveMime,
       extension: ext,
       buffer,
+      contentRating,
+      visibility: isPrivate
+        ? "PRIVATE"
+        : String(formData.get("visibility") ?? "PUBLIC").toUpperCase() === "SUBSCRIBERS"
+          ? "SUBSCRIBERS"
+          : "PUBLIC",
+      ageIdentityStatus: ownerIsAdult && (!adultContent || identityApproved) ? "PASS" : "PENDING",
+      consentStatus: contentDeclarationAccepted || isPrivate ? "PASS" : "PENDING",
+      adminReviewRequired: adultContent,
+      depictedPeople: [{
+        personReference: `user:${session.user.id}`,
+        isUploader: true,
+        isContentOwner: true,
+        ageStatus: ownerIsAdult && (!adultContent || identityApproved) ? "PASS" : "PENDING",
+        consentStatus: contentDeclarationAccepted || isPrivate ? "PASS" : "PENDING",
+        ageVerificationReference: owner?.professional?.kycSessionId ?? owner?.kycSessionId ?? null,
+        consentReference: contentDeclarationAccepted ? "content-authorization-declaration:0.4-ready-for-legal-review" : null,
+      }],
     });
     const processed = await processUploadAsset(quarantined.id, buffer);
     const type = detectedKind.category === "video" ? "video" : "image";

@@ -2,13 +2,11 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import type { Prisma } from "@prisma/client";
+import { evaluateMediaPublicationGates } from "@/lib/media-security";
+import { getMediaStorageProvider, type MediaStorageName } from "@/lib/media-storage";
+import { moderateFileContent, scanFileForVirus, type SecurityResult } from "@/lib/moderation";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import {
-  moderateFileContent,
-  scanFileForVirus,
-  type SecurityResult,
-} from "@/lib/moderation";
 
 const DEFAULT_QUARANTINE_BUCKET = "upload-quarantine";
 const DEFAULT_APPROVED_BUCKET = "approved-media";
@@ -25,6 +23,21 @@ type QuarantineInput = {
   detectedMimeType: string;
   extension: string;
   buffer: Buffer;
+  contentRating: "STANDARD" | "ADULT_SUGGESTIVE" | "ADULT_EXPLICIT";
+  visibility: "PUBLIC" | "PRIVATE" | "SUBSCRIBERS";
+  ageIdentityStatus: "PASS" | "PENDING";
+  consentStatus: "PASS" | "PENDING";
+  adminReviewRequired: boolean;
+  depictedPeople: Array<{
+    personReference: string;
+    relationship?: string;
+    isUploader: boolean;
+    isContentOwner: boolean;
+    ageStatus: "PASS" | "PENDING";
+    consentStatus: "PASS" | "PENDING";
+    ageVerificationReference?: string | null;
+    consentReference?: string | null;
+  }>;
 };
 
 function safeResult(result: SecurityResult): Prisma.InputJsonObject {
@@ -44,9 +57,7 @@ async function ensurePrivateBucket(bucket: string) {
       const supabase = createSupabaseServerClient();
       const { data, error } = await supabase.storage.getBucket(bucket);
       if (data) {
-        if (data.public) {
-          throw new Error(`Bucket ${bucket} precisa ser privado.`);
-        }
+        if (data.public) throw new Error(`Bucket ${bucket} precisa ser privado.`);
         return;
       }
       if (error && !/not found|does not exist/i.test(error.message)) {
@@ -67,12 +78,7 @@ async function ensurePrivateBucket(bucket: string) {
   }
 }
 
-async function auditAsset(
-  actorId: string | null,
-  assetId: string,
-  reason: string,
-  changes: Record<string, unknown>,
-) {
+async function auditAsset(actorId: string | null, assetId: string, reason: string, changes: Record<string, unknown>) {
   await prisma.auditLog.create({
     data: {
       adminId: actorId,
@@ -83,23 +89,51 @@ async function auditAsset(
       reason,
       changes: JSON.parse(JSON.stringify(changes)),
     },
-  }).catch((cause) => {
-    console.error("[upload-security] falha de auditoria", cause);
-  });
+  }).catch((cause) => console.error("[upload-security] falha de auditoria", cause));
 }
 
-async function downloadQuarantinedAsset(asset: {
+type StoredAsset = {
+  storageProvider?: string | null;
   quarantineBucket: string;
   quarantinePath: string;
-}) {
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase.storage
-    .from(asset.quarantineBucket)
-    .download(asset.quarantinePath);
-  if (error || !data) {
-    throw new Error(error?.message || "Arquivo de quarentena nao encontrado.");
+  approvedBucket?: string | null;
+  approvedPath?: string | null;
+};
+
+async function downloadAssetForProcessing(asset: StoredAsset) {
+  const provider = getMediaStorageProvider((asset.storageProvider || "SUPABASE") as MediaStorageName);
+  try {
+    return await provider.download(asset.quarantineBucket, asset.quarantinePath);
+  } catch (quarantineError) {
+    if (asset.approvedBucket && asset.approvedPath) {
+      return provider.download(asset.approvedBucket, asset.approvedPath);
+    }
+    throw quarantineError;
   }
-  return Buffer.from(await data.arrayBuffer());
+}
+
+function publicationGate(asset: {
+  userId: string;
+  uploadCompletedAt: Date | null;
+  malwareStatus: string;
+  moderationStatus: string;
+  ageIdentityStatus: string;
+  consentStatus: string;
+  adminReviewRequired: boolean;
+  adminReviewStatus: string;
+  takedownStatus: string;
+}) {
+  return evaluateMediaPublicationGates({
+    uploadComplete: Boolean(asset.uploadCompletedAt),
+    malwareStatus: asset.malwareStatus,
+    moderationStatus: asset.moderationStatus,
+    ageIdentityStatus: asset.ageIdentityStatus,
+    consentStatus: asset.consentStatus,
+    adminReviewRequired: asset.adminReviewRequired,
+    adminReviewStatus: asset.adminReviewStatus,
+    takedownStatus: asset.takedownStatus,
+    ownerId: asset.userId,
+  });
 }
 
 async function promoteAsset(
@@ -109,26 +143,24 @@ async function promoteAsset(
     folder: string;
     extension: string;
     detectedMimeType: string;
+    storageProvider?: string | null;
     quarantineBucket: string;
     quarantinePath: string;
+    approvedBucket?: string | null;
+    approvedPath?: string | null;
   },
   buffer?: Buffer,
 ) {
-  const approvedBucket =
-    process.env.APPROVED_MEDIA_BUCKET?.trim() || DEFAULT_APPROVED_BUCKET;
+  const current = await prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
+  const gates = publicationGate(current);
+  if (!gates.publishable) throw new Error(`Publicacao bloqueada pelos gates: ${gates.blockers.join(", ")}.`);
+
+  const approvedBucket = process.env.APPROVED_MEDIA_BUCKET?.trim() || DEFAULT_APPROVED_BUCKET;
   await ensurePrivateBucket(approvedBucket);
-  const contents = buffer ?? await downloadQuarantinedAsset(asset);
+  const contents = buffer ?? await downloadAssetForProcessing(asset);
   const approvedPath = `${asset.folder}/${asset.userId}/${asset.id}.${asset.extension}`;
-  const supabase = createSupabaseServerClient();
-  const uploaded = await supabase.storage
-    .from(approvedBucket)
-    .upload(approvedPath, contents, {
-      contentType: asset.detectedMimeType,
-      upsert: false,
-    });
-  if (uploaded.error && !/already exists|duplicate/i.test(uploaded.error.message)) {
-    throw new Error(`Falha ao promover arquivo aprovado: ${uploaded.error.message}`);
-  }
+  const provider = getMediaStorageProvider((asset.storageProvider || "SUPABASE") as MediaStorageName);
+  await provider.upload({ bucket: approvedBucket, path: approvedPath, contents, contentType: asset.detectedMimeType, overwrite: false });
 
   const controlledUrl = `/api/media/${asset.id}`;
   await prisma.uploadAsset.update({
@@ -138,37 +170,24 @@ async function promoteAsset(
       approvedBucket,
       approvedPath,
       controlledUrl,
+      storageProvider: provider.name,
       approvedAt: new Date(),
       failureReason: null,
       lastProcessedAt: new Date(),
     },
   });
-  await supabase.storage
-    .from(asset.quarantineBucket)
-    .remove([asset.quarantinePath])
-    .catch(() => undefined);
+  await provider.delete(asset.quarantineBucket, asset.quarantinePath).catch(() => undefined);
   return controlledUrl;
 }
 
 export async function quarantineUpload(input: QuarantineInput) {
-  const quarantineBucket =
-    process.env.UPLOAD_QUARANTINE_BUCKET?.trim() || DEFAULT_QUARANTINE_BUCKET;
+  const quarantineBucket = process.env.UPLOAD_QUARANTINE_BUCKET?.trim() || DEFAULT_QUARANTINE_BUCKET;
   await ensurePrivateBucket(quarantineBucket);
-
   const id = globalThis.crypto.randomUUID();
   const fileHash = createHash("sha256").update(input.buffer).digest("hex");
-  const quarantinePath =
-    `${input.userId}/${new Date().toISOString().slice(0, 10)}/${id}.${input.extension}`;
-  const supabase = createSupabaseServerClient();
-  const uploaded = await supabase.storage
-    .from(quarantineBucket)
-    .upload(quarantinePath, input.buffer, {
-      contentType: input.detectedMimeType,
-      upsert: false,
-    });
-  if (uploaded.error) {
-    throw new Error(`Falha ao salvar arquivo em quarentena: ${uploaded.error.message}`);
-  }
+  const quarantinePath = `${input.userId}/${new Date().toISOString().slice(0, 10)}/${id}.${input.extension}`;
+  const provider = getMediaStorageProvider("SUPABASE");
+  await provider.upload({ bucket: quarantineBucket, path: quarantinePath, contents: input.buffer, contentType: input.detectedMimeType, overwrite: false });
 
   try {
     const asset = await prisma.uploadAsset.create({
@@ -185,6 +204,20 @@ export async function quarantineUpload(input: QuarantineInput) {
         fileHash,
         quarantineBucket,
         quarantinePath,
+        storageProvider: provider.name,
+        uploadCompletedAt: new Date(),
+        contentRating: input.contentRating,
+        visibility: input.visibility,
+        ageIdentityStatus: input.ageIdentityStatus,
+        consentStatus: input.consentStatus,
+        adminReviewRequired: input.adminReviewRequired,
+        adminReviewStatus: input.adminReviewRequired ? "PENDING" : "NOT_REQUIRED",
+        depictedPeople: {
+          create: input.depictedPeople.map((person) => ({
+            ...person,
+            verificationDate: person.ageStatus === "PASS" && person.consentStatus === "PASS" ? new Date() : null,
+          })),
+        },
       },
     });
     await auditAsset(input.userId, asset.id, "Arquivo recebido em quarentena.", {
@@ -193,41 +226,38 @@ export async function quarantineUpload(input: QuarantineInput) {
       folder: asset.folder,
       sizeBytes: asset.sizeBytes,
       fileHash,
+      contentRating: input.contentRating,
+      visibility: input.visibility,
     });
     return asset;
   } catch (cause) {
-    await supabase.storage.from(quarantineBucket).remove([quarantinePath]).catch(() => undefined);
+    await provider.delete(quarantineBucket, quarantinePath).catch(() => undefined);
     throw cause;
   }
 }
 
 export async function processUploadAsset(assetId: string, suppliedBuffer?: Buffer) {
-  const asset = await prisma.uploadAsset.findUnique({ where: { id: assetId } });
+  let asset = await prisma.uploadAsset.findUnique({ where: { id: assetId } });
   if (!asset) throw new Error("Ativo de upload nao encontrado.");
-  if (asset.status === "APPROVED" || asset.status === "REJECTED") return asset;
+  if (asset.status === "REJECTED") return asset;
+  if (asset.status === "APPROVED" && publicationGate(asset).publishable) return asset;
+  if (asset.status === "APPROVED") {
+    asset = await prisma.uploadAsset.update({
+      where: { id: asset.id },
+      data: { status: "QUARANTINED", approvedAt: null, failureReason: "Fail-closed: gates obrigatorios incompletos." },
+    });
+  }
 
   const settings = await prisma.platformSettings.findUnique({
     where: { id: "default" },
-    select: {
-      uploadSecurityEnabled: true,
-      uploadAvProvider: true,
-      uploadModerationProvider: true,
-    },
+    select: { uploadSecurityEnabled: true, uploadAvProvider: true, uploadModerationProvider: true },
   });
-  const buffer = suppliedBuffer ?? await downloadQuarantinedAsset(asset);
-  const avProvider = settings?.uploadSecurityEnabled === false
-    ? "MANUAL"
-    : settings?.uploadAvProvider;
-  const moderationProvider = settings?.uploadSecurityEnabled === false
-    ? "MANUAL"
-    : settings?.uploadModerationProvider;
+  const buffer = suppliedBuffer ?? await downloadAssetForProcessing(asset);
+  const avProvider = settings?.uploadSecurityEnabled === false ? "MANUAL" : settings?.uploadAvProvider;
+  const moderationProvider = settings?.uploadSecurityEnabled === false ? "MANUAL" : settings?.uploadModerationProvider;
 
-  const malware = await scanFileForVirus(
-    buffer,
-    asset.originalName,
-    asset.detectedMimeType,
-    { provider: avProvider },
-  );
+  const malware = await scanFileForVirus(buffer, asset.originalName, asset.detectedMimeType, { provider: avProvider });
+  const malwarePassed = malware.status === "CLEAN" || malware.status === "APPROVED";
   const malwareRejected = malware.status === "INFECTED" || malware.status === "REJECTED";
   await prisma.uploadAsset.update({
     where: { id: asset.id },
@@ -238,36 +268,21 @@ export async function processUploadAsset(assetId: string, suppliedBuffer?: Buffe
       malwareResult: safeResult(malware),
       scanAttempts: { increment: 1 },
       lastProcessedAt: new Date(),
-      // PENDING/ERROR = provedor não configurado ou indisponível; não bloqueia o upload
-      status: malwareRejected ? "REJECTED" : "PENDING_MODERATION",
+      status: malwareRejected ? "REJECTED" : malwarePassed ? "PENDING_MODERATION" : "QUARANTINED",
       rejectedAt: malwareRejected ? new Date() : undefined,
-      failureReason: malwareRejected ? malware.reason : null,
+      failureReason: malwarePassed ? null : malware.reason || "Varredura antimalware nao concluiu com PASS.",
     },
   });
-  if (malwareRejected) {
-    await auditAsset(null, asset.id, "Resultado da varredura antimalware.", {
-      malware: safeResult(malware),
-    });
+  if (!malwarePassed) {
+    await auditAsset(null, asset.id, "Resultado da varredura antimalware.", { malware: safeResult(malware), failClosed: !malwareRejected });
     return prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
   }
 
-  const privateIdentityMaterial =
-    asset.category === "document" ||
-    asset.folder.startsWith("documentos") ||
-    asset.folder.startsWith("verificacao");
-  const moderation = privateIdentityMaterial
-    ? {
-        safe: true,
-        status: "APPROVED" as const,
-        provider: "DOCUMENT_PRIVATE",
-        reason: "Documento privado nao passa por moderacao visual publica.",
-      }
-    : await moderateFileContent(
-        buffer,
-        asset.originalName,
-        asset.detectedMimeType,
-        { provider: moderationProvider },
-      );
+  const privateIdentityMaterial = asset.category === "document" || asset.folder.startsWith("documentos") || asset.folder.startsWith("verificacao");
+  const moderation: SecurityResult = privateIdentityMaterial
+    ? { safe: true, status: "APPROVED", provider: "DOCUMENT_PRIVATE", reason: "Documento privado fora de publicacao visual." }
+    : await moderateFileContent(buffer, asset.originalName, asset.detectedMimeType, { provider: moderationProvider });
+  const moderationPassed = moderation.status === "APPROVED";
   const moderationRejected = moderation.status === "REJECTED";
   await prisma.uploadAsset.update({
     where: { id: asset.id },
@@ -278,20 +293,32 @@ export async function processUploadAsset(assetId: string, suppliedBuffer?: Buffe
       moderationResult: safeResult(moderation),
       moderationAttempts: { increment: 1 },
       lastProcessedAt: new Date(),
-      // PENDING = revisão manual pendente; promove o arquivo e marca para revisão posterior
-      status: moderationRejected ? "REJECTED" : "PROCESSING",
+      status: moderationRejected ? "REJECTED" : moderationPassed ? "PROCESSING" : "QUARANTINED",
       rejectedAt: moderationRejected ? new Date() : undefined,
-      failureReason: moderationRejected ? moderation.reason : null,
+      failureReason: moderationPassed ? null : moderation.reason || "Moderacao nao concluiu com PASS.",
     },
   });
-  if (moderationRejected) {
-    await auditAsset(null, asset.id, "Resultado da moderacao de conteudo.", {
-      moderation: safeResult(moderation),
-    });
+  if (!moderationPassed) {
+    await auditAsset(null, asset.id, "Resultado da moderacao de conteudo.", { moderation: safeResult(moderation), failClosed: !moderationRejected });
     return prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
   }
 
-  await promoteAsset(asset, buffer);
+  const ready = await prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
+  const gates = publicationGate(ready);
+  if (!gates.publishable) {
+    const onlyAdminReview = gates.blockers.length === 1 && gates.blockers[0] === "ADMIN_REVIEW";
+    await prisma.uploadAsset.update({
+      where: { id: asset.id },
+      data: {
+        status: ready.adminReviewRequired && onlyAdminReview ? "PENDING_REVIEW" : "QUARANTINED",
+        failureReason: `Gates pendentes: ${gates.blockers.join(", ")}.`,
+      },
+    });
+    await auditAsset(null, asset.id, "Arquivo mantido em quarentena por gates obrigatorios.", { blockers: gates.blockers });
+    return prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
+  }
+
+  await promoteAsset(ready, buffer);
   await auditAsset(null, asset.id, "Arquivo aprovado e promovido para armazenamento privado.", {
     malware: safeResult(malware),
     moderation: safeResult(moderation),
@@ -299,24 +326,25 @@ export async function processUploadAsset(assetId: string, suppliedBuffer?: Buffe
   return prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
 }
 
-export async function approveUploadAsset(
-  assetId: string,
-  reviewerId: string,
-  reason: string,
-) {
+export async function approveUploadAsset(assetId: string, reviewerId: string, reason: string) {
   const asset = await prisma.uploadAsset.findUniqueOrThrow({ where: { id: assetId } });
   if (asset.malwareStatus !== "CLEAN" && asset.malwareStatus !== "APPROVED") {
     throw new Error("Aprovacao humana exige varredura antimalware limpa.");
   }
-  if (asset.status === "APPROVED") return asset;
+  if (asset.ageIdentityStatus !== "PASS" || asset.consentStatus !== "PASS") {
+    throw new Error("Aprovacao humana exige identidade, maioridade e consentimento validados.");
+  }
+  if (asset.takedownStatus !== "CLEAR") throw new Error("Ativo sob takedown nao pode ser aprovado.");
+  if (asset.status === "APPROVED" && publicationGate(asset).publishable) return asset;
 
-  await prisma.uploadAsset.update({
+  const reviewed = await prisma.uploadAsset.update({
     where: { id: asset.id },
     data: {
       moderationStatus: "APPROVED",
       moderationProvider: "MANUAL",
-      moderationProviderVersion: "human-review-v1",
+      moderationProviderVersion: "human-review-v2",
       moderationResult: { status: "APPROVED", reason },
+      adminReviewStatus: "PASS",
       reviewedById: reviewerId,
       reviewReason: reason,
       status: "PROCESSING",
@@ -324,24 +352,21 @@ export async function approveUploadAsset(
       lastProcessedAt: new Date(),
     },
   });
-  await promoteAsset(asset);
+  await promoteAsset(reviewed);
   await auditAsset(reviewerId, asset.id, "Conteudo aprovado em revisao humana.", { reason });
   return prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
 }
 
-export async function rejectUploadAsset(
-  assetId: string,
-  reviewerId: string,
-  reason: string,
-) {
+export async function rejectUploadAsset(assetId: string, reviewerId: string, reason: string) {
   const asset = await prisma.uploadAsset.update({
     where: { id: assetId },
     data: {
       status: "REJECTED",
       moderationStatus: "REJECTED",
       moderationProvider: "MANUAL",
-      moderationProviderVersion: "human-review-v1",
+      moderationProviderVersion: "human-review-v2",
       moderationResult: { status: "REJECTED", reason },
+      adminReviewStatus: "REJECTED",
       reviewedById: reviewerId,
       reviewReason: reason,
       failureReason: reason,

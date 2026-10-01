@@ -24,6 +24,21 @@ function loadSentryClient() {
       enabled: true,
       environment: process.env.NODE_ENV,
       tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1,
+      sendDefaultPii: false,
+      beforeSend(event) {
+        event.user = undefined;
+        if (event.request) {
+          event.request.data = undefined;
+          event.request.query_string = undefined;
+          event.request.headers = undefined;
+          event.request.cookies = undefined;
+        }
+        event.extra = undefined;
+        return event;
+      },
+      beforeBreadcrumb(breadcrumb) {
+        return breadcrumb.category === "console" ? null : breadcrumb;
+      },
       ignoreErrors: [
         "AbortError",
         "NetworkError",

@@ -127,24 +127,11 @@ export async function ensureProfileForIntent(userId: string, intent: EntryAccoun
       select: { id: true, name: true, email: true, category: true },
     });
 
-    const existing = await tx.professional.findUnique({
-      where: { userId },
-      select: { id: true },
-    });
-
-    if (existing) {
-      await tx.professional.update({
-        where: { userId },
-        data: { escortCategory: normalizedCategory },
-        select: { id: true },
-      });
-      return;
-    }
-
     const displayName = user.name?.trim() || "Perfil em cadastro";
     const slug = await uniqueDraftProfessionalSlug(tx, userId, `${displayName}-${user.email ?? userId.slice(-8)}`);
-    await tx.professional.create({
-      data: {
+    await tx.professional.upsert({
+      where: { userId },
+      create: {
         userId,
         slug,
         displayName,
@@ -165,6 +152,7 @@ export async function ensureProfileForIntent(userId: string, intent: EntryAccoun
         fetishes: [],
         galleryUrls: [],
       },
+      update: { escortCategory: normalizedCategory },
       select: { id: true },
     });
   });

@@ -7,7 +7,10 @@ import {
   decryptMfaSecret,
   encryptMfaSecret,
   generateMfaSecret,
+  generateAdminRecoveryCode,
+  hashAdminRecoveryCode,
   mfaOtpAuthUri,
+  verifyAdminRecoveryCode,
   verifyTotp,
 } from "@/lib/admin-mfa";
 import { logAudit } from "@/lib/audit";
@@ -17,7 +20,7 @@ export const dynamic = "force-dynamic";
 async function verifyMfa(formData: FormData) {
   "use server";
   const { session } = await requireAdminIdentity("dashboard:view");
-  const code = String(formData.get("code") ?? "").replace(/\D/g, "");
+  const submittedCode = String(formData.get("code") ?? "").trim();
   const enrollment = await prisma.adminMfaEnrollment.findUnique({
     where: { userId: session.user.id },
   });
@@ -27,7 +30,9 @@ async function verifyMfa(formData: FormData) {
     || undefined;
   const userAgent = requestHeaders.get("user-agent") ?? undefined;
 
-  if (!enrollment || !verifyTotp(decryptMfaSecret(enrollment.encryptedSecret), code)) {
+  const validTotp = Boolean(enrollment && verifyTotp(decryptMfaSecret(enrollment.encryptedSecret), submittedCode.replace(/\D/g, "")));
+  const validRecovery = Boolean(enrollment && verifyAdminRecoveryCode(enrollment.recoveryCodeHash, submittedCode));
+  if (!enrollment || (!validTotp && !validRecovery)) {
     await logAudit({
       adminId: session.user.id,
       action: "ADMIN_ACCESS",
@@ -42,7 +47,11 @@ async function verifyMfa(formData: FormData) {
 
   await prisma.adminMfaEnrollment.update({
     where: { userId: session.user.id },
-    data: { verifiedAt: enrollment.verifiedAt ?? new Date(), disabledAt: null },
+    data: {
+      verifiedAt: enrollment.verifiedAt ?? new Date(),
+      disabledAt: null,
+      recoveryCodeHash: validRecovery ? null : enrollment.recoveryCodeHash,
+    },
   });
   await createAdminMfaSession(session.user.id, ipAddress, userAgent);
   await logAudit({
@@ -50,7 +59,9 @@ async function verifyMfa(formData: FormData) {
     action: "ADMIN_ACCESS",
     targetType: "SYSTEM",
     targetId: "mfa",
-    reason: enrollment.verifiedAt ? "MFA administrativo validado" : "MFA administrativo ativado",
+    reason: validRecovery
+      ? "Acesso administrativo recuperado com codigo de uso unico"
+      : enrollment.verifiedAt ? "MFA administrativo validado" : "MFA administrativo ativado",
     ipAddress,
     userAgent,
   });
@@ -66,17 +77,30 @@ export default async function AdminMfaPage({
   let enrollment = await prisma.adminMfaEnrollment.findUnique({
     where: { userId: session.user.id },
   });
+  let recoveryCode: string | null = null;
 
   if (!enrollment || enrollment.disabledAt) {
     const secret = generateMfaSecret();
+    recoveryCode = generateAdminRecoveryCode();
     enrollment = await prisma.adminMfaEnrollment.upsert({
       where: { userId: session.user.id },
-      create: { userId: session.user.id, encryptedSecret: encryptMfaSecret(secret) },
+      create: {
+        userId: session.user.id,
+        encryptedSecret: encryptMfaSecret(secret),
+        recoveryCodeHash: hashAdminRecoveryCode(recoveryCode),
+      },
       update: {
         encryptedSecret: encryptMfaSecret(secret),
+        recoveryCodeHash: hashAdminRecoveryCode(recoveryCode),
         verifiedAt: null,
         disabledAt: null,
       },
+    });
+  } else if (!enrollment.verifiedAt && !enrollment.recoveryCodeHash) {
+    recoveryCode = generateAdminRecoveryCode();
+    enrollment = await prisma.adminMfaEnrollment.update({
+      where: { userId: session.user.id },
+      data: { recoveryCodeHash: hashAdminRecoveryCode(recoveryCode) },
     });
   }
 
@@ -103,6 +127,13 @@ export default async function AdminMfaPage({
               <summary>URI para configuracao</summary>
               <code style={{ display: "block", marginTop: 8, overflowWrap: "anywhere", fontSize: 11 }}>{uri}</code>
             </details>
+            {recoveryCode ? (
+              <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,.12)" }}>
+                <strong>Codigo de recuperacao de uso unico</strong>
+                <code style={{ display: "block", marginTop: 10, color: "#fbbf24", overflowWrap: "anywhere", fontSize: 14 }}>{recoveryCode}</code>
+                <p style={{ color: "#b8b1a6", fontSize: 12, lineHeight: 1.5 }}>Guarde em um gerenciador de senhas. O valor nao sera exibido novamente.</p>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -111,10 +142,9 @@ export default async function AdminMfaPage({
           <input
             id="code"
             name="code"
-            inputMode="numeric"
+                inputMode="text"
             autoComplete="one-time-code"
-            pattern="[0-9]{6}"
-            maxLength={6}
+            maxLength={40}
             required
             style={{ minHeight: 52, borderRadius: 8, border: "1px solid rgba(183, 44, 255,.34)", background: "#050506", color: "#fff", padding: "0 14px", fontSize: 22, letterSpacing: 0 }}
           />

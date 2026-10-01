@@ -161,80 +161,79 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Você deve aceitar os Termos de Uso e a Política de Privacidade." }, { status: 400 });
     }
 
-    if (existing) {
-      const user = await prisma.user.update({
-        where: { id: existing.id },
-        data: {
-          name: existing.name ?? (authUser.user_metadata?.name as string | undefined) ?? null,
-          image: existing.image ?? (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
-          phone: existing.phone ?? phone ?? null,
-          accountType: targetAccountType === "client" ? existing.accountType : targetAccountType,
-          role: existing.role === "ADMIN" ? "ADMIN" : targetAccountType === "model" ? "HOST" : existing.role,
-          category: targetAccountType === "model" ? category ?? existing.category : existing.category,
-          birthDate: birthDate ? new Date(birthDate) : existing.birthDate,
-          lgpdConsent: existing.lgpdConsent || lgpdConsent,
-          termsConsent: existing.termsConsent || termsConsent,
-          consentDate: existing.consentDate ?? new Date(),
-          ...(pendingProfessionalPhone
-            ? {
-                phone: pendingProfessionalPhone.phone,
-                phoneVerified: true,
-                phoneVerifiedAt: new Date(),
-              }
-            : {}),
-        },
-        select: { id: true, name: true, email: true, role: true, accountType: true },
-      });
-
-      await ensureProfileForIntent(user.id, profileIntent, category);
-      await recordUserAcceptances({
-        userId: user.id,
-        userCategory: user.accountType,
-        documentKeys: registrationDocumentKeys(user.accountType),
-        source: "auth-register",
-        acceptanceType: "REGISTRATION",
-        req,
-      });
-      await recordConsentPreference({
-        userId: user.id,
-        purpose: "PRIVACY_POLICY",
-        granted: true,
-        source: "auth-register",
-        req,
-      });
-      const response = NextResponse.json(user, { status: 200 });
-      if (pendingProfessionalPhone) clearPendingProfessionalPhoneCookie(response);
-      return response;
-    }
-
-    if (!birthDate) {
+    if (!birthDate && !existing?.birthDate) {
       return NextResponse.json({ error: "Você deve ter 18 anos ou mais para se registrar." }, { status: 400 });
     }
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name: (authUser.user_metadata?.name as string | undefined) ?? authUser.email ?? phone ?? null,
-        image: (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
-        phone: phone ?? null,
-        role: legacyRoleFor(accountType),
-        accountType: targetAccountType,
-        category: targetAccountType === "model" ? category ?? null : null,
-        birthDate: new Date(birthDate),
-        lgpdConsent,
-        termsConsent,
-        consentDate: new Date(),
-        ...(pendingProfessionalPhone
-          ? {
-              phone: pendingProfessionalPhone.phone,
-              phoneVerified: true,
-              phoneVerifiedAt: new Date(),
-            }
-          : {}),
-        clientProfile: { create: {} },
-      },
-      select: { id: true, name: true, email: true, role: true, accountType: true },
-    });
+    // O find inicial serve às validações. A decisão create/update é refeita sob
+    // lock para que double-click/retry não se transforme em P2002/HTTP 500.
+    const identityKey = pendingProfessionalPhone?.phone ?? email.toLowerCase();
+    const { user, created } = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`registration:${identityKey}`}))`;
+      const lockedExisting = await tx.user.findUnique({ where: { email } });
+
+      if (pendingProfessionalPhone) {
+        const phoneOwner = await tx.user.findFirst({
+          where: {
+            phone: pendingProfessionalPhone.phone,
+            ...(lockedExisting ? { id: { not: lockedExisting.id } } : {}),
+          },
+          select: { id: true },
+        });
+        if (phoneOwner) {
+          throw new ProfessionalPhoneRegistrationError("Este telefone já está vinculado a outra conta.");
+        }
+      }
+
+      if (lockedExisting) {
+        return {
+          created: false,
+          user: await tx.user.update({
+            where: { id: lockedExisting.id },
+            data: {
+              name: lockedExisting.name ?? (authUser.user_metadata?.name as string | undefined) ?? null,
+              image: lockedExisting.image ?? (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
+              phone: lockedExisting.phone ?? phone ?? null,
+              accountType: targetAccountType === "client" ? lockedExisting.accountType : targetAccountType,
+              role: lockedExisting.role === "ADMIN" ? "ADMIN" : targetAccountType === "model" ? "HOST" : lockedExisting.role,
+              category: targetAccountType === "model" ? category ?? lockedExisting.category : lockedExisting.category,
+              birthDate: birthDate ? new Date(birthDate) : lockedExisting.birthDate,
+              lgpdConsent: lockedExisting.lgpdConsent || lgpdConsent,
+              termsConsent: lockedExisting.termsConsent || termsConsent,
+              consentDate: lockedExisting.consentDate ?? new Date(),
+              ...(pendingProfessionalPhone
+                ? { phone: pendingProfessionalPhone.phone, phoneVerified: true, phoneVerifiedAt: new Date() }
+                : {}),
+            },
+            select: { id: true, name: true, email: true, role: true, accountType: true },
+          }),
+        };
+      }
+
+      return {
+        created: true,
+        user: await tx.user.create({
+          data: {
+            email,
+            name: (authUser.user_metadata?.name as string | undefined) ?? authUser.email ?? phone ?? null,
+            image: (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
+            phone: phone ?? null,
+            role: legacyRoleFor(accountType),
+            accountType: targetAccountType,
+            category: targetAccountType === "model" ? category ?? null : null,
+            birthDate: new Date(birthDate!),
+            lgpdConsent,
+            termsConsent,
+            consentDate: new Date(),
+            ...(pendingProfessionalPhone
+              ? { phone: pendingProfessionalPhone.phone, phoneVerified: true, phoneVerifiedAt: new Date() }
+              : {}),
+            clientProfile: { create: {} },
+          },
+          select: { id: true, name: true, email: true, role: true, accountType: true },
+        }),
+      };
+    }, { maxWait: 10_000, timeout: 10_000 });
 
     await ensureProfileForIntent(user.id, profileIntent, category);
     await recordUserAcceptances({
@@ -252,7 +251,7 @@ export async function POST(req: NextRequest) {
       source: "auth-register",
       req,
     });
-    const response = NextResponse.json(user, { status: 201 });
+    const response = NextResponse.json(user, { status: created ? 201 : 200 });
     if (pendingProfessionalPhone) clearPendingProfessionalPhoneCookie(response);
     return response;
   } catch (err) {

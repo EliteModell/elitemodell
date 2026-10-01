@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 
 function scrubSensitiveRequestData(event: Sentry.ErrorEvent) {
+  event.user = undefined;
   if (event.request?.cookies) {
     event.request.cookies = {};
   }
@@ -8,6 +9,20 @@ function scrubSensitiveRequestData(event: Sentry.ErrorEvent) {
     delete event.request.headers.authorization;
     delete event.request.headers.cookie;
   }
+  if (event.request) {
+    event.request.data = undefined;
+    event.request.query_string = undefined;
+    if (event.request.url) {
+      try {
+        const url = new URL(event.request.url);
+        url.search = "";
+        event.request.url = url.toString();
+      } catch {
+        event.request.url = event.request.url.split("?")[0];
+      }
+    }
+  }
+  event.extra = undefined;
   return event;
 }
 
@@ -20,6 +35,11 @@ export async function register() {
     environment: process.env.NODE_ENV,
     tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1,
     beforeSend: scrubSensitiveRequestData,
+    beforeBreadcrumb(breadcrumb) {
+      // Objetos de console podem conter e-mail, telefone, caminhos privados ou
+      // metadados de mídia adulta. Métricas devem usar campos explicitamente seguros.
+      return breadcrumb.category === "console" ? null : breadcrumb;
+    },
   });
 }
 

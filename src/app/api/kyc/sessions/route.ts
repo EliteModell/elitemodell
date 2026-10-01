@@ -15,6 +15,7 @@ import {
   shouldUsePersonaProvider,
 } from "@/lib/persona";
 import { prisma } from "@/lib/prisma";
+import { enforceRateLimitAsync } from "@/lib/security";
 
 function appBaseUrl() {
   return (
@@ -80,6 +81,8 @@ export async function GET() {
 export async function POST() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
+  const limited = await enforceRateLimitAsync(`kyc-session:persona:${session.user.id}`, 3, 60 * 60 * 1000, "Muitas tentativas de iniciar biometria.");
+  if (limited) return limited;
   if (!canUseProfessionalKyc(session)) {
     return NextResponse.json({ error: "Apenas anunciantes podem iniciar biometria." }, { status: 403 });
   }

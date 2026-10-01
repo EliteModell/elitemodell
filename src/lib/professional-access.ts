@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Prisma, PrismaClient } from "@prisma/client";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import type { AccessProfessional } from "@/lib/professional-access-policy";
 import { professionalApprovalTrialData } from "@/lib/professional-access-policy";
@@ -10,6 +11,7 @@ export {
 } from "@/lib/professional-access-policy";
 
 export const DEFAULT_PROFESSIONAL_FREE_TRIAL_DAYS = 30;
+export const PROFESSIONAL_BILLING_SETTINGS_CACHE_TAG = "professional-billing-settings";
 export const DEFAULT_PROFESSIONAL_BILLING_SETTINGS = {
   billingEnabled: false,
   monthlyPriceCents: null as number | null,
@@ -27,7 +29,7 @@ export async function getProfessionalFreeTrialDays(db: DbClient = prisma) {
   return settings?.professionalFreeTrialDays ?? DEFAULT_PROFESSIONAL_FREE_TRIAL_DAYS;
 }
 
-export async function getProfessionalBillingSettings(db: DbClient = prisma) {
+async function readProfessionalBillingSettings(db: DbClient) {
   const settings = await db.platformSettings.findUnique({
     where: { id: "default" },
     select: {
@@ -44,6 +46,19 @@ export async function getProfessionalBillingSettings(db: DbClient = prisma) {
     currency: settings.professionalBillingCurrency,
     trialDays: settings.professionalFreeTrialDays,
   };
+}
+
+const getCachedProfessionalBillingSettings = unstable_cache(
+  () => readProfessionalBillingSettings(prisma),
+  [PROFESSIONAL_BILLING_SETTINGS_CACHE_TAG],
+  { revalidate: 60, tags: [PROFESSIONAL_BILLING_SETTINGS_CACHE_TAG] },
+);
+
+export async function getProfessionalBillingSettings(db: DbClient = prisma) {
+  // Transaction clients must observe their own snapshot and cannot use a shared cache.
+  return db === prisma
+    ? getCachedProfessionalBillingSettings()
+    : readProfessionalBillingSettings(db);
 }
 
 export async function professionalApprovalAccessData(

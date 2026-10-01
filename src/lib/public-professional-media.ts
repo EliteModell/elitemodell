@@ -7,7 +7,16 @@ export type PublicProfileAsset = {
   moderationStatus?: string | null;
   approvedBucket: string | null;
   approvedPath: string | null;
+  uploadCompletedAt?: Date | string | null;
+  malwareStatus?: string | null;
+  ageIdentityStatus?: string | null;
+  consentStatus?: string | null;
+  adminReviewRequired?: boolean | null;
+  adminReviewStatus?: string | null;
+  takedownStatus?: string | null;
 };
+
+import { evaluateMediaPublicationGates } from "@/lib/media-security";
 
 export type PublicProfilePhoto = {
   id?: string;
@@ -43,7 +52,17 @@ export function filterApprovedProfilePhotos(
       .filter((asset) =>
         asset.userId === ownerId &&
         asset.status === "APPROVED" &&
-        asset.moderationStatus !== "REJECTED" &&
+        evaluateMediaPublicationGates({
+          uploadComplete: Boolean(asset.uploadCompletedAt),
+          malwareStatus: asset.malwareStatus,
+          moderationStatus: asset.moderationStatus,
+          ageIdentityStatus: asset.ageIdentityStatus,
+          consentStatus: asset.consentStatus,
+          adminReviewRequired: asset.adminReviewRequired,
+          adminReviewStatus: asset.adminReviewStatus,
+          takedownStatus: asset.takedownStatus,
+          ownerId: asset.userId,
+        }).publishable &&
         asset.category === "image" &&
         asset.folder.startsWith("profiles") &&
         Boolean(asset.approvedBucket && asset.approvedPath),

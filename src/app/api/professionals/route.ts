@@ -4,8 +4,9 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { authorizeAdultContentRequest } from "@/lib/adult-content-access";
 import { authOptions } from "@/lib/auth";
-import { stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
+import { ageGateCacheHeaders, stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
 import { DIDIT_PROVIDER } from "@/lib/professional-verification";
 import { ProfessionalDiditError, requireApprovedProfessionalDidit } from "@/lib/professional-didit";
 import { getProfessionalBillingSettings } from "@/lib/professional-access";
@@ -16,7 +17,6 @@ import {
   calculateAge,
   canonicalProfessionalPhotos,
   isProfessionalOnline,
-  publicCacheHeaders,
 } from "@/lib/public-professional-profile";
 import { professionalCityFilter, resolveExactCityQuery } from "@/lib/public-city-search";
 import { publicProfessionalWhere } from "@/lib/public-professional-access";
@@ -25,6 +25,7 @@ import { normalizeControlledMediaUrl } from "@/lib/public-professional-media";
 import { deliverProfessionalSubmissionReceipt } from "@/lib/professional-submission-receipt";
 import { logAudit } from "@/lib/audit";
 import { professionalCompletion, issueChecklist } from "@/lib/professional-completeness";
+import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
@@ -44,6 +45,10 @@ function slugify(text: string) {
 }
 
 export async function GET(req: NextRequest) {
+  const limited = await enforceRateLimitAsync(`public-search:${getClientIP(req)}`, 300, 60 * 1000, "Muitas buscas em pouco tempo.");
+  if (limited) return limited;
+  const adultAccess = await authorizeAdultContentRequest();
+  if (!adultAccess.ok) return NextResponse.json({ error: adultAccess.error }, { status: adultAccess.status, headers: adultAccess.headers });
   const { searchParams } = new URL(req.url);
   const search    = searchParams.get("search");
   const specialty = searchParams.get("specialty");
@@ -139,7 +144,7 @@ export async function GET(req: NextRequest) {
         activePlanId: true, planPriority: true,
         onlineVisible: true, lastOnlineAt: true,
         user: { select: { image: true, premiumUntil: true } },
-        photos: { orderBy: { order: "asc" }, take: 8, select: { id: true, url: true, cover: true, order: true } },
+        photos: { where: { hiddenAt: null }, orderBy: { order: "asc" }, take: 8, select: { id: true, url: true, cover: true, order: true } },
         specialties: { select: { id: true, name: true } },
       },
     }),
@@ -187,7 +192,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json(
     { professionals: safeList, total, page, pages: Math.ceil(total / limit) },
-    { headers: publicCacheHeaders() },
+    { headers: ageGateCacheHeaders() },
   );
 }
 

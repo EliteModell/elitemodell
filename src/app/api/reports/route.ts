@@ -5,7 +5,7 @@ import { z } from "zod";
 import { ReportStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import { checkRateLimit, sanitizeInput } from "@/lib/security";
+import { enforceRateLimitAsync, sanitizeInput } from "@/lib/security";
 
 const reportSchema = z.object({
   targetType: z.enum(["USER", "PROFESSIONAL", "PROPERTY", "CONTENT"]),
@@ -35,13 +35,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Rate limiting: máx 5 denúncias por hora
-    const rateLimit = checkRateLimit(`report:${session.user.id}`, 5, 60 * 60 * 1000);
-    if (!rateLimit.allowed) {
-      return NextResponse.json(
-        { error: "Muitas denúncias. Tente novamente mais tarde." },
-        { status: 429 }
-      );
-    }
+    const limited = await enforceRateLimitAsync(`report:${session.user.id}`, 5, 60 * 60 * 1000, "Muitas denúncias. Tente novamente mais tarde.");
+    if (limited) return limited;
 
     const body = await req.json();
     const validated = reportSchema.parse(body);

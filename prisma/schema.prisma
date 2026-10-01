@@ -1086,16 +1086,31 @@ model UploadAsset {
   rejectedAt                DateTime?
   reviewedById              String?
   reviewReason              String?   @db.Text
+  storageProvider           String    @default("SUPABASE")
+  uploadCompletedAt         DateTime?
+  contentRating             String    @default("STANDARD")
+  visibility                String    @default("PRIVATE")
+  ageIdentityStatus         String    @default("PENDING")
+  consentStatus             String    @default("PENDING")
+  adminReviewRequired       Boolean   @default(true)
+  adminReviewStatus         String    @default("PENDING")
+  takedownStatus            String    @default("CLEAR")
+  takedownAt                DateTime?
+  takedownReason            String?   @db.Text
+  deliveryMode              String    @default("CONTROLLED_ROUTE")
   createdAt                 DateTime  @default(now())
   updatedAt                 DateTime  @updatedAt
 
-  owner    User  @relation("UploadOwner", fields: [userId], references: [id], onDelete: Restrict)
-  reviewer User? @relation("UploadReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  owner          User                  @relation("UploadOwner", fields: [userId], references: [id], onDelete: Restrict)
+  reviewer       User?                 @relation("UploadReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  depictedPeople MediaDepictedPerson[]
 
   @@unique([quarantineBucket, quarantinePath])
   @@index([userId, createdAt])
   @@index([status, createdAt])
   @@index([malwareStatus, moderationStatus, createdAt])
+  @@index([takedownStatus, status, createdAt])
+  @@index([storageProvider, approvedBucket, approvedPath])
   @@index([fileHash])
 }
 
@@ -1135,17 +1150,20 @@ model ProfessionalLocationChange {
 }
 
 model ProfessionalPhoto {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   professionalId String
   url            String
   caption        String?
-  order          Int      @default(0)
-  cover          Boolean  @default(false)
-  createdAt      DateTime @default(now())
+  order          Int       @default(0)
+  cover          Boolean   @default(false)
+  hiddenAt       DateTime?
+  hiddenReason   String?   @db.Text
+  createdAt      DateTime  @default(now())
 
   professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
 
   @@index([professionalId, cover, order])
+  @@index([hiddenAt])
 }
 
 model ProfessionalSpecialty {
@@ -1155,6 +1173,8 @@ model ProfessionalSpecialty {
   icon           String?
 
   professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@index([professionalId])
 }
 
 model Schedule {
@@ -1670,6 +1690,29 @@ model ContentDeclaration {
   @@unique([storageBucket, storagePath, declarationKey, version])
   @@index([userId, createdAt])
   @@index([fileHash])
+}
+
+model MediaDepictedPerson {
+  id                       String    @id @default(cuid())
+  assetId                  String
+  personReference          String
+  relationship             String    @default("DEPICTED_PERSON")
+  isUploader               Boolean   @default(false)
+  isContentOwner           Boolean   @default(false)
+  ageVerificationReference String?
+  consentReference         String?
+  verificationDate         DateTime?
+  ageStatus                String    @default("PENDING")
+  consentStatus            String    @default("PENDING")
+  revokedAt                DateTime?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  asset UploadAsset @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  @@unique([assetId, personReference])
+  @@index([assetId, ageStatus, consentStatus])
+  @@index([personReference])
 }
 
 model CheckoutAcceptance {

@@ -23,6 +23,7 @@ import { reconcileProfessionalDidit } from "@/lib/didit-reconciliation";
 import { prisma } from "@/lib/prisma";
 import { createDigitCallbackState } from "@/lib/didit-callback";
 import { professionalCompletion } from "@/lib/professional-completeness";
+import { enforceRateLimitAsync } from "@/lib/security";
 
 const DIGIT_INTENT_LEASE_MS = 2 * 60_000;
 const DIGIT_INTENT_EXPIRATION_MS = 7 * 24 * 60 * 60_000;
@@ -123,6 +124,8 @@ export async function GET() {
 export async function POST() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
+  const limited = await enforceRateLimitAsync(`kyc-session:didit:${session.user.id}`, 3, 60 * 60 * 1000, "Muitas tentativas de iniciar verificação.");
+  if (limited) return limited;
   if (!canUseProfessionalKyc(session)) {
     return NextResponse.json({ error: "Apenas anunciantes podem iniciar verificacao." }, { status: 403 });
   }

@@ -340,7 +340,7 @@ function BuscarContent() {
       else next.set(key, value);
     });
     const query = next.toString();
-    router.replace(query ? `/buscar?${query}` : "/buscar", { scroll: false });
+    window.history.replaceState(null, "", query ? `/buscar?${query}` : "/buscar");
   }
 
   function setCategory(next: SubTab) {
@@ -460,7 +460,7 @@ function BuscarContent() {
               next.set("estado", choice.state.toLowerCase());
               next.delete("virtual");
               next.delete("selecionarCidade");
-              router.replace(`/buscar?${next.toString()}`, { scroll: false });
+              window.history.replaceState(null, "", `/buscar?${next.toString()}`);
             })
             .catch(() => undefined);
         },
@@ -477,7 +477,7 @@ function BuscarContent() {
     setDistance("any");
     setSortBy("relevance");
     setSubTab("mulheres");
-    router.replace("/buscar", { scroll: false });
+    window.history.replaceState(null, "", "/buscar");
   }
 
   const suggestedCities = useCitySuggestions(locationSearch, showLocationModal);

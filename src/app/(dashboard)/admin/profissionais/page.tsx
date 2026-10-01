@@ -192,6 +192,7 @@ async function reviewProfessional(formData: FormData) {
 
   const professional = action === "approve"
     ? await prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`professional-approval:${id}`}))`;
         const current = await tx.professional.findUniqueOrThrow({
           where: { id },
           select: {
@@ -239,9 +240,9 @@ async function reviewProfessional(formData: FormData) {
             freeAccessEndsAt: true,
           },
         });
+        if (current.status === "ACTIVE") return null;
         if (professionalApprovalIssues(current).length) return null;
         if (current.kycProvider === "DIDIT") {
-          await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`didit-professional:${current.userId}`}))`;
           const active = await tx.professional.findUnique({ where: { id }, select: { kycSessionId: true, status: true } });
           if (!current.kycSessionId || active?.kycSessionId !== current.kycSessionId || active.status !== "PENDING_REVIEW") return null;
           try {

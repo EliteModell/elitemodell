@@ -68,6 +68,19 @@ export async function POST(req: NextRequest) {
       detectedMimeType: detected.mimeType,
       extension: detected.extension,
       buffer,
+      contentRating: "STANDARD",
+      visibility: "PUBLIC",
+      ageIdentityStatus: "PASS",
+      consentStatus: "PASS",
+      adminReviewRequired: false,
+      depictedPeople: [{
+        personReference: session.user.id,
+        relationship: "SELF",
+        isUploader: true,
+        isContentOwner: true,
+        ageStatus: "PASS",
+        consentStatus: "PASS",
+      }],
     });
     const processed = await processUploadAsset(quarantined.id, buffer);
     if (processed.status !== "APPROVED" || !processed.controlledUrl) {

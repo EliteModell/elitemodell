@@ -92,6 +92,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "adult-media-security",
+      testMatch: "**/adult-media-security.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "legal-document-catalog",
       testMatch: "**/legal-document-catalog.spec.ts",
       use: { browserName: "chromium" },

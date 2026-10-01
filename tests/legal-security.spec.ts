@@ -57,7 +57,7 @@ test.describe("juridico e seguranca - visitante", () => {
     expect(dimensions.text).toContain("maioridade");
   });
 
-  test("descoberta publica permite leitura anonima e preserva gravacoes autenticadas", async ({ request }) => {
+  test("descoberta adulta bloqueia leitura anonima e preserva gravacoes autenticadas", async ({ request }) => {
     const publicResponses = await Promise.all([
       request.get("/api/professionals"),
       request.get("/api/professionals/slug-publico"),
@@ -66,7 +66,7 @@ test.describe("juridico e seguranca - visitante", () => {
     ]);
 
     for (const response of publicResponses) {
-      expect([200, 404]).toContain(response.status());
+      expect([401, 403]).toContain(response.status());
       const body = await response.text();
       expect(body).not.toContain("storage/v1/object/public");
     }
@@ -77,15 +77,15 @@ test.describe("juridico e seguranca - visitante", () => {
       request.post("/api/favorites/professionals", { data: { professionalId: "clx0000000000000000000000" } }),
       request.post("/api/reviews", { data: {} }),
     ]);
-    expect(privateMedia.status()).toBe(404);
+    expect([401, 403]).toContain(privateMedia.status());
     expect(properties.status()).toBe(410);
     await expect(properties.json()).resolves.toMatchObject({ error: "Recurso desativado." });
     expect(favorite.status()).toBe(401);
-    expect(review.status()).toBe(401);
+    expect([401, 403]).toContain(review.status());
   });
 
   test("rodape usa os quatro canais sociais atuais com icones acessiveis", async ({ page }) => {
-    await page.goto("/buscar", { waitUntil: "domcontentloaded" });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     const footer = page.locator("footer");
 
     for (const label of ["Instagram", "WhatsApp", "YouTube", "Telegram"]) {
@@ -96,12 +96,12 @@ test.describe("juridico e seguranca - visitante", () => {
     await expect(footer.getByLabel("TikTok")).toHaveCount(0);
   });
 
-  test("paginas de perfil e listagem ficam acessiveis ao visitante", async ({ page }) => {
+  test("paginas de perfil e listagem redirecionam visitante para verificacao etaria", async ({ page }) => {
     await page.goto("/profissionais/perfil-publico", { waitUntil: "domcontentloaded" });
-    expect(page.url()).toContain("/profissionais/perfil-publico");
+    expect(page.url()).toContain("/verificacao-idade");
 
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
-    expect(page.url()).toContain("/buscar");
+    expect(page.url()).toContain("/verificacao-idade");
   });
 
   test("robots e sitemap indexam paginas institucionais sem expor conteudo adulto", async ({ request }) => {

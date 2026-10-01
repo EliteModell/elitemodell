@@ -40,6 +40,21 @@ export function generateMfaSecret() {
   return result;
 }
 
+export function generateAdminRecoveryCode() {
+  return `EM-${randomBytes(18).toString("base64url")}`;
+}
+
+export function hashAdminRecoveryCode(code: string) {
+  return createHash("sha256").update(code.trim()).digest("hex");
+}
+
+export function verifyAdminRecoveryCode(expectedHash: string | null, code: string) {
+  if (!expectedHash || !code.startsWith("EM-")) return false;
+  const expected = Buffer.from(expectedHash, "hex");
+  const actual = Buffer.from(hashAdminRecoveryCode(code), "hex");
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
 function decodeBase32(value: string) {
   let bits = "";
   for (const char of value.replace(/=+$/g, "").toUpperCase()) {

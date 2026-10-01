@@ -13,7 +13,6 @@ import {
   calculateAge,
   canonicalProfessionalPhotos,
   isProfessionalOnline,
-  publicCacheHeaders,
 } from "@/lib/public-professional-profile";
 import { normalizeContactVisibility } from "@/lib/professional-contact";
 import {
@@ -21,8 +20,14 @@ import {
   filterApprovedProfilePhotos,
   normalizeControlledMediaUrl,
 } from "@/lib/public-professional-media";
+import { authorizeAdultContentRequest } from "@/lib/adult-content-access";
+import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+  const limited = await enforceRateLimitAsync(`public-profile:${getClientIP(req)}`, 300, 60 * 1000, "Muitos perfis abertos em pouco tempo.");
+  if (limited) return limited;
+  const adultAccess = await authorizeAdultContentRequest();
+  if (!adultAccess.ok) return NextResponse.json({ error: adultAccess.error }, { status: adultAccess.status, headers: adultAccess.headers });
   const { slug } = await params;
   const now = new Date();
   const tokenPromise = getToken({
@@ -115,6 +120,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
         },
       },
       photos: {
+        where: { hiddenAt: null },
         orderBy: { order: "asc" },
         select: { id: true, url: true, caption: true, cover: true, order: true },
       },
@@ -175,6 +181,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     select: {
       id: true, userId: true, folder: true, category: true, status: true,
       moderationStatus: true, approvedBucket: true, approvedPath: true,
+      uploadCompletedAt: true, malwareStatus: true, ageIdentityStatus: true,
+      consentStatus: true, adminReviewRequired: true, adminReviewStatus: true,
+      takedownStatus: true,
     },
   }) : [];
   const photos = filterApprovedProfilePhotos(canonicalPhotos, photoAssets, professional.userId);
@@ -238,7 +247,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   delete publicUser.premiumUntil;
   delete publicUser.stories;
   return NextResponse.json(publicProfessional, {
-    headers: canViewDraft ? ageGateCacheHeaders() : publicCacheHeaders(),
+    headers: ageGateCacheHeaders(),
   });
 }
 

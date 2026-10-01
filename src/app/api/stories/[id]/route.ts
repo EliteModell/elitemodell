@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { enforceRateLimit, getClientIP } from "@/lib/security";
+import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 
 const idSchema = z.string().cuid();
 
@@ -28,7 +28,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return NextResponse.json({ ok: true });
 
-  const limited = enforceRateLimit(
+  const limited = await enforceRateLimitAsync(
     `story-view:${parsed.data}:${getClientIP(req)}`,
     120,
     60 * 1000,

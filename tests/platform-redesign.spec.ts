@@ -138,7 +138,7 @@ async function assertGuestHeaderFits(page: Page) {
 }
 
 async function capture(page: Page, fileName: string, fullPage = true) {
-  await page.waitForLoadState("networkidle").catch(() => undefined);
+  await page.waitForLoadState("networkidle", { timeout: 3_000 }).catch(() => undefined);
   await assertNoOverflow(page);
   await page.screenshot({ path: path.join(OUTPUT_DIR, fileName), fullPage });
 }
@@ -201,6 +201,12 @@ async function assertControlContrast(locator: ReturnType<Page["locator"]>) {
 }
 
 async function mockPublicProfessionals(page: Page) {
+  await installMockSessionCookie(page.context(), CLIENT_SESSION.user);
+  await page.route("**/api/auth/session", (route: Route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: "null",
+  }));
   const professional = {
     id: "professional-victoria",
     slug: "victoria",

@@ -16,6 +16,8 @@ const emergencyReasons = new Set([
   "HUMAN_TRAFFICKING",
   "PHYSICAL_RISK",
   "UNAUTHORIZED_IMAGE",
+  "NON_CONSENSUAL_INTIMATE_MEDIA",
+  "DEEPFAKE_IMPERSONATION",
 ]);
 
 const schema = z.object({
@@ -24,6 +26,7 @@ const schema = z.object({
   reason: z.enum([
     "POSSIBLE_MINOR", "CHILD_SEXUALIZATION", "EXPLOITATION_COERCION",
     "HUMAN_TRAFFICKING", "PHYSICAL_RISK", "UNAUTHORIZED_IMAGE",
+    "NON_CONSENSUAL_INTIMATE_MEDIA", "DEEPFAKE_IMPERSONATION",
     "FAKE_PROFILE", "FAKE_DOCUMENT", "FRAUD_SCAM", "ILLEGAL_CONTENT",
     "HARASSMENT", "ACCOUNT_TAKEOVER", "OTHER",
   ]),
@@ -77,13 +80,14 @@ async function applyCautionaryWithdrawal(
   }
 
   if (target.targetType === "PHOTO") {
-    const hidden = await tx.professionalPhoto.deleteMany({
+    const hidden = await tx.professionalPhoto.updateMany({
       where: {
         OR: [
           { id: target.targetId },
           { url: target.targetId },
         ],
       },
+      data: { hiddenAt: now, hiddenReason: reason },
     });
     const asset = await tx.uploadAsset.updateMany({
       where: {
@@ -95,6 +99,10 @@ async function applyCautionaryWithdrawal(
       data: {
         status: "REJECTED",
         moderationStatus: "REJECTED",
+        adminReviewStatus: "REJECTED",
+        takedownStatus: "RESTRICTED",
+        takedownAt: now,
+        takedownReason: reason,
         rejectedAt: now,
         reviewReason: reason,
       },
@@ -128,6 +136,10 @@ async function applyCautionaryWithdrawal(
       data: {
         status: "REJECTED",
         moderationStatus: "REJECTED",
+        adminReviewStatus: "REJECTED",
+        takedownStatus: "RESTRICTED",
+        takedownAt: now,
+        takedownReason: reason,
         rejectedAt: now,
         reviewReason: reason,
       },
@@ -156,6 +168,10 @@ async function applyCautionaryWithdrawal(
         data: {
           status: "REJECTED",
           moderationStatus: "REJECTED",
+          adminReviewStatus: "REJECTED",
+          takedownStatus: "RESTRICTED",
+          takedownAt: now,
+          takedownReason: reason,
           rejectedAt: now,
           reviewReason: reason,
         },

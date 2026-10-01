@@ -5,9 +5,9 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ageGateCacheHeaders, stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
-import { enforceRateLimit } from "@/lib/security";
-import { publicCacheHeaders } from "@/lib/public-professional-profile";
+import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import { getPublicProfessionalWhere } from "@/lib/public-professional-access";
+import { authorizeAdultContentRequest } from "@/lib/adult-content-access";
 
 type StoryGroupResponse = {
   userId: string;
@@ -49,6 +49,10 @@ function controlledAssetId(value: string, requestUrl: string) {
 }
 
 export async function GET(req: NextRequest) {
+  const limited = await enforceRateLimitAsync(`public-stories:${getClientIP(req)}`, 180, 60 * 1000, "Muitas consultas de stories em pouco tempo.");
+  if (limited) return limited;
+  const adultAccess = await authorizeAdultContentRequest();
+  if (!adultAccess.ok) return NextResponse.json({ error: adultAccess.error }, { status: adultAccess.status, headers: adultAccess.headers });
   const now = new Date();
   const url = new URL(req.url);
   const session = await getServerSession(authOptions);
@@ -163,7 +167,7 @@ export async function GET(req: NextRequest) {
     (b.stories[0]?.createdAt.getTime() ?? 0) - (a.stories[0]?.createdAt.getTime() ?? 0)
   );
 
-  return NextResponse.json(grouped, { headers: publicCacheHeaders() });
+  return NextResponse.json(grouped, { headers: ageGateCacheHeaders() });
 }
 
 export async function POST(req: NextRequest) {
@@ -179,7 +183,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Stories sao exclusivos para profissionais aprovadas." }, { status: 403 });
   }
 
-  const limited = enforceRateLimit(`stories:${session.user.id}`, 20, 60 * 60 * 1000, "Muitos stories em pouco tempo.");
+  const limited = await enforceRateLimitAsync(`stories:${session.user.id}`, 20, 60 * 60 * 1000, "Muitos stories em pouco tempo.");
   if (limited) return limited;
 
   try {

@@ -1,25 +1,37 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { authorizeAdminRequest } from "@/lib/admin-access";
+import { authorizeAdultContentRequest } from "@/lib/adult-content-access";
 import { ageGateCacheHeaders } from "@/lib/age-gate-policy";
+import { evaluateMediaPublicationGates } from "@/lib/media-security";
+import { getMediaStorageProvider, type MediaStorageName } from "@/lib/media-storage";
 import { prisma } from "@/lib/prisma";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getPublicProfessionalWhere } from "@/lib/public-professional-access";
 import { controlledMediaAssetId } from "@/lib/public-professional-media";
+import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 
 function safeFilename(value: string) {
   return value.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 120) || "media";
 }
 
-export async function GET(
-  _req: NextRequest,
-  context: { params: Promise<{ id: string }> },
-) {
-  const session = await getServerSession(authOptions);
+export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const adultAccess = await authorizeAdultContentRequest();
+  if (!adultAccess.ok) {
+    return NextResponse.json(
+      { error: adultAccess.error },
+      { status: adultAccess.status, headers: adultAccess.headers },
+    );
+  }
   const { id } = await context.params;
+  const limited = await enforceRateLimitAsync(
+    `media:${adultAccess.session.user.id}:${getClientIP(req)}`,
+    240,
+    15 * 60 * 1000,
+    "Muitas requisicoes de midia.",
+  );
+  if (limited) return limited;
+
   const asset = await prisma.uploadAsset.findUnique({
     where: { id },
     select: {
@@ -27,57 +39,60 @@ export async function GET(
       userId: true,
       originalName: true,
       folder: true,
+      category: true,
       detectedMimeType: true,
       status: true,
+      visibility: true,
+      uploadCompletedAt: true,
+      malwareStatus: true,
+      moderationStatus: true,
+      ageIdentityStatus: true,
+      consentStatus: true,
+      adminReviewRequired: true,
+      adminReviewStatus: true,
+      takedownStatus: true,
+      storageProvider: true,
       approvedBucket: true,
       approvedPath: true,
     },
   });
-  if (
-    !asset ||
-    asset.status !== "APPROVED" ||
-    !asset.approvedBucket ||
-    !asset.approvedPath
-  ) {
-    return NextResponse.json(
-      { error: "Midia indisponivel." },
-      { status: 404, headers: ageGateCacheHeaders() },
-    );
+  const gates = asset ? evaluateMediaPublicationGates({
+    uploadComplete: Boolean(asset.uploadCompletedAt),
+    malwareStatus: asset.malwareStatus,
+    moderationStatus: asset.moderationStatus,
+    ageIdentityStatus: asset.ageIdentityStatus,
+    consentStatus: asset.consentStatus,
+    adminReviewRequired: asset.adminReviewRequired,
+    adminReviewStatus: asset.adminReviewStatus,
+    takedownStatus: asset.takedownStatus,
+    ownerId: asset.userId,
+  }) : null;
+  if (!asset || asset.status !== "APPROVED" || !gates?.publishable || !asset.approvedBucket || !asset.approvedPath) {
+    return NextResponse.json({ error: "Midia indisponivel." }, { status: 404, headers: ageGateCacheHeaders() });
   }
 
-  const isOwner = asset.userId === session?.user?.id;
-  const isPrivateIdentityMaterial =
-    asset.folder.startsWith("documentos") ||
-    asset.folder.startsWith("verificacao");
-  if (isPrivateIdentityMaterial && !session?.user?.id) {
-    return NextResponse.json(
-      { error: "Nao autorizado." },
-      { status: 401, headers: ageGateCacheHeaders() },
-    );
-  }
-  if (isPrivateIdentityMaterial && !isOwner) {
-    const admin = await authorizeAdminRequest("kyc:review");
+  const isOwner = asset.userId === adultAccess.session.user.id;
+  const isPrivateIdentityMaterial = asset.folder.startsWith("documentos") || asset.folder.startsWith("verificacao");
+  const logicalPrivate = isPrivateIdentityMaterial || asset.visibility !== "PUBLIC";
+  let isAdmin = adultAccess.session.user.role === "ADMIN";
+  if (logicalPrivate && !isOwner) {
+    const admin = await authorizeAdminRequest(isPrivateIdentityMaterial ? "kyc:review" : "reports:manage");
     if (!admin.ok) {
-      return NextResponse.json(
-        { error: admin.error },
-        { status: admin.status, headers: ageGateCacheHeaders() },
-      );
+      return NextResponse.json({ error: "Midia indisponivel." }, { status: 404, headers: ageGateCacheHeaders() });
     }
+    isAdmin = true;
   } else if (!isOwner) {
     const now = new Date();
     const publicWhere = await getPublicProfessionalWhere(now);
     const [profile, stories] = await Promise.all([
       prisma.professional.findFirst({
-        where: {
-          ...publicWhere,
-          userId: asset.userId,
-        },
+        where: { ...publicWhere, userId: asset.userId },
         select: {
           image: true,
           galleryUrls: true,
           presentationVideoUrl: true,
           presentationVideoStatus: true,
-          photos: { select: { url: true } },
+          photos: { where: { hiddenAt: null }, select: { url: true } },
           user: { select: { image: true } },
         },
       }),
@@ -85,14 +100,7 @@ export async function GET(
         where: {
           userId: asset.userId,
           expiresAt: { gt: now },
-          user: {
-            professional: {
-              is: {
-                ...publicWhere,
-                verified: true,
-              },
-            },
-          },
+          user: { professional: { is: { ...publicWhere, verified: true } } },
         },
         select: { mediaUrl: true, thumbnail: true },
       }),
@@ -105,41 +113,51 @@ export async function GET(
       ...(profile.presentationVideoStatus === "APPROVED" ? [profile.presentationVideoUrl] : []),
     ] : [];
     const storyUrls = stories.flatMap((story) => [story.mediaUrl, story.thumbnail]);
-    const hasPublicReference = [...profileUrls, ...storyUrls]
-      .some((url) => controlledMediaAssetId(url) === asset.id);
+    const hasPublicReference = [...profileUrls, ...storyUrls].some((url) => controlledMediaAssetId(url) === asset.id);
     if (!hasPublicReference) {
-      return NextResponse.json(
-        { error: "Midia indisponivel." },
-        { status: 404, headers: ageGateCacheHeaders() },
-      );
+      return NextResponse.json({ error: "Midia indisponivel." }, { status: 404, headers: ageGateCacheHeaders() });
     }
   }
 
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase.storage
-    .from(asset.approvedBucket)
-    .download(asset.approvedPath);
-  if (error || !data) {
-    console.error("[media] arquivo aprovado ausente", {
-      assetId: asset.id,
-      error: error?.message,
+  const provider = getMediaStorageProvider(asset.storageProvider as MediaStorageName);
+  if (asset.category === "video") {
+    const signedUrl = await provider.getSignedUrl(asset.approvedBucket, asset.approvedPath, 60);
+    await prisma.auditLog.create({
+      data: {
+        adminId: isAdmin ? adultAccess.session.user.id : null,
+        actorIdentifier: adultAccess.session.user.id,
+        action: "ADMIN_ACCESS",
+        targetType: "CONTENT",
+        targetId: asset.id,
+        reason: "Entrega controlada de video por URL temporaria.",
+        changes: { delivery: "SIGNED_REDIRECT", expiresInSeconds: 60, owner: isOwner },
+        ipAddress: getClientIP(req),
+        userAgent: req.headers.get("user-agent")?.slice(0, 300) ?? null,
+      },
+    }).catch(() => undefined);
+    return NextResponse.redirect(signedUrl, {
+      status: 307,
+      headers: { ...ageGateCacheHeaders(), "Cache-Control": "private, no-store, max-age=0" },
     });
-    return NextResponse.json(
-      { error: "Midia indisponivel." },
-      { status: 404, headers: ageGateCacheHeaders() },
-    );
   }
 
-  return new Response(data, {
+  let contents: Buffer;
+  try {
+    contents = await provider.download(asset.approvedBucket, asset.approvedPath);
+  } catch (cause) {
+    console.error("[media] arquivo aprovado ausente", { assetId: asset.id, provider: provider.name, cause });
+    return NextResponse.json({ error: "Midia indisponivel." }, { status: 404, headers: ageGateCacheHeaders() });
+  }
+
+  return new Response(new Uint8Array(contents), {
     status: 200,
     headers: {
       "Content-Type": asset.detectedMimeType,
       "Content-Disposition": `inline; filename="${safeFilename(asset.originalName)}"`,
-      "Cache-Control": isPrivateIdentityMaterial || isOwner
-        ? "private, no-store, max-age=0"
-        : "public, max-age=300, s-maxage=300, stale-while-revalidate=3600",
+      "Cache-Control": "private, no-store, max-age=0, must-revalidate",
       "X-Content-Type-Options": "nosniff",
       "Referrer-Policy": "no-referrer",
+      "X-Robots-Tag": "noindex, nofollow, noarchive, noimageindex",
     },
   });
 }

@@ -1,6 +1,6 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
-import { ageGateCacheHeaders, isAgeRestrictedPath } from "@/lib/age-gate-policy";
+import { ageGateCacheHeaders, isAgeRestrictedRequest } from "@/lib/age-gate-policy";
 
 function isAdminToken(token: { role?: string }) {
   return token.role === "ADMIN";
@@ -75,9 +75,8 @@ export async function proxy(request: NextRequest) {
     (route) => pathname === route || pathname.startsWith(route + "/")
   );
 
-  if (isPublic) return NextResponse.next();
-
-  const isSensitivePublicContent = isAgeRestrictedPath(pathname);
+  const isSensitivePublicContent = isAgeRestrictedRequest(pathname, request.method);
+  if (isPublic && !isSensitivePublicContent) return NextResponse.next();
 
   const token = await getToken({
     req: request,
@@ -115,6 +114,8 @@ export async function proxy(request: NextRequest) {
   if (isSensitivePublicContent && !tokenWithRole.adultVerified && !isAdmin) {
     return forbidden("/dashboard/verificacao-idade");
   }
+
+  if (isPublic) return withAgeGateHeaders(NextResponse.next());
 
   const homeForToken = () => {
     if (isAdmin) return "/admin";

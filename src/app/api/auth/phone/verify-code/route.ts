@@ -162,6 +162,9 @@ async function persistVerifiedPhone({
   const legacyEmail = `phone_${phone}@sms.elitemodell.local`;
 
   return prisma.$transaction(async (tx) => {
+    // OTP retries may arrive together. Serialize by normalized phone before the
+    // read/write pair so two requests cannot create two verified owners.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`verified-phone:${phone}`}))`;
     const existing = await tx.user.findFirst({
       where: {
         OR: [

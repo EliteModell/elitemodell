@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import { hasValidAdminMfaSession } from "@/lib/admin-mfa";
 
 export type AdminRole = PrismaAdminRole;
 
@@ -85,7 +86,9 @@ export async function requireAdminIdentity(permission?: AdminPermission) {
 }
 
 export async function requireAdmin(permission?: AdminPermission) {
-  return requireAdminIdentity(permission);
+  const access = await requireAdminIdentity(permission);
+  if (!await hasValidAdminMfaSession(access.session.user.id)) redirect("/admin/mfa");
+  return access;
 }
 
 export async function authorizeAdminRequest(permission?: AdminPermission) {
@@ -95,6 +98,9 @@ export async function authorizeAdminRequest(permission?: AdminPermission) {
   if (!access) return { ok: false as const, status: 403, error: "Acesso administrativo negado." };
   if (permission && !hasAdminPermission(access.adminRole, permission)) {
     return { ok: false as const, status: 403, error: "Permissao administrativa insuficiente." };
+  }
+  if (!await hasValidAdminMfaSession(session.user.id)) {
+    return { ok: false as const, status: 428, error: "MFA administrativo obrigatorio.", code: "ADMIN_MFA_REQUIRED" };
   }
   return { ok: true as const, session, ...access };
 }

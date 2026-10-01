@@ -1,4 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
+import { installMockSessionCookie } from "./helpers/mock-auth";
+
+const ADULT_VIEWER = {
+  id: "home-adult-viewer",
+  name: "Visitante verificado",
+  email: "home-viewer@teste.elitemodell.local",
+  role: "GUEST",
+  accountType: "client",
+  adultVerified: true,
+  activeProfileType: "CLIENTE" as const,
+  availableProfiles: ["CLIENTE"] as Array<"CLIENTE" | "PROFESSIONAL" | "HOST">,
+};
 
 async function prepareHome(page: Page) {
   await page.addInitScript(() => {
@@ -17,6 +29,12 @@ test.describe("home fiel à referência mobile", () => {
   test.beforeEach(async ({ page }) => prepareHome(page));
 
   test("busca por cidade usa o filtro real", async ({ page }) => {
+    await installMockSessionCookie(page.context(), ADULT_VIEWER);
+    await page.route("**/api/auth/session", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ user: ADULT_VIEWER, expires: new Date(Date.now() + 86_400_000).toISOString() }),
+    }));
     await page.goto("/", { waitUntil: "domcontentloaded" });
     const search = page.getByRole("combobox", { name: "Buscar acompanhantes por cidade" });
     await search.fill("Belo");

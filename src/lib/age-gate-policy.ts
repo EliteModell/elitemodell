@@ -1,6 +1,14 @@
 export const AGE_RESTRICTED_PATH_PREFIXES = [
-  "/imoveis",
-  "/api/properties",
+  "/buscar",
+  "/profissionais",
+  "/cidade",
+] as const;
+
+export const AGE_RESTRICTED_API_PREFIXES = [
+  "/api/media",
+  "/api/stories",
+  "/api/reviews",
+  "/api/professionals",
 ] as const;
 
 export const AGE_GATE_CACHE_HEADERS: Record<string, string> = {
@@ -12,7 +20,19 @@ export const AGE_GATE_CACHE_HEADERS: Record<string, string> = {
 };
 
 export function isAgeRestrictedPath(pathname: string) {
-  return AGE_RESTRICTED_PATH_PREFIXES.some(
+  return [...AGE_RESTRICTED_PATH_PREFIXES, ...AGE_RESTRICTED_API_PREFIXES].some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+export function isAgeRestrictedRequest(pathname: string, method = "GET") {
+  if (AGE_RESTRICTED_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
+    return true;
+  }
+  if (method.toUpperCase() !== "GET" && pathname.startsWith("/api/professionals")) {
+    return false;
+  }
+  return AGE_RESTRICTED_API_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
