@@ -8,7 +8,7 @@ Regra aplicada: nenhum stress em produção; nenhum SMS, e-mail, KYC, pagamento 
 
 O banco, depois dos índices comprovados, executou as consultas críticas em menos de 20 ms com 50.000 profissionais sintéticas. O primeiro limite medido não foi o PostgreSQL: foi uma única instância Next.js, que saturou CPU e perdeu a meta de latência já com 50 usuários simultâneos. Com 500 e 1.000 usuários, a maioria das tentativas foi abortada/retornou erro de rede.
 
-A base comporta 1.000 registros profissionais, mas a plataforma inteira **não está comprovadamente pronta** para um pico de lançamento. Faltam corrigir configuração externa do pool da produção, comando remoto de build da Vercel, observabilidade, upload direto/assíncrono e entrega de mídia otimizada. O plano real da Vercel, Supabase, Cloudflare e terceiros não pôde ser comprovado; portanto permanece `UNKNOWN`.
+A base comporta 1.000 registros profissionais, mas a plataforma inteira **não está comprovadamente pronta** para um pico de lançamento. Faltam corrigir a configuração externa do pool da produção, observabilidade, upload direto/assíncrono e entrega de mídia otimizada. O plano real da Vercel, Supabase, Cloudflare e terceiros não pôde ser comprovado; portanto permanece `UNKNOWN`.
 
 Resultados centrais:
 
@@ -40,15 +40,15 @@ Resultados centrais:
 | `VERCEL_IMAGE_LIMITS` | `UNKNOWN`; documentação indica cotas por plano e entrada máxima de 10 MB por imagem transformada |
 | `VERCEL_CONCURRENCY` | Configuração real `UNKNOWN`; documentação informa autoscaling, mas isso não valida a aplicação nem o plano |
 | Projeto | `elitemodell`, Next.js, Node 24 |
-| Build remoto | **INCORRETO:** override remoto ainda executa diretamente uma migração antiga antes do build |
+| Build remoto | **CORRIGIDO/CONFIRMADO:** o deployment final `dpl_BuXYSPRz6o5bTF94YkPGiQVT9B5R` informou `buildCommand: npm run build` e ficou `READY` |
 
-O repositório contém `vercel.json` com `npm run build`, mas o projeto remoto tem precedência e usa:
+Durante a auditoria foi observado um override remoto antigo que executava diretamente uma migration antes do build:
 
 ```text
 npx prisma db execute --url "$DIRECT_URL" --file prisma/migrations/20260522120000_pre_production_safety_fixes/migration.sql && npm run build
 ```
 
-Isso não executa a cadeia atual de migrações e pode repetir SQL antigo a cada deploy. É bloqueador de lançamento.
+Esse override não apareceu no deployment final: a configuração efetiva voltou a `npm run build`. Migrations devem continuar fora do build, em job controlado com `prisma migrate deploy`. O item de Build Command está concluído; não permanece como bloqueador.
 
 Fontes oficiais: [limites de Functions](https://vercel.com/docs/functions/limitations), [uso e preço de Fluid Compute](https://vercel.com/docs/functions/usage-and-pricing), [limites e preço de imagens](https://vercel.com/docs/image-optimization/limits-and-pricing), [limites gerais](https://vercel.com/docs/limits).
 
@@ -441,7 +441,7 @@ Fontes: [Supabase billing](https://supabase.com/docs/guides/platform/billing-on-
 
 ### P0 — antes de segunda/antes de abrir tráfego
 
-1. Remover o Build Command remoto antigo da Vercel e usar `npm run build`; migrations devem ocorrer em job controlado com `prisma migrate deploy`.
+1. **CONCLUÍDO:** o deployment final confirmou `npm run build`; migrations devem permanecer em job controlado com `prisma migrate deploy`.
 2. Alterar `DATABASE_URL` remoto para transaction pooler com `pgbouncer=true&connection_limit=1&pool_timeout=10`; validar Preview.
 3. Confirmar plano/quota/spend cap de Vercel, Supabase, Upstash, Twilio, Resend e KYC no dashboard. Sem isso, `PLAN_UPGRADE_REQUIRED=UNKNOWN`.
 4. Ativar observabilidade sem PII, pelo menos erros, P95/P99, conexões e alertas de provedores.
@@ -503,7 +503,7 @@ UPLOAD_CAPACITY = 50 × 10 MB consumiram +998,99 MB RSS; fluxo atual NÃO SEGURO
 100000_DAILY_VISITORS_READY = NÃO COMPROVADO
 
 DATABASE_SCALE_STATUS = YELLOW: consultas e índices aprovados até 50k; pool remoto e bootstrap são P0
-VERCEL_SCALE_STATUS = RED/UNKNOWN: plano desconhecido, build remoto errado e metas não atingidas por instância
+VERCEL_SCALE_STATUS = RED/UNKNOWN: build remoto corrigido e deployment READY; plano desconhecido e metas não atingidas por instância
 STORAGE_SCALE_STATUS = RED para acervo adulto: quota/plano desconhecidos, proxy em memória e sem variantes/CDN homologado
 VIDEO_SCALE_STATUS = RED: não liberar upload/streaming antes de direct upload + worker + Stream/CDN
 ADMIN_SCALE_STATUS = YELLOW: principais telas paginadas e SQL rápido; KYC/moderação ainda têm janelas sem navegação
@@ -521,7 +521,7 @@ CODE_CHANGES_REQUIRED = SIM
 BUNNY_RECOMMENDATION = homologar Bunny Storage/CDN para imagens antes do acervo grande; não ativar sem credenciais/aprovação
 BUNNY_STREAM_RECOMMENDATION = obrigatório antes de vídeo público em escala; upload direto, webhook, HLS, token auth e hotlink protection
 
-LAUNCH_BLOCKERS = build remoto Vercel, DATABASE_URL/pool, observabilidade, teste Preview, bootstrap/restore e mídia autenticada
+LAUNCH_BLOCKERS = DATABASE_URL/pool, quotas/planos, observabilidade, teste Preview, bootstrap/restore e mídia autenticada
 FIRST_WEEK_ACTIONS = direct upload/queue, paginação Admin, métricas, rate limit de borda, Web Vitals
 FIRST_MONTH_ACTIONS = Bunny, variantes de imagem, Stream, failover e otimização até GREEN
 
@@ -543,9 +543,9 @@ GIT_DIFF_CHECK = PASS; apenas avisos de normalização LF/CRLF
 4. **Qual componente quebra/satura primeiro?** A instância Next/SSR por CPU e latência.
 5. **O PostgreSQL foi o primeiro gargalo?** Não. As consultas críticas indexadas ficaram abaixo de 20 ms com 50 mil profissionais sintéticas.
 6. **A aplicação Next/SSR foi o primeiro gargalo?** Sim. A saturação por instância apareceu antes de esgotamento do PostgreSQL.
-7. **Precisamos aumentar plano/instância antes do lançamento?** `UNKNOWN`. Os planos não foram comprovados. É obrigatório corrigir build/pool e medir em Preview; só então decidir upgrade com evidência.
+7. **Precisamos aumentar plano/instância antes do lançamento?** `UNKNOWN`. Os planos não foram comprovados. O build remoto já foi corrigido; é obrigatório corrigir o pool e medir em Preview antes de decidir upgrade com evidência.
 8. **O upload atual ainda duplica arquivo na memória?** Sim. O fluxo mantém cópias integrais em `formData`/`arrayBuffer`/`Buffer`; 50 uploads simulados de 10 MB elevaram o RSS em 998,99 MB.
 9. **Precisamos mover vídeo para Bunny/Bunny Stream?** Sim, antes de liberar vídeo público em escala. Não é necessário para cadastro textual de 1.000 profissionais.
-10. **O que é P0 antes do lançamento?** Os oito itens P0 da seção 22: build remoto, pool, quotas/planos, observabilidade, carga segura em Preview, bootstrap/restore, mídia autenticada e fluxo de busca em Preview.
+10. **O que é P0 antes do lançamento?** Dos oito itens da seção 22, o Build Command foi concluído. Permanecem pool, quotas/planos, observabilidade, carga segura em Preview, bootstrap/restore, mídia autenticada e homologação do fluxo de busca em Preview.
 11. **O que pode ficar para a primeira semana?** Direct upload e worker/outbox, paginação Admin, métricas operacionais, rate limit de borda, telemetria de queries, Web Vitals e remoção do cache público do POST de tracking.
 12. **O que pode ficar para o primeiro mês?** Bunny Storage/CDN e Bunny Stream antes de vídeo público, variantes de imagem, teste Admin balanceado, restore/failover periódico e otimização de CPU/SSR até atingir `GREEN`.
