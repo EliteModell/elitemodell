@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { suggestCities, type CitySuggestion } from "@/lib/city-catalog";
+import { normalizeLocationText } from "@/lib/brazilian-location";
 
 export function useCitySuggestions(input: string, enabled = true) {
   const [result, setResult] = useState<{ input: string; cities: CitySuggestion[] } | null>(null);
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || normalizeLocationText(input).length < 2) return;
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {

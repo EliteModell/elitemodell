@@ -12,13 +12,13 @@ import {
   isProfessionalCategory,
   postLoginPathFromUser,
 } from "@/lib/account-routes";
-import { resolveProfessionalAccess } from "@/lib/professional-access";
+import { getProfessionalBillingSettings, resolveProfessionalAccess } from "@/lib/professional-access";
 
 export async function getCurrentAccountAccess() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return null;
 
-  const user = await prisma.user.findUnique({
+  const [user, billingSettings] = await Promise.all([prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
       id: true,
@@ -37,6 +37,9 @@ export async function getCurrentAccountAccess() {
           accessGrandfathered: true,
           freeAccessStartedAt: true,
           freeAccessEndsAt: true,
+          billingStatus: true,
+          subscriptionStartedAt: true,
+          subscriptionEndsAt: true,
         },
       },
       properties: {
@@ -44,7 +47,7 @@ export async function getCurrentAccountAccess() {
         orderBy: { createdAt: "desc" },
       },
     },
-  });
+  }), getProfessionalBillingSettings()]);
 
   if (!user) return null;
 
@@ -59,6 +62,8 @@ export async function getCurrentAccountAccess() {
         user.professional,
         user,
         companionStatus === "ACTIVE" || companionStatus === "PAUSED",
+        new Date(),
+        billingSettings,
       )
     : null;
 
@@ -73,6 +78,7 @@ export async function getCurrentAccountAccess() {
     companionApproved: companionStatus === "ACTIVE" || companionStatus === "PAUSED",
     companionInReview: Boolean(companionStatus && companionStatus !== "ACTIVE" && companionStatus !== "PAUSED"),
     professionalAccess,
+    billingSettings,
     hostStatus,
     hasHostRequest: Boolean(user.hostProfile) || user.properties.length > 0,
     hasHostIntent: (Boolean(user.hostProfile) || isHostAccountType(user.accountType)) && !isCompanionIntent,
@@ -102,7 +108,7 @@ export async function requireCompanionPanel(options: { allowExpired?: boolean } 
     if (access.hasCompanionRequest) redirect(ACCOUNT_ROUTES.verificacaoAcompanhante);
     redirect(ACCOUNT_ROUTES.cadastroAcompanhante);
   }
-  if (access.professionalAccess?.kind === "EXPIRED" && !options.allowExpired) {
+  if (access.professionalAccess && !access.professionalAccess.canUsePlatform && !options.allowExpired) {
     redirect("/profissional/planos?acesso=expirado");
   }
   return access;

@@ -59,7 +59,7 @@ export default function AdminSidebar({ mobileOpen, onClose, name, email }: Props
           <div className="space-y-1">
             {adminNav.map(([label, href, Icon]) => {
               const active = pathname === href || (href !== "/admin" && pathname.startsWith(`${href}/`));
-              return <Link key={href} href={href} prefetch={false} onClick={onClose} aria-current={active ? "page" : undefined} className={`flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-bold no-underline transition-colors ${active ? "bg-[#f7ebff] text-[#8f1fd1]" : "text-[#555866] hover:bg-[#faf7fc] hover:text-[#8f1fd1]"}`}><Icon className="h-4 w-4 shrink-0" aria-hidden="true" />{label}</Link>;
+              return <Link key={href} href={href} onClick={onClose} aria-current={active ? "page" : undefined} className={`flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-bold no-underline transition-colors ${active ? "bg-[#f7ebff] text-[#8f1fd1]" : "text-[#555866] hover:bg-[#faf7fc] hover:text-[#8f1fd1]"}`}><Icon className="h-4 w-4 shrink-0" aria-hidden="true" />{label}</Link>;
             })}
           </div>
         </nav>

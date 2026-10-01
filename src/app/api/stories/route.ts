@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { ageGateCacheHeaders, stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
 import { enforceRateLimit } from "@/lib/security";
 import { publicCacheHeaders } from "@/lib/public-professional-profile";
-import { publicProfessionalWhere } from "@/lib/public-professional-access";
+import { getPublicProfessionalWhere } from "@/lib/public-professional-access";
 
 type StoryGroupResponse = {
   userId: string;
@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
 
   const city = url.searchParams.get("city");
   const state = url.searchParams.get("state");
-  const professionalWhere = publicProfessionalWhere(now);
+  const professionalWhere = await getPublicProfessionalWhere(now);
 
   const stories = await prisma.story.findMany({
     where: {

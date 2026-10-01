@@ -25,6 +25,24 @@ import * as path from "path";
 
 const STORAGE_PATH = path.join(__dirname, ".auth", "user.json");
 
+function colorChannels(value: string) {
+  const values = value.match(/[\d.]+/g)?.map(Number) ?? [];
+  return [values[0] ?? 0, values[1] ?? 0, values[2] ?? 0];
+}
+
+function contrastRatio(foreground: string, background: string) {
+  const luminance = (color: string) => {
+    const channels = colorChannels(color).map((channel) => {
+      const normalized = channel / 255;
+      return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+    });
+    return (0.2126 * channels[0]) + (0.7152 * channels[1]) + (0.0722 * channels[2]);
+  };
+  const lighter = Math.max(luminance(foreground), luminance(background));
+  const darker = Math.min(luminance(foreground), luminance(background));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 /** Verifica se o storageState tem cookies reais (login aconteceu) */
 function isAuthenticated(): boolean {
   try {
@@ -192,8 +210,14 @@ test.describe("Bottom nav — 4 tabs", () => {
       const link = page.locator(`.client-bottom-nav a[href="${tab.href}"]`);
       await link.waitFor({ state: "visible", timeout: 8_000 });
 
-      const className = await link.getAttribute("class");
-      expect(className).toContain("bg-[#d4a843]/15");
+      await expect(link).toHaveAttribute("aria-current", "page");
+      const colors = await link.evaluate((element) => {
+        const text = element.querySelector("span:last-child") ?? element;
+        const foreground = getComputedStyle(text).color;
+        const background = getComputedStyle(element.parentElement!).backgroundColor;
+        return { foreground, background };
+      });
+      expect(contrastRatio(colors.foreground, colors.background), JSON.stringify(colors)).toBeGreaterThanOrEqual(4.5);
     });
   }
 });

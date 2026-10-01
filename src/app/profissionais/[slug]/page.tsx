@@ -953,12 +953,12 @@ export default function ProfissionalProfilePage() {
       </div>
 
       {bookingOpen ? (
-        <div style={{ position: "fixed", inset: 0, zIndex: 900, background: "rgba(2,6,15,0.82)", backdropFilter: "blur(14px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-          <div style={{ width: "min(100%, 560px)", maxHeight: "88vh", overflowY: "auto", border: `1px solid ${GOLD_MID}`, borderRadius: 14, background: "linear-gradient(180deg,#080808,#080808)", boxShadow: "0 30px 90px rgba(0,0,0,0.58)" }}>
+        <div role="dialog" aria-modal="true" aria-labelledby="booking-dialog-title" style={{ position: "fixed", inset: 0, zIndex: 900, background: "rgba(2,6,15,0.82)", backdropFilter: "blur(14px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 6 }}>
+          <div className="elite-dialog elite-dialog--dark" style={{ border: `1px solid ${GOLD_MID}`, borderRadius: 14, boxShadow: "0 30px 90px rgba(0,0,0,0.58)" }}>
             <div style={{ padding: 18, borderBottom: `1px solid ${GOLD_DIM}`, display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
               <div>
-                <p style={{ margin: "0 0 6px", color: GOLD, fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase" }}>Agendamento Elite</p>
-                <h2 style={{ margin: 0, color: "#fcf7ff", fontSize: 24, fontFamily: PLAYFAIR }}>Agendar com {pro.displayName}</h2>
+                <p className="elite-dialog-kicker" style={{ margin: "0 0 6px", color: GOLD, fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase" }}>Agendamento Elite</p>
+                <h2 id="booking-dialog-title" style={{ margin: 0, color: "#fcf7ff", fontSize: 24, fontFamily: PLAYFAIR }}>Agendar com {pro.displayName}</h2>
                 <p style={{ margin: "8px 0 0", color: "#b4adb0", fontSize: 13, lineHeight: 1.5 }}>Confirme os detalhes diretamente com a profissional antes de solicitar o atendimento.</p>
               </div>
               <button onClick={() => setBookingOpen(false)} aria-label="Fechar agendamento" style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "rgba(255,255,255,0.03)", color: GOLD, cursor: "pointer", fontSize: 18 }}>×</button>
@@ -966,7 +966,7 @@ export default function ProfissionalProfilePage() {
 
             {authStatus !== "authenticated" ? (
               <div style={{ padding: 18, display: "grid", gap: 12 }}>
-                <div style={{ border: `1px solid ${GOLD_DIM}`, background: "#080808", borderRadius: 12, padding: 14 }}>
+                <div className="elite-dialog-card" style={{ border: `1px solid ${GOLD_DIM}`, borderRadius: 12, padding: 14 }}>
                   <p style={{ margin: "0 0 6px", color: "#fcf7ff", fontWeight: 800 }}>Confirme sua conta para agendar</p>
                   <p style={{ margin: 0, color: "#b4adb0", fontSize: 13, lineHeight: 1.55 }}>Entre ou conclua um cadastro simples para solicitar o atendimento com segurança.</p>
                 </div>

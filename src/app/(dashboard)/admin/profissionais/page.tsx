@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
-import { professionalApprovalAccessData } from "@/lib/professional-access";
+import { getProfessionalBillingSettings, professionalApprovalAccessData } from "@/lib/professional-access";
 import { filterApprovedProfilePhotos, type PublicProfileAsset } from "@/lib/public-professional-media";
 import { sendProfessionalApprovalEmail } from "@/lib/auth-email";
 import { sendProfessionalCorrectionEmail, sendProfessionalRejectionEmail } from "@/lib/professional-review-email";
@@ -305,12 +305,20 @@ async function reviewProfessional(formData: FormData) {
   revalidatePath("/admin/profissionais");
 }
 
-export default async function AdminProfissionaisPage({ searchParams }: { searchParams?: Promise<{ status?: string; page?: string }> }) {
+export default async function AdminProfissionaisPage({ searchParams }: { searchParams?: Promise<{ status?: string; access?: string; page?: string }> }) {
   await requireAdmin("professionals:review");
   const params = await searchParams;
   const status = params?.status;
+  const accessFilter = params?.access;
   const page = pageNumber(params?.page);
-  const where = status && status !== "ALL" ? { status: status as "DRAFT" | "PENDING_REVIEW" | "CORRECTION_REQUIRED" | "ACTIVE" | "PAUSED" | "SUSPENDED" | "REJECTED" } : {};
+  const now = new Date();
+  const where: Prisma.ProfessionalWhereInput = {};
+  if (status && status !== "ALL") where.status = status as "DRAFT" | "PENDING_REVIEW" | "CORRECTION_REQUIRED" | "ACTIVE" | "PAUSED" | "SUSPENDED" | "REJECTED";
+  if (accessFilter === "TRIAL") Object.assign(where, { accessGrandfathered: false, freeAccessEndsAt: { gt: now } });
+  if (accessFilter === "TRIAL_EXPIRED") Object.assign(where, { accessGrandfathered: false, freeAccessEndsAt: { lte: now }, billingStatus: "TRIAL_EXPIRED" });
+  if (accessFilter === "ACTIVE") Object.assign(where, { billingStatus: "ACTIVE" });
+  if (accessFilter === "GRANDFATHERED") Object.assign(where, { accessGrandfathered: true });
+  const billingSettings = await getProfessionalBillingSettings();
 
   const [total, professionals] = await Promise.all([prisma.professional.count({ where }), prisma.professional.findMany({
     where,
@@ -359,6 +367,9 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
       freeAccessStartedAt: true,
       freeAccessEndsAt: true,
       accessGrandfathered: true,
+      billingStatus: true,
+      subscriptionStartedAt: true,
+      subscriptionEndsAt: true,
       presentationVideoUrl: true,
       presentationVideoStatus: true,
       presentationVideoRejectReason: true,
@@ -407,7 +418,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
         select: {
           name: true, email: true, phone: true, city: true, state: true, birthDate: true, category: true,
           blocked: true, blockReason: true, blockedAt: true, kycSubmittedAt: true, kycReviewedAt: true,
-          kycRejectionReason: true, createdAt: true, updatedAt: true,
+          kycRejectionReason: true, premiumUntil: true, createdAt: true, updatedAt: true,
           uploadedAssets: {
             where: { folder: { startsWith: "profiles" } },
             select: {
@@ -419,7 +430,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
       },
       photos: { orderBy: { order: "asc" }, select: { id: true, url: true, cover: true, order: true, caption: true, createdAt: true } },
       specialties: { select: { id: true, name: true } },
-      locationChanges: { orderBy: { createdAt: "desc" }, take: 10, select: {
+      locationChanges: { orderBy: { createdAt: "desc" }, take: 3, select: {
         id: true, fromCity: true, fromState: true, fromNeighborhood: true, toCity: true, toState: true,
         toNeighborhood: true, changeType: true, effectiveFrom: true, effectiveUntil: true,
         verificationStatus: true, riskReason: true, createdAt: true,
@@ -429,6 +440,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
   const auditEntries = professionals.length ? await prisma.auditLog.findMany({
     where: { targetType: { in: ["PROFESSIONAL", "CONTENT"] }, targetId: { in: professionals.map((professional) => professional.id) } },
     orderBy: { timestamp: "desc" },
+    take: PAGE_SIZE * 6,
     select: {
       id: true, targetId: true, action: true, reason: true, changes: true, actorIdentifier: true, timestamp: true,
       admin: { select: { name: true, email: true } },
@@ -456,7 +468,12 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
             <Link
               prefetch={false}
               key={item}
-              href={item === "ALL" ? "/admin/profissionais" : `/admin/profissionais?status=${item}`}
+              href={(() => {
+                const query = new URLSearchParams();
+                if (item !== "ALL") query.set("status", item);
+                if (accessFilter) query.set("access", accessFilter);
+                return `/admin/profissionais${query.size ? `?${query}` : ""}`;
+              })()}
               style={{
                 ...buttonStyle,
                 textDecoration: "none",
@@ -471,6 +488,16 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
         })}
       </div>
 
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "-8px 0 20px" }} aria-label="Filtros de acesso profissional">
+        {[{ key: "", label: "Todos os acessos" }, { key: "TRIAL", label: "Trial ativo" }, { key: "TRIAL_EXPIRED", label: "Trial encerrado" }, { key: "ACTIVE", label: "Assinatura ativa" }, { key: "GRANDFATHERED", label: "Conta legada" }].map((item) => {
+          const active = item.key === (accessFilter ?? "");
+          const query = new URLSearchParams();
+          if (status && status !== "ALL") query.set("status", status);
+          if (item.key) query.set("access", item.key);
+          return <Link prefetch={false} key={item.key || "all-access"} href={`/admin/profissionais${query.size ? `?${query}` : ""}`} style={{ ...buttonStyle, textDecoration: "none", background: active ? "#f3dcff" : "#fff", color: active ? "#8f1fd1" : "#676170" }}>{item.label}</Link>;
+        })}
+      </div>
+
       {/* ── Cards ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {professionals.map((pro) => (
@@ -481,6 +508,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
             approvalIssues={professionalApprovalIssues(pro)}
             audits={auditsByProfessional.get(pro.id) ?? []}
             reviewAction={reviewProfessional}
+            billingEnabled={billingSettings.billingEnabled}
           />
         ))}
 
@@ -492,7 +520,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
       </div>
 
       <div style={{ marginTop: 16 }}>
-        <AdminPagination basePath="/admin/profissionais" page={page} pageSize={PAGE_SIZE} total={total} query={{ status }} />
+        <AdminPagination basePath="/admin/profissionais" page={page} pageSize={PAGE_SIZE} total={total} query={{ status, access: accessFilter }} />
       </div>
       <style>{`
         .pro-card { background:#fff; border:1px solid #e7dfe9; border-left:4px solid; border-radius:14px; overflow:hidden; content-visibility:auto; contain-intrinsic-size:720px; color:#27232c; }

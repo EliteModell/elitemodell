@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
-import { resolveProfessionalAccess } from "@/lib/professional-access";
+import { getProfessionalBillingSettings, resolveProfessionalAccess } from "@/lib/professional-access";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
@@ -31,6 +31,9 @@ export async function GET(
         accessGrandfathered: true,
         freeAccessStartedAt: true,
         freeAccessEndsAt: true,
+        billingStatus: true,
+        subscriptionStartedAt: true,
+        subscriptionEndsAt: true,
         user: { select: { premiumUntil: true } },
         presentationVideoUrl: true,
         presentationVideoStatus: true,
@@ -49,11 +52,13 @@ export async function GET(
   const ownerOrAdmin =
     professional.userId === session.user.id || session.user.role === "ADMIN";
   const now = new Date();
+  const billingSettings = await getProfessionalBillingSettings();
   const access = resolveProfessionalAccess(
     professional,
     professional.user,
     professional.status === "ACTIVE",
     now,
+    billingSettings,
   );
   if (
     !ownerOrAdmin &&

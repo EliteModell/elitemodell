@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { issueChecklist, issuesForStep, professionalCompletion } from "../src/lib/professional-completeness";
 import { locationChangeNeedsReview, normalizeServiceLocation, publicServiceLocation } from "../src/lib/professional-location";
+import { professionalCityFilter, resolveExactCityQuery } from "../src/lib/public-city-search";
 
 const complete = {
   displayName: "Modelo Teste",
@@ -84,6 +85,20 @@ test.describe("regra central de completude profissional", () => {
 });
 
 test.describe("localização de atendimento", () => {
+  test("Vitória é reconhecida como cidade exata com acento e caixa variados", () => {
+    for (const value of ["Vitória", "Vitoria", "vitória", "vitoria"]) {
+      expect(resolveExactCityQuery(value, "ES")).toMatchObject({ city: "Vitória", state: "ES" });
+    }
+  });
+
+  test("filtro de Vitória cobre grafias armazenadas com e sem acento sem agrupar a tabela", async () => {
+    const filter = await professionalCityFilter("vitoria", "ES");
+    const serialized = JSON.stringify(filter);
+    expect(serialized).toContain("Vitória");
+    expect(serialized).toContain("vitoria");
+    expect(serialized).toContain('"currentServiceState":{"equals":"ES"');
+  });
+
   test("normaliza UF sem alterar a cidade informada", () => {
     expect(normalizeServiceLocation({ city: " Vitória ", state: "es", neighborhood: " Praia do Canto " }))
       .toEqual({ city: "Vitória", state: "ES", neighborhood: "Praia do Canto" });
@@ -120,7 +135,7 @@ test.describe("localização de atendimento", () => {
     const publicRoute = fs.readFileSync(path.join(process.cwd(), "src/app/api/professionals/route.ts"), "utf8");
     expect(wizard).toContain('await fetch("/api/professionals/draft"');
     expect(wizard.indexOf('await fetch("/api/professionals/draft"')).toBeLessThan(wizard.indexOf("setStep((current)"));
-    const publicSelect = publicRoute.slice(publicRoute.indexOf("select: {"), publicRoute.indexOf("console.log(\"[CLIENT_SEARCH]"));
+    const publicSelect = publicRoute.slice(publicRoute.indexOf("select: {"), publicRoute.indexOf("const safeList"));
     expect(publicSelect).not.toContain("address: true");
     expect(publicSelect).not.toContain("latitude: true");
     expect(publicSelect).not.toContain("longitude: true");

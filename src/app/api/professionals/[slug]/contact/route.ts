@@ -7,7 +7,7 @@ import {
   canViewProfessionalContact,
   normalizeContactVisibility,
 } from "@/lib/professional-contact";
-import { resolveProfessionalAccess } from "@/lib/professional-access";
+import { getProfessionalBillingSettings, resolveProfessionalAccess } from "@/lib/professional-access";
 import { prisma } from "@/lib/prisma";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 
@@ -34,6 +34,9 @@ export async function GET(
       accessGrandfathered: true,
       freeAccessStartedAt: true,
       freeAccessEndsAt: true,
+      billingStatus: true,
+      subscriptionStartedAt: true,
+      subscriptionEndsAt: true,
       phone: true,
       whatsapp: true,
       hidePhone: true,
@@ -42,12 +45,14 @@ export async function GET(
     },
   });
   const now = new Date();
+  const billingSettings = await getProfessionalBillingSettings();
   const access = professional
     ? resolveProfessionalAccess(
         professional,
         professional.user,
         professional.status === "ACTIVE",
         now,
+        billingSettings,
       )
     : null;
   if (

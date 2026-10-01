@@ -7,7 +7,7 @@ import { authorizeAdminRequest } from "@/lib/admin-access";
 import { ageGateCacheHeaders } from "@/lib/age-gate-policy";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { publicProfessionalWhere } from "@/lib/public-professional-access";
+import { getPublicProfessionalWhere } from "@/lib/public-professional-access";
 import { controlledMediaAssetId } from "@/lib/public-professional-media";
 
 function safeFilename(value: string) {
@@ -65,10 +65,11 @@ export async function GET(
     }
   } else if (!isOwner) {
     const now = new Date();
+    const publicWhere = await getPublicProfessionalWhere(now);
     const [profile, stories] = await Promise.all([
       prisma.professional.findFirst({
         where: {
-          ...publicProfessionalWhere(now),
+          ...publicWhere,
           userId: asset.userId,
         },
         select: {
@@ -87,7 +88,7 @@ export async function GET(
           user: {
             professional: {
               is: {
-                ...publicProfessionalWhere(now),
+                ...publicWhere,
                 verified: true,
               },
             },

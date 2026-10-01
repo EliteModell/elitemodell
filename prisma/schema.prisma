@@ -20,6 +20,16 @@ enum ProfessionalStatus {
   REJECTED
 }
 
+enum ProfessionalBillingStatus {
+  PENDING_APPROVAL
+  TRIAL
+  ACTIVE
+  TRIAL_EXPIRED
+  PAST_DUE
+  CANCELED
+  GRANDFATHERED
+}
+
 enum AppointmentStatus {
   PENDING
   CONFIRMED
@@ -842,41 +852,46 @@ model Professional {
   rejectReason     String?
 
   // Status e métricas
-  status                         ProfessionalStatus @default(PENDING_REVIEW)
-  verified                       Boolean            @default(false)
-  featured                       Boolean            @default(false)
+  status                         ProfessionalStatus        @default(PENDING_REVIEW)
+  verified                       Boolean                   @default(false)
+  featured                       Boolean                   @default(false)
   freeAccessStartedAt            DateTime?
   freeAccessEndsAt               DateTime?
-  accessGrandfathered            Boolean            @default(true)
+  accessGrandfathered            Boolean                   @default(true)
+  billingStatus                  ProfessionalBillingStatus @default(GRANDFATHERED)
+  subscriptionStartedAt          DateTime?
+  subscriptionEndsAt             DateTime?
+  subscriptionProvider           String?
+  subscriptionExternalId         String?
   pauseStartedAt                 DateTime?
   pauseUntil                     DateTime?
   pauseReason                    String?
-  boostActive                    Boolean            @default(false)
+  boostActive                    Boolean                   @default(false)
   boostStartedAt                 DateTime?
   boostUntil                     DateTime?
   boostSource                    String?
   activePlanId                   String?
-  planPriority                   Int                @default(0)
-  onlineVisible                  Boolean            @default(true)
+  planPriority                   Int                       @default(0)
+  onlineVisible                  Boolean                   @default(true)
   lastOnlineAt                   DateTime?
-  profileViews                   Int                @default(0)
-  contactClicks                  Int                @default(0)
-  rating                         Float              @default(0)
-  totalReviews                   Int                @default(0)
-  totalAppointments              Int                @default(0)
+  profileViews                   Int                       @default(0)
+  contactClicks                  Int                       @default(0)
+  rating                         Float                     @default(0)
+  totalReviews                   Int                       @default(0)
+  totalAppointments              Int                       @default(0)
   registrationSubmittedAt        DateTime?
-  completionRulesVersion         Int                @default(1)
+  completionRulesVersion         Int                       @default(1)
   currentServiceCity             String?
   currentServiceState            String?
   currentServiceNeighborhood     String?
-  additionalServiceNeighborhoods String[]           @default([])
+  additionalServiceNeighborhoods String[]                  @default([])
   locationUpdatedAt              DateTime?
-  locationVerificationStatus     String             @default("UNVERIFIED")
+  locationVerificationStatus     String                    @default("UNVERIFIED")
   temporaryLocationFrom          DateTime?
   temporaryLocationUntil         DateTime?
   previousServiceLocation        Json?
-  createdAt                      DateTime           @default(now())
-  updatedAt                      DateTime           @updatedAt
+  createdAt                      DateTime                  @default(now())
+  updatedAt                      DateTime                  @updatedAt
 
   user              User                           @relation(fields: [userId], references: [id], onDelete: Cascade)
   photos            ProfessionalPhoto[]
@@ -893,6 +908,7 @@ model Professional {
 
   @@index([status, featured, rating, totalReviews, createdAt])
   @@index([status, accessGrandfathered, freeAccessEndsAt])
+  @@index([billingStatus, freeAccessEndsAt])
   @@index([status, boostActive, boostUntil])
   @@index([status, planPriority, featured, rating])
   @@index([status, lastOnlineAt])
@@ -924,6 +940,9 @@ model ProfessionalSubmissionReceipt {
 model PlatformSettings {
   id                                  String   @id @default("default")
   professionalFreeTrialDays           Int      @default(30)
+  professionalBillingEnabled          Boolean  @default(false)
+  professionalMonthlyPriceCents       Int?
+  professionalBillingCurrency         String   @default("BRL")
   uploadSecurityEnabled               Boolean  @default(true)
   uploadAvProvider                    String   @default("CLAMAV")
   uploadModerationProvider            String   @default("MANUAL")

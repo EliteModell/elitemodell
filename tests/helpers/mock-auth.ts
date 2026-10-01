@@ -17,7 +17,11 @@ type MockToken = {
   adultVerified?: boolean;
 };
 
-let configuredUserPromise: Promise<{
+type MockSessionOptions = {
+  persistedProfessionalStatus?: "DRAFT";
+};
+
+type PersistedUser = {
   id: string;
   name: string | null;
   email: string;
@@ -25,9 +29,55 @@ let configuredUserPromise: Promise<{
   accountType: string | null;
   clientStatus: string | null;
   blocked: boolean;
-} | null> | null = null;
+};
 
-async function resolvePersistedIdentity(token: MockToken): Promise<MockToken> {
+let configuredUserPromise: Promise<PersistedUser | null> | null = null;
+let draftProfessionalUserPromise: Promise<PersistedUser | null> | null = null;
+
+async function resolvePersistedIdentity(
+  token: MockToken,
+  options: MockSessionOptions = {},
+): Promise<MockToken> {
+  if (options.persistedProfessionalStatus) {
+    draftProfessionalUserPromise ??= (async () => {
+      const prisma = new PrismaClient();
+      try {
+        return await prisma.user.findFirst({
+          where: {
+            blocked: false,
+            professional: { is: { status: options.persistedProfessionalStatus } },
+          },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            accountType: true,
+            clientStatus: true,
+            blocked: true,
+          },
+        });
+      } finally {
+        await prisma.$disconnect();
+      }
+    })();
+
+    const professionalUser = await draftProfessionalUserPromise;
+    if (!professionalUser) {
+      throw new Error("A persisted DRAFT professional is required for this E2E session.");
+    }
+    return {
+      ...token,
+      id: professionalUser.id,
+      name: professionalUser.name ?? token.name,
+      email: professionalUser.email,
+      role: professionalUser.role,
+      accountType: professionalUser.accountType ?? token.accountType,
+      clientStatus: professionalUser.clientStatus,
+    };
+  }
+
   const email = process.env.TEST_USER_EMAIL;
   if (!email) return token;
 
@@ -72,13 +122,14 @@ async function resolvePersistedIdentity(token: MockToken): Promise<MockToken> {
 export async function installMockSessionCookie(
   context: BrowserContext,
   token: MockToken,
+  options: MockSessionOptions = {},
 ) {
   const secret = process.env.NEXTAUTH_SECRET;
   if (!secret) {
     throw new Error("NEXTAUTH_SECRET is required for signed E2E sessions.");
   }
 
-  const persistedToken = await resolvePersistedIdentity(token);
+  const persistedToken = await resolvePersistedIdentity(token, options);
   const { clientStatus, ...tokenWithoutNullableClientStatus } = persistedToken;
   const value = await encode({
     secret,

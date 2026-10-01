@@ -6,7 +6,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { enforceRateLimit, getClientIP } from "@/lib/security";
 import { publicCacheHeaders } from "@/lib/public-professional-profile";
-import { publicProfessionalWhere } from "@/lib/public-professional-access";
+import { getPublicProfessionalWhere } from "@/lib/public-professional-access";
 
 const schema = z.object({
   eventType: z.enum(["profile_view", "contact_click", "favorite"]),
@@ -23,9 +23,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     );
     if (limited) return limited;
     const now = new Date();
+    const publicWhere = await getPublicProfessionalWhere(now);
     const professional = await prisma.professional.findFirst({
       where: {
-        ...publicProfessionalWhere(now),
+        ...publicWhere,
         slug,
       },
       select: { id: true },

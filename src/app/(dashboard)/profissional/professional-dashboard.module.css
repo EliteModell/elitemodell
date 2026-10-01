@@ -182,6 +182,21 @@ button.headerIconButton {
   border-radius: 20px;
 }
 
+.trialCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 15px 18px;
+  border: 1px solid #e4c8f0;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fff 0%, #fbf3ff 100%);
+}
+
+.trialCard div { display: grid; gap: 5px; }
+.trialCard strong { color: #241927 !important; font-size: 17px; }
+.trialCard p { max-width: 560px; margin: 0 !important; color: #62596a !important; font-size: 13px; line-height: 1.5 !important; text-align: right; }
+
 .avatarLink {
   position: relative;
   width: 76px;
@@ -1055,6 +1070,8 @@ button.headerIconButton {
 }
 
 @media (max-width: 640px) {
+  .trialCard { align-items: flex-start; flex-direction: column; gap: 9px; padding: 14px; }
+  .trialCard p { text-align: left; }
   .topHeader {
     padding-right: 12px;
     padding-left: 12px;

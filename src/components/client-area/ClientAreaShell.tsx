@@ -442,6 +442,7 @@ export function ClientBottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={active ? "page" : undefined}
               className={`relative flex flex-col items-center justify-center gap-1.5 rounded-[11px] text-[12px] font-bold leading-none no-underline transition-all duration-200 ${
                 active
                   ? "border border-[#b72cff]/28 bg-[#b72cff]/15 text-[#e1a6ff] shadow-[0_10px_24px_rgba(183, 44, 255,0.10)]"

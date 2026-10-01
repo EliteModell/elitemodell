@@ -608,6 +608,43 @@ footer button,
 footer span { color: var(--text-secondary) !important; }
 
 /* Modais, drawers, alertas e estados de foco */
+.admin-panel h1,
+.admin-panel h2,
+.admin-panel h3,
+.admin-panel strong,
+.admin-panel label { color: var(--text-primary) !important; }
+.admin-panel p { color: var(--text-secondary) !important; }
+.admin-panel input:not([type="checkbox"]):not([type="radio"]),
+.admin-panel textarea,
+.admin-panel select {
+  border-color: var(--border-strong) !important;
+  background: #fff !important;
+  color: var(--text-primary) !important;
+}
+
+.elite-dialog {
+  width: min(100%, 560px);
+  max-height: min(88vh, calc(100dvh - 24px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.elite-dialog--dark {
+  border-color: rgba(225, 166, 255, .32) !important;
+  background: #100d12 !important;
+  color: #f8f4fa !important;
+}
+.public-profile-page .elite-dialog--dark h1,
+.public-profile-page .elite-dialog--dark h2,
+.public-profile-page .elite-dialog--dark h3,
+.public-profile-page .elite-dialog--dark strong { color: #fff !important; }
+.public-profile-page .elite-dialog--dark p,
+.public-profile-page .elite-dialog--dark label { color: #c9c1cc !important; }
+.public-profile-page .elite-dialog--dark .elite-dialog-kicker { color: #e1a6ff !important; }
+.public-profile-page .elite-dialog--dark .elite-dialog-card {
+  border-color: rgba(225, 166, 255, .28) !important;
+  background: #19151c !important;
+  color: #f8f4fa !important;
+}
 [role="dialog"]:not(.age-card):not(.entry-choice-panel) section,
 [role="dialog"]:not(.age-card):not(.entry-choice-panel) > div:not([class*="backdrop"]) { border-color: var(--border) !important; }
 input[type="checkbox"], input[type="radio"] { accent-color: var(--primary); }
@@ -618,6 +655,7 @@ select:focus-visible,
 textarea:focus-visible { outline-color: rgba(183, 44, 255,.48) !important; }
 
 @media (max-width: 640px) {
+  .elite-dialog { width: 100%; max-height: calc(100dvh - 12px); border-radius: 18px 18px 0 0 !important; }
   .age-content { padding: 24px 18px 18px !important; }
   .cookie-consent-panel { padding: 14px !important; }
   .cookie-consent-panel .cookie-button { min-height: 46px !important; padding-inline: 12px !important; font-size: 12px !important; }

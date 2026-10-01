@@ -2883,13 +2883,13 @@ body[data-client-dashboard="true"] .client-premium,
 .client-dashboard-shell .client-bottom-nav a[href="/dashboard"] {
   border-color: rgba(183, 44, 255, 0.30) !important;
   background: rgba(183, 44, 255, 0.13) !important;
-  color: #d77bff !important;
+  color: #8612b5 !important;
   opacity: 1 !important;
 }
 
 .client-dashboard-shell .client-bottom-nav a[href="/dashboard"] svg,
 .client-dashboard-shell .client-bottom-nav a[href="/dashboard"] span {
-  color: #d77bff !important;
+  color: #8612b5 !important;
   opacity: 1 !important;
 }
 
@@ -5368,4 +5368,3 @@ body[data-client-drawer-open="true"] .client-bottom-nav {
   border-right: 1px solid #251f20;
   white-space: nowrap;
 }
-

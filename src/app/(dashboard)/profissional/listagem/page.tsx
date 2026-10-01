@@ -53,13 +53,14 @@ export default async function ProfessionalListingPage() {
         where: { city: professional.city, status: "ACTIVE" },
         select: { id: true },
         orderBy: [{ boostActive: "desc" }, { featured: "desc" }, { rating: "desc" }, { totalReviews: "desc" }, { createdAt: "asc" }],
+        take: 500,
       })
     : [];
 
   const rankingIndex = cityRanking.findIndex((item) => item.id === professional.id);
   const rankingPosition = rankingIndex >= 0 ? rankingIndex + 1 : null;
   const hasActivePlan = Boolean(professional.user.premiumUntil && professional.user.premiumUntil > now);
-  const freeAccess = access.professionalAccess?.kind === "FREE_TRIAL";
+  const freeAccess = access.professionalAccess?.kind === "TRIAL";
   const isBoostActive = Boolean(professional.boostActive && (!professional.boostUntil || professional.boostUntil > now));
   const allPhotosCount = professional.photos.length || professional.galleryUrls.length + (professional.image ? 1 : 0);
   const cityLabel = professional.city && professional.state ? `${professional.city}, ${professional.state}` : "Cidade não informada";

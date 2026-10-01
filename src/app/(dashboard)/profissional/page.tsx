@@ -26,7 +26,6 @@ import { requireCompanionPanel } from "@/lib/account-access";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { prisma } from "@/lib/prisma";
 import { resolveProfessionalAccess } from "@/lib/professional-access";
-import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
 import styles from "./professional-dashboard.module.css";
 
 export const dynamic = "force-dynamic";
@@ -91,7 +90,6 @@ function ContentPreview({
 
 export default async function ProfissionalDashPage() {
   const access = await requireCompanionPanel({ allowExpired: true });
-  await refreshExpiredProfessionalTimers();
   const now = new Date();
   const eventsSince = new Date(now.getTime() - 30 * DAY_MS);
 
@@ -123,9 +121,10 @@ export default async function ProfissionalDashPage() {
     professional.user,
     professional.status === "ACTIVE" || professional.status === "PAUSED",
     now,
+    access.billingSettings,
   );
 
-  if (professionalAccess.kind === "EXPIRED") {
+  if (!professionalAccess.canUsePlatform) {
     return (
       <div className={styles.dashboard}>
         <section className={styles.expiredCard}>
@@ -151,6 +150,9 @@ export default async function ProfissionalDashPage() {
   const isVisible = professional.status === "ACTIVE" && professionalAccess.canAppearInSearch && (!professional.pauseUntil || professional.pauseUntil <= now);
   const activeToday = Boolean(professional.lastOnlineAt && professional.lastOnlineAt.getTime() >= now.getTime() - DAY_MS);
   const last30Clicks = professional.profileEvents.filter((event) => event.eventType === "contact_click").length;
+  const trialEndLabel = professionalAccess.freeTrialEndsAt
+    ? new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(professionalAccess.freeTrialEndsAt)
+    : null;
 
   const essentials = [
     { done: Boolean(profilePhoto) },
@@ -259,6 +261,31 @@ export default async function ProfissionalDashPage() {
 
   return (
     <div className={styles.dashboard} data-dashboard-version="professional-light-v1">
+      <section className={styles.trialCard} aria-label="Situação do período gratuito">
+        <div>
+          <span className={styles.eyebrow}>
+            {professionalAccess.kind === "GRANDFATHERED" ? "Conta legada" : professionalAccess.kind === "ACTIVE" ? "Assinatura ativa" : "Período gratuito"}
+          </span>
+          <strong>
+            {professionalAccess.kind === "TRIAL"
+              ? `${professionalAccess.freeTrialDaysLeft} dia${professionalAccess.freeTrialDaysLeft === 1 ? "" : "s"} restante${professionalAccess.freeTrialDaysLeft === 1 ? "" : "s"}`
+              : professionalAccess.kind === "TRIAL_EXPIRED"
+                ? "Período gratuito concluído"
+                : professionalAccess.kind === "GRANDFATHERED"
+                  ? "Seu acesso atual foi preservado"
+                  : "Acesso profissional ativo"}
+          </strong>
+        </div>
+        <p>
+          {professionalAccess.kind === "TRIAL" && trialEndLabel
+            ? `Seu período gratuito termina em ${trialEndLabel}.`
+            : professionalAccess.kind === "TRIAL_EXPIRED" && !professionalAccess.billingEnabled
+              ? "A cobrança mensal ainda não está habilitada. Seu acesso continua normalmente."
+              : professionalAccess.kind === "GRANDFATHERED"
+                ? "Esta conta é anterior à política atual e não foi convertida em inadimplente."
+                : "Sua conta profissional está em situação regular."}
+        </p>
+      </section>
       <section className={styles.profileCard} aria-label="Perfil profissional">
         <Link href="/profissional/fotos" className={styles.avatarLink} aria-label="Editar foto de perfil">
           <span className={styles.avatar}>

@@ -259,8 +259,11 @@ async function mockClientAccount(page: Page) {
   }));
 }
 
-async function mockProfessionalAccount(page: Page) {
-  await installMockSessionCookie(page.context(), PROFESSIONAL_SESSION.user);
+async function mockProfessionalAccount(
+  page: Page,
+  options: { persistedProfessionalStatus?: "DRAFT" } = {},
+) {
+  await installMockSessionCookie(page.context(), PROFESSIONAL_SESSION.user, options);
   await page.route("**/api/auth/session", (route: Route) => route.fulfill({
     status: 200,
     contentType: "application/json",
@@ -436,10 +439,30 @@ test("header autenticado mantém a ação de continuar cadastro com contraste AA
   }
 });
 
+test("modal de agendamento mantém contraste AA e cabe nos iPhones suportados", async ({ page, context }) => {
+  await acceptAdultGate(context);
+  await mockPublicProfessionals(page);
+  for (const width of [320, 360, 375, 390, 393, 414, 430]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/profissionais/victoria", { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: "Agendar", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: /Agendar com Victoria/ });
+    await expect(dialog).toBeVisible();
+    await assertDarkText(dialog.getByText("Confirme os detalhes diretamente com a profissional antes de solicitar o atendimento."));
+    await assertDarkText(dialog.getByText("Confirme sua conta para agendar"));
+    const bounds = await dialog.locator(".elite-dialog").boundingBox();
+    expect(bounds?.x ?? -1).toBeGreaterThanOrEqual(0);
+    expect((bounds?.x ?? 0) + (bounds?.width ?? width)).toBeLessThanOrEqual(width + 1);
+    expect(bounds?.height ?? 900).toBeLessThanOrEqual(844);
+    await assertNoOverflow(page);
+    if (width === 390) await page.screenshot({ path: path.join(OUTPUT_DIR, "14-scheduling-modal-after.png"), fullPage: true });
+  }
+});
+
 test("as 9 etapas do cadastro profissional mantêm contraste e encaixe responsivo", async ({ page, context }) => {
   test.setTimeout(180_000);
   await acceptAdultGate(context);
-  await mockProfessionalAccount(page);
+  await mockProfessionalAccount(page, { persistedProfessionalStatus: "DRAFT" });
   await page.route("**/api/users/me/activate-professional", (route: Route) => route.fulfill({
     status: 200,
     contentType: "application/json",
@@ -456,6 +479,27 @@ test("as 9 etapas do cadastro profissional mantêm contraste e encaixe responsiv
       professionalStatus: "DRAFT",
       professional: { status: "DRAFT" },
     }),
+  }));
+  await page.route("**/api/professionals/draft", (route: Route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      completion: {
+        profilePercent: 100,
+        profileComplete: true,
+        kycApproved: false,
+        readyToSubmit: false,
+        firstIncompleteStep: 7,
+        issues: [],
+        profileIssues: [],
+      },
+      correction: null,
+    }),
+  }));
+  await page.route("**/api/didit/session", (route: Route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ available: false, status: "NOT_STARTED", retryAllowed: false }),
   }));
   await context.addInitScript(() => {
     localStorage.setItem("elitemodell_professional_onboarding_v1", JSON.stringify({

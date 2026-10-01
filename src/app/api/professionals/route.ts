@@ -8,8 +8,7 @@ import { authOptions } from "@/lib/auth";
 import { stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
 import { DIDIT_PROVIDER } from "@/lib/professional-verification";
 import { ProfessionalDiditError, requireApprovedProfessionalDidit } from "@/lib/professional-didit";
-import { refreshExpiredProfessionalTimers } from "@/lib/professional-timers";
-import { activeProfessionalAccessWhere } from "@/lib/professional-access";
+import { getProfessionalBillingSettings } from "@/lib/professional-access";
 import { createProfessionalSchema } from "@/lib/professional-profile-schema";
 import { assertApprovedMediaUrls } from "@/lib/approved-media";
 import { normalizeContactVisibility } from "@/lib/professional-contact";
@@ -19,13 +18,13 @@ import {
   isProfessionalOnline,
   publicCacheHeaders,
 } from "@/lib/public-professional-profile";
-import { professionalCityFilter } from "@/lib/public-city-search";
+import { professionalCityFilter, resolveExactCityQuery } from "@/lib/public-city-search";
+import { publicProfessionalWhere } from "@/lib/public-professional-access";
 import { publicServiceLocation } from "@/lib/professional-location";
 import { normalizeControlledMediaUrl } from "@/lib/public-professional-media";
 import { deliverProfessionalSubmissionReceipt } from "@/lib/professional-submission-receipt";
 import { logAudit } from "@/lib/audit";
 import { professionalCompletion, issueChecklist } from "@/lib/professional-completeness";
-import { refreshExpiredTemporaryLocations } from "@/lib/professional-location-service";
 
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
@@ -45,7 +44,6 @@ function slugify(text: string) {
 }
 
 export async function GET(req: NextRequest) {
-  await refreshExpiredTemporaryLocations();
   const { searchParams } = new URL(req.url);
   const search    = searchParams.get("search");
   const specialty = searchParams.get("specialty");
@@ -60,21 +58,24 @@ export async function GET(req: NextRequest) {
   const limitParam = Number(searchParams.get("limit") ?? 12);
   const limit     = Number.isFinite(limitParam) ? Math.min(24, Math.max(1, Math.floor(limitParam))) : 12;
   const now       = new Date();
-  await refreshExpiredProfessionalTimers(now);
+  const billingSettings = await getProfessionalBillingSettings();
 
-  // Apenas status ACTIVE é obrigatório. "verified" é badge visual, não bloqueio de visibilidade.
-  const where: Prisma.ProfessionalWhereInput = { status: "ACTIVE" };
+  // Pausas vencidas voltam a aparecer pela própria consulta, sem escrita de manutenção no GET.
+  const where: Prisma.ProfessionalWhereInput = {};
   const andFilters: Prisma.ProfessionalWhereInput[] = [
-    { OR: [{ pauseUntil: null }, { pauseUntil: { lt: now } }] },
-    activeProfessionalAccessWhere(now),
+    publicProfessionalWhere(now, billingSettings.billingEnabled),
   ];
 
   if (search) {
-    where.OR = [
-      { displayName: { contains: search, mode: "insensitive" } },
-      { city:        { contains: search, mode: "insensitive" } },
-      { bio:         { contains: search, mode: "insensitive" } },
-    ];
+    const exactCity = resolveExactCityQuery(search);
+    if (exactCity) andFilters.push(await professionalCityFilter(exactCity.city, exactCity.state));
+    else {
+      where.OR = [
+        { displayName: { contains: search, mode: "insensitive" } },
+        { city: { contains: search, mode: "insensitive" } },
+        { bio: { contains: search, mode: "insensitive" } },
+      ];
+    }
   }
   if (city) {
     andFilters.push(await professionalCityFilter(city, state ?? ""));
@@ -122,10 +123,8 @@ export async function GET(req: NextRequest) {
         bio: true,
         city: true, state: true, bairro: true,
         currentServiceCity: true, currentServiceState: true, currentServiceNeighborhood: true,
-        image: true, galleryUrls: true,
+        image: true,
         escortCategory: true, birthDate: true,
-        height: true, weight: true, hairColor: true, eyeColor: true, ethnicity: true,
-        hasTattoos: true, hasSilicone: true,
         hideAge: true,
         phone: true,
         whatsapp: true,
@@ -134,27 +133,22 @@ export async function GET(req: NextRequest) {
         priceMin: true, pricePerHour: true, price30min: true,
         attendanceTypes: true, servesGenders: true,
         services: true,
-        rating: true, totalReviews: true, totalAppointments: true,
+        rating: true, totalReviews: true,
         verified: true, featured: true,
         boostActive: true, boostUntil: true,
         activePlanId: true, planPriority: true,
         onlineVisible: true, lastOnlineAt: true,
-        profileViews: true, contactClicks: true,
         user: { select: { image: true, premiumUntil: true } },
-        photos: { orderBy: { order: "asc" } },
-        specialties: true,
+        photos: { orderBy: { order: "asc" }, take: 8, select: { id: true, url: true, cover: true, order: true } },
+        specialties: { select: { id: true, name: true } },
       },
     }),
     prisma.professional.count({ where }),
   ]);
 
-  console.log("[CLIENT_SEARCH] filters", { search, city, state, category, sortBy, page, limit });
-  console.log("[CLIENT_SEARCH] professionals found", professionals.length, "/ total", total);
-
   const safeList = professionals.map(({
     hidePhone,
     contactVisibility,
-    galleryUrls,
     birthDate,
     hideAge,
     onlineVisible,
@@ -167,7 +161,7 @@ export async function GET(req: NextRequest) {
     ...p
   }) => {
     const serviceLocation = publicServiceLocation({ ...p, currentServiceCity, currentServiceState, currentServiceNeighborhood });
-    const photos = canonicalProfessionalPhotos({ photos: p.photos, image: p.image, galleryUrls });
+    const photos = canonicalProfessionalPhotos({ photos: p.photos, image: p.image, galleryUrls: [] });
     const premiumActive = Boolean(p.user.premiumUntil && p.user.premiumUntil > now);
     const normalizedContactVisibility = normalizeContactVisibility(contactVisibility, hidePhone);
     return {
@@ -338,6 +332,7 @@ export async function POST(req: NextRequest) {
             ...professionalData,
             userId: session.user.id,
             accessGrandfathered: false,
+            billingStatus: "PENDING_APPROVAL",
             specialties: {
               create: allSpecialties.map((name) => ({ name })),
             },

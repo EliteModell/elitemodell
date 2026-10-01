@@ -3,7 +3,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/admin-access";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
-import { getProfessionalFreeTrialDays } from "@/lib/professional-access";
+import { getProfessionalBillingSettings, getProfessionalFreeTrialDays } from "@/lib/professional-access";
 import { AdminHeader, AdminPanel, StatusPill, buttonStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
@@ -80,15 +80,15 @@ async function updateUploadSecurity(formData: FormData) {
 
 export default async function AdminConfiguracoesPage() {
   const { adminRole } = await requireAdmin("settings:manage");
-  const professionalFreeTrialDays = await getProfessionalFreeTrialDays();
-  const uploadSettings = await prisma.platformSettings.findUnique({
+  const [billingSettings, uploadSettings] = await Promise.all([getProfessionalBillingSettings(), prisma.platformSettings.findUnique({
     where: { id: "default" },
     select: {
       uploadSecurityEnabled: true,
       uploadAvProvider: true,
       uploadModerationProvider: true,
     },
-  });
+  })]);
+  const professionalFreeTrialDays = billingSettings.trialDays;
   const envStatus = [
     ["KYC_PROVIDER", process.env.KYC_PROVIDER],
     ["PERSONA_API_KEY", process.env.PERSONA_API_KEY ? "configurada" : ""],
@@ -204,6 +204,12 @@ export default async function AdminConfiguracoesPage() {
           </label>
           <div style={{ color: "#22c55e", fontSize: 13, fontWeight: 800 }}>
             Configuração atual: {professionalFreeTrialDays} dias gratuitos
+          </div>
+          <div style={{ display: "grid", gap: 6, padding: 12, border: "1px solid #eadff0", borderRadius: 10, background: "#fcf8ff", color: "#514b55", fontSize: 13 }}>
+            <strong>Cobrança pós-trial: {billingSettings.billingEnabled ? "habilitada" : "desabilitada"}</strong>
+            <span>Mensalidade: {billingSettings.monthlyPriceCents == null ? "ainda não definida" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: billingSettings.currency }).format(billingSettings.monthlyPriceCents / 100)}</span>
+            <span>Moeda configurada: {billingSettings.currency}</span>
+            <small>Nenhuma cobrança recorrente é criada por esta configuração.</small>
           </div>
         </form>
       </AdminPanel>

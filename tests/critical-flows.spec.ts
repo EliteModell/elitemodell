@@ -80,7 +80,8 @@ async function expectCadastroChoiceOptions(page: Page) {
   const body = page.locator("body");
   await expect(body).toContainText(/cliente/i);
   await expect(body).toContainText(/acompanhante/i);
-  await expect(body).toContainText(/anfitri/i);
+  await expect(page.getByTestId("registration-choice-page").getByRole("link", { name: /Cadastre-se como acompanhante/i })).toBeVisible();
+  await expect(page.locator('a[href^="/anfitriao"], a[href^="/cadastro-anfitriao"]')).toHaveCount(0);
 }
 
 async function seedHostDraft(page: Page) {
@@ -114,7 +115,7 @@ test.describe("Fluxo 1 — Cadastro", () => {
     await expectCadastroChoiceOptions(page);
   });
 
-  test("/cadastro com rascunho de anfitriao salvo ainda mostra escolha de tipo", async ({ page }) => {
+  test("/cadastro ignora rascunho local do modulo de anfitriao aposentado", async ({ page }) => {
     await bypassAgeGate(page);
     await seedHostDraft(page);
     await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
@@ -123,7 +124,7 @@ test.describe("Fluxo 1 — Cadastro", () => {
     expect(page.url()).toMatch(/\/cadastro$/);
   });
 
-  test("/cadastro logado com rascunho anterior ainda permite escolher tipo", async ({ page }) => {
+  test("/cadastro logado ignora rascunho do modulo de anfitriao aposentado", async ({ page }) => {
     await bypassAgeGate(page);
     await seedHostDraft(page);
     await mockAuth(page);
@@ -150,13 +151,11 @@ test.describe("Fluxo 1 — Cadastro", () => {
     );
   });
 
-  test("anfitriao iniciado nao prende o proximo clique em cadastrar", async ({ page }) => {
+  test("rota aposentada de anfitriao redireciona sem prender o cadastro atual", async ({ page }) => {
     await bypassAgeGate(page);
+    await page.goto("/anfitriao/imoveis/novo", { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(/\/$/);
     await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
-    await page.locator('a[href="/anfitriao/imoveis/novo"]').first().click();
-    await page.waitForURL(/\/anfitriao\/imoveis\/novo/);
-    await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
-    await page.waitForLoadState("networkidle").catch(() => {});
     await expectCadastroChoiceOptions(page);
   });
 
@@ -248,7 +247,7 @@ test.describe("Fluxo 1 — Cadastro", () => {
     await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle").catch(() => {});
     await expect(page.getByRole("heading", { name: "Cadastre-se grátis como acompanhante" })).toBeVisible();
-    await expect(page.getByLabel("Qual seu número de telefone?")).toBeVisible();
+    await expect(page.getByLabel("Seu número de telefone")).toBeVisible();
     expect(page.url()).toMatch(/\/cadastro\/acompanhante/);
   });
 
@@ -484,7 +483,6 @@ test.describe("Segurança — Proteção de rotas", () => {
     "/profissional",
     "/painel/cliente",
     "/painel/acompanhante",
-    "/painel/anfitriao",
     "/verificacao/acompanhante",
     "/completar-cadastro",
   ];
@@ -497,6 +495,12 @@ test.describe("Segurança — Proteção de rotas", () => {
       expect(page.url()).toMatch(/\/login/);
     });
   }
+
+  test("modulo aposentado de anfitriao redireciona para a home", async ({ page }) => {
+    await bypassAgeGate(page);
+    await page.goto("/painel/anfitriao", { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(/\/$/);
+  });
 
   test("/admin redireciona para /dashboard para usuário não-admin com sessão", async ({ page }) => {
     await gotoWithMock(page, "/admin");
@@ -540,7 +544,7 @@ test.describe("Fluxo público — Buscar prazer", () => {
     );
 
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    const cta = page.getByRole("link", { name: /Ver perfis agora/i });
+    const cta = page.getByRole("link", { name: /Explorar perfis/i }).first();
     await expect(cta).toHaveAttribute(
       "href",
       "/buscar?tab=acompanhantes&selecionarCidade=1",
@@ -575,6 +579,7 @@ test.describe("Fluxo público — Buscar prazer", () => {
     await page.waitForTimeout(500);
     expect(professionalRequests).toBe(0);
 
+    await page.getByPlaceholder("Digite cidade ou UF").fill("Itauna");
     await page.getByRole("button", { name: "Itaúna, MG" }).click();
     await page.getByRole("button", { name: "Buscar acompanhantes" }).click();
     await expect(page).toHaveURL(/cidade=Ita(%C3%BA|ú)na/i);

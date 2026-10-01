@@ -78,20 +78,22 @@ test.describe("juridico e seguranca - visitante", () => {
       request.post("/api/reviews", { data: {} }),
     ]);
     expect(privateMedia.status()).toBe(404);
-    expect([401, 403]).toContain(properties.status());
+    expect(properties.status()).toBe(410);
+    await expect(properties.json()).resolves.toMatchObject({ error: "Recurso desativado." });
     expect(favorite.status()).toBe(401);
     expect(review.status()).toBe(401);
   });
 
-  test("rodape usa os cinco icones sociais no lugar de letras", async ({ page }) => {
+  test("rodape usa os quatro canais sociais atuais com icones acessiveis", async ({ page }) => {
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
     const footer = page.locator("footer");
 
-    for (const label of ["Instagram", "WhatsApp", "TikTok", "YouTube", "Telegram"]) {
+    for (const label of ["Instagram", "WhatsApp", "YouTube", "Telegram"]) {
       const social = footer.getByLabel(label);
       await expect(social).toHaveCount(1);
       await expect(social.locator("svg")).toHaveCount(1);
     }
+    await expect(footer.getByLabel("TikTok")).toHaveCount(0);
   });
 
   test("paginas de perfil e listagem ficam acessiveis ao visitante", async ({ page }) => {
@@ -102,7 +104,7 @@ test.describe("juridico e seguranca - visitante", () => {
     expect(page.url()).toContain("/buscar");
   });
 
-  test("robots e sitemap nao indexam conteudo adulto ou minutas juridicas", async ({ request }) => {
+  test("robots e sitemap indexam paginas institucionais sem expor conteudo adulto", async ({ request }) => {
     const [robots, sitemap] = await Promise.all([
       request.get("/robots.txt"),
       request.get("/sitemap.xml"),
@@ -110,11 +112,13 @@ test.describe("juridico e seguranca - visitante", () => {
     const robotsText = await robots.text();
     const sitemapText = await sitemap.text();
 
-    expect(robotsText).toContain("Disallow: /");
+    expect(robotsText).toContain("Disallow: /buscar");
+    expect(robotsText).toContain("Disallow: /profissionais");
     expect(sitemapText).not.toContain("/profissionais");
     expect(sitemapText).not.toContain("/buscar");
-    expect(sitemapText).not.toContain("/terms");
-    expect(sitemapText).not.toContain("/privacy");
+    expect(sitemapText).toContain("/terms");
+    expect(sitemapText).toContain("/privacy");
+    expect(sitemapText).toContain("/politica-conteudo");
     expect(sitemapText).not.toContain("storage/v1/object/public");
   });
 

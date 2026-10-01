@@ -6,7 +6,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import { resolveProfessionalAccess } from "@/lib/professional-access";
+import { getProfessionalBillingSettings, resolveProfessionalAccess } from "@/lib/professional-access";
 import { assertApprovedMediaUrls } from "@/lib/approved-media";
 import { ageGateCacheHeaders, stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
 import {
@@ -16,7 +16,6 @@ import {
   publicCacheHeaders,
 } from "@/lib/public-professional-profile";
 import { normalizeContactVisibility } from "@/lib/professional-contact";
-import { refreshExpiredTemporaryLocations } from "@/lib/professional-location-service";
 import {
   controlledMediaAssetId,
   filterApprovedProfilePhotos,
@@ -24,7 +23,6 @@ import {
 } from "@/lib/public-professional-media";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
-  await refreshExpiredTemporaryLocations();
   const { slug } = await params;
   const now = new Date();
   const tokenPromise = getToken({
@@ -90,6 +88,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       accessGrandfathered: true,
       freeAccessStartedAt: true,
       freeAccessEndsAt: true,
+      billingStatus: true,
+      subscriptionStartedAt: true,
+      subscriptionEndsAt: true,
       pauseUntil: true,
       pauseReason: true,
       boostActive: true,
@@ -126,7 +127,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       },
     },
   });
-  const [token, professional] = await Promise.all([tokenPromise, professionalPromise]);
+  const [token, professional, billingSettings] = await Promise.all([
+    tokenPromise,
+    professionalPromise,
+    getProfessionalBillingSettings(),
+  ]);
 
   if (!professional) {
     return NextResponse.json(
@@ -147,6 +152,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     professional,
     professional.user,
     professional.status === "ACTIVE" || professional.status === "PAUSED",
+    now,
+    billingSettings,
   );
   if ((!effectivelyActive || isPausedByDate || !access.canAppearInSearch) && !canViewDraft) {
     return NextResponse.json(
@@ -218,6 +225,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   delete publicProfessional.accessGrandfathered;
   delete publicProfessional.freeAccessStartedAt;
   delete publicProfessional.freeAccessEndsAt;
+  delete publicProfessional.billingStatus;
+  delete publicProfessional.subscriptionStartedAt;
+  delete publicProfessional.subscriptionEndsAt;
   delete publicProfessional.lastOnlineAt;
   delete publicProfessional.onlineVisible;
   delete publicProfessional.activePlanId;

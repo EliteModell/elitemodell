@@ -52,12 +52,12 @@ export function StatCard({
   );
 
   if (!href) return content;
-  return <Link prefetch={false} href={href} style={{ textDecoration: "none" }}>{content}</Link>;
+  return <Link href={href} style={{ textDecoration: "none" }}>{content}</Link>;
 }
 
 export function AdminPanel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background: adminColors.panel, border: `1px solid ${adminColors.border}`, borderRadius: 16, padding: 16, boxShadow: "0 8px 24px rgba(37, 31, 32,.06)" }}>
+    <div className="admin-panel" style={{ background: adminColors.panel, border: `1px solid ${adminColors.border}`, borderRadius: 16, padding: 16, boxShadow: "0 8px 24px rgba(37, 31, 32,.06)" }}>
       {children}
     </div>
   );

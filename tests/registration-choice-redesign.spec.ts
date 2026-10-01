@@ -21,7 +21,7 @@ test.describe("página de escolha de cadastro", () => {
   });
 
   test("preserva rotas e não inclui ações duplicadas no topo", async ({ page }) => {
-    await page.goto("/cadastro", { waitUntil: "networkidle" });
+    await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
 
     const choice = page.getByTestId("registration-choice-page");
     await expect(choice).toBeVisible();
@@ -49,13 +49,13 @@ test.describe("página de escolha de cadastro", () => {
   });
 
   test("navega para acompanhante e login pelos destinos preservados", async ({ page }) => {
-    await page.goto("/cadastro", { waitUntil: "networkidle" });
+    await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
     await page.getByTestId("registration-choice-page")
       .getByRole("link", { name: /Cadastre-se como acompanhante/i })
       .click();
     await expect(page).toHaveURL(/\/cadastro\/acompanhante$/);
 
-    await page.goto("/cadastro", { waitUntil: "networkidle" });
+    await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
     await page.getByTestId("registration-choice-page").getByRole("link", { name: "Entrar" }).click();
     await expect(page).toHaveURL(/\/login$/);
   });
@@ -63,7 +63,7 @@ test.describe("página de escolha de cadastro", () => {
   for (const width of [320, 360, 375, 390, 393, 414, 430, 768, 1024, 1440]) {
     test(`sem overflow e com composição íntegra em ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: width >= 768 ? 900 : 844 });
-      await page.goto("/cadastro", { waitUntil: "networkidle" });
+      await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
 
       const choice = page.getByTestId("registration-choice-page");
       await expect(choice).toBeVisible();

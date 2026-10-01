@@ -155,6 +155,7 @@ export async function ensureProfileForIntent(userId: string, intent: EntryAccoun
         status: "DRAFT",
         verified: false,
         accessGrandfathered: false,
+        billingStatus: "PENDING_APPROVAL",
         paymentMethods: [],
         attendanceTypes: [],
         servesGenders: [],

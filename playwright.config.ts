@@ -12,7 +12,10 @@ const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
 
 export default defineConfig({
   testDir: "./tests",
-  timeout: 35_000,
+  // The authenticated suites share a remote database. Limiting concurrency keeps
+  // route-level assertions deterministic without weakening their coverage.
+  workers: 2,
+  timeout: 60_000,
   retries: 1,
   reporter: [
     ["list"],
@@ -56,6 +59,11 @@ export default defineConfig({
     {
       name: "professional-validation",
       testMatch: "**/professional-validation.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
+      name: "professional-trial",
+      testMatch: "**/professional-trial.spec.ts",
       use: { browserName: "chromium" },
     },
     {

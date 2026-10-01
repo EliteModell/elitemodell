@@ -3,6 +3,7 @@ import Link from "next/link";
 import { StatusPill, buttonStyle } from "../_components/AdminPrimitives";
 import { AdminKycEvidence } from "./AdminKycEvidence";
 import { professionalCompletion } from "@/lib/professional-completeness";
+import { resolveProfessionalAccess } from "@/lib/professional-access-policy";
 
 type AuditEntry = {
   id: string;
@@ -35,7 +36,9 @@ export type AdminProfessionalRecord = {
   kycProvider: string | null; kycSessionId: string | null; kycStatus: string;
   rejectReason: string | null; pauseUntil: Date | null; pauseReason: string | null;
   boostActive: boolean; boostUntil: Date | null; boostSource: string | null;
-  freeAccessEndsAt: Date | null; accessGrandfathered: boolean;
+  freeAccessStartedAt: Date | null; freeAccessEndsAt: Date | null; accessGrandfathered: boolean;
+  billingStatus: "PENDING_APPROVAL" | "TRIAL" | "ACTIVE" | "TRIAL_EXPIRED" | "PAST_DUE" | "CANCELED" | "GRANDFATHERED";
+  subscriptionStartedAt: Date | null; subscriptionEndsAt: Date | null;
   profileViews: number; contactClicks: number; rating: number; totalReviews: number;
   registrationSubmittedAt: Date | null; completionRulesVersion: number;
   currentServiceCity: string | null; currentServiceState: string | null; currentServiceNeighborhood: string | null;
@@ -47,7 +50,7 @@ export type AdminProfessionalRecord = {
     name: string | null; email: string; phone: string | null; city: string | null; state: string | null;
     birthDate: Date | null; category: string | null; blocked: boolean; blockReason: string | null;
     blockedAt: Date | null; kycSubmittedAt: Date | null; kycReviewedAt: Date | null;
-    kycRejectionReason: string | null; createdAt: Date; updatedAt: Date;
+    kycRejectionReason: string | null; premiumUntil: Date | null; createdAt: Date; updatedAt: Date;
     uploadedAssets: unknown[];
   };
   photos: Array<{ id: string; url: string; cover: boolean; order: number; caption: string | null; createdAt: Date }>;
@@ -133,12 +136,14 @@ export function AdminProfessionalCard({
   profileIssues,
   audits,
   reviewAction,
+  billingEnabled,
 }: {
   professional: AdminProfessionalRecord;
   approvalIssues: string[];
   profileIssues: string[];
   audits: AuditEntry[];
   reviewAction: (formData: FormData) => Promise<void>;
+  billingEnabled: boolean;
 }) {
   const canApprove = pro.status === "PENDING_REVIEW" && approvalIssues.length === 0;
   const accent = pro.status === "ACTIVE" ? "#16a34a" : pro.status === "REJECTED" || pro.status === "SUSPENDED" ? "#dc2626" : pro.status === "PENDING_REVIEW" || pro.status === "CORRECTION_REQUIRED" ? "#9a25cf" : "#786f7e";
@@ -161,6 +166,16 @@ export function AdminProfessionalCard({
     return value.includes("EMAIL_SENT") || value.includes("EMAIL_FAILED");
   });
   const currentIssues = pro.status === "PENDING_REVIEW" ? approvalIssues : profileIssues;
+  const billing = resolveProfessionalAccess(pro, pro.user, pro.status === "ACTIVE" || pro.status === "PAUSED", new Date(), { billingEnabled });
+  const billingLabel = {
+    PENDING_APPROVAL: "Aguardando aprovação",
+    TRIAL: "Trial ativo",
+    ACTIVE: "Assinatura ativa",
+    TRIAL_EXPIRED: "Trial encerrado",
+    PAST_DUE: "Pagamento pendente",
+    CANCELED: "Cancelada",
+    GRANDFATHERED: "Conta legada",
+  }[billing.kind];
   const lifecycle = [
     ["Cadastro iniciado", true], ["Cadastro concluído", profileIssues.length === 0],
     ["Enviado para análise", pro.status !== "DRAFT" || Boolean(pro.submissionReceipt)],
@@ -254,6 +269,16 @@ export function AdminProfessionalCard({
               <Row label="Perfil" value={profileIssues.length ? "Incompleto" : "Completo"} />
             </Section>
 
+            <Section title="TRIAL / ASSINATURA">
+              <Row label="Status" value={billingLabel} />
+              <Row label="Início do trial" value={date(pro.freeAccessStartedAt, true)} />
+              <Row label="Fim do trial" value={date(pro.freeAccessEndsAt, true)} />
+              <Row label="Dias restantes" value={billing.freeTrialDaysLeft == null ? "Não se aplica" : billing.freeTrialDaysLeft} />
+              <Row label="Assinatura ativa" value={billing.subscriptionActive ? "Sim" : "Não"} />
+              <Row label="Conta anterior à política" value={pro.accessGrandfathered ? "Sim" : "Não"} />
+              <Row label="Cobrança global" value={billingEnabled ? "Habilitada" : "Desabilitada"} />
+            </Section>
+
             <Section title="KYC / IDENTIDADE">
               <Row label="Método" value={providerLabel(pro.kycProvider, pro.kycSessionId)} />
               <Row label="Status geral" value={technicalStatus(pro.kycStatus)} />
@@ -340,7 +365,7 @@ export function AdminProfessionalCard({
               <Row label="Views" value={pro.profileViews} /><Row label="Contatos" value={pro.contactClicks} />
               <Row label="Avaliação" value={`${pro.rating.toFixed(1)} (${pro.totalReviews})`} />
               <Row label="Boost" value={pro.boostActive ? `Ativo${pro.boostUntil ? ` até ${date(pro.boostUntil)}` : ""}` : "Inativo"} />
-              <Row label="Acesso" value={pro.accessGrandfathered ? "Legado" : pro.freeAccessEndsAt ? `Gratuito até ${date(pro.freeAccessEndsAt)}` : "Inicia na aprovação"} />
+              <Row label="Acesso" value={billingLabel} />
             </div>
           </aside>
         </div>
