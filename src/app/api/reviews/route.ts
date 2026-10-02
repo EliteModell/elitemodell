@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   }
 
   if (searchParams.get("eligibility") === "1") {
-    const session = await getServerSession(authOptions);
+    const session = adultAccess.session;
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Nao autorizado." }, { status: 401, headers: ageGateCacheHeaders() });
     }

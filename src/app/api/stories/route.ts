@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
   if (!adultAccess.ok) return NextResponse.json({ error: adultAccess.error }, { status: adultAccess.status, headers: adultAccess.headers });
   const now = new Date();
   const url = new URL(req.url);
-  const session = await getServerSession(authOptions);
+  const session = adultAccess.session;
   if (url.searchParams.get("mine") === "1") {
     if (!session?.user?.id) {
       return NextResponse.json(

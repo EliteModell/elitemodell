@@ -1,4 +1,5 @@
 import { NextAuthOptions } from "next-auth";
+import type { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
@@ -20,6 +21,69 @@ function isUniqueEmailConflict(err: unknown) {
     err.code === "P2002" &&
     Array.isArray(err.meta?.target) &&
     err.meta.target.includes("email");
+}
+
+type AuthContextRow = {
+  name: string | null;
+  email: string;
+  image: string | null;
+  role: string;
+  accountType: string;
+  clientStatus: string;
+  lgpdConsent: boolean;
+  termsConsent: boolean;
+  birthDate: Date | null;
+  blocked: boolean;
+  hasClientProfile: boolean;
+  hasHostProfile: boolean;
+  professionalId: string | null;
+  professionalStatus: string | null;
+  professionalVerified: boolean | null;
+  professionalKycStatus: string | null;
+  hasActiveAdminAssignment: boolean;
+  propertyStatuses: string[];
+};
+
+export async function loadAuthContext(userId: string) {
+  const configuredSchema = process.env.DATABASE_URL
+    ? new URL(process.env.DATABASE_URL).searchParams.get("schema") ?? "public"
+    : "public";
+  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(configuredSchema)) {
+    throw new Error("Invalid database schema configured for auth context.");
+  }
+  const table = (name: string) => Prisma.raw(`"${configuredSchema}"."${name}"`);
+  const rows = await prisma.$queryRaw<AuthContextRow[]>`
+    SELECT
+      u."name", u."email", u."image", u."role"::text AS "role",
+      u."accountType", u."clientStatus"::text AS "clientStatus",
+      u."lgpdConsent", u."termsConsent", u."birthDate", u."blocked",
+      EXISTS (SELECT 1 FROM ${table("ClientProfile")} cp WHERE cp."userId" = u."id") AS "hasClientProfile",
+      EXISTS (SELECT 1 FROM ${table("HostProfile")} hp WHERE hp."userId" = u."id") AS "hasHostProfile",
+      p."id" AS "professionalId", p."status"::text AS "professionalStatus",
+      p."verified" AS "professionalVerified", p."kycStatus" AS "professionalKycStatus",
+      EXISTS (
+        SELECT 1 FROM ${table("AdminRoleAssignment")} ara
+        WHERE ara."userId" = u."id" AND ara."active" = true AND ara."revokedAt" IS NULL
+      ) AS "hasActiveAdminAssignment",
+      COALESCE((
+        SELECT array_agg(prop."status"::text) FROM ${table("Property")} prop WHERE prop."hostId" = u."id"
+      ), ARRAY[]::text[]) AS "propertyStatuses"
+    FROM ${table("User")} u
+    LEFT JOIN ${table("Professional")} p ON p."userId" = u."id"
+    WHERE u."id" = ${userId}
+    LIMIT 1
+  `;
+  return rows[0] ?? null;
+}
+
+function invalidateAuthToken(token: JWT): JWT {
+  token.id = "";
+  token.sub = "";
+  token.role = "GUEST";
+  token.adultVerified = false;
+  token.availableProfiles = [];
+  token.activeProfileType = undefined;
+  return token;
 }
 
 export const authOptions: NextAuthOptions = {
@@ -497,51 +561,37 @@ export const authOptions: NextAuthOptions = {
       }
       if (token.id) {
         try {
-          const dbUser = await prisma.user.findUnique({
-            where: { id: token.id as string },
-            select: {
-              name: true,
-              email: true,
-              image: true,
-              role: true,
-              accountType: true,
-              clientStatus: true,
-              clientProfile: { select: { id: true } },
-              hostProfile: { select: { id: true } },
-              lgpdConsent: true,
-              termsConsent: true,
-              birthDate: true,
-              professional: { select: { id: true, status: true, verified: true, kycStatus: true } },
-              properties: { select: { status: true } },
-              adminAssignments: {
-                where: { active: true, revokedAt: null },
-                select: { id: true },
-                take: 1,
-              },
-              blocked: true,
-            },
-          });
-          if (dbUser) {
+          const dbUser = await loadAuthContext(token.id as string);
+          if (!dbUser) return invalidateAuthToken(token);
+          {
             if (dbUser.blocked) {
               console.warn(`[JWT] Usuário bloqueado: ${token.id}`);
-              return null as unknown as typeof token;
+              return invalidateAuthToken(token);
             }
             token.name = dbUser.name;
             token.email = dbUser.email;
             token.picture = dbUser.image;
-            const effectiveRole = dbUser.adminAssignments.length > 0 ? "ADMIN" : dbUser.role;
+            const effectiveRole = dbUser.hasActiveAdminAssignment ? "ADMIN" : dbUser.role;
             token.role = effectiveRole;
             token.accountType = dbUser.accountType;
             token.clientStatus = dbUser.clientStatus;
-            token.professionalStatus = dbUser.professional?.status ?? null;
+            token.professionalStatus = dbUser.professionalStatus;
             token.adultVerified =
               dbUser.clientStatus === "VERIFIED" ||
-              Boolean(dbUser.professional?.verified && dbUser.professional?.kycStatus === "APPROVED") ||
+              Boolean(dbUser.professionalVerified && dbUser.professionalKycStatus === "APPROVED") ||
               effectiveRole === "ADMIN";
-            token.availableProfiles = deriveAvailableProfiles({ ...dbUser, role: effectiveRole });
-            token.isProfessional = !!dbUser.professional || token.availableProfiles.includes("PROFESSIONAL");
+            const profileShape = {
+              role: effectiveRole,
+              accountType: dbUser.accountType,
+              clientProfile: dbUser.hasClientProfile ? {} : null,
+              hostProfile: dbUser.hasHostProfile ? {} : null,
+              professional: dbUser.professionalId ? {} : null,
+              properties: dbUser.propertyStatuses.map((status) => ({ status })),
+            };
+            token.availableProfiles = deriveAvailableProfiles(profileShape);
+            token.isProfessional = Boolean(dbUser.professionalId) || token.availableProfiles.includes("PROFESSIONAL");
             token.needsConsent = !dbUser.lgpdConsent || !dbUser.termsConsent || !dbUser.birthDate;
-            token.hostStatus = getHostRegistrationStatus(dbUser);
+            token.hostStatus = getHostRegistrationStatus(profileShape);
             if (!token.activeProfileType || !token.availableProfiles.includes(token.activeProfileType)) {
               token.activeProfileType = token.availableProfiles.includes("CLIENTE") ? "CLIENTE" : token.availableProfiles[0];
             }

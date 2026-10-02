@@ -97,6 +97,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "auth-latency-security",
+      testMatch: "**/auth-latency-security.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "legal-document-catalog",
       testMatch: "**/legal-document-catalog.spec.ts",
       use: { browserName: "chromium" },
