@@ -1,6 +1,7 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 import { ageGateCacheHeaders, isAgeRestrictedRequest } from "@/lib/age-gate-policy";
+import { hasConfirmedAgeDeclaration } from "@/lib/age-declaration";
 
 function isAdminToken(token: { role?: string }) {
   return token.role === "ADMIN";
@@ -78,6 +79,11 @@ export async function proxy(request: NextRequest) {
   const isSensitivePublicContent = isAgeRestrictedRequest(pathname, request.method);
   if (isPublic && !isSensitivePublicContent) return NextResponse.next();
 
+  const hasAgeDeclaration = hasConfirmedAgeDeclaration(request.cookies);
+  if (isPublic && isSensitivePublicContent && hasAgeDeclaration) {
+    return withAgeGateHeaders(NextResponse.next());
+  }
+
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
@@ -86,9 +92,13 @@ export async function proxy(request: NextRequest) {
 
   if (!token) {
     if (isSensitivePublicContent) {
+      const ageGateUrl = new URL("/verificacao-idade", request.url);
+      if (!isApiRoute) {
+        ageGateUrl.searchParams.set("returnUrl", `${pathname}${request.nextUrl.search}`);
+      }
       return isApiRoute
         ? withAgeGateHeaders(NextResponse.json({ error: "Verificacao de maioridade obrigatoria." }, { status: 403 }))
-        : withAgeGateHeaders(NextResponse.redirect(new URL("/verificacao-idade", request.url)));
+        : withAgeGateHeaders(NextResponse.redirect(ageGateUrl));
     }
     return unauthorized();
   }

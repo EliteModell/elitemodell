@@ -47,7 +47,7 @@ function slugify(text: string) {
 export async function GET(req: NextRequest) {
   const limited = await enforceRateLimitAsync(`public-search:${getClientIP(req)}`, 300, 60 * 1000, "Muitas buscas em pouco tempo.");
   if (limited) return limited;
-  const adultAccess = await authorizeAdultContentRequest();
+  const adultAccess = await authorizeAdultContentRequest(req, { allowAgeDeclaration: true });
   if (!adultAccess.ok) return NextResponse.json({ error: adultAccess.error }, { status: adultAccess.status, headers: adultAccess.headers });
   const { searchParams } = new URL(req.url);
   const search    = searchParams.get("search");

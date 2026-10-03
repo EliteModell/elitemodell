@@ -54,10 +54,10 @@ test.describe("juridico e seguranca - visitante", () => {
       text: document.body.innerText.toLowerCase(),
     }));
     expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 2);
-    expect(dimensions.text).toContain("maioridade");
+    expect(dimensions.text).toContain("maiores de 18 anos");
   });
 
-  test("descoberta adulta bloqueia leitura anonima e preserva gravacoes autenticadas", async ({ request }) => {
+  test("descoberta adulta exige declaracao e preserva gravacoes autenticadas", async ({ request }) => {
     const publicResponses = await Promise.all([
       request.get("/api/professionals"),
       request.get("/api/professionals/slug-publico"),
@@ -69,6 +69,17 @@ test.describe("juridico e seguranca - visitante", () => {
       expect([401, 403]).toContain(response.status());
       const body = await response.text();
       expect(body).not.toContain("storage/v1/object/public");
+    }
+
+    const declaredHeaders = { Cookie: "elite_modell_age_declaration=confirmed" };
+    const declaredResponses = await Promise.all([
+      request.get("/api/professionals", { headers: declaredHeaders }),
+      request.get("/api/professionals/slug-publico", { headers: declaredHeaders }),
+      request.get("/api/stories", { headers: declaredHeaders }),
+      request.get("/api/reviews?professionalId=clx0000000000000000000000", { headers: declaredHeaders }),
+    ]);
+    for (const response of declaredResponses) {
+      expect([401, 403]).not.toContain(response.status());
     }
 
     const [privateMedia, properties, favorite, review] = await Promise.all([
@@ -96,12 +107,23 @@ test.describe("juridico e seguranca - visitante", () => {
     await expect(footer.getByLabel("TikTok")).toHaveCount(0);
   });
 
-  test("paginas de perfil e listagem redirecionam visitante para verificacao etaria", async ({ page }) => {
+  test("declaracao etaria libera paginas publicas sem sessao", async ({ page, context }) => {
     await page.goto("/profissionais/perfil-publico", { waitUntil: "domcontentloaded" });
     expect(page.url()).toContain("/verificacao-idade");
 
-    await page.goto("/buscar", { waitUntil: "domcontentloaded" });
-    expect(page.url()).toContain("/verificacao-idade");
+    await context.addCookies([{
+      name: "elite_modell_age_declaration",
+      value: "confirmed",
+      domain: "127.0.0.1",
+      path: "/",
+      sameSite: "Lax",
+    }]);
+
+    for (const route of ["/buscar", "/cidade", "/profissionais", "/profissionais/perfil-publico"]) {
+      const response = await page.goto(route, { waitUntil: "domcontentloaded" });
+      expect(response?.status(), route).toBeLessThan(500);
+      expect(page.url(), route).not.toContain("/verificacao-idade");
+    }
   });
 
   test("robots e sitemap indexam paginas institucionais sem expor conteudo adulto", async ({ request }) => {

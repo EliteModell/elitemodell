@@ -16,7 +16,7 @@ function safeFilename(value: string) {
 }
 
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const adultAccess = await authorizeAdultContentRequest();
+  const adultAccess = await authorizeAdultContentRequest(req, { allowAgeDeclaration: true });
   if (!adultAccess.ok) {
     return NextResponse.json(
       { error: adultAccess.error },
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
   }
   const { id } = await context.params;
   const limited = await enforceRateLimitAsync(
-    `media:${adultAccess.session.user.id}:${getClientIP(req)}`,
+    `media:${adultAccess.session?.user.id ?? "age-declared"}:${getClientIP(req)}`,
     240,
     15 * 60 * 1000,
     "Muitas requisicoes de midia.",
@@ -71,10 +71,10 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
     return NextResponse.json({ error: "Midia indisponivel." }, { status: 404, headers: ageGateCacheHeaders() });
   }
 
-  const isOwner = asset.userId === adultAccess.session.user.id;
+  const isOwner = asset.userId === adultAccess.session?.user.id;
   const isPrivateIdentityMaterial = asset.folder.startsWith("documentos") || asset.folder.startsWith("verificacao");
   const logicalPrivate = isPrivateIdentityMaterial || asset.visibility !== "PUBLIC";
-  let isAdmin = adultAccess.session.user.role === "ADMIN";
+  let isAdmin = adultAccess.session?.user.role === "ADMIN";
   if (logicalPrivate && !isOwner) {
     const admin = await authorizeAdminRequest(isPrivateIdentityMaterial ? "kyc:review" : "reports:manage");
     if (!admin.ok) {
@@ -124,8 +124,8 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
     const signedUrl = await provider.getSignedUrl(asset.approvedBucket, asset.approvedPath, 60);
     await prisma.auditLog.create({
       data: {
-        adminId: isAdmin ? adultAccess.session.user.id : null,
-        actorIdentifier: adultAccess.session.user.id,
+        adminId: isAdmin ? adultAccess.session?.user.id ?? null : null,
+        actorIdentifier: adultAccess.session?.user.id ?? "age-declared-visitor",
         action: "ADMIN_ACCESS",
         targetType: "CONTENT",
         targetId: asset.id,

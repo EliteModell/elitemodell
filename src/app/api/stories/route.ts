@@ -51,10 +51,12 @@ function controlledAssetId(value: string, requestUrl: string) {
 export async function GET(req: NextRequest) {
   const limited = await enforceRateLimitAsync(`public-stories:${getClientIP(req)}`, 180, 60 * 1000, "Muitas consultas de stories em pouco tempo.");
   if (limited) return limited;
-  const adultAccess = await authorizeAdultContentRequest();
+  const url = new URL(req.url);
+  const adultAccess = await authorizeAdultContentRequest(req, {
+    allowAgeDeclaration: url.searchParams.get("mine") !== "1",
+  });
   if (!adultAccess.ok) return NextResponse.json({ error: adultAccess.error }, { status: adultAccess.status, headers: adultAccess.headers });
   const now = new Date();
-  const url = new URL(req.url);
   const session = adultAccess.session;
   if (url.searchParams.get("mine") === "1") {
     if (!session?.user?.id) {

@@ -5,6 +5,11 @@ import { usePathname } from "next/navigation";
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
+import {
+  AGE_DECLARATION_COOKIE,
+  AGE_DECLARATION_MAX_AGE_SECONDS,
+  AGE_DECLARATION_VALUE,
+} from "@/lib/age-declaration";
 
 const GOLD = "#b72cff";
 const CONSENT_KEY = "elite_modell_adult_consent_session";
@@ -13,10 +18,12 @@ const CONSENT_PERSIST_KEY = "elite_modell_ageConsentAccepted";
 const CONSENT_PERSIST_DATE_KEY = "elite_modell_ageConsentAcceptedAt";
 const DECLINED_KEY = "elite_modell_adult_consent_declined";
 const SAFE_EXIT_PATH = "/saida";
+const CONSENT_MAX_AGE_MS = AGE_DECLARATION_MAX_AGE_SECONDS * 1000;
 
 function shouldSkipGate(pathname: string | null) {
   if (!pathname) return true;
   if (pathname === SAFE_EXIT_PATH) return true;
+  if (pathname === "/verificacao-idade") return true;
 
   return [
     "/profissional",
@@ -34,7 +41,15 @@ function shouldSkipGate(pathname: string | null) {
 
 function hasAdultConsent() {
   try {
-    return Boolean(sessionStorage.getItem(CONSENT_KEY) || localStorage.getItem(CONSENT_PERSIST_KEY));
+    const persistedAt = Date.parse(localStorage.getItem(CONSENT_PERSIST_DATE_KEY) ?? "");
+    const hasFreshPersistentConsent =
+      localStorage.getItem(CONSENT_PERSIST_KEY) === "true" &&
+      Number.isFinite(persistedAt) &&
+      Date.now() - persistedAt < CONSENT_MAX_AGE_MS;
+    const hasCookie = document.cookie
+      .split(";")
+      .some((part) => part.trim() === `${AGE_DECLARATION_COOKIE}=${AGE_DECLARATION_VALUE}`);
+    return Boolean(sessionStorage.getItem(CONSENT_KEY) || hasFreshPersistentConsent || hasCookie);
   } catch {
     return false;
   }
@@ -89,8 +104,11 @@ export default function AgeGate() {
     sessionStorage.setItem(CONSENT_DATE_KEY, acceptedAt);
     localStorage.setItem(CONSENT_PERSIST_KEY, "true");
     localStorage.setItem(CONSENT_PERSIST_DATE_KEY, acceptedAt);
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${AGE_DECLARATION_COOKIE}=${AGE_DECLARATION_VALUE}; Max-Age=${AGE_DECLARATION_MAX_AGE_SECONDS}; Path=/; SameSite=Lax${secure}`;
     sessionStorage.removeItem(DECLINED_KEY);
     setAccepted(true);
+    window.location.reload();
   }
 
   function declineConsent() {
@@ -124,12 +142,11 @@ export default function AgeGate() {
             <span>18+</span>
           </div>
 
-          <p className="eyebrow">Acesso restrito</p>
-          <h2 id="age-gate-title">Aviso importante antes de continuar</h2>
+          <p className="eyebrow">Conteúdo +18</p>
+          <h2 id="age-gate-title">Conteúdo destinado a maiores de 18 anos.</h2>
           <p id="age-gate-description" className="age-intro">
-            Este ambiente é destinado exclusivamente a maiores de 18 anos. Ao continuar, você confirma que possui 18 anos ou
-            mais e que está ciente de que poderá visualizar conteúdo e anúncios voltados ao público adulto, sempre de acordo
-            com os <Link href="/terms">Termos de Uso</Link> e a <Link href="/privacy">Política de Privacidade</Link> da plataforma.
+            Ao continuar, você declara possuir 18 anos ou mais. Consulte os <Link href="/terms">Termos de Uso</Link> e a{" "}
+            <Link href="/privacy">Política de Privacidade</Link>.
           </p>
 
           <div className="privacy-note">
@@ -139,11 +156,11 @@ export default function AgeGate() {
 
           <div className="actions">
             <button ref={acceptButtonRef} className="continue-button" onClick={acceptConsent} type="button">
-              Aceitar e continuar
+              Tenho 18 anos ou mais
             </button>
 
             <button className="deny-button" onClick={declineConsent} type="button">
-              Recusar
+              Sair
             </button>
           </div>
         </div>

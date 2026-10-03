@@ -19,9 +19,11 @@ const createSchema = z.object({
 export async function GET(req: NextRequest) {
   const limited = await enforceRateLimitAsync(`public-reviews:${getClientIP(req)}`, 180, 60 * 1000, "Muitas consultas de avaliações.");
   if (limited) return limited;
-  const adultAccess = await authorizeAdultContentRequest();
-  if (!adultAccess.ok) return NextResponse.json({ error: adultAccess.error }, { status: adultAccess.status, headers: adultAccess.headers });
   const { searchParams } = new URL(req.url);
+  const adultAccess = await authorizeAdultContentRequest(req, {
+    allowAgeDeclaration: searchParams.get("eligibility") !== "1",
+  });
+  if (!adultAccess.ok) return NextResponse.json({ error: adultAccess.error }, { status: adultAccess.status, headers: adultAccess.headers });
   const professionalId = searchParams.get("professionalId");
   if (!professionalId) {
     return NextResponse.json(

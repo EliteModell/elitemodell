@@ -26,7 +26,7 @@ import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const limited = await enforceRateLimitAsync(`public-profile:${getClientIP(req)}`, 300, 60 * 1000, "Muitos perfis abertos em pouco tempo.");
   if (limited) return limited;
-  const adultAccess = await authorizeAdultContentRequest();
+  const adultAccess = await authorizeAdultContentRequest(req, { allowAgeDeclaration: true });
   if (!adultAccess.ok) return NextResponse.json({ error: adultAccess.error }, { status: adultAccess.status, headers: adultAccess.headers });
   const { slug } = await params;
   const now = new Date();
@@ -179,7 +179,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const photoAssets = photoAssetIds.length ? await prisma.uploadAsset.findMany({
     where: { id: { in: photoAssetIds }, userId: professional.userId },
     select: {
-      id: true, userId: true, folder: true, category: true, status: true,
+      id: true, userId: true, folder: true, category: true, status: true, visibility: true,
       moderationStatus: true, approvedBucket: true, approvedPath: true,
       uploadCompletedAt: true, malwareStatus: true, ageIdentityStatus: true,
       consentStatus: true, adminReviewRequired: true, adminReviewStatus: true,

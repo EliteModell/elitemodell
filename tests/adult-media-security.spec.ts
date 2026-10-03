@@ -2,6 +2,12 @@ import { expect, test } from "@playwright/test";
 import { isAgeRestrictedRequest } from "../src/lib/age-gate-policy";
 import { createMediaAccessToken, verifyMediaAccessToken } from "../src/lib/media-access-token";
 import { evaluateMediaPublicationGates } from "../src/lib/media-security";
+import {
+  AGE_DECLARATION_COOKIE,
+  AGE_DECLARATION_MAX_AGE_SECONDS,
+  AGE_DECLARATION_VALUE,
+  hasConfirmedAgeDeclaration,
+} from "../src/lib/age-declaration";
 
 const passingGates = {
   uploadComplete: true,
@@ -66,6 +72,14 @@ test.describe("seguranca fail-closed de midia adulta", () => {
       expect(isAgeRestrictedRequest(path, "GET"), path).toBe(true);
     }
     expect(isAgeRestrictedRequest("/api/professionals", "POST")).toBe(false);
+  });
+
+  test("declaracao etaria usa cookie limitado sem equivaler a verificacao forte", () => {
+    expect(AGE_DECLARATION_COOKIE).toBe("elite_modell_age_declaration");
+    expect(AGE_DECLARATION_VALUE).toBe("confirmed");
+    expect(AGE_DECLARATION_MAX_AGE_SECONDS).toBe(30 * 24 * 60 * 60);
+    expect(hasConfirmedAgeDeclaration({ get: () => ({ value: "confirmed" }) })).toBe(true);
+    expect(hasConfirmedAgeDeclaration({ get: () => ({ value: "invalid" }) })).toBe(false);
   });
 
   test("API de midia privada recusa visitante sem sessao", async ({ request }) => {

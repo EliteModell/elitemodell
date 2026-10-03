@@ -4,6 +4,7 @@ export type PublicProfileAsset = {
   folder: string;
   category: string;
   status: string;
+  visibility?: string | null;
   moderationStatus?: string | null;
   approvedBucket: string | null;
   approvedPath: string | null;
@@ -52,6 +53,7 @@ export function filterApprovedProfilePhotos(
       .filter((asset) =>
         asset.userId === ownerId &&
         asset.status === "APPROVED" &&
+        asset.visibility === "PUBLIC" &&
         evaluateMediaPublicationGates({
           uploadComplete: Boolean(asset.uploadCompletedAt),
           malwareStatus: asset.malwareStatus,
