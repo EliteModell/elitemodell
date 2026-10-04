@@ -9,7 +9,7 @@ import Navbar from "@/components/Navbar";
 import PublicReportButton from "@/components/moderation/PublicReportButton";
 import ProfessionalContactAction from "@/components/professionals/ProfessionalContactAction";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
-import { resolvePublicProfileMedia } from "@/lib/public-professional-media";
+import { controlledMediaAssetId, resolvePublicProfileMedia } from "@/lib/public-professional-media";
 import styles from "./profile.module.css";
 
 const ActionAuthModal = dynamic(() => import("@/components/auth/ActionAuthModal"));
@@ -450,6 +450,7 @@ export default function ProfissionalProfilePage() {
               src={coverImage}
               alt=""
               fill
+              unoptimized={Boolean(controlledMediaAssetId(coverImage))}
               preload
               sizes="100vw"
               quality={72}
@@ -479,6 +480,7 @@ export default function ProfissionalProfilePage() {
                   src={profileImage}
                   alt={pro.displayName}
                   fill
+                  unoptimized={Boolean(controlledMediaAssetId(profileImage))}
                   sizes="88px"
                   quality={62}
                   loading="eager"
@@ -614,6 +616,7 @@ export default function ProfissionalProfilePage() {
                     src={url}
                     alt=""
                     fill
+                    unoptimized={Boolean(controlledMediaAssetId(url))}
                     sizes="(max-width: 720px) 33vw, 220px"
                     quality={60}
                     onError={() => markMediaFailed(url)}
