@@ -40,8 +40,26 @@ export default function CitySelectorScreen({
     setInput("");
     setSuggestions([]);
     setNoResults(null);
-    const focusTimer = setTimeout(() => inputRef.current?.focus(), 140);
-    return () => clearTimeout(focusTimer);
+  }, []);
+
+  useEffect(() => {
+    function syncVisualViewport() {
+      const height = window.visualViewport?.height ?? window.innerHeight;
+      document.documentElement.style.setProperty("--elite-visual-viewport-height", `${height}px`);
+      document.body.dataset.cityKeyboardOpen =
+        window.visualViewport && window.innerHeight - window.visualViewport.height > 120 ? "true" : "false";
+    }
+
+    syncVisualViewport();
+    window.visualViewport?.addEventListener("resize", syncVisualViewport);
+    window.visualViewport?.addEventListener("scroll", syncVisualViewport);
+
+    return () => {
+      delete document.body.dataset.cityKeyboardOpen;
+      document.documentElement.style.removeProperty("--elite-visual-viewport-height");
+      window.visualViewport?.removeEventListener("resize", syncVisualViewport);
+      window.visualViewport?.removeEventListener("scroll", syncVisualViewport);
+    };
   }, []);
 
   useEffect(() => {
@@ -149,18 +167,18 @@ export default function CitySelectorScreen({
         <section className="client-city-hero">
           <p className="client-city-kicker">EXPLORAR PERFIS</p>
           <h1 className="client-city-title">
-            Escolha sua<br />cidade <span>✦</span>
+            Escolha sua<br /><span>cidade</span>
           </h1>
           <p className="client-city-subtitle">
             Use sua localização ou<br />digite a cidade para buscar perfis
           </p>
           <Image
-            src="/brand/elite-modell%20gps.png"
+            src="/images/client/model-client-premium.jpeg"
             alt=""
-            width={640}
-            height={520}
+            width={1066}
+            height={559}
             priority
-            sizes="(max-width: 430px) 100vw, 320px"
+            sizes="(max-width: 430px) 78vw, 340px"
             className="client-city-hero-image"
           />
         </section>
@@ -171,7 +189,7 @@ export default function CitySelectorScreen({
             type="button"
             onClick={handleGeolocate}
             disabled={geolocating}
-            className="flex w-full items-center justify-center gap-2.5 rounded-[14px] border border-[#b72cff]/36 bg-[#b72cff]/14 py-4 text-[14px] font-bold text-[#e1a6ff] transition active:scale-[0.98] disabled:opacity-60"
+            className="client-city-location-button"
           >
             {geolocating ? (
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#e1a6ff]/30 border-t-[#e1a6ff]" />
@@ -274,43 +292,34 @@ export default function CitySelectorScreen({
 
           {!noResults && !busy && visibleSuggestions.length === 0 && input.length < 2 && (
             <div className="space-y-[44px]">
-              <div className="flex flex-wrap items-center gap-5 rounded-[18px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-5 shadow-[0_22px_70px_rgba(0,0,0,0.32)] sm:flex-nowrap sm:p-7">
-                <div className="grid h-[82px] w-[82px] shrink-0 place-items-center rounded-[17px] bg-[#080808]/88">
-                  <Diamond className="h-12 w-12 text-[#d77bff]" strokeWidth={1.7} />
+              <div className="client-city-intro-card">
+                <div>
+                  <Diamond />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-[21px] font-black leading-tight text-[#d77bff] sm:text-[24px]">Encontre perfis exclusivos</h2>
-                  <p className="mt-3 text-[15px] leading-[1.55] text-[#fffaf0]/60 sm:text-[18px]">
+                <div>
+                  <h2>Disponível para iniciantes</h2>
+                  <p>
                     Explore acompanhantes na sua cidade com segurança e discrição.
                   </p>
+                  <button type="button" onClick={() => setPremiumOpen(true)} className="flex min-h-[54px] w-full client-city-premium-button">
+                    Seja Premium
+                    <Crown />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setPremiumOpen(true)}
-                  className="flex min-h-[54px] w-full shrink-0 items-center justify-center gap-3 rounded-[12px] border border-[#d77bff]/55 bg-[linear-gradient(135deg,rgba(183, 44, 255,0.34),rgba(101, 0, 155,0.78))] px-7 text-[16px] font-black text-[#d77bff] shadow-[0_0_34px_rgba(183, 44, 255,0.14)] transition hover:brightness-110 active:scale-95 sm:min-h-[58px] sm:w-auto"
-                >
-                  Seja Premium
-                  <Crown className="h-5 w-5 fill-[#d77bff]/30" />
-                </button>
               </div>
-              <div className="space-y-8 px-4">
-                <div className="flex items-center gap-5">
-                  <div className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-[16px] bg-[#080808]/88 text-[#d77bff]">
-                    <ShieldCheck className="h-7 w-7" />
-                  </div>
+              <div className="client-city-trust-list">
+                <div>
+                  <div><ShieldCheck /></div>
                   <div>
-                    <h3 className="text-[18px] font-black text-[#fffaf0]">Ambiente seguro e verificado</h3>
-                    <p className="mt-2 text-[16px] leading-snug text-[#fffaf0]/58">Seus dados estão protegidos conosco.</p>
+                    <h3>Ambiente seguro e verificado</h3>
+                    <p>Seus dados estão protegidos conosco.</p>
                   </div>
                 </div>
-                <div className="h-px bg-white/10" />
-                <div className="flex items-center gap-5">
-                  <div className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-[16px] bg-[#080808]/88 text-[#d77bff]">
-                    <LockKeyhole className="h-7 w-7" />
-                  </div>
+                <div>
+                  <div><LockKeyhole /></div>
                   <div>
-                    <h3 className="text-[18px] font-black text-[#fffaf0]">Privacidade garantida</h3>
-                    <p className="mt-2 text-[16px] leading-snug text-[#fffaf0]/58">Informações 100% seguras.</p>
+                    <h3>Privacidade garantida</h3>
+                    <p>Informações 100% seguras.</p>
                   </div>
                 </div>
               </div>

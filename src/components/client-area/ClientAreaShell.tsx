@@ -417,7 +417,10 @@ export function ClientBottomNav() {
     <nav className="client-bottom-nav fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(8px+env(safe-area-inset-bottom))] transition-all duration-200 md:hidden">
       <div className="mx-auto grid h-[72px] max-w-[720px] grid-cols-4 rounded-[14px] border border-[#b72cff]/18 bg-[#090a0b]/94 p-1.5 shadow-[0_-12px_30px_rgba(0,0,0,0.30)] backdrop-blur-2xl">
         {items.map((item) => {
-          const isExplore = pathname === "/dashboard/explorar" || pathname?.startsWith("/dashboard/explorar/");
+          const isExplore =
+            pathname === "/dashboard/explorar" ||
+            pathname?.startsWith("/dashboard/explorar/") ||
+            pathname === "/dashboard/selecionar-cidade";
           const isLists = pathname === "/dashboard/listas" || pathname?.startsWith("/dashboard/listas/");
           const active =
             pathname === item.href ||
@@ -429,6 +432,7 @@ export function ClientBottomNav() {
                 pathname?.startsWith("/dashboard") &&
                   pathname !== "/dashboard/acompanhantes" &&
                   pathname !== "/dashboard/explorar" &&
+                  pathname !== "/dashboard/selecionar-cidade" &&
                   pathname !== "/dashboard/shots" &&
                   pathname !== "/dashboard/favoritos" &&
                   pathname !== "/dashboard/listas" &&
@@ -511,7 +515,8 @@ export default function ClientAreaShell({
         <main className="page-content relative z-[1] w-full">
           {children}
         </main>
-        <style>{`body { background: #f7f7fa; }`}</style>
+        <ClientBottomNav />
+        <style>{`body { background: #08050c; }`}</style>
       </div>
     );
   }
