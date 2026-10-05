@@ -21,7 +21,7 @@ export default function VerificationSection({ steps }: { steps: VerificationStep
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-          <h2 className="min-w-0 flex-1 text-[28px] font-black leading-8 text-[var(--text-primary)]">Verificação</h2>
+          <h2 className="min-w-0 flex-1 text-[28px] font-black leading-8 text-[var(--text-primary)]">Verificação da conta</h2>
               <span className="rounded-full border border-[#b72cff]/18 bg-[#b72cff]/10 px-2.5 py-1 text-[14px] font-black text-[#e1a6ff]">
                 {doneCount}/{steps.length}
               </span>

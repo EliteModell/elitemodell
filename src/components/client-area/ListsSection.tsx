@@ -6,10 +6,12 @@ function ListCard({
   title,
   text,
   icon,
+  countLabel,
 }: {
   title: string;
   text: string;
   icon: React.ReactNode;
+  countLabel: string;
 }) {
   return (
     <article className="client-card p-5">
@@ -20,14 +22,14 @@ function ListCard({
         <div className="min-w-0 flex-1">
         <h3 className="text-[22px] font-black leading-7 text-[var(--text-primary)]">{title}</h3>
         <p className="mt-2 text-[15px] leading-7 text-[var(--text-secondary)]">{text}</p>
-        <p className="mt-3 text-[12px] font-black uppercase text-[var(--text-secondary)]">0 perfil salvo</p>
+        <p className="mt-3 text-[12px] font-black uppercase text-[var(--text-secondary)]">{countLabel}</p>
         </div>
       </div>
     </article>
   );
 }
 
-export default function ListsSection() {
+export default function ListsSection({ favoriteProfiles = 0 }: { favoriteProfiles?: number }) {
   return (
     <section className="client-page-tight client-dashboard-section">
       <div className="flex items-end justify-between gap-3">
@@ -51,11 +53,13 @@ export default function ListsSection() {
           title="Perfis curtidos"
           text="Os perfis marcados com coracao ficarao agrupados aqui."
           icon={<Heart className="h-6 w-6" />}
+          countLabel={`${favoriteProfiles} ${favoriteProfiles === 1 ? "perfil salvo" : "perfis salvos"}`}
         />
         <ListCard
           title="Perfis seguidos"
           text="Acompanhe novidades sem misturar com sua lista de curtidos."
           icon={<UserRoundCheck className="h-6 w-6" />}
+          countLabel="Nenhum perfil seguido"
         />
       </div>
 

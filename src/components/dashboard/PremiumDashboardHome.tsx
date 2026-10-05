@@ -6,11 +6,13 @@ import {
   ChevronRight,
   CircleAlert,
   CreditCard,
+  Crown,
   Heart,
   MessageCircle,
   Search,
   ShieldAlert,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import AchievementsSection from "@/components/client-area/AchievementsSection";
 import CitySelectorScreen from "@/components/client-area/CitySelectorScreen";
@@ -82,15 +84,17 @@ function ActionCard({
   title,
   description,
   cta,
+  visual,
 }: {
   href: string;
   icon: React.ReactNode;
   title: string;
   description: string;
   cta: string;
+  visual?: "model" | "soft";
 }) {
   return (
-    <Link href={href} className="client-action-card client-dashboard-action-card group no-underline">
+    <Link href={href} className={`client-action-card client-dashboard-action-card group no-underline ${visual ? `client-action-card--${visual}` : ""}`}>
       <span className="client-dashboard-icon">
         {icon}
       </span>
@@ -130,6 +134,7 @@ function QuickActionGrid({
             title="Explorar"
             description="Veja perfis reais quando houver disponibilidade na sua cidade."
             cta="Acessar"
+            visual="model"
           />
           <ActionCard
             href="/dashboard/favoritos"
@@ -137,6 +142,7 @@ function QuickActionGrid({
             title="Listas"
             description="Guarde curtidos, seguidos e coleções privadas sem exposição."
             cta="Abrir"
+            visual="soft"
           />
           {ageVerified ? (
             <ActionCard
@@ -253,7 +259,7 @@ function ReviewsSection() {
 
 function SafetyCard() {
   return (
-    <section className="client-page-tight client-dashboard-section" style={{ paddingBottom: "calc(120px + env(safe-area-inset-bottom))" }}>
+    <section className="client-page-tight client-dashboard-section">
       <div className="client-panel p-5">
         <div className="flex items-start gap-4">
           <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[8px] border border-[#b72cff]/20 bg-[#b72cff]/10 text-[#e1a6ff]">
@@ -273,6 +279,29 @@ function SafetyCard() {
           <MessageCircle className="h-4 w-4" />
           Falar com atendimento
         </Link>
+      </div>
+    </section>
+  );
+}
+
+function PremiumCard() {
+  return (
+    <section className="client-page-tight client-dashboard-section client-premium-offer-wrap">
+      <div className="client-premium-offer relative overflow-hidden p-5">
+        <div className="client-premium-offer-photo" aria-hidden="true" />
+        <div className="client-premium-offer-shade" aria-hidden="true" />
+        <div className="relative z-[1] max-w-[68%]">
+          <p className="client-kicker inline-flex items-center gap-2">
+            <Crown className="h-4 w-4" /> Elite Premium
+          </p>
+          <h2 className="mt-2 text-[28px] font-black leading-[1.05] text-white">Uma experiência ainda mais exclusiva</h2>
+          <p className="mt-3 text-[14px] leading-6 text-white/68">
+            Recursos avançados, mais privacidade e benefícios reservados para clientes premium.
+          </p>
+          <Link href="/dashboard/planos" className="client-primary-button mt-5 inline-flex min-h-[46px] items-center gap-2 px-5 text-[14px] font-black no-underline">
+            <Sparkles className="h-4 w-4" /> Ver planos
+          </Link>
+        </div>
       </div>
     </section>
   );
@@ -347,11 +376,12 @@ export default function PremiumDashboardHome({
         <AgeVerificationCard status={data.user.ageVerificationStatus} />
         <QuickStatsSection stats={data.stats} vip={data.vip} />
         <VerificationSection steps={verificationSteps} />
-        <ListsSection />
-        <HistorySection />
+        <ListsSection favoriteProfiles={data.stats.favoriteProfiles} />
+        <HistorySection profiles={data.recentAppointments} />
         <AchievementsSection />
         <ReviewsSection />
         <SafetyCard />
+        <PremiumCard />
       </div>
     </div>
   );

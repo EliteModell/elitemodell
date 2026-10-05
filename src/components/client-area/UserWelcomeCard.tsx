@@ -54,7 +54,7 @@ export default function UserWelcomeCard({
             AREA CLIENTE
           </p>
           <h1 style={{ color: "#f5f0e4", fontSize: 22, fontWeight: 900, lineHeight: 1.15, marginTop: 2 }}>
-            {firstName(name)}
+            Olá, {firstName(name)}
           </h1>
           <button
             type="button"

@@ -66,7 +66,7 @@ export default function AgeVerificationCard({
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-[24px] font-black leading-7 text-white">Verifique sua idade</h2>
+              <h2 className="text-[24px] font-black leading-7 text-white">Verificação de idade</h2>
               <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-black uppercase ${statusStyles[status]}`}>
                 <StatusIcon status={status} />
                 {clientAgeVerificationLabel(status)}
