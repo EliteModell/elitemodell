@@ -58,14 +58,42 @@ test.describe("adaptadores de fornecedores", () => {
       authorization = new Headers(init?.headers).get("authorization") || "";
       return new Response(JSON.stringify({
         safe: true,
+        status: "CLEAN",
         provider: "test-av",
         version: "1.2.3",
       }), { status: 200, headers: { "content-type": "application/json" } });
     };
     try {
       const result = await scanFileForVirus(Buffer.from("ok"), "a.txt", "text/plain", { provider: "HTTP" });
-      expect(result).toMatchObject({ safe: true, status: "APPROVED", provider: "test-av", providerVersion: "1.2.3" });
+      expect(result).toMatchObject({ safe: true, status: "CLEAN", provider: "test-av", providerVersion: "1.2.3" });
       expect(authorization).toBe("Bearer test-token");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("adaptador HTTP preserva malware confirmado e falha operacional fail-closed", async () => {
+    const originalFetch = globalThis.fetch;
+    process.env.AV_ENABLED = "true";
+    process.env.AV_HTTP_ENDPOINT = "https://security.invalid/scan";
+    process.env.AV_HTTP_TOKEN = "test-token";
+    try {
+      globalThis.fetch = async () => new Response(JSON.stringify({
+        safe: false,
+        status: "INFECTED",
+        provider: "test-av",
+      }), { status: 200, headers: { "content-type": "application/json" } });
+      await expect(scanFileForVirus(Buffer.from("eicar"), "eicar.com", "application/octet-stream", { provider: "HTTP" }))
+        .resolves.toMatchObject({ safe: false, status: "INFECTED", provider: "test-av" });
+
+      globalThis.fetch = async () => new Response(JSON.stringify({
+        safe: false,
+        status: "TIMEOUT",
+        provider: "test-av",
+        reason: "controlled timeout",
+      }), { status: 200, headers: { "content-type": "application/json" } });
+      await expect(scanFileForVirus(Buffer.from("arquivo"), "a.txt", "text/plain", { provider: "HTTP" }))
+        .resolves.toMatchObject({ safe: false, status: "ERROR", provider: "test-av" });
     } finally {
       globalThis.fetch = originalFetch;
     }

@@ -146,6 +146,34 @@ async function scanWithHttpProvider(
     return errorResult(provider, `Fornecedor respondeu HTTP ${response.status} sem decisao valida.`);
   }
 
+  const reportedStatus = json.status?.trim().toUpperCase();
+  if (provider === "HTTP_AV") {
+    if (json.safe && (reportedStatus === "CLEAN" || reportedStatus === "APPROVED")) {
+      return {
+        safe: true,
+        status: "CLEAN",
+        provider: json.provider?.trim() || provider,
+        providerVersion: json.version?.trim() || undefined,
+        reason: json.reason,
+        details: json.labels === undefined ? undefined : { labels: json.labels },
+      };
+    }
+    if (!json.safe && (reportedStatus === "INFECTED" || reportedStatus === "REJECTED")) {
+      return {
+        safe: false,
+        status: "INFECTED",
+        provider: json.provider?.trim() || provider,
+        providerVersion: json.version?.trim() || undefined,
+        reason: json.reason,
+        details: json.labels === undefined ? undefined : { labels: json.labels },
+      };
+    }
+    return errorResult(
+      json.provider?.trim() || provider,
+      json.reason || `Fornecedor retornou estado antimalware invalido: ${reportedStatus || "AUSENTE"}.`,
+    );
+  }
+
   return {
     safe: json.safe,
     status: json.safe ? "APPROVED" : "REJECTED",
