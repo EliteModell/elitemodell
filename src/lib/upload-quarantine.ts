@@ -377,3 +377,24 @@ export async function rejectUploadAsset(assetId: string, reviewerId: string, rea
   await auditAsset(reviewerId, asset.id, "Conteudo rejeitado em revisao humana.", { reason });
   return asset;
 }
+
+export async function escalateUploadAsset(assetId: string, reviewerId: string, reason: string) {
+  const asset = await prisma.uploadAsset.update({
+    where: { id: assetId },
+    data: {
+      status: "QUARANTINED",
+      moderationStatus: "ESCALATED",
+      moderationProvider: "MANUAL",
+      moderationProviderVersion: "human-review-v2",
+      moderationResult: { status: "ESCALATED", reason },
+      adminReviewStatus: "ESCALATED",
+      reviewedById: reviewerId,
+      reviewReason: reason,
+      failureReason: reason,
+      approvedAt: null,
+      lastProcessedAt: new Date(),
+    },
+  });
+  await auditAsset(reviewerId, asset.id, "Conteudo escalado em revisao humana.", { reason });
+  return asset;
+}

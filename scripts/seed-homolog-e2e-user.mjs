@@ -30,7 +30,7 @@ try {
       termsConsent: true,
       lgpdConsent: true,
       consentDate: new Date(),
-      clientStatus: "UNVERIFIED",
+      clientStatus: "VERIFIED",
     },
     update: {
       name: "Conta E2E Homologacao",
@@ -43,7 +43,7 @@ try {
       birthDate: new Date("1990-01-01T00:00:00.000Z"),
       termsConsent: true,
       lgpdConsent: true,
-      clientStatus: "UNVERIFIED",
+      clientStatus: "VERIFIED",
     },
   });
 
@@ -52,11 +52,11 @@ try {
     create: {
       userId: user.id,
       displayName: "Conta E2E",
-      status: "UNVERIFIED",
+      status: "VERIFIED",
     },
     update: {
       displayName: "Conta E2E",
-      status: "UNVERIFIED",
+      status: "VERIFIED",
     },
   });
 

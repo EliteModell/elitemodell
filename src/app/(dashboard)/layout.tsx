@@ -23,15 +23,17 @@ const ProfessionalTopHeader = dynamic(() =>
 
 function LoadingScreen() {
   return (
-    <div className="grid min-h-screen place-items-center bg-[#f7f7fa] px-5 text-[#141212]">
-      <div className="w-full max-w-sm rounded-2xl border border-[#fcf7ff] bg-white p-6 text-center shadow-[0_18px_50px_rgba(37, 31, 32,0.10)]">
-        <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-xl border border-[#e1a6ff] bg-[#fcf7ff] text-[#b72cff]">
+    <div className="grid min-h-screen min-h-[100dvh] w-full place-items-center overflow-x-hidden bg-[#050505] px-5 text-white">
+      <div className="w-full max-w-sm rounded-2xl border border-[#b72cff]/30 bg-[linear-gradient(180deg,rgba(20,12,24,0.98),rgba(7,7,9,0.98))] p-6 text-center shadow-[0_22px_70px_rgba(0,0,0,0.62),0_0_34px_rgba(183,44,255,0.10)]">
+        <div className="mx-auto mb-5 w-[172px]" aria-label="Elite Modell">
+          <BrandMark />
+        </div>
+        <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-xl border border-[#b72cff]/40 bg-[#120916] text-[#d77bff] shadow-[0_0_24px_rgba(183,44,255,0.16)]">
           <Sparkles className="h-6 w-6 animate-pulse" />
         </div>
-        <p className="text-xs font-black uppercase tracking-[0.24em] text-[#b72cff]">Elite Modell</p>
         <h1 className="mt-2 text-xl font-black">Preparando sua conta</h1>
-        <div className="mt-5 h-2 overflow-hidden rounded-full bg-[#fcf7ff]">
-          <div className="premium-loading-bar h-full w-1/2 rounded-full bg-[#b72cff]" />
+        <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/8">
+          <div className="premium-loading-bar h-full w-1/2 rounded-full bg-[linear-gradient(90deg,#8f1fd1,#ff43b7,#d77bff)]" />
         </div>
       </div>
     </div>

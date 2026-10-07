@@ -9,6 +9,13 @@ import { prisma } from "../src/lib/prisma";
 import { NextRequest } from "next/server";
 import { createHmac } from "node:crypto";
 import {
+  isServiceOptionSelected,
+  PROFESSIONAL_SERVICE_CATEGORIES,
+  removeServiceSelection,
+  replaceServiceSelection,
+  serviceSelectionDirection,
+} from "../src/lib/professional-service-catalog";
+import {
   buildDigitVendorData,
   canRetryDigitStatus,
   createDigitIntentMarker,
@@ -92,6 +99,31 @@ test.describe("validacao do perfil profissional", () => {
   });
 });
 
+test.describe("catalogo de servicos profissionais", () => {
+  test("possui ids unicos, categorias completas e nenhum rotulo duplicado", () => {
+    const options = PROFESSIONAL_SERVICE_CATEGORIES.flatMap((category) => category.options);
+    expect(new Set(options.map((option) => option.id)).size).toBe(options.length);
+    expect(new Set(options.map((option) => option.label)).size).toBe(options.length);
+    expect(PROFESSIONAL_SERVICE_CATEGORIES.map((category) => category.label)).toEqual([
+      "Acompanhamento",
+      "Massagens",
+      "Serviços íntimos",
+    ]);
+  });
+
+  test("preserva valor legado e troca direcao sem duplicar o servico", () => {
+    const massage = PROFESSIONAL_SERVICE_CATEGORIES[1].options[0];
+    const oral = PROFESSIONAL_SERVICE_CATEGORIES[2].options.find((option) => option.id === "protected-oral")!;
+    expect(isServiceOptionSelected(["Massagem"], massage)).toBe(true);
+
+    const doing = replaceServiceSelection(["Acompanhamento"], oral, "DO");
+    const receiving = replaceServiceSelection(doing, oral, "RECEIVE");
+    expect(receiving).toHaveLength(2);
+    expect(serviceSelectionDirection(receiving[1], oral)).toBe("RECEIVE");
+    expect(removeServiceSelection(receiving, oral)).toEqual(["Acompanhamento"]);
+  });
+});
+
 function diditDecision(status: DiditDecision["status"], dateOfBirth: string | null = "1990-01-01"): DiditDecision {
   return {
     session_id: "didit_session_test",
@@ -149,6 +181,23 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     expect(page).toContain("localStorage.setItem(DRAFT_KEY");
     expect(page).toContain('form.kycStatus !== "APPROVED"');
     expect(page).not.toContain("startFaceBiometry");
+  });
+
+  test("upload do onboarding preserva preview local e aceita referencia privada controlada", () => {
+    const page = fs.readFileSync(
+      path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"),
+      "utf8",
+    );
+    const uploadRoute = fs.readFileSync(path.join(process.cwd(), "src/app/api/upload/route.ts"), "utf8");
+    const createRoute = fs.readFileSync(path.join(process.cwd(), "src/app/api/professionals/route.ts"), "utf8");
+
+    expect(page).toContain("setMainPhotoPreview(previewUrl)");
+    expect(page).toContain("galleryPreviews[url]");
+    expect(page).toContain("Foto recebida. Você pode continuar o cadastro.");
+    expect(page).not.toContain("Arquivo mantido em quarentena para revisão.");
+    expect(uploadRoute).toContain("/api/media/${encodeURIComponent(processed.id)}");
+    expect(uploadRoute).toContain("Arquivo recebido e em analise de seguranca.");
+    expect(createRoute).toContain("assertOwnedUploadMediaUrls");
   });
 
   test("backend valida a decisao real e sobrescreve o estado enviado pelo navegador", () => {

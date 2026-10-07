@@ -5,6 +5,7 @@ import {
   isProfessionalOnline,
 } from "../src/lib/public-professional-profile";
 import {
+  adminControlledMediaPreviewUrl,
   controlledMediaAssetId,
   filterApprovedProfilePhotos,
   normalizeControlledMediaUrl,
@@ -95,6 +96,7 @@ test.describe("contrato publico do perfil profissional", () => {
     folder: id === "cover-id" ? "profiles/main" : "profiles/gallery",
     category: "image",
     status: "APPROVED",
+    visibility: "PUBLIC",
     uploadCompletedAt: new Date("2026-06-18T12:00:00.000Z"),
     malwareStatus: "CLEAN",
     moderationStatus: "APPROVED",
@@ -129,6 +131,13 @@ test.describe("contrato publico do perfil profissional", () => {
     expect(normalizeControlledMediaUrl(absolute)).toBe("/api/media/cover-id");
   });
 
+  test("gera preview administrativo somente para a rota controlada", () => {
+    expect(adminControlledMediaPreviewUrl("/api/media/cover-id"))
+      .toBe("/api/admin/uploads/cover-id/preview");
+    expect(adminControlledMediaPreviewUrl("https://legacy.example/photo.jpg"))
+      .toBe("https://legacy.example/photo.jpg");
+  });
+
   test("perfil aprovado expoe capa, avatar e duas fotos aprovadas", () => {
     const photos = filterApprovedProfilePhotos([
       { id: "photo-cover", url: "https://www.elitemodell.com.br/api/media/cover-id", cover: true, order: 0 },
@@ -141,15 +150,35 @@ test.describe("contrato publico do perfil profissional", () => {
     expect(media.gallery).toEqual(["/api/media/cover-id", "/api/media/gallery-id"]);
   });
 
-  test("nao publica fotos pendentes, rejeitadas, privadas ou de outra conta", () => {
+  test("publica foto de perfil aprovada mesmo com flag privada legada, mas bloqueia pendentes e outra conta", () => {
     const photos = filterApprovedProfilePhotos([
       { url: "/api/media/pending-id", cover: true },
       { url: "/api/media/private-id" },
       { url: "/api/media/foreign-id" },
     ], [
       { ...approvedAssets[0], id: "pending-id", status: "PENDING_MODERATION" },
-      { ...approvedAssets[0], id: "private-id", folder: "documentos/rg" },
+      { ...approvedAssets[0], id: "private-id", visibility: "PRIVATE" },
       { ...approvedAssets[0], id: "foreign-id", userId: "other-owner" },
+    ], ownerId);
+
+    expect(photos).toEqual([{ url: "/api/media/private-id" }]);
+  });
+
+  test("nao amplia midia exclusiva de assinantes", () => {
+    const photos = filterApprovedProfilePhotos([
+      { url: "/api/media/subscribers-id", cover: true },
+    ], [
+      { ...approvedAssets[0], id: "subscribers-id", visibility: "SUBSCRIBERS" },
+    ], ownerId);
+
+    expect(photos).toEqual([]);
+  });
+
+  test("documento privado nunca entra na galeria publica", () => {
+    const photos = filterApprovedProfilePhotos([
+      { url: "/api/media/document-id", cover: true },
+    ], [
+      { ...approvedAssets[0], id: "document-id", category: "document", folder: "documentos/identidade", visibility: "PRIVATE" },
     ], ownerId);
 
     expect(photos).toEqual([]);
@@ -211,6 +240,21 @@ test.describe("contrato publico do perfil profissional", () => {
     await expect(page.getByTestId("profile-avatar")).toHaveAttribute("data-media-state", "image");
     await expect(page.getByTestId("profile-avatar").locator("img")).toHaveCount(1);
     await expect(page.getByTestId("gallery-image")).toHaveCount(2);
+  });
+
+  test("perfil aprovado permanece íntegro nos mobiles prioritários", async ({ page }) => {
+    await mockPublicProfilePage(page, ["/mock-media/cover.jpg", "/mock-media/gallery.jpg"]);
+    for (const width of [375, 390, 412, 430]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto("/profissionais/victoria", { waitUntil: "domcontentloaded" });
+      await expect(page.getByTestId("profile-cover")).toHaveAttribute("data-media-state", "image");
+      await expect(page.getByTestId("gallery-image")).toHaveCount(2);
+      const dimensions = await page.evaluate(() => ({
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+      }));
+      expect(dimensions.scrollWidth, `overflow em ${width}px`).toBeLessThanOrEqual(dimensions.clientWidth + 1);
+    }
   });
 
   test("UI remove tags de imagem quebradas e mostra fallback", async ({ page }) => {

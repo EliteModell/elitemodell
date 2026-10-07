@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { assertApprovedMediaUrls } from "@/lib/approved-media";
+import { assertOwnedUploadMediaUrls } from "@/lib/approved-media";
 import { normalizeControlledMediaUrl } from "@/lib/public-professional-media";
 import { professionalCompletion } from "@/lib/professional-completeness";
 
@@ -154,7 +154,7 @@ export async function PATCH(req: NextRequest) {
       } });
     } else if (step === 6) {
       const urls = [text(form.mainPhotoUrl), ...list(form.galleryUrls)].filter(Boolean);
-      await assertApprovedMediaUrls({ urls, requestUrl: req.url, ownerId: session.user.id, allowedFolderPrefixes: ["profiles"] });
+      await assertOwnedUploadMediaUrls({ urls, requestUrl: req.url, ownerId: session.user.id, allowedFolderPrefixes: ["profiles"] });
       const normalized = urls.map((url) => normalizeControlledMediaUrl(url)).filter((url): url is string => Boolean(url));
       await prisma.professional.update({ where: { id: professional.id }, data: {
         ...common, image: null, galleryUrls: [], photos: { deleteMany: {}, create: normalized.map((url, order) => ({ url, order, cover: order === 0 })) },

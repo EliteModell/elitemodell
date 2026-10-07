@@ -9,6 +9,17 @@ import toast from "react-hot-toast";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { validateBirthDate } from "@/lib/age-validation";
 import { loadSupabaseAuth } from "@/lib/supabase-auth-loader";
+import {
+  isServiceOptionSelected,
+  PROFESSIONAL_SERVICE_CATEGORIES,
+  PROFESSIONAL_SPECIALTY_CATEGORIES,
+  removeServiceSelection,
+  replaceServiceSelection,
+  SERVICE_DIRECTION_LABELS,
+  serviceSelectionDirection,
+  type ProfessionalServiceOption,
+  type ServiceDirection,
+} from "@/lib/professional-service-catalog";
 import ProfessionalCityAutocomplete from "@/components/professional-onboarding/ProfessionalCityAutocomplete";
 
 const ProfessionalVerificationSteps = dynamic(
@@ -37,6 +48,7 @@ type SingleFormField = "escortCategory" | "hairColor" | "eyeColor" | "ethnicity"
 type PriceFormField = "price15min" | "price30min" | "pricePerHour" | "price2h" | "priceOvernight" | "priceWebcam";
 type ValidationIssue = { field: string; message: string };
 type SubmissionResult = { status: string; receiptStatus?: string };
+type UploadResult = { reference: string; status: string; pendingReview: boolean };
 type CompletionState = {
   profilePercent: number;
   profileComplete: boolean;
@@ -80,8 +92,6 @@ const ATENDE    = ["Homens", "Mulheres", "Casais", "Homens trans", "Mulheres tra
 const IDIOMAS   = ["Português", "Inglês", "Espanhol", "Francês", "Italiano", "Alemão", "Libras", "Outro"];
 const BODY_TYPES = ["Corpo atlético", "Corpo magro", "Corpo médio", "Corpo curvy", "Corpo plus size"];
 const DEPILATION_STYLES = ["Depilada", "Depilação parcial", "Não depilada"];
-const SERVICOS  = ["Acompanhamento", "Jantar a dois", "Viagens", "Festas e eventos", "Massagem", "Massagem tântrica", "Vídeo chamada", "Pernoite", "Final de semana", "Hotéis", "Local próprio"];
-const FETICHES  = ["Striptease", "Dominação", "Roleplay", "Bondage", "Fantasias/uniformes", "Acessórios eróticos", "Ativo", "Passivo", "Versátil", "Permite filmagem", "Faz sexo virtual"];
 const PAGAMENTO = ["Pix", "Dinheiro", "Cartão de crédito", "Cartão de débito", "Transferência"];
 const DIAS_SEMANA = ["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"];
 const ESTADOS_BR = ["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN","RO","RR","RS","SC","SE","SP","TO"];
@@ -109,6 +119,10 @@ const ATTENDANCE_EXCLUSIONS: Record<string, string[]> = {
   "Somente hotéis/motéis": ["A domicílio", "Somente local do cliente", "Local próprio", "Não atendo em residência própria", "Hotéis", "Motéis"],
   "A domicílio": ["Somente hotéis/motéis"],
 };
+
+function canPreviewImageInBrowser(file: File) {
+  return !/\.(heic|heif)$/i.test(file.name) && !/image\/(heic|heif)/i.test(file.type);
+}
 
 function generateVerificationCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -151,12 +165,54 @@ function ChipGroup({ children }: { children: React.ReactNode }) {
   return <div className="model-chip-group" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{children}</div>;
 }
 
-function UploadZone({ label, accept, preview, onFile, loading }: {
-  label: string; accept: string; preview?: string | null; onFile: (f: File) => void; loading?: boolean;
+function ServiceOption({
+  option,
+  values,
+  onToggle,
+  onDirection,
+}: {
+  option: ProfessionalServiceOption;
+  values: string[];
+  onToggle: (option: ProfessionalServiceOption) => void;
+  onDirection: (option: ProfessionalServiceOption, direction: ServiceDirection) => void;
+}) {
+  const selected = isServiceOptionSelected(values, option);
+  const currentValue = values.find((value) => isServiceOptionSelected([value], option));
+  const selectedDirection = currentValue ? serviceSelectionDirection(currentValue, option) : null;
+
+  return (
+    <div className="model-service-option">
+      <Tag label={option.label} active={selected} onClick={() => onToggle(option)} />
+      {selected && option.directions ? (
+        <div className="model-service-directions" aria-label={`Como oferece ${option.label}`}>
+          {option.directions.map((direction) => (
+            <button
+              type="button"
+              key={direction}
+              aria-pressed={selectedDirection === direction}
+              data-active={selectedDirection === direction ? "true" : "false"}
+              onClick={() => onDirection(option, direction)}
+            >
+              {SERVICE_DIRECTION_LABELS[direction]}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function UploadZone({ label, accept, preview, persisted, onFile, loading }: {
+  label: string;
+  accept: string;
+  preview?: string | null;
+  persisted?: boolean;
+  onFile: (f: File) => void;
+  loading?: boolean;
 }) {
   const ref = useRef<HTMLInputElement>(null);
-  const canPreview = !!preview && (preview.startsWith("http") || preview.startsWith("/") || preview.startsWith("blob:") || preview.startsWith("data:"));
-  const isPrivateFile = !!preview && !canPreview;
+  const canPreview = !!preview && !preview.startsWith("/api/media/") && (preview.startsWith("http") || preview.startsWith("/") || preview.startsWith("blob:") || preview.startsWith("data:"));
+  const isPrivateFile = persisted && !canPreview;
   const acceptLabel = accept === IMAGE_ACCEPT ? "JPG, PNG, WebP ou HEIC" : accept.replace("image/*,video/*", "JPG, PNG ou MP4");
   return (
     <div>
@@ -188,7 +244,8 @@ function UploadZone({ label, accept, preview, onFile, loading }: {
           </>
         ) : isPrivateFile ? (
           <div style={{ padding: "28px 0", color: GOLD, fontSize: 13, fontWeight: 700 }}>
-            {loading ? "Enviando…" : "Arquivo privado enviado ✓"}
+            {loading ? "Enviando…" : "Foto recebida ✓"}
+            {!loading ? <small style={{ display: "block", marginTop: 6, color: "#aaa0b2", fontWeight: 500 }}>Análise de segurança em andamento. Você pode continuar o cadastro.</small> : null}
           </div>
         ) : loading ? (
           <div style={{ padding: "28px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
@@ -289,6 +346,8 @@ export default function ProfissionalNovoPage() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const [mainPhotoPreview, setMainPhotoPreview] = useState<string | null>(null);
+  const [galleryPreviews, setGalleryPreviews] = useState<Record<string, string>>({});
   const [diditAvailable, setDigitAvailable] = useState(false);
   const [diditMessage, setDigitMessage] = useState<string | null>(null);
   const [diditRetryAllowed, setDigitRetryAllowed] = useState(false);
@@ -313,6 +372,7 @@ export default function ProfissionalNovoPage() {
   const skipInitialDraftSaveRef = useRef(true);
   const submittingRef = useRef(false);
   const diditStartingRef = useRef(false);
+  const localPreviewUrlsRef = useRef(new Set<string>());
 
   /* ── estado do formulário ─────────────────────────────── */
   const [form, setForm] = useState({
@@ -361,7 +421,7 @@ export default function ProfissionalNovoPage() {
         setForm((current) => ({
           ...current,
           ...safeDraftForm,
-          galleryUrls: Array.isArray(parsed.form?.galleryUrls) ? parsed.form.galleryUrls.filter((url) => !String(url).startsWith("blob:")) : current.galleryUrls,
+          galleryUrls: Array.isArray(parsed.form?.galleryUrls) ? parsed.form.galleryUrls.filter((url) => !/^(blob:|uploading:)/.test(String(url))) : current.galleryUrls,
           mainPhotoUrl: parsed.form?.mainPhotoUrl && !String(parsed.form.mainPhotoUrl).startsWith("blob:") ? parsed.form.mainPhotoUrl : current.mainPhotoUrl,
           docFrenteFile: null,
           docVersoFile: null,
@@ -391,6 +451,11 @@ export default function ProfissionalNovoPage() {
     };
   }, []);
 
+  useEffect(() => () => {
+    localPreviewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    localPreviewUrlsRef.current.clear();
+  }, []);
+
   useEffect(() => {
     if (!draftLoadedRef.current) return;
     if (skipInitialDraftSaveRef.current) {
@@ -401,7 +466,7 @@ export default function ProfissionalNovoPage() {
     const draftForm = {
       ...form,
       mainPhotoUrl: form.mainPhotoUrl.startsWith("blob:") ? "" : form.mainPhotoUrl,
-      galleryUrls: form.galleryUrls.filter((url) => !url.startsWith("blob:")),
+      galleryUrls: form.galleryUrls.filter((url) => !/^(blob:|uploading:)/.test(url)),
       docFrenteFile: null,
       docVersoFile: null,
       verificationFile: null,
@@ -648,6 +713,21 @@ export default function ProfissionalNovoPage() {
       return { ...f, [field]: arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val] };
     });
   }
+  function toggleService(field: "services" | "fetishes", option: ProfessionalServiceOption) {
+    setForm((current) => ({
+      ...current,
+      [field]: isServiceOptionSelected(current[field], option)
+        ? removeServiceSelection(current[field], option)
+        : replaceServiceSelection(current[field], option, option.directions ? "DO" : undefined),
+    }));
+    if (validationIssue?.field === field) setValidationIssue(null);
+  }
+  function setServiceDirection(field: "services" | "fetishes", option: ProfessionalServiceOption, direction: ServiceDirection) {
+    setForm((current) => ({
+      ...current,
+      [field]: replaceServiceSelection(current[field], option, direction),
+    }));
+  }
   function toggleAttendanceOption(val: string) {
     setForm((f) => {
       const current = f.attendanceTypes;
@@ -678,7 +758,7 @@ export default function ProfissionalNovoPage() {
   }
 
   /* ── upload helper ────────────────────────────────────── */
-  async function uploadFile(file: File, folder: string): Promise<string> {
+  async function uploadFile(file: File, folder: string): Promise<UploadResult> {
     const fd = new FormData();
     fd.append("file", file);
     if (["profiles", "profile-videos", "stories", "properties"].some((prefix) => folder.startsWith(prefix))) {
@@ -692,9 +772,13 @@ export default function ProfissionalNovoPage() {
     const d = await res.json();
     const uploaded = d.url ?? d.path;
     if (!uploaded) {
-      throw new Error(d.message ?? "Arquivo mantido em quarentena para revisão.");
+      throw new Error("Não foi possível confirmar o recebimento do arquivo.");
     }
-    return uploaded;
+    return {
+      reference: uploaded,
+      status: String(d.status ?? "PENDING"),
+      pendingReview: Number(res.status) === 202 || d.status !== "APPROVED",
+    };
   }
 
   /* upload da foto principal */
@@ -706,22 +790,29 @@ export default function ProfissionalNovoPage() {
     }
 
     const previousPhoto = form.mainPhotoUrl;
-    const previewUrl = URL.createObjectURL(file);
+    const previousPreview = mainPhotoPreview;
+    const previewUrl = canPreviewImageInBrowser(file) ? URL.createObjectURL(file) : null;
+    if (previewUrl) localPreviewUrlsRef.current.add(previewUrl);
     /* Mostra preview imediatamente enquanto faz upload */
-    set("mainPhotoUrl", previewUrl);
+    setMainPhotoPreview(previewUrl);
     setUploadingIdx(-1);
     try {
-      const url = await uploadFile(file, "profiles/main");
-      /* Substitui blob pela URL remota antes de revogar */
-      set("mainPhotoUrl", url);
-      /* Aguarda um tick para o React renderizar com a URL remota antes de revogar o blob */
-      setTimeout(() => URL.revokeObjectURL(previewUrl), 200);
-      toast.success("Foto principal enviada com sucesso!");
+      const uploaded = await uploadFile(file, "profiles/main");
+      set("mainPhotoUrl", uploaded.reference);
+      if (previousPreview && previousPreview !== previewUrl) {
+        URL.revokeObjectURL(previousPreview);
+        localPreviewUrlsRef.current.delete(previousPreview);
+      }
+      toast.success(uploaded.pendingReview ? "Foto recebida. Você pode continuar o cadastro." : "Foto principal enviada com sucesso!");
     } catch (err) {
       console.error("[professional-onboarding] Erro ao enviar foto principal.", err);
       set("mainPhotoUrl", previousPhoto);
-      URL.revokeObjectURL(previewUrl);
-      const msg = err instanceof Error ? err.message : "Erro ao enviar foto. Tente novamente.";
+      setMainPhotoPreview(previousPreview);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        localPreviewUrlsRef.current.delete(previewUrl);
+      }
+      const msg = err instanceof Error ? err.message : "Não foi possível analisar esta foto agora. Tente novamente.";
       toast.error(msg, { duration: 5000 });
     } finally {
       setUploadingIdx(null);
@@ -737,25 +828,54 @@ export default function ProfissionalNovoPage() {
       return;
     }
 
-    const previewUrl = URL.createObjectURL(file);
+    const previewUrl = canPreviewImageInBrowser(file) ? URL.createObjectURL(file) : null;
+    if (previewUrl) localPreviewUrlsRef.current.add(previewUrl);
+    const temporaryReference = previewUrl ?? `uploading:${crypto.randomUUID()}`;
     setUploadingIdx(form.galleryUrls.length);
-    setForm((current) => ({ ...current, galleryUrls: [...current.galleryUrls, previewUrl] }));
+    setForm((current) => ({ ...current, galleryUrls: [...current.galleryUrls, temporaryReference] }));
     try {
-      const url = await uploadFile(file, "profiles/gallery");
+      const uploaded = await uploadFile(file, "profiles/gallery");
       setForm((current) => ({
         ...current,
-        galleryUrls: current.galleryUrls.map((item) => item === previewUrl ? url : item),
+        galleryUrls: current.galleryUrls.map((item) => item === temporaryReference ? uploaded.reference : item),
       }));
-      toast.success("Foto adicionada à galeria.");
+      if (previewUrl) setGalleryPreviews((current) => ({ ...current, [uploaded.reference]: previewUrl }));
+      toast.success(uploaded.pendingReview ? "Foto recebida e em análise de segurança." : "Foto adicionada à galeria.");
     } catch (err) {
       console.error("[professional-onboarding] Erro ao enviar foto da galeria.", err);
-      setForm((current) => ({ ...current, galleryUrls: current.galleryUrls.filter((item) => item !== previewUrl) }));
-      toast.error(err instanceof Error ? err.message : "Erro ao enviar foto.");
+      setForm((current) => ({ ...current, galleryUrls: current.galleryUrls.filter((item) => item !== temporaryReference) }));
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        localPreviewUrlsRef.current.delete(previewUrl);
+      }
+      toast.error(err instanceof Error ? err.message : "Não foi possível analisar esta foto agora. Tente novamente.");
     }
     finally {
-      URL.revokeObjectURL(previewUrl);
       setUploadingIdx(null);
     }
+  }
+
+  function removeMainPhoto() {
+    if (mainPhotoPreview) {
+      URL.revokeObjectURL(mainPhotoPreview);
+      localPreviewUrlsRef.current.delete(mainPhotoPreview);
+    }
+    setMainPhotoPreview(null);
+    set("mainPhotoUrl", "");
+  }
+
+  function removeGalleryPhoto(reference: string) {
+    const preview = galleryPreviews[reference];
+    if (preview) {
+      URL.revokeObjectURL(preview);
+      localPreviewUrlsRef.current.delete(preview);
+      setGalleryPreviews((current) => {
+        const next = { ...current };
+        delete next[reference];
+        return next;
+      });
+    }
+    set("galleryUrls", form.galleryUrls.filter((item) => item !== reference));
   }
 
   /* ── verificação Didit ────────────────────────────────── */
@@ -1475,17 +1595,46 @@ export default function ProfissionalNovoPage() {
           ETAPA 4 — SERVIÇOS
       ══════════════════════════════════════════════ */}
       {step === 3 && (
-        <div>
-          <Section title="Serviços oferecidos" desc="Selecione tudo o que você oferece.">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {SERVICOS.map((s) => <Tag key={s} label={s} active={form.services.includes(s)} onClick={() => toggleArr("services", s)} />)}
-            </div>
+        <div className="model-services-step">
+          <Section title="Serviços oferecidos" desc="Abra uma categoria e selecione somente o que você oferece.">
+            <p className="model-service-summary" aria-live="polite">
+              {form.services.length ? `${form.services.length} serviço(s) selecionado(s)` : "Nenhum serviço selecionado"}
+            </p>
+            {PROFESSIONAL_SERVICE_CATEGORIES.map((category, index) => (
+              <details className="model-service-category" key={category.id} open={index === 0}>
+                <summary>{category.label}<span>{category.options.filter((option) => isServiceOptionSelected(form.services, option)).length}</span></summary>
+                <div className="model-service-options">
+                  {category.options.map((option) => (
+                    <ServiceOption
+                      key={option.id}
+                      option={option}
+                      values={form.services}
+                      onToggle={(selected) => toggleService("services", selected)}
+                      onDirection={(selected, direction) => setServiceDirection("services", selected, direction)}
+                    />
+                  ))}
+                </div>
+              </details>
+            ))}
           </Section>
-          <Section title="Comportamento e especialidades">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {FETICHES.map((f) => <Tag key={f} label={f} active={form.fetishes.includes(f)} onClick={() => toggleArr("fetishes", f)} />)}
-            </div>
-          </Section>
+          {PROFESSIONAL_SPECIALTY_CATEGORIES.map((category) => (
+            <Section key={category.id} title={category.label}>
+              <details className="model-service-category" open>
+                <summary>Ver opções<span>{category.options.filter((option) => isServiceOptionSelected(form.fetishes, option)).length}</span></summary>
+                <div className="model-service-options">
+                  {category.options.map((option) => (
+                    <ServiceOption
+                      key={option.id}
+                      option={option}
+                      values={form.fetishes}
+                      onToggle={(selected) => toggleService("fetishes", selected)}
+                      onDirection={(selected, direction) => setServiceDirection("fetishes", selected, direction)}
+                    />
+                  ))}
+                </div>
+              </details>
+            </Section>
+          ))}
         </div>
       )}
 
@@ -1556,11 +1705,12 @@ export default function ProfissionalNovoPage() {
         <div>
           <Section title="Foto principal" desc="Esta é a primeira foto que os clientes veem. Deve ser real, clara e você pode escolher mostrar ou não o rosto.">
             <UploadZone label="Foto de capa do perfil *" accept={IMAGE_ACCEPT}
-              preview={form.mainPhotoUrl || null}
+              preview={mainPhotoPreview ?? (form.mainPhotoUrl || null)}
+              persisted={Boolean(form.mainPhotoUrl)}
               loading={uploadingIdx === -1}
               onFile={handleMainPhoto} />
             {form.mainPhotoUrl && (
-              <button onClick={() => set("mainPhotoUrl", "")} style={{ marginTop: 8, background: "none", border: "none", color: "#aaa0b2", fontSize: 12, cursor: "pointer" }}>
+              <button onClick={removeMainPhoto} style={{ marginTop: 8, background: "none", border: "none", color: "#aaa0b2", fontSize: 12, cursor: "pointer" }}>
                 ✕ Remover foto
               </button>
             )}
@@ -1570,8 +1720,12 @@ export default function ProfissionalNovoPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               {form.galleryUrls.map((url, i) => (
                 <div key={i} style={{ position: "relative", borderRadius: 10, overflow: "hidden", aspectRatio: "3/4", background: "#080808" }}>
-                  <img src={url} alt={`foto ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  <button onClick={() => set("galleryUrls", form.galleryUrls.filter((_, j) => j !== i))}
+                  {galleryPreviews[url] || !url.startsWith("/api/media/") ? (
+                    <img src={galleryPreviews[url] ?? url} alt={`foto ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <div className="model-upload-received"><strong>Foto recebida ✓</strong><span>Em análise de segurança</span></div>
+                  )}
+                  <button onClick={() => removeGalleryPhoto(url)}
                     style={{ position: "absolute", top: 6, right: 6, width: 24, height: 24, borderRadius: "50%", background: "rgba(6,14,27,0.9)", border: "none", color: "#fcf7ff", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
                 </div>
               ))}
@@ -1579,6 +1733,7 @@ export default function ProfissionalNovoPage() {
                 <div>
                   <UploadZone label="" accept={IMAGE_ACCEPT}
                     preview={null}
+                    persisted={false}
                     loading={typeof uploadingIdx === "number" && uploadingIdx >= 0 && uploadingIdx < 90}
                     onFile={handleGalleryPhoto} />
                 </div>
@@ -1791,6 +1946,94 @@ export default function ProfissionalNovoPage() {
           font-size: 11px;
           font-weight: 950;
         }
+        .model-service-summary {
+          margin: 0 0 12px !important;
+          color: #d9cfe0 !important;
+          font-size: 12px !important;
+          font-weight: 750;
+        }
+        .model-service-category {
+          margin-bottom: 10px;
+          overflow: hidden;
+          border: 1px solid rgba(183, 44, 255, .24);
+          border-radius: 16px;
+          background: rgba(8, 8, 10, .72);
+        }
+        .model-service-category > summary {
+          display: flex;
+          min-height: 52px;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 12px 14px;
+          color: #fff;
+          font-size: 14px;
+          font-weight: 850;
+          cursor: pointer;
+          list-style: none;
+        }
+        .model-service-category > summary::-webkit-details-marker { display: none; }
+        .model-service-category > summary span {
+          display: grid;
+          min-width: 28px;
+          height: 28px;
+          place-items: center;
+          border-radius: 999px;
+          background: rgba(183, 44, 255, .16);
+          color: #d77bff;
+          font-size: 11px;
+        }
+        .model-service-options {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: flex-start;
+          gap: 9px;
+          padding: 0 12px 14px;
+        }
+        .model-service-option {
+          display: flex;
+          min-width: 0;
+          flex: 0 1 auto;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 6px;
+        }
+        .model-service-directions {
+          display: flex;
+          max-width: 100%;
+          flex-wrap: wrap;
+          gap: 5px;
+          padding-left: 4px;
+        }
+        .model-service-directions button {
+          min-height: 32px !important;
+          border: 1px solid rgba(183, 44, 255, .24) !important;
+          border-radius: 999px !important;
+          background: rgba(183, 44, 255, .08) !important;
+          padding: 5px 9px !important;
+          color: #d9cfe0 !important;
+          font-size: 10px !important;
+          font-weight: 800 !important;
+        }
+        .model-service-directions button[data-active="true"] {
+          border-color: #d77bff !important;
+          background: rgba(183, 44, 255, .26) !important;
+          color: #fff !important;
+        }
+        .model-upload-received {
+          display: flex;
+          width: 100%;
+          height: 100%;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+          gap: 5px;
+          padding: 12px;
+          color: #d77bff;
+          text-align: center;
+        }
+        .model-upload-received strong { font-size: 12px; }
+        .model-upload-received span { color: #aaa0b2; font-size: 10px; }
         .model-subsection-label {
           margin: 0 0 8px !important;
           color: #d77bff !important;

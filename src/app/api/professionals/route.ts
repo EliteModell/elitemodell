@@ -11,7 +11,7 @@ import { DIDIT_PROVIDER } from "@/lib/professional-verification";
 import { ProfessionalDiditError, requireApprovedProfessionalDidit } from "@/lib/professional-didit";
 import { getProfessionalBillingSettings } from "@/lib/professional-access";
 import { createProfessionalSchema } from "@/lib/professional-profile-schema";
-import { assertApprovedMediaUrls } from "@/lib/approved-media";
+import { assertOwnedUploadMediaUrls } from "@/lib/approved-media";
 import { normalizeContactVisibility } from "@/lib/professional-contact";
 import {
   calculateAge,
@@ -261,7 +261,7 @@ export async function POST(req: NextRequest) {
     const diditVerification = await requireApprovedProfessionalDidit(session.user.id);
 
     const { specialties, services, phone, whatsapp, image, galleryUrls, ...profileData } = data;
-    await assertApprovedMediaUrls({
+    await assertOwnedUploadMediaUrls({
       urls: [image, ...galleryUrls].filter((url): url is string => Boolean(url)),
       requestUrl: req.url,
       ownerId: session.user.id,

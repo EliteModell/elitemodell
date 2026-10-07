@@ -498,3 +498,37 @@ test.describe("Botões — sem ação morta", () => {
     }
   });
 });
+
+test.describe("Estabilidade visual mobile", () => {
+  test.beforeEach(requireAuth);
+
+  for (const width of [375, 390, 412, 430]) {
+    test(`sem overflow horizontal em ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await gotoClientArea(page, "/dashboard/acompanhantes");
+
+      const metrics = await page.evaluate(() => ({
+        documentScrollWidth: document.documentElement.scrollWidth,
+        documentClientWidth: document.documentElement.clientWidth,
+        bodyScrollWidth: document.body.scrollWidth,
+        innerWidth: window.innerWidth,
+        htmlBackground: getComputedStyle(document.documentElement).backgroundColor,
+        bodyBackground: getComputedStyle(document.body).backgroundColor,
+      }));
+
+      expect(metrics.documentScrollWidth).toBe(metrics.documentClientWidth);
+      expect(metrics.bodyScrollWidth).toBeLessThanOrEqual(metrics.innerWidth);
+      expect(metrics.htmlBackground).not.toBe("rgba(0, 0, 0, 0)");
+      expect(metrics.htmlBackground).not.toBe("rgb(255, 255, 255)");
+      expect(metrics.bodyBackground).not.toBe("rgba(0, 0, 0, 0)");
+      expect(metrics.bodyBackground).not.toBe("rgb(255, 255, 255)");
+
+      const bottomNav = page.locator(".client-bottom-nav");
+      await expect(bottomNav).toBeVisible();
+      const navBox = await bottomNav.boundingBox();
+      expect(navBox).not.toBeNull();
+      expect(navBox!.x).toBeGreaterThanOrEqual(0);
+      expect(navBox!.x + navBox!.width).toBeLessThanOrEqual(width);
+    });
+  }
+});

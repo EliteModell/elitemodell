@@ -22,6 +22,59 @@ type ProviderOptions = {
   timeoutMs?: number;
 };
 
+export type ClamAvConfiguration = {
+  mode: "REMOTE_CLAMD";
+  hostConfigured: boolean;
+  port: number;
+  protocol: "TCP_INSTREAM";
+  timeoutMs: number;
+  streaming: true;
+  chunkSizeBytes: number;
+  maxFileSizeBytes: number | null;
+};
+
+export function getClamAvConfiguration(): ClamAvConfiguration {
+  const configuredMax = Number(process.env.UPLOAD_MAX_FILE_SIZE_BYTES || 0);
+  return {
+    mode: "REMOTE_CLAMD",
+    hostConfigured: Boolean(process.env.CLAMAV_HOST?.trim()),
+    port: Number(process.env.CLAMAV_PORT || 3310),
+    protocol: "TCP_INSTREAM",
+    timeoutMs: Number(process.env.AV_TIMEOUT_MS || 30_000),
+    streaming: true,
+    chunkSizeBytes: 64 * 1024,
+    maxFileSizeBytes: Number.isFinite(configuredMax) && configuredMax > 0 ? configuredMax : null,
+  };
+}
+
+export async function checkClamAvHealth(options: ProviderOptions = {}) {
+  const host = process.env.CLAMAV_HOST?.trim();
+  const config = getClamAvConfiguration();
+  const port = config.port;
+  const timeoutMs = options.timeoutMs ?? Math.min(config.timeoutMs, 5_000);
+  if (!host || !Number.isInteger(port) || port < 1 || port > 65535) {
+    return { healthy: false as const, provider: "CLAMAV", reason: "NOT_CONFIGURED", config };
+  }
+
+  return new Promise<{ healthy: boolean; provider: string; reason: string; config: ClamAvConfiguration }>((resolve) => {
+    const socket = net.createConnection({ host, port });
+    let response = "";
+    let settled = false;
+    const finish = (healthy: boolean, reason: string) => {
+      if (settled) return;
+      settled = true;
+      socket.destroy();
+      resolve({ healthy, provider: "CLAMAV", reason, config });
+    };
+    socket.setTimeout(timeoutMs);
+    socket.on("connect", () => socket.end("zPING\0"));
+    socket.on("data", (chunk) => { response += chunk.toString("utf8"); });
+    socket.on("end", () => finish(/PONG/i.test(response), /PONG/i.test(response) ? "PONG" : "INVALID_RESPONSE"));
+    socket.on("timeout", () => finish(false, "TIMEOUT"));
+    socket.on("error", () => finish(false, "CONNECTION_ERROR"));
+  });
+}
+
 function normalizedProvider(value: string | undefined, fallback: string) {
   return (value || fallback).trim().toUpperCase();
 }
@@ -93,7 +146,7 @@ async function scanWithClamAv(
 
     socket.on("connect", () => {
       socket.write("zINSTREAM\0");
-      const chunkSize = 64 * 1024;
+      const chunkSize = getClamAvConfiguration().chunkSizeBytes;
       for (let offset = 0; offset < buffer.length; offset += chunkSize) {
         const chunk = buffer.subarray(offset, Math.min(offset + chunkSize, buffer.length));
         const length = Buffer.allocUnsafe(4);

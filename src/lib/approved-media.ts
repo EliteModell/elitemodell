@@ -87,3 +87,48 @@ export async function assertApprovedMediaUrls(input: {
     }
   }
 }
+
+/**
+ * Validates references attached to a professional registration draft.
+ * This intentionally does not make the asset public: publication continues
+ * to require assertApprovedMediaUrls/evaluateMediaPublicationGates.
+ */
+export async function assertOwnedUploadMediaUrls(input: {
+  urls: string[];
+  requestUrl: string;
+  ownerId: string;
+  allowedFolderPrefixes: string[];
+}) {
+  const entries = input.urls.map((url) => ({ url, id: controlledAssetId(url, input.requestUrl) }));
+  if (entries.some((entry) => !entry.id)) {
+    throw new Error("A midia precisa ter sido enviada pela plataforma.");
+  }
+  if (entries.length === 0) return;
+
+  const ids = entries.map((entry) => entry.id).filter((id): id is string => Boolean(id));
+  const assets = await prisma.uploadAsset.findMany({
+    where: { id: { in: ids } },
+    select: {
+      id: true,
+      userId: true,
+      folder: true,
+      status: true,
+      uploadCompletedAt: true,
+      malwareStatus: true,
+    },
+  });
+  const byId = new Map(assets.map((asset) => [asset.id, asset]));
+  for (const id of ids) {
+    const asset = byId.get(id);
+    if (
+      !asset ||
+      asset.userId !== input.ownerId ||
+      !asset.uploadCompletedAt ||
+      asset.status === "REJECTED" ||
+      asset.malwareStatus === "INFECTED" ||
+      !input.allowedFolderPrefixes.some((prefix) => asset.folder.startsWith(prefix))
+    ) {
+      throw new Error("A midia informada nao foi recebida com seguranca ou pertence a outra conta.");
+    }
+  }
+}

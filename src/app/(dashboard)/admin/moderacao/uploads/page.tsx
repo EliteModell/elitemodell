@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/admin-access";
 import { prisma } from "@/lib/prisma";
 import {
   approveUploadAsset,
+  escalateUploadAsset,
   processUploadAsset,
   rejectUploadAsset,
 } from "@/lib/upload-quarantine";
@@ -26,6 +27,8 @@ async function reviewUpload(formData: FormData) {
     await rejectUploadAsset(assetId, session.user.id, reason);
   } else if (action === "REPROCESS") {
     await processUploadAsset(assetId);
+  } else if (action === "ESCALATE") {
+    await escalateUploadAsset(assetId, session.user.id, reason);
   }
   revalidatePath("/admin/moderacao/uploads");
 }
@@ -42,6 +45,10 @@ export default async function AdminUploadModerationPage() {
     where: { status: { not: "APPROVED" } },
     orderBy: { createdAt: "asc" },
     take: 100,
+    include: {
+      owner: { select: { id: true, name: true, email: true } },
+      reviewer: { select: { id: true, name: true, email: true } },
+    },
   });
 
   return (
@@ -74,13 +81,20 @@ export default async function AdminUploadModerationPage() {
                   <StatusPill tone={tone(asset.status)}>{asset.status}</StatusPill>
                   <StatusPill tone={tone(asset.malwareStatus)}>AV: {asset.malwareStatus}</StatusPill>
                   <StatusPill tone={tone(asset.moderationStatus)}>Conteúdo: {asset.moderationStatus}</StatusPill>
+                  <StatusPill tone={tone(asset.ageIdentityStatus)}>Idade: {asset.ageIdentityStatus}</StatusPill>
+                  <StatusPill tone={tone(asset.consentStatus)}>Consentimento: {asset.consentStatus}</StatusPill>
                 </div>
                 <h2 style={{ color: "#fff", fontSize: 16, margin: "0 0 8px", overflowWrap: "anywhere" }}>{asset.originalName}</h2>
                 <p style={{ color: "#b4adb0", fontSize: 13, lineHeight: 1.6, margin: "0 0 12px" }}>
                   {asset.folder} · {asset.detectedMimeType} · {(asset.sizeBytes / 1024 / 1024).toFixed(2)} MB
                   <br />
                   AV: {asset.malwareProvider || "pendente"} · Moderação: {asset.moderationProvider || "pendente"}
+                  <br />Owner: {asset.owner.name ?? asset.owner.email ?? asset.owner.id}
+                  <br />Upload: {asset.createdAt.toLocaleString("pt-BR")}
+                  <br />Revisor: {asset.reviewer?.name ?? asset.reviewer?.email ?? "pendente"}
+                  <br />Decisão: {asset.reviewedById && asset.lastProcessedAt ? asset.lastProcessedAt.toLocaleString("pt-BR") : "pendente"}
                 </p>
+                {asset.reviewReason ? <p style={{ color: "#e9d5ff", fontSize: 13 }}>Motivo da revisão: {asset.reviewReason}</p> : null}
                 {asset.failureReason ? <p style={{ color: "#fca5a5", fontSize: 13 }}>{asset.failureReason}</p> : null}
                 <form action={reviewUpload} style={{ display: "grid", gap: 9 }}>
                   <input type="hidden" name="assetId" value={asset.id} />
@@ -97,6 +111,9 @@ export default async function AdminUploadModerationPage() {
                     </button>
                     <button name="action" value="REJECT" style={{ border: "1px solid rgba(239,68,68,.4)", borderRadius: 8, background: "rgba(239,68,68,.12)", color: "#fca5a5", padding: "9px 12px", fontWeight: 800 }}>
                       Rejeitar
+                    </button>
+                    <button name="action" value="ESCALATE" style={{ border: "1px solid rgba(250,204,21,.4)", borderRadius: 8, background: "rgba(250,204,21,.12)", color: "#fde68a", padding: "9px 12px", fontWeight: 800 }}>
+                      Escalar
                     </button>
                     <button name="action" value="APPROVE" disabled={asset.malwareStatus !== "CLEAN"} style={{ border: 0, borderRadius: 8, background: "#b72cff", color: "#080704", padding: "9px 12px", fontWeight: 950, opacity: asset.malwareStatus === "CLEAN" ? 1 : 0.45 }}>
                       Aprovar

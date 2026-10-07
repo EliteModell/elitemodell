@@ -8,7 +8,7 @@ import { evaluateMediaPublicationGates } from "@/lib/media-security";
 import { getMediaStorageProvider, type MediaStorageName } from "@/lib/media-storage";
 import { prisma } from "@/lib/prisma";
 import { getPublicProfessionalWhere } from "@/lib/public-professional-access";
-import { controlledMediaAssetId } from "@/lib/public-professional-media";
+import { controlledMediaAssetId, isApprovedProfileVisualAsset } from "@/lib/public-professional-media";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 
 function safeFilename(value: string) {
@@ -73,7 +73,15 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
 
   const isOwner = asset.userId === adultAccess.session?.user.id;
   const isPrivateIdentityMaterial = asset.folder.startsWith("documentos") || asset.folder.startsWith("verificacao");
-  const logicalPrivate = isPrivateIdentityMaterial || asset.visibility !== "PUBLIC";
+  const approvedProfileVisual = isApprovedProfileVisualAsset(asset);
+  const logicalPrivate = isPrivateIdentityMaterial || (
+    asset.visibility !== "PUBLIC" &&
+    // Profile media is still served only by this authorized route and only
+    // after every publication gate plus a live profile reference are checked.
+    // This repairs stale PRIVATE flags left from quarantine without exposing
+    // the underlying bucket or widening subscriber-only media.
+    !(asset.visibility === "PRIVATE" && approvedProfileVisual)
+  );
   let isAdmin = adultAccess.session?.user.role === "ADMIN";
   if (logicalPrivate && !isOwner) {
     const admin = await authorizeAdminRequest(isPrivateIdentityMaterial ? "kyc:review" : "reports:manage");

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import net from "node:net";
 import { NextRequest } from "next/server";
 import { POST as sendPhoneCode } from "../src/app/api/auth/phone/send-code/route";
 import { POST as prepareFirebasePhone } from "../src/app/api/auth/phone/firebase-send/route";
@@ -21,6 +22,25 @@ import {
   scanFileForVirus,
 } from "../src/lib/moderation-core";
 
+async function withFakeClamd(
+  response: string | null,
+  run: (port: number) => Promise<void>,
+) {
+  const server = net.createServer((socket) => {
+    socket.once("data", () => {
+      if (response !== null) socket.end(`${response}\0`);
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("Fake clamd sem porta TCP.");
+  try {
+    await run(address.port);
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+}
+
 test.describe("adaptadores de fornecedores", () => {
   test.afterEach(() => {
     delete process.env.AV_ENABLED;
@@ -29,6 +49,8 @@ test.describe("adaptadores de fornecedores", () => {
     delete process.env.AV_HTTP_TOKEN;
     delete process.env.CONTENT_MODERATION_ENDPOINT;
     delete process.env.CONTENT_MODERATION_TOKEN;
+    delete process.env.CLAMAV_HOST;
+    delete process.env.CLAMAV_PORT;
     delete process.env.ASAAS_API_KEY;
     delete process.env.ASAAS_ENVIRONMENT;
   });
@@ -304,6 +326,50 @@ test.describe("Twilio Verify no cadastro profissional", () => {
   test("normaliza telefone brasileiro para E.164", () => {
     expect(toBrazilianE164("(11) 91793-4340")).toBe("+5511917934340");
     expect(toBrazilianE164("+55 11 91793-4340")).toBe("+5511917934340");
+  });
+
+  test("clamd INSTREAM aceita arquivo limpo", async () => {
+    await withFakeClamd("stream: OK", async (port) => {
+      process.env.CLAMAV_HOST = "127.0.0.1";
+      process.env.CLAMAV_PORT = String(port);
+      await expect(scanFileForVirus(Buffer.from("arquivo limpo"), "clean.txt", "text/plain", { provider: "CLAMAV" }))
+        .resolves.toMatchObject({ safe: true, status: "CLEAN", provider: "CLAMAV" });
+    });
+  });
+
+  test("clamd INSTREAM rejeita assinatura EICAR", async () => {
+    await withFakeClamd("stream: Win.Test.EICAR_HDB-1 FOUND", async (port) => {
+      process.env.CLAMAV_HOST = "127.0.0.1";
+      process.env.CLAMAV_PORT = String(port);
+      const eicar = Buffer.from("X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*");
+      await expect(scanFileForVirus(eicar, "eicar.com.txt", "text/plain", { provider: "CLAMAV" }))
+        .resolves.toMatchObject({ safe: false, status: "INFECTED", provider: "CLAMAV" });
+    });
+  });
+
+  test("timeout do clamd permanece fail-closed", async () => {
+    await withFakeClamd(null, async (port) => {
+      process.env.CLAMAV_HOST = "127.0.0.1";
+      process.env.CLAMAV_PORT = String(port);
+      await expect(scanFileForVirus(Buffer.from("arquivo"), "a.txt", "text/plain", { provider: "CLAMAV", timeoutMs: 30 }))
+        .resolves.toMatchObject({ safe: false, status: "ERROR", provider: "CLAMAV" });
+    });
+  });
+
+  test("erro de conexao do clamd permanece fail-closed", async () => {
+    process.env.CLAMAV_HOST = "127.0.0.1";
+    process.env.CLAMAV_PORT = "1";
+    await expect(scanFileForVirus(Buffer.from("arquivo"), "a.txt", "text/plain", { provider: "CLAMAV", timeoutMs: 100 }))
+      .resolves.toMatchObject({ safe: false, status: "ERROR", provider: "CLAMAV" });
+  });
+
+  test("resposta desconhecida do clamd permanece fail-closed", async () => {
+    await withFakeClamd("UNKNOWN", async (port) => {
+      process.env.CLAMAV_HOST = "127.0.0.1";
+      process.env.CLAMAV_PORT = String(port);
+      await expect(scanFileForVirus(Buffer.from("arquivo"), "a.txt", "text/plain", { provider: "CLAMAV" }))
+        .resolves.toMatchObject({ safe: false, status: "ERROR", provider: "CLAMAV" });
+    });
   });
 
   test("erro 60203 informa limite temporário e recuperação automática", async () => {

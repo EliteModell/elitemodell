@@ -43,6 +43,19 @@ export function normalizeControlledMediaUrl(value?: string | null) {
   return assetId ? `/api/media/${encodeURIComponent(assetId)}` : null;
 }
 
+export function adminControlledMediaPreviewUrl(value?: string | null) {
+  const assetId = controlledMediaAssetId(value);
+  return assetId ? `/api/admin/uploads/${encodeURIComponent(assetId)}/preview` : value ?? null;
+}
+
+export function isApprovedProfileVisualAsset(asset: PublicProfileAsset) {
+  return (
+    asset.status === "APPROVED" &&
+    (asset.category === "image" || asset.category === "video") &&
+    asset.folder.startsWith("profiles")
+  );
+}
+
 export function filterApprovedProfilePhotos(
   photos: PublicProfilePhoto[],
   assets: PublicProfileAsset[],
@@ -52,8 +65,12 @@ export function filterApprovedProfilePhotos(
     assets
       .filter((asset) =>
         asset.userId === ownerId &&
-        asset.status === "APPROVED" &&
-        asset.visibility === "PUBLIC" &&
+        isApprovedProfileVisualAsset(asset) &&
+        // A bucket stays private. For an approved visual asset that is
+        // referenced by the profile, PRIVATE may be a stale quarantine-stage
+        // flag and must not make an otherwise publishable asset disappear.
+        // SUBSCRIBERS remains restricted and is never widened here.
+        (asset.visibility === "PUBLIC" || asset.visibility === "PRIVATE") &&
         evaluateMediaPublicationGates({
           uploadComplete: Boolean(asset.uploadCompletedAt),
           malwareStatus: asset.malwareStatus,

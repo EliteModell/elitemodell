@@ -14,6 +14,7 @@ const ageRestrictedHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["127.0.0.1"],
   poweredByHeader: false,
   serverExternalPackages: ["mercadopago"],
   async headers() {

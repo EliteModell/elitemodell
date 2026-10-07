@@ -77,8 +77,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#b72cff",
-  colorScheme: "light",
+  themeColor: "#050505",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -112,10 +112,12 @@ export default function RootLayout({
         {
           "--font-inter": '"Inter", "Segoe UI Variable Text", "Segoe UI", Arial, Helvetica, sans-serif',
           "--font-playfair": '"Inter", "Segoe UI Variable Text", "Segoe UI", Arial, Helvetica, sans-serif',
+          backgroundColor: "#050505",
+          colorScheme: "dark",
         } as React.CSSProperties
       }
     >
-      <body className="min-h-screen">
+      <body className="min-h-screen bg-[#050505]">
         <script
           type="application/ld+json"
           suppressHydrationWarning

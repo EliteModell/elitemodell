@@ -22,7 +22,7 @@ const passingGates = {
 };
 
 test.describe("seguranca fail-closed de midia adulta", () => {
-  for (const malwareStatus of ["PENDING", "ERROR"]) {
+  for (const malwareStatus of ["PENDING", "ERROR", "INFECTED"]) {
     test(`nao publica com malware ${malwareStatus}`, () => {
       const result = evaluateMediaPublicationGates({ ...passingGates, malwareStatus });
       expect(result.publishable).toBe(false);
@@ -30,7 +30,7 @@ test.describe("seguranca fail-closed de midia adulta", () => {
     });
   }
 
-  for (const moderationStatus of ["PENDING", "ERROR"]) {
+  for (const moderationStatus of ["PENDING", "ERROR", "REJECTED"]) {
     test(`nao publica com moderacao ${moderationStatus}`, () => {
       const result = evaluateMediaPublicationGates({ ...passingGates, moderationStatus });
       expect(result.publishable).toBe(false);

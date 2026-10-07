@@ -334,13 +334,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         assetId: processed.id,
-        path: isPrivate ? `asset:${processed.id}` : null,
+        // The controlled application reference is safe to persist while the
+        // asset remains private. /api/media still enforces every publication
+        // gate and will not serve pending/quarantined content publicly.
+        path: `/api/media/${encodeURIComponent(processed.id)}`,
         url: null,
         status: processed.status,
         malwareStatus: processed.malwareStatus,
         moderationStatus: processed.moderationStatus,
         type,
-        message: "Arquivo mantido em quarentena e aguardando revisao.",
+        message: "Arquivo recebido e em analise de seguranca.",
       },
       { status: 202 },
     );

@@ -229,7 +229,7 @@ async function reviewProfessional(formData: FormData) {
                 uploadedAssets: {
                   where: { folder: { startsWith: "profiles" } },
                   select: {
-                    id: true, userId: true, folder: true, category: true, status: true,
+                    id: true, userId: true, folder: true, category: true, status: true, visibility: true,
                     moderationStatus: true, approvedBucket: true, approvedPath: true,
                   },
                 },
@@ -423,7 +423,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
           uploadedAssets: {
             where: { folder: { startsWith: "profiles" } },
             select: {
-              id: true, userId: true, folder: true, category: true, status: true,
+              id: true, userId: true, folder: true, category: true, status: true, visibility: true,
               moderationStatus: true, approvedBucket: true, approvedPath: true,
             },
           },

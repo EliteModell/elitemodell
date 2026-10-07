@@ -36,18 +36,32 @@
 
 html {
   width: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
   scroll-behavior: smooth;
   overflow-x: hidden;
+  background: var(--background);
+  color-scheme: dark;
 }
 
 body {
   width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  min-height: 100dvh;
   overflow-x: hidden;
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-inter), "Inter", "Segoe UI", Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
+}
+
+@supports (overflow: clip) {
+  html,
+  body {
+    overflow-x: clip;
+  }
 }
 
 img,
@@ -245,10 +259,19 @@ svg {
   --client-faint: #85858a;
   position: relative;
   isolation: isolate;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 100dvh;
   overflow-x: hidden;
   background: #050505;
   color: var(--client-text);
+}
+
+@supports (overflow: clip) {
+  .client-premium {
+    overflow-x: clip;
+  }
 }
 
 .client-premium::before {
@@ -2883,13 +2906,13 @@ body[data-client-dashboard="true"] .client-premium,
 .client-dashboard-shell .client-bottom-nav a[href="/dashboard"] {
   border-color: rgba(183, 44, 255, 0.30) !important;
   background: rgba(183, 44, 255, 0.13) !important;
-  color: #8612b5 !important;
+  color: #e1a6ff !important;
   opacity: 1 !important;
 }
 
 .client-dashboard-shell .client-bottom-nav a[href="/dashboard"] svg,
 .client-dashboard-shell .client-bottom-nav a[href="/dashboard"] span {
-  color: #8612b5 !important;
+  color: #e1a6ff !important;
   opacity: 1 !important;
 }
 

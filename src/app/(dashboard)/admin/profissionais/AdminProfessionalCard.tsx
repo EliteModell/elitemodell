@@ -4,6 +4,7 @@ import { StatusPill, buttonStyle } from "../_components/AdminPrimitives";
 import { AdminKycEvidence } from "./AdminKycEvidence";
 import { professionalCompletion } from "@/lib/professional-completeness";
 import { resolveProfessionalAccess } from "@/lib/professional-access-policy";
+import { adminControlledMediaPreviewUrl } from "@/lib/public-professional-media";
 
 type AuditEntry = {
   id: string;
@@ -148,7 +149,9 @@ export function AdminProfessionalCard({
   const canApprove = pro.status === "PENDING_REVIEW" && approvalIssues.length === 0;
   const accent = pro.status === "ACTIVE" ? "#16a34a" : pro.status === "REJECTED" || pro.status === "SUSPENDED" ? "#dc2626" : pro.status === "PENDING_REVIEW" || pro.status === "CORRECTION_REQUIRED" ? "#9a25cf" : "#786f7e";
   const tone = pro.status === "ACTIVE" ? "success" : pro.status === "REJECTED" || pro.status === "SUSPENDED" ? "danger" : pro.status === "PENDING_REVIEW" || pro.status === "CORRECTION_REQUIRED" ? "warning" : "neutral";
-  const cover = pro.photos.find((photo) => photo.cover)?.url ?? pro.image ?? pro.photos[0]?.url ?? null;
+  const cover = adminControlledMediaPreviewUrl(
+    pro.photos.find((photo) => photo.cover)?.url ?? pro.image ?? pro.photos[0]?.url ?? null,
+  );
   const calculatedAge = age(pro.birthDate ?? pro.user.birthDate);
   const lastAudit = audits[0];
   const approvedAudit = audits.find((entry) => entry.action === "PROFESSIONAL_APPROVED");
@@ -254,7 +257,10 @@ export function AdminProfessionalCard({
               </div>
               {cover && <div className="pro-cover"><img src={cover} alt={`Foto principal de ${pro.displayName}`} loading="lazy" /><span>Foto principal</span></div>}
               <p className="pro-subtitle">Galeria administrativa · {pro.photos.length} foto(s)</p>
-              {pro.photos.length ? <div className="pro-gallery">{pro.photos.map((photo) => <a href={photo.url} target="_blank" rel="noreferrer" key={photo.id} className={photo.cover ? "cover" : ""}><img src={photo.url} alt={photo.caption ?? `Foto de ${pro.displayName}`} loading="lazy" /><span>{photo.cover ? "Principal · ampliar" : "Ampliar"}</span></a>)}</div> : <p className="pro-empty">Nenhuma foto enviada</p>}
+              {pro.photos.length ? <div className="pro-gallery">{pro.photos.map((photo) => {
+                const previewUrl = adminControlledMediaPreviewUrl(photo.url);
+                return <a href={previewUrl ?? "#"} target="_blank" rel="noreferrer" key={photo.id} className={photo.cover ? "cover" : ""}><img src={previewUrl ?? ""} alt={photo.caption ?? `Foto de ${pro.displayName}`} loading="lazy" /><span>{photo.cover ? "Principal · ampliar" : "Ampliar"}</span></a>;
+              })}</div> : <p className="pro-empty">Nenhuma foto enviada</p>}
               {pro.presentationVideoUrl && <div className="pro-admin-video"><video src={pro.presentationVideoUrl} controls preload="metadata" /><span>Vídeo de apresentação · {technicalStatus(pro.presentationVideoStatus)}</span></div>}
               <p className="pro-subtitle">Serviços</p><Tags values={pro.services} empty="Nenhum serviço cadastrado" />
               <p className="pro-subtitle">Especialidades</p><Tags values={pro.specialties.map((item) => item.name)} empty="Nenhuma especialidade cadastrada" />
