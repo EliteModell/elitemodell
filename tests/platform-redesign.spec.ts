@@ -508,7 +508,9 @@ test("as 9 etapas do cadastro profissional mantêm contraste e encaixe responsiv
     body: JSON.stringify({ available: false, status: "NOT_STARTED", retryAllowed: false }),
   }));
   await context.addInitScript(() => {
-    localStorage.setItem("elitemodell_professional_onboarding_v1", JSON.stringify({
+    localStorage.setItem("elitemodell_professional_onboarding_v2:test-user-id:PROFESSIONAL", JSON.stringify({
+      ownerId: "test-user-id",
+      registrationType: "PROFESSIONAL",
       step: 8,
       form: {
         displayName: "Perfil de revisão",

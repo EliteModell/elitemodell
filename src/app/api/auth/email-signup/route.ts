@@ -6,7 +6,6 @@ import { isAgeOfMajority } from "@/lib/age-validation";
 import { buildAuthEmail, sendAuthEmail } from "@/lib/auth-email";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
-import { createSignupDraftToken } from "@/lib/signup-draft-token";
 import { canonicalizeRequestedEmailCallback } from "@/lib/email-auth-callback";
 
 const schema = z.object({
@@ -143,23 +142,10 @@ export async function POST(req: NextRequest) {
     }
 
     await sendAuthEmail(email, authEmail);
-    const draftSessionToken = body.accountType === "PROFESSIONAL"
-      ? createSignupDraftToken({
-        email,
-        name: body.name,
-        accountType: body.accountType,
-        category: body.category,
-        birthDate: body.birthDate,
-        lgpdConsent: body.lgpdConsent,
-        termsConsent: body.termsConsent,
-        ageConfirmed: body.ageConfirmed,
-      })
-      : undefined;
-
     console.info("[email-signup] solicitacao aceita pelo provedor", {
       emailDomain: email.split("@")[1] ?? "unknown",
       actionType: generated.actionType,
-      draftSession: Boolean(draftSessionToken),
+      draftSession: false,
       requestIp,
     });
 
@@ -167,8 +153,6 @@ export async function POST(req: NextRequest) {
       ok: true,
       email,
       actionType: generated.actionType,
-      draftSessionToken,
-      continueTo: draftSessionToken ? "/profissional/novo" : undefined,
     });
   } catch (err) {
     if (err instanceof z.ZodError) {

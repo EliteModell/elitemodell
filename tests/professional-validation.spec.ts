@@ -178,7 +178,8 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     expect(verificationSteps).toContain('props.mode === "summary"');
     expect(verificationSteps.match(/Verificar minha identidade/g)).toHaveLength(1);
     expect(page).toContain("diditStartingRef.current");
-    expect(page).toContain("localStorage.setItem(DRAFT_KEY");
+    expect(page).toContain("localStorage.setItem(professionalDraftStorageKey(accountUserId)");
+    expect(page).toContain("isOwnedProfessionalDraft(parsed, accountUserId)");
     expect(page).toContain('form.kycStatus !== "APPROVED"');
     expect(page).not.toContain("startFaceBiometry");
   });

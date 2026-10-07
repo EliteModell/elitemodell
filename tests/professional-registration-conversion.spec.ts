@@ -457,42 +457,15 @@ test("após validar o código abre a ativação profissional completa", async ({
   }
 });
 
-test("cadastro profissional por email envia link e entra direto no onboarding em rascunho", async ({ page }) => {
-  const captured: { signupPayload?: Record<string, unknown>; nextAuthPayload?: string | null } = {};
+test("cadastro profissional por email exige confirmação antes do onboarding", async ({ page }) => {
+  const captured: { signupPayload?: Record<string, unknown> } = {};
 
   await page.route("**/api/auth/email-signup", async (route) => {
     captured.signupPayload = route.request().postDataJSON();
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({
-        ok: true,
-        draftSessionToken: "draft-token-for-tests",
-        continueTo: "/profissional/novo",
-      }),
-    });
-  });
-  await page.route("**/api/auth/csrf**", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ csrfToken: "csrf-token-for-tests" }),
-    });
-  });
-  await page.route("**/api/auth/callback/email-signup-draft**", async (route) => {
-    captured.nextAuthPayload = route.request().postData();
-    const url = new URL("/profissional/novo", route.request().url()).toString();
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ url }),
-    });
-  });
-  await page.route("**/profissional/novo**", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "text/html",
-      body: "<!doctype html><html><body><h1>Criar perfil de acompanhante</h1></body></html>",
+      body: JSON.stringify({ ok: true }),
     });
   });
 
@@ -510,9 +483,8 @@ test("cadastro profissional por email envia link e entra direto no onboarding em
   await page.getByLabel(/Confirmo que sou maior de 18 anos/).check();
   await page.getByRole("button", { name: "Criar conta" }).click();
 
-  await page.waitForURL(/\/profissional\/novo/);
-  await expect(page.getByRole("heading", { name: "Criar perfil de acompanhante" })).toBeVisible();
-  expect(captured.nextAuthPayload).toContain("draft-token-for-tests");
+  await expect(page.getByRole("heading", { name: "Verifique seu email" })).toBeVisible();
+  await expect(page).toHaveURL(/\/cadastro/);
 
   expect(captured.signupPayload).toMatchObject({
     accountType: "PROFESSIONAL",

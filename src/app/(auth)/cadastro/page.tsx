@@ -725,20 +725,7 @@ export default function CadastroPage() {
     setLoading(true);
     try {
       const captchaToken = await getCaptchaToken();
-      const signup = await sendEmailSignup(captchaToken);
-      if (signup.accountType === "PROFESSIONAL" && signup.draftSessionToken) {
-        const res = await signIn("email-signup-draft", {
-          token: signup.draftSessionToken,
-          redirect: false,
-        });
-        if (!res?.error) {
-          toast.success("Conta criada. Confirme o email ate o envio final.");
-          router.push(signup.continueTo ?? ACCOUNT_ROUTES.onboardingAcompanhante);
-          router.refresh();
-          return;
-        }
-        console.warn("[cadastro] sessao de rascunho profissional recusada", res?.error);
-      }
+      await sendEmailSignup(captchaToken);
       toast.success("Email de confirmacao enviado.");
       setStep("verify");
     } catch (err: unknown) {
@@ -1061,16 +1048,16 @@ export default function CadastroPage() {
       )}
 
       {isLoggedUpgradeFlow ? (
-        <div style={{ marginBottom: 20, padding: 14, borderRadius: 8, border: "1px solid rgba(183, 44, 255,0.24)", background: "rgba(15,23,42,0.72)" }}>
+        <div className={styles.upgradeCard} style={{ marginBottom: 20, padding: 14, borderRadius: 8, border: "1px solid rgba(183, 44, 255,0.24)", background: "rgba(15,23,42,0.92)" }}>
           <p style={{ color: "#fcf7ff", fontSize: 14, fontWeight: 800, margin: "0 0 6px" }}>
             Continuar cadastro de {form.accountType === "PROFESSIONAL" ? "acompanhante" : "anunciante de espaço"}
           </p>
-          <p style={{ color: "#968a9e", fontSize: 12, lineHeight: 1.5, margin: "0 0 12px" }}>
+          <p style={{ color: "#e4dce8", fontSize: 12, lineHeight: 1.5, margin: "0 0 12px" }}>
             Você já está logado. Vamos atualizar sua conta e abrir as etapas do cadastro.
           </p>
           <div style={{ display: "grid", gap: 12, marginBottom: 12 }}>
             <div>
-              <label style={{ display: "block", fontSize: 13, color: "#b4adb0", marginBottom: 6, fontWeight: 500 }}>Data de nascimento</label>
+              <label style={{ display: "block", fontSize: 13, color: "#f4eef7", marginBottom: 6, fontWeight: 700 }}>Data de nascimento</label>
               <div style={{ display: "grid", gridTemplateColumns: "0.72fr 0.72fr 1fr", gap: 8 }}>
                 <input
                   type="text"
@@ -1117,7 +1104,7 @@ export default function CadastroPage() {
               {errors.birthDate && <p data-auth-required-error="true" style={{ color: "#ef4444", fontSize: 12, margin: "6px 0 0" }}>{errors.birthDate}</p>}
             </div>
 
-            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#968a9e", fontSize: 12, lineHeight: 1.5 }}>
+            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#eee7f1", fontSize: 12, lineHeight: 1.5 }}>
               <input type="checkbox" checked={form.termsConsent} onChange={(e) => setForm({ ...form, termsConsent: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
               <span>
                 Li e aceito os <Link href="/terms" style={{ color: GOLD, textDecoration: "none" }}>Termos de Uso</Link> e li o{" "}
@@ -1126,7 +1113,7 @@ export default function CadastroPage() {
               </span>
             </label>
 
-            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#968a9e", fontSize: 12, lineHeight: 1.5 }}>
+            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#eee7f1", fontSize: 12, lineHeight: 1.5 }}>
               <input type="checkbox" checked={form.lgpdConsent} onChange={(e) => setForm({ ...form, lgpdConsent: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
               <span>
                 Li e aceito a <Link href="/privacy" style={{ color: GOLD, textDecoration: "none" }}>Política de Privacidade</Link>.
@@ -1134,7 +1121,7 @@ export default function CadastroPage() {
               </span>
             </label>
           </div>
-          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#968a9e", fontSize: 12, lineHeight: 1.5, marginTop: 12 }}>
+          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "#eee7f1", fontSize: 12, lineHeight: 1.5, marginTop: 12 }}>
             <input type="checkbox" checked={form.ageConfirmed} onChange={(e) => setForm({ ...form, ageConfirmed: e.target.checked })} style={{ marginTop: 2, accentColor: GOLD }} />
             <span>
               Confirmo que sou maior de 18 anos e li a <Link href="/documentos/adult-declaration" style={{ color: GOLD, textDecoration: "none" }}>Confirmacao de Maioridade</Link>.
@@ -1146,7 +1133,7 @@ export default function CadastroPage() {
             type="button"
             onClick={handleContinueExistingAccount}
             disabled={loading}
-            style={{ width: "100%", padding: "13px", background: loading ? "#65009b" : GOLD, color: "#080808", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}
+            style={{ width: "100%", padding: "13px", background: loading ? "#4b235f" : GOLD, color: loading ? "#ffffff" : "#080808", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}
           >
             {loading ? "Preparando cadastro..." : form.accountType === "PROFESSIONAL" ? "Ir para as fases do cadastro" : "Voltar ao anúncio"}
           </button>

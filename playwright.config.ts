@@ -37,6 +37,11 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "professional-draft-isolation",
+      testMatch: "**/professional-draft-isolation.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "account-routes",
       testMatch: "**/account-routes.spec.ts",
       use: { browserName: "chromium" },

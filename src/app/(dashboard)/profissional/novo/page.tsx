@@ -21,6 +21,12 @@ import {
   type ServiceDirection,
 } from "@/lib/professional-service-catalog";
 import ProfessionalCityAutocomplete from "@/components/professional-onboarding/ProfessionalCityAutocomplete";
+import {
+  isOwnedProfessionalDraft,
+  LEGACY_PROFESSIONAL_DRAFT_KEY,
+  PROFESSIONAL_REGISTRATION_TYPE,
+  professionalDraftStorageKey,
+} from "@/lib/professional-draft-storage";
 
 const ProfessionalVerificationSteps = dynamic(
   () => import("@/components/professional-onboarding/ProfessionalVerificationSteps"),
@@ -32,6 +38,7 @@ const GOLD = "#b72cff";
 const GOLD_DIM = "rgba(183, 44, 255,0.10)";
 const GOLD_MID = "rgba(183, 44, 255,0.28)";
 const PLAYFAIR = "var(--font-playfair), serif";
+const EMAIL_GATE_STYLES = `.model-email-gate{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;background:radial-gradient(circle at 50% 20%,rgba(183,44,255,.18),transparent 38%),#080808;color:#fcf7ff;text-align:center;padding:32px 18px}.model-email-gate>img{width:184px;height:auto}.model-email-gate section{width:min(100%,430px);padding:28px 22px;border:1px solid rgba(183,44,255,.35);border-radius:20px;background:#111013}.model-email-gate h1{margin:4px 0 14px;font-size:30px}.model-email-gate p{color:#c8becd;line-height:1.6}.model-email-gate .eyebrow{margin:0;color:#d77bff;font-size:12px;font-weight:900;letter-spacing:2px;text-transform:uppercase}.model-email-gate .actions{display:grid;gap:10px;margin-top:22px}.model-email-gate button,.model-email-gate input{min-height:48px;border-radius:12px;font:inherit}.model-email-gate input{padding:0 14px;border:1px solid rgba(183,44,255,.4);background:#080808;color:#fff}.model-email-gate button{border:0;background:#b72cff;color:#080808;font-weight:900}.model-email-gate button.secondary{border:1px solid rgba(183,44,255,.35);background:transparent;color:#d77bff}.model-email-gate button:disabled{opacity:.55;cursor:not-allowed}`;
 
 const inputStyle: React.CSSProperties = {
   width: "100%", padding: "12px 14px", background: "#080808",
@@ -102,7 +109,6 @@ const CATEGORIAS = [
 ];
 
 const STEPS = ["Dados", "Aparência", "Atendimento", "Serviços", "Valores", "Contato", "Fotos", "Verificação", "Enviar"];
-const DRAFT_KEY = "elitemodell_professional_onboarding_v1";
 const IMAGE_ACCEPT = "image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,.heic,.heif";
 const IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif"]);
 const IMAGE_EXTENSION_RE = /\.(jpe?g|png|webp|heic|heif)$/i;
@@ -352,6 +358,7 @@ export default function ProfissionalNovoPage() {
   const [diditMessage, setDigitMessage] = useState<string | null>(null);
   const [diditRetryAllowed, setDigitRetryAllowed] = useState(false);
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
+  const [accountUserId, setAccountUserId] = useState<string | null>(null);
   const [emailVerified, setEmailVerified] = useState<boolean | null>(null);
   const [emailBusy, setEmailBusy] = useState(false);
   const [emailCooldown, setEmailCooldown] = useState(0);
@@ -403,17 +410,26 @@ export default function ProfissionalNovoPage() {
   });
 
   useEffect(() => {
+    if (!accountUserId || emailVerified !== true) return;
+    const draftKey = professionalDraftStorageKey(accountUserId);
     const restoreTimer = window.setTimeout(() => {
     try {
-      const rawDraft = localStorage.getItem(DRAFT_KEY);
+      localStorage.removeItem(LEGACY_PROFESSIONAL_DRAFT_KEY);
+      const rawDraft = localStorage.getItem(draftKey);
       if (!rawDraft) {
         draftLoadedRef.current = true;
         return;
       }
 
-      const parsed = JSON.parse(rawDraft) as { step?: number; form?: Partial<typeof form> };
-      if (parsed?.form && typeof parsed.form === "object") {
-        const safeDraftForm = { ...parsed.form };
+      const parsed = JSON.parse(rawDraft) as { ownerId?: string; registrationType?: string; step?: number; form?: Partial<typeof form> };
+      if (!isOwnedProfessionalDraft(parsed, accountUserId)) {
+        localStorage.removeItem(draftKey);
+        draftLoadedRef.current = true;
+        return;
+      }
+      const ownedDraftForm = parsed.form as Partial<typeof form> | undefined;
+      if (ownedDraftForm && typeof ownedDraftForm === "object") {
+        const safeDraftForm = { ...ownedDraftForm };
         delete safeDraftForm.verificationUrl;
         delete safeDraftForm.kycProvider;
         delete safeDraftForm.kycSessionId;
@@ -421,15 +437,15 @@ export default function ProfissionalNovoPage() {
         setForm((current) => ({
           ...current,
           ...safeDraftForm,
-          galleryUrls: Array.isArray(parsed.form?.galleryUrls) ? parsed.form.galleryUrls.filter((url) => !/^(blob:|uploading:)/.test(String(url))) : current.galleryUrls,
-          mainPhotoUrl: parsed.form?.mainPhotoUrl && !String(parsed.form.mainPhotoUrl).startsWith("blob:") ? parsed.form.mainPhotoUrl : current.mainPhotoUrl,
+          galleryUrls: Array.isArray(ownedDraftForm.galleryUrls) ? ownedDraftForm.galleryUrls.filter((url) => !/^(blob:|uploading:)/.test(String(url))) : current.galleryUrls,
+          mainPhotoUrl: ownedDraftForm.mainPhotoUrl && !String(ownedDraftForm.mainPhotoUrl).startsWith("blob:") ? ownedDraftForm.mainPhotoUrl : current.mainPhotoUrl,
           docFrenteFile: null,
           docVersoFile: null,
           verificationFile: null,
         }));
 
-        if (parsed.form.birthDate) {
-          const [year, month, day] = String(parsed.form.birthDate).split("-");
+        if (ownedDraftForm.birthDate) {
+          const [year, month, day] = String(ownedDraftForm.birthDate).split("-");
           setBirthParts({ day: day ?? "", month: month ?? "", year: year ?? "" });
         }
       }
@@ -439,7 +455,7 @@ export default function ProfissionalNovoPage() {
       }
     } catch (err) {
       console.warn("[professional-onboarding] Não foi possível restaurar o rascunho local.", err);
-      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem(draftKey);
     } finally {
       draftLoadedRef.current = true;
       if (new URLSearchParams(window.location.search).get("didit") === "returned") setStep(7);
@@ -449,7 +465,7 @@ export default function ProfissionalNovoPage() {
     return () => {
       window.clearTimeout(restoreTimer);
     };
-  }, []);
+  }, [accountUserId, emailVerified]);
 
   useEffect(() => () => {
     localPreviewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
@@ -457,7 +473,7 @@ export default function ProfissionalNovoPage() {
   }, []);
 
   useEffect(() => {
-    if (!draftLoadedRef.current) return;
+    if (!draftLoadedRef.current || !accountUserId || emailVerified !== true) return;
     if (skipInitialDraftSaveRef.current) {
       skipInitialDraftSaveRef.current = false;
       return;
@@ -478,7 +494,7 @@ export default function ProfissionalNovoPage() {
 
     const saveTimer = window.setTimeout(() => {
       try {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify({ step, form: draftForm, updatedAt: new Date().toISOString() }));
+        localStorage.setItem(professionalDraftStorageKey(accountUserId), JSON.stringify({ ownerId: accountUserId, registrationType: PROFESSIONAL_REGISTRATION_TYPE, step, form: draftForm, updatedAt: new Date().toISOString() }));
         window.setTimeout(() => setDraftSaveError(false), 0);
       } catch (err) {
       console.warn("[professional-onboarding] Não foi possível salvar o rascunho local.", err);
@@ -487,7 +503,7 @@ export default function ProfissionalNovoPage() {
     }, 300);
 
     return () => window.clearTimeout(saveTimer);
-  }, [form, step]);
+  }, [accountUserId, emailVerified, form, step]);
 
   useEffect(() => {
     if (emailCooldown <= 0) return;
@@ -505,7 +521,7 @@ export default function ProfissionalNovoPage() {
         const user = await response.json() as { email?: string; emailVerified?: string | boolean | null };
         if (!active) return;
         setAccountEmail(user.email ?? null);
-        if (user.emailVerified) setEmailVerified(true);
+        if (user.emailVerified) window.location.reload();
       } catch {
         // Mantém o aviso e permite uma nova tentativa quando a conexão voltar.
       }
@@ -524,28 +540,32 @@ export default function ProfissionalNovoPage() {
     let active = true;
 
     async function loadUserDefaults() {
-      await fetch("/api/users/me/activate-professional", {
+      const res = await fetch("/api/users/me", { cache: "no-store" });
+      if (!res.ok) return;
+      let user = await res.json();
+      if (!active) return;
+
+      setAccountUserId(user.id ?? null);
+      setAccountEmail(user.email ?? null);
+      setEmailVerified(Boolean(user.emailVerified));
+      if (!user.emailVerified) return;
+
+      const activation = await fetch("/api/users/me/activate-professional", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
-      }).catch((err) => {
-        console.warn("[professional-onboarding] Nao foi possivel ativar o contexto profissional.", err);
       });
-
-      const res = await fetch("/api/users/me");
-      if (!res.ok) return;
-      const user = await res.json();
-      if (!active) return;
-
-      setAccountEmail(user.email ?? null);
-      setEmailVerified(Boolean(user.emailVerified));
+      if (!activation.ok || !active) return;
+      const refreshed = await fetch("/api/users/me", { cache: "no-store" });
+      if (!refreshed.ok || !active) return;
+      user = await refreshed.json();
 
       if (user.professional?.status === "ACTIVE" || user.professional?.status === "PAUSED") {
         router.replace(ACCOUNT_ROUTES.dashboardAcompanhante);
         return;
       }
       if (user.professional?.status === "PENDING_REVIEW") {
-        localStorage.removeItem(DRAFT_KEY);
+        localStorage.removeItem(professionalDraftStorageKey(user.id));
         setSubmissionResult({ status: "PENDING_REVIEW" });
         return;
       }
@@ -939,7 +959,7 @@ export default function ProfissionalNovoPage() {
       const data = await response.json().catch(() => ({})) as { error?: unknown; maskedEmail?: string; verified?: boolean };
       if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Não foi possível solicitar a confirmação agora.");
       if (data.verified) {
-        setEmailVerified(true);
+        window.location.reload();
         toast.success("Seu e-mail já está confirmado.");
         return;
       }
@@ -963,7 +983,7 @@ export default function ProfissionalNovoPage() {
       const response = await fetch("/api/users/me", { cache: "no-store" });
       const user = response.ok ? await response.json() as { emailVerified?: string | boolean | null } : null;
       if (user?.emailVerified) {
-        setEmailVerified(true);
+        window.location.reload();
         toast.success("E-mail confirmado. Você já pode concluir o envio.");
       } else {
         toast.error("A confirmação ainda não foi identificada. Abra o link recebido e tente novamente.");
@@ -998,7 +1018,7 @@ export default function ProfissionalNovoPage() {
       if (!response.ok) return false;
       const user = await response.json() as { professional?: { status?: string } };
       if (user.professional?.status === "PENDING_REVIEW") {
-        localStorage.removeItem(DRAFT_KEY);
+        if (accountUserId) localStorage.removeItem(professionalDraftStorageKey(accountUserId));
         setSubmissionResult({ status: "PENDING_REVIEW" });
         return true;
       }
@@ -1072,7 +1092,7 @@ export default function ProfissionalNovoPage() {
         toast.error(responseError(data));
         return;
       }
-      localStorage.removeItem(DRAFT_KEY);
+      if (accountUserId) localStorage.removeItem(professionalDraftStorageKey(accountUserId));
       setSubmissionResult({ status: data.status ?? "PENDING_REVIEW", receiptStatus: data.receiptStatus });
     } catch {
       const recovered = await recoverSubmittedProfile();
@@ -1177,6 +1197,38 @@ export default function ProfissionalNovoPage() {
   const diditRejected = form.kycStatus === "REJECTED";
   const diditPending = Boolean(form.kycSessionId) && !diditApproved && !diditRejected;
 
+  if (emailVerified === null) {
+    return <main className="model-email-gate"><Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={184} height={61} priority /><p>Preparando seu cadastro...</p><style>{EMAIL_GATE_STYLES}</style></main>;
+  }
+
+  if (emailVerified === false) {
+    return (
+      <main className="model-email-gate">
+        <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={184} height={61} priority />
+        <section>
+          <p className="eyebrow">Conta criada</p>
+          <h1>Confirme seu e-mail</h1>
+          <p>Enviamos um link para <strong>{maskEmail(accountEmail)}</strong>. Confirme o endereço antes de iniciar as etapas do cadastro de acompanhante.</p>
+          <p>Depois de confirmar, volte a esta aba e toque no botão abaixo. Confira também a pasta de spam.</p>
+          {editingEmail ? (
+            <div className="actions">
+              <input type="email" autoComplete="email" value={replacementEmail} onChange={(event) => setReplacementEmail(event.target.value)} placeholder="novo@email.com" />
+              <button type="button" disabled={emailBusy || !replacementEmail.trim()} onClick={() => requestEmailConfirmation("change")}>Salvar e reenviar</button>
+              <button type="button" className="secondary" onClick={() => setEditingEmail(false)}>Cancelar</button>
+            </div>
+          ) : (
+            <div className="actions">
+              <button type="button" disabled={emailBusy} onClick={checkEmailConfirmation}>Já confirmei meu e-mail</button>
+              <button type="button" className="secondary" disabled={emailBusy || emailCooldown > 0} onClick={() => requestEmailConfirmation("resend")}>{emailCooldown > 0 ? `Reenviar em ${emailCooldown}s` : "Reenviar confirmação"}</button>
+              <button type="button" className="secondary" onClick={() => setEditingEmail(true)}>Corrigir e-mail</button>
+            </div>
+          )}
+        </section>
+        <style>{EMAIL_GATE_STYLES}</style>
+      </main>
+    );
+  }
+
   if (submissionResult) {
     return (
       <main className="model-submission-success">
@@ -1257,7 +1309,7 @@ export default function ProfissionalNovoPage() {
         </div>
       )}
 
-      {emailVerified === false && (
+      {false && (
         <div className="model-email-warning" role="status" style={{
           margin: "0 0 22px",
           padding: "14px 16px",
@@ -1790,14 +1842,14 @@ export default function ProfissionalNovoPage() {
         </button>
 
         {!isLast ? (
-          <button onClick={next} disabled={loading}
-            style={{ padding: "12px 32px", background: GOLD, border: "none", borderRadius: 10, color: "#080808", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
-            {loading ? "Salvando..." : "Continuar →"}
+          <button onClick={next} disabled={loading || (step === 7 && !diditApproved)}
+            style={{ padding: "12px 32px", background: loading || (step === 7 && !diditApproved) ? "#65009b" : GOLD, border: "none", borderRadius: 10, color: "#080808", fontSize: 14, fontWeight: 800, cursor: loading || (step === 7 && !diditApproved) ? "not-allowed" : "pointer" }}>
+            {loading ? "Salvando..." : step === 7 && diditPending ? "Verificação em análise" : step === 7 && !diditApproved ? "Verifique sua identidade" : "Continuar →"}
           </button>
         ) : (
-          <button onClick={submit} disabled={loading || emailVerified === false || !diditApproved}
-            style={{ padding: "12px 32px", background: loading || emailVerified === false || !diditApproved ? "#65009b" : GOLD, border: "none", borderRadius: 10, color: "#080808", fontSize: 14, fontWeight: 800, cursor: loading || emailVerified === false || !diditApproved ? "not-allowed" : "pointer" }}>
-            {loading ? "Enviando..." : emailVerified === false ? "Confirme o email para enviar" : !diditApproved ? "Verifique sua identidade" : "Enviar cadastro para análise"}
+          <button onClick={submit} disabled={loading || !diditApproved}
+            style={{ padding: "12px 32px", background: loading || !diditApproved ? "#65009b" : GOLD, border: "none", borderRadius: 10, color: "#080808", fontSize: 14, fontWeight: 800, cursor: loading || !diditApproved ? "not-allowed" : "pointer" }}>
+            {loading ? "Enviando..." : !diditApproved ? "Verifique sua identidade" : "Enviar cadastro para análise"}
           </button>
         )}
       </div>

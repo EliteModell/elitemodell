@@ -879,11 +879,13 @@ body[data-client-drawer-open="true"] {
 .client-premium .client-dashboard-action-card .text-\[24px\] {
   font-size: 19px !important;
   line-height: 1.1 !important;
+  color: #fff !important;
 }
 
 .client-premium .client-dashboard-action-card .text-\[15px\] {
   font-size: 12px !important;
   line-height: 1.55 !important;
+  color: #d9cfdf !important;
 }
 
 .client-premium .client-dashboard-icon {

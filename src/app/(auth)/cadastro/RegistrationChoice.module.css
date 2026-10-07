@@ -463,6 +463,13 @@
   overflow: hidden;
 }
 
+.upgradeCard a {
+  color: #eda9ff !important;
+  font-weight: 750;
+  text-decoration: underline !important;
+  text-underline-offset: 2px;
+}
+
 .professionalCategoryGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

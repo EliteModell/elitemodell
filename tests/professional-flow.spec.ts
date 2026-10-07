@@ -61,6 +61,7 @@ async function mockModelAuth(page: Page) {
         ...MOCK_MODEL_SESSION.user,
         lgpdConsent: true,
         termsConsent: true,
+        emailVerified: true,
         birthDate: "2000-01-01",
         professional: null,
       }),
@@ -100,26 +101,26 @@ test.describe("Didit corrigida", () => {
       url: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000", httpOnly: true, sameSite: "Lax" }]);
     await page.context().setExtraHTTPHeaders({ Authorization: `Bearer ${token}` });
     await page.route("**/api/users/me**", route => route.fulfill({ json: {
-      ...MOCK_MODEL_SESSION.user, emailVerified: true, birthDate: "2000-01-01", professional: null,
+      ...MOCK_MODEL_SESSION.user, id: fixtureId, emailVerified: true, birthDate: "2000-01-01", professional: null,
     } }));
-    await page.addInitScript(() => {
+    await page.addInitScript((userId) => {
       localStorage.setItem("elite_cookie_consent", "necessary");
-      localStorage.setItem("elitemodell_professional_onboarding_v1", JSON.stringify({ step: 7, form: {
+      localStorage.setItem(`elitemodell_professional_onboarding_v2:${encodeURIComponent(userId)}:PROFESSIONAL`, JSON.stringify({ ownerId: userId, registrationType: "PROFESSIONAL", step: 7, form: {
         displayName: "Modelo Teste", bio: "Apresentação de teste. ".repeat(8), city: "São Paulo", state: "SP",
         escortCategory: "MULHER", birthDate: "2000-01-01", attendanceTypes: ["A domicílio"],
         servesGenders: ["Homens"], diasDisponiveis: ["Segunda"], services: ["Acompanhamento"],
         paymentMethods: ["Pix"], pricePerHour: "300", whatsapp: "11912345678",
         mainPhotoUrl: "/api/media/test-cover", galleryUrls: [],
       } }));
-    });
+    }, fixtureId);
   });
 
   test("Botão de avançar está presente", async ({ page }) => {
-    await page.addInitScript(() => {
-      const key = "elitemodell_professional_onboarding_v1";
+    await page.addInitScript((userId) => {
+      const key = `elitemodell_professional_onboarding_v2:${encodeURIComponent(userId)}:PROFESSIONAL`;
       const draft = JSON.parse(localStorage.getItem(key) || "{}");
       localStorage.setItem(key, JSON.stringify({ ...draft, step: 0 }));
-    });
+    }, fixtureId);
     await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("button", { name: /Próximo|Continuar/ })).toBeVisible();
   });
@@ -166,7 +167,10 @@ test.describe("Didit corrigida", () => {
       await route.fulfill({ status: 201, json: { status: "PENDING_REVIEW", receiptStatus: "SENT" } });
     });
     await page.goto("/profissional/novo?didit=returned", { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("button", { name: "Verificação em análise" })).toBeDisabled();
+    const pendingActions = page.getByRole("button", { name: "Verificação em análise" });
+    await expect(pendingActions).toHaveCount(2);
+    await expect(pendingActions.first()).toBeDisabled();
+    await expect(pendingActions.nth(1)).toBeDisabled();
     approved = true;
     await expect(page.getByText("✓ Identidade verificada", { exact: true })).toBeVisible({ timeout: 25_000 });
     await page.getByRole("button", { name: /Próximo|Continuar/ }).click();
