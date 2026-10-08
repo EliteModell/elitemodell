@@ -8,6 +8,9 @@ import { ageGateCacheHeaders, stripLegacyPublicStorageUrl } from "@/lib/age-gate
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import { getPublicProfessionalWhere } from "@/lib/public-professional-access";
 import { authorizeAdultContentRequest } from "@/lib/adult-content-access";
+import { controlledMediaAssetId, isPublishableStoryAsset, normalizeControlledMediaUrl } from "@/lib/public-professional-media";
+import { professionalCityFilter } from "@/lib/public-city-search";
+import { publicServiceLocation } from "@/lib/professional-location";
 
 type StoryGroupResponse = {
   userId: string;
@@ -20,11 +23,13 @@ type StoryGroupResponse = {
   verified: boolean;
   sponsored: boolean;
   planPriority: number;
+  institutional?: boolean;
   stories: Array<{
     id: string;
     mediaUrl: string;
     mediaType: string;
     thumbnail: string | null;
+    caption: string | null;
     views: number;
     createdAt: Date;
   }>;
@@ -34,6 +39,7 @@ const createSchema = z.object({
   mediaUrl: z.string().url(),
   mediaType: z.enum(["image", "video"]).default("image"),
   thumbnail: z.string().url().nullable().optional(),
+  caption: z.string().trim().max(240).nullable().optional(),
 });
 
 function controlledAssetId(value: string, requestUrl: string) {
@@ -68,13 +74,14 @@ export async function GET(req: NextRequest) {
     const stories = await prisma.story.findMany({
       where: { userId: session.user.id, expiresAt: { gt: now } },
       orderBy: { createdAt: "desc" },
-      select: { id: true, mediaUrl: true, mediaType: true, thumbnail: true, views: true, expiresAt: true, createdAt: true },
+      select: { id: true, mediaUrl: true, mediaType: true, thumbnail: true, caption: true, views: true, expiresAt: true, createdAt: true },
     });
     const safeStories = stories
       .map((story) => ({
         ...story,
         mediaUrl: stripLegacyPublicStorageUrl(story.mediaUrl),
         thumbnail: stripLegacyPublicStorageUrl(story.thumbnail),
+        caption: story.caption,
       }))
       .filter((story): story is typeof story & { mediaUrl: string } => Boolean(story.mediaUrl));
     return NextResponse.json({ stories: safeStories }, { headers: ageGateCacheHeaders() });
@@ -83,6 +90,7 @@ export async function GET(req: NextRequest) {
   const city = url.searchParams.get("city");
   const state = url.searchParams.get("state");
   const professionalWhere = await getPublicProfessionalWhere(now);
+  const cityWhere = city ? await professionalCityFilter(city, state ?? "") : null;
 
   const stories = await prisma.story.findMany({
     where: {
@@ -90,10 +98,8 @@ export async function GET(req: NextRequest) {
       user: {
         professional: {
           is: {
-            ...professionalWhere,
+            AND: [professionalWhere, ...(cityWhere ? [cityWhere] : [])],
             verified: true,
-            ...(city ? { city: { contains: city, mode: "insensitive" } } : {}),
-            ...(state ? { state: { equals: state.toUpperCase(), mode: "insensitive" } } : {}),
           },
         },
       },
@@ -112,6 +118,9 @@ export async function GET(req: NextRequest) {
               displayName: true,
               city: true,
               state: true,
+              currentServiceCity: true,
+              currentServiceState: true,
+              currentServiceNeighborhood: true,
               verified: true,
               image: true,
               boostActive: true,
@@ -127,13 +136,33 @@ export async function GET(req: NextRequest) {
     take: 80,
   });
 
+  const assetIds = Array.from(new Set(stories
+    .map((story) => controlledMediaAssetId(story.mediaUrl))
+    .filter((id): id is string => Boolean(id))));
+  const assets = assetIds.length ? await prisma.uploadAsset.findMany({
+    where: { id: { in: assetIds } },
+    select: {
+      id: true, userId: true, folder: true, category: true, status: true,
+      moderationStatus: true, approvedBucket: true, approvedPath: true,
+      uploadCompletedAt: true, malwareStatus: true, ageIdentityStatus: true,
+      consentStatus: true, adminReviewRequired: true, adminReviewStatus: true,
+      takedownStatus: true,
+    },
+  }) : [];
+  const publicStoryAssets = new Map(assets.filter((asset) =>
+    isPublishableStoryAsset(asset, asset.userId),
+  ).map((asset) => [asset.id, asset]));
+
   const grouped = Object.values(
     stories.reduce<Record<string, StoryGroupResponse>>((acc, story) => {
-      const mediaUrl = stripLegacyPublicStorageUrl(story.mediaUrl);
+      const assetId = controlledMediaAssetId(story.mediaUrl);
+      const asset = assetId ? publicStoryAssets.get(assetId) : null;
+      const mediaUrl = asset && asset.userId === story.userId ? normalizeControlledMediaUrl(story.mediaUrl) : null;
       if (!mediaUrl) return acc;
       const professional = story.user.professional;
       if (!professional) return acc;
       if (!acc[story.userId]) {
+        const serviceLocation = publicServiceLocation(professional);
         const sponsored = professional.boostActive && (!professional.boostUntil || professional.boostUntil > now);
         const premiumActive = Boolean(story.user.premiumUntil && story.user.premiumUntil > now);
         acc[story.userId] = {
@@ -145,8 +174,8 @@ export async function GET(req: NextRequest) {
             stripLegacyPublicStorageUrl(professional.photos?.[0]?.url) ??
             stripLegacyPublicStorageUrl(professional.image) ??
             null,
-          city: professional.city,
-          state: professional.state,
+          city: serviceLocation.city,
+          state: serviceLocation.state,
           verified: professional.verified,
           sponsored,
           planPriority: premiumActive ? professional.planPriority : 0,
@@ -158,6 +187,7 @@ export async function GET(req: NextRequest) {
         mediaUrl,
         mediaType: story.mediaType,
         thumbnail: stripLegacyPublicStorageUrl(story.thumbnail),
+        caption: story.caption,
         views: story.views,
         createdAt: story.createdAt,
       });
@@ -169,7 +199,22 @@ export async function GET(req: NextRequest) {
     (b.stories[0]?.createdAt.getTime() ?? 0) - (a.stories[0]?.createdAt.getTime() ?? 0)
   );
 
-  return NextResponse.json(grouped, { headers: ageGateCacheHeaders() });
+  const eliteStories: StoryGroupResponse = {
+    userId: "elite-platform",
+    professionalId: "elite-platform",
+    slug: "politica-conteudo",
+    nome: "Elite Stories",
+    foto: "/android-chrome-512x512.png",
+    city: "",
+    state: "",
+    verified: true,
+    sponsored: false,
+    planPriority: 0,
+    institutional: true,
+    stories: [],
+  };
+
+  return NextResponse.json([eliteStories, ...grouped], { headers: ageGateCacheHeaders() });
 }
 
 export async function POST(req: NextRequest) {
@@ -194,14 +239,17 @@ export async function POST(req: NextRequest) {
     if (assetId) {
       const asset = await prisma.uploadAsset.findUnique({
         where: { id: assetId },
-        select: { userId: true, folder: true, category: true, status: true },
+        select: {
+          id: true, userId: true, folder: true, category: true, status: true,
+          moderationStatus: true, approvedBucket: true, approvedPath: true,
+          uploadCompletedAt: true, malwareStatus: true, ageIdentityStatus: true,
+          consentStatus: true, adminReviewRequired: true, adminReviewStatus: true,
+          takedownStatus: true,
+        },
       });
       if (
         !asset ||
-        asset.userId !== session.user.id ||
-        asset.status !== "APPROVED" ||
-        !asset.folder.startsWith("stories") ||
-        !["image", "video"].includes(asset.category)
+        !isPublishableStoryAsset(asset, session.user.id)
       ) {
         return NextResponse.json({ error: "Midia nao aprovada para stories." }, { status: 409 });
       }
@@ -220,6 +268,7 @@ export async function POST(req: NextRequest) {
         mediaUrl: data.mediaUrl,
         mediaType: data.mediaType,
         thumbnail: data.thumbnail ?? null,
+        caption: data.caption ?? null,
         expiresAt,
       },
     });

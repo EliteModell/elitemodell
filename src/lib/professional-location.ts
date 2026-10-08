@@ -4,6 +4,9 @@ export type ServiceLocation = {
   neighborhood?: string | null;
 };
 
+export const INITIAL_FREE_CITY_CHANGES = 3;
+export const CITY_CHANGE_REQUIRES_VOUCHER = true;
+
 export function normalizeServiceLocation(input: ServiceLocation): ServiceLocation {
   return {
     city: input.city.trim(),

@@ -14,10 +14,11 @@ import {
   canonicalProfessionalPhotos,
   isProfessionalOnline,
 } from "@/lib/public-professional-profile";
-import { normalizeContactVisibility } from "@/lib/professional-contact";
+import { canShowProfessionalContact, normalizeContactVisibility } from "@/lib/professional-contact";
 import {
   controlledMediaAssetId,
   filterApprovedProfilePhotos,
+  isPublishableStoryAsset,
   normalizeControlledMediaUrl,
 } from "@/lib/public-professional-media";
 import { authorizeAdultContentRequest } from "@/lib/adult-content-access";
@@ -89,6 +90,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       presentationVideoRejectReason: true,
       status: true,
       verified: true,
+      kycStatus: true,
       featured: true,
       accessGrandfathered: true,
       freeAccessStartedAt: true,
@@ -176,8 +178,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const photoAssetIds = canonicalPhotos
     .map((photo) => controlledMediaAssetId(photo.url))
     .filter((id): id is string => Boolean(id));
-  const photoAssets = photoAssetIds.length ? await prisma.uploadAsset.findMany({
-    where: { id: { in: photoAssetIds }, userId: professional.userId },
+  const storyAssetIds = professional.user.stories
+    .map((story) => controlledMediaAssetId(story.mediaUrl))
+    .filter((id): id is string => Boolean(id));
+  const referencedAssetIds = Array.from(new Set([...photoAssetIds, ...storyAssetIds]));
+  const photoAssets = referencedAssetIds.length ? await prisma.uploadAsset.findMany({
+    where: { id: { in: referencedAssetIds }, userId: professional.userId },
     select: {
       id: true, userId: true, folder: true, category: true, status: true, visibility: true,
       moderationStatus: true, approvedBucket: true, approvedPath: true,
@@ -193,7 +199,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     professional.contactVisibility,
     professional.hidePhone,
   );
-  const publicContact = canViewDraft || contactVisibility === "PUBLIC";
+  const contactAvailable = canShowProfessionalContact({
+    status: effectivelyActive ? "ACTIVE" : professional.status,
+    verified: professional.verified,
+    kycStatus: professional.kycStatus,
+    paused: isPausedByDate,
+    hasValidContact: Boolean(professional.phone || professional.whatsapp),
+    commercialAccess: access.canAppearInSearch,
+  });
+  const publicContact = canViewDraft || (contactAvailable && contactVisibility === "PUBLIC");
   const hasPremiumVideo =
     professional.presentationVideoStatus === "APPROVED" &&
     Boolean(stripLegacyPublicStorageUrl(professional.presentationVideoUrl));
@@ -208,6 +222,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     photos,
     avatar: coverImage ?? stripLegacyPublicStorageUrl(professional.user.image),
     stories: professional.user.stories
+      .filter((story) => {
+        const assetId = controlledMediaAssetId(story.mediaUrl);
+        const asset = assetId ? photoAssets.find((candidate) => candidate.id === assetId) : null;
+        return Boolean(asset && isPublishableStoryAsset(asset, professional.userId));
+      })
       .map((story) => ({
         ...story,
         mediaUrl: normalizeControlledMediaUrl(story.mediaUrl) ?? stripLegacyPublicStorageUrl(story.mediaUrl),
@@ -220,7 +239,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     plan: premiumActive ? professional.activePlanId : null,
     planPriority: premiumActive ? professional.planPriority : 0,
     contactVisibility,
-    contactAvailable: Boolean(professional.phone || professional.whatsapp),
+    contactAvailable,
     phone: publicContact ? professional.phone : null,
     whatsapp: publicContact ? professional.whatsapp : null,
     birthDate: professional.hideAge && !canViewDraft ? null : professional.birthDate,

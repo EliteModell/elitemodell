@@ -12,6 +12,7 @@ type StoryItem = {
   mediaUrl: string;
   mediaType: "image" | "video";
   thumbnail: string | null;
+  caption: string | null;
   views: number;
   expiresAt: string;
   createdAt: string;
@@ -75,6 +76,7 @@ export function ProfessionalStoriesClient() {
   const [publishing, setPublishing] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [contentDeclarationAccepted, setContentDeclarationAccepted] = useState(false);
+  const [caption, setCaption] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -150,7 +152,7 @@ export function ProfessionalStoriesClient() {
       const storyRes = await fetch("/api/stories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mediaUrl: uploaded.url, mediaType: pending.mediaType }),
+        body: JSON.stringify({ mediaUrl: uploaded.url, mediaType: pending.mediaType, caption: caption.trim() || null }),
       });
       const story = await storyRes.json().catch(() => ({}));
       if (!storyRes.ok) throw new Error(friendlyUploadError(typeof story.error === "string" ? story.error : ""));
@@ -159,6 +161,7 @@ export function ProfessionalStoriesClient() {
       URL.revokeObjectURL(pending.preview);
       setPending(null);
       setContentDeclarationAccepted(false);
+      setCaption("");
       toast.success("Story publicado com sucesso.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível publicar agora. Tente novamente.");
@@ -212,6 +215,10 @@ export function ProfessionalStoriesClient() {
               <p style={{ margin: "10px 0 0", color: "var(--elite-text-muted)", lineHeight: 1.65, fontSize: 14 }}>
                 Stories ativos aparecem para clientes na área de conteúdo recente. Vídeos devem ser curtos para carregar bem no celular.
               </p>
+              <label style={{ display: "grid", gap: 7, marginTop: 14, color: "var(--elite-text-muted)", fontSize: 13, fontWeight: 800 }}>
+                Legenda opcional
+                <input value={caption} maxLength={240} onChange={(event) => setCaption(event.target.value)} placeholder="Conte algo sobre este story" style={{ minHeight: 44, borderRadius: 11, border: "1px solid var(--elite-border-soft)", background: "rgba(0,0,0,.3)", color: "#fff", padding: "0 12px" }} />
+              </label>
               <label style={{ display: "flex", gap: 10, alignItems: "flex-start", marginTop: 14, color: "var(--elite-text-muted)", fontSize: 13, lineHeight: 1.5 }}>
                 <input
                   type="checkbox"
@@ -272,6 +279,7 @@ export function ProfessionalStoriesClient() {
                 </div>
                 <div style={{ padding: "10px 2px 2px" }}>
                   <p style={{ margin: 0, color: "#fff", fontWeight: 900, fontSize: 13 }}>Story ativo</p>
+                  {story.caption ? <p style={{ margin: "5px 0 0", color: "#fff", fontSize: 12, lineHeight: 1.45 }}>{story.caption}</p> : null}
                   <p style={{ margin: "4px 0 0", color: "var(--elite-text-muted)", fontSize: 12 }}>
                     Expira às {formatTime(story.expiresAt)} · {story.views} visualizações
                   </p>

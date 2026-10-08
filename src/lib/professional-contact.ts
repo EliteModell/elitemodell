@@ -28,3 +28,23 @@ export function canViewProfessionalContact(input: {
   if (input.visibility === "LOGGED_IN") return input.authenticated;
   return input.authenticated && input.premium;
 }
+
+export function canShowProfessionalContact(input: {
+  status: string;
+  verified: boolean;
+  kycStatus: string | null | undefined;
+  suspended?: boolean;
+  paused?: boolean;
+  hasValidContact: boolean;
+  commercialAccess: boolean;
+}) {
+  return (
+    input.status === "ACTIVE" &&
+    input.verified &&
+    input.kycStatus === "APPROVED" &&
+    !input.suspended &&
+    !input.paused &&
+    input.hasValidContact &&
+    input.commercialAccess
+  );
+}

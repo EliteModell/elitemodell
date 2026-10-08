@@ -56,6 +56,27 @@ export function isApprovedProfileVisualAsset(asset: PublicProfileAsset) {
   );
 }
 
+export function isPublishableStoryAsset(asset: PublicProfileAsset, ownerId: string) {
+  return (
+    asset.userId === ownerId &&
+    asset.status === "APPROVED" &&
+    (asset.category === "image" || asset.category === "video") &&
+    asset.folder.startsWith("stories") &&
+    Boolean(asset.approvedBucket && asset.approvedPath) &&
+    evaluateMediaPublicationGates({
+      uploadComplete: Boolean(asset.uploadCompletedAt),
+      malwareStatus: asset.malwareStatus,
+      moderationStatus: asset.moderationStatus,
+      ageIdentityStatus: asset.ageIdentityStatus,
+      consentStatus: asset.consentStatus,
+      adminReviewRequired: asset.adminReviewRequired,
+      adminReviewStatus: asset.adminReviewStatus,
+      takedownStatus: asset.takedownStatus,
+      ownerId: asset.userId,
+    }).publishable
+  );
+}
+
 export function filterApprovedProfilePhotos(
   photos: PublicProfilePhoto[],
   assets: PublicProfileAsset[],

@@ -12,7 +12,7 @@ import { ProfessionalDiditError, requireApprovedProfessionalDidit } from "@/lib/
 import { getProfessionalBillingSettings } from "@/lib/professional-access";
 import { createProfessionalSchema } from "@/lib/professional-profile-schema";
 import { assertOwnedUploadMediaUrls } from "@/lib/approved-media";
-import { normalizeContactVisibility } from "@/lib/professional-contact";
+import { canShowProfessionalContact, normalizeContactVisibility } from "@/lib/professional-contact";
 import {
   calculateAge,
   canonicalProfessionalPhotos,
@@ -21,7 +21,7 @@ import {
 import { professionalCityFilter, resolveExactCityQuery } from "@/lib/public-city-search";
 import { publicProfessionalWhere } from "@/lib/public-professional-access";
 import { publicServiceLocation } from "@/lib/professional-location";
-import { normalizeControlledMediaUrl } from "@/lib/public-professional-media";
+import { controlledMediaAssetId, filterApprovedProfilePhotos, normalizeControlledMediaUrl } from "@/lib/public-professional-media";
 import { deliverProfessionalSubmissionReceipt } from "@/lib/professional-submission-receipt";
 import { logAudit } from "@/lib/audit";
 import { professionalCompletion, issueChecklist } from "@/lib/professional-completeness";
@@ -124,7 +124,7 @@ export async function GET(req: NextRequest) {
       skip: (page - 1) * limit,
       take: limit,
       select: {
-        id: true, slug: true, displayName: true,
+        id: true, userId: true, slug: true, displayName: true,
         bio: true,
         city: true, state: true, bairro: true,
         currentServiceCity: true, currentServiceState: true, currentServiceNeighborhood: true,
@@ -139,7 +139,8 @@ export async function GET(req: NextRequest) {
         attendanceTypes: true, servesGenders: true,
         services: true,
         rating: true, totalReviews: true,
-        verified: true, featured: true,
+        status: true, verified: true, kycStatus: true, featured: true,
+        pauseUntil: true,
         boostActive: true, boostUntil: true,
         activePlanId: true, planPriority: true,
         onlineVisible: true, lastOnlineAt: true,
@@ -151,7 +152,26 @@ export async function GET(req: NextRequest) {
     prisma.professional.count({ where }),
   ]);
 
+  const referencedAssetIds = Array.from(new Set(professionals.flatMap((professional) =>
+    canonicalProfessionalPhotos({ photos: professional.photos, image: professional.image, galleryUrls: [] })
+      .map((photo) => controlledMediaAssetId(photo.url))
+      .filter((id): id is string => Boolean(id)),
+  )));
+  const referencedAssets = referencedAssetIds.length ? await prisma.uploadAsset.findMany({
+    where: { id: { in: referencedAssetIds } },
+    select: {
+      id: true, userId: true, folder: true, category: true, status: true, visibility: true,
+      moderationStatus: true, approvedBucket: true, approvedPath: true, uploadCompletedAt: true,
+      malwareStatus: true, ageIdentityStatus: true, consentStatus: true,
+      adminReviewRequired: true, adminReviewStatus: true, takedownStatus: true,
+    },
+  }) : [];
+
   const safeList = professionals.map(({
+    userId,
+    status,
+    kycStatus,
+    pauseUntil,
     hidePhone,
     contactVisibility,
     birthDate,
@@ -166,9 +186,22 @@ export async function GET(req: NextRequest) {
     ...p
   }) => {
     const serviceLocation = publicServiceLocation({ ...p, currentServiceCity, currentServiceState, currentServiceNeighborhood });
-    const photos = canonicalProfessionalPhotos({ photos: p.photos, image: p.image, galleryUrls: [] });
+    const photos = filterApprovedProfilePhotos(
+      canonicalProfessionalPhotos({ photos: p.photos, image: p.image, galleryUrls: [] }),
+      referencedAssets,
+      userId,
+    );
     const premiumActive = Boolean(p.user.premiumUntil && p.user.premiumUntil > now);
     const normalizedContactVisibility = normalizeContactVisibility(contactVisibility, hidePhone);
+    const contactAvailable = canShowProfessionalContact({
+      status,
+      verified: p.verified,
+      kycStatus,
+      paused: Boolean(pauseUntil && pauseUntil > now),
+      hasValidContact: Boolean(p.whatsapp || p.phone),
+      // publicProfessionalWhere already enforces the configured commercial gate.
+      commercialAccess: true,
+    });
     return {
       ...p,
       city: serviceLocation.city,
@@ -184,9 +217,9 @@ export async function GET(req: NextRequest) {
       plan: premiumActive ? activePlanId : null,
       planPriority: premiumActive ? planPriority : 0,
       contactVisibility: normalizedContactVisibility,
-      contactAvailable: Boolean(p.whatsapp || p.phone),
-      phone: normalizedContactVisibility === "PUBLIC" ? p.phone : null,
-      whatsapp: normalizedContactVisibility === "PUBLIC" ? p.whatsapp : null,
+      contactAvailable,
+      phone: contactAvailable && normalizedContactVisibility === "PUBLIC" ? p.phone : null,
+      whatsapp: contactAvailable && normalizedContactVisibility === "PUBLIC" ? p.whatsapp : null,
     };
   });
 

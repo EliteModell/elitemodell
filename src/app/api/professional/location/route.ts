@@ -1,14 +1,16 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { locationChangeNeedsReview, normalizeServiceLocation } from "@/lib/professional-location";
+import { CITY_CHANGE_REQUIRES_VOUCHER, INITIAL_FREE_CITY_CHANGES, locationChangeNeedsReview, normalizeServiceLocation } from "@/lib/professional-location";
 import { refreshExpiredTemporaryLocations } from "@/lib/professional-location-service";
 import { sendProfessionalLocationEmail } from "@/lib/professional-extra-email";
+import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 
 const schema = z.object({
   city: z.string().trim().min(2).max(80),
@@ -52,6 +54,9 @@ export async function GET() {
     include: { locationChanges: { orderBy: { createdAt: "desc" }, take: 20 } },
   });
   if (!professional) return NextResponse.json({ error: "Perfil profissional não encontrado." }, { status: 404 });
+  const permanentChangesUsed = await prisma.professionalLocationChange.count({
+    where: { professionalId: professional.id, changeType: "PERMANENT" },
+  });
   return NextResponse.json({
     location: {
       city: professional.currentServiceCity || professional.city,
@@ -65,12 +70,22 @@ export async function GET() {
       attendanceTypes: professional.attendanceTypes,
     },
     history: professional.locationChanges,
+    policy: {
+      initialFreeChanges: INITIAL_FREE_CITY_CHANGES,
+      permanentChangesUsed,
+      freeChangesRemaining: Math.max(0, INITIAL_FREE_CITY_CHANGES - permanentChangesUsed),
+      voucherRequiredAfterFreeChanges: CITY_CHANGE_REQUIRES_VOUCHER,
+      voucherPurchaseAvailable: false,
+      price: null,
+    },
   });
 }
 
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  const limited = await enforceRateLimitAsync(`professional-location:${session.user.id}:${getClientIP(req)}`, 6, 6 * 60 * 60 * 1000, "Muitas alterações de localização. Tente mais tarde.");
+  if (limited) return limited;
   try {
     await refreshExpiredTemporaryLocations();
     const input = schema.parse(await req.json());
@@ -80,18 +95,36 @@ export async function PATCH(req: NextRequest) {
       include: { user: { select: { email: true, name: true } } },
     });
     if (!professional) return NextResponse.json({ error: "Perfil profissional não encontrado." }, { status: 404 });
+    const currentCity = professional.currentServiceCity || professional.city;
+    const currentState = professional.currentServiceState || professional.state;
+    const changesLocation = currentCity.toLocaleLowerCase("pt-BR") !== target.city.toLocaleLowerCase("pt-BR") || currentState !== target.state;
+    if (input.mode === "PERMANENT" && changesLocation && CITY_CHANGE_REQUIRES_VOUCHER) {
+      const permanentChangesUsed = await prisma.professionalLocationChange.count({
+        where: { professionalId: professional.id, changeType: "PERMANENT" },
+      });
+      if (permanentChangesUsed >= INITIAL_FREE_CITY_CHANGES) {
+        return NextResponse.json({
+          error: "As alterações gratuitas de cidade foram utilizadas. Um voucher será necessário quando a compra estiver disponível.",
+          reason: "CITY_CHANGE_VOUCHER_REQUIRED",
+          price: null,
+        }, { status: 409 });
+      }
+    }
     const since = new Date(Date.now() - 6 * 60 * 60 * 1000);
     const recentChanges = await prisma.professionalLocationChange.count({ where: { professionalId: professional.id, createdAt: { gte: since } } });
     const risk = locationChangeNeedsReview({
       kycApproved: professional.kycStatus === "APPROVED",
       recentChanges,
-      stateChanged: professional.state !== target.state,
+      stateChanged: currentState !== target.state,
     });
     const verificationStatus = risk.review ? "LOCATION_REVIEW_REQUIRED" : "VERIFIED";
     const now = new Date();
     const effectiveFrom = input.mode === "TEMPORARY" ? new Date(input.effectiveFrom!) : now;
     const effectiveUntil = input.mode === "TEMPORARY" ? new Date(input.effectiveUntil!) : null;
     const appliesNow = input.mode === "PERMANENT" || effectiveFrom <= now;
+    const requestIpHash = process.env.NEXTAUTH_SECRET
+      ? createHash("sha256").update(`${process.env.NEXTAUTH_SECRET}:${getClientIP(req)}`).digest("hex")
+      : null;
 
     await prisma.$transaction(async (tx) => {
       await tx.professionalLocationChange.create({ data: {
@@ -101,6 +134,7 @@ export async function PATCH(req: NextRequest) {
         fromNeighborhood: professional.currentServiceNeighborhood || professional.bairro,
         toCity: target.city, toState: target.state, toNeighborhood: target.neighborhood,
         changeType: input.mode, effectiveFrom, effectiveUntil, verificationStatus, riskReason: risk.reason,
+        requestIpHash, voucherId: null,
       } });
       await tx.professional.update({
         where: { id: professional.id },

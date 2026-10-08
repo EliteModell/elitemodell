@@ -87,6 +87,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "location-search",
+      testMatch: "**/location-search.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "premium-upsell",
       testMatch: "**/premium-upsell.spec.ts",
       use: { browserName: "chromium" },

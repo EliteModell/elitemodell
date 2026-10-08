@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 import { issueChecklist, issuesForStep, professionalCompletion } from "../src/lib/professional-completeness";
-import { locationChangeNeedsReview, normalizeServiceLocation, publicServiceLocation } from "../src/lib/professional-location";
+import { CITY_CHANGE_REQUIRES_VOUCHER, INITIAL_FREE_CITY_CHANGES, locationChangeNeedsReview, normalizeServiceLocation, publicServiceLocation } from "../src/lib/professional-location";
 import { professionalCityFilter, resolveExactCityQuery } from "../src/lib/public-city-search";
 
 const complete = {
@@ -85,6 +85,10 @@ test.describe("regra central de completude profissional", () => {
 });
 
 test.describe("localização de atendimento", () => {
+  test("politica inicial reserva tres trocas gratis e exige voucher depois", () => {
+    expect(INITIAL_FREE_CITY_CHANGES).toBe(3);
+    expect(CITY_CHANGE_REQUIRES_VOUCHER).toBe(true);
+  });
   test("Vitória é reconhecida como cidade exata com acento e caixa variados", () => {
     for (const value of ["Vitória", "Vitoria", "vitória", "vitoria"]) {
       expect(resolveExactCityQuery(value, "ES")).toMatchObject({ city: "Vitória", state: "ES" });

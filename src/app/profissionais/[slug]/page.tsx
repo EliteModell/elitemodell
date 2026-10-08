@@ -644,7 +644,7 @@ export default function ProfissionalProfilePage() {
               <video
                 src={premiumVideoUrl ?? pro.presentationVideoUrl ?? undefined}
                 controls
-                preload="metadata"
+                preload="none"
                 style={{ width: "100%", maxHeight: 420, borderRadius: 14, border: `1px solid ${GOLD_MID}`, background: "#050506" }}
               />
             </div>

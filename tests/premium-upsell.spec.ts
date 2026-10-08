@@ -7,6 +7,7 @@ import {
   resolvePremiumUpsellPrice,
 } from "../src/lib/client-plans";
 import {
+  canShowProfessionalContact,
   canViewProfessionalContact,
   normalizeContactVisibility,
 } from "../src/lib/professional-contact";
@@ -63,6 +64,15 @@ test.describe("upsell premium para clientes", () => {
       authenticated: true,
       premium: true,
     })).toBe(true);
+  });
+
+  test("contato so pode ser oferecido por perfil elegivel", () => {
+    const eligible = { status: "ACTIVE", verified: true, kycStatus: "APPROVED", hasValidContact: true, commercialAccess: true };
+    expect(canShowProfessionalContact(eligible)).toBe(true);
+    expect(canShowProfessionalContact({ ...eligible, verified: false })).toBe(false);
+    expect(canShowProfessionalContact({ ...eligible, kycStatus: "PENDING" })).toBe(false);
+    expect(canShowProfessionalContact({ ...eligible, paused: true })).toBe(false);
+    expect(canShowProfessionalContact({ ...eligible, commercialAccess: false })).toBe(false);
   });
 
   test("checkout registra tentativa, aceite e idempotencia", () => {

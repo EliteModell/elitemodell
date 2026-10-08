@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import {
+  canShowProfessionalContact,
   canViewProfessionalContact,
   normalizeContactVisibility,
 } from "@/lib/professional-contact";
@@ -30,6 +31,8 @@ export async function GET(
       id: true,
       userId: true,
       status: true,
+      verified: true,
+      kycStatus: true,
       pauseUntil: true,
       accessGrandfathered: true,
       freeAccessStartedAt: true,
@@ -62,6 +65,17 @@ export async function GET(
     !access?.canAppearInSearch
   ) {
     return NextResponse.json({ error: "Profissional nao encontrada." }, { status: 404 });
+  }
+
+  if (!canShowProfessionalContact({
+    status: professional.status,
+    verified: professional.verified,
+    kycStatus: professional.kycStatus,
+    paused: Boolean(professional.pauseUntil && professional.pauseUntil > now),
+    hasValidContact: Boolean(professional.phone || professional.whatsapp),
+    commercialAccess: Boolean(access.canAppearInSearch),
+  })) {
+    return NextResponse.json({ error: "Contato indisponivel." }, { status: 404 });
   }
 
   const ownerOrAdmin =

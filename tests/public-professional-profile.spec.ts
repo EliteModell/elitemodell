@@ -8,6 +8,7 @@ import {
   adminControlledMediaPreviewUrl,
   controlledMediaAssetId,
   filterApprovedProfilePhotos,
+  isPublishableStoryAsset,
   normalizeControlledMediaUrl,
   resolvePublicProfileMedia,
 } from "../src/lib/public-professional-media";
@@ -182,6 +183,14 @@ test.describe("contrato publico do perfil profissional", () => {
     ], ownerId);
 
     expect(photos).toEqual([]);
+  });
+
+  test("story publico exige owner, pasta e todos os gates aprovados", () => {
+    const story = { ...approvedAssets[0], id: "story-id", folder: "stories", category: "video" };
+    expect(isPublishableStoryAsset(story, ownerId)).toBe(true);
+    expect(isPublishableStoryAsset({ ...story, userId: "other-owner" }, ownerId)).toBe(false);
+    expect(isPublishableStoryAsset({ ...story, status: "PENDING_MODERATION" }, ownerId)).toBe(false);
+    expect(isPublishableStoryAsset({ ...story, malwareStatus: "INFECTED" }, ownerId)).toBe(false);
   });
 
   test("remove imagem quebrada da galeria e usa fallback quando nao sobra URL", () => {

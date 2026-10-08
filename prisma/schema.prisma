@@ -271,6 +271,7 @@ model Story {
   mediaUrl  String
   mediaType String   @default("image")
   thumbnail String?
+  caption   String?  @db.VarChar(240)
   expiresAt DateTime
   views     Int      @default(0)
   createdAt DateTime @default(now())
@@ -1141,6 +1142,8 @@ model ProfessionalLocationChange {
   effectiveUntil     DateTime?
   verificationStatus String    @default("VERIFIED")
   riskReason         String?
+  requestIpHash      String?
+  voucherId          String?
   createdAt          DateTime  @default(now())
 
   professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)

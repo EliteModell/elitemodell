@@ -61,6 +61,7 @@ type StoryGroup = {
   slug: string;
   nome: string;
   foto: string | null;
+  institutional?: boolean;
   stories: Array<{ id: string; mediaUrl: string; mediaType: string; thumbnail: string | null }>;
 };
 
@@ -605,6 +606,8 @@ function BuscarContent() {
         }
         .location-option:hover { border-color: #d9b8eb; background: var(--surface-soft); }
         .location-option.active { border-color: var(--primary); background: var(--primary-soft); color: var(--text-primary); }
+        .location-option.location-geolocation { border-color: var(--primary); background: linear-gradient(135deg, #ff3ba7, #9b19d8); color: #fff; font-weight: 900; box-shadow: 0 10px 24px rgba(183,44,255,.2); }
+        .location-option.location-geolocation:disabled { opacity: .72; cursor: wait; }
         .location-modal-header { padding: 18px 18px 14px; border-bottom: 1px solid var(--border); }
         .location-modal-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
         .location-modal-kicker { margin: 0 0 4px; color: var(--primary); font-size: 10px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
@@ -910,12 +913,12 @@ function LocationModal({
         </div>
 
         <div style={{ padding: "14px 18px 8px" }}>
-          <button type="button" className="location-option" onClick={onGeo} style={{ marginBottom: 10 }}>
+          <button type="button" className="location-option location-geolocation" onClick={onGeo} disabled={geoLoading} style={{ marginBottom: 10 }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
               <LocationIcon />
               {geoLoading ? "Solicitando permissão..." : "Usar minha localização aproximada"}
             </span>
-            <span style={{ color: GOLD }}>↗</span>
+            <span aria-hidden="true">↗</span>
           </button>
           {geoMessage && <p className="location-modal-message">{geoMessage}</p>}
           <button type="button" className={`location-option ${draftVirtual ? "active" : ""}`} onClick={onSelectVirtual}>
@@ -945,7 +948,11 @@ function LocationModal({
             onClick={onApply}
             disabled={!draft && !draftVirtual}
           >
-            Buscar acompanhantes
+            {draftVirtual
+              ? "Ver acompanhantes online"
+              : draft
+                ? `Ver acompanhantes em ${draft.label}`
+                : "Buscar acompanhantes"}
           </button>
         </div>
       </div>
@@ -957,13 +964,14 @@ function StoriesStrip({ stories }: { stories: StoryGroup[] }) {
   return (
     <div className="stories-strip" aria-label="Destaques">
       {stories.map((story) => (
-        <Link key={story.userId} href={`/profissionais/${story.slug}`} className="story-item">
+        <Link key={story.userId} href={story.institutional ? `/${story.slug}` : `/profissionais/${story.slug}`} className="story-item">
           <div className="story-avatar">
             <div className="story-avatar-inner">
               <Image
                 src={story.foto ?? story.stories[0]?.thumbnail ?? story.stories[0]?.mediaUrl ?? "/android-chrome-512x512.png"}
                 alt={story.nome}
                 fill
+                unoptimized={Boolean((story.foto ?? story.stories[0]?.thumbnail ?? story.stories[0]?.mediaUrl)?.startsWith("/api/media/"))}
                 sizes="64px"
                 style={{ objectFit: "cover" }}
               />
@@ -989,6 +997,7 @@ function ProfileCard({ profile }: { profile: CardPerfil }) {
             src={profile.foto ?? "/android-chrome-512x512.png"}
             alt={profile.nome}
             fill
+            unoptimized={Boolean(profile.foto?.startsWith("/api/media/"))}
             sizes="(max-width: 640px) 100vw, 260px"
             quality={70}
             style={{ objectFit: "cover" }}
