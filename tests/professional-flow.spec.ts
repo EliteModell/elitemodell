@@ -14,6 +14,7 @@ import { installMockSessionCookie } from "./helpers/mock-auth";
 import { PrismaClient } from "@prisma/client";
 import { encode } from "next-auth/jwt";
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 
 /* ─── Mock de sessão de acompanhante ──────────────────────────────────────── */
 
@@ -478,6 +479,40 @@ test.describe("Dashboard da profissional", () => {
     const resp = await page.goto("/profissional", { waitUntil: "domcontentloaded" });
     expect(resp?.status()).not.toBe(404);
     expect(resp?.status()).not.toBe(500);
+  });
+
+  test("gate de e-mail mantém texto, placeholder e cursor legíveis no Safari mobile", async ({ page }) => {
+    const pageSource = readFileSync("src/app/(dashboard)/profissional/novo/page.tsx", "utf8");
+    const styles = pageSource.match(/const EMAIL_GATE_STYLES = `([^`]+)`;/)?.[1];
+    expect(styles, "estilos reais do gate de e-mail").toBeTruthy();
+    await page.setContent(`<style>${styles}</style><main class="model-email-gate"><section><div class="actions"><input placeholder="novo@email.com" /></div></section></main>`);
+    const input = page.getByPlaceholder("novo@email.com");
+    await input.fill("novo.teste@example.com");
+
+    for (const width of [375, 390, 412, 430]) {
+      await page.setViewportSize({ width, height: 844 });
+      await input.focus();
+      const styles = await input.evaluate((element) => {
+        const field = getComputedStyle(element);
+        const placeholder = getComputedStyle(element, "::placeholder");
+        return {
+          color: field.color,
+          textFillColor: field.webkitTextFillColor,
+          caretColor: field.caretColor,
+          backgroundColor: field.backgroundColor,
+          placeholderColor: placeholder.color,
+          fontSize: Number.parseFloat(field.fontSize),
+          clientWidth: document.documentElement.clientWidth,
+          scrollWidth: document.documentElement.scrollWidth,
+        };
+      });
+      expect(styles.color).toBe("rgb(252, 247, 255)");
+      expect(styles.textFillColor).toBe("rgb(252, 247, 255)");
+      expect(styles.caretColor).not.toBe(styles.backgroundColor);
+      expect(styles.placeholderColor).not.toBe(styles.backgroundColor);
+      expect(styles.fontSize).toBeGreaterThanOrEqual(16);
+      expect(styles.scrollWidth).toBeLessThanOrEqual(styles.clientWidth + 1);
+    }
   });
 
   test("painel profissional permanece íntegro nos viewports prioritários", async ({ page }, testInfo) => {
