@@ -1,5 +1,20 @@
 import { prisma } from "@/lib/prisma";
 
+export async function refreshExpiredProfessionalBoosts(now = new Date()) {
+  return prisma.professional.updateMany({
+    where: {
+      boostActive: true,
+      boostUntil: { lt: now },
+    },
+    data: {
+      boostActive: false,
+      boostStartedAt: null,
+      boostUntil: null,
+      boostSource: null,
+    },
+  });
+}
+
 export async function refreshExpiredProfessionalTimers(now = new Date()) {
   await prisma.$transaction([
     prisma.professional.updateMany({

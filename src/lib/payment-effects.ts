@@ -17,6 +17,7 @@ export async function applyPaidPaymentEffects(paymentId: string) {
         }
         return { applied: false, reason: "already_applied" as const };
       }
+      const professionalPlan = parseProfessionalPlanReference(payment.externalReference);
       if (["REFUNDED", "CANCELLED", "EXPIRED", "CHARGEBACK"].includes(payment.status)) {
         return { applied: false, reason: "payment_not_eligible" as const };
       }
@@ -98,7 +99,11 @@ export async function applyPaidPaymentEffects(paymentId: string) {
         });
       }
 
-      if (payment.userId && effectivePremiumUntil) {
+      if (
+        payment.userId &&
+        effectivePremiumUntil &&
+        (!professionalPlan || professionalPlan.plan.benefits.premium)
+      ) {
         const user = await tx.user.findUnique({
           where: { id: payment.userId },
           select: { premiumUntil: true },
@@ -111,7 +116,6 @@ export async function applyPaidPaymentEffects(paymentId: string) {
         });
       }
 
-      const professionalPlan = parseProfessionalPlanReference(payment.externalReference);
       if (payment.userId && professionalPlan) {
         const professional = await tx.professional.findUnique({
           where: { userId: payment.userId },
@@ -131,8 +135,10 @@ export async function applyPaidPaymentEffects(paymentId: string) {
             planPriority?: number;
           } = {};
 
-          update.activePlanId = professionalPlan.plan.id;
-          update.planPriority = getProfessionalPlanPriority(professionalPlan.plan.id);
+          if (professionalPlan.plan.benefits.premium) {
+            update.activePlanId = professionalPlan.plan.id;
+            update.planPriority = getProfessionalPlanPriority(professionalPlan.plan.id);
+          }
           if (professionalPlan.plan.benefits.featured) update.featured = true;
           if (professionalPlan.plan.benefits.hideAge) update.hideAge = true;
           if (professionalPlan.plan.benefits.showPhone && payment.premiumUntil) {

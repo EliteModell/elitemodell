@@ -7,6 +7,7 @@ import {
   refundAsaasPaymentOperation,
 } from "@/lib/payment-operations";
 import { toCents } from "@/lib/money";
+import { getProfessionalPlan } from "@/lib/professional-plans";
 import {
   AdminHeader,
   AdminPanel,
@@ -26,7 +27,8 @@ function describePaymentReference(payment: {
 }) {
   if (payment.externalReference?.startsWith("professional-plan:")) {
     const [, planId, priceKey] = payment.externalReference.split(":");
-    return `${planId ?? "plano"} / ${priceKey ?? "duracao"}`;
+    const plan = planId ? getProfessionalPlan(planId) : null;
+    return `${plan?.name ?? "Plano Elite"} / ${priceKey ?? "duração"}`;
   }
   return payment.externalReference ?? payment.bookingId ?? "-";
 }

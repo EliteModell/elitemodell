@@ -26,6 +26,7 @@ import { deliverProfessionalSubmissionReceipt } from "@/lib/professional-submiss
 import { logAudit } from "@/lib/audit";
 import { professionalCompletion, issueChecklist } from "@/lib/professional-completeness";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
+import { refreshExpiredProfessionalBoosts } from "@/lib/professional-timers";
 
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
@@ -63,6 +64,7 @@ export async function GET(req: NextRequest) {
   const limitParam = Number(searchParams.get("limit") ?? 12);
   const limit     = Number.isFinite(limitParam) ? Math.min(24, Math.max(1, Math.floor(limitParam))) : 12;
   const now       = new Date();
+  await refreshExpiredProfessionalBoosts(now);
   const billingSettings = await getProfessionalBillingSettings();
 
   // Pausas vencidas voltam a aparecer pela própria consulta, sem escrita de manutenção no GET.

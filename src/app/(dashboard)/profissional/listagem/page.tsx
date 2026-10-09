@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireCompanionPanel } from "@/lib/account-access";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { ProfessionalListingClient, type ProfessionalListingViewData } from "@/components/professional-dashboard/ProfessionalListingClient";
+import { refreshExpiredProfessionalBoosts } from "@/lib/professional-timers";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -34,6 +35,7 @@ function categoryLabel(value: string | null | undefined) {
 export default async function ProfessionalListingPage() {
   const access = await requireCompanionPanel();
   const now = new Date();
+  await refreshExpiredProfessionalBoosts(now);
 
   const professional = await prisma.professional.findUnique({
     where: { userId: access.user.id },

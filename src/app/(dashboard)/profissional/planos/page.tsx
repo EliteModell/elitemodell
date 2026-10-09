@@ -61,23 +61,22 @@ const GOLD = "#b72cff";
 
 const PRODUCT_META: Record<ProfessionalPlanId, ProductMeta> = {
   "one-hour-top": {
-    eyebrow: "Produto principal",
-    headline: "Prioridade temporária nos horários de maior movimento",
-    summary: "Seu anúncio ganha prioridade por 1 hora, aparece com mais força no topo das buscas e recebe um formato de destaque ampliado.",
-    badge: "Destaque recomendado",
-    primaryPrice: "R$ 24,99",
+    eyebrow: "Destaque temporário",
+    headline: "Maior prioridade durante o período contratado",
+    summary: "Seu perfil recebe peso adicional temporário no ranking e ganha posições prioritárias, sem alterar permanentemente o anúncio.",
+    badge: "Produto Elite",
     icon: Zap,
     tone: "gold",
     benefits: [
       "Prioridade temporária",
-      "Topo das buscas e listagem",
+      "Maior peso de exibição",
       "Mais visibilidade na sua cidade",
       "Formato de destaque ampliado",
       "Mais chance de receber contatos",
       "Ideal para horários de maior movimento",
     ],
-    cta: "Comprar 1 hora no topo",
-    exampleTitle: "Destaque de topo",
+    cta: "Ativar Impulso Elite",
+    exampleTitle: "Impulso Elite",
   },
   pontos: {
     eyebrow: "Força de listagem",
@@ -828,8 +827,8 @@ export default function PlanosPage() {
 
       <section className="premium-section-card plans-extra-heading">
         <p className="eyebrow">Recursos extras</p>
-        <h2>Impulsos rápidos para momentos estratégicos</h2>
-        <p>Combine planos com topo temporário, telefone na listagem, pontos e privacidade quando precisar de mais alcance.</p>
+        <h2>Recursos para momentos estratégicos</h2>
+        <p>Combine planos com o Impulso Elite, telefone na listagem, pontos e privacidade quando precisar de mais alcance.</p>
       </section>
 
       <section className="extra-products-grid" aria-label="Produtos extras">

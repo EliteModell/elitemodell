@@ -1,5 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { chromium, expect, test } from "@playwright/test";
 import net from "node:net";
+import { readFileSync } from "node:fs";
 import { NextRequest } from "next/server";
 import { POST as sendPhoneCode } from "../src/app/api/auth/phone/send-code/route";
 import { POST as prepareFirebasePhone } from "../src/app/api/auth/phone/firebase-send/route";
@@ -21,6 +22,68 @@ import {
   moderateFileContent,
   scanFileForVirus,
 } from "../src/lib/moderation-core";
+import {
+  getProfessionalPlan,
+  getProfessionalPlanPrice,
+  parseProfessionalPlanReference,
+  professionalPlanReference,
+} from "../src/lib/professional-plans";
+
+test.describe("modelo comercial do Impulso Elite", () => {
+  test("mantém uma única oferta pública de R$ 16,99", () => {
+    const boost = getProfessionalPlan("one-hour-top");
+    expect(boost).not.toBeNull();
+    expect(boost?.name).toBe("Impulso Elite");
+    expect(boost?.prices).toHaveLength(1);
+    expect(boost?.prices[0]).toMatchObject({ key: "hora", label: "1 hora", value: 16.99 });
+    expect(boost?.benefits).toEqual({ boost: true });
+  });
+
+  test("checkout resolve preço no servidor e preserva referência idempotente", () => {
+    const resolved = getProfessionalPlanPrice("one-hour-top", "hora");
+    expect(resolved?.price.value).toBe(16.99);
+    expect(getProfessionalPlanPrice("one-hour-top", "option-b")).toBeNull();
+
+    const reference = professionalPlanReference({
+      planId: "one-hour-top",
+      priceKey: "hora",
+      activationMode: "agora",
+      userId: "professional-test",
+      checkoutToken: "00000000-0000-4000-8000-000000000001",
+    });
+    expect(parseProfessionalPlanReference(reference)).toMatchObject({
+      userId: "professional-test",
+      activationMode: "agora",
+      plan: { name: "Impulso Elite" },
+      price: { value: 16.99 },
+    });
+  });
+
+  test("card do Impulso Elite cabe nos celulares suportados", async () => {
+    const browser = await chromium.launch({ channel: "chrome", headless: true });
+    const page = await browser.newPage();
+    try {
+    const source = readFileSync("src/app/(dashboard)/profissional/planos/page.tsx", "utf8");
+    const css = source.match(/<style>\{`([\s\S]+)`\}<\/style>/)?.[1];
+    expect(css, "CSS real da página comercial").toBeTruthy();
+    await page.setContent(`<style>${css}</style><main class="plans-page"><section class="extra-products-grid"><article class="product-card tone-gold hero-product"><div class="product-topline"><span>Destaque temporário</span><b>Produto Elite</b></div><div class="product-heading"><span class="product-icon">✦</span><div><h2>Impulso Elite</h2><p>Maior prioridade durante o período contratado</p></div></div><p class="summary">Seu perfil recebe peso adicional temporário no ranking e ganha posições prioritárias, sem alterar permanentemente o anúncio.</p><ul class="benefit-grid"><li>Prioridade temporária</li><li>Maior peso de exibição</li></ul><div class="price-row"><span>R$ 16,99</span><small>por 1 hora</small></div><div class="card-actions"><button class="primary-action">Ativar Impulso Elite</button></div></article></section></main>`);
+
+    for (const width of [375, 390, 412, 430]) {
+      await page.setViewportSize({ width, height: 844 });
+      const metrics = await page.evaluate(() => ({
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+        priceFontSize: Number.parseFloat(getComputedStyle(document.querySelector(".price-row span")!).fontSize),
+      }));
+      expect(metrics.scrollWidth, `overflow em ${width}px`).toBeLessThanOrEqual(metrics.clientWidth + 1);
+      expect(metrics.priceFontSize).toBeGreaterThanOrEqual(20);
+      await expect(page.getByRole("button", { name: "Ativar Impulso Elite" })).toBeVisible();
+    }
+    } finally {
+      await browser.close();
+    }
+  });
+});
 
 async function withFakeClamd(
   response: string | null,

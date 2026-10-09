@@ -43,10 +43,10 @@ export const POINTS_MAX = 15000;
 export const PROFESSIONAL_PLANS: ProfessionalPlan[] = [
   {
     id: "one-hour-top",
-    name: "1 hora no topo",
+    name: "Impulso Elite",
     points: 0,
-    prices: [{ key: "hora", label: "1 hora", value: 24.99, durationMs: 60 * minute }],
-    benefits: { premium: true, featured: true, boost: true, showPhone: true },
+    prices: [{ key: "hora", label: "1 hora", value: 16.99, durationMs: 60 * minute }],
+    benefits: { boost: true },
   },
   {
     id: "pontos",
