@@ -645,6 +645,35 @@ export default function CadastroPage() {
     };
   }
 
+  async function ensureSecureServerSession() {
+    const current = await fetch("/api/users/me", { cache: "no-store" });
+    if (current.ok) return;
+    if (current.status !== 401) {
+      const data = await current.json().catch(() => ({}));
+      throw new Error(typeof data.error === "string" ? data.error : "Nao foi possivel validar sua sessao.");
+    }
+
+    // O SessionProvider pode manter estado autenticado em memoria depois que o
+    // cookie HTTP-only do NextAuth expirou. Revalide a identidade no servidor
+    // usando somente a sessao Supabase assinada; nunca prossiga apenas pelo estado do cliente.
+    const supabaseAuth = await loadSupabaseAuth();
+    const { data, error } = await supabaseAuth.auth.getSession();
+    const accessToken = data.session?.access_token;
+    if (error || !accessToken) {
+      throw new Error("Sua sessao expirou. Entre novamente para continuar o cadastro.");
+    }
+
+    const refreshed = await signIn("supabase", nextAuthCadastroPayload(accessToken));
+    if (refreshed?.error) {
+      throw new Error("Sua sessao expirou. Entre novamente para continuar o cadastro.");
+    }
+
+    const verified = await fetch("/api/users/me", { cache: "no-store" });
+    if (!verified.ok) {
+      throw new Error("Sua sessao expirou. Entre novamente para continuar o cadastro.");
+    }
+  }
+
   function nextPath() {
     if (continueIntent === "profissional") return ACCOUNT_ROUTES.onboardingAcompanhante;
     if (continueIntent === "anfitriao") return ACCOUNT_ROUTES.onboardingAnfitriao;
@@ -819,6 +848,8 @@ export default function CadastroPage() {
         accountType: form.accountType,
         category: form.category || null,
       });
+
+      await ensureSecureServerSession();
 
       await postJsonOrThrow("/api/auth/complete-profile", {
         birthDate: form.birthDate,

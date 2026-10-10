@@ -503,6 +503,159 @@ test("cadastro profissional por email exige confirmação antes do onboarding", 
   expect(redirectTo.searchParams.get("returnUrl")).toBe("/profissional/novo");
 });
 
+test("cadastro profissional recupera cookie NextAuth expirado usando a sessão Supabase válida", async ({ page }) => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  test.skip(!supabaseUrl, "NEXT_PUBLIC_SUPABASE_URL é necessária para reproduzir a sessão móvel.");
+
+  const projectRef = new URL(supabaseUrl!).hostname.split(".")[0];
+  await page.addInitScript(({ storageKey }) => {
+    localStorage.setItem(storageKey, JSON.stringify({
+      access_token: "supabase-mobile-session-token",
+      refresh_token: "supabase-mobile-refresh-token",
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+      expires_in: 3600,
+      token_type: "bearer",
+      user: {
+        id: "supabase-mobile-user",
+        aud: "authenticated",
+        role: "authenticated",
+        email: "mobile-session@elitemodell.local",
+        app_metadata: { provider: "email" },
+        user_metadata: {},
+      },
+    }));
+  }, { storageKey: `sb-${projectRef}-auth-token` });
+
+  const session = {
+    user: {
+      id: "mobile-session-user",
+      email: "mobile-session@elitemodell.local",
+      role: "GUEST",
+      accountType: "client",
+    },
+    expires: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+  };
+  let userChecks = 0;
+  let completeProfileCalls = 0;
+  let activateProfessionalCalls = 0;
+  let nextAuthRefreshCalls = 0;
+
+  await page.route("**/api/auth/session", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify(session),
+  }));
+  await page.route("**/api/users/me", (route) => {
+    userChecks += 1;
+    if (userChecks === 2) {
+      return route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ error: "Não autorizado." }) });
+    }
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: session.user.id,
+        birthDate: null,
+        termsConsent: false,
+        lgpdConsent: false,
+        category: null,
+        professional: null,
+        redirectTo: "/profissional/novo",
+      }),
+    });
+  });
+  await page.route("**/api/auth/csrf", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ csrfToken: "csrf-mobile-session" }),
+  }));
+  await page.route("**/api/auth/callback/supabase**", async (route) => {
+    nextAuthRefreshCalls += 1;
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ url: new URL("/cadastro?tipo=acompanhante&telefoneValidado=1", route.request().url()).toString() }),
+    });
+  });
+  await page.route("**/api/auth/complete-profile", (route) => {
+    completeProfileCalls += 1;
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+  });
+  await page.route("**/api/users/me/activate-professional", (route) => {
+    activateProfessionalCalls += 1;
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+  });
+  await page.route("**/profissional/novo**", (route) => route.fulfill({
+    status: 200,
+    contentType: "text/html",
+    body: "<!doctype html><html><body><h1>Onboarding profissional</h1></body></html>",
+  }));
+
+  await page.goto("/cadastro?tipo=acompanhante&telefoneValidado=1", { waitUntil: "domcontentloaded" });
+  await expect.poll(() => userChecks).toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Mulher" }).click();
+  await page.getByLabel("Dia de nascimento").fill("01");
+  await page.getByLabel("Mês de nascimento").fill("01");
+  await page.getByLabel("Ano de nascimento").fill("1995");
+  await page.getByLabel(/Termos de Uso/).check();
+  await page.getByLabel(/Política de Privacidade/).check();
+  await page.getByLabel(/Confirmo que sou maior de 18 anos/).check();
+  await page.getByRole("button", { name: "Ir para as fases do cadastro" }).click();
+
+  await expect.poll(() => nextAuthRefreshCalls).toBe(1);
+  await expect.poll(() => completeProfileCalls).toBe(1);
+  await expect.poll(() => activateProfessionalCalls).toBe(1);
+  await expect(page).toHaveURL(/\/profissional\/novo/);
+});
+
+test("cadastro profissional interrompe com segurança quando NextAuth e Supabase expiraram", async ({ page }) => {
+  const session = {
+    user: { id: "expired-mobile-user", email: "expired@elitemodell.local", role: "GUEST", accountType: "client" },
+    expires: new Date(Date.now() + 60_000).toISOString(),
+  };
+  let userChecks = 0;
+  let protectedWrites = 0;
+
+  await page.route("**/api/auth/session", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify(session),
+  }));
+  await page.route("**/api/users/me", (route) => {
+    userChecks += 1;
+    if (userChecks === 1) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ id: session.user.id, birthDate: null, termsConsent: false, lgpdConsent: false, category: null, professional: null }),
+      });
+    }
+    return route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ error: "Não autorizado." }) });
+  });
+  await page.route("**/api/auth/complete-profile", (route) => {
+    protectedWrites += 1;
+    return route.fulfill({ status: 500, contentType: "application/json", body: "{}" });
+  });
+  await page.route("**/api/users/me/activate-professional", (route) => {
+    protectedWrites += 1;
+    return route.fulfill({ status: 500, contentType: "application/json", body: "{}" });
+  });
+
+  await page.goto("/cadastro?tipo=acompanhante&telefoneValidado=1", { waitUntil: "domcontentloaded" });
+  await expect.poll(() => userChecks).toBe(1);
+  await page.getByRole("button", { name: "Mulher" }).click();
+  await page.getByLabel("Dia de nascimento").fill("01");
+  await page.getByLabel("Mês de nascimento").fill("01");
+  await page.getByLabel("Ano de nascimento").fill("1995");
+  await page.getByLabel(/Termos de Uso/).check();
+  await page.getByLabel(/Política de Privacidade/).check();
+  await page.getByLabel(/Confirmo que sou maior de 18 anos/).check();
+  await page.getByRole("button", { name: "Ir para as fases do cadastro" }).click();
+
+  await expect(page.getByText("Sua sessao expirou. Entre novamente para continuar o cadastro.")).toBeVisible();
+  expect(protectedWrites).toBe(0);
+});
+
 test("não cria rolagem horizontal no mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
