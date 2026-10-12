@@ -696,7 +696,7 @@ export default function ProfissionalNovoPage() {
     void refreshDigitStatus();
     const poll = window.setInterval(() => {
       if (awaitingResult) void refreshDigitStatus();
-    }, 15_000);
+    }, 30_000);
     window.addEventListener("focus", refreshDigitStatus);
     document.addEventListener("visibilitychange", onVisibility);
     return () => {

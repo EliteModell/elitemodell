@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import { enforceRateLimit, sanitizeInput } from "@/lib/security";
+import { enforceRateLimitAsync, sanitizeInput } from "@/lib/security";
 
 const createSchema = z.object({
   bookingId: z.string().cuid(),
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
 
-  const limited = enforceRateLimit(`messages:${session.user.id}`, 60, 60 * 1000, "Muitas mensagens em pouco tempo.");
+  const limited = await enforceRateLimitAsync(`messages:${session.user.id}`, 60, 60 * 1000, "Muitas mensagens em pouco tempo.");
   if (limited) return limited;
 
   try {

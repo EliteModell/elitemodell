@@ -11,6 +11,7 @@ import {
 } from "@/lib/premium-checkout";
 import { prisma } from "@/lib/prisma";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
+import { checkRateLimitAsync } from "@/lib/rate-limit";
 
 export async function GET(
   req: NextRequest,
@@ -51,15 +52,18 @@ export async function GET(
     getAsaasConfig().configured &&
     ["PENDING", "PAID"].includes(intent.payment.status)
   ) {
-    try {
-      const remote = await getAsaasPayment(intent.payment.providerPaymentId);
-      await syncAsaasPaymentSnapshot(intent.payment.id, remote);
-      intent = await prisma.premiumPurchaseIntent.findUniqueOrThrow({
-        where: { id: intent.id },
-        include: { payment: true },
-      });
-    } catch {
-      // Mantem o snapshot local quando o provedor estiver temporariamente indisponivel.
+    const providerRefresh = await checkRateLimitAsync(`asaas-status-refresh:${intent.payment.id}`, 1, 30 * 1000);
+    if (providerRefresh.allowed) {
+      try {
+        const remote = await getAsaasPayment(intent.payment.providerPaymentId);
+        await syncAsaasPaymentSnapshot(intent.payment.id, remote);
+        intent = await prisma.premiumPurchaseIntent.findUniqueOrThrow({
+          where: { id: intent.id },
+          include: { payment: true },
+        });
+      } catch {
+        // Mantem o snapshot local quando o provedor estiver temporariamente indisponivel.
+      }
     }
   }
 

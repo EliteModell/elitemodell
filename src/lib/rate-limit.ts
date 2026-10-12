@@ -76,10 +76,12 @@ async function checkRedis(key: string, max: number, windowMs: number): Promise<R
 
   if (!res.ok) return checkInMemory(key, max, windowMs);
 
-  const data = (await res.json().catch(() => null)) as Array<{ result: number }> | null;
-  if (!data) return checkInMemory(key, max, windowMs);
-  const count = data[0].result;
-  const ttl = data[2].result;
+  const data = (await res.json().catch(() => null)) as Array<{ result?: unknown }> | null;
+  const count = data?.[0]?.result;
+  const ttl = data?.[2]?.result;
+  if (typeof count !== "number" || typeof ttl !== "number") {
+    return checkInMemory(key, max, windowMs);
+  }
   const resetIn = ttl > 0 ? ttl * 1000 : windowMs;
 
   if (count > max) return { allowed: false, remaining: 0, resetIn };
@@ -88,11 +90,14 @@ async function checkRedis(key: string, max: number, windowMs: number): Promise<R
 
 // ─── API pública ──────────────────────────────────────────────────────────────
 
-const HAS_REDIS =
-  typeof process.env.UPSTASH_REDIS_REST_URL === "string" &&
-  process.env.UPSTASH_REDIS_REST_URL.length > 0 &&
-  typeof process.env.UPSTASH_REDIS_REST_TOKEN === "string" &&
-  process.env.UPSTASH_REDIS_REST_TOKEN.length > 0;
+function hasRedisConfig() {
+  return (
+    typeof process.env.UPSTASH_REDIS_REST_URL === "string" &&
+    process.env.UPSTASH_REDIS_REST_URL.length > 0 &&
+    typeof process.env.UPSTASH_REDIS_REST_TOKEN === "string" &&
+    process.env.UPSTASH_REDIS_REST_TOKEN.length > 0
+  );
+}
 
 /**
  * Verifica rate limit para um identificador (IP, user ID, etc.).
@@ -104,6 +109,6 @@ export function checkRateLimitAsync(
   windowMs = 5 * 60 * 1000
 ): Promise<RateLimitResult> {
   const key = `rl:${identifier}`;
-  if (HAS_REDIS) return checkRedis(key, maxRequests, windowMs);
+  if (hasRedisConfig()) return checkRedis(key, maxRequests, windowMs);
   return Promise.resolve(checkInMemory(key, maxRequests, windowMs));
 }

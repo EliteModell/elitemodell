@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { enforceRateLimit, getClientIP } from "@/lib/security";
+import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import { publicCacheHeaders } from "@/lib/public-professional-profile";
 import { getPublicProfessionalWhere } from "@/lib/public-professional-access";
 
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const { slug } = await params;
   try {
     const { eventType } = schema.parse(await req.json());
-    const limited = enforceRateLimit(
+    const limited = await enforceRateLimitAsync(
       `professional-event:${slug}:${eventType}:${getClientIP(req)}`,
       eventType === "profile_view" ? 30 : 12,
       60 * 60 * 1000,

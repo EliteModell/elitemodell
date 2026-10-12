@@ -6,6 +6,7 @@ import { POST as sendPhoneCode } from "../src/app/api/auth/phone/send-code/route
 import { POST as prepareFirebasePhone } from "../src/app/api/auth/phone/firebase-send/route";
 import { prisma } from "../src/lib/prisma";
 import { readJsonResponse } from "../src/lib/safe-json-response";
+import { checkRateLimitAsync } from "../src/lib/rate-limit";
 import {
   checkTwilioVerification,
   getTwilioWhatsAppAvailability,
@@ -235,6 +236,61 @@ test.describe("adaptadores de fornecedores", () => {
       confirmedDate: null,
       invoiceUrl: "https://example.invalid/invoice",
     });
+  });
+});
+
+test.describe("controles de consumo automatizado", () => {
+  test("rotas de custo usam limite distribuido e cooldown de provedor", () => {
+    const addressSearch = readFileSync("src/app/api/address/search/route.ts", "utf8");
+    const appointments = readFileSync("src/app/api/appointments/route.ts", "utf8");
+    const messages = readFileSync("src/app/api/messages/route.ts", "utf8");
+    const tracking = readFileSync("src/app/api/professionals/[slug]/track/route.ts", "utf8");
+    const paymentStatus = readFileSync("src/app/api/payments/status/[id]/route.ts", "utf8");
+    const premiumStatus = readFileSync("src/app/api/premium/checkout/status/[id]/route.ts", "utf8");
+
+    expect(addressSearch).toContain("enforceRateLimitAsync");
+    expect(addressSearch).toContain("address-search:");
+    for (const source of [appointments, messages, tracking]) {
+      expect(source).toContain("enforceRateLimitAsync");
+      expect(source).not.toMatch(/\benforceRateLimit\(/);
+    }
+    expect(paymentStatus).toContain("asaas-status-refresh:");
+    expect(premiumStatus).toContain("asaas-status-refresh:");
+  });
+
+  test("polling visivel tem intervalo moderado e prazo maximo", () => {
+    const chat = readFileSync("src/components/ChatBox.tsx", "utf8");
+    const pix = readFileSync("src/components/payments/PixPaymentModal.tsx", "utf8");
+    const premium = readFileSync("src/components/premium/PremiumUpsellModal.tsx", "utf8");
+    const didit = readFileSync("src/app/(dashboard)/profissional/novo/page.tsx", "utf8");
+
+    expect(chat).toContain("10_000");
+    expect(pix).toContain("POLL_INTERVAL = 15_000");
+    expect(pix).toContain("POLL_MAX_DURATION = 15 * 60 * 1000");
+    expect(premium).toContain("PAYMENT_POLL_INTERVAL_MS = 15_000");
+    expect(premium).toContain("PAYMENT_POLL_MAX_DURATION_MS = 15 * 60 * 1000");
+    expect(didit).toContain("}, 30_000);");
+  });
+
+  test("indisponibilidade do Upstash mantém proteção local", async () => {
+    const previousUrl = process.env.UPSTASH_REDIS_REST_URL;
+    const previousToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+    const previousFetch = global.fetch;
+    process.env.UPSTASH_REDIS_REST_URL = "https://upstash.invalid";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "test-token";
+    global.fetch = async () => { throw new Error("upstash unavailable"); };
+
+    try {
+      const key = `upstash-fallback-${crypto.randomUUID()}`;
+      expect((await checkRateLimitAsync(key, 1, 60_000)).allowed).toBe(true);
+      expect((await checkRateLimitAsync(key, 1, 60_000)).allowed).toBe(false);
+    } finally {
+      global.fetch = previousFetch;
+      if (previousUrl === undefined) delete process.env.UPSTASH_REDIS_REST_URL;
+      else process.env.UPSTASH_REDIS_REST_URL = previousUrl;
+      if (previousToken === undefined) delete process.env.UPSTASH_REDIS_REST_TOKEN;
+      else process.env.UPSTASH_REDIS_REST_TOKEN = previousToken;
+    }
   });
 });
 

@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAsaasConfig, getAsaasPayment } from "@/lib/asaas";
 import { syncAsaasPaymentSnapshot } from "@/lib/payment-operations";
+import { checkRateLimitAsync } from "@/lib/rate-limit";
 
 export async function GET(
   _req: NextRequest,
@@ -16,6 +17,13 @@ export async function GET(
   if (!session?.user?.id) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
 
   const { id } = await params;
+  const requestLimit = await checkRateLimitAsync(`payment-status:${session.user.id}:${id}`, 70, 20 * 60 * 1000);
+  if (!requestLimit.allowed) {
+    return NextResponse.json(
+      { error: "Muitas consultas de pagamento." },
+      { status: 429, headers: { "Retry-After": String(Math.max(1, Math.ceil(requestLimit.resetIn / 1000))) } },
+    );
+  }
 
   let payment = await prisma.payment.findFirst({
     where: {
@@ -49,31 +57,34 @@ export async function GET(
     getAsaasConfig().configured &&
     ["PENDING", "PAID", "PARTIALLY_REFUNDED"].includes(payment.status)
   ) {
-    try {
-      const remote = await getAsaasPayment(payment.providerPaymentId);
-      await syncAsaasPaymentSnapshot(payment.id, remote);
-      payment = await prisma.payment.findUniqueOrThrow({
-        where: { id: payment.id },
-        select: {
-          id: true,
-          status: true,
-          amount: true,
-          method: true,
-          paidAt: true,
-          creditAmount: true,
-          premiumUntil: true,
-          providerPaymentId: true,
-          provider: true,
-          providerStatus: true,
-          expiresAt: true,
-          refundedAmountCents: true,
-          benefitStatus: true,
-          benefitError: true,
-          cancelledAt: true,
-        },
-      });
-    } catch {
-      // O status local continua disponivel se o provedor estiver temporariamente indisponivel.
+    const providerRefresh = await checkRateLimitAsync(`asaas-status-refresh:${payment.id}`, 1, 30 * 1000);
+    if (providerRefresh.allowed) {
+      try {
+        const remote = await getAsaasPayment(payment.providerPaymentId);
+        await syncAsaasPaymentSnapshot(payment.id, remote);
+        payment = await prisma.payment.findUniqueOrThrow({
+          where: { id: payment.id },
+          select: {
+            id: true,
+            status: true,
+            amount: true,
+            method: true,
+            paidAt: true,
+            creditAmount: true,
+            premiumUntil: true,
+            providerPaymentId: true,
+            provider: true,
+            providerStatus: true,
+            expiresAt: true,
+            refundedAmountCents: true,
+            benefitStatus: true,
+            benefitError: true,
+            cancelledAt: true,
+          },
+        });
+      } catch {
+        // O status local continua disponivel se o provedor estiver temporariamente indisponivel.
+      }
     }
   }
 

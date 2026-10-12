@@ -63,6 +63,9 @@ const FALLBACK_PLANS: Plan[] = [
   },
 ];
 
+const PAYMENT_POLL_INTERVAL_MS = 15_000;
+const PAYMENT_POLL_MAX_DURATION_MS = 15 * 60 * 1000;
+
 function money(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -107,6 +110,8 @@ function PremiumUpsellContent({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollingDeadlineRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollingInFlightRef = useRef(false);
 
   const currentPlan = useMemo(
     () => plans.find((plan) => plan.id === selectedPlan) ?? plans[0],
@@ -137,23 +142,39 @@ function PremiumUpsellContent({
     if (stage !== "pix" || !checkout) return;
 
     async function refreshStatus() {
-      const response = await fetch(`/api/premium/checkout/status/${checkout?.intentId}`, {
-        cache: "no-store",
-      }).catch(() => null);
-      if (!response?.ok) return;
-      const data = await response.json();
-      if (data.paid) {
-        setStage("paid");
-        if (pollingRef.current) clearInterval(pollingRef.current);
-        pollingRef.current = null;
+      if (pollingInFlightRef.current) return;
+      pollingInFlightRef.current = true;
+      try {
+        const response = await fetch(`/api/premium/checkout/status/${checkout?.intentId}`, {
+          cache: "no-store",
+        }).catch(() => null);
+        if (!response?.ok) return;
+        const data = await response.json();
+        if (data.paid) {
+          setStage("paid");
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          if (pollingDeadlineRef.current) clearTimeout(pollingDeadlineRef.current);
+          pollingRef.current = null;
+          pollingDeadlineRef.current = null;
+        }
+      } finally {
+        pollingInFlightRef.current = false;
       }
     }
 
     void refreshStatus();
-    pollingRef.current = setInterval(() => void refreshStatus(), 4000);
-    return () => {
+    pollingRef.current = setInterval(() => {
+      if (document.visibilityState === "visible") void refreshStatus();
+    }, PAYMENT_POLL_INTERVAL_MS);
+    pollingDeadlineRef.current = setTimeout(() => {
       if (pollingRef.current) clearInterval(pollingRef.current);
       pollingRef.current = null;
+    }, PAYMENT_POLL_MAX_DURATION_MS);
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      if (pollingDeadlineRef.current) clearTimeout(pollingDeadlineRef.current);
+      pollingRef.current = null;
+      pollingDeadlineRef.current = null;
     };
   }, [checkout, stage]);
 

@@ -28,7 +28,7 @@ export default function ChatBox({ bookingId, title }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastFetchRef = useRef<string | null>(null);
 
-  // Polling a cada 4s para novas mensagens
+  // Polling moderado, suspenso em background, para evitar funcoes e queries desnecessarias.
   useEffect(() => {
     let cancelled = false;
 
@@ -53,7 +53,7 @@ export default function ChatBox({ bookingId, title }: Props) {
     fetchMessages(true);
     const interval = setInterval(() => {
       if (!document.hidden) fetchMessages(false);
-    }, 4000);
+    }, 10_000);
     function handleVisibility() {
       if (!document.hidden) fetchMessages(false);
     }

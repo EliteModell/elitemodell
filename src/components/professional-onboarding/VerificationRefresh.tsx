@@ -11,7 +11,7 @@ export function VerificationRefresh({ enabled }: { enabled: boolean }) {
     const refresh = () => {
       if (document.visibilityState === "visible" && !pending) startTransition(() => router.refresh());
     };
-    const timer = window.setInterval(refresh, 15_000);
+    const timer = window.setInterval(refresh, 30_000);
     window.addEventListener("focus", refresh);
     return () => {
       window.clearInterval(timer);

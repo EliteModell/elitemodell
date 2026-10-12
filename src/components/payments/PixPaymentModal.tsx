@@ -24,7 +24,8 @@ type PixData = {
 
 type Stage = "loading" | "waiting" | "paid" | "failed";
 
-const POLL_INTERVAL = 6000;
+const POLL_INTERVAL = 15_000;
+const POLL_MAX_DURATION = 15 * 60 * 1000;
 
 export default function PixPaymentModal({ planId, creditAmount, bookingId, amount, onClose, onSuccess }: Props) {
   const checkoutTokenRef = useRef(crypto.randomUUID());
@@ -33,6 +34,8 @@ export default function PixPaymentModal({ planId, creditAmount, bookingId, amoun
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollDeadlineRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollInFlightRef = useRef(false);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -97,7 +100,8 @@ export default function PixPaymentModal({ planId, creditAmount, bookingId, amoun
     if (!pix?.localPaymentId || stage !== "waiting") return;
 
     async function checkStatus() {
-      if (!pix?.localPaymentId || !mountedRef.current) return;
+      if (!pix?.localPaymentId || !mountedRef.current || pollInFlightRef.current) return;
+      pollInFlightRef.current = true;
       try {
         const res = await fetch(`/api/payments/status/${pix.localPaymentId}`);
         if (!res.ok || !mountedRef.current) return;
@@ -115,15 +119,25 @@ export default function PixPaymentModal({ planId, creditAmount, bookingId, amoun
           setStage("failed");
           setError("Pagamento não confirmado. Tente novamente.");
         }
-      } catch {}
+      } catch {
+      } finally {
+        pollInFlightRef.current = false;
+      }
     }
 
     pollRef.current = setInterval(() => {
       if (!document.hidden) void checkStatus();
     }, POLL_INTERVAL);
+    pollDeadlineRef.current = setTimeout(() => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      pollRef.current = null;
+    }, POLL_MAX_DURATION);
 
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      if (pollDeadlineRef.current) clearTimeout(pollDeadlineRef.current);
+      pollRef.current = null;
+      pollDeadlineRef.current = null;
     };
   }, [pix?.localPaymentId, stage]);
 

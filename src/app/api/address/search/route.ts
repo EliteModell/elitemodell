@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
+import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 
 type GooglePlaceSuggestion = {
   placePrediction?: GooglePlacePrediction;
@@ -22,6 +23,14 @@ export async function GET(req: NextRequest) {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
   if (input.length < 3) return NextResponse.json({ suggestions: [], provider: "none" });
+
+  const limited = await enforceRateLimitAsync(
+    `address-search:${getClientIP(req)}`,
+    30,
+    60 * 1000,
+    "Muitas buscas de endereco. Aguarde um instante.",
+  );
+  if (limited) return limited;
 
   if (!apiKey) {
     return NextResponse.json({

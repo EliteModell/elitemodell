@@ -407,7 +407,7 @@ function PlanCheckout({ selection, onClose }: { selection: CheckoutSelection; on
 
     const timer = window.setInterval(() => {
       if (!document.hidden) void verifyPayment();
-    }, 6000);
+    }, 15_000);
 
     return () => window.clearInterval(timer);
   }, [paymentId, stage]);
