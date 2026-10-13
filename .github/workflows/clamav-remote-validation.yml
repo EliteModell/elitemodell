@@ -15,6 +15,7 @@ jobs:
     timeout-minutes: 20
     env:
       DATABASE_URL: postgresql://invalid:invalid@127.0.0.1:5432/invalid
+      DIRECT_URL: postgresql://invalid:invalid@127.0.0.1:5432/invalid
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
