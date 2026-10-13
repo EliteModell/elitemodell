@@ -85,7 +85,7 @@ jobs:
           done) > /tmp/memory-percent.log &
           sampler=$!
           sleep 3
-          docker exec --user clamav clamav-validation sh /app/services/clamav-worker/smoke-test.sh
+          docker exec --user clamav clamav-validation sh /app/services/clamav-worker/container-validation.sh
           sleep 2
           kill "$sampler" 2>/dev/null || true
           wait "$sampler" 2>/dev/null || true

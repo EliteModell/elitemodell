@@ -5,10 +5,10 @@ work_dir="$(mktemp -d)"
 trap 'rm -rf "$work_dir"' EXIT
 
 printf 'elite modell clean test\n' > "$work_dir/clean.txt"
-# EICAR is deliberately assembled in the test container so repository scanners
-# do not quarantine this source file merely for containing the full signature.
-printf '%s' 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-' > "$work_dir/eicar.com"
-printf '%s' 'STANDARD-ANTIVIRUS-TEST-FILE!$H+H*' >> "$work_dir/eicar.com"
+# Decode only inside the isolated Linux container so endpoint protection does
+# not mistake this source file for the official harmless test payload.
+printf '%s' 'WDVPIVAlQEFQWzRcUFpYNTQoUF4pN0NDKTd9JEVJQ0FSLVNUQU5EQVJELUFOVElWSVJVUy1URVNULUZJTEUhJEgrSCo=' \
+  | base64 -d > "$work_dir/eicar.com"
 
 clamdscan --no-summary "$work_dir/clean.txt" | grep -q 'OK$'
 set +e
