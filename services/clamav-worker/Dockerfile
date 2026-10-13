@@ -19,7 +19,11 @@ ENV NODE_ENV=production \
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates clamav-daemon clamav-freshclam netcat-openbsd tini \
  && rm -rf /var/lib/apt/lists/* \
- && freshclam --stdout
+ && freshclam --stdout \
+ && printf '\nTCPSocket 3310\nTCPAddr 127.0.0.1\n' >> /etc/clamav/clamd.conf \
+ && sed -i 's/^StreamMaxLength .*/StreamMaxLength 262144000/' /etc/clamav/clamd.conf \
+ && sed -i 's/^MaxFileSize .*/MaxFileSize 262144000/' /etc/clamav/clamd.conf \
+ && sed -i 's/^MaxScanSize .*/MaxScanSize 524288000/' /etc/clamav/clamd.conf
 WORKDIR /app
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY --from=dependencies /app/prisma ./prisma
