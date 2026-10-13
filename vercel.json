@@ -1,4 +1,9 @@
 {
   "buildCommand": "npm run build",
+  "git": {
+    "deploymentEnabled": {
+      "codex/security-audit-20261013": false
+    }
+  },
   "regions": ["gru1"]
 }
