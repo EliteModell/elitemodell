@@ -1,7 +1,16 @@
+-- LEGADO — NAO EXECUTAR EM PRODUCAO.
+-- Este arquivo antecede o pipeline atual de quarentena. Ele cria buckets
+-- publicos e permite upload direto, o que contorna ClamAV, moderacao e os
+-- gates de publicacao. Novos uploads devem usar exclusivamente os buckets
+-- privados `upload-quarantine` e `approved-media`, servidos por /api/media.
+-- Mantido apenas como referencia historica ate a migracao do acervo legado.
 -- ============================================================
--- EliteModell — Supabase Storage Setup (produção)
--- Rodar no SQL Editor do Supabase (Database > SQL Editor)
--- ============================================================
+
+DO $$
+BEGIN
+  RAISE EXCEPTION 'Script legado bloqueado: use o pipeline privado de quarentena e midia aprovada.';
+END
+$$;
 
 -- 1. Criar/atualizar buckets
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
