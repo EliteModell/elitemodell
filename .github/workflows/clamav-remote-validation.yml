@@ -2,6 +2,9 @@ name: ClamAV remote validation
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - codex/clamav-remote-validation-20261012
 
 permissions:
   contents: read
