@@ -59,4 +59,15 @@ test.describe("uploads em quarentena", () => {
     expect(source).not.toContain("claimMalwareScan");
     expect(source).not.toContain("processUploadAsset");
   });
+
+  test("script legado de storage esta bloqueado contra execucao acidental", () => {
+    const legacySql = readFileSync("supabase/storage-setup.sql", "utf8");
+    expect(legacySql).toContain("LEGADO — NAO EXECUTAR EM PRODUCAO");
+    expect(legacySql).toContain("RAISE EXCEPTION 'Script legado bloqueado");
+
+    const quarantine = readFileSync("src/lib/upload-quarantine.ts", "utf8");
+    expect(quarantine).toContain('const DEFAULT_QUARANTINE_BUCKET = "upload-quarantine"');
+    expect(quarantine).toContain('const DEFAULT_APPROVED_BUCKET = "approved-media"');
+    expect(quarantine).toContain("if (data.public) throw new Error");
+  });
 });
