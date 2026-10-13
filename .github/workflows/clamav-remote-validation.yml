@@ -16,6 +16,9 @@ jobs:
     env:
       DATABASE_URL: postgresql://invalid:invalid@127.0.0.1:5432/invalid
       DIRECT_URL: postgresql://invalid:invalid@127.0.0.1:5432/invalid
+      NEXT_PUBLIC_SUPABASE_URL: https://invalid.example
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: synthetic-invalid-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: synthetic-invalid-service-role-key
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
