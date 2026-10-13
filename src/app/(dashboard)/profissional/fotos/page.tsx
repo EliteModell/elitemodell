@@ -6,6 +6,7 @@ import type { ChangeEvent, ReactNode, RefObject } from "react";
 import toast from "react-hot-toast";
 import { Camera, ImageIcon, Images, Loader2, Trash2, UploadCloud, UserRound } from "lucide-react";
 import { PremiumHeroCard, PremiumSection } from "@/components/professional-dashboard/ProfessionalPremium";
+import { monitorUpload, parseUploadResponse, UPLOAD_PENDING_MESSAGE, type UploadApiPayload } from "@/lib/upload-response";
 
 type PhotoRecord = {
   id?: string;
@@ -168,17 +169,8 @@ export default function ProfissionalFotosPage() {
     formData.append("file", file);
     formData.append("contentDeclarationAccepted", "true");
     const res = await fetch(`/api/upload?folder=profiles/${profileId}`, { method: "POST", body: formData });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.url) {
-      throw new Error(
-        typeof data.error === "string"
-          ? data.error
-          : typeof data.message === "string"
-            ? data.message
-            : "Não foi possível enviar agora. Tente novamente.",
-      );
-    }
-    return data.url as string;
+    const data: UploadApiPayload = await res.json().catch(() => ({}));
+    return parseUploadResponse(res, data);
   }
 
   async function saveUserImage(image: string | null) {
@@ -213,9 +205,20 @@ export default function ProfissionalFotosPage() {
     }
     setSavingKey("profile");
     try {
-      const url = await uploadImage(profilePending.file);
-      await saveUserImage(url);
-      setProfilePhoto(url);
+      const uploaded = await uploadImage(profilePending.file);
+      if (uploaded.pending || !uploaded.url) {
+        await saveUserImage(uploaded.reference);
+        setProfilePhoto(uploaded.reference);
+        void monitorUpload(uploaded.assetId, (result) => toast[result.status === "APPROVED" ? "success" : "error"](
+          result.status === "APPROVED" ? "Foto verificada e liberada para moderação." : result.failureReason || "A foto não passou pela verificação.",
+        ));
+        URL.revokeObjectURL(profilePending.preview);
+        setProfilePending(null);
+        toast.success(UPLOAD_PENDING_MESSAGE);
+        return;
+      }
+      await saveUserImage(uploaded.url);
+      setProfilePhoto(uploaded.url);
       URL.revokeObjectURL(profilePending.preview);
       setProfilePending(null);
       toast.success("Sua foto foi atualizada.");
@@ -233,9 +236,20 @@ export default function ProfissionalFotosPage() {
     }
     setSavingKey("cover");
     try {
-      const url = await uploadImage(coverPending.file);
-      await saveProfessionalPhotos(url, gallery);
-      setCoverPhoto(url);
+      const uploaded = await uploadImage(coverPending.file);
+      if (uploaded.pending || !uploaded.url) {
+        await saveProfessionalPhotos(uploaded.reference, gallery);
+        setCoverPhoto(uploaded.reference);
+        void monitorUpload(uploaded.assetId, (result) => toast[result.status === "APPROVED" ? "success" : "error"](
+          result.status === "APPROVED" ? "Capa verificada e liberada para moderação." : result.failureReason || "A capa não passou pela verificação.",
+        ));
+        URL.revokeObjectURL(coverPending.preview);
+        setCoverPending(null);
+        toast.success(UPLOAD_PENDING_MESSAGE);
+        return;
+      }
+      await saveProfessionalPhotos(uploaded.url, gallery);
+      setCoverPhoto(uploaded.url);
       URL.revokeObjectURL(coverPending.preview);
       setCoverPending(null);
       toast.success("Capa atualizada com sucesso.");
@@ -254,15 +268,25 @@ export default function ProfissionalFotosPage() {
     setSavingKey("gallery");
     try {
       const uploaded: string[] = [];
+      let pendingCount = 0;
       for (const pending of galleryPending) {
-        uploaded.push(await uploadImage(pending.file));
+        const result = await uploadImage(pending.file);
+        if (result.pending || !result.url) {
+          pendingCount += 1;
+          uploaded.push(result.reference);
+          void monitorUpload(result.assetId, (settled) => toast[settled.status === "APPROVED" ? "success" : "error"](
+            settled.status === "APPROVED" ? "Foto da galeria verificada e liberada para moderação." : settled.failureReason || "Uma foto não passou pela verificação.",
+          ));
+        } else uploaded.push(result.url);
       }
-      const nextGallery = [...gallery, ...uploaded];
-      await saveProfessionalPhotos(coverPhoto, nextGallery);
-      setGallery(nextGallery);
+      if (uploaded.length) {
+        const nextGallery = [...gallery, ...uploaded];
+        await saveProfessionalPhotos(coverPhoto, nextGallery);
+        setGallery(nextGallery);
+      }
       galleryPending.forEach((item) => URL.revokeObjectURL(item.preview));
       setGalleryPending([]);
-      toast.success(uploaded.length === 1 ? "Foto publicada com sucesso." : "Fotos publicadas com sucesso.");
+      toast.success(pendingCount ? `${pendingCount} arquivo(s) recebido(s), aguardando verificação.` : uploaded.length === 1 ? "Foto publicada com sucesso." : "Fotos publicadas com sucesso.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível enviar agora. Tente novamente.");
     } finally {

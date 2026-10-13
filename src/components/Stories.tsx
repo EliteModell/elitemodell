@@ -2,6 +2,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
+import { monitorUpload, parseUploadResponse, UPLOAD_PENDING_MESSAGE, type UploadApiPayload } from "@/lib/upload-response";
 
 type StoryItem = { id: string; mediaUrl: string; mediaType: string; thumbnail: string | null; views: number; createdAt: string };
 type StoryGroup = { userId: string; slug: string; nome: string; foto: string | null; stories: StoryItem[]; visto?: boolean };
@@ -84,9 +85,18 @@ export default function Stories() {
       fd.append("file", file);
       fd.append("contentDeclarationAccepted", "true");
       const up = await fetch("/api/upload", { method: "POST", body: fd });
-      const uploaded = await up.json().catch(() => ({}));
-      if (!up.ok || !uploaded.url) {
-        alert(uploaded.error || uploaded.message || "Arquivo aguardando revisão.");
+      const payload: UploadApiPayload = await up.json().catch(() => ({}));
+      const uploaded = parseUploadResponse(up, payload);
+      if (uploaded.pending || !uploaded.url) {
+        alert(UPLOAD_PENDING_MESSAGE);
+        void monitorUpload(uploaded.assetId, async (result) => {
+          if (result.status !== "APPROVED" || !result.url) {
+            alert(result.failureReason || "O arquivo não passou pela verificação.");
+            return;
+          }
+          await fetch("/api/stories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mediaUrl: result.url, mediaType: uploaded.type, thumbnail: uploaded.thumbnail }) });
+          await carregar();
+        });
         return;
       }
       const { url, type, thumbnail } = uploaded;

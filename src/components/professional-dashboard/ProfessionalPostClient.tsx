@@ -9,6 +9,7 @@ import {
   Loader2, Play, Plus, Sparkles, Star, Upload, UploadCloud, UserRound,
 } from "lucide-react";
 import styles from "./ProfessionalPostClient.module.css";
+import { monitorUpload, parseUploadResponse, UPLOAD_PENDING_MESSAGE, type UploadApiPayload } from "@/lib/upload-response";
 
 type PhotoRecord = { url: string; cover: boolean; order: number };
 type StoryItem = { id: string; mediaUrl: string; mediaType: "image" | "video"; thumbnail: string | null };
@@ -136,9 +137,22 @@ export function ProfessionalPostClient() {
       body.append("file", pendingVideo.file);
       body.append("contentDeclarationAccepted", "true");
       const uploadRes = await fetch(`/api/upload?folder=profile-videos/${professionalId}`, { method: "POST", body });
-      const uploaded = await uploadRes.json().catch(() => ({}));
-      if (!uploadRes.ok || !uploaded.url) {
-        throw new Error(typeof uploaded.error === "string" ? uploaded.error : typeof uploaded.message === "string" ? uploaded.message : "Não foi possível enviar agora. Tente novamente.");
+      const payload: UploadApiPayload = await uploadRes.json().catch(() => ({}));
+      const uploaded = parseUploadResponse(uploadRes, payload);
+      if (uploaded.pending || !uploaded.url) {
+        const updateRes = await fetch(`/api/professionals/${professionalSlug}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ presentationVideoUrl: uploaded.reference }),
+        });
+        if (!updateRes.ok) throw new Error("O arquivo foi recebido, mas não foi possível vinculá-lo ao perfil.");
+        void monitorUpload(uploaded.assetId, (result) => toast[result.status === "APPROVED" ? "success" : "error"](
+          result.status === "APPROVED" ? "Vídeo verificado e liberado para moderação." : result.failureReason || "O vídeo não passou pela verificação.",
+        ));
+        URL.revokeObjectURL(pendingVideo.preview);
+        setPendingVideo(null);
+        setContentDeclarationAccepted(false);
+        setVideoStatus("PENDING");
+        toast.success(UPLOAD_PENDING_MESSAGE);
+        return;
       }
       const updateRes = await fetch(`/api/professionals/${professionalSlug}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ presentationVideoUrl: uploaded.url }),

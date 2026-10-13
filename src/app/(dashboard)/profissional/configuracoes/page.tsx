@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { monitorUpload, parseUploadResponse, UPLOAD_PENDING_MESSAGE, type UploadApiPayload } from "@/lib/upload-response";
 
 type Settings = {
   id: string;
@@ -96,11 +97,16 @@ export default function ProfissionalConfiguracoesPage() {
       body.append("file", file);
       body.append("contentDeclarationAccepted", "true");
       const res = await fetch(`/api/upload?folder=profile-videos/${settings.id}`, { method: "POST", body });
-      const data: { url?: string | null; error?: string; message?: string } = await res.json().catch(() => ({}));
-      if (!res.ok || !data.url) {
-        throw new Error(data.error || data.message || "Não foi possível concluir agora.");
+      const data: UploadApiPayload = await res.json().catch(() => ({}));
+      const uploaded = parseUploadResponse(res, data);
+      if (uploaded.pending || !uploaded.url) {
+        await save({ presentationVideoUrl: uploaded.reference }, UPLOAD_PENDING_MESSAGE);
+        void monitorUpload(uploaded.assetId, (result) => toast[result.status === "APPROVED" ? "success" : "error"](
+          result.status === "APPROVED" ? "Vídeo verificado e liberado para moderação." : result.failureReason || "O vídeo não passou pela verificação.",
+        ));
+        return;
       }
-      await save({ presentationVideoUrl: data.url }, "Seu vídeo foi enviado para análise.");
+      await save({ presentationVideoUrl: uploaded.url }, "Seu vídeo foi enviado para análise.");
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : "Não foi possível concluir agora. Tente novamente.");
     } finally {

@@ -6,6 +6,7 @@ import type { ChangeEvent } from "react";
 import toast from "react-hot-toast";
 import { Camera, CirclePlus, Loader2, Play, Trash2, UploadCloud } from "lucide-react";
 import { PremiumHeroCard, PremiumSection } from "@/components/professional-dashboard/ProfessionalPremium";
+import { monitorUpload, parseUploadResponse, UPLOAD_PENDING_MESSAGE, type UploadApiPayload } from "@/lib/upload-response";
 
 type StoryItem = {
   id: string;
@@ -139,14 +140,32 @@ export function ProfessionalStoriesClient() {
       body.append("file", pending.file);
       body.append("contentDeclarationAccepted", "true");
       const uploadRes = await fetch("/api/upload?folder=stories", { method: "POST", body });
-      const uploaded = await uploadRes.json().catch(() => ({}));
-      if (!uploadRes.ok || !uploaded.url) {
-        const detail = typeof uploaded.error === "string"
-          ? uploaded.error
-          : typeof uploaded.message === "string"
-            ? uploaded.message
-            : "";
-        throw new Error(friendlyUploadError(detail));
+      const payload: UploadApiPayload = await uploadRes.json().catch(() => ({}));
+      const uploaded = parseUploadResponse(uploadRes, payload);
+      if (uploaded.pending || !uploaded.url) {
+        const pendingCaption = caption.trim() || null;
+        void monitorUpload(uploaded.assetId, async (result) => {
+          if (result.status !== "APPROVED" || !result.url) {
+            toast.error(result.failureReason || "O arquivo não passou pela verificação.");
+            return;
+          }
+          const response = await fetch("/api/stories", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mediaUrl: result.url, mediaType: pending.mediaType, caption: pendingCaption }),
+          });
+          if (response.ok) {
+            const story = await response.json();
+            setStories((current) => [story as StoryItem, ...current]);
+            toast.success("Story verificado e publicado.");
+          }
+        });
+        URL.revokeObjectURL(pending.preview);
+        setPending(null);
+        setContentDeclarationAccepted(false);
+        setCaption("");
+        toast.success(UPLOAD_PENDING_MESSAGE);
+        return;
       }
 
       const storyRes = await fetch("/api/stories", {
