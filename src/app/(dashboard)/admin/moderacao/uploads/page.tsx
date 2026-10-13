@@ -48,8 +48,19 @@ export default async function AdminUploadModerationPage() {
     include: {
       owner: { select: { id: true, name: true, email: true } },
       reviewer: { select: { id: true, name: true, email: true } },
+      malwareScanJob: true,
     },
   });
+  const now = new Date();
+  const overdueQueueCutoff = new Date(now.getTime() - 5 * 60_000);
+  const stuckAssets = assets.filter((asset) => asset.status === "QUARANTINED" && (
+    !asset.malwareScanJob
+    || asset.malwareScanJob.status === "FAILED"
+    || (asset.malwareScanJob.status === "PROCESSING"
+      && Boolean(asset.malwareScanJob.leaseExpiresAt && asset.malwareScanJob.leaseExpiresAt < now))
+    || (["QUEUED", "RETRY"].includes(asset.malwareScanJob.status)
+      && asset.malwareScanJob.availableAt < overdueQueueCutoff)
+  ));
 
   return (
     <div>
@@ -57,6 +68,13 @@ export default async function AdminUploadModerationPage() {
         title="Uploads em quarentena"
         subtitle="Nenhum arquivo desta fila possui URL pública. Aprovação humana exige antimalware limpo."
       />
+      {stuckAssets.length > 0 ? (
+        <AdminPanel>
+          <p role="alert" style={{ margin: 0, color: "#fde68a", fontWeight: 800 }}>
+            Atenção: {stuckAssets.length} arquivo(s) estão em quarentena sem worker ativo, com lease vencido, fila atrasada ou tentativas esgotadas. Nenhum foi publicado automaticamente.
+          </p>
+        </AdminPanel>
+      ) : null}
       <div style={{ display: "grid", gap: 14 }}>
         {assets.length === 0 ? (
           <AdminPanel>
@@ -93,6 +111,7 @@ export default async function AdminUploadModerationPage() {
                   <br />Upload: {asset.createdAt.toLocaleString("pt-BR")}
                   <br />Revisor: {asset.reviewer?.name ?? asset.reviewer?.email ?? "pendente"}
                   <br />Decisão: {asset.reviewedById && asset.lastProcessedAt ? asset.lastProcessedAt.toLocaleString("pt-BR") : "pendente"}
+                  <br />Fila AV: {asset.malwareScanJob?.status ?? "sem job"} · tentativas {asset.malwareScanJob?.attempts ?? 0}/{asset.malwareScanJob?.maxAttempts ?? 5}
                 </p>
                 {asset.reviewReason ? <p style={{ color: "#e9d5ff", fontSize: 13 }}>Motivo da revisão: {asset.reviewReason}</p> : null}
                 {asset.failureReason ? <p style={{ color: "#fca5a5", fontSize: 13 }}>{asset.failureReason}</p> : null}

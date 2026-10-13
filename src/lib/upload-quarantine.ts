@@ -5,6 +5,7 @@ import type { Prisma } from "@prisma/client";
 import { evaluateMediaPublicationGates } from "@/lib/media-security";
 import { getMediaStorageProvider, type MediaStorageName } from "@/lib/media-storage";
 import { moderateFileContent, scanFileForVirus, type SecurityResult } from "@/lib/moderation";
+import { enqueueMalwareScan } from "@/lib/clamav-scan-queue";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
@@ -236,7 +237,11 @@ export async function quarantineUpload(input: QuarantineInput) {
   }
 }
 
-export async function processUploadAsset(assetId: string, suppliedBuffer?: Buffer) {
+export async function processUploadAsset(
+  assetId: string,
+  suppliedBuffer?: Buffer,
+  options: { enqueueRetry?: boolean } = {},
+) {
   let asset = await prisma.uploadAsset.findUnique({ where: { id: assetId } });
   if (!asset) throw new Error("Ativo de upload nao encontrado.");
   if (asset.status === "REJECTED") return asset;
@@ -274,6 +279,14 @@ export async function processUploadAsset(assetId: string, suppliedBuffer?: Buffe
     },
   });
   if (!malwarePassed) {
+    if (!malwareRejected && options.enqueueRetry !== false) {
+      await enqueueMalwareScan(asset.id).catch((cause) => {
+        console.error("[upload-quarantine] nao foi possivel enfileirar retry", {
+          assetId: asset.id,
+          reason: cause instanceof Error ? cause.message : "unknown",
+        });
+      });
+    }
     await auditAsset(null, asset.id, "Resultado da varredura antimalware.", { malware: safeResult(malware), failClosed: !malwareRejected });
     return prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
   }

@@ -1105,6 +1105,7 @@ model UploadAsset {
   owner          User                  @relation("UploadOwner", fields: [userId], references: [id], onDelete: Restrict)
   reviewer       User?                 @relation("UploadReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
   depictedPeople MediaDepictedPerson[]
+  malwareScanJob MalwareScanJob?
 
   @@unique([quarantineBucket, quarantinePath])
   @@index([userId, createdAt])
@@ -1113,6 +1114,26 @@ model UploadAsset {
   @@index([takedownStatus, status, createdAt])
   @@index([storageProvider, approvedBucket, approvedPath])
   @@index([fileHash])
+}
+
+model MalwareScanJob {
+  id             String   @id @default(cuid())
+  assetId        String   @unique
+  status         String   @default("QUEUED")
+  attempts       Int      @default(0)
+  maxAttempts    Int      @default(5)
+  availableAt    DateTime @default(now())
+  leaseToken     String?
+  leaseExpiresAt DateTime?
+  lastError      String?  @db.Text
+  completedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  asset UploadAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([status, availableAt])
+  @@index([leaseExpiresAt])
 }
 
 model ProfessionalProfileEvent {

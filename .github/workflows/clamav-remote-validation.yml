@@ -1,0 +1,97 @@
+name: ClamAV remote validation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build isolated image
+        shell: bash
+        run: |
+          set -euo pipefail
+          started=$(date +%s)
+          docker build --tag elitemodell-clamav-validation:${GITHUB_SHA} --file services/clamav-worker/Dockerfile .
+          finished=$(date +%s)
+          echo "REMOTE_BUILD_SECONDS=$((finished-started))"
+          docker image inspect elitemodell-clamav-validation:${GITHUB_SHA} \
+            --format 'DOCKER_IMAGE_ID={{.Id}} DOCKER_IMAGE_BYTES={{.Size}}'
+
+      - name: Start worker and measure cold start
+        shell: bash
+        run: |
+          set -euo pipefail
+          image=elitemodell-clamav-validation:${GITHUB_SHA}
+          started=$(date +%s%3N)
+          docker run --detach --name clamav-validation \
+            --memory=2g --cpus=1 --publish 18080:8080 \
+            --env REQUIRE_CLOUD_TASK_HEADER=true \
+            --env DATABASE_URL=postgresql://invalid:invalid@127.0.0.1:5432/invalid \
+            --env NEXT_PUBLIC_SUPABASE_URL=https://invalid.example \
+            --env SUPABASE_SERVICE_ROLE_KEY=synthetic-invalid-value \
+            "$image"
+          for attempt in $(seq 1 180); do
+            if curl --silent --fail http://127.0.0.1:18080/health >/dev/null; then
+              ready=$(date +%s%3N)
+              echo "COLD_START_MS=$((ready-started))"
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs clamav-validation
+          exit 1
+
+      - name: Measure memory and run real CLEAN and EICAR scans
+        shell: bash
+        run: |
+          set -euo pipefail
+          (for attempt in $(seq 1 120); do
+            docker stats clamav-validation --no-stream --format '{{.MemPerc}}' | tr -d '%' || true
+            sleep 1
+          done) > /tmp/memory-percent.log &
+          sampler=$!
+          docker exec clamav-validation sh /app/services/clamav-worker/smoke-test.sh
+          kill "$sampler" 2>/dev/null || true
+          wait "$sampler" 2>/dev/null || true
+          peak=$(sort -n /tmp/memory-percent.log | tail -1)
+          echo "RAM_MAX_PERCENT_OF_2G=${peak:-unknown}"
+          docker exec clamav-validation clamdscan --version
+          docker exec clamav-validation freshclam --version
+
+      - name: Validate authentication and fail-closed health
+        shell: bash
+        run: |
+          set -euo pipefail
+          auth_code=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request POST --header 'content-type: application/json' \
+            --data '{"assetId":"synthetic_asset_123"}' http://127.0.0.1:18080/tasks/scan)
+          test "$auth_code" = 403
+          echo "AUTH_WITHOUT_CLOUD_TASK=PASS"
+
+          docker exec clamav-validation pkill clamd
+          unavailable_code=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18080/health)
+          test "$unavailable_code" = 500
+          echo "CLAMD_UNAVAILABLE_FAIL_CLOSED=PASS"
+
+          docker exec --detach clamav-validation node -e \
+            "require('net').createServer(function () {}).listen(3310, '127.0.0.1')"
+          sleep 1
+          started=$(date +%s%3N)
+          timeout_code=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18080/health)
+          finished=$(date +%s%3N)
+          test "$timeout_code" = 500
+          elapsed=$((finished-started))
+          test "$elapsed" -ge 1800
+          test "$elapsed" -lt 5000
+          echo "CLAMD_TIMEOUT_FAIL_CLOSED=PASS TIMEOUT_MS=$elapsed"
+
+      - name: Diagnostic logs on failure
+        if: failure()
+        run: docker logs clamav-validation 2>&1 || true
