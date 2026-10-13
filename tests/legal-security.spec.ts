@@ -23,6 +23,13 @@ test.describe("juridico e seguranca - visitante", () => {
     expect(dataExport.status()).toBe(401);
   });
 
+  test("Bearer malformado falha fechado sem erro interno", async ({ request }) => {
+    const response = await request.get("/api/users/me/export", {
+      headers: { Authorization: "Bearer %%%invalid%%%" },
+    });
+    expect([401, 403]).toContain(response.status());
+  });
+
   test("pagamento, reserva e upload rejeitam visitante", async ({ request }) => {
     const [pix, card, booking, upload] = await Promise.all([
       request.post("/api/payments/pix", { data: {} }),

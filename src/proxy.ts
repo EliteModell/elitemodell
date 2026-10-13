@@ -84,11 +84,14 @@ export async function proxy(request: NextRequest) {
     return withAgeGateHeaders(NextResponse.next());
   }
 
+  // Auth.js v4 pode lancar ao interpretar Bearer/cookies malformados. Trate
+  // qualquer token invalido como ausencia de sessao, mantendo o proxy
+  // fail-closed em vez de devolver erro 500.
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
     secureCookie: request.nextUrl.protocol === "https:",
-  });
+  }).catch(() => null);
 
   if (!token) {
     if (isSensitivePublicContent) {

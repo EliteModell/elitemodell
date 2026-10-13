@@ -21,6 +21,15 @@ export async function OperationalLegalDocumentPage({ documentKey }: { documentKe
       document: { key: documentKey, internal: false },
     },
     orderBy: { createdAt: "desc" },
+  }).catch((error: unknown) => {
+    // A pagina continua informativa, mas sem documento/aceite, quando a fonte
+    // versionada esta indisponivel. Nao registre a mensagem do driver, pois ela
+    // pode conter detalhes de conexao.
+    console.error("[legal-document] Version lookup unavailable", {
+      errorType: error instanceof Error ? error.name : "UnknownError",
+      documentKey,
+    });
+    return null;
   });
 
   return (
@@ -42,7 +51,7 @@ export async function OperationalLegalDocumentPage({ documentKey }: { documentKe
           }}
         >
           <p style={{ margin: 0, color: "#f59e0b", fontWeight: 900, letterSpacing: ".08em", textTransform: "uppercase", fontSize: 12 }}>
-            {version?.status === OPERATIONAL_LEGAL_STATUS
+            {version?.status === OPERATIONAL_LEGAL_STATUS || !version
               ? "VERSAO OPERACIONAL DA EMPRESA - PENDENTE DE RATIFICACAO JURIDICA FINAL"
               : "DOCUMENTO JURIDICO VERSIONADO"}
           </p>
