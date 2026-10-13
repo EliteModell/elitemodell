@@ -17,7 +17,7 @@ ENV NODE_ENV=production \
     SCANNER_MAX_FILE_BYTES=262144000 \
     SCANNER_TIMEOUT_MS=300000
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates clamav-daemon clamav-freshclam netcat-openbsd tini \
+ && apt-get install -y --no-install-recommends ca-certificates clamav clamav-daemon clamav-freshclam clamdscan netcat-openbsd tini \
  && rm -rf /var/lib/apt/lists/* \
  && freshclam --stdout \
  && printf '\nTCPSocket 3310\nTCPAddr 127.0.0.1\n' >> /etc/clamav/clamd.conf \

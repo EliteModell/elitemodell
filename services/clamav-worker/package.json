@@ -2,6 +2,7 @@
   "name": "elitemodell-clamav-worker",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@prisma/client": "5.22.0",
     "@supabase/supabase-js": "2.105.3"
