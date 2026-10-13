@@ -10,6 +10,25 @@ permissions:
   contents: read
 
 jobs:
+  app-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://invalid:invalid@127.0.0.1:5432/invalid
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run db:validate
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run build
+      - run: npx playwright test --config tests/clamav-worker.playwright.config.ts
+      - run: npx playwright test --config tests/upload-processing.playwright.config.ts
+
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 30
