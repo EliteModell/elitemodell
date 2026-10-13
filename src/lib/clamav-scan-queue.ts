@@ -16,6 +16,9 @@ export async function enqueueMalwareScan(assetId: string) {
       leaseToken: null,
       leaseExpiresAt: null,
       completedAt: null,
+      taskName: null,
+      dispatchedAt: null,
+      lastDispatchError: null,
     },
   });
 }

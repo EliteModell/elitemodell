@@ -97,7 +97,7 @@ Replace every uppercase placeholder and review the active project before use.
 These commands intentionally stop before changing production.
 
 ```sh
-gcloud services enable cloudtasks.googleapis.com run.googleapis.com artifactregistry.googleapis.com
+gcloud services enable cloudtasks.googleapis.com cloudscheduler.googleapis.com run.googleapis.com artifactregistry.googleapis.com
 gcloud tasks queues create elitemodell-malware-scan --location=southamerica-east1 \
   --max-concurrent-dispatches=3 --max-dispatches-per-second=1 \
   --max-attempts=12 --min-backoff=30s --max-backoff=3600s --max-doublings=7
@@ -109,10 +109,25 @@ gcloud run services add-iam-policy-binding elitemodell-clamav \
   --role=roles/run.invoker
 ```
 
+After the private service exists, create one Scheduler job (one-minute cadence)
+that sends an authenticated OIDC `POST` to `/tasks/dispatch` with header
+`X-CloudScheduler: true`. The scheduler identity receives only
+`roles/run.invoker`. The header is defense in depth and is never treated as the
+identity boundary; Cloud Run IAM performs authentication.
+
+```sh
+gcloud scheduler jobs create http elitemodell-malware-dispatch \
+  --location=southamerica-east1 --schedule='* * * * *' \
+  --uri='REPLACE_PRIVATE_CLOUD_RUN_URL/tasks/dispatch' --http-method=POST \
+  --headers='X-CloudScheduler=true' \
+  --oidc-service-account-email='REPLACE_SCHEDULER_INVOKER_SERVICE_ACCOUNT' \
+  --oidc-token-audience='REPLACE_PRIVATE_CLOUD_RUN_URL'
+```
+
 The task creator needs `roles/cloudtasks.enqueuer` on the queue and
 `roles/iam.serviceAccountUser` on the OIDC invoker identity. The Cloud Tasks
-service agent needs `roles/iam.serviceAccountTokenCreator` if that automatic
-grant is absent. The worker identity gets Secret Manager access only to the three
+service agent must retain its automatically granted
+`roles/cloudtasks.serviceAgent`; legacy projects require verification. The worker identity gets Secret Manager access only to the three
 referenced secrets; it does not get Storage Admin because downloads use a
 short-lived signed URL issued with the existing private storage credential.
 

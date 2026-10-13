@@ -8,6 +8,10 @@ CREATE TABLE "MalwareScanJob" (
     "leaseToken" TEXT,
     "leaseExpiresAt" TIMESTAMP(3),
     "lastError" TEXT,
+    "taskName" TEXT,
+    "dispatchedAt" TIMESTAMP(3),
+    "dispatchAttempts" INTEGER NOT NULL DEFAULT 0,
+    "lastDispatchError" TEXT,
     "completedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -15,6 +19,7 @@ CREATE TABLE "MalwareScanJob" (
 );
 
 CREATE UNIQUE INDEX "MalwareScanJob_assetId_key" ON "MalwareScanJob"("assetId");
+CREATE UNIQUE INDEX "MalwareScanJob_taskName_key" ON "MalwareScanJob"("taskName");
 CREATE INDEX "MalwareScanJob_status_availableAt_idx" ON "MalwareScanJob"("status", "availableAt");
 CREATE INDEX "MalwareScanJob_leaseExpiresAt_idx" ON "MalwareScanJob"("leaseExpiresAt");
 

@@ -38,6 +38,18 @@ spec:
               value: "262144000"
             - name: SCANNER_TIMEOUT_MS
               value: "300000"
+            - name: REQUIRE_CLOUD_SCHEDULER_HEADER
+              value: "true"
+            - name: CLOUD_TASKS_PROJECT
+              value: "REPLACE_PROJECT_ID"
+            - name: CLOUD_TASKS_LOCATION
+              value: "southamerica-east1"
+            - name: CLOUD_TASKS_QUEUE
+              value: "elitemodell-malware-scan"
+            - name: CLAMAV_WORKER_URL
+              value: "REPLACE_PRIVATE_CLOUD_RUN_URL"
+            - name: CLOUD_TASKS_OIDC_SERVICE_ACCOUNT
+              value: "REPLACE_TASK_INVOKER_SERVICE_ACCOUNT"
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:

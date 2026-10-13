@@ -257,6 +257,18 @@ export async function processUploadAsset(
     where: { id: "default" },
     select: { uploadSecurityEnabled: true, uploadAvProvider: true, uploadModerationProvider: true },
   });
+  if (process.env.UPLOAD_AV_ASYNC_ENABLED === "true" && settings?.uploadSecurityEnabled !== false) {
+    await enqueueMalwareScan(asset.id);
+    return prisma.uploadAsset.update({
+      where: { id: asset.id },
+      data: {
+        status: "QUARANTINED",
+        malwareStatus: "PENDING",
+        malwareProvider: "CLAMAV_CLOUD_RUN",
+        failureReason: null,
+      },
+    });
+  }
   const buffer = suppliedBuffer ?? await downloadAssetForProcessing(asset);
   const avProvider = settings?.uploadSecurityEnabled === false ? "MANUAL" : settings?.uploadAvProvider;
   const moderationProvider = settings?.uploadSecurityEnabled === false ? "MANUAL" : settings?.uploadModerationProvider;

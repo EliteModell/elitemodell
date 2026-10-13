@@ -75,4 +75,18 @@ test.describe("candidato ClamAV assincrono", () => {
     expect(source).toContain('event: "scan_lease_lost"');
     expect(source).toContain('status: exhausted ? "FAILED" : "RETRY"');
   });
+
+  test("dispatcher duravel usa Cloud Tasks com OIDC e recuperacao independente do navegador", () => {
+    const worker = readFileSync("services/clamav-worker/server.ts", "utf8");
+    const upload = readFileSync("src/lib/upload-quarantine.ts", "utf8");
+    const migration = readFileSync("prisma/migrations/20261011120000_clamav_async_scan_queue/migration.sql", "utf8");
+    expect(worker).toContain('request.url === "/tasks/dispatch"');
+    expect(worker).toContain('request.headers["x-cloudscheduler"] !== "true"');
+    expect(worker).toContain("metadata.google.internal");
+    expect(worker).toContain("oidcToken: { serviceAccountEmail: oidcServiceAccountEmail, audience: workerUrl }");
+    expect(worker).toContain("malware-${job.id}");
+    expect(upload).toContain('process.env.UPLOAD_AV_ASYNC_ENABLED === "true"');
+    expect(migration).toContain('"taskName" TEXT');
+    expect(migration).toContain('CREATE UNIQUE INDEX "MalwareScanJob_taskName_key"');
+  });
 });

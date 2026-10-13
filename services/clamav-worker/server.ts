@@ -23,6 +23,74 @@ function required(name: string) {
   return value;
 }
 
+function cloudTasksParent() {
+  return `projects/${required("CLOUD_TASKS_PROJECT")}/locations/${required("CLOUD_TASKS_LOCATION")}/queues/${required("CLOUD_TASKS_QUEUE")}`;
+}
+
+async function metadataAccessToken() {
+  const response = await fetch("http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token", {
+    headers: { "metadata-flavor": "Google" },
+    signal: AbortSignal.timeout(5_000),
+  });
+  if (!response.ok) throw new Error(`Metadata token failed: HTTP ${response.status}`);
+  const body = await response.json() as { access_token?: string };
+  if (!body.access_token) throw new Error("Metadata token response is invalid");
+  return body.access_token;
+}
+
+async function dispatchQueuedJobs(limit = 50) {
+  const jobs = await prisma.malwareScanJob.findMany({
+    where: { status: "QUEUED", availableAt: { lte: new Date() }, completedAt: null, taskName: null },
+    select: { id: true, assetId: true },
+    orderBy: { createdAt: "asc" },
+    take: Math.max(1, Math.min(limit, 100)),
+  });
+  if (!jobs.length) return { selected: 0, dispatched: 0, failed: 0 };
+  const parent = cloudTasksParent();
+  const workerUrl = required("CLAMAV_WORKER_URL").replace(/\/$/, "");
+  const oidcServiceAccountEmail = required("CLOUD_TASKS_OIDC_SERVICE_ACCOUNT");
+  const token = await metadataAccessToken();
+  let dispatched = 0;
+  let failed = 0;
+  for (const job of jobs) {
+    const taskName = `${parent}/tasks/malware-${job.id}`;
+    const task = {
+      name: taskName,
+      httpRequest: {
+        httpMethod: "POST",
+        url: `${workerUrl}/tasks/scan`,
+        headers: { "Content-Type": "application/json" },
+        body: Buffer.from(JSON.stringify({ assetId: job.assetId })).toString("base64"),
+        oidcToken: { serviceAccountEmail: oidcServiceAccountEmail, audience: workerUrl },
+      },
+    };
+    try {
+      const response = await fetch(`https://cloudtasks.googleapis.com/v2/${parent}/tasks`, {
+        method: "POST",
+        headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+        body: JSON.stringify({ task }),
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!response.ok && response.status !== 409) throw new Error(`Cloud Tasks create failed: HTTP ${response.status}`);
+      await prisma.malwareScanJob.updateMany({
+        where: { id: job.id, taskName: null, status: "QUEUED" },
+        data: { taskName, dispatchedAt: new Date(), dispatchAttempts: { increment: 1 }, lastDispatchError: null },
+      });
+      dispatched += 1;
+    } catch (cause) {
+      failed += 1;
+      await prisma.malwareScanJob.update({
+        where: { id: job.id },
+        data: {
+          dispatchAttempts: { increment: 1 },
+          lastDispatchError: (cause instanceof Error ? cause.message : "Dispatch failure").slice(0, 2_000),
+        },
+      }).catch(() => undefined);
+    }
+  }
+  return { selected: jobs.length, dispatched, failed };
+}
+
 function json(response: import("node:http").ServerResponse, status: number, body: unknown) {
   response.writeHead(status, { "content-type": "application/json", "cache-control": "no-store" });
   response.end(JSON.stringify(body));
@@ -253,6 +321,13 @@ const server = createServer(async (request, response) => {
       await assertFreshSignatures();
       await assertClamdAvailable();
       return json(response, 200, { ok: true });
+    }
+    if (request.method === "POST" && request.url === "/tasks/dispatch") {
+      if (process.env.REQUIRE_CLOUD_SCHEDULER_HEADER !== "false" && request.headers["x-cloudscheduler"] !== "true") {
+        return json(response, 403, { error: "cloud_scheduler_required" });
+      }
+      const result = await dispatchQueuedJobs();
+      return json(response, result.failed ? 503 : 200, result);
     }
     if (request.method !== "POST" || request.url !== "/tasks/scan") return json(response, 404, { error: "not_found" });
     if (process.env.REQUIRE_CLOUD_TASK_HEADER !== "false" && !request.headers["x-cloudtasks-taskname"]) {
