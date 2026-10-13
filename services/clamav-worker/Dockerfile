@@ -28,7 +28,8 @@ WORKDIR /app
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY --from=dependencies /app/prisma ./prisma
 COPY services/clamav-worker ./services/clamav-worker
-RUN chmod 0555 services/clamav-worker/entrypoint.sh
+RUN sed -i 's/\r$//' services/clamav-worker/entrypoint.sh services/clamav-worker/container-validation.sh \
+ && chmod 0555 services/clamav-worker/entrypoint.sh services/clamav-worker/container-validation.sh
 USER root
 EXPOSE 8080
 ENTRYPOINT ["/usr/bin/tini", "--", "/app/services/clamav-worker/entrypoint.sh"]
