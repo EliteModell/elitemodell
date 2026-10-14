@@ -15,10 +15,14 @@ import {
   TwilioVerifyProviderError,
 } from "../src/lib/twilio-verify";
 import {
+  createAsaasCustomer,
   cancelAsaasPayment,
   refundAsaasPayment,
   sanitizeAsaasPayment,
 } from "../src/lib/asaas";
+import { createPersonaInquiry } from "../src/lib/persona";
+import { externalFetch } from "../src/lib/homologation-isolation";
+import { validateHomologationRuntime } from "../src/lib/homologation-runtime-guard";
 import {
   moderateFileContent,
   scanFileForVirus,
@@ -29,6 +33,46 @@ import {
   parseProfessionalPlanReference,
   professionalPlanReference,
 } from "../src/lib/professional-plans";
+
+function homologationJwt(role: "anon" | "service_role") {
+  const payload = Buffer.from(JSON.stringify({ ref: "jbdshpbtqspzfzjngqbg", role })).toString("base64url");
+  return `header.${payload}.signature`;
+}
+
+function runtimeEnvironment(): Record<string, string | undefined> {
+  return {
+    HOMOLOGATION_MODE: "isolated",
+    HOMOLOGATION_RUNTIME_ID: "elite-preview-20261013-v1",
+    DATABASE_URL: "postgresql://synthetic:synthetic@db.jbdshpbtqspzfzjngqbg.supabase.co:5432/postgres",
+    DIRECT_URL: "postgresql://synthetic:synthetic@db.jbdshpbtqspzfzjngqbg.supabase.co:5432/postgres",
+    NEXT_PUBLIC_SUPABASE_URL: "https://jbdshpbtqspzfzjngqbg.supabase.co",
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: homologationJwt("anon"),
+    SUPABASE_SERVICE_ROLE_KEY: homologationJwt("service_role"),
+    NEXTAUTH_SECRET: "nextauth-synthetic-secret-000000000001",
+    AUTH_SECRET: "auth-synthetic-secret-00000000000000002",
+    MEDIA_SIGNING_SECRET: "media-synthetic-secret-0000000000003",
+    UPLOAD_QUARANTINE_BUCKET: "upload-quarantine",
+    APPROVED_MEDIA_BUCKET: "approved-media",
+    HOMOLOGATION_EXTERNAL_MODE: "mock", EMAIL_DELIVERY_MODE: "mock", PAYMENT_PROVIDER_MODE: "mock",
+    REDIS_PROVIDER_MODE: "mock", CLOUD_TASKS_PROVIDER_MODE: "mock", KYC_PROVIDER: "MOCK",
+  };
+}
+
+test.describe("homologation runtime guard", () => {
+  test("accepts the complete isolated runtime identity", () => {
+    expect(validateHomologationRuntime(runtimeEnvironment())).toBe(true);
+  });
+
+  test("blocks a Production Supabase identity without printing values", () => {
+    expect(() => validateHomologationRuntime({ ...runtimeEnvironment(), NEXT_PUBLIC_SUPABASE_URL: "https://jgvmpbrsxegwkrgjncsv.supabase.co" }))
+      .toThrow(/BLOCKED/);
+  });
+
+  test("blocks homologation variables in Production", () => {
+    expect(() => validateHomologationRuntime({ ...runtimeEnvironment(), VERCEL_ENV: "production" }))
+      .toThrow(/leaked into Production/);
+  });
+});
 
 test.describe("modelo comercial do Impulso Elite", () => {
   test("mantém uma única oferta pública de R$ 16,99", () => {
@@ -117,6 +161,14 @@ test.describe("adaptadores de fornecedores", () => {
     delete process.env.CLAMAV_PORT;
     delete process.env.ASAAS_API_KEY;
     delete process.env.ASAAS_ENVIRONMENT;
+    delete process.env.HOMOLOGATION_MODE;
+    delete process.env.HOMOLOGATION_EXTERNAL_MODE;
+    delete process.env.EMAIL_DELIVERY_MODE;
+    delete process.env.PAYMENT_PROVIDER_MODE;
+    delete process.env.KYC_PROVIDER;
+    delete process.env.REDIS_PROVIDER_MODE;
+    delete process.env.VERCEL_ENV;
+    delete process.env.VERCEL_GIT_COMMIT_REF;
   });
 
   test("sem antivirus configurado o arquivo permanece pendente e inseguro", async () => {
@@ -236,6 +288,38 @@ test.describe("adaptadores de fornecedores", () => {
       confirmedDate: null,
       invoiceUrl: "https://example.invalid/invoice",
     });
+  });
+
+  test("preview isolado usa mocks sem chamadas externas", async () => {
+    process.env.HOMOLOGATION_MODE = "isolated";
+    process.env.VERCEL_ENV = "preview";
+    process.env.VERCEL_GIT_COMMIT_REF = "codex/security-audit-20261013";
+    process.env.HOMOLOGATION_EXTERNAL_MODE = "mock";
+    process.env.EMAIL_DELIVERY_MODE = "mock";
+    process.env.PAYMENT_PROVIDER_MODE = "mock";
+    process.env.KYC_PROVIDER = "MOCK";
+    process.env.REDIS_PROVIDER_MODE = "mock";
+    const originalFetch = globalThis.fetch;
+    let networkCalls = 0;
+    globalThis.fetch = async () => { networkCalls += 1; throw new Error("network forbidden"); };
+    try {
+      await expect(createAsaasCustomer({ name: "Synthetic" })).resolves.toMatchObject({ id: /mock_/ });
+      await expect(createPersonaInquiry("synthetic-user", "https://preview.invalid/callback")).resolves.toMatchObject({ inquiryId: "mock_inq_synthetic-user" });
+      const key = `mock-redis-${crypto.randomUUID()}`;
+      expect((await checkRateLimitAsync(key, 1, 60_000)).allowed).toBe(true);
+      expect((await scanFileForVirus(Buffer.from("synthetic"))).status).toBe("PENDING");
+      expect((await moderateFileContent(Buffer.from("synthetic"), "x.jpg", "image/jpeg")).status).toBe("PENDING");
+      await expect(externalFetch("https://api.example.invalid")).rejects.toThrow(/External network is disabled/);
+      expect(networkCalls).toBe(0);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("mock e bloqueado fora do preview isolado", async () => {
+    process.env.PAYMENT_PROVIDER_MODE = "mock";
+    process.env.VERCEL_ENV = "production";
+    await expect(createAsaasCustomer({ name: "Synthetic" })).rejects.toThrow(/restricted to the isolated homologation branch/);
   });
 });
 

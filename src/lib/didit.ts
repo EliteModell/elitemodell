@@ -186,7 +186,7 @@ export function isDigitAvailable() {
 export async function createDigitSession(vendorData: string, callbackUrl: string): Promise<DiditSession> {
   const { apiKey, workflowId } = getDigitConfig();
 
-  const res = await fetch(`${DIDIT_API_BASE}/v3/session/`, {
+  const res = await externalFetch(`${DIDIT_API_BASE}/v3/session/`, {
     method: "POST",
     headers: {
       "x-api-key": apiKey,
@@ -213,7 +213,7 @@ export async function findDigitSessionByVendorData(vendorData: string): Promise<
   const url = new URL(`${DIDIT_API_BASE}/v2/sessions`);
   url.searchParams.set("vendor_data", vendorData);
 
-  const res = await fetch(url, { headers: { "x-api-key": apiKey }, cache: "no-store", signal: AbortSignal.timeout(8_000) });
+  const res = await externalFetch(url, { headers: { "x-api-key": apiKey }, cache: "no-store", signal: AbortSignal.timeout(8_000) });
   if (!res.ok) {
     throw new Error(`Didit session reconciliation failed with status ${res.status}`);
   }
@@ -257,7 +257,7 @@ export async function findDigitSessionByVendorData(vendorData: string): Promise<
 export async function fetchDigitSessionDecision(sessionId: string): Promise<DiditDecision> {
   const { apiKey } = getDigitConfig();
 
-  const res = await fetch(`${DIDIT_API_BASE}/v3/session/${sessionId}/decision/`, {
+  const res = await externalFetch(`${DIDIT_API_BASE}/v3/session/${sessionId}/decision/`, {
     headers: { "x-api-key": apiKey },
     cache: "no-store",
     signal: AbortSignal.timeout(8_000),
@@ -338,3 +338,4 @@ export function isAdult(dateOfBirth: string | null): boolean {
   }
   return age >= 18;
 }
+import { externalFetch } from "@/lib/homologation-isolation";

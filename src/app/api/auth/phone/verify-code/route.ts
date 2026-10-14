@@ -126,7 +126,7 @@ async function verifyFirebasePhoneIdToken(idToken: string, expectedPhone: string
     throw new Error("Firebase nao esta configurado no servidor.");
   }
 
-  const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`, {
+  const res = await externalFetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ idToken }),
@@ -515,3 +515,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Nao foi possivel verificar o codigo." }, { status: 500 });
   }
 }
+import { externalFetch } from "@/lib/homologation-isolation";

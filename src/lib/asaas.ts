@@ -1,3 +1,5 @@
+import { isHomologationMock } from "@/lib/homologation-isolation";
+
 type AsaasEnvironment = "sandbox" | "production";
 
 const DEFAULT_API_URLS: Record<AsaasEnvironment, string> = {
@@ -84,6 +86,13 @@ export function getAsaasConfig() {
 }
 
 async function asaasRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  if (isHomologationMock("PAYMENT_PROVIDER_MODE")) {
+    const body = init?.body ? JSON.parse(String(init.body)) : {};
+    const id = `mock_${Buffer.from(`${path}:${body.externalReference ?? "synthetic"}`).toString("base64url").slice(0, 28)}`;
+    if (path === "/customers") return { id: `cus_${id}` } as T;
+    if (path.endsWith("/pixQrCode")) return { encodedImage: "", payload: `MOCK-PIX-${id}`, expirationDate: new Date(Date.now() + 15 * 60_000).toISOString() } as T;
+    return { id, status: "PENDING", externalReference: body.externalReference ?? null, value: body.value, billingType: body.billingType } as T;
+  }
   const config = getAsaasConfig();
 
   if (!config.apiKey) {

@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://elitemodell.com.br";
-  const res = await fetch("https://places.googleapis.com/v1/places:autocomplete", {
+  const res = await externalFetch("https://places.googleapis.com/v1/places:autocomplete", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -75,3 +75,4 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ suggestions, provider: "google" });
 }
+import { externalFetch } from "@/lib/homologation-isolation";

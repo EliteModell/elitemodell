@@ -31,7 +31,7 @@ async function verifyTurnstile(token: string, ip: string): Promise<CaptchaResult
   }
   if (!token) return { success: false, error: "Token CAPTCHA ausente." };
 
-  const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+  const res = await externalFetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ secret, response: token, remoteip: ip }),
@@ -50,7 +50,7 @@ async function verifyRecaptcha(token: string): Promise<CaptchaResult> {
   if (!token) return { success: false, error: "Token CAPTCHA ausente." };
 
   const url = `https://www.google.com/recaptcha/api/siteverify?secret=${secret}&response=${encodeURIComponent(token)}`;
-  const res = await fetch(url, { method: "POST" });
+  const res = await externalFetch(url, { method: "POST" });
   const data = (await res.json()) as { success: boolean; score?: number };
   // reCAPTCHA v3: score < 0.5 indica provável bot
   const passed = data.success && (data.score === undefined || data.score >= 0.5);
@@ -71,3 +71,4 @@ export async function verifyCaptcha(token: string, ip = ""): Promise<CaptchaResu
   }
   return { success: true }; // bypass em dev
 }
+import { externalFetch } from "@/lib/homologation-isolation";

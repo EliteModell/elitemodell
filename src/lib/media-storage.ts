@@ -165,7 +165,7 @@ export class BunnyMediaStorageProvider implements MediaStorageProvider {
 
   private async request(method: string, bucket: string, path: string, body?: Buffer, contentType?: string) {
     const config = bunnyConfiguration();
-    const response = await fetch(bunnyObjectUrl(config, bucket, path), {
+    const response = await externalFetch(bunnyObjectUrl(config, bucket, path), {
       method,
       headers: {
         AccessKey: config.accessKey,
@@ -269,3 +269,4 @@ export function getActiveMediaStorageProvider() {
 export function bunnyProductionEnabled() {
   return process.env.BUNNY_PRODUCTION_ENABLED === "true";
 }
+import { externalFetch } from "@/lib/homologation-isolation";

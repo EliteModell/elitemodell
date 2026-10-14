@@ -23,7 +23,7 @@ export async function GET(
     return NextResponse.json({ error: "CEP inválido." }, { status: 400 });
   }
 
-  const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`, {
+  const res = await externalFetch(`https://viacep.com.br/ws/${cleanCep}/json/`, {
     headers: { Accept: "application/json" },
     next: { revalidate: 60 * 60 * 24 * 30 },
   });
@@ -46,3 +46,4 @@ export async function GET(
     state: data.uf ?? "",
   });
 }
+import { externalFetch } from "@/lib/homologation-isolation";

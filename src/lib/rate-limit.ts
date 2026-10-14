@@ -109,6 +109,14 @@ export function checkRateLimitAsync(
   windowMs = 5 * 60 * 1000
 ): Promise<RateLimitResult> {
   const key = `rl:${identifier}`;
+  if (process.env.REDIS_PROVIDER_MODE === "mock") {
+    const isolated = process.env.HOMOLOGATION_MODE === "isolated" ||
+      (process.env.VERCEL_ENV === "preview" && process.env.VERCEL_GIT_COMMIT_REF === "codex/security-audit-20261013");
+    if (!isolated || process.env.VERCEL_ENV === "production") {
+      return Promise.reject(new Error("REDIS_PROVIDER_MODE=mock is restricted to isolated homologation."));
+    }
+    return Promise.resolve(checkInMemory(key, maxRequests, windowMs));
+  }
   if (hasRedisConfig()) return checkRedis(key, maxRequests, windowMs);
   return Promise.resolve(checkInMemory(key, maxRequests, windowMs));
 }

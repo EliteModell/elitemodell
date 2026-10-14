@@ -41,6 +41,9 @@ export function isFirebaseConfigured(): boolean {
 
 export function getFirebaseClientApp(): FirebaseApp {
   assertFirebaseClientConfig();
+  if (firebaseConfig.projectId?.endsWith(".invalid") || firebaseConfig.authDomain?.endsWith(".invalid")) {
+    throw new Error("Firebase desativado no preview isolado.");
+  }
   return getApps().length ? getApp() : initializeApp(firebaseConfig);
 }
 

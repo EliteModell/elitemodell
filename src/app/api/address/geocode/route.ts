@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
     if (!apiKey) {
       return NextResponse.json({ error: "GOOGLE_MAPS_API_KEY não configurada." }, { status: 501 });
     }
-    const res = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`, {
+    const res = await externalFetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`, {
       headers: {
         "X-Goog-Api-Key": apiKey,
         "X-Goog-FieldMask": "id,formattedAddress,location,addressComponents",
@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
 
     // PRIMARY: BigDataCloud (free, no API key required)
     try {
-      const bdcRes = await fetch(
+      const bdcRes = await externalFetch(
         `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=pt`,
         {
           headers: { "Referer": appUrl },
@@ -145,7 +145,7 @@ export async function GET(req: NextRequest) {
         url.searchParams.set("latlng", `${latitude},${longitude}`);
         url.searchParams.set("language", "pt-BR");
         url.searchParams.set("key", apiKey);
-        const res = await fetch(url, {
+        const res = await externalFetch(url, {
           headers: { "Referer": appUrl },
           signal: AbortSignal.timeout(4500),
         });
@@ -203,7 +203,7 @@ export async function GET(req: NextRequest) {
   url.searchParams.set("language", "pt-BR");
   url.searchParams.set("key", apiKey);
 
-  const res = await fetch(url, { headers: { "Referer": appUrl } });
+  const res = await externalFetch(url, { headers: { "Referer": appUrl } });
   if (!res.ok) return NextResponse.json({ error: "Erro ao geocodificar endereço." }, { status: 502 });
 
   const data = await res.json();
@@ -222,3 +222,4 @@ export async function GET(req: NextRequest) {
     longitude: result.geometry?.location?.lng,
   });
 }
+import { externalFetch } from "@/lib/homologation-isolation";

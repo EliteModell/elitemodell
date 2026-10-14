@@ -154,7 +154,7 @@ function safeProviderMessage(payload: TwilioVerifyPayload, fallback: string) {
 
 async function twilioVerifyRequest(path: string, body: URLSearchParams) {
   const config = getTwilioVerifyConfig();
-  const response = await fetch(
+  const response = await externalFetch(
     `https://verify.twilio.com/v2/Services/${config.serviceSid}/${path}`,
     {
       method: "POST",
@@ -210,7 +210,7 @@ export async function sendTwilioVerification(
 }
 
 async function twilioReadJson<T>(url: string, config: TwilioVerifyConfig): Promise<T> {
-  const response = await fetch(url, {
+  const response = await externalFetch(url, {
     method: "GET",
     headers: { Authorization: authorizationHeader(config.accountSid, config.authToken) },
     cache: "no-store",
@@ -344,3 +344,4 @@ export async function checkTwilioVerification(phone: string, code: string) {
 export function checkTwilioSmsVerification(phone: string, code: string) {
   return checkTwilioVerification(phone, code);
 }
+import { externalFetch } from "@/lib/homologation-isolation";

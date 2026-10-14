@@ -187,7 +187,7 @@ class TwilioOtpDeliveryProvider implements OtpDeliveryProvider {
       Locale: "pt-BR",
     });
 
-    const response = await fetch(`https://verify.twilio.com/v2/Services/${serviceSid}/Verifications`, {
+    const response = await externalFetch(`https://verify.twilio.com/v2/Services/${serviceSid}/Verifications`, {
       method: "POST",
       headers: {
         Authorization: twilioAuthHeader(accountSid, authToken),
@@ -214,7 +214,7 @@ class TwilioOtpDeliveryProvider implements OtpDeliveryProvider {
       Body: otpMessage(input.code),
     });
 
-    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+    const response = await externalFetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
       method: "POST",
       headers: {
         Authorization: twilioAuthHeader(accountSid, authToken),
@@ -255,7 +255,7 @@ class WhatsAppCloudOtpDeliveryProvider implements OtpDeliveryProvider {
 
     this.assertCredentials();
 
-    const response = await fetch(
+    const response = await externalFetch(
       `https://graph.facebook.com/${graphVersion()}/${this.phoneNumberId}/messages`,
       {
         method: "POST",
@@ -305,7 +305,7 @@ class ZenviaOtpDeliveryProvider implements OtpDeliveryProvider {
     }
 
     const to = `+55${input.phone}`;
-    const response = await fetch("https://api.zenvia.com/v2/channels/sms/messages", {
+    const response = await externalFetch("https://api.zenvia.com/v2/channels/sms/messages", {
       method: "POST",
       headers: {
         "X-API-TOKEN": this.apiToken,
@@ -406,3 +406,4 @@ export function getOtpDeliveryProvider(): OtpDeliveryProvider {
 
   throw new OtpDeliveryConfigurationError(`Provider OTP invalido: ${provider}.`);
 }
+import { externalFetch } from "@/lib/homologation-isolation";

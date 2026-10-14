@@ -248,7 +248,7 @@ async function revokeExternalAccounts(userId: string) {
   for (const account of accounts) {
     if (account.provider === "google" && (account.access_token || account.refresh_token)) {
       const token = account.access_token || account.refresh_token;
-      const response = await fetch("https://oauth2.googleapis.com/revoke", {
+      const response = await externalFetch("https://oauth2.googleapis.com/revoke", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({ token: token! }),
@@ -773,3 +773,4 @@ export async function processPendingDeletionJobs(limit = 5) {
   }
   return results;
 }
+import { externalFetch } from "@/lib/homologation-isolation";

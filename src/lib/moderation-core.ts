@@ -243,6 +243,12 @@ export async function scanFileForVirus(
   mimeType = "application/octet-stream",
   options: ProviderOptions = {},
 ): Promise<SecurityResult> {
+  if (process.env.HOMOLOGATION_EXTERNAL_MODE === "mock") {
+    const isolated = process.env.HOMOLOGATION_MODE === "isolated" ||
+      (process.env.VERCEL_ENV === "preview" && process.env.VERCEL_GIT_COMMIT_REF === "codex/security-audit-20261013");
+    if (!isolated || process.env.VERCEL_ENV === "production") return errorResult("MOCK", "Mock bloqueado fora da homologacao isolada.");
+    return pending("MOCK_AV", "Objeto sintetico mantido em quarentena; nenhuma chamada externa realizada.");
+  }
   const provider = normalizedProvider(
     options.provider || process.env.UPLOAD_AV_PROVIDER,
     "CLAMAV",
@@ -281,6 +287,12 @@ export async function moderateFileContent(
   mimeType: string,
   options: ProviderOptions = {},
 ): Promise<SecurityResult> {
+  if (process.env.HOMOLOGATION_EXTERNAL_MODE === "mock") {
+    const isolated = process.env.HOMOLOGATION_MODE === "isolated" ||
+      (process.env.VERCEL_ENV === "preview" && process.env.VERCEL_GIT_COMMIT_REF === "codex/security-audit-20261013");
+    if (!isolated || process.env.VERCEL_ENV === "production") return errorResult("MOCK", "Mock bloqueado fora da homologacao isolada.");
+    return pending("MOCK_MODERATION", "Revisao manual obrigatoria; nenhuma chamada externa realizada.");
+  }
   const provider = normalizedProvider(
     options.provider || process.env.UPLOAD_MODERATION_PROVIDER,
     "MANUAL",

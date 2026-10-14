@@ -1,3 +1,5 @@
+import { isHomologationMock } from "@/lib/homologation-isolation";
+
 const PERSONA_API_BASE = "https://api.withpersona.com/api/v1";
 const PERSONA_HOSTED_FLOW_BASE = "https://inquiry.withpersona.com/verify";
 
@@ -165,6 +167,9 @@ export function personaProviderLabel(provider?: string | null, sessionId?: strin
 }
 
 export async function createPersonaInquiry(userId: string, redirectUri: string) {
+  if (process.env.KYC_PROVIDER === "MOCK" && isHomologationMock("HOMOLOGATION_EXTERNAL_MODE")) {
+    return { inquiryId: `mock_inq_${userId}`, sessionToken: undefined, oneTimeLink: undefined };
+  }
   const { apiKey, templateId, apiVersion } = getPersonaConfig();
 
   if (!apiKey || !templateId) {
@@ -298,6 +303,12 @@ function timingSafeEqualHex(a: string, b: string) {
 export async function fetchPersonaInquiryDetails(
   inquiryId: string,
 ): Promise<PersonaInquiryDetails> {
+  if (process.env.KYC_PROVIDER === "MOCK" && isHomologationMock("HOMOLOGATION_EXTERNAL_MODE")) {
+    return {
+      data: { id: inquiryId, type: "inquiry", attributes: { status: "pending", "is-sandbox": true } },
+      included: [],
+    } as PersonaInquiryDetails;
+  }
   const { apiKey, apiVersion } = getPersonaConfig();
   if (!apiKey) {
     throw new PersonaIntegrationError(

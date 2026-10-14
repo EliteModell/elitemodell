@@ -1,5 +1,6 @@
 import "server-only";
 import { professionalSubmissionReceiptIdempotencyKey } from "@/lib/email-idempotency";
+import { isHomologationMock } from "@/lib/homologation-isolation";
 
 export type AuthEmailActionType =
   | "signup"
@@ -189,6 +190,9 @@ export async function sendAuthEmail(
   email: AuthEmail,
   options?: { idempotencyKey?: string; timeoutMs?: number },
 ) {
+  if (isHomologationMock("EMAIL_DELIVERY_MODE")) {
+    return `mock-email-${options?.idempotencyKey ?? "synthetic"}`;
+  }
   const resendKey = process.env.RESEND_API_KEY;
   if (!resendKey) {
     console.error("[auth-email] RESEND_API_KEY ausente");

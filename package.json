@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "turbo": "next dev --turbo",
-    "build": "prisma generate && next build --webpack",
+    "build": "npm run guard:homologation && prisma generate && next build --webpack",
+    "guard:homologation": "node scripts/validate-homologation-env.cjs",
+    "test:homologation-access": "node scripts/validate-homologation-access.cjs",
+    "test:auth-security": "node scripts/validate-auth-security.cjs",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
