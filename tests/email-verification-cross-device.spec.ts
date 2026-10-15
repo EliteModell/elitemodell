@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createEmailVerificationAttempt, verifyEmailVerificationAttempt } from "../src/lib/email-verification-attempt";
+import { createEmailVerificationAttempt, verifyEmailVerificationAttempt } from "../src/lib/email-verification-attempt-core";
 
 test.describe("confirmacao de email entre dispositivos", () => {
   test.beforeEach(() => {
