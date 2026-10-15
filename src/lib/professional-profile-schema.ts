@@ -55,6 +55,7 @@ export const createProfessionalSchema = z.object({
   approximateLocation: z.string().max(160).optional(),
   image: z.string().optional(),
   galleryUrls: z.array(z.string()).optional().default([]),
+  presentationVideoUrl: z.string().optional(),
   docType: z.string().optional(),
   docFrenteUrl: z.string().optional(),
   docVersoUrl: z.string().optional(),

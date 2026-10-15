@@ -166,9 +166,25 @@ export async function PATCH(req: NextRequest) {
     } else if (step === 6) {
       const urls = [text(form.mainPhotoUrl), ...list(form.galleryUrls)].filter(Boolean);
       await assertOwnedUploadMediaUrls({ urls, requestUrl: req.url, ownerId: session.user.id, allowedFolderPrefixes: ["profiles"] });
+      const presentationVideoUrl = text(form.presentationVideoUrl);
+      if (presentationVideoUrl) {
+        await assertOwnedUploadMediaUrls({
+          urls: [presentationVideoUrl],
+          requestUrl: req.url,
+          ownerId: session.user.id,
+          allowedFolderPrefixes: ["profile-videos"],
+        });
+      }
       const normalized = urls.map((url) => normalizeControlledMediaUrl(url)).filter((url): url is string => Boolean(url));
+      const normalizedPresentationVideo = normalizeControlledMediaUrl(presentationVideoUrl);
       await prisma.professional.update({ where: { id: professional.id }, data: {
-        ...common, image: null, galleryUrls: [], photos: { deleteMany: {}, create: normalized.map((url, order) => ({ url, order, cover: order === 0 })) },
+        ...common,
+        image: null,
+        galleryUrls: [],
+        presentationVideoUrl: normalizedPresentationVideo,
+        presentationVideoStatus: normalizedPresentationVideo ? "PENDING_REVIEW" : "NONE",
+        presentationVideoRejectReason: null,
+        photos: { deleteMany: {}, create: normalized.map((url, order) => ({ url, order, cover: order === 0 })) },
       } });
     } else {
       await prisma.professional.update({ where: { id: professional.id }, data: common });

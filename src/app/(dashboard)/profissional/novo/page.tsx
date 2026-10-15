@@ -110,10 +110,13 @@ const CATEGORIAS = [
 
 const STEPS = ["Dados", "Aparência", "Atendimento", "Serviços", "Valores", "Contato", "Fotos", "Verificação", "Enviar"];
 const IMAGE_ACCEPT = "image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,.heic,.heif";
+const VIDEO_ACCEPT = "video/mp4,.mp4";
 const IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif"]);
 const IMAGE_EXTENSION_RE = /\.(jpe?g|png|webp|heic|heif)$/i;
 const GENERIC_MOBILE_MIME_TYPES = new Set(["", "application/octet-stream"]);
 const MAX_PROFILE_IMAGE_BYTES = 20 * 1024 * 1024;
+const MAX_PROFILE_VIDEO_BYTES = 50 * 1024 * 1024;
+const MAX_PROFILE_VIDEO_SECONDS = 30;
 const MAX_ONBOARDING_GALLERY_PHOTOS = 20;
 const REMOTE_IMAGE_RE = /^(https?:\/\/|\/)/i;
 const ATTENDANCE_EXCLUSIONS: Record<string, string[]> = {
@@ -128,6 +131,28 @@ const ATTENDANCE_EXCLUSIONS: Record<string, string[]> = {
 
 function canPreviewImageInBrowser(file: File) {
   return !/\.(heic|heif)$/i.test(file.name) && !/image\/(heic|heif)/i.test(file.type);
+}
+
+function selectedCountLabel(count: number) {
+  return count === 1 ? "1 selecionado" : `${count} selecionados`;
+}
+
+function videoDuration(file: File) {
+  return new Promise<number>((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(url);
+      if (Number.isFinite(video.duration)) resolve(video.duration);
+      else reject(new Error("invalid_duration"));
+    };
+    video.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("invalid_video"));
+    };
+    video.src = url;
+  });
 }
 
 function generateVerificationCode() {
@@ -219,7 +244,7 @@ function UploadZone({ label, accept, preview, persisted, onFile, loading }: {
   const ref = useRef<HTMLInputElement>(null);
   const canPreview = !!preview && !preview.startsWith("/api/media/") && (preview.startsWith("http") || preview.startsWith("/") || preview.startsWith("blob:") || preview.startsWith("data:"));
   const isPrivateFile = persisted && !canPreview;
-  const acceptLabel = accept === IMAGE_ACCEPT ? "JPG, PNG, WebP ou HEIC" : accept.replace("image/*,video/*", "JPG, PNG ou MP4");
+  const acceptLabel = accept === IMAGE_ACCEPT ? "JPG, PNG, WebP ou HEIC" : accept === VIDEO_ACCEPT ? "MP4 • até 30 segundos • máximo 50 MB" : accept;
   return (
     <div>
       {label ? <label style={labelStyle}>{label}</label> : null}
@@ -354,6 +379,10 @@ export default function ProfissionalNovoPage() {
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const [mainPhotoPreview, setMainPhotoPreview] = useState<string | null>(null);
   const [galleryPreviews, setGalleryPreviews] = useState<Record<string, string>>({});
+  const [presentationVideoPreview, setPresentationVideoPreview] = useState<string | null>(null);
+  const [professionalId, setProfessionalId] = useState<string | null>(null);
+  const [openServiceCategories, setOpenServiceCategories] = useState<string[]>([PROFESSIONAL_SERVICE_CATEGORIES[0]?.id].filter(Boolean));
+  const [openSpecialtyCategories, setOpenSpecialtyCategories] = useState<string[]>([PROFESSIONAL_SPECIALTY_CATEGORIES[0]?.id].filter(Boolean));
   const [diditAvailable, setDigitAvailable] = useState(false);
   const [diditMessage, setDigitMessage] = useState<string | null>(null);
   const [diditRetryAllowed, setDigitRetryAllowed] = useState(false);
@@ -399,8 +428,8 @@ export default function ProfissionalNovoPage() {
     paymentMethods: [] as string[],
     /* etapa 6 */
     phone: "", whatsapp: "", instagram: "", website: "",
-    /* etapa 7 – fotos */
-    mainPhotoUrl: "", galleryUrls: [] as string[],
+    /* etapa 7 – fotos e vídeo */
+    mainPhotoUrl: "", galleryUrls: [] as string[], presentationVideoUrl: "", presentationVideoStatus: "NONE",
     /* etapa 8 – documentos */
     docType: "", docFrenteUrl: "", docVersoUrl: "",
     docFrenteFile: null as File | null, docVersoFile: null as File | null,
@@ -421,7 +450,7 @@ export default function ProfissionalNovoPage() {
         return;
       }
 
-      const parsed = JSON.parse(rawDraft) as { ownerId?: string; registrationType?: string; step?: number; form?: Partial<typeof form> };
+      const parsed = JSON.parse(rawDraft) as { ownerId?: string; registrationType?: string; step?: number; form?: Partial<typeof form>; ui?: { openServiceCategories?: string[]; openSpecialtyCategories?: string[] } };
       if (!isOwnedProfessionalDraft(parsed, accountUserId)) {
         localStorage.removeItem(draftKey);
         draftLoadedRef.current = true;
@@ -453,6 +482,8 @@ export default function ProfissionalNovoPage() {
       if (Number.isInteger(parsed.step)) {
         setStep(Math.max(0, Math.min(Number(parsed.step), STEPS.length - 1)));
       }
+      if (Array.isArray(parsed.ui?.openServiceCategories)) setOpenServiceCategories(parsed.ui.openServiceCategories);
+      if (Array.isArray(parsed.ui?.openSpecialtyCategories)) setOpenSpecialtyCategories(parsed.ui.openSpecialtyCategories);
     } catch (err) {
       console.warn("[professional-onboarding] Não foi possível restaurar o rascunho local.", err);
       localStorage.removeItem(draftKey);
@@ -494,7 +525,14 @@ export default function ProfissionalNovoPage() {
 
     const saveTimer = window.setTimeout(() => {
       try {
-        localStorage.setItem(professionalDraftStorageKey(accountUserId), JSON.stringify({ ownerId: accountUserId, registrationType: PROFESSIONAL_REGISTRATION_TYPE, step, form: draftForm, updatedAt: new Date().toISOString() }));
+        localStorage.setItem(professionalDraftStorageKey(accountUserId), JSON.stringify({
+          ownerId: accountUserId,
+          registrationType: PROFESSIONAL_REGISTRATION_TYPE,
+          step,
+          form: draftForm,
+          ui: { openServiceCategories, openSpecialtyCategories },
+          updatedAt: new Date().toISOString(),
+        }));
         window.setTimeout(() => setDraftSaveError(false), 0);
       } catch (err) {
       console.warn("[professional-onboarding] Não foi possível salvar o rascunho local.", err);
@@ -503,7 +541,7 @@ export default function ProfissionalNovoPage() {
     }, 300);
 
     return () => window.clearTimeout(saveTimer);
-  }, [accountUserId, emailVerified, form, step]);
+  }, [accountUserId, emailVerified, form, openServiceCategories, openSpecialtyCategories, step]);
 
   useEffect(() => {
     if (emailCooldown <= 0) return;
@@ -571,6 +609,7 @@ export default function ProfissionalNovoPage() {
       }
 
       const professional = user.professional;
+      setProfessionalId(professional?.id ?? null);
       const isCorrection = professional?.status === "CORRECTION_REQUIRED";
       const shouldRestore = isCorrection || professional?.status === "DRAFT";
       const loadedDate = (professional?.birthDate ?? user.birthDate) ? String(professional?.birthDate ?? user.birthDate).slice(0, 10) : "";
@@ -621,6 +660,8 @@ export default function ProfissionalNovoPage() {
         website: shouldRestore ? (professional.website ?? current.website) : current.website,
         mainPhotoUrl: shouldRestore ? (professional.image ?? professional.photos?.find((photo: { cover?: boolean }) => photo.cover)?.url ?? professional.photos?.[0]?.url ?? current.mainPhotoUrl) : current.mainPhotoUrl,
         galleryUrls: shouldRestore ? (professional.galleryUrls ?? professional.photos?.filter((photo: { cover?: boolean }) => !photo.cover).map((photo: { url: string }) => photo.url) ?? []) : current.galleryUrls,
+        presentationVideoUrl: shouldRestore ? (professional.presentationVideoUrl ?? "") : current.presentationVideoUrl,
+        presentationVideoStatus: shouldRestore ? (professional.presentationVideoStatus ?? "NONE") : current.presentationVideoStatus,
       }));
       if (loadedDate) {
         const [y, m, d] = loadedDate.split("-");
@@ -898,6 +939,68 @@ export default function ProfissionalNovoPage() {
     set("galleryUrls", form.galleryUrls.filter((item) => item !== reference));
   }
 
+  async function handlePresentationVideo(file: File) {
+    if (!professionalId) {
+      toast.error("Não foi possível identificar seu perfil. Atualize a página e tente novamente.");
+      return;
+    }
+    if (file.type !== "video/mp4" || !/\.mp4$/i.test(file.name)) {
+      toast.error("Envie um vídeo no formato MP4.");
+      return;
+    }
+    if (file.size > MAX_PROFILE_VIDEO_BYTES) {
+      toast.error("O vídeo deve ter no máximo 50 MB.");
+      return;
+    }
+    try {
+      const duration = await videoDuration(file);
+      if (duration > MAX_PROFILE_VIDEO_SECONDS + 0.25) {
+        toast.error("O vídeo deve ter no máximo 30 segundos.");
+        return;
+      }
+    } catch {
+      toast.error("Não foi possível validar este vídeo MP4.");
+      return;
+    }
+
+    const previousReference = form.presentationVideoUrl;
+    const previousPreview = presentationVideoPreview;
+    const previewUrl = URL.createObjectURL(file);
+    localPreviewUrlsRef.current.add(previewUrl);
+    setPresentationVideoPreview(previewUrl);
+    setUploadingIdx(-2);
+    try {
+      const uploaded = await uploadFile(file, `profile-videos/${professionalId}`);
+      setForm((current) => ({
+        ...current,
+        presentationVideoUrl: uploaded.reference,
+        presentationVideoStatus: uploaded.pendingReview ? "PENDING_REVIEW" : "APPROVED",
+      }));
+      if (previousPreview && previousPreview !== previewUrl) {
+        URL.revokeObjectURL(previousPreview);
+        localPreviewUrlsRef.current.delete(previousPreview);
+      }
+      toast.success(uploaded.pendingReview ? "Vídeo recebido e enviado para análise." : "Vídeo de perfil enviado.");
+    } catch (error) {
+      setForm((current) => ({ ...current, presentationVideoUrl: previousReference }));
+      setPresentationVideoPreview(previousPreview);
+      URL.revokeObjectURL(previewUrl);
+      localPreviewUrlsRef.current.delete(previewUrl);
+      toast.error(error instanceof Error ? error.message : "Não foi possível enviar o vídeo agora.");
+    } finally {
+      setUploadingIdx(null);
+    }
+  }
+
+  function removePresentationVideo() {
+    if (presentationVideoPreview) {
+      URL.revokeObjectURL(presentationVideoPreview);
+      localPreviewUrlsRef.current.delete(presentationVideoPreview);
+    }
+    setPresentationVideoPreview(null);
+    setForm((current) => ({ ...current, presentationVideoUrl: "", presentationVideoStatus: "NONE" }));
+  }
+
   /* ── verificação Didit ────────────────────────────────── */
   async function startDigitVerification() {
     if (diditStartingRef.current || uploadingIdx === 100) return;
@@ -1075,6 +1178,7 @@ export default function ProfissionalNovoPage() {
         phone: form.phone, whatsapp: form.whatsapp, instagram: form.instagram, website: form.website,
         image: form.mainPhotoUrl || undefined,
         galleryUrls: form.galleryUrls,
+        presentationVideoUrl: form.presentationVideoUrl || undefined,
         verificationType: form.verificationType,
         verificationCode: generateVerificationCode(),
         kycProvider: form.kycProvider,
@@ -1237,9 +1341,9 @@ export default function ProfissionalNovoPage() {
         <p className="model-success-eyebrow">Cadastro recebido</p>
         <h1>{"Cadastro 100% conclu\u00eddo"}</h1>
         <p className="model-analysis-status">Status: <strong>{"Em an\u00e1lise"}</strong></p>
-        <p>{"A equipe revisar\u00e1 seus dados, documentos e fotos. Voc\u00ea receber\u00e1 um e-mail quando a an\u00e1lise for conclu\u00edda."}</p>
+        <p>{"Seu perfil foi enviado para análise. A equipe revisará seus dados, documentos e mídias em até 3 dias úteis."}</p>
         {submissionResult.receiptStatus === "SENT" ? (
-          <p className="model-receipt-status">Enviamos um comprovante discreto para o seu e-mail.</p>
+          <p className="model-receipt-status">Enviamos ao seu e-mail a confirmação de que o perfil entrou em análise.</p>
         ) : (
           <p className="model-receipt-status">O cadastro está salvo. Se o comprovante não chegar, confira também a pasta de spam.</p>
         )}
@@ -1649,12 +1753,20 @@ export default function ProfissionalNovoPage() {
       {step === 3 && (
         <div className="model-services-step">
           <Section title="Serviços oferecidos" desc="Abra uma categoria e selecione somente o que você oferece.">
-            <p className="model-service-summary" aria-live="polite">
-              {form.services.length ? `${form.services.length} serviço(s) selecionado(s)` : "Nenhum serviço selecionado"}
-            </p>
-            {PROFESSIONAL_SERVICE_CATEGORIES.map((category, index) => (
-              <details className="model-service-category" key={category.id} open={index === 0}>
-                <summary>{category.label}<span>{category.options.filter((option) => isServiceOptionSelected(form.services, option)).length}</span></summary>
+            <p className="model-service-summary" aria-live="polite">{selectedCountLabel(form.services.length)} no total</p>
+            {PROFESSIONAL_SERVICE_CATEGORIES.map((category) => {
+              const selectedLabels = category.options.filter((option) => isServiceOptionSelected(form.services, option)).map((option) => option.label);
+              const isOpen = openServiceCategories.includes(category.id);
+              return (
+              <details className="model-service-category" key={category.id} open={isOpen} onToggle={(event) => {
+                const open = event.currentTarget.open;
+                setOpenServiceCategories((current) => open ? [...new Set([...current, category.id])] : current.filter((id) => id !== category.id));
+              }}>
+                <summary>
+                  <span className="model-service-heading"><strong>{category.label}</strong><small>{isOpen ? "Toque para recolher" : "Toque para abrir e selecionar opções"}</small>{!isOpen && selectedLabels.length > 0 ? <em>{selectedLabels.join(" • ")}</em> : null}</span>
+                  <span className="model-service-count">{selectedCountLabel(selectedLabels.length)}</span>
+                  <span className="model-service-chevron" aria-hidden="true">⌄</span>
+                </summary>
                 <div className="model-service-options">
                   {category.options.map((option) => (
                     <ServiceOption
@@ -1667,12 +1779,19 @@ export default function ProfissionalNovoPage() {
                   ))}
                 </div>
               </details>
-            ))}
+            ); })}
           </Section>
           {PROFESSIONAL_SPECIALTY_CATEGORIES.map((category) => (
             <Section key={category.id} title={category.label}>
-              <details className="model-service-category" open>
-                <summary>Ver opções<span>{category.options.filter((option) => isServiceOptionSelected(form.fetishes, option)).length}</span></summary>
+              <details className="model-service-category" open={openSpecialtyCategories.includes(category.id)} onToggle={(event) => {
+                const open = event.currentTarget.open;
+                setOpenSpecialtyCategories((current) => open ? [...new Set([...current, category.id])] : current.filter((id) => id !== category.id));
+              }}>
+                <summary>
+                  <span className="model-service-heading"><strong>Opções de especialidade</strong><small>{openSpecialtyCategories.includes(category.id) ? "Toque para recolher" : "Toque para abrir e selecionar opções"}</small>{!openSpecialtyCategories.includes(category.id) ? <em>{category.options.filter((option) => isServiceOptionSelected(form.fetishes, option)).map((option) => option.label).join(" • ") || "Nenhuma opção selecionada"}</em> : null}</span>
+                  <span className="model-service-count">{selectedCountLabel(category.options.filter((option) => isServiceOptionSelected(form.fetishes, option)).length)}</span>
+                  <span className="model-service-chevron" aria-hidden="true">⌄</span>
+                </summary>
                 <div className="model-service-options">
                   {category.options.map((option) => (
                     <ServiceOption
@@ -1799,6 +1918,20 @@ export default function ProfissionalNovoPage() {
                 Todo conteúdo pode passar por moderação. A foto principal/capa deve ser adequada para exibição inicial do perfil.
               </p>
             </div>
+          </Section>
+
+          <Section title="Vídeo de perfil (opcional)" desc="Adicione 1 vídeo MP4 de até 30 segundos e 50 MB. Ele passará pela mesma análise de segurança das fotos.">
+            {form.presentationVideoUrl ? (
+              <div className="model-video-preview">
+                {presentationVideoPreview ? <video src={presentationVideoPreview} controls playsInline preload="metadata" aria-label="Prévia do vídeo de perfil" /> : <div className="model-upload-received"><strong>Vídeo recebido ✓</strong><span>Status: {form.presentationVideoStatus === "APPROVED" ? "aprovado" : "em análise"}</span></div>}
+                <div className="model-video-actions">
+                  <label className="model-video-replace">Substituir<input type="file" accept={VIDEO_ACCEPT} onChange={(event) => { const file = event.target.files?.[0]; if (file) void handlePresentationVideo(file); event.currentTarget.value = ""; }} /></label>
+                  <button type="button" onClick={removePresentationVideo}>Remover</button>
+                </div>
+              </div>
+            ) : (
+              <UploadZone label="Vídeo de apresentação" accept={VIDEO_ACCEPT} preview={null} persisted={false} loading={uploadingIdx === -2} onFile={handlePresentationVideo} />
+            )}
           </Section>
         </div>
       )}
@@ -2000,16 +2133,17 @@ export default function ProfissionalNovoPage() {
         }
         .model-service-summary {
           margin: 0 0 12px !important;
-          color: #d9cfe0 !important;
+          color: #5b4864 !important;
           font-size: 12px !important;
           font-weight: 750;
         }
         .model-service-category {
           margin-bottom: 10px;
           overflow: hidden;
-          border: 1px solid rgba(183, 44, 255, .24);
+          border: 1px solid #ddc6e8;
           border-radius: 16px;
-          background: rgba(8, 8, 10, .72);
+          background: linear-gradient(145deg, #fff, #fbf5ff);
+          box-shadow: 0 8px 24px rgba(91, 16, 119, .08);
         }
         .model-service-category > summary {
           display: flex;
@@ -2018,23 +2152,31 @@ export default function ProfissionalNovoPage() {
           justify-content: space-between;
           gap: 12px;
           padding: 12px 14px;
-          color: #fff;
+          color: #32133e;
           font-size: 14px;
           font-weight: 850;
           cursor: pointer;
           list-style: none;
         }
         .model-service-category > summary::-webkit-details-marker { display: none; }
-        .model-service-category > summary span {
-          display: grid;
-          min-width: 28px;
-          height: 28px;
-          place-items: center;
+        .model-service-heading { display: flex; min-width: 0; flex: 1; flex-direction: column; align-items: flex-start; gap: 3px; }
+        .model-service-heading strong { color: #32133e; font-size: 15px; }
+        .model-service-heading small { color: #715e79; font-size: 11px; font-weight: 650; }
+        .model-service-heading em { max-width: 100%; overflow: hidden; color: #7d179f; font-size: 11px; font-style: normal; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+        .model-service-count {
+          display: inline-flex;
+          min-width: max-content;
+          min-height: 28px;
+          align-items: center;
+          justify-content: center;
           border-radius: 999px;
-          background: rgba(183, 44, 255, .16);
-          color: #d77bff;
+          background: #f0dcfa;
+          color: #651183;
           font-size: 11px;
+          padding: 5px 9px;
         }
+        .model-service-chevron { color: #7d179f; font-size: 22px; line-height: 1; transition: transform .2s ease; }
+        .model-service-category[open] .model-service-chevron { transform: rotate(180deg); }
         .model-service-options {
           display: flex;
           flex-wrap: wrap;
@@ -2042,6 +2184,12 @@ export default function ProfissionalNovoPage() {
           gap: 9px;
           padding: 0 12px 14px;
         }
+        .model-video-preview { overflow: hidden; border: 1px solid #ddc6e8; border-radius: 16px; background: #fbf5ff; }
+        .model-video-preview video { display: block; width: 100%; max-height: 360px; background: #080808; object-fit: contain; }
+        .model-video-preview .model-upload-received { min-height: 150px; }
+        .model-video-actions { display: flex; gap: 10px; padding: 12px; }
+        .model-video-actions button, .model-video-replace { display: inline-flex; min-height: 42px; flex: 1; align-items: center; justify-content: center; border: 1px solid #c994df; border-radius: 12px; background: #fff; color: #651183; font-size: 13px; font-weight: 800; cursor: pointer; }
+        .model-video-replace input { display: none; }
         .model-service-option {
           display: flex;
           min-width: 0;

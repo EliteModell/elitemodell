@@ -87,7 +87,7 @@ function resolveBucket(folder: string): {
     return { isPrivate: false, maxBytes: 20 * 1024 * 1024, allowedTypes: ALLOWED_IMAGE };
   }
   if (folder.startsWith("profile-videos")) {
-    return { isPrivate: false, maxBytes: 50 * 1024 * 1024, allowedTypes: ALLOWED_VIDEO };
+    return { isPrivate: false, maxBytes: 50 * 1024 * 1024, allowedTypes: ["video/mp4"] };
   }
   return { isPrivate: false, maxBytes: 50 * 1024 * 1024, allowedTypes: ALLOWED_VIDEO };
 }

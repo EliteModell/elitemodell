@@ -237,6 +237,7 @@ export async function sendProfessionalSubmissionReceipt(
           <h1 style="font-size:22px;margin:0 0 14px">Seu cadastro foi recebido</h1>
           <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Olá, ${safeName || "profissional"}.</p>
           <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Recebemos seu cadastro e ele foi enviado para análise.</p>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">O prazo estimado para a revisão é de até <strong>3 dias úteis</strong>.</p>
           <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Nossa equipe irá conferir seus dados, documentos, verificação de identidade e informações do perfil.</p>
           <p style="color:#625c68;line-height:1.7;margin:0">Assim que a análise for concluída, enviaremos um novo e-mail informando a aprovação ou os itens que precisam ser corrigidos. Você não precisa realizar um novo cadastro.</p>
           <div style="margin-top:28px;padding-top:18px;border-top:1px solid #eee6f1;color:#77707b;font-size:12px">Esta mensagem não contém fotos, documentos, dados biométricos ou informações financeiras.</div>

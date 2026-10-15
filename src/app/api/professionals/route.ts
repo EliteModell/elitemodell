@@ -295,17 +295,26 @@ export async function POST(req: NextRequest) {
 
     const diditVerification = await requireApprovedProfessionalDidit(session.user.id);
 
-    const { specialties, services, phone, whatsapp, image, galleryUrls, ...profileData } = data;
+    const { specialties, services, phone, whatsapp, image, galleryUrls, presentationVideoUrl, ...profileData } = data;
     await assertOwnedUploadMediaUrls({
       urls: [image, ...galleryUrls].filter((url): url is string => Boolean(url)),
       requestUrl: req.url,
       ownerId: session.user.id,
       allowedFolderPrefixes: ["profiles"],
     });
+    if (presentationVideoUrl) {
+      await assertOwnedUploadMediaUrls({
+        urls: [presentationVideoUrl],
+        requestUrl: req.url,
+        ownerId: session.user.id,
+        allowedFolderPrefixes: ["profile-videos"],
+      });
+    }
     const normalizedImage = normalizeControlledMediaUrl(image);
     const normalizedGalleryUrls = galleryUrls
       .map((url) => normalizeControlledMediaUrl(url))
       .filter((url): url is string => Boolean(url));
+    const normalizedPresentationVideo = normalizeControlledMediaUrl(presentationVideoUrl);
     const escortCategory = profileData.escortCategory
       || (user?.category && ["MULHER", "TRANS", "HOMEM"].includes(user.category) ? user.category : undefined);
 
@@ -323,6 +332,9 @@ export async function POST(req: NextRequest) {
       ...profileData,
       image: null,
       galleryUrls: [],
+      presentationVideoUrl: normalizedPresentationVideo,
+      presentationVideoStatus: normalizedPresentationVideo ? "PENDING_REVIEW" : "NONE",
+      presentationVideoRejectReason: null,
       phone:     phone ? normalizePhone(phone) : undefined,
       whatsapp:  whatsapp ? normalizePhone(whatsapp) : undefined,
       verificationUrl: null,

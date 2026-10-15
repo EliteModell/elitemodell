@@ -9,7 +9,13 @@ export function professionalDraftStorageKey(userId: string) {
 export function isOwnedProfessionalDraft(
   value: unknown,
   userId: string,
-): value is { ownerId: string; registrationType: typeof PROFESSIONAL_REGISTRATION_TYPE; step?: number; form?: Record<string, unknown> } {
+): value is {
+  ownerId: string;
+  registrationType: typeof PROFESSIONAL_REGISTRATION_TYPE;
+  step?: number;
+  form?: Record<string, unknown>;
+  ui?: { openServiceCategories?: string[]; openSpecialtyCategories?: string[] };
+} {
   if (!value || typeof value !== "object") return false;
   const draft = value as Record<string, unknown>;
   return draft.ownerId === userId && draft.registrationType === PROFESSIONAL_REGISTRATION_TYPE;

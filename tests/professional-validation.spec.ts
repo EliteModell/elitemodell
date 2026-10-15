@@ -201,6 +201,44 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     expect(createRoute).toContain("assertOwnedUploadMediaUrls");
   });
 
+  test("onboarding oferece acordoes claros e persiste o estado visual entre etapas", () => {
+    const page = fs.readFileSync(
+      path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"),
+      "utf8",
+    );
+    expect(page).toContain('selectedCountLabel');
+    expect(page).toContain('"1 selecionado"');
+    expect(page).toContain('Toque para abrir e selecionar opções');
+    expect(page).toContain('openServiceCategories');
+    expect(page).toContain('ui: { openServiceCategories, openSpecialtyCategories }');
+    expect(page).toContain('model-service-chevron');
+  });
+
+  test("video opcional usa MP4 controlado, limite local e validacao de propriedade no servidor", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"), "utf8");
+    const draftRoute = fs.readFileSync(path.join(process.cwd(), "src/app/api/professionals/draft/route.ts"), "utf8");
+    const createRoute = fs.readFileSync(path.join(process.cwd(), "src/app/api/professionals/route.ts"), "utf8");
+    const uploadRoute = fs.readFileSync(path.join(process.cwd(), "src/app/api/upload/route.ts"), "utf8");
+    expect(page).toContain('MAX_PROFILE_VIDEO_SECONDS = 30');
+    expect(page).toContain('MAX_PROFILE_VIDEO_BYTES = 50 * 1024 * 1024');
+    expect(page).toContain('uploadFile(file, `profile-videos/${professionalId}`)');
+    expect(page).toContain('presentationVideoStatus: uploaded.pendingReview ? "PENDING_REVIEW" : "APPROVED"');
+    expect(draftRoute).toContain('allowedFolderPrefixes: ["profile-videos"]');
+    expect(createRoute).toContain('allowedFolderPrefixes: ["profile-videos"]');
+    expect(uploadRoute).toContain('allowedTypes: ["video/mp4"]');
+  });
+
+  test("estados de identidade e confirmacao final possuem textos profissionais e contraste explicito", () => {
+    const verification = fs.readFileSync(path.join(process.cwd(), "src/components/professional-onboarding/ProfessionalVerificationSteps.tsx"), "utf8");
+    const page = fs.readFileSync(path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"), "utf8");
+    const email = fs.readFileSync(path.join(process.cwd(), "src/lib/auth-email.ts"), "utf8");
+    expect(verification).toContain('background: "#f4e8fb"');
+    expect(verification).toContain('color: "#55106f"');
+    expect(verification).toContain('Verificação não concluída — reenvio necessário');
+    expect(page).toContain('em até 3 dias úteis');
+    expect(email).toContain('3 dias úteis');
+  });
+
   test("backend valida a decisao real e sobrescreve o estado enviado pelo navegador", () => {
     const route = fs.readFileSync(path.join(process.cwd(), "src/app/api/professionals/route.ts"), "utf8");
     const validationAt = route.indexOf("requireApprovedProfessionalDidit(session.user.id)");
