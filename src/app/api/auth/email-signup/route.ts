@@ -7,6 +7,7 @@ import { buildAuthEmail, sendAuthEmail } from "@/lib/auth-email";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import { canonicalizeRequestedEmailCallback } from "@/lib/email-auth-callback";
+import { createEmailVerificationAttempt } from "@/lib/email-verification-attempt";
 
 const schema = z.object({
   email: z.string().email(),
@@ -21,6 +22,7 @@ const schema = z.object({
   captchaToken: z.string().optional(),
   name: z.string().min(2),
   role: z.string().optional(),
+  attemptId: z.string().uuid(),
 });
 
 function publicErrorForSupabase(message?: string) {
@@ -153,6 +155,11 @@ export async function POST(req: NextRequest) {
       ok: true,
       email,
       actionType: generated.actionType,
+      verificationToken: createEmailVerificationAttempt({
+        userId: generated.data.user.id,
+        email,
+        attemptId: body.attemptId,
+      }),
     });
   } catch (err) {
     if (err instanceof z.ZodError) {

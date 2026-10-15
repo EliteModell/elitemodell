@@ -23,6 +23,7 @@ const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
 const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
 const PENDING_REGISTRATION_KEY = "elitemodell_pending_registration";
 const PENDING_REGISTRATION_COOKIE = "elitemodell_pending_registration";
+const EMAIL_VERIFICATION_ATTEMPT_KEY = "elitemodell_email_verification_attempt";
 const CALLBACK_TIMEOUT_MS = 5000;
 const NEXTAUTH_SIGNIN_TIMEOUT_MS = 45000;
 const CALLBACK_SLOW_MESSAGE_MS = 2500;
@@ -638,6 +639,7 @@ function AuthCallbackContent() {
       searchParams.get("flow") === "cadastro" ||
       Boolean(pendingRegistration) ||
       explicitIntent === "professional-signup";
+    const verificationAttempt = searchParams.get("attempt");
     const initialRetryRoleIntent =
       roleIntent ??
       roleIntentFromPending(pendingRegistration) ??
@@ -678,6 +680,17 @@ function AuthCallbackContent() {
       } else {
         accessToken = await consumeHashSession() ?? await waitForSession();
         if (!accessToken) throw new Error("Sessao nao encontrada. Tente novamente.");
+      }
+
+      const originalAttempt = localStorage.getItem(EMAIL_VERIFICATION_ATTEMPT_KEY);
+      if (isCadastroFlow && verificationAttempt && originalAttempt !== verificationAttempt) {
+        await supabaseAuth.auth.signOut({ scope: "local" }).catch(() => undefined);
+        if (!active) return;
+        window.clearTimeout(slowMessageTimer);
+        window.clearTimeout(stillWorkingTimer);
+        setSuccess(true);
+        setMessage("E-mail confirmado. Volte ao dispositivo em que você iniciou o cadastro para continuar.");
+        return;
       }
 
       if (active) setMessage("Configurando sua conta...");
@@ -721,6 +734,7 @@ function AuthCallbackContent() {
 
       clearRoleIntentStorage();
       clearPendingRegistrationStorage();
+      localStorage.removeItem(EMAIL_VERIFICATION_ATTEMPT_KEY);
 
       // Fast path: se há returnUrl explícita e não é um novo cadastro, redirecionar
       // direto sem buscar /api/users/me (economiza 300–800ms por login).

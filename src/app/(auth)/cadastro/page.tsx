@@ -41,7 +41,9 @@ type EmailSignupResponse = {
   draftSessionToken?: string;
   continueTo?: string;
   accountType?: AccountType;
+  verificationToken?: string;
 };
+type VerificationStatus = "waiting" | "checking" | "offline" | "expired";
 const ROLE_INTENT_KEY = "elitemodell_login_role_intent";
 const ROLE_INTENT_COOKIE = "elitemodell_login_role_intent";
 const PENDING_REGISTRATION_KEY = "elitemodell_pending_registration";
@@ -328,6 +330,8 @@ export default function CadastroPage() {
   const [continueIntent, setContinueIntent] = useState<EntryAccountRole | null>(null);
   const [requestedReturnUrl, setRequestedReturnUrl] = useState<string | null>(null);
   const [step, setStep] = useState<Step>("form");
+  const [verificationToken, setVerificationToken] = useState<string | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>("waiting");
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -349,6 +353,8 @@ export default function CadastroPage() {
   const yearRef = useRef<HTMLInputElement>(null);
   const captchaRef = useRef<CaptchaFieldHandle>(null);
   const autoContinueRef = useRef(false);
+  const verificationAttemptIdRef = useRef<string | null>(null);
+  const verificationCompletingRef = useRef(false);
   const isAuthenticated = status === "authenticated";
   const isLoggedUpgradeFlow = isAuthenticated && form.accountType !== "GUEST";
 
@@ -711,6 +717,7 @@ export default function CadastroPage() {
       flow: "cadastro",
     });
     if (intent === "profissional") params.set("intent", "professional-signup");
+    if (verificationAttemptIdRef.current) params.set("attempt", verificationAttemptIdRef.current);
     return params.toString();
   }
 
@@ -723,6 +730,12 @@ export default function CadastroPage() {
   }
 
   async function sendEmailSignup(captchaToken?: string) {
+    verificationAttemptIdRef.current ??= crypto.randomUUID();
+    try {
+      localStorage.setItem("elitemodell_email_verification_attempt", verificationAttemptIdRef.current);
+    } catch {
+      // O polling continua funcionando enquanto esta pagina permanecer aberta.
+    }
     const payload = registrationPayload(captchaToken);
     const response = await fetch("/api/auth/email-signup", {
       method: "POST",
@@ -731,6 +744,7 @@ export default function CadastroPage() {
         email: form.email.trim().toLowerCase(),
         password: form.password,
         redirectTo: buildAuthCallbackUrl(callbackParams()),
+        attemptId: verificationAttemptIdRef.current,
         ...payload,
       }),
     });
@@ -744,8 +758,84 @@ export default function CadastroPage() {
 
     rememberPendingRegistration(payload);
     rememberRoleIntent(roleIntent());
+    if (!data.verificationToken) throw new Error("Nao foi possivel acompanhar a confirmacao deste cadastro.");
+    setVerificationToken(data.verificationToken);
+    setVerificationStatus("waiting");
     return { ...data, accountType: payload.accountType };
   }
+
+  async function continueAfterEmailVerification() {
+    if (verificationCompletingRef.current) return;
+    verificationCompletingRef.current = true;
+    setVerificationStatus("checking");
+    setLoading(true);
+    try {
+      const supabaseAuth = await loadSupabaseAuth();
+      const { data, error } = await supabaseAuth.auth.signInWithPassword({
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+      });
+      if (error || !data.session?.access_token) {
+        throw new Error("O email foi confirmado, mas sua sessao expirou. Entre novamente para continuar.");
+      }
+      const result = await signIn("supabase", nextAuthCadastroPayload(data.session.access_token));
+      if (result?.error) throw new Error("Nao foi possivel criar sua sessao segura.");
+      clearCadastroIntentState();
+      router.push(await resolvedNextPathAfterAuth());
+      router.refresh();
+    } catch (error) {
+      verificationCompletingRef.current = false;
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel continuar o cadastro.");
+      router.push(loginPathAfterEmailVerification());
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function checkEmailVerification(manual = false) {
+    if (!verificationToken || verificationCompletingRef.current) return;
+    if (manual) setVerificationStatus("checking");
+    try {
+      const response = await fetch("/api/auth/email-verification-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ token: verificationToken }),
+      });
+      const result = await response.json().catch(() => ({})) as { status?: string };
+      if (response.status === 410 || result.status === "expired") {
+        setVerificationStatus("expired");
+        return;
+      }
+      if (!response.ok) {
+        setVerificationStatus("offline");
+        return;
+      }
+      if (result.status === "verified") {
+        await continueAfterEmailVerification();
+        return;
+      }
+      setVerificationStatus("waiting");
+      if (manual) toast("A confirmacao ainda nao chegou. Verifique o email e tente novamente.");
+    } catch {
+      setVerificationStatus("offline");
+    }
+  }
+
+  useEffect(() => {
+    if (step !== "verify" || !verificationToken || verificationStatus === "expired") return;
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === "visible") void checkEmailVerification();
+    }, 5000);
+    const onFocus = () => void checkEmailVerification();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(poll);
+      window.removeEventListener("focus", onFocus);
+    };
+  // checkEmailVerification intentionally uses the current form kept on this page.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, verificationToken, verificationStatus]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -798,6 +888,7 @@ export default function CadastroPage() {
 
     setLoading(true);
     try {
+      verificationAttemptIdRef.current = crypto.randomUUID();
       await sendEmailSignup();
       toast.success("Email reenviado. Confira a caixa de entrada e o spam.");
     } catch (err: unknown) {
@@ -1013,11 +1104,17 @@ export default function CadastroPage() {
         <p style={{ color: GOLD, fontSize: 15, fontWeight: 600, margin: "0 0 24px" }}>{form.email}</p>
         <p style={{ color: "#615b52", fontSize: 13, lineHeight: 1.6, margin: "0 0 32px" }}>
           {form.accountType === "PROFESSIONAL"
-            ? "Confirme o email para ativar sua conta. Depois entre como acompanhante para continuar nas 9 etapas do cadastro."
-            : "Confirme o email para ativar sua conta. Depois volte aqui para entrar."}
+            ? "Confirme o email em qualquer dispositivo. Esta tela liberara automaticamente as 9 etapas do cadastro."
+            : "Confirme o email em qualquer dispositivo. Esta tela continuara automaticamente de onde voce parou."}
         </p>
-        <button onClick={() => router.push(loginPathAfterEmailVerification())} style={{ width: "100%", padding: "13px", background: GOLD, color: "#080808", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
-          {form.accountType === "PROFESSIONAL" ? "Entrar como acompanhante" : "Ir para o login"}
+        <p role="status" aria-live="polite" style={{ color: verificationStatus === "expired" ? "#b42318" : "#615b52", fontSize: 12, lineHeight: 1.5, margin: "0 0 14px" }}>
+          {verificationStatus === "checking" && "Consultando confirmacao..."}
+          {verificationStatus === "waiting" && "Aguardando confirmacao do servidor..."}
+          {verificationStatus === "offline" && "Nao foi possivel consultar agora. Tentaremos novamente automaticamente."}
+          {verificationStatus === "expired" && "Esta tentativa expirou. Reenvie o email para gerar uma nova confirmacao."}
+        </p>
+        <button disabled={loading || verificationStatus === "expired"} onClick={() => void checkEmailVerification(true)} style={{ width: "100%", padding: "13px", background: GOLD, color: "#080808", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}>
+          {loading ? "Continuando..." : "Já confirmei meu e-mail"}
         </button>
         <button
           type="button"

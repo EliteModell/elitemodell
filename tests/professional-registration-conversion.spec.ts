@@ -465,7 +465,14 @@ test("cadastro profissional por email exige confirmação antes do onboarding", 
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ ok: true }),
+      body: JSON.stringify({ ok: true, verificationToken: "signed-verification-token-for-browser-test" }),
+    });
+  });
+  await page.route("**/api/auth/email-verification-status", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ status: "pending" }),
     });
   });
 
@@ -484,6 +491,8 @@ test("cadastro profissional por email exige confirmação antes do onboarding", 
   await page.getByRole("button", { name: "Criar conta" }).click();
 
   await expect(page.getByRole("heading", { name: "Verifique seu email" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Já confirmei meu e-mail" })).toBeVisible();
+  await expect(page.getByText("Aguardando confirmacao do servidor...", { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/cadastro/);
 
   expect(captured.signupPayload).toMatchObject({
@@ -494,6 +503,7 @@ test("cadastro profissional por email exige confirmação antes do onboarding", 
     termsConsent: true,
     ageConfirmed: true,
   });
+  expect(captured.signupPayload?.attemptId).toMatch(/^[0-9a-f-]{36}$/i);
 
   const redirectTo = new URL(String(captured.signupPayload?.redirectTo));
   expect(redirectTo.pathname).toBe("/auth/callback");
@@ -501,6 +511,40 @@ test("cadastro profissional por email exige confirmação antes do onboarding", 
   expect(redirectTo.searchParams.get("flow")).toBe("cadastro");
   expect(redirectTo.searchParams.get("intent")).toBe("professional-signup");
   expect(redirectTo.searchParams.get("returnUrl")).toBe("/profissional/novo");
+  expect(redirectTo.searchParams.get("attempt")).toBe(captured.signupPayload?.attemptId);
+});
+
+test("cadastro consulta confirmacao manual sem liberar email ainda pendente", async ({ page }) => {
+  let checks = 0;
+  await page.route("**/api/auth/email-signup", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, verificationToken: "signed-verification-token-for-pending-test" }),
+    });
+  });
+  await page.route("**/api/auth/email-verification-status", async (route) => {
+    checks += 1;
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ status: "pending" }) });
+  });
+
+  await page.goto("/cadastro?tipo=cliente", { waitUntil: "domcontentloaded" });
+  await page.getByPlaceholder("Seu nome").fill("Cliente Pendente");
+  await page.getByPlaceholder("seu@email.com").fill("pendente@elitemodell.local");
+  await page.locator('input[type="password"]').fill("senha123");
+  await page.getByPlaceholder("DD").fill("01");
+  await page.getByPlaceholder("MM").fill("01");
+  await page.getByPlaceholder("AAAA").fill("1995");
+  const confirmations = page.getByRole("checkbox");
+  await confirmations.nth(0).check();
+  await confirmations.nth(1).check();
+  await confirmations.nth(2).check();
+  await page.getByRole("button", { name: "Criar conta" }).click();
+  await page.getByRole("button", { name: "Já confirmei meu e-mail" }).click();
+
+  await expect.poll(() => checks).toBeGreaterThan(0);
+  await expect(page.getByRole("heading", { name: "Verifique seu email" })).toBeVisible();
+  await expect(page).toHaveURL(/\/cadastro/);
 });
 
 test("cadastro profissional recupera cookie NextAuth expirado usando a sessão Supabase válida", async ({ page }) => {

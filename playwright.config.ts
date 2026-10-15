@@ -112,6 +112,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "email-verification-cross-device",
+      testMatch: "**/email-verification-cross-device.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "legal-document-catalog",
       testMatch: "**/legal-document-catalog.spec.ts",
       use: { browserName: "chromium" },
