@@ -123,122 +123,6 @@
   font-size: 14px;
 }
 
-.highlights {
-  position: relative;
-  max-width: 1420px;
-  margin: 0 auto;
-  padding: 76px 42px 82px;
-}
-
-.highlights::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  width: 440px;
-  height: 440px;
-  top: 20px;
-  left: 50%;
-  border-radius: 50%;
-  background: rgba(116, 53, 143, .08);
-  filter: blur(90px);
-  transform: translateX(-50%);
-}
-
-.highlightsHeading {
-  margin-bottom: 30px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 32px;
-}
-
-.highlightsHeading h2 {
-  margin: 10px 0 0;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: clamp(42px, 4.6vw, 66px);
-  font-weight: 760;
-  line-height: 1;
-  letter-spacing: -.045em;
-}
-
-.highlightsHeading p {
-  max-width: 390px;
-  margin: 0 0 5px;
-  color: var(--muted);
-  font-size: 17px;
-  line-height: 1.5;
-}
-
-.highlightsGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
-}
-
-.highlightCard {
-  position: relative;
-  aspect-ratio: 4 / 5;
-  overflow: hidden;
-  border: 1px solid rgba(116, 53, 143, .13);
-  border-radius: 30px;
-  background: #f4edf6;
-  box-shadow: 0 24px 56px rgba(52, 25, 63, .14);
-  isolation: isolate;
-}
-
-.highlightImage {
-  object-fit: cover;
-  transition: transform .55s ease;
-}
-
-.highlightImagePurple {
-  object-position: 50% 32%;
-}
-
-.highlightImageGold {
-  object-position: 50% 34%;
-}
-
-.highlightShade {
-  position: absolute;
-  z-index: 1;
-  inset: 0;
-  background: linear-gradient(180deg, transparent 55%, rgba(20, 9, 25, .72) 100%);
-  pointer-events: none;
-}
-
-.highlightMeta {
-  position: absolute;
-  z-index: 2;
-  right: 28px;
-  bottom: 26px;
-  left: 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  color: #fff;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, .34);
-}
-
-.highlightMeta span {
-  color: #efd7a8;
-  font-size: 11px;
-  font-weight: 850;
-  letter-spacing: .2em;
-  text-transform: uppercase;
-}
-
-.highlightMeta strong {
-  font-size: clamp(22px, 2.3vw, 34px);
-  line-height: 1.05;
-}
-
-@media (hover: hover) {
-  .highlightCard:hover .highlightImage {
-    transform: scale(1.018);
-  }
-}
-
 .trust {
   min-height: 138px;
   padding: 28px max(42px, calc((100vw - 1420px) / 2));
@@ -386,11 +270,10 @@
   .trust { padding-inline: 24px; }
   .trustItem { padding-inline: 28px; }
   .quick { padding-inline: 24px; }
-  .highlights { padding-inline: 24px; }
 }
 
 @media (max-width: 620px) {
-  .hero { min-height: 570px; }
+  .hero { min-height: 620px; }
   .hero::after {
     background:
       linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, .97) 27%, rgba(255, 255, 255, .67) 48%, rgba(255, 255, 255, .05) 78%),
@@ -398,7 +281,7 @@
   }
   .model { inset: 0 -26% 0 31%; }
   .modelImage { object-position: 50% 32%; }
-  .heroCopy { width: 61%; min-height: 570px; margin: 0 16px; padding: 26px 0 20px; justify-content: flex-start; }
+  .heroCopy { width: 61%; min-height: 620px; margin: 0 16px; padding: 35px 0 28px; justify-content: flex-start; }
   .heroEyebrow { max-width: 230px; margin-top: 28px; font-size: 9px; letter-spacing: .18em; }
   .heroCopy h1 { margin: 18px 0 16px; font-size: clamp(36px, 10.5vw, 48px); line-height: 1; }
   .heroCopy > p { max-width: 245px; font-size: 13px; line-height: 1.42; }
@@ -416,25 +299,11 @@
   .entryGrid { grid-template-columns: 1fr; gap: 16px; }
   .entryCard { min-height: 280px; padding: 28px 24px 24px; border-radius: 22px; }
   .entryCard h3 { font-size: 34px; }
-  .highlights { padding: 38px 12px 44px; }
-  .highlights::before { width: 280px; height: 280px; filter: blur(65px); }
-  .highlightsHeading { margin-bottom: 18px; display: block; }
-  .highlightsHeading h2 { margin-top: 7px; font-size: 36px; }
-  .highlightsHeading p { max-width: 310px; margin-top: 10px; font-size: 14px; line-height: 1.42; }
-  .highlightsGrid { gap: 10px; }
-  .highlightCard { aspect-ratio: 3 / 4; border-radius: 20px; box-shadow: 0 15px 34px rgba(52, 25, 63, .13); }
-  .highlightImagePurple { object-position: 50% 29%; }
-  .highlightImageGold { object-position: 50% 31%; }
-  .highlightShade { background: linear-gradient(180deg, transparent 49%, rgba(20, 9, 25, .76) 100%); }
-  .highlightMeta { right: 12px; bottom: 13px; left: 12px; gap: 4px; }
-  .highlightMeta span { font-size: 8px; letter-spacing: .13em; }
-  .highlightMeta strong { font-size: clamp(15px, 4.5vw, 20px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .heroCta,
-  .cta,
-  .highlightImage { transition: none; }
+  .cta { transition: none; }
 }
 
 /* Home visual aprovada — somente a identidade cromática usa o roxo oficial. */
@@ -467,16 +336,16 @@
 }
 
 @media (max-width: 620px) {
-  .hero { min-height: 570px; }
+  .hero { min-height: 680px; }
   .hero::after { background: linear-gradient(90deg,#fff 0%,rgba(255,255,255,.98) 24%,rgba(255,247,248,.73) 48%,rgba(255,241,244,.08) 79%), linear-gradient(0deg,rgba(255,255,255,.82) 0%,transparent 26%); }
   .model { inset: 0 -34% 0 22%; }
   .modelImage { object-position: 48% 35%; }
-  .heroCopy { width: 64%; min-height: 570px; margin: 0 18px; padding: 20px 0 16px; }
-  .heroEyebrow { max-width: 260px; margin-top: 18px; font-size: 9px; line-height: 1.35; letter-spacing: .18em; }
+  .heroCopy { width: 64%; min-height: 680px; margin: 0 18px; padding: 28px 0 20px; }
+  .heroEyebrow { max-width: 260px; margin-top: 26px; font-size: 9px; line-height: 1.35; letter-spacing: .18em; }
   .heroCopy h1 { margin: 17px 0 14px; font-size: clamp(35px,10.2vw,44px); line-height: 1.01; }
   .heroCopy > p { max-width: 250px; font-size: 13px; line-height: 1.42; }
   .heroActions { width: min(58vw,250px); margin-top: 17px; gap: 9px; }
-  .heroCta { width: 100%; min-height: 46px; padding: 0 18px; font-size: 13px; }
+  .heroCta { width: 100%; min-height: 50px; padding: 0 18px; font-size: 14px; }
   .ageNotice { max-width: 235px; margin-top: auto; font-size: 10px; }
   .trust { min-height: 98px; padding: 17px 9px; }
   .trustItem { min-height: 58px; padding: 2px 9px; text-align: center; }
