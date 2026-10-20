@@ -123,6 +123,53 @@
   font-size: 14px;
 }
 
+.campaign {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.06fr) minmax(0, .94fr);
+  gap: clamp(32px, 5vw, 88px);
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: clamp(72px, 8vw, 128px) max(42px, calc((100vw - 1420px) / 2)) clamp(88px, 10vw, 156px);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 14% 24%, rgba(116, 53, 143, .11), transparent 31%),
+    radial-gradient(circle at 91% 77%, rgba(206, 161, 91, .12), transparent 30%),
+    linear-gradient(180deg, #fff 0%, #fcf8fd 52%, #fff 100%);
+}
+
+.campaign::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 50%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(116, 53, 143, .16), transparent);
+}
+
+.campaignVisual {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+}
+
+.campaignPurple {
+  max-width: 680px;
+  justify-self: end;
+}
+
+.campaignGold {
+  max-width: 620px;
+  margin-top: clamp(80px, 10vw, 160px);
+  justify-self: start;
+}
+
+.campaignImage {
+  object-fit: cover;
+  object-position: center top;
+}
+
 .trust {
   min-height: 138px;
   padding: 28px max(42px, calc((100vw - 1420px) / 2));
@@ -270,6 +317,19 @@
   .trust { padding-inline: 24px; }
   .trustItem { padding-inline: 28px; }
   .quick { padding-inline: 24px; }
+  .campaign {
+    grid-template-columns: 1fr;
+    gap: 56px;
+    padding: 72px 24px 88px;
+  }
+  .campaign::before { display: none; }
+  .campaignPurple,
+  .campaignGold {
+    width: min(100%, 680px);
+    max-width: none;
+    margin: 0;
+    justify-self: center;
+  }
 }
 
 @media (max-width: 620px) {
@@ -299,6 +359,15 @@
   .entryGrid { grid-template-columns: 1fr; gap: 16px; }
   .entryCard { min-height: 280px; padding: 28px 24px 24px; border-radius: 22px; }
   .entryCard h3 { font-size: 34px; }
+  .campaign {
+    gap: 32px;
+    padding: 42px 14px 58px;
+    background:
+      radial-gradient(circle at 6% 20%, rgba(116, 53, 143, .1), transparent 35%),
+      radial-gradient(circle at 94% 80%, rgba(206, 161, 91, .1), transparent 34%),
+      #fff;
+  }
+  .campaignVisual { aspect-ratio: 2 / 3; }
 }
 
 @media (prefers-reduced-motion: reduce) {

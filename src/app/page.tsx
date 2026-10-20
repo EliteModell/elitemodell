@@ -5,6 +5,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import HomeCitySearch from "@/components/home/HomeCitySearch";
+import elitePurple from "@/assets/home/elite-destaque-roxo.jpg";
+import eliteGold from "@/assets/home/elite-destaque-dourado.jpg";
 import styles from "./home.module.css";
 
 const entries = [
@@ -35,6 +37,29 @@ export default function HomePage() {
             <Link href={ACCOUNT_ROUTES.cadastroAcompanhante} className={`${styles.heroCta} ${styles.heroCtaSecondary}`}>Anunciar meu perfil<ArrowRight aria-hidden="true" size={22}/></Link>
           </div>
           <span className={styles.ageNotice}>Ambiente exclusivo para maiores de 18 anos.</span>
+        </div>
+      </section>
+
+      <section className={styles.campaign} aria-label="Garotas-propaganda Elite Modell">
+        <div className={`${styles.campaignVisual} ${styles.campaignPurple}`}>
+          <Image
+            src={elitePurple}
+            alt="Garota-propaganda Elite Modell com peças roxas e detalhes dourados"
+            fill
+            quality={85}
+            sizes="(max-width: 620px) calc(100vw - 28px), (max-width: 900px) calc(100vw - 48px), 680px"
+            className={styles.campaignImage}
+          />
+        </div>
+        <div className={`${styles.campaignVisual} ${styles.campaignGold}`}>
+          <Image
+            src={eliteGold}
+            alt="Garota-propaganda Elite Modell com look dourado"
+            fill
+            quality={85}
+            sizes="(max-width: 620px) calc(100vw - 28px), (max-width: 900px) calc(100vw - 48px), 620px"
+            className={styles.campaignImage}
+          />
         </div>
       </section>
 
