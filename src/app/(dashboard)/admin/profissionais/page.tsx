@@ -39,7 +39,7 @@ const statusLabel: Record<string, string> = {
 };
 
 type ProfessionalApprovalReview = {
-  userId: string; status: string; image?: string | null; registrationSubmittedAt?: Date | null; bio: string; city: string; state: string; escortCategory: string | null;
+  userId: string; displayName: string; status: string; image?: string | null; registrationSubmittedAt?: Date | null; bio: string; city: string; state: string; escortCategory: string | null;
   birthDate: Date | null; attendanceTypes: string[]; servesGenders: string[]; diasDisponiveis: string[];
   services: string[]; price15min: number | null; pricePerHour: number | null; price30min: number | null; price2h: number | null;
   priceOvernight: number | null; priceWebcam: number | null; paymentMethods: string[]; whatsapp: string | null;
@@ -198,6 +198,7 @@ async function reviewProfessional(formData: FormData) {
           where: { id },
           select: {
             userId: true,
+            displayName: true,
             status: true,
             image: true,
             registrationSubmittedAt: true,

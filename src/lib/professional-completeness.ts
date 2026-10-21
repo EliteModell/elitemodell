@@ -1,4 +1,5 @@
 import { isAgeOfMajority, isValidBirthDate } from "@/lib/age-validation";
+import { isProfessionalDisplayNameReady } from "@/lib/professional-display-name";
 
 export const PROFESSIONAL_REGISTRATION_STEPS = [
   { id: "basic", label: "Dados pessoais", routeStep: 0 },
@@ -58,7 +59,7 @@ const ONBOARDING_CHECKS: Array<{
   step: number;
   valid: (profile: ProfessionalCompletionInput) => boolean;
 }> = [
-  { code: "display_name", field: "displayName", label: "Nome profissional", step: 0, valid: (p) => (p.displayName?.trim().length ?? 0) >= 2 },
+  { code: "display_name", field: "displayName", label: "Nome profissional", step: 0, valid: (p) => isProfessionalDisplayNameReady(p.displayName) },
   { code: "category", field: "genderIdentity", label: "Identidade do perfil", step: 0, valid: (p) => ["MULHER", "HOMEM", "NAO_BINARIO", "AUTODESCRICAO"].includes(p.genderIdentity ?? "") || ["MULHER", "HOMEM", "TRANS"].includes(p.escortCategory ?? "") },
   { code: "service_city", field: "city", label: "Cidade principal de atendimento", step: 2, valid: (p) => (p.city?.trim().length ?? 0) >= 2 },
   { code: "service_state", field: "state", label: "Estado de atendimento", step: 2, valid: (p) => (p.state?.trim().length ?? 0) >= 2 },
@@ -110,6 +111,7 @@ export function professionalAdministrativeApprovalIssues(profile: ProfessionalCo
     code, field, label, step: 0, stepLabel: "Aprovação administrativa",
   });
   if (!profile.registrationSubmittedAt) add("submission", "registrationSubmittedAt", "Cadastro ainda não enviado para análise");
+  if (!isProfessionalDisplayNameReady(profile.displayName)) add("display_name", "displayName", "Informe um nome profissional antes da aprovação");
   if (!profile.termsConsent || !profile.lgpdConsent) add("legal_consent", "consent", "Termos e consentimento LGPD obrigatórios");
   if (!profile.kycSessionId || profile.kycStatus !== "APPROVED") add("kyc", "kycSessionId", "Verificação de identidade e maioridade aprovada");
   if (!profile.image && !profile.photos?.some((photo) => Boolean(photo.url))) add("main_photo", "image", "Foto principal");
@@ -123,7 +125,7 @@ const REQUIRED_CHECKS: Array<{
   step: number;
   valid: (profile: ProfessionalCompletionInput) => boolean;
 }> = [
-  { code: "display_name", field: "displayName", label: "Nome profissional", step: 0, valid: (p) => (p.displayName?.trim().length ?? 0) >= 2 },
+  { code: "display_name", field: "displayName", label: "Nome profissional", step: 0, valid: (p) => isProfessionalDisplayNameReady(p.displayName) },
   { code: "bio", field: "bio", label: "Biografia com pelo menos 80 caracteres", step: 0, valid: (p) => (p.bio?.trim().length ?? 0) >= 80 },
   { code: "category", field: "escortCategory", label: "Categoria profissional", step: 0, valid: (p) => ["MULHER", "HOMEM", "TRANS"].includes(p.escortCategory ?? "") },
   { code: "service_city", field: "city", label: "Cidade de atendimento", step: 0, valid: (p) => (p.city?.trim().length ?? 0) >= 2 },

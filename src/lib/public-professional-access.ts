@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Prisma } from "@prisma/client";
 import { activeProfessionalAccessWhere, getProfessionalBillingSettings } from "@/lib/professional-access";
+import { RESERVED_PUBLIC_PROFESSIONAL_NAMES } from "@/lib/professional-display-name";
 
 export function publicProfessionalWhere(
   now = new Date(),
@@ -16,6 +17,11 @@ export function publicProfessionalWhere(
         ],
       },
       activeProfessionalAccessWhere(now, billingEnabled),
+      {
+        NOT: RESERVED_PUBLIC_PROFESSIONAL_NAMES.map((displayName) => ({
+          displayName: { equals: displayName, mode: "insensitive" },
+        })),
+      },
     ],
   };
 }

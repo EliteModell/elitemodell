@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { normalizeLocationText } from "@/lib/brazilian-location";
@@ -11,6 +11,7 @@ type CityChoice = CitySuggestion;
 
 export default function HomeCitySearch() {
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [input, setInput] = useState("");
   const [selected, setSelected] = useState<CityChoice | null>(null);
   const [focused, setFocused] = useState(false);
@@ -42,9 +43,12 @@ export default function HomeCitySearch() {
   return <form className={styles.form} onSubmit={submit} role="search" aria-label="Buscar acompanhantes por cidade">
     <label className={styles.label} htmlFor="home-city-search">Buscar acompanhantes por cidade</label>
     <div className={`${styles.control} ${focused ? styles.focused : ""}`}>
-      <input id="home-city-search" type="search" value={input} placeholder="Digite sua cidade" autoComplete="off" role="combobox"
+      <input ref={inputRef} id="home-city-search" type="search" value={input} placeholder="Digite sua cidade" autoComplete="off" role="combobox"
         aria-autocomplete="list" aria-controls="home-city-suggestions" aria-expanded={focused && choices.length > 0}
-        onFocus={() => setFocused(true)} onBlur={() => window.setTimeout(() => setFocused(false), 120)}
+        onFocus={() => {
+          setFocused(true);
+          window.setTimeout(() => inputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 250);
+        }} onBlur={() => window.setTimeout(() => setFocused(false), 120)}
         onChange={(event) => {
           const value = event.target.value;
           setInput(value); setSelected(null); setMessage("");

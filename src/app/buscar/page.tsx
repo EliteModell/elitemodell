@@ -568,7 +568,10 @@ function BuscarContent() {
         }
         .location-modal-backdrop {
           position: fixed;
-          inset: 0;
+          top: 0;
+          right: 0;
+          left: 0;
+          height: 100dvh;
           z-index: 9000;
           display: flex;
           align-items: flex-end;
@@ -582,12 +585,14 @@ function BuscarContent() {
           max-width: 560px;
           max-height: min(720px, 92vh);
           overflow: hidden;
+          display: flex;
+          flex-direction: column;
           border-radius: 18px;
           border: 1px solid var(--border);
           background: #fff;
           box-shadow: 0 22px 58px rgba(37, 31, 32,.16);
         }
-        .location-list { max-height: 280px; overflow-y: auto; padding: 4px 18px 0; }
+        .location-list { min-height: 56px; max-height: 280px; flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; padding: 4px 18px 0; -webkit-overflow-scrolling: touch; }
         .location-option {
           width: 100%;
           min-height: 48px;
@@ -608,7 +613,8 @@ function BuscarContent() {
         .location-option.active { border-color: var(--primary); background: var(--primary-soft); color: var(--text-primary); }
         .location-option.location-geolocation { border-color: var(--primary); background: linear-gradient(135deg, #ff3ba7, #9b19d8); color: #fff; font-weight: 900; box-shadow: 0 10px 24px rgba(183,44,255,.2); }
         .location-option.location-geolocation:disabled { opacity: .72; cursor: wait; }
-        .location-modal-header { padding: 18px 18px 14px; border-bottom: 1px solid var(--border); }
+        .location-modal-header { flex: 0 0 auto; padding: 18px 18px 14px; border-bottom: 1px solid var(--border); }
+        .location-modal-extras { flex: 0 0 auto; padding: 14px 18px 8px; }
         .location-modal-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
         .location-modal-kicker { margin: 0 0 4px; color: var(--primary); font-size: 10px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
         .location-modal-title { margin: 0; color: var(--text-primary); font-family: ${PLAYFAIR}; font-size: 24px; line-height: 1.12; }
@@ -619,7 +625,7 @@ function BuscarContent() {
         .location-modal-search input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring); }
         .location-modal-message { margin: 0 0 10px; color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
         .location-modal-empty { color: var(--text-secondary); font-size: 13px; }
-        .location-modal-footer { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; padding: 14px 18px 18px; border-top: 1px solid var(--border); }
+        .location-modal-footer { flex: 0 0 auto; display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; padding: 14px 18px max(18px, env(safe-area-inset-bottom)); border-top: 1px solid var(--border); background: #fff; }
         .location-modal-secondary, .location-modal-primary { min-height: 46px; border-radius: 999px; font-weight: 800; cursor: pointer; }
         .location-modal-secondary { border: 1px solid #d9b8eb; background: #fff; color: var(--primary); }
         .location-modal-primary { border: 1px solid var(--primary); background: var(--primary); color: var(--text-on-primary); font-weight: 900; }
@@ -704,7 +710,12 @@ function BuscarContent() {
           .perfil-info { padding: 16px 18px; }
           .dynamic-title { font-size: 1.85rem; }
           .location-modal-backdrop { padding: 0; align-items: flex-end; }
-          .location-modal { border-radius: 18px 18px 0 0; max-height: 90vh; }
+          .location-modal { border-radius: 18px 18px 0 0; max-height: min(90dvh, 720px); }
+          .location-modal-backdrop[data-compact="true"] { align-items: stretch; padding-top: max(4px, env(safe-area-inset-top)); }
+          .location-modal-backdrop[data-compact="true"] .location-modal { max-height: 100%; margin-top: auto; }
+          .location-modal-backdrop[data-compact="true"] .location-modal-extras { display: none; }
+          .location-modal-backdrop[data-compact="true"] .location-list { max-height: none; padding-top: 8px; }
+          .location-modal-backdrop[data-compact="true"] .location-modal-footer { padding-top: 8px; }
           .profiles-empty, .rooms-coming-soon { min-height: 300px; border-radius: 14px; padding: 36px 18px; }
           .profiles-empty-actions, .coming-actions { flex-direction: column; }
           .profiles-empty-actions button, .profiles-empty-actions a, .coming-actions a { width: 100%; }
@@ -891,8 +902,38 @@ function LocationModal({
   onSelectCity: (city: LocationChoice) => void;
   onSelectVirtual: () => void;
 }) {
+  const [visualViewport, setVisualViewport] = useState<{ height: number; offsetTop: number; keyboardOpen: boolean } | null>(null);
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const updateViewport = () => {
+      setVisualViewport({
+        height: Math.round(viewport.height),
+        offsetTop: Math.round(viewport.offsetTop),
+        keyboardOpen: window.innerHeight - viewport.height > 120,
+      });
+    };
+    updateViewport();
+    viewport.addEventListener("resize", updateViewport);
+    viewport.addEventListener("scroll", updateViewport);
+    return () => {
+      viewport.removeEventListener("resize", updateViewport);
+      viewport.removeEventListener("scroll", updateViewport);
+    };
+  }, []);
+
   return (
-    <div className="location-modal-backdrop" role="dialog" aria-modal="true" aria-label="Selecionar localização">
+    <div
+      className="location-modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Selecionar localização"
+      data-keyboard-open={visualViewport?.keyboardOpen ? "true" : "false"}
+      data-compact={visualViewport?.keyboardOpen || searchFocused ? "true" : "false"}
+      style={visualViewport ? { top: visualViewport.offsetTop, height: visualViewport.height } : undefined}
+    >
       <div className="location-modal">
         <div className="location-modal-header">
           <div className="location-modal-heading">
@@ -906,13 +947,14 @@ function LocationModal({
             <SearchIcon style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)" }} />
             <input
               value={locationSearch}
+              onFocus={() => setSearchFocused(true)}
               onChange={(event) => onSearch(event.target.value)}
               placeholder="Digite cidade ou UF"
             />
           </div>
         </div>
 
-        <div style={{ padding: "14px 18px 8px" }}>
+        <div className="location-modal-extras">
           <button type="button" className="location-option location-geolocation" onClick={onGeo} disabled={geoLoading} style={{ marginBottom: 10 }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
               <LocationIcon />

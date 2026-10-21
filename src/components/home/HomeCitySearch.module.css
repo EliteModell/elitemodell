@@ -23,6 +23,6 @@
   .control { min-height: 50px; padding: 4px; }
   .control input { padding-inline: 12px 6px; font-size: 13px; }
   .control > button { width: 42px; min-width: 42px; }
-  .suggestions { width: min(88vw, 340px); }
+  .suggestions { width: min(88vw, 340px); max-height: min(270px, 42dvh); }
   .suggestions button { align-items: flex-start; flex-direction: column; gap: 3px; }
 }

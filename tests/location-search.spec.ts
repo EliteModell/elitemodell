@@ -156,3 +156,24 @@ test("Home still suggests national cities when ranking API is unavailable", asyn
   await expect(page.getByRole("option").filter({ hasText: "Manaus, AM" })).toBeVisible();
   await expect(page.getByRole("option").filter({ hasText: "Vitória, ES" })).toHaveCount(0);
 });
+
+test("modal mantem Linhares acessivel no viewport reduzido pelo teclado", async ({ page }) => {
+  for (const width of [375, 390, 430]) {
+    await page.setViewportSize({ width, height: 430 });
+    await page.goto("/buscar?tab=acompanhantes&selecionarCidade=1", { waitUntil: "domcontentloaded" });
+    const dialog = page.getByRole("dialog", { name: "Selecionar localização" });
+    await dialog.getByPlaceholder("Digite cidade ou UF").fill("Linhares");
+    const choice = dialog.getByRole("button", { name: "Linhares, ES" });
+    await expect(choice).toBeVisible();
+    const geometry = await choice.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom, viewport: window.visualViewport?.height ?? window.innerHeight };
+    });
+    expect(geometry.top).toBeGreaterThanOrEqual(0);
+    expect(geometry.bottom).toBeLessThanOrEqual(geometry.viewport + 1);
+    await choice.click();
+    await expect(dialog.getByRole("button", { name: "Ver acompanhantes em Linhares, ES" })).toBeVisible();
+    await dialog.getByRole("button", { name: "Ver acompanhantes em Linhares, ES" }).click();
+    await expect(page).toHaveURL(/cidade=Linhares&estado=es/);
+  }
+});

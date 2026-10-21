@@ -26,6 +26,7 @@ const complete = {
 };
 
 const approvalReady = {
+  displayName: "Modelo Teste",
   registrationSubmittedAt: new Date("2026-10-21T18:50:00Z"),
   termsConsent: true,
   lgpdConsent: true,
@@ -51,6 +52,11 @@ test.describe("aprovação administrativa cirúrgica", () => {
   test("bloqueia quando falta requisito obrigatório de segurança", () => {
     const issues = professionalAdministrativeApprovalIssues({ ...approvalReady, kycStatus: "PENDING" });
     expect(issues).toContainEqual(expect.objectContaining({ code: "kyc" }));
+  });
+
+  test("bloqueia o nome provisório usado durante o cadastro", () => {
+    const issues = professionalAdministrativeApprovalIssues({ ...approvalReady, displayName: "Cadastro de acompanhante" });
+    expect(issues).toContainEqual(expect.objectContaining({ code: "display_name" }));
   });
 });
 

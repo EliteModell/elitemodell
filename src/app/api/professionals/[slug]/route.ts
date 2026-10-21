@@ -23,6 +23,7 @@ import {
 } from "@/lib/public-professional-media";
 import { authorizeAdultContentRequest } from "@/lib/adult-content-access";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
+import { isProfessionalDisplayNameReady } from "@/lib/professional-display-name";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const limited = await enforceRateLimitAsync(`public-profile:${getClientIP(req)}`, 300, 60 * 1000, "Muitos perfis abertos em pouco tempo.");
@@ -163,7 +164,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     now,
     billingSettings,
   );
-  if ((!effectivelyActive || isPausedByDate || !access.canAppearInSearch) && !canViewDraft) {
+  if ((!effectivelyActive || isPausedByDate || !access.canAppearInSearch || !isProfessionalDisplayNameReady(professional.displayName)) && !canViewDraft) {
     return NextResponse.json(
       { error: "Profissional nao encontrado." },
       { status: 404, headers: ageGateCacheHeaders() },
