@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { professionalCompletion } from "@/lib/professional-completeness";
+import { professionalOnboardingCompletion } from "@/lib/professional-completeness";
 
 export const createProfessionalSchema = z.object({
   displayName: z.string().min(2),
@@ -67,7 +67,7 @@ export const createProfessionalSchema = z.object({
   kycSessionId: z.string().optional(),
   kycStatus: z.string().optional(),
 }).superRefine((data, ctx) => {
-  const result = professionalCompletion({
+  const result = professionalOnboardingCompletion({
     ...data,
     image: data.image,
     emailVerified: true,

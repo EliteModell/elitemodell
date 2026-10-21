@@ -406,7 +406,7 @@ test("HTML inesperado da API mostra erro amigável sem quebrar a tela", async ({
   await expect(page.getByLabel("Código de 6 dígitos")).toHaveCount(0);
 });
 
-test("após validar o código abre a ativação profissional completa", async ({ page }) => {
+test("após validar o código entra direto no onboarding simplificado", async ({ page }) => {
   await page.route("**/api/auth/phone/send-code", async (route) => {
     await route.fulfill({
       status: 200,
@@ -419,18 +419,26 @@ test("após validar o código abre a ativação profissional completa", async ({
       phone: "31999999999",
       code: "123456",
       accountType: "model",
-      deferAccountCreation: true,
+      deferAccountCreation: false,
     });
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
         ok: true,
-        registrationPending: true,
-        redirectTo: "/cadastro?tipo=acompanhante&telefoneValidado=1",
+        registrationPending: false,
+        authToken: "new-professional-phone-token",
+        redirectTo: "/profissional/novo",
       }),
     });
   });
+  await page.route("**/api/auth/csrf**", (route) => route.fulfill({ json: { csrfToken: "csrf-new-professional" } }));
+  await page.route("**/api/auth/callback/phone-otp-token**", (route) => route.fulfill({ json: { url: new URL("/profissional/novo", route.request().url()).toString() } }));
+  await page.route("**/profissional/novo**", (route) => route.fulfill({
+    status: 200,
+    contentType: "text/html; charset=utf-8",
+    body: "<!doctype html><html lang=\"pt-BR\"><meta charset=\"utf-8\"><body><h1>Como você quer aparecer?</h1><p>Etapa 1 de 5</p></body></html>",
+  }));
   await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
 
   await page.getByLabel("Seu número de telefone").fill("31999999999");
@@ -439,22 +447,10 @@ test("após validar o código abre a ativação profissional completa", async ({
   await page.getByLabel("Código de 6 dígitos").fill("123456");
   await page.getByRole("button", { name: "Validar e continuar" }).click();
 
-  await page.waitForURL(/\/cadastro\?tipo=acompanhante&telefoneValidado=1/);
-  await expect(page.getByText("Cadastro de acompanhante +18", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Cadastrar com Google" })).toHaveCount(0);
-  await expect(page.getByPlaceholder("seu@email.com")).toBeVisible();
-  const womanCategory = page.getByRole("button", { name: "Mulher" });
-  await womanCategory.click();
-  await expect(womanCategory).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("button", { name: "Mostrar senha" })).toBeVisible();
-  await page.getByPlaceholder("Mínimo 6 caracteres").fill("senha123");
-  await page.getByRole("button", { name: "Mostrar senha" }).click();
-  await expect(page.getByPlaceholder("Mínimo 6 caracteres")).toHaveAttribute("type", "text");
-  await expect(page.getByRole("button", { name: "Ocultar senha" })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByText("Data de nascimento", { exact: true })).toBeVisible();
-  for (const step of ["Dados", "Aparência", "Atendimento", "Serviços", "Valores", "Contato", "Fotos", "Verificação", "Enviar"]) {
-    await expect(page.locator("body")).toContainText(step);
-  }
+  await page.waitForURL(/\/profissional\/novo/);
+  await expect(page.getByRole("heading", { name: "Como você quer aparecer?" })).toBeVisible();
+  await expect(page.getByText("Etapa 1 de 5")).toBeVisible();
+  await expect(page.getByPlaceholder("seu@email.com")).toHaveCount(0);
 });
 
 test("cadastro profissional por email exige confirmação antes do onboarding", async ({ page }) => {

@@ -24,7 +24,7 @@ import { publicServiceLocation } from "@/lib/professional-location";
 import { controlledMediaAssetId, filterApprovedProfilePhotos, normalizeControlledMediaUrl } from "@/lib/public-professional-media";
 import { deliverProfessionalSubmissionReceipt } from "@/lib/professional-submission-receipt";
 import { logAudit } from "@/lib/audit";
-import { professionalCompletion, issueChecklist } from "@/lib/professional-completeness";
+import { professionalOnboardingCompletion } from "@/lib/professional-completeness";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import { refreshExpiredProfessionalBoosts } from "@/lib/professional-timers";
 
@@ -273,7 +273,8 @@ export async function POST(req: NextRequest) {
       select: { name: true, category: true, email: true, emailVerified: true, clientStatus: true, kycSessionId: true },
     });
 
-    if (!user?.emailVerified) {
+    // O telefone já foi verificado na entrada do fluxo; e-mail é opcional para o onboarding.
+    if (!user) {
       return NextResponse.json(
         {
           error: "Confirme seu e-mail antes de enviar o cadastro para análise.",
@@ -283,13 +284,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const completion = professionalCompletion({ ...data, emailVerified: user.emailVerified });
+    const completion = professionalOnboardingCompletion({ ...data, emailVerified: user?.emailVerified });
     if (completion.profileIssues.length) {
       return NextResponse.json({
         error: "Seu cadastro ainda não pode ser enviado.",
         code: "profile_incomplete",
         completion,
-        checklist: issueChecklist({ ...data, emailVerified: user.emailVerified }),
+        checklist: completion.issues,
       }, { status: 422 });
     }
 

@@ -342,7 +342,7 @@ export function ProfessionalRegistrationFlow({
           phone: onlyDigits(phone),
           code,
           accountType: "model",
-          deferAccountCreation: true,
+          deferAccountCreation: false,
           ...consents,
         }),
       });
@@ -355,7 +355,7 @@ export function ProfessionalRegistrationFlow({
         throw new Error(data.error || "Código inválido ou expirado.");
       }
 
-      if (data.existingAccount && data.authToken && data.redirectTo) {
+      if (data.authToken && data.redirectTo) {
         const auth = await signIn("phone-otp-token", {
           token: data.authToken,
           redirect: false,
@@ -363,7 +363,7 @@ export function ProfessionalRegistrationFlow({
         if (auth?.error) {
           throw new Error("Código validado, mas não foi possível iniciar a sessão.");
         }
-        toast.success("Telefone confirmado. Acessando sua conta existente.");
+        toast.success(data.existingAccount ? "Telefone confirmado. Acessando sua conta existente." : "Telefone confirmado. Vamos criar seu perfil.");
         router.replace(data.redirectTo);
         router.refresh();
         return;
@@ -506,6 +506,10 @@ export function ProfessionalRegistrationFlow({
                   <label className={styles.checkRow}>
                     <input type="checkbox" checked={mandatoryConsentsAccepted} onChange={(event) => setMandatoryConsent(event.target.checked)} />
                     <span>Confirmo que tenho 18 anos ou mais, que o perfil será criado para mim e concordo com os <Link href="/terms" target="_blank">Termos de Uso</Link> e a <Link href="/privacy" target="_blank">Política de Privacidade</Link>.</span>
+                  </label>
+                  <label className={styles.checkRow}>
+                    <input type="checkbox" checked={consents.marketingConsent} onChange={(event) => setConsents((current) => ({ ...current, marketingConsent: event.target.checked }))} />
+                    <span>Quero receber novidades e dicas da Elite Modell. <strong>Opcional</strong></span>
                   </label>
                 </div>
 

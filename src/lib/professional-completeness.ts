@@ -47,6 +47,54 @@ export type ProfessionalCompletionIssue = {
   stepLabel: string;
 };
 
+const ONBOARDING_CHECKS: Array<{
+  code: string;
+  field: string;
+  label: string;
+  step: number;
+  valid: (profile: ProfessionalCompletionInput) => boolean;
+}> = [
+  { code: "display_name", field: "displayName", label: "Nome profissional", step: 0, valid: (p) => (p.displayName?.trim().length ?? 0) >= 2 },
+  { code: "category", field: "escortCategory", label: "Categoria profissional", step: 0, valid: (p) => ["MULHER", "HOMEM", "TRANS"].includes(p.escortCategory ?? "") },
+  { code: "service_city", field: "city", label: "Cidade principal de atendimento", step: 2, valid: (p) => (p.city?.trim().length ?? 0) >= 2 },
+  { code: "service_state", field: "state", label: "Estado de atendimento", step: 2, valid: (p) => (p.state?.trim().length ?? 0) >= 2 },
+  { code: "attendance_type", field: "attendanceTypes", label: "Modalidade de atendimento", step: 2, valid: (p) => Boolean(p.attendanceTypes?.length) },
+  { code: "hourly_price", field: "pricePerHour", label: "Valor inicial por hora", step: 3, valid: (p) => typeof p.pricePerHour === "number" && p.pricePerHour > 0 },
+  { code: "main_photo", field: "image", label: "Foto principal", step: 3, valid: (p) => Boolean(p.image || p.photos?.some((photo) => photo.url && (photo.cover || p.photos?.length === 1))) },
+];
+
+/** Requisitos mínimos de envio; a publicação continua usando professionalCompletion. */
+export function professionalOnboardingCompletion(profile: ProfessionalCompletionInput) {
+  const profileIssues: ProfessionalCompletionIssue[] = ONBOARDING_CHECKS
+    .filter((check) => !check.valid(profile))
+    .map((check) => ({
+      code: check.code,
+      field: check.field,
+      label: check.label,
+      step: check.step,
+      stepLabel: ["Dados básicos", "Identidade", "Atendimento", "Perfil"][check.step] ?? "Cadastro",
+    }));
+  const kycApproved = Boolean(profile.kycSessionId && profile.kycStatus === "APPROVED");
+  const issues = kycApproved ? profileIssues : [...profileIssues, {
+    code: "kyc",
+    field: "kycSessionId",
+    label: "Verificação de identidade aprovada",
+    step: 1,
+    stepLabel: "Identidade",
+  }];
+  const completedRequired = ONBOARDING_CHECKS.length - profileIssues.length;
+  return {
+    profilePercent: Math.round((completedRequired / ONBOARDING_CHECKS.length) * 100),
+    profileComplete: profileIssues.length === 0,
+    kycApproved,
+    emailVerified: Boolean(profile.emailVerified),
+    readyToSubmit: profileIssues.length === 0 && kycApproved,
+    firstIncompleteStep: issues.length ? Math.min(...issues.map((issue) => issue.step)) : 4,
+    profileIssues,
+    issues,
+  };
+}
+
 const REQUIRED_CHECKS: Array<{
   code: string;
   field: string;

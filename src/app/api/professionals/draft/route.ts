@@ -7,10 +7,11 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { assertOwnedUploadMediaUrls } from "@/lib/approved-media";
 import { normalizeControlledMediaUrl } from "@/lib/public-professional-media";
-import { professionalCompletion } from "@/lib/professional-completeness";
+import { professionalCompletion, professionalOnboardingCompletion } from "@/lib/professional-completeness";
 
 const draftSchema = z.object({
   step: z.number().int().min(0).max(7),
+  flow: z.literal("simplified-v1").optional(),
   form: z.record(z.string(), z.unknown()),
 });
 
@@ -41,16 +42,8 @@ async function loadProfessional(userId: string) {
   });
 }
 
-async function hasConfirmedEmail(userId: string) {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { emailVerified: true } });
-  return Boolean(user?.emailVerified);
-}
-
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (session?.user?.id && !await hasConfirmedEmail(session.user.id)) {
-    return NextResponse.json({ error: "Confirme seu email antes de acessar o cadastro.", code: "EMAIL_NOT_CONFIRMED" }, { status: 403 });
-  }
   if (!session?.user?.id) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   const professional = await loadProfessional(session.user.id);
   if (!professional) return NextResponse.json({ error: "Rascunho profissional não encontrado." }, { status: 404 });
@@ -79,12 +72,9 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (session?.user?.id && !await hasConfirmedEmail(session.user.id)) {
-    return NextResponse.json({ error: "Confirme seu email antes de salvar o cadastro.", code: "EMAIL_NOT_CONFIRMED" }, { status: 403 });
-  }
   if (!session?.user?.id) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   try {
-    const { step, form } = draftSchema.parse(await req.json());
+    const { step, form, flow } = draftSchema.parse(await req.json());
     const professional = await loadProfessional(session.user.id);
     if (!professional) return NextResponse.json({ error: "Rascunho profissional não encontrado." }, { status: 404 });
     if (!["DRAFT", "CORRECTION_REQUIRED"].includes(professional.status)) {
@@ -107,7 +97,9 @@ export async function PATCH(req: NextRequest) {
       priceWebcam: submittedNumber(form, "priceWebcam", professional.priceWebcam),
       emailVerified: professional.user.emailVerified,
     };
-    const completion = professionalCompletion(merged);
+    const completion = flow === "simplified-v1"
+      ? professionalOnboardingCompletion(merged)
+      : professionalCompletion(merged);
     const stepIssues = completion.issues.filter((issue) => issue.step === step);
     if (stepIssues.length) {
       return NextResponse.json({
@@ -120,6 +112,56 @@ export async function PATCH(req: NextRequest) {
     }
 
     const common = { completionRulesVersion: 2 };
+    if (flow === "simplified-v1") {
+      if (step === 0) {
+        const category = text(form.escortCategory);
+        const typedCategory = ["MULHER", "HOMEM", "TRANS"].includes(category)
+          ? category as "MULHER" | "HOMEM" | "TRANS"
+          : null;
+        await prisma.professional.update({
+          where: { id: professional.id },
+          data: {
+            ...common,
+            displayName: text(form.displayName),
+            escortCategory: category,
+            user: { update: { category: typedCategory } },
+          },
+        });
+      } else if (step === 2) {
+        await prisma.professional.update({
+          where: { id: professional.id },
+          data: {
+            ...common,
+            city: text(form.city),
+            state: text(form.state).toUpperCase(),
+            attendanceTypes: list(form.attendanceTypes),
+            currentServiceCity: text(form.city),
+            currentServiceState: text(form.state).toUpperCase(),
+            locationUpdatedAt: new Date(),
+            locationVerificationStatus: "VERIFIED",
+          },
+        });
+      } else if (step === 3) {
+        const urls = [text(form.mainPhotoUrl)].filter(Boolean);
+        await assertOwnedUploadMediaUrls({ urls, requestUrl: req.url, ownerId: session.user.id, allowedFolderPrefixes: ["profiles"] });
+        const normalized = urls.map((url) => normalizeControlledMediaUrl(url)).filter((url): url is string => Boolean(url));
+        await prisma.professional.update({
+          where: { id: professional.id },
+          data: {
+            ...common,
+            bio: text(form.bio),
+            pricePerHour: number(form.pricePerHour),
+            priceMin: number(form.pricePerHour),
+            image: null,
+            galleryUrls: [],
+            photos: { deleteMany: {}, create: normalized.map((url, order) => ({ url, order, cover: order === 0 })) },
+          },
+        });
+      }
+      const saved = await loadProfessional(session.user.id);
+      const savedCompletion = professionalOnboardingCompletion({ ...saved!, specialties: saved!.specialties, emailVerified: saved!.user.emailVerified });
+      return NextResponse.json({ ok: true, savedStep: step, completion: savedCompletion });
+    }
     if (step === 0) {
       const category = text(form.escortCategory);
       const typedCategory = ["MULHER", "HOMEM", "TRANS", "HETERO"].includes(category)

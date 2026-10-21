@@ -23,6 +23,7 @@ import {
   roleForPhoneAccount,
   timingSafeCodeCompare,
 } from "@/lib/phone-otp";
+import { ensureProfileForIntent } from "@/lib/account-profiles";
 import { setPendingProfessionalPhoneCookie } from "@/lib/professional-phone-registration";
 import {
   TWILIO_NOT_CONFIGURED_ERROR,
@@ -332,6 +333,7 @@ export async function POST(req: NextRequest) {
         accountType: body.accountType,
         consent,
       });
+      if (body.accountType === "model") await ensureProfileForIntent(user.id, "profissional");
       await recordPhoneLegalTrace(user, req, body.marketingConsent);
       console.info("[phone/verify-code] firebase_sms_verified", {
         accountType: body.accountType,
@@ -471,6 +473,7 @@ export async function POST(req: NextRequest) {
       },
       verificationId: verification.id,
     });
+    if (body.accountType === "model") await ensureProfileForIntent(user.id, "profissional");
     await recordPhoneLegalTrace(user, req, body.marketingConsent);
 
     return NextResponse.json({

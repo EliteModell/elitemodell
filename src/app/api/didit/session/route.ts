@@ -130,13 +130,24 @@ export async function POST() {
     return NextResponse.json({ error: "Apenas anunciantes podem iniciar verificacao." }, { status: 403 });
   }
 
+  const account = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { phoneVerified: true },
+  });
+  if (!account?.phoneVerified) {
+    return NextResponse.json(
+      { error: "Confirme seu telefone por SMS antes da verificacao de identidade.", code: "PHONE_NOT_VERIFIED" },
+      { status: 403 },
+    );
+  }
+
   const draft = await prisma.professional.findUnique({
     where: { userId: session.user.id },
     include: { photos: { select: { url: true, cover: true } }, specialties: { select: { name: true } } },
   });
   if (!draft) return NextResponse.json({ error: "Rascunho profissional não encontrado." }, { status: 409 });
   const beforeIdentity = professionalCompletion({ ...draft, specialties: draft.specialties, emailVerified: true })
-    .profileIssues.filter((issue) => issue.step < 7);
+    .profileIssues.filter((issue) => ["displayName", "escortCategory"].includes(issue.field));
   if (beforeIdentity.length) {
     return NextResponse.json({
       error: "Complete as etapas anteriores antes da verificação de identidade.",
