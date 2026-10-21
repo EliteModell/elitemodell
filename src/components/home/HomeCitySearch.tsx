@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { normalizeLocationText } from "@/lib/brazilian-location";
@@ -20,6 +20,18 @@ export default function HomeCitySearch() {
 
   const suggestions = useCitySuggestions(input, focused);
   const choices = normalizedInput.length >= 2 ? suggestions.slice(0, 6) : [];
+
+  useEffect(() => {
+    if (!focused) return;
+    const keepSearchVisible = () => inputRef.current?.scrollIntoView({ block: "start" });
+    keepSearchVisible();
+    const delayed = window.setTimeout(keepSearchVisible, 250);
+    window.visualViewport?.addEventListener("resize", keepSearchVisible);
+    return () => {
+      window.clearTimeout(delayed);
+      window.visualViewport?.removeEventListener("resize", keepSearchVisible);
+    };
+  }, [focused, choices.length]);
 
   function selectCity(choice: CityChoice) {
     setSelected(choice);
@@ -47,7 +59,7 @@ export default function HomeCitySearch() {
         aria-autocomplete="list" aria-controls="home-city-suggestions" aria-expanded={focused && choices.length > 0}
         onFocus={() => {
           setFocused(true);
-          window.setTimeout(() => inputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 250);
+          inputRef.current?.scrollIntoView({ block: "start" });
         }} onBlur={() => window.setTimeout(() => setFocused(false), 120)}
         onChange={(event) => {
           const value = event.target.value;

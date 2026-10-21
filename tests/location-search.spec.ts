@@ -177,3 +177,17 @@ test("modal mantem Linhares acessivel no viewport reduzido pelo teclado", async 
     await expect(page).toHaveURL(/cidade=Linhares&estado=es/);
   }
 });
+
+test("home mantem Linhares acessivel no viewport reduzido pelo teclado", async ({ page }) => {
+  for (const width of [375, 390, 430]) {
+    await page.setViewportSize({ width, height: 430 });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.getByRole("combobox", { name: "Buscar acompanhantes por cidade" }).fill("Linhares");
+    const choice = page.getByRole("option").filter({ hasText: "Linhares, ES" });
+    await expect(choice).toBeVisible();
+    await expect.poll(async () => choice.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.top >= 0 && rect.bottom <= (window.visualViewport?.height ?? window.innerHeight) + 1;
+    })).toBe(true);
+  }
+});
