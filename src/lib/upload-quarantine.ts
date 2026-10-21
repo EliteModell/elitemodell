@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import type { Prisma } from "@prisma/client";
+import { manualMediaReviewBlockers } from "@/lib/manual-media-review";
 import { evaluateMediaPublicationGates } from "@/lib/media-security";
 import { getMediaStorageProvider, type MediaStorageName } from "@/lib/media-storage";
 import { moderateFileContent, scanFileForVirus, type SecurityResult } from "@/lib/moderation";
@@ -137,11 +138,42 @@ function publicationGate(asset: {
   });
 }
 
+async function ensureProfessionalPhotoReference(asset: { userId: string; folder: string; category: string }, controlledUrl: string) {
+  if (asset.category !== "image" || !asset.folder.startsWith("profiles")) return;
+  const professional = await prisma.professional.findUnique({
+    where: { userId: asset.userId },
+    select: { id: true },
+  });
+  if (!professional) return;
+  const existing = await prisma.professionalPhoto.findFirst({
+    where: { professionalId: professional.id, url: controlledUrl },
+    select: { id: true },
+  });
+  if (existing) return;
+  const [visibleCount, lastPhoto] = await Promise.all([
+    prisma.professionalPhoto.count({ where: { professionalId: professional.id, hiddenAt: null } }),
+    prisma.professionalPhoto.findFirst({
+      where: { professionalId: professional.id },
+      orderBy: { order: "desc" },
+      select: { order: true },
+    }),
+  ]);
+  await prisma.professionalPhoto.create({
+    data: {
+      professionalId: professional.id,
+      url: controlledUrl,
+      cover: visibleCount === 0,
+      order: (lastPhoto?.order ?? -1) + 1,
+    },
+  });
+}
+
 async function promoteAsset(
   asset: {
     id: string;
     userId: string;
     folder: string;
+    category: string;
     extension: string;
     detectedMimeType: string;
     storageProvider?: string | null;
@@ -177,6 +209,7 @@ async function promoteAsset(
       lastProcessedAt: new Date(),
     },
   });
+  await ensureProfessionalPhotoReference(asset, controlledUrl);
   await provider.delete(asset.quarantineBucket, asset.quarantinePath).catch(() => undefined);
   return controlledUrl;
 }
@@ -245,7 +278,10 @@ export async function processUploadAsset(
   let asset = await prisma.uploadAsset.findUnique({ where: { id: assetId } });
   if (!asset) throw new Error("Ativo de upload nao encontrado.");
   if (asset.status === "REJECTED") return asset;
-  if (asset.status === "APPROVED" && publicationGate(asset).publishable) return asset;
+  if (asset.status === "APPROVED" && publicationGate(asset).publishable) {
+    if (asset.controlledUrl) await ensureProfessionalPhotoReference(asset, asset.controlledUrl);
+    return asset;
+  }
   if (asset.status === "APPROVED") {
     asset = await prisma.uploadAsset.update({
       where: { id: asset.id },
@@ -352,14 +388,41 @@ export async function processUploadAsset(
 }
 
 export async function approveUploadAsset(assetId: string, reviewerId: string, reason: string) {
-  const asset = await prisma.uploadAsset.findUniqueOrThrow({ where: { id: assetId } });
-  if (asset.malwareStatus !== "CLEAN" && asset.malwareStatus !== "APPROVED") {
-    throw new Error("Aprovacao humana exige varredura antimalware limpa.");
-  }
-  if (asset.ageIdentityStatus !== "PASS" || asset.consentStatus !== "PASS") {
-    throw new Error("Aprovacao humana exige identidade, maioridade e consentimento validados.");
-  }
-  if (asset.takedownStatus !== "CLEAR") throw new Error("Ativo sob takedown nao pode ser aprovado.");
+  const asset = await prisma.uploadAsset.findUniqueOrThrow({
+    where: { id: assetId },
+    include: {
+      owner: { select: { blocked: true, professional: { select: { id: true, status: true, verified: true, kycStatus: true } } } },
+      depictedPeople: { select: { ageStatus: true, consentStatus: true, revokedAt: true } },
+    },
+  });
+  const professional = asset.owner.professional;
+  const openReport = await prisma.report.findFirst({
+    where: {
+      status: { in: ["PENDING", "REVIEWING"] },
+      OR: [
+        { targetType: { in: ["CONTENT", "PHOTO"] }, targetId: { in: [asset.id, asset.controlledUrl ?? ""] } },
+        ...(professional ? [{ targetType: "PROFESSIONAL", targetId: professional.id }] : []),
+        { targetType: "USER", targetId: asset.userId },
+      ],
+    },
+    select: { id: true },
+  });
+  const blockers = manualMediaReviewBlockers({
+    category: asset.category,
+    folder: asset.folder,
+    uploadCompletedAt: asset.uploadCompletedAt,
+    malwareStatus: asset.malwareStatus,
+    ageIdentityStatus: asset.ageIdentityStatus,
+    consentStatus: asset.consentStatus,
+    takedownStatus: asset.takedownStatus,
+    ownerBlocked: asset.owner.blocked,
+    professionalStatus: professional?.status,
+    professionalVerified: professional?.verified,
+    professionalKycStatus: professional?.kycStatus,
+    depictedPeople: asset.depictedPeople,
+    hasOpenReport: Boolean(openReport),
+  });
+  if (blockers.length) throw new Error(`Aprovacao humana bloqueada: ${blockers.join(", ")}.`);
   if (asset.status === "APPROVED" && publicationGate(asset).publishable) return asset;
 
   const reviewed = await prisma.uploadAsset.update({

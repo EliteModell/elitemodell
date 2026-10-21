@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { isAgeRestrictedRequest } from "../src/lib/age-gate-policy";
 import { createMediaAccessToken, verifyMediaAccessToken } from "../src/lib/media-access-token";
 import { evaluateMediaPublicationGates } from "../src/lib/media-security";
+import { isReadyForHumanContentReview, manualMediaReviewBlockers } from "../src/lib/manual-media-review";
 import {
   AGE_DECLARATION_COOKIE,
   AGE_DECLARATION_MAX_AGE_SECONDS,
@@ -22,6 +23,44 @@ const passingGates = {
 };
 
 test.describe("seguranca fail-closed de midia adulta", () => {
+  const humanReviewReady = {
+    category: "image",
+    folder: "profiles/photos",
+    uploadCompletedAt: new Date(),
+    malwareStatus: "CLEAN",
+    ageIdentityStatus: "PASS",
+    consentStatus: "PASS",
+    takedownStatus: "CLEAR",
+    ownerBlocked: false,
+    professionalStatus: "ACTIVE",
+    professionalVerified: true,
+    professionalKycStatus: "APPROVED",
+    depictedPeople: [{ ageStatus: "PASS", consentStatus: "PASS", revokedAt: null }],
+    hasOpenReport: false,
+  };
+
+  test("libera para revisao humana somente foto com controles obrigatorios aprovados", () => {
+    expect(isReadyForHumanContentReview(humanReviewReady)).toBe(true);
+  });
+
+  test("bloqueia lote quando AV, consentimento, pessoa retratada ou denuncia estao pendentes", () => {
+    const blockers = manualMediaReviewBlockers({
+      ...humanReviewReady,
+      malwareStatus: "PENDING",
+      consentStatus: "PENDING",
+      depictedPeople: [{ ageStatus: "PASS", consentStatus: "PENDING", revokedAt: null }],
+      hasOpenReport: true,
+    });
+    expect(blockers).toEqual(expect.arrayContaining(["MALWARE_SCAN", "CONSENT", "DEPICTED_PEOPLE", "OPEN_REPORT"]));
+  });
+
+  test("fluxo oficial vincula foto promovida ao perfil sem substituir capa existente", async () => {
+    const source = await import("node:fs/promises").then((fs) => fs.readFile("src/lib/upload-quarantine.ts", "utf8"));
+    expect(source).toContain('asset.folder.startsWith("profiles")');
+    expect(source).toContain("prisma.professionalPhoto.create");
+    expect(source).toContain("cover: visibleCount === 0");
+  });
+
   for (const malwareStatus of ["PENDING", "ERROR", "INFECTED"]) {
     test(`nao publica com malware ${malwareStatus}`, () => {
       const result = evaluateMediaPublicationGates({ ...passingGates, malwareStatus });

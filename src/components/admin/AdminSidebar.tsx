@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Banknote, ClipboardList, FileCheck, Headphones, LayoutDashboard, LogOut, MessageCircle, Scale, Settings, ShieldAlert, TicketPercent, UserCog, UserRound, UsersRound } from "lucide-react";
+import { Banknote, ClipboardList, FileCheck, Headphones, Images, LayoutDashboard, LogOut, MessageCircle, Scale, Settings, ShieldAlert, TicketPercent, UserCog, UserRound, UsersRound } from "lucide-react";
 import { loadSupabaseAuth } from "@/lib/supabase-auth-loader";
 
 const adminNav = [
@@ -13,6 +13,7 @@ const adminNav = [
   ["KYC", "/admin/kyc", FileCheck],
   ["Clientes", "/admin/clientes", UsersRound],
   ["Denúncias", "/admin/denuncias", ShieldAlert],
+  ["Moderação de fotos", "/admin/moderacao/uploads", Images],
   ["Suporte", "/admin/suporte", Headphones],
   ["Financeiro", "/admin/financeiro", Banknote],
   ["Funcionários", "/admin/funcionarios", UserCog],
