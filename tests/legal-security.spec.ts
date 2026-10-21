@@ -6,14 +6,14 @@ test.describe("juridico e seguranca - visitante", () => {
     expect(response.status()).toBe(401);
   });
 
-  test("exportacao juridica exige administrador e MFA", async ({ request }) => {
+  test("exportacao juridica exige administrador", async ({ request }) => {
     const response = await request.get("/api/admin/legal/export");
-    expect([401, 403, 428]).toContain(response.status());
+    expect([401, 403]).toContain(response.status());
   });
 
   test("fila administrativa de uploads nao e publica", async ({ request }) => {
     const response = await request.get("/api/admin/uploads");
-    expect([401, 403, 428]).toContain(response.status());
+    expect([401, 403]).toContain(response.status());
   });
 
   test("exclusao e exportacao de dados exigem sessao", async ({ request }) => {
