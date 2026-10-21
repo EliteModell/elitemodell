@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import HomeCitySearch from "@/components/home/HomeCitySearch";
+import eliteHero from "@/../public/images/home/elite-hero-three-models.png";
 import elitePurple from "@/assets/home/elite-destaque-roxo.jpg";
 import eliteGold from "@/assets/home/elite-destaque-dourado.jpg";
 import styles from "./home.module.css";
@@ -25,7 +26,7 @@ export default function HomePage() {
     <main>
       <section className={styles.hero}>
         <div className={styles.model}>
-          <Image src="/images/home/modelo-elite.jpg" alt="Modelo da Elite Modell" fill preload quality={100} sizes="(max-width: 760px) 72vw, 58vw" className={styles.modelImage}/>
+          <Image src={eliteHero} alt="Modelo da Elite Modell" fill preload quality={75} sizes="(max-width: 900px) 100vw, 62vw" className={styles.modelImage}/>
         </div>
         <div className={styles.heroCopy}>
           <span className={styles.heroEyebrow}>Discrição • Segurança • Liberdade</span>
