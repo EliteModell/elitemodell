@@ -2,6 +2,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
+import { requiresDirectMediaDelivery } from "@/lib/public-professional-media";
 import { monitorUpload, parseUploadResponse, UPLOAD_PENDING_MESSAGE, type UploadApiPayload } from "@/lib/upload-response";
 
 type StoryItem = { id: string; mediaUrl: string; mediaType: string; thumbnail: string | null; views: number; createdAt: string };
@@ -139,7 +140,7 @@ export default function Stories() {
                 <div style={{ width: 70, height: 70, borderRadius: "50%", padding: 2.5, background: visto ? "linear-gradient(135deg,#676064,#aaa0b2)" : "linear-gradient(135deg,#fcf7ff,#b72cff,#f0c060,#65009b)" }}>
                   <div style={{ width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden", border: "2.5px solid #080808", background: "#080808", position: "relative" }}>
                     {g.foto
-                      ? <Image src={g.foto} alt={g.nome} fill sizes="70px" style={{ objectFit: "cover", objectPosition: "top" }} />
+                      ? <Image src={g.foto} alt={g.nome} fill unoptimized={requiresDirectMediaDelivery(g.foto)} sizes="70px" style={{ objectFit: "cover", objectPosition: "top" }} />
                       : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: "#aaa0b2" }}>✦</div>
                     }
                   </div>
@@ -175,7 +176,7 @@ export default function Stories() {
             <div style={{ position: "relative", paddingTop: "170%", background: "#111" }}>
               {story.mediaType === "video"
                 ? <video src={story.mediaUrl} poster={story.thumbnail ?? undefined} autoPlay loop muted playsInline preload="metadata" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                : <Image src={story.mediaUrl} alt="" fill sizes="min(380px, 95vw)" style={{ objectFit: "cover" }} />
+                : <Image src={story.mediaUrl} alt="" fill unoptimized={requiresDirectMediaDelivery(story.mediaUrl)} sizes="min(380px, 95vw)" style={{ objectFit: "cover" }} />
               }
               <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 40%)" }} />
             </div>
@@ -184,7 +185,7 @@ export default function Stories() {
             <div style={{ position: "absolute", top: 20, left: 12, right: 12, display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 2 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", border: "2px solid #b72cff", background: "#1a1a1a", position: "relative" }}>
-                  {aberto.grupo.foto && <Image src={aberto.grupo.foto} alt="" fill sizes="32px" style={{ objectFit: "cover" }} />}
+                  {aberto.grupo.foto && <Image src={aberto.grupo.foto} alt="" fill unoptimized={requiresDirectMediaDelivery(aberto.grupo.foto)} sizes="32px" style={{ objectFit: "cover" }} />}
                 </div>
                 <div>
                   <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: "#fff" }}>{aberto.grupo.nome}</p>

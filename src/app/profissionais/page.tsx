@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { requiresDirectMediaDelivery } from "@/lib/public-professional-media";
 import Navbar from "@/components/Navbar";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 
@@ -344,6 +345,7 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
               src={coverPhoto}
               alt={pro.displayName}
               fill
+              unoptimized={requiresDirectMediaDelivery(coverPhoto)}
               sizes={featured ? "(max-width: 768px) 100vw, 380px" : "(max-width: 768px) 100vw, 340px"}
               quality={70}
               style={{ objectFit: "cover", objectPosition: "top" }}
@@ -367,7 +369,7 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
           )}
           <div style={{ position: "absolute", left: 14, bottom: -28, width: 64, height: 64, borderRadius: "50%", border: "3px solid #b72cff", overflow: "hidden", background: "#fff", boxShadow: "0 10px 26px rgba(37, 31, 32,0.18)" }}>
             {profilePhoto ? (
-              <Image src={profilePhoto} alt={pro.displayName} fill sizes="64px" style={{ objectFit: "cover", objectPosition: "top" }} />
+              <Image src={profilePhoto} alt={pro.displayName} fill unoptimized={requiresDirectMediaDelivery(profilePhoto)} sizes="64px" style={{ objectFit: "cover", objectPosition: "top" }} />
             ) : (
               <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", color: "#b72cff", fontWeight: 900 }}>
                 {pro.displayName.split(" ").map((n) => n[0]).slice(0, 2).join("")}

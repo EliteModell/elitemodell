@@ -43,6 +43,15 @@ export function normalizeControlledMediaUrl(value?: string | null) {
   return assetId ? `/api/media/${encodeURIComponent(assetId)}` : null;
 }
 
+/**
+ * Controlled media depends on the viewer's age/session cookies. The Next.js
+ * image optimizer does not forward those headers, so these URLs must be
+ * requested directly by the browser.
+ */
+export function requiresDirectMediaDelivery(value?: string | null) {
+  return Boolean(controlledMediaAssetId(value));
+}
+
 export function adminControlledMediaPreviewUrl(value?: string | null) {
   const assetId = controlledMediaAssetId(value);
   return assetId ? `/api/admin/uploads/${encodeURIComponent(assetId)}/preview` : value ?? null;

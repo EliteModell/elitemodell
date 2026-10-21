@@ -10,6 +10,7 @@ import {
   filterApprovedProfilePhotos,
   isPublishableStoryAsset,
   normalizeControlledMediaUrl,
+  requiresDirectMediaDelivery,
   resolvePublicProfileMedia,
 } from "../src/lib/public-professional-media";
 import {
@@ -131,6 +132,12 @@ test.describe("contrato publico do perfil profissional", () => {
     const absolute = "https://www.elitemodell.com.br/api/media/cover-id";
     expect(controlledMediaAssetId(absolute)).toBe("cover-id");
     expect(normalizeControlledMediaUrl(absolute)).toBe("/api/media/cover-id");
+  });
+
+  test("entrega midia controlada direto ao navegador para preservar os cookies de acesso", () => {
+    expect(requiresDirectMediaDelivery("/api/media/cover-id")).toBe(true);
+    expect(requiresDirectMediaDelivery("https://www.elitemodell.com.br/api/media/cover-id")).toBe(true);
+    expect(requiresDirectMediaDelivery("/brand/elite-modell-logo.png")).toBe(false);
   });
 
   test("gera preview administrativo somente para a rota controlada", () => {

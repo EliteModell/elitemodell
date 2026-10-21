@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Stories from "@/components/Stories";
+import { requiresDirectMediaDelivery } from "@/lib/public-professional-media";
 
 type Professional = {
   id: string;
@@ -52,7 +53,7 @@ export default function HomeDiscoveryPreview() {
             <Link key={professional.id} href={`/profissionais/${professional.slug}`} className="home-profile-card">
               <div className="home-profile-photo">
                 {professional.image ? (
-                  <Image src={professional.image} alt={professional.displayName} fill sizes="240px" style={{ objectFit: "cover" }} />
+                  <Image src={professional.image} alt={professional.displayName} fill unoptimized={requiresDirectMediaDelivery(professional.image)} sizes="240px" style={{ objectFit: "cover" }} />
                 ) : null}
                 <div className="home-profile-gradient" />
                 <div className="home-profile-badges">
