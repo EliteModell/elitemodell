@@ -221,6 +221,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     galleryUrls: photos.filter((photo) => !photo.cover).map((photo) => photo.url),
     photos,
     avatar: coverImage ?? stripLegacyPublicStorageUrl(professional.user.image),
+    mediaPublication: {
+      total: canonicalPhotos.length,
+      published: photos.length,
+      pending: Math.max(0, canonicalPhotos.length - photos.length),
+    },
     stories: professional.user.stories
       .filter((story) => {
         const assetId = controlledMediaAssetId(story.mediaUrl);

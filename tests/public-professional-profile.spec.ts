@@ -33,7 +33,7 @@ const MOCK_SESSION = {
   expires: new Date(Date.now() + 86_400_000).toISOString(),
 };
 
-function mockProfessional(photoUrls: string[]) {
+function mockProfessional(photoUrls: string[], pendingMedia = 0) {
   return {
     id: "professional-victoria",
     slug: "victoria",
@@ -52,6 +52,7 @@ function mockProfessional(photoUrls: string[]) {
     specialties: [],
     services: [],
     photos: photoUrls.map((url, index) => ({ id: `photo-${index}`, url, cover: index === 0, order: index })),
+    mediaPublication: { total: photoUrls.length + pendingMedia, published: photoUrls.length, pending: pendingMedia },
     reviews: [],
     stories: [],
     createdAt: "2026-06-18T12:00:00.000Z",
@@ -59,7 +60,7 @@ function mockProfessional(photoUrls: string[]) {
   };
 }
 
-async function mockPublicProfilePage(page: Page, photoUrls: string[], brokenImages = false) {
+async function mockPublicProfilePage(page: Page, photoUrls: string[], brokenImages = false, pendingMedia = 0) {
   await installMockSessionCookie(page.context(), MOCK_SESSION.user);
   await page.addInitScript(() => {
     sessionStorage.setItem("elite_modell_adult_consent_session", "accepted");
@@ -73,7 +74,7 @@ async function mockPublicProfilePage(page: Page, photoUrls: string[], brokenImag
   await page.route("**/api/professionals/victoria", (route: Route) => route.fulfill({
     status: 200,
     contentType: "application/json",
-    body: JSON.stringify(mockProfessional(photoUrls)),
+    body: JSON.stringify(mockProfessional(photoUrls, pendingMedia)),
   }));
   await page.route(/\/api\/professionals\?.*/, (route: Route) => route.fulfill({
     status: 200,
@@ -185,6 +186,18 @@ test.describe("contrato publico do perfil profissional", () => {
     expect(photos).toEqual([]);
   });
 
+  test("perfil restrito mantem foto pendente ou reprovada fora da resposta publica", () => {
+    const photos = filterApprovedProfilePhotos([
+      { url: "/api/media/pending-id", cover: true },
+      { url: "/api/media/rejected-id" },
+    ], [
+      { ...approvedAssets[0], id: "pending-id", status: "PENDING_MODERATION", moderationStatus: "PENDING", approvedBucket: null, approvedPath: null },
+      { ...approvedAssets[0], id: "rejected-id", status: "REJECTED", moderationStatus: "REJECTED", approvedBucket: null, approvedPath: null },
+    ], ownerId);
+
+    expect(photos).toEqual([]);
+  });
+
   test("story publico exige owner, pasta e todos os gates aprovados", () => {
     const story = { ...approvedAssets[0], id: "story-id", folder: "stories", category: "video" };
     expect(isPublishableStoryAsset(story, ownerId)).toBe(true);
@@ -275,5 +288,14 @@ test.describe("contrato publico do perfil profissional", () => {
     await expect(page.getByTestId("profile-avatar")).toHaveAttribute("data-media-state", "fallback");
     await expect(page.getByTestId("profile-avatar").locator("img")).toHaveCount(0);
     await expect(page.getByTestId("gallery-image")).toHaveCount(0);
+  });
+
+  test("UI explica quando as fotos existem mas continuam restritas pela moderacao", async ({ page }) => {
+    await mockPublicProfilePage(page, [], false, 4);
+    await page.goto("/profissionais/victoria", { waitUntil: "domcontentloaded" });
+
+    await expect(page.getByTestId("profile-cover")).toHaveAttribute("data-media-state", "fallback");
+    await expect(page.getByTestId("gallery-image")).toHaveCount(0);
+    await expect(page.getByTestId("gallery-restricted")).toContainText("aguardando liberação");
   });
 });

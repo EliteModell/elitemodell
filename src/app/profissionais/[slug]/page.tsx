@@ -34,6 +34,7 @@ type ApiProfessional = {
   image?: string | null;
   avatar?: string | null;
   galleryUrls?: string[];
+  mediaPublication?: { total: number; published: number; pending: number };
   phone?: string | null;
   whatsapp?: string | null;
   instagram?: string | null;
@@ -457,6 +458,11 @@ export default function ProfissionalProfilePage() {
               onError={() => markMediaFailed(coverImage)}
               style={{ objectFit: "cover", objectPosition: "center 15%" }}
             />
+          ) : pro.mediaPublication?.pending ? (
+            <div data-testid="gallery-restricted" style={{ textAlign: "center", padding: "32px 16px", color: "#676064", marginBottom: 28 }}>
+              <p style={{ marginBottom: 6, fontWeight: 700 }}>Fotos enviadas aguardando liberação</p>
+              <p style={{ margin: 0, fontSize: 12 }}>As imagens permanecem privadas até concluírem todos os controles de segurança e moderação.</p>
+            </div>
           ) : (
             <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #080808, #160022)" }} />
           )}
