@@ -61,6 +61,19 @@ test.describe("seguranca fail-closed de midia adulta", () => {
     expect(source).toContain("cover: visibleCount === 0");
   });
 
+  test("painel agrupa lotes por profissional e separa as fotos de 21/10/2026", async () => {
+    const [page, batch] = await Promise.all([
+      import("node:fs/promises").then((fs) => fs.readFile("src/app/(dashboard)/admin/moderacao/uploads/page.tsx", "utf8")),
+      import("node:fs/promises").then((fs) => fs.readFile("src/app/(dashboard)/admin/moderacao/uploads/ProfessionalBatchApproval.tsx", "utf8")),
+    ]);
+    expect(page).toContain("ID profissional:");
+    expect(page).toContain("Enviadas em 21/10/2026");
+    expect(page).toContain("Fotos antigas (antes de 21/10/2026)");
+    expect(page).toContain("ownedAssets.some");
+    expect(batch).toContain("Selecionar todas as elegíveis");
+    expect(batch).toContain("selectedCount === 0");
+  });
+
   for (const malwareStatus of ["PENDING", "ERROR", "INFECTED"]) {
     test(`nao publica com malware ${malwareStatus}`, () => {
       const result = evaluateMediaPublicationGates({ ...passingGates, malwareStatus });

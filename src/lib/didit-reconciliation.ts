@@ -47,12 +47,49 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
           : undefined,
       },
     });
+    let synchronizedMediaAgeCount = 0;
+    let synchronizedOwnerDepictionCount = 0;
+    if (approved) {
+      const [mediaAge, ownerDepictions] = await Promise.all([
+        tx.uploadAsset.updateMany({
+          where: {
+            userId,
+            category: "image",
+            folder: { startsWith: "profiles" },
+            ageIdentityStatus: { not: "PASS" },
+          },
+          data: { ageIdentityStatus: "PASS" },
+        }),
+        tx.mediaDepictedPerson.updateMany({
+          where: {
+            asset: {
+              userId,
+              category: "image",
+              folder: { startsWith: "profiles" },
+            },
+            personReference: { in: [userId, `user:${userId}`] },
+            isUploader: true,
+            isContentOwner: true,
+            revokedAt: null,
+            ageStatus: { not: "PASS" },
+          },
+          data: {
+            ageStatus: "PASS",
+            ageVerificationReference: sessionId,
+          },
+        }),
+      ]);
+      synchronizedMediaAgeCount = mediaAge.count;
+      synchronizedOwnerDepictionCount = ownerDepictions.count;
+    }
     return {
       response: { sessionId, status: assessment.status, rawStatus: decision.status,
         retryAllowed: assessment.retryAllowed, message: assessment.reason, url, starting: false },
       rejected, professionalId: professional.id ?? "", professionalUserId: professional.userId ?? "",
       email: professional.user?.email ?? null, name: professional.user?.name ?? null, reason: assessment.reason,
       becameApproved: approved && professional.kycStatus !== "APPROVED",
+      synchronizedMediaAgeCount,
+      synchronizedOwnerDepictionCount,
     };
   }, { maxWait: 5_000, timeout: 15_000 });
 
@@ -83,6 +120,21 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
       targetId: outcome.professionalId,
       changes: { kycStatus: "APPROVED", source: "didit-live-decision" },
       reason: "Documento, reconhecimento facial, prova de vida e maioridade confirmados pela Didit.",
+    });
+  }
+  if ((outcome.synchronizedMediaAgeCount || outcome.synchronizedOwnerDepictionCount) && outcome.professionalId) {
+    await logAudit({
+      actorIdentifier: "didit",
+      action: "USER_VERIFIED",
+      targetType: "PROFESSIONAL",
+      targetId: outcome.professionalId,
+      changes: {
+        ageIdentityStatus: "PASS",
+        mediaCount: outcome.synchronizedMediaAgeCount,
+        ownerDepictionCount: outcome.synchronizedOwnerDepictionCount,
+        source: "didit-live-decision",
+      },
+      reason: "Maioridade da titular sincronizada em mídias próprias após decisão oficial aprovada da Didit; consentimentos e demais pessoas retratadas permaneceram inalterados.",
     });
   }
   return outcome.response;

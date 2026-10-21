@@ -350,7 +350,7 @@ test.describe("reconciliacao Didit com respostas simuladas", () => {
   let decision: DiditDecision;
   let active = true;
   let profileStatus = "DRAFT";
-  let writes: Array<{ target: string; data: Record<string, unknown> }>;
+  let writes: Array<{ target: string; data: Record<string, unknown>; where?: Record<string, unknown> }>;
 
   test.beforeEach(() => {
     active = true;
@@ -371,10 +371,16 @@ test.describe("reconciliacao Didit com respostas simuladas", () => {
           verificationUrl: "https://verify.didit.me/session-test",
           user: { email: null, name: "Profissional Teste" },
         } : null,
-        updateMany: async ({ data }: { data: Record<string, unknown> }) => { writes.push({ target: "professional", data }); return { count: 1 }; },
+        updateMany: async ({ data, where }: { data: Record<string, unknown>; where?: Record<string, unknown> }) => { writes.push({ target: "professional", data, where }); return { count: 1 }; },
       },
       user: {
-        updateMany: async ({ data }: { data: Record<string, unknown> }) => { writes.push({ target: "user", data }); return { count: 1 }; },
+        updateMany: async ({ data, where }: { data: Record<string, unknown>; where?: Record<string, unknown> }) => { writes.push({ target: "user", data, where }); return { count: 1 }; },
+      },
+      uploadAsset: {
+        updateMany: async ({ data, where }: { data: Record<string, unknown>; where?: Record<string, unknown> }) => { writes.push({ target: "uploadAsset", data, where }); return { count: 1 }; },
+      },
+      mediaDepictedPerson: {
+        updateMany: async ({ data, where }: { data: Record<string, unknown>; where?: Record<string, unknown> }) => { writes.push({ target: "mediaDepictedPerson", data, where }); return { count: 1 }; },
       },
     };
     prisma.$transaction = (async (fn: (client: typeof tx) => Promise<unknown>) => fn(tx)) as unknown as typeof prisma.$transaction;
@@ -417,6 +423,31 @@ test.describe("reconciliacao Didit com respostas simuladas", () => {
     decision = diditDecision("Declined");
     expect((await webhook("Approved")).status).toBe(200);
     expect(writes.find(w => w.target === "professional")?.data.kycStatus).toBe("REJECTED");
+  });
+
+  test("decisao oficial aprovada sincroniza somente a maioridade da titular da midia", async () => {
+    await reconcileProfessionalDidit("user_test", "didit_session_test");
+    const mediaWrite = writes.find(w => w.target === "uploadAsset");
+    const ownerWrite = writes.find(w => w.target === "mediaDepictedPerson");
+
+    expect(mediaWrite?.data).toEqual({ ageIdentityStatus: "PASS" });
+    expect(mediaWrite?.where).toMatchObject({
+      userId: "user_test",
+      category: "image",
+      ageIdentityStatus: { not: "PASS" },
+    });
+    expect(ownerWrite?.data).toEqual({
+      ageStatus: "PASS",
+      ageVerificationReference: "didit_session_test",
+    });
+    expect(ownerWrite?.where).toMatchObject({
+      personReference: { in: ["user_test", "user:user_test"] },
+      isUploader: true,
+      isContentOwner: true,
+      revokedAt: null,
+    });
+    expect(mediaWrite?.data).not.toHaveProperty("consentStatus");
+    expect(ownerWrite?.data).not.toHaveProperty("consentStatus");
   });
 
   test("erro do provedor pede reentrega do webhook sem alterar KYC", async () => {
