@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import HomeCitySearch from "@/components/home/HomeCitySearch";
+import HomeDiscoveryPreview from "@/components/home/HomeDiscoveryPreview";
 import eliteHero from "@/../public/images/home/elite-hero-three-models.png";
 import elitePurple from "@/assets/home/elite-destaque-roxo.jpg";
 import eliteGold from "@/assets/home/elite-destaque-dourado.jpg";
@@ -40,6 +41,8 @@ export default function HomePage() {
           <span className={styles.ageNotice}>Ambiente exclusivo para maiores de 18 anos.</span>
         </div>
       </section>
+
+      <HomeDiscoveryPreview />
 
       <section className={styles.campaign} aria-label="Garotas-propaganda Elite Modell">
         <div className={`${styles.campaignVisual} ${styles.campaignPurple}`}>
