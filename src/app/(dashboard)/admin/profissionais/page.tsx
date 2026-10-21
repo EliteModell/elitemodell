@@ -5,15 +5,15 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
 import { getProfessionalBillingSettings, professionalApprovalAccessData } from "@/lib/professional-access";
-import { filterApprovedProfilePhotos, type PublicProfileAsset } from "@/lib/public-professional-media";
+import { type PublicProfileAsset } from "@/lib/public-professional-media";
 import { sendProfessionalApprovalEmail } from "@/lib/auth-email";
 import { sendProfessionalCorrectionEmail, sendProfessionalRejectionEmail } from "@/lib/professional-review-email";
 import { digitVendorDataBelongsToUser, fetchDigitSessionDecision } from "@/lib/didit";
 import { assessProfessionalDiditDecision } from "@/lib/professional-didit";
 import { AdminHeader, AdminPagination, buttonStyle } from "../_components/AdminPrimitives";
 import { AdminProfessionalCard } from "./AdminProfessionalCard";
-import { professionalCompletion } from "@/lib/professional-completeness";
-import { deliverProfessionalCommunication } from "@/lib/professional-communications";
+import { professionalAdministrativeApprovalIssues, professionalCompletion } from "@/lib/professional-completeness";
+import { deliverProfessionalApprovalSms, deliverProfessionalCommunication } from "@/lib/professional-communications";
 import { sendProfessionalLocationEmail, sendProfessionalReminderEmail } from "@/lib/professional-extra-email";
 
 export const dynamic = "force-dynamic";
@@ -39,27 +39,28 @@ const statusLabel: Record<string, string> = {
 };
 
 type ProfessionalApprovalReview = {
-  userId: string; status: string; bio: string; city: string; state: string; escortCategory: string | null;
+  userId: string; status: string; image?: string | null; registrationSubmittedAt?: Date | null; bio: string; city: string; state: string; escortCategory: string | null;
   birthDate: Date | null; attendanceTypes: string[]; servesGenders: string[]; diasDisponiveis: string[];
   services: string[]; price15min: number | null; pricePerHour: number | null; price30min: number | null; price2h: number | null;
   priceOvernight: number | null; priceWebcam: number | null; paymentMethods: string[]; whatsapp: string | null;
   kycSessionId: string | null; kycProvider?: string | null; kycStatus: string; verifStatus: string;
   photos: Array<{ id?: string; url: string; cover?: boolean; order?: number }>; specialties: unknown[];
-  user: { blocked: boolean; email: string | null; uploadedAssets: PublicProfileAsset[] };
+  user: { blocked: boolean; email: string | null; emailVerified: Date | null; termsConsent: boolean; lgpdConsent: boolean; uploadedAssets: PublicProfileAsset[] };
 };
 
 function professionalProfileIssues(professional: ProfessionalApprovalReview) {
-  return professionalCompletion({ ...professional, emailVerified: true }).profileIssues.map((issue) => issue.label);
+  return professionalCompletion({ ...professional, emailVerified: Boolean(professional.user.emailVerified) }).issues.map((issue) => issue.label);
 }
 
 function professionalApprovalIssues(professional: ProfessionalApprovalReview) {
-  const issues = professionalProfileIssues(professional);
+  const issues = professionalAdministrativeApprovalIssues({
+    ...professional,
+    termsConsent: professional.user.termsConsent,
+    lgpdConsent: professional.user.lgpdConsent,
+  }).map((issue) => issue.label);
   if (professional.status === "DRAFT") issues.unshift("cadastro ainda não enviado para análise");
   else if (professional.status !== "PENDING_REVIEW") issues.unshift(`status ${statusLabel[professional.status] ?? professional.status} não permite aprovação`);
   if (professional.user.blocked) issues.push("conta bloqueada");
-  if (professional.photos.length && filterApprovedProfilePhotos(
-    professional.photos, professional.user.uploadedAssets, professional.userId,
-  ).length !== professional.photos.length) issues.push("há mídia pendente, privada ou indisponível");
   const kycInitiated = Boolean(professional.kycSessionId) ||
     !["NOT_STARTED", "NOT_SENT", ""].includes((professional.kycStatus ?? "").trim().toUpperCase()) ||
     !["NOT_STARTED", "NOT_SENT", ""].includes((professional.verifStatus ?? "").trim().toUpperCase());
@@ -198,6 +199,8 @@ async function reviewProfessional(formData: FormData) {
           select: {
             userId: true,
             status: true,
+            image: true,
+            registrationSubmittedAt: true,
             bio: true,
             city: true,
             state: true,
@@ -225,6 +228,9 @@ async function reviewProfessional(formData: FormData) {
               select: {
                 blocked: true,
                 email: true,
+                emailVerified: true,
+                termsConsent: true,
+                lgpdConsent: true,
                 name: true,
                 uploadedAssets: {
                   where: { folder: { startsWith: "profiles" } },
@@ -274,9 +280,10 @@ async function reviewProfessional(formData: FormData) {
   if (action === "approve") {
     await deliverProfessionalCommunication({
       professionalId: id, userId: professional.userId, email: professional.user?.email, adminId: session.user.id,
-      type: "PROFILE_APPROVED", notificationTitle: "Perfil aprovado", notificationBody: "Seu perfil foi aprovado e já pode aparecer na plataforma.",
+      type: "PROFILE_APPROVED", notificationTitle: "Cadastro aprovado", notificationBody: "Seu cadastro foi aprovado. Complete informações opcionais no painel; a publicação continua sujeita à moderação.",
       link: "/profissional", send: () => sendProfessionalApprovalEmail(professional.user!.email!, professional.user!.name),
     });
+    await deliverProfessionalApprovalSms({ professionalId: id, userId: professional.userId, adminId: session.user.id });
   } else if (action === "correction") {
     await deliverProfessionalCommunication({
       professionalId: id, userId: professional.userId, email: professional.user?.email, adminId: session.user.id,
@@ -418,6 +425,8 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
       user: {
         select: {
           name: true, email: true, phone: true, city: true, state: true, birthDate: true, category: true,
+          emailVerified: true,
+          termsConsent: true, lgpdConsent: true,
           blocked: true, blockReason: true, blockedAt: true, kycSubmittedAt: true, kycReviewedAt: true,
           kycRejectionReason: true, premiumUntil: true, createdAt: true, updatedAt: true,
           uploadedAssets: {

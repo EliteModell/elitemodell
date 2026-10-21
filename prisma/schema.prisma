@@ -799,6 +799,9 @@ model Professional {
 
   // Perfil físico
   escortCategory  String?
+  genderIdentity  String?
+  genderSelfDescription String?
+  transIdentity   String?
   birthDate       DateTime?
   hideAge         Boolean   @default(false)
   height          Int?

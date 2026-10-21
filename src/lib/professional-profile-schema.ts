@@ -26,6 +26,9 @@ export const createProfessionalSchema = z.object({
   priceWebcam: z.number().positive().optional(),
   paymentMethods: z.array(z.string()).optional().default([]),
   escortCategory: z.string().optional(),
+  genderIdentity: z.enum(["MULHER", "HOMEM", "NAO_BINARIO", "AUTODESCRICAO"]).optional(),
+  genderSelfDescription: z.string().trim().max(80).optional(),
+  transIdentity: z.enum(["SIM", "NAO", "PREFIRO_NAO_INFORMAR"]).optional(),
   birthDate: z.string().optional(),
   height: z.number().optional(),
   weight: z.number().optional(),
@@ -75,7 +78,7 @@ export const createProfessionalSchema = z.object({
   for (const issue of result.profileIssues) {
     ctx.addIssue({ code: "custom", path: [issue.field], message: issue.label });
   }
-  if (!data.kycSessionId) {
-    ctx.addIssue({ code: "custom", path: ["kycSessionId"], message: "Verificação de identidade não iniciada" });
+  if (data.genderIdentity === "AUTODESCRICAO" && !data.genderSelfDescription?.trim()) {
+    ctx.addIssue({ code: "custom", path: ["genderSelfDescription"], message: "Conte brevemente como você se identifica" });
   }
 });

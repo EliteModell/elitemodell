@@ -114,9 +114,10 @@ export async function PATCH(req: NextRequest) {
     const common = { completionRulesVersion: 2 };
     if (flow === "simplified-v1") {
       if (step === 0) {
-        const category = text(form.escortCategory);
-        const typedCategory = ["MULHER", "HOMEM", "TRANS"].includes(category)
-          ? category as "MULHER" | "HOMEM" | "TRANS"
+        const identity = text(form.genderIdentity);
+        const category = identity || text(form.escortCategory);
+        const typedCategory = ["MULHER", "HOMEM"].includes(identity)
+          ? identity as "MULHER" | "HOMEM"
           : null;
         await prisma.professional.update({
           where: { id: professional.id },
@@ -124,6 +125,9 @@ export async function PATCH(req: NextRequest) {
             ...common,
             displayName: text(form.displayName),
             escortCategory: category,
+            genderIdentity: identity || null,
+            genderSelfDescription: identity === "AUTODESCRICAO" ? text(form.genderSelfDescription) : null,
+            transIdentity: text(form.transIdentity) || null,
             user: { update: { category: typedCategory } },
           },
         });

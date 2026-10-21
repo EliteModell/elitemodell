@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { digitVendorDataBelongsToUser, fetchDigitSessionDecision, isSafeDigitVerificationUrl } from "@/lib/didit";
 import { assessProfessionalDiditDecision } from "@/lib/professional-didit";
+import { logAudit } from "@/lib/audit";
 
 /** Serialize decision reads and writes with session creation for this account.
  * Webhook payloads are notifications: the current provider decision is authoritative.
@@ -10,7 +11,7 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`didit-professional:${userId}`}))`;
     const professional = await tx.professional.findFirst({
       where: { userId, kycProvider: "DIDIT", kycSessionId: sessionId },
-      select: { id: true, userId: true, status: true, verificationUrl: true, user: { select: { email: true, name: true } } },
+      select: { id: true, userId: true, status: true, kycStatus: true, registrationSubmittedAt: true, verificationUrl: true, user: { select: { email: true, name: true } } },
     });
     if (!professional) throw new Error("didit_active_session_changed");
     const decision = await fetchDigitSessionDecision(sessionId);
@@ -41,6 +42,9 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
         rejectReason: professional.status === "REJECTED" || professional.status === "SUSPENDED"
           ? undefined : rejected ? assessment.reason : null,
         verificationUrl: url,
+        status: approved && professional.status === "DRAFT" && professional.registrationSubmittedAt
+          ? "PENDING_REVIEW"
+          : undefined,
       },
     });
     return {
@@ -48,6 +52,7 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
         retryAllowed: assessment.retryAllowed, message: assessment.reason, url, starting: false },
       rejected, professionalId: professional.id ?? "", professionalUserId: professional.userId ?? "",
       email: professional.user?.email ?? null, name: professional.user?.name ?? null, reason: assessment.reason,
+      becameApproved: approved && professional.kycStatus !== "APPROVED",
     };
   }, { maxWait: 5_000, timeout: 15_000 });
 
@@ -69,6 +74,16 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
         send: () => sendProfessionalKycActionEmail(outcome.email!, outcome.name, outcome.reason),
       });
     }
+  }
+  if (outcome.becameApproved && outcome.professionalId) {
+    await logAudit({
+      actorIdentifier: "didit",
+      action: "USER_VERIFIED",
+      targetType: "PROFESSIONAL",
+      targetId: outcome.professionalId,
+      changes: { kycStatus: "APPROVED", source: "didit-live-decision" },
+      reason: "Documento, reconhecimento facial, prova de vida e maioridade confirmados pela Didit.",
+    });
   }
   return outcome.response;
 }

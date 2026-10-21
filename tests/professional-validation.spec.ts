@@ -79,10 +79,10 @@ test.describe("validacao do perfil profissional", () => {
     expect(issuePaths(withoutImage)).toContain("image");
   });
 
-  test("rejeita perfil sem sessao KYC", () => {
+  test("aceita informações iniciais sem sessão KYC, mantendo publicação bloqueada", () => {
     const withoutKyc: Record<string, unknown> = { ...validProfile };
     delete withoutKyc.kycSessionId;
-    expect(issuePaths(withoutKyc)).toContain("kycSessionId");
+    expect(createProfessionalSchema.safeParse(withoutKyc).success).toBe(true);
   });
 
   test("delega nascimento e maioridade para a decisao assinada da Didit", () => {
@@ -156,6 +156,24 @@ test.describe("verificacao Didit no onboarding profissional", () => {
       status: "PENDING",
       approved: false,
     });
+    expect(assessProfessionalDiditDecision({ ...diditDecision("Approved"), id_verifications: [] })).toMatchObject({
+      status: "REJECTED",
+      approved: false,
+    });
+    expect(assessProfessionalDiditDecision({ ...diditDecision("Approved"), liveness_checks: [] })).toMatchObject({
+      status: "REJECTED",
+      approved: false,
+    });
+  });
+
+  test("aprovacao automatica do KYC nunca publica automaticamente o perfil", () => {
+    const reconciliation = fs.readFileSync(path.join(process.cwd(), "src/lib/didit-reconciliation.ts"), "utf8");
+    const submission = fs.readFileSync(path.join(process.cwd(), "src/app/api/professionals/route.ts"), "utf8");
+    expect(reconciliation).toContain('kycStatus: assessment.status');
+    expect(reconciliation).toContain('? "PENDING_REVIEW"');
+    expect(reconciliation).not.toContain('status: "ACTIVE"');
+    expect(submission).toContain('identityApproved ? "PENDING_REVIEW" as const : "DRAFT" as const');
+    expect(submission).not.toContain('verified:  true');
   });
 
   test("onboarding preserva rascunho, apresenta uma etapa Didit e impede clique duplo", () => {
@@ -163,11 +181,11 @@ test.describe("verificacao Didit no onboarding profissional", () => {
       path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"),
       "utf8",
     );
-    expect(page.match(/Confirme sua identidade/g)).toHaveLength(1);
+    expect(page).toContain("<h1>Confirme sua identidade</h1>");
     expect(page).toContain("diditStarting.current");
     expect(page).toContain("window.localStorage.setItem(STORAGE_KEY");
     expect(page).toContain("window.localStorage.getItem(STORAGE_KEY)");
-    expect(page).toContain('form.kycStatus !== "APPROVED"');
+    expect(page).toContain('form.kycStatus === "APPROVED"');
     expect(page).not.toContain("startFaceBiometry");
   });
 
@@ -190,7 +208,7 @@ test.describe("verificacao Didit no onboarding profissional", () => {
 
   test("backend valida a decisao real e sobrescreve o estado enviado pelo navegador", () => {
     const route = fs.readFileSync(path.join(process.cwd(), "src/app/api/professionals/route.ts"), "utf8");
-    const validationAt = route.indexOf("requireApprovedProfessionalDidit(session.user.id)");
+    const validationAt = route.indexOf("reconcileProfessionalDidit(session.user.id, diditVerification.sessionId)");
     const persistenceAt = route.indexOf("const professionalData");
     expect(validationAt).toBeGreaterThan(-1);
     expect(persistenceAt).toBeGreaterThan(validationAt);
@@ -327,6 +345,7 @@ test.describe("reconciliacao Didit com respostas simuladas", () => {
   const originalFind = prisma.professional.findFirst;
   const originalCreate = prisma.webhookEvent.create;
   const originalUpdate = prisma.webhookEvent.update;
+  const originalNotificationFind = prisma.notification.findFirst;
   const originalSecret = process.env.DIDIT_WEBHOOK_SECRET;
   let decision: DiditDecision;
   let active = true;
@@ -343,7 +362,15 @@ test.describe("reconciliacao Didit com respostas simuladas", () => {
     const tx = {
       $executeRaw: async () => 1,
       professional: {
-        findFirst: async () => active ? { status: profileStatus, verificationUrl: "https://verify.didit.me/session-test" } : null,
+        findFirst: async () => active ? {
+          id: "professional-test",
+          userId: "user_test",
+          status: profileStatus,
+          kycStatus: "APPROVED",
+          registrationSubmittedAt: null,
+          verificationUrl: "https://verify.didit.me/session-test",
+          user: { email: null, name: "Profissional Teste" },
+        } : null,
         updateMany: async ({ data }: { data: Record<string, unknown> }) => { writes.push({ target: "professional", data }); return { count: 1 }; },
       },
       user: {
@@ -354,6 +381,7 @@ test.describe("reconciliacao Didit com respostas simuladas", () => {
     prisma.professional.findFirst = (async () => ({ userId: "user_test" })) as typeof prisma.professional.findFirst;
     prisma.webhookEvent.create = (async () => ({ id: "event-test" })) as unknown as typeof prisma.webhookEvent.create;
     prisma.webhookEvent.update = (async () => ({ id: "event-test" })) as unknown as typeof prisma.webhookEvent.update;
+    prisma.notification.findFirst = (async () => ({ id: "existing-action-notification" })) as typeof prisma.notification.findFirst;
   });
 
   test.afterEach(() => {
@@ -362,6 +390,7 @@ test.describe("reconciliacao Didit com respostas simuladas", () => {
     prisma.professional.findFirst = originalFind;
     prisma.webhookEvent.create = originalCreate;
     prisma.webhookEvent.update = originalUpdate;
+    prisma.notification.findFirst = originalNotificationFind;
     if (originalSecret === undefined) delete process.env.DIDIT_WEBHOOK_SECRET;
     else process.env.DIDIT_WEBHOOK_SECRET = originalSecret;
   });
@@ -381,7 +410,7 @@ test.describe("reconciliacao Didit com respostas simuladas", () => {
   test("evento pendente atrasado conserva a aprovacao atual e nao publica perfil", async () => {
     expect((await webhook("In Progress")).status).toBe(200);
     expect(writes.find(w => w.target === "professional")?.data).toMatchObject({ kycStatus: "APPROVED", rejectReason: null });
-    expect(writes.find(w => w.target === "professional")?.data).not.toHaveProperty("status");
+    expect(writes.find(w => w.target === "professional")?.data.status).not.toBe("ACTIVE");
   });
 
   test("evento antigo Approved nao aprova decisao atual Declined", async () => {

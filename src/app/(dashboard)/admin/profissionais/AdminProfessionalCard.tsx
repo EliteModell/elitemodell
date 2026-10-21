@@ -50,6 +50,7 @@ export type AdminProfessionalRecord = {
   user: {
     name: string | null; email: string; phone: string | null; city: string | null; state: string | null;
     birthDate: Date | null; category: string | null; blocked: boolean; blockReason: string | null;
+    termsConsent: boolean; lgpdConsent: boolean;
     blockedAt: Date | null; kycSubmittedAt: Date | null; kycReviewedAt: Date | null;
     kycRejectionReason: string | null; premiumUntil: Date | null; createdAt: Date; updatedAt: Date;
     uploadedAssets: unknown[];

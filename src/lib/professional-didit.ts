@@ -38,6 +38,19 @@ export function assessProfessionalDiditDecision(decision: DiditDecision): {
   const status = normalizeDigitStatus(decision.status);
   const dateOfBirth = extractDateOfBirth(decision);
 
+  if (status === DIDIT_APPROVED_STATUS) {
+    const documentApproved = Boolean(decision.id_verifications?.some((item) => item.status.toLowerCase() === "approved"));
+    const livenessApproved = Boolean(decision.liveness_checks?.some((item) => item.status.toLowerCase() === "approved"));
+    if (!documentApproved || !livenessApproved) {
+      return {
+        status: DIDIT_REJECTED_STATUS,
+        approved: false,
+        retryAllowed: false,
+        reason: "A Didit não confirmou conjuntamente o documento, o reconhecimento facial e a prova de vida. Fale com o suporte.",
+      };
+    }
+  }
+
   if (status === DIDIT_APPROVED_STATUS && !isAdult(dateOfBirth)) {
     return {
       status: DIDIT_REJECTED_STATUS,

@@ -18,6 +18,7 @@ export type ProfessionalCompletionInput = {
   city?: string | null;
   state?: string | null;
   escortCategory?: string | null;
+  genderIdentity?: string | null;
   birthDate?: string | Date | null;
   attendanceTypes?: readonly string[] | null;
   servesGenders?: readonly string[] | null;
@@ -37,6 +38,9 @@ export type ProfessionalCompletionInput = {
   kycSessionId?: string | null;
   kycStatus?: string | null;
   emailVerified?: string | Date | boolean | null;
+  registrationSubmittedAt?: string | Date | null;
+  termsConsent?: boolean | null;
+  lgpdConsent?: boolean | null;
 };
 
 export type ProfessionalCompletionIssue = {
@@ -55,7 +59,7 @@ const ONBOARDING_CHECKS: Array<{
   valid: (profile: ProfessionalCompletionInput) => boolean;
 }> = [
   { code: "display_name", field: "displayName", label: "Nome profissional", step: 0, valid: (p) => (p.displayName?.trim().length ?? 0) >= 2 },
-  { code: "category", field: "escortCategory", label: "Categoria profissional", step: 0, valid: (p) => ["MULHER", "HOMEM", "TRANS"].includes(p.escortCategory ?? "") },
+  { code: "category", field: "genderIdentity", label: "Identidade do perfil", step: 0, valid: (p) => ["MULHER", "HOMEM", "NAO_BINARIO", "AUTODESCRICAO"].includes(p.genderIdentity ?? "") || ["MULHER", "HOMEM", "TRANS"].includes(p.escortCategory ?? "") },
   { code: "service_city", field: "city", label: "Cidade principal de atendimento", step: 2, valid: (p) => (p.city?.trim().length ?? 0) >= 2 },
   { code: "service_state", field: "state", label: "Estado de atendimento", step: 2, valid: (p) => (p.state?.trim().length ?? 0) >= 2 },
   { code: "attendance_type", field: "attendanceTypes", label: "Modalidade de atendimento", step: 2, valid: (p) => Boolean(p.attendanceTypes?.length) },
@@ -93,6 +97,23 @@ export function professionalOnboardingCompletion(profile: ProfessionalCompletion
     profileIssues,
     issues,
   };
+}
+
+/**
+ * Requisitos de segurança para a decisão administrativa. Campos comerciais
+ * continuam no indicador de completude, mas não bloqueiam a aprovação.
+ * A publicação de mídia permanece protegida pela moderação de assets.
+ */
+export function professionalAdministrativeApprovalIssues(profile: ProfessionalCompletionInput) {
+  const issues: ProfessionalCompletionIssue[] = [];
+  const add = (code: string, field: string, label: string) => issues.push({
+    code, field, label, step: 0, stepLabel: "Aprovação administrativa",
+  });
+  if (!profile.registrationSubmittedAt) add("submission", "registrationSubmittedAt", "Cadastro ainda não enviado para análise");
+  if (!profile.termsConsent || !profile.lgpdConsent) add("legal_consent", "consent", "Termos e consentimento LGPD obrigatórios");
+  if (!profile.kycSessionId || profile.kycStatus !== "APPROVED") add("kyc", "kycSessionId", "Verificação de identidade e maioridade aprovada");
+  if (!profile.image && !profile.photos?.some((photo) => Boolean(photo.url))) add("main_photo", "image", "Foto principal");
+  return issues;
 }
 
 const REQUIRED_CHECKS: Array<{

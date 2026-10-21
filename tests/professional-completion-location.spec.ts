@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
-import { issueChecklist, issuesForStep, professionalCompletion } from "../src/lib/professional-completeness";
+import { issueChecklist, issuesForStep, professionalAdministrativeApprovalIssues, professionalCompletion } from "../src/lib/professional-completeness";
 import { CITY_CHANGE_REQUIRES_VOUCHER, INITIAL_FREE_CITY_CHANGES, locationChangeNeedsReview, normalizeServiceLocation, publicServiceLocation } from "../src/lib/professional-location";
 import { professionalCityFilter, resolveExactCityQuery } from "../src/lib/public-city-search";
 
@@ -24,6 +24,35 @@ const complete = {
   kycStatus: "APPROVED",
   emailVerified: true,
 };
+
+const approvalReady = {
+  registrationSubmittedAt: new Date("2026-10-21T18:50:00Z"),
+  termsConsent: true,
+  lgpdConsent: true,
+  kycSessionId: "didit_live_approved",
+  kycStatus: "APPROVED",
+  image: null,
+  photos: [{ url: "/api/media/existing-cover", cover: true }],
+};
+
+test.describe("aprovação administrativa cirúrgica", () => {
+  test("reconhece a foto principal existente no relacionamento", () => {
+    expect(professionalAdministrativeApprovalIssues(approvalReady).map((issue) => issue.code)).not.toContain("main_photo");
+  });
+
+  test("reconhece KYC Didit aprovado", () => {
+    expect(professionalAdministrativeApprovalIssues(approvalReady).map((issue) => issue.code)).not.toContain("kyc");
+  });
+
+  test("libera aprovação sem campos comerciais opcionais", () => {
+    expect(professionalAdministrativeApprovalIssues(approvalReady)).toEqual([]);
+  });
+
+  test("bloqueia quando falta requisito obrigatório de segurança", () => {
+    const issues = professionalAdministrativeApprovalIssues({ ...approvalReady, kycStatus: "PENDING" });
+    expect(issues).toContainEqual(expect.objectContaining({ code: "kyc" }));
+  });
+});
 
 test.describe("regra central de completude profissional", () => {
   test("obrigatório faltando identifica a etapa e impede completude", () => {

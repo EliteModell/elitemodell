@@ -262,7 +262,8 @@ export async function sendProfessionalApprovalEmail(to: string, name?: string | 
         <h2 style="color:#fcf7ff;font-size:22px;margin:0 0 12px">Cadastro aprovado</h2>
         <p style="color:#b4adb0;line-height:1.7;margin:0">Olá${name?.trim() ? `, ${name.trim()}` : ""}.</p>
         <p style="color:#b4adb0;line-height:1.7;margin:12px 0">Seu cadastro na Elite Modell foi aprovado.</p>
-        <p style="color:#b4adb0;line-height:1.7;margin:0">Seu perfil já pode ficar disponível na plataforma conforme as regras de segurança e moderação.</p>
+        <p style="color:#b4adb0;line-height:1.7;margin:0">Você já pode acessar sua conta e aproveitar os recursos disponíveis na plataforma.</p>
+        <p style="color:#b4adb0;line-height:1.7;margin:12px 0 0">Se ainda houver alguma informação pendente no perfil, você poderá completá-la na sua área de cadastro. A publicação continua sujeita às regras de segurança e moderação.</p>
         <p style="color:#b4adb0;line-height:1.7;margin:24px 0 0">Atenciosamente,<br><strong style="color:#fcf7ff">Equipe Elite Modell</strong></p>
         <div style="margin-top:32px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.08);text-align:center;color:#aaa0b2;font-size:12px">
           Elite Modell - Plataforma premium adulta - Brasil
@@ -272,7 +273,7 @@ export async function sendProfessionalApprovalEmail(to: string, name?: string | 
   `;
 
   await sendAuthEmail(to, {
-    subject: "Seu perfil foi aprovado",
+    subject: "Seu cadastro na Elite Modell foi aprovado!",
     html: base,
   });
 }

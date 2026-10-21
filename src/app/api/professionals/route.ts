@@ -8,7 +8,7 @@ import { authorizeAdultContentRequest } from "@/lib/adult-content-access";
 import { authOptions } from "@/lib/auth";
 import { ageGateCacheHeaders, stripLegacyPublicStorageUrl } from "@/lib/age-gate-policy";
 import { DIDIT_PROVIDER } from "@/lib/professional-verification";
-import { ProfessionalDiditError, requireApprovedProfessionalDidit } from "@/lib/professional-didit";
+import { reconcileProfessionalDidit } from "@/lib/didit-reconciliation";
 import { getProfessionalBillingSettings } from "@/lib/professional-access";
 import { createProfessionalSchema } from "@/lib/professional-profile-schema";
 import { assertOwnedUploadMediaUrls } from "@/lib/approved-media";
@@ -99,7 +99,14 @@ export async function GET(req: NextRequest) {
       },
     });
   }
-  if (category) where.escortCategory = category.toUpperCase();
+  if (category) {
+    const normalizedCategory = category.toUpperCase();
+    if (normalizedCategory === "TRANS") {
+      andFilters.push({ OR: [{ transIdentity: "SIM" }, { escortCategory: "TRANS" }] });
+    } else {
+      andFilters.push({ OR: [{ genderIdentity: normalizedCategory }, { escortCategory: normalizedCategory }] });
+    }
+  }
   if (priceMax) where.priceMin = { lte: Number(priceMax) };
   if (specialty) {
     andFilters.push({
@@ -248,7 +255,7 @@ export async function POST(req: NextRequest) {
 
   const existing = await prisma.professional.findUnique({
     where: { userId: session.user.id },
-    select: { id: true, status: true, user: { select: { email: true, name: true } } },
+    select: { id: true, status: true, kycProvider: true, kycSessionId: true, kycStatus: true, user: { select: { email: true, name: true } } },
   });
   if (existing && !["DRAFT", "CORRECTION_REQUIRED"].includes(existing.status)) {
     if (existing.status === "PENDING_REVIEW") {
@@ -294,7 +301,24 @@ export async function POST(req: NextRequest) {
       }, { status: 422 });
     }
 
-    const diditVerification = await requireApprovedProfessionalDidit(session.user.id);
+    let diditVerification = {
+      sessionId: user.kycSessionId ?? existing?.kycSessionId ?? null,
+      status: existing?.kycStatus ?? "NOT_STARTED",
+    };
+    if (diditVerification.sessionId) {
+      try {
+        const reconciled = await reconcileProfessionalDidit(session.user.id, diditVerification.sessionId);
+        diditVerification = { sessionId: reconciled.sessionId, status: reconciled.status };
+      } catch (error) {
+        // A indisponibilidade do provedor não apaga o preenchimento nem rebaixa uma
+        // aprovação oficial que já foi reconciliada e persistida no servidor.
+        console.warn("[professionals] Didit indisponível durante o envio inicial.", {
+          userId: session.user.id,
+          reason: error instanceof Error ? error.name : "unknown",
+        });
+      }
+    }
+    const identityApproved = diditVerification.status === "APPROVED";
 
     const { specialties, services, phone, whatsapp, image, galleryUrls, ...profileData } = data;
     await assertOwnedUploadMediaUrls({
@@ -307,7 +331,8 @@ export async function POST(req: NextRequest) {
     const normalizedGalleryUrls = galleryUrls
       .map((url) => normalizeControlledMediaUrl(url))
       .filter((url): url is string => Boolean(url));
-    const escortCategory = profileData.escortCategory
+    const escortCategory = profileData.genderIdentity
+      || profileData.escortCategory
       || (user?.category && ["MULHER", "TRANS", "HOMEM"].includes(user.category) ? user.category : undefined);
 
     // garante slug único
@@ -328,17 +353,17 @@ export async function POST(req: NextRequest) {
       whatsapp:  whatsapp ? normalizePhone(whatsapp) : undefined,
       verificationUrl: null,
       verificationType: "biometria",
-      kycProvider: DIDIT_PROVIDER,
+      kycProvider: diditVerification.sessionId ? DIDIT_PROVIDER : existing?.kycProvider,
       kycSessionId: diditVerification.sessionId,
       kycStatus: diditVerification.status,
       escortCategory,
       slug,
       bio:       profileData.bio ?? "",
       birthDate: profileData.birthDate ? new Date(profileData.birthDate) : undefined,
-      status:    "PENDING_REVIEW" as const,
+      status:    identityApproved ? "PENDING_REVIEW" as const : "DRAFT" as const,
       verified:  false,
-      docStatus: "APPROVED",
-      verifStatus: "APPROVED",
+      docStatus: identityApproved ? "APPROVED" : diditVerification.status === "REJECTED" ? "REJECTED" : "PENDING",
+      verifStatus: identityApproved ? "APPROVED" : diditVerification.status === "REJECTED" ? "REJECTED" : "PENDING",
       registrationSubmittedAt: new Date(),
       completionRulesVersion: 2,
       currentServiceCity: profileData.city,
@@ -399,8 +424,8 @@ export async function POST(req: NextRequest) {
       action: "SETTINGS_CHANGED",
       targetType: "PROFESSIONAL",
       targetId: professional.id,
-      changes: { moderationAction: existing?.status === "CORRECTION_REQUIRED" ? "resubmit" : "submit", resultingStatus: "PENDING_REVIEW" },
-      reason: existing?.status === "CORRECTION_REQUIRED" ? "Cadastro corrigido e reenviado para análise" : "Cadastro enviado para análise",
+      changes: { moderationAction: existing?.status === "CORRECTION_REQUIRED" ? "resubmit" : "submit", resultingStatus: professional.status, identityStatus: diditVerification.status },
+      reason: identityApproved ? "Cadastro enviado para análise administrativa" : "Informações iniciais recebidas; aguardando aprovação da identidade",
     });
     const receiptStatus = await deliverProfessionalSubmissionReceipt(professional.id, user.email, user.name);
     await prisma.notification.create({
@@ -408,7 +433,9 @@ export async function POST(req: NextRequest) {
         userId: session.user.id,
         type: existing?.status === "CORRECTION_REQUIRED" ? "PROFILE_RESUBMITTED" : "PROFILE_SUBMITTED",
         title: existing?.status === "CORRECTION_REQUIRED" ? "Cadastro reenviado" : "Cadastro enviado para análise",
-        body: "Recebemos seu cadastro completo. Você será avisada quando a análise terminar.",
+        body: identityApproved
+          ? "Recebemos seu cadastro. Você será avisada quando a análise terminar."
+          : "Recebemos suas informações. Seu perfil continuará privado enquanto a identidade estiver pendente.",
         link: "/profissional/analise",
       },
     });
@@ -418,11 +445,10 @@ export async function POST(req: NextRequest) {
       status: professional.status,
       alreadySubmitted: false,
       receiptStatus,
+      identityPending: !identityApproved,
+      identityStatus: diditVerification.status,
     }, { status: existing ? 200 : 201 });
   } catch (err) {
-    if (err instanceof ProfessionalDiditError) {
-      return NextResponse.json({ error: err.message, code: err.code }, { status: err.httpStatus });
-    }
     if (err instanceof z.ZodError) {
       return NextResponse.json({
         error: err.issues[0]?.message ?? "Revise os campos obrigatórios.",
