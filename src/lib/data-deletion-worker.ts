@@ -371,19 +371,19 @@ async function removeStorageAndMedia(userId: string, preservation: ReturnType<ty
 
   const professional = await prisma.professional.findUnique({ where: { userId }, select: { id: true } });
   const properties = await prisma.property.findMany({ where: { hostId: userId }, select: { id: true } });
+  const removableAssetIds = assets
+    .filter((asset) =>
+      !protectedPaths.has(`${asset.quarantineBucket}:${asset.quarantinePath}`) &&
+      !(asset.approvedBucket && asset.approvedPath && protectedPaths.has(`${asset.approvedBucket}:${asset.approvedPath}`)),
+    )
+    .map((asset) => asset.id);
   await prisma.$transaction([
     prisma.story.deleteMany({ where: { userId } }),
+    prisma.mediaDepictedPerson.deleteMany({ where: { assetId: { in: removableAssetIds } } }),
     prisma.uploadAsset.deleteMany({
       where: {
         userId,
-        id: {
-          notIn: assets
-            .filter((asset) =>
-              protectedPaths.has(`${asset.quarantineBucket}:${asset.quarantinePath}`) ||
-              Boolean(asset.approvedBucket && asset.approvedPath && protectedPaths.has(`${asset.approvedBucket}:${asset.approvedPath}`)),
-            )
-            .map((asset) => asset.id),
-        },
+        id: { in: removableAssetIds },
       },
     }),
     prisma.professionalPhoto.deleteMany({ where: professional ? { professionalId: professional.id } : { professionalId: "" } }),

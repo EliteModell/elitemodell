@@ -17,6 +17,7 @@ test("busca administrativa de conta é exata, restrita e auditada", () => {
 
 test("exclusao administrativa exige master e confirma os tres identificadores", () => {
   const source = readFileSync("src/app/(dashboard)/admin/clientes/page.tsx", "utf8");
+  const worker = readFileSync("src/lib/data-deletion-worker.ts", "utf8");
 
   expect(source).toContain('requireAdmin("settings:manage")');
   expect(source).toContain('adminRole !== "ADMIN_MASTER"');
@@ -28,4 +29,5 @@ test("exclusao administrativa exige master e confirma os tres identificadores", 
   expect(source).toContain("processDataDeletionJob(existing.id)");
   expect(source).toContain("export const maxDuration = 300");
   expect(source).toContain('type: "ADMIN_TEST_ACCOUNT_DELETION"');
+  expect(worker.indexOf("prisma.mediaDepictedPerson.deleteMany")).toBeLessThan(worker.indexOf("prisma.uploadAsset.deleteMany"));
 });
