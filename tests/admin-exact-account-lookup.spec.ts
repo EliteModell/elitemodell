@@ -38,6 +38,7 @@ test("aviso de recuperacao seleciona somente legado incompleto e e idempotente",
   expect(source).toContain('status: { in: ["DRAFT", "PENDING_REVIEW"] }');
   expect(source).toContain("registrationSubmittedAt: { not: null }");
   expect(source).toContain("completionRulesVersion: { lt: 2 }");
+  expect(source).toContain('reason: { contains: "envio legado incompleto", mode: "insensitive" }');
   expect(source).toContain("if (completion.profileComplete) continue");
   expect(source).toContain("LEGACY_RECOVERY_NOTICE_REASON");
   expect(source).toContain('type: "LEGACY_ONBOARDING_RECOVERED"');

@@ -41,11 +41,20 @@ async function notifyLegacyOnboardingRecoveries() {
   "use server";
   const { session, adminRole } = await requireAdmin("professionals:review");
   if (adminRole !== "ADMIN_MASTER") return;
+  const recoveredAudits = await prisma.auditLog.findMany({
+    where: {
+      targetType: "PROFESSIONAL",
+      reason: { contains: "envio legado incompleto", mode: "insensitive" },
+    },
+    select: { targetId: true },
+  });
   const possible = await prisma.professional.findMany({
     where: {
       status: { in: ["DRAFT", "PENDING_REVIEW"] },
-      registrationSubmittedAt: { not: null },
-      completionRulesVersion: { lt: 2 },
+      OR: [
+        { registrationSubmittedAt: { not: null }, completionRulesVersion: { lt: 2 } },
+        { id: { in: recoveredAudits.map((audit) => audit.targetId) } },
+      ],
     },
     include: {
       photos: { select: { url: true, cover: true } },
