@@ -986,7 +986,6 @@ function LocationModal({
             <input
               value={locationSearch}
               onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
               onChange={(event) => onSearch(event.target.value)}
               placeholder="Digite cidade ou UF"
               inputMode="search"
