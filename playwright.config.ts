@@ -37,6 +37,11 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "admin-exact-account-lookup",
+      testMatch: "**/admin-exact-account-lookup.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "professional-draft-isolation",
       testMatch: "**/professional-draft-isolation.spec.ts",
       use: { browserName: "chromium" },
