@@ -90,7 +90,14 @@ export async function GET(req: NextRequest) {
   const city = url.searchParams.get("city");
   const state = url.searchParams.get("state");
   const professionalWhere = await getPublicProfessionalWhere(now);
-  const cityWhere = city ? await professionalCityFilter(city, state ?? "") : null;
+  const regionWhere = city
+    ? await professionalCityFilter(city, state ?? "")
+    : state
+      ? { OR: [
+          { currentServiceState: { equals: state.toUpperCase(), mode: "insensitive" as const } },
+          { AND: [{ OR: [{ currentServiceState: null }, { currentServiceState: "" }] }, { state: { equals: state.toUpperCase(), mode: "insensitive" as const } }] },
+        ] }
+      : null;
 
   const stories = await prisma.story.findMany({
     where: {
@@ -98,7 +105,7 @@ export async function GET(req: NextRequest) {
       user: {
         professional: {
           is: {
-            AND: [professionalWhere, ...(cityWhere ? [cityWhere] : [])],
+            AND: [professionalWhere, ...(regionWhere ? [regionWhere] : [])],
             verified: true,
           },
         },

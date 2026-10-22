@@ -8,7 +8,7 @@ import { monitorUpload, parseUploadResponse, UPLOAD_PENDING_MESSAGE, type Upload
 type StoryItem = { id: string; mediaUrl: string; mediaType: string; thumbnail: string | null; views: number; createdAt: string };
 type StoryGroup = { userId: string; slug: string; nome: string; foto: string | null; stories: StoryItem[]; visto?: boolean; institutional?: boolean };
 
-export default function Stories({ city, state, onChooseRegion }: { city?: string; state?: string; onChooseRegion?: () => void }) {
+export default function Stories({ city, state }: { city?: string; state?: string }) {
   const { data: session } = useSession();
   const rowRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -22,10 +22,8 @@ export default function Stories({ city, state, onChooseRegion }: { city?: string
   const carregar = useCallback(async (signal?: AbortSignal) => {
     try {
       const query = new URLSearchParams();
-      if (city && state) {
-        query.set("city", city);
-        query.set("state", state);
-      }
+      if (city) query.set("city", city);
+      if (state) query.set("state", state);
       const res = await fetch(`/api/stories${query.size ? `?${query}` : ""}`, { signal });
       if (res.ok) setGrupos(await res.json());
     } catch {}
@@ -125,19 +123,19 @@ export default function Stories({ city, state, onChooseRegion }: { city?: string
 
   return (
     <>
-      <div style={{ position: "relative", marginBottom: 24 }}>
-        <div ref={rowRef} style={{ display: "flex", gap: 16, overflowX: "auto", scrollbarWidth: "none", padding: "18px 40px 12px 8px", WebkitOverflowScrolling: "touch" }}>
+      <div className="stories-compact-shell">
+        <div ref={rowRef} className="stories-compact-row">
 
           {/* Botão adicionar story (só para profissionais) */}
           {canPostStory && (
             <div onClick={() => fileRef.current?.click()}
               style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: uploading ? "wait" : "pointer", flexShrink: 0, opacity: uploading ? 0.6 : 1 }}>
-              <div style={{ width: 70, height: 70, borderRadius: "50%", background: "#fff", border: "2px dashed rgba(142,36,170,.42)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, color: "#861fa8" }}
+              <div className="stories-compact-circle stories-add-circle"
                 onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#b72cff")}
                 onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(183, 44, 255,0.3)")}>
                 {uploading ? "..." : "+"}
               </div>
-              <span style={{ fontSize: 11, color: "#574660", fontWeight: 700, fontFamily: "var(--font-playfair), serif" }}>Seu story</span>
+              <span className="stories-compact-name">Seu story</span>
               <input ref={fileRef} type="file" accept="image/*,video/*" style={{ display: "none" }} onChange={handleUpload} />
             </div>
           )}
@@ -148,7 +146,7 @@ export default function Stories({ city, state, onChooseRegion }: { city?: string
             return (
               <div key={g.userId} onClick={() => abrirGrupo(g)}
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer", flexShrink: 0 }}>
-                <div style={{ width: 70, height: 70, borderRadius: "50%", padding: 2.5, background: visto ? "linear-gradient(135deg,#676064,#aaa0b2)" : "linear-gradient(135deg,#fcf7ff,#b72cff,#f0c060,#65009b)" }}>
+                <div className="stories-compact-circle" style={{ background: visto ? "linear-gradient(135deg,#9b929d,#c9becb)" : "linear-gradient(135deg,#fcf7ff,#b72cff,#f0a060,#65009b)" }}>
                   <div style={{ width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden", border: "2.5px solid #fff", background: "#f7effb", position: "relative" }}>
                     {g.foto
                       ? <Image src={g.foto} alt={g.nome} fill unoptimized={requiresDirectMediaDelivery(g.foto)} sizes="70px" style={{ objectFit: "cover", objectPosition: "top" }} />
@@ -156,7 +154,7 @@ export default function Stories({ city, state, onChooseRegion }: { city?: string
                     }
                   </div>
                 </div>
-                <span style={{ fontSize: 11, color: visto ? "#8f8295" : "#4b3656", fontWeight: 700, maxWidth: 70, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "var(--font-playfair), serif" }}>
+                <span className="stories-compact-name" style={{ color: visto ? "#8f8295" : "#4b3656" }}>
                   {g.nome.split(" ")[0]}
                 </span>
               </div>
@@ -165,17 +163,15 @@ export default function Stories({ city, state, onChooseRegion }: { city?: string
 
         </div>
 
-        {city && state && regionalStories.length === 0 ? (
+        {(city || state) && regionalStories.length === 0 ? (
           <div className="stories-region-message" role="status">
-            <span>Nenhum story disponível em {city}, {state} agora.</span>
-            {onChooseRegion ? <button type="button" onClick={onChooseRegion}>Ver stories de outras regiões</button> : null}
+            <span>Nenhum story disponível nesta região agora.</span>
           </div>
         ) : null}
-        {onChooseRegion && regionalStories.length > 0 ? <button type="button" className="stories-region-trigger" onClick={onChooseRegion}>⌖ <span>Ver stories de outras regiões</span> ›</button> : null}
 
         {/* Setas navegação */}
-        <button aria-label="Stories anteriores" onClick={() => scroll("left")} style={{ position: "absolute", left: 0, top: 53, transform: "translateY(-50%)", width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,.94)", border: "1px solid #e4d3ed", color: "#7b1fa2", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>‹</button>
-        <button aria-label="Próximos stories" onClick={() => scroll("right")} style={{ position: "absolute", right: 0, top: 53, transform: "translateY(-50%)", width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,.94)", border: "1px solid #e4d3ed", color: "#7b1fa2", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>›</button>
+        <button aria-label="Stories anteriores" className="stories-arrow stories-arrow-left" onClick={() => scroll("left")}>‹</button>
+        <button aria-label="Próximos stories" className="stories-arrow stories-arrow-right" onClick={() => scroll("right")}>›</button>
       </div>
 
       {/* Viewer */}
@@ -227,10 +223,8 @@ export default function Stories({ city, state, onChooseRegion }: { city?: string
 
       <style>{`
         div::-webkit-scrollbar{display:none}
-        .stories-region-message{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-4px 8px 14px;color:#75677d;font-size:12px}
-        .stories-region-message button{min-height:38px;flex:0 0 auto;border:1px solid #a64bc0;border-radius:999px;padding:0 14px;background:#fff;color:#791e99;font-weight:850;cursor:pointer}
-        .stories-region-trigger{width:calc(100% - 16px);min-height:48px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;margin:2px 8px 4px;border:1px solid #9a36b7;border-radius:999px;padding:0 18px;background:rgba(255,255,255,.74);color:#781b98;font-size:18px;font-weight:900;cursor:pointer}.stories-region-trigger span{font-size:14px}
-        @media(max-width:640px){.stories-region-message{align-items:flex-start;flex-direction:column}.stories-region-message button{width:100%}}
+        .stories-compact-shell{position:relative;margin-bottom:4px}.stories-compact-row{display:flex;gap:13px;overflow-x:auto;scroll-snap-type:x proximity;scroll-behavior:smooth;scrollbar-width:none;padding:11px 34px 8px 5px;-webkit-overflow-scrolling:touch}.stories-compact-row>div{scroll-snap-align:start}.stories-compact-circle{width:66px;height:66px;border-radius:50%;padding:2.5px}.stories-add-circle{display:flex;align-items:center;justify-content:center;border:2px dashed rgba(142,36,170,.42);background:#fff;color:#861fa8;font-size:26px}.stories-compact-name{max-width:66px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#574660;font:700 11px var(--font-playfair),serif;text-align:center}.stories-region-message{margin:0 7px 6px;color:#75677d;font-size:11px}.stories-arrow{position:absolute;top:44px;transform:translateY(-50%);z-index:2;width:25px;height:25px;display:grid;place-items:center;border:1px solid #e4d3ed;border-radius:50%;background:rgba(255,255,255,.94);color:#7b1fa2;cursor:pointer}.stories-arrow-left{left:0}.stories-arrow-right{right:0}
+        @media(max-width:640px){.stories-compact-row{gap:11px;padding-top:9px}.stories-compact-circle{width:60px;height:60px}.stories-compact-name{max-width:60px;font-size:10px}.stories-arrow{top:40px}}
       `}</style>
     </>
   );

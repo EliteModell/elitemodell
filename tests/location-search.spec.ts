@@ -208,8 +208,8 @@ test("available cities remain reachable in the reduced iPhone keyboard viewport"
   })).toBe(true);
 });
 
-test("home story selector chooses one city without changing the main location", async ({ page }) => {
-  let requestedStoryRegion = "";
+test("home discovery starts national and filters by state or city without changing the main location", async ({ page }) => {
+  const storyRequests: string[] = [];
   await page.addInitScript(() => {
     localStorage.setItem("elite_modell_public_location", JSON.stringify({ city: "Salvador", state: "BA", label: "Salvador, BA" }));
   });
@@ -219,28 +219,42 @@ test("home story selector chooses one city without changing the main location", 
       { city: "Recife", state: "PE", count: 2 },
     ],
   } }));
-  await page.route("**/api/stories", (route) => route.fulfill({ json: [
-    { userId: "elite-platform", slug: "politica-conteudo", nome: "Elite Stories", foto: "/android-chrome-512x512.png", institutional: true, stories: [] },
-    { userId: "recife-story", slug: "recife-model", nome: "Recife Story", foto: null, city: "Recife", state: "PE", stories: [{ id: "story-1" }, { id: "story-2" }] },
-  ] }));
-  await page.route("**/api/stories?city=**", async (route) => {
+  await page.route("**/api/stories**", async (route) => {
     const url = new URL(route.request().url());
     const city = url.searchParams.get("city");
-    requestedStoryRegion = `${city}|${url.searchParams.get("state")}`;
+    const state = url.searchParams.get("state");
+    storyRequests.push(`${city ?? "all"}|${state ?? "all"}`);
     await route.fulfill({ json: [
       { userId: "elite-platform", slug: "politica-conteudo", nome: "Elite Stories", foto: "/android-chrome-512x512.png", institutional: true, stories: [] },
-      ...(city === "Recife" ? [{ userId: "recife-story", slug: "recife-model", nome: "Recife Story", foto: null, city: "Recife", state: "PE", stories: [{ id: "story-1", mediaUrl: "/test.jpg", mediaType: "image", thumbnail: null, views: 0, createdAt: new Date().toISOString() }] }] : []),
+      ...(!state || state === "BA" ? [{ userId: "salvador-story", slug: "salvador-model", nome: "Salvador Story", foto: null, city: "Salvador", state: "BA", stories: [{ id: "story-ba", mediaUrl: "/test.jpg", mediaType: "image", thumbnail: null, views: 0, createdAt: new Date().toISOString() }] }] : []),
+      ...(!state || state === "PE" ? [{ userId: "recife-story", slug: "recife-model", nome: "Recife Story", foto: null, city: "Recife", state: "PE", stories: [{ id: "story-pe", mediaUrl: "/test.jpg", mediaType: "image", thumbnail: null, views: 0, createdAt: new Date().toISOString() }] }] : []),
     ] });
   });
   await page.route("**/api/professionals?**", (route) => route.fulfill({ json: { professionals: [], total: 0 } }));
 
   await page.goto("/");
-  await page.getByRole("button", { name: "Ver stories de outras regiões" }).click();
-  const dialog = page.getByRole("dialog", { name: "Escolha uma cidade" });
-  await expect(dialog.getByText("2 stories disponíveis")).toBeVisible();
-  await dialog.getByRole("button", { name: /Recife, PE/ }).click();
+  const filter = page.getByRole("button", { name: /Todas as regiões/ });
+  await expect(filter).toBeVisible();
+  await expect(page.getByText("Salvador", { exact: true })).toBeVisible();
   await expect(page.getByText("Recife", { exact: true })).toBeVisible();
-  await expect.poll(() => requestedStoryRegion).toBe("Recife|PE");
+
+  await filter.click();
+  let dialog = page.getByRole("dialog", { name: "Escolha uma região" });
+  await dialog.getByRole("button", { name: /Bahia \(BA\)/ }).click();
+  await expect.poll(() => storyRequests.at(-1)).toBe("all|BA");
+  await expect(page.getByText("Salvador", { exact: true })).toBeVisible();
+  await expect(page.getByText("Recife", { exact: true })).toHaveCount(0);
+
+  await page.getByRole("button", { name: /Bahia \(BA\)/ }).click();
+  dialog = page.getByRole("dialog", { name: "Escolha uma região" });
+  await dialog.getByRole("button", { name: /Salvador, BA/ }).click();
+  await expect.poll(() => storyRequests.at(-1)).toBe("Salvador|BA");
+
+  await page.getByRole("button", { name: /Salvador, BA/ }).click();
+  dialog = page.getByRole("dialog", { name: "Escolha uma região" });
+  await dialog.getByRole("button", { name: /Todas as regiões/ }).click();
+  await expect.poll(() => storyRequests.at(-1)).toBe("all|all");
+  await expect(page.getByText("Recife", { exact: true })).toBeVisible();
   await expect(page.getByText("Elite", { exact: true })).toBeVisible();
   await expect.poll(() => page.evaluate(() => localStorage.getItem("elite_modell_public_location"))).toContain("Salvador");
 });
