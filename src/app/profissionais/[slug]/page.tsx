@@ -436,7 +436,7 @@ export default function ProfissionalProfilePage() {
   return (
     <div className="public-profile-page" style={{ background: "#f7f7fa", minHeight: "100vh", color: "#141212", paddingBottom: 72 }}>
       <Navbar />
-      <div style={{ position: "fixed", right: 18, bottom: 82, zIndex: 90, background: "rgba(8,8,10,.92)", border: "1px solid rgba(239,68,68,.35)", borderRadius: 8, padding: "10px 12px" }}>
+      <div className={styles.floatingReport} style={{ position: "fixed", right: 18, bottom: 82, zIndex: 90, background: "rgba(8,8,10,.92)", border: "1px solid rgba(239,68,68,.35)", borderRadius: 8, padding: "10px 12px" }}>
         {authStatus === "authenticated" ? (
           <PublicReportButton key={reportOpen ? "report-open" : "report-closed"} targetType="PROFESSIONAL" targetId={pro.id} initialOpen={reportOpen} />
         ) : (
