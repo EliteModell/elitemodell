@@ -49,6 +49,7 @@ export async function GET() {
           genderSelfDescription: true,
           transIdentity: true,
           registrationSubmittedAt: true,
+          completionRulesVersion: true,
           bio: true,
           birthDate: true,
           placeId: true,

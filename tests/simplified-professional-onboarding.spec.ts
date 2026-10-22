@@ -158,6 +158,69 @@ test("troca de conta preserva o rascunho de A e bloqueia dados de A em B", async
   expect(storageState.accountB).toBeNull();
 });
 
+test("envio legado incompleto do fluxo de cinco etapas retoma a primeira pendência nas nove etapas", async ({ page }) => {
+  await mockOnboarding(page);
+  await page.unroute("**/api/users/me**");
+  await page.route("**/api/users/me**", (route) => route.fulfill({ json: {
+    id: USER_ID,
+    email: "legacy@example.invalid",
+    emailVerified: true,
+    birthDate: "2000-01-01",
+    lgpdConsent: true,
+    termsConsent: true,
+    professional: {
+      ...professional("Marina Legado"),
+      status: "PENDING_REVIEW",
+      registrationSubmittedAt: "2026-10-20T12:00:00.000Z",
+      completionRulesVersion: 1,
+      bio: "Cadastro antigo parcialmente preenchido.",
+      kycStatus: "APPROVED",
+    },
+  } }));
+  await page.unroute("**/api/professionals/draft");
+  await page.route("**/api/professionals/draft", (route) => route.fulfill({ json: {
+    completion: {
+      profilePercent: 36,
+      profileComplete: false,
+      readyToSubmit: false,
+      firstIncompleteStep: 1,
+      profileIssues: [{ code: "birth_date", field: "birthDate", label: "Data de nascimento", step: 1 }],
+      issues: [{ code: "birth_date", field: "birthDate", label: "Data de nascimento", step: 1 }],
+    },
+  } }));
+
+  await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByText("Etapa 2 de 9", { exact: false })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cadastro recebido com sucesso!" })).toHaveCount(0);
+  await expect(page.getByText("Seu cadastro anterior foi iniciado em uma versão antiga", { exact: false })).toBeVisible();
+});
+
+test("envio atual completo continua na confirmação sem reabrir etapas", async ({ page }) => {
+  await mockOnboarding(page);
+  await page.unroute("**/api/users/me**");
+  await page.route("**/api/users/me**", (route) => route.fulfill({ json: {
+    id: USER_ID,
+    email: "current@example.invalid",
+    emailVerified: true,
+    professional: {
+      ...professional("Marina Atual"),
+      status: "DRAFT",
+      registrationSubmittedAt: "2026-10-22T12:00:00.000Z",
+      completionRulesVersion: 2,
+      kycStatus: "PENDING",
+    },
+  } }));
+  await page.unroute("**/api/professionals/draft");
+  await page.route("**/api/professionals/draft", (route) => route.fulfill({ json: {
+    completion: { profilePercent: 100, profileComplete: true, readyToSubmit: false, firstIncompleteStep: 7, profileIssues: [], issues: [] },
+  } }));
+
+  await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("heading", { name: "Cadastro recebido com sucesso!" })).toBeVisible();
+});
+
 test("primeira etapa não tem overflow no iPhone Safari nem no desktop", async ({ page }, testInfo) => {
   await mockOnboarding(page);
   for (const width of [390, 1440]) {

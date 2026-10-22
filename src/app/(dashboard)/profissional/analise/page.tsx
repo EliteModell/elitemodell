@@ -5,6 +5,7 @@ import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { prisma } from "@/lib/prisma";
 import { reconcileProfessionalDidit } from "@/lib/didit-reconciliation";
 import { VerificationRefresh } from "@/components/professional-onboarding/VerificationRefresh";
+import { professionalCompletion } from "@/lib/professional-completeness";
 
 export const dynamic = "force-dynamic";
 
@@ -39,9 +40,26 @@ export default async function ProfessionalAnalysisPage() {
   if (professional.status === "ACTIVE" || professional.status === "PAUSED") redirect(ACCOUNT_ROUTES.dashboardAcompanhante);
 
   const identity = await prisma.professional.findUnique({
-    where: { id: professional.id }, select: { kycProvider: true, kycSessionId: true, registrationSubmittedAt: true },
+    where: { id: professional.id },
+    include: {
+      photos: { select: { url: true, cover: true } },
+      specialties: { select: { name: true } },
+      user: { select: { emailVerified: true } },
+    },
   });
-  if (professional.status === "DRAFT" && !identity?.registrationSubmittedAt) redirect(ACCOUNT_ROUTES.onboardingAcompanhante);
+  const completion = identity ? professionalCompletion({
+    ...identity,
+    specialties: identity.specialties,
+    emailVerified: identity.user.emailVerified,
+  }) : null;
+  const validCurrentSubmission = Boolean(
+    identity?.registrationSubmittedAt
+    && identity.completionRulesVersion >= 2
+    && completion?.profileComplete,
+  );
+  if (["DRAFT", "PENDING_REVIEW"].includes(professional.status) && !validCurrentSubmission) {
+    redirect(ACCOUNT_ROUTES.onboardingAcompanhante);
+  }
   let identityStatus: string | null = null;
   let identityMessage: string | null = null;
   if (identity?.kycProvider === "DIDIT" && identity.kycSessionId) {

@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { assertOwnedUploadMediaUrls } from "@/lib/approved-media";
 import { normalizeControlledMediaUrl } from "@/lib/public-professional-media";
 import { professionalCompletion, professionalOnboardingCompletion } from "@/lib/professional-completeness";
+import { logAudit } from "@/lib/audit";
 
 const draftSchema = z.object({
   step: z.number().int().min(0).max(7),
@@ -88,8 +89,38 @@ export async function PATCH(req: NextRequest) {
     const { step, form, flow } = draftSchema.parse(await req.json());
     const professional = await loadProfessional(session.user.id);
     if (!professional) return NextResponse.json({ error: "Rascunho profissional não encontrado." }, { status: 404 });
-    if (!["DRAFT", "CORRECTION_REQUIRED"].includes(professional.status)) {
+    const persistedCompletion = professionalCompletion({
+      ...professional,
+      specialties: professional.specialties,
+      emailVerified: professional.user.emailVerified,
+    });
+    const recoverableLegacySubmission = ["DRAFT", "PENDING_REVIEW"].includes(professional.status)
+      && Boolean(professional.registrationSubmittedAt)
+      && professional.completionRulesVersion < 2
+      && !persistedCompletion.profileComplete;
+    if (!["DRAFT", "CORRECTION_REQUIRED"].includes(professional.status) && !recoverableLegacySubmission) {
       return NextResponse.json({ error: "Este cadastro não está em edição." }, { status: 409 });
+    }
+    if (recoverableLegacySubmission) {
+      const previousSubmittedAt = professional.registrationSubmittedAt;
+      await prisma.professional.update({
+        where: { id: professional.id },
+        data: { status: "DRAFT", registrationSubmittedAt: null },
+      });
+      await logAudit({
+        actorIdentifier: `professional:${session.user.id}`,
+        action: "SETTINGS_CHANGED",
+        targetType: "PROFESSIONAL",
+        targetId: professional.id,
+        reason: "Recuperação idempotente de envio legado incompleto para o fluxo atual de nove etapas.",
+        changes: {
+          recovery: "simplified-v1-incomplete-submission",
+          previousStatus: professional.status,
+          previousRegistrationSubmittedAt: previousSubmittedAt,
+          missingFields: persistedCompletion.profileIssues.map((issue) => issue.field),
+          resultingStatus: "DRAFT",
+        },
+      });
     }
 
     const merged = {

@@ -571,7 +571,14 @@ export default function ProfissionalNovoPage() {
         router.replace(ACCOUNT_ROUTES.dashboardAcompanhante);
         return;
       }
-      if (user.professional?.status === "PENDING_REVIEW" || (user.professional?.status === "DRAFT" && user.professional?.registrationSubmittedAt)) {
+      const draftResponse = await fetch("/api/professionals/draft", { cache: "no-store" });
+      const draftState = draftResponse.ok ? await draftResponse.json() as { completion?: CompletionState } : null;
+      const hasValidCurrentSubmission = Boolean(
+        user.professional?.registrationSubmittedAt
+        && Number(user.professional?.completionRulesVersion ?? 0) >= 2
+        && draftState?.completion?.profileComplete,
+      );
+      if (["DRAFT", "PENDING_REVIEW"].includes(user.professional?.status ?? "") && hasValidCurrentSubmission) {
         localStorage.removeItem(professionalDraftStorageKey(user.id));
         setSubmissionResult({
           status: user.professional.status,
@@ -586,11 +593,15 @@ export default function ProfissionalNovoPage() {
 
       const professional = user.professional;
       const isCorrection = professional?.status === "CORRECTION_REQUIRED";
-      const shouldRestore = isCorrection || professional?.status === "DRAFT";
+      const isLegacyRecovery = professional?.status === "PENDING_REVIEW" && !hasValidCurrentSubmission;
+      const shouldRestore = isCorrection || isLegacyRecovery || professional?.status === "DRAFT";
       const loadedDate = (professional?.birthDate ?? user.birthDate) ? String(professional?.birthDate ?? user.birthDate).slice(0, 10) : "";
       if (isCorrection) {
         setCorrectionReason(professional.rejectReason || "Revise os dados indicados pela equipe e reenvie o cadastro.");
         setStep(0);
+      } else if (isLegacyRecovery) {
+        setCorrectionReason("Seu cadastro anterior foi iniciado em uma versão antiga. Seus dados foram preservados; complete apenas as etapas pendentes antes de enviar novamente.");
+        setStep(Math.max(0, Math.min(draftState?.completion?.firstIncompleteStep ?? 0, STEPS.length - 1)));
       }
       setForm((current) => ({
         ...current,
@@ -1032,8 +1043,15 @@ export default function ProfissionalNovoPage() {
     try {
       const response = await fetch("/api/users/me", { cache: "no-store" });
       if (!response.ok) return false;
-      const user = await response.json() as { professional?: { status?: string; registrationSubmittedAt?: string | null; slug?: string; kycStatus?: string } };
-      if (user.professional?.status === "ACTIVE" || user.professional?.status === "PENDING_REVIEW" || Boolean(user.professional?.registrationSubmittedAt)) {
+      const user = await response.json() as { professional?: { status?: string; registrationSubmittedAt?: string | null; completionRulesVersion?: number; slug?: string; kycStatus?: string } };
+      const draftResponse = await fetch("/api/professionals/draft", { cache: "no-store" });
+      const draftState = draftResponse.ok ? await draftResponse.json() as { completion?: CompletionState } : null;
+      const hasValidCurrentSubmission = Boolean(
+        user.professional?.registrationSubmittedAt
+        && Number(user.professional?.completionRulesVersion ?? 0) >= 2
+        && draftState?.completion?.profileComplete,
+      );
+      if (user.professional?.status === "ACTIVE" || (["DRAFT", "PENDING_REVIEW"].includes(user.professional?.status ?? "") && hasValidCurrentSubmission)) {
         if (accountUserId) localStorage.removeItem(professionalDraftStorageKey(accountUserId));
         setSubmissionResult({
           status: user.professional?.status ?? "PENDING_REVIEW",
