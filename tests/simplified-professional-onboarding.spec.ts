@@ -42,7 +42,9 @@ test("placeholder técnico não trava a primeira etapa e o nome escolhido é sal
 
   const name = page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...");
   await expect(name).toHaveValue("");
+  await expect(page.getByText("Seu cadastro ainda está com um nome genérico.")).toBeVisible();
   await name.fill("Marina Elite");
+  await expect(page.getByText("Seu cadastro ainda está com um nome genérico.")).toBeHidden();
   await page.getByRole("button", { name: "Mulher" }).click();
   await page.getByRole("button", { name: "Não", exact: true }).click();
 
@@ -55,6 +57,18 @@ test("placeholder técnico não trava a primeira etapa e o nome escolhido é sal
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Confirme sua identidade" })).toBeVisible();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("elitemodell.professional.simple-onboarding.v1") || "{}").displayName)).toBe("Marina Elite");
+});
+
+test("nome profissional obrigatório mostra erro claro e rejeita o nome técnico", async ({ page }) => {
+  await mockOnboarding(page);
+  await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText("Qual nome você quer mostrar aos clientes?")).toContainText("*");
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Informe seu nome profissional." })).toBeVisible();
+
+  await page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...").fill("Cadastro de acompanhante");
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Esse nome não pode ser usado." })).toBeVisible();
 });
 
 for (const scenario of [
