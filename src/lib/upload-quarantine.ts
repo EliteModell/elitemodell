@@ -240,6 +240,12 @@ export async function quarantineUpload(input: QuarantineInput) {
   await provider.upload({ bucket: quarantineBucket, path: quarantinePath, contents: input.buffer, contentType: input.detectedMimeType, overwrite: false });
 
   try {
+    const settings = await prisma.platformSettings.findUnique({
+      where: { id: "default" },
+      select: { uploadSecurityEnabled: true },
+    });
+    const createAsyncMalwareJob = process.env.UPLOAD_AV_ASYNC_ENABLED === "true"
+      && settings?.uploadSecurityEnabled !== false;
     const asset = await prisma.uploadAsset.create({
       data: {
         id,
@@ -268,6 +274,10 @@ export async function quarantineUpload(input: QuarantineInput) {
             verificationDate: person.ageStatus === "PASS" && person.consentStatus === "PASS" ? new Date() : null,
           })),
         },
+        // The asset and its first AV job must commit together. Otherwise a
+        // process restart between this insert and processUploadAsset leaves a
+        // permanently quarantined asset with no durable work item.
+        malwareScanJob: createAsyncMalwareJob ? { create: { status: "QUEUED" } } : undefined,
       },
     });
     await auditAsset(input.userId, asset.id, "Arquivo recebido em quarentena.", {

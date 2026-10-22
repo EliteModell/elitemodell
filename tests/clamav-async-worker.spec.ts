@@ -86,6 +86,10 @@ test.describe("candidato ClamAV assincrono", () => {
     expect(worker).toContain("oidcToken: { serviceAccountEmail: oidcServiceAccountEmail, audience: workerUrl }");
     expect(worker).toContain("malware-${job.id}");
     expect(upload).toContain('process.env.UPLOAD_AV_ASYNC_ENABLED === "true"');
+    expect(upload).toContain('malwareScanJob: createAsyncMalwareJob ? { create: { status: "QUEUED" } } : undefined');
+    expect(worker).toContain('malwareScanJob: null');
+    expect(worker).toContain('event: "malware_jobs_backfilled"');
+    expect(worker).toContain('status: { in: ["QUEUED", "RETRY"] }');
     expect(migration).toContain('"taskName" TEXT');
     expect(migration).toContain('CREATE UNIQUE INDEX "MalwareScanJob_taskName_key"');
   });

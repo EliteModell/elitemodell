@@ -39,13 +39,33 @@ async function metadataAccessToken() {
 }
 
 async function dispatchQueuedJobs(limit = 50) {
+  const orphanedAssets = await prisma.uploadAsset.findMany({
+    where: {
+      status: { in: ["QUARANTINED", "PENDING"] },
+      malwareStatus: { in: ["PENDING", "ERROR"] },
+      uploadCompletedAt: { not: null },
+      malwareScanJob: null,
+    },
+    select: { id: true },
+    orderBy: { createdAt: "asc" },
+    take: Math.max(1, Math.min(limit, 100)),
+  });
+  const backfilled = orphanedAssets.length
+    ? (await prisma.malwareScanJob.createMany({
+        data: orphanedAssets.map(({ id }) => ({ assetId: id, status: "QUEUED" })),
+        skipDuplicates: true,
+      })).count
+    : 0;
+  if (backfilled) {
+    console.log(JSON.stringify({ event: "malware_jobs_backfilled", count: backfilled }));
+  }
   const jobs = await prisma.malwareScanJob.findMany({
-    where: { status: "QUEUED", availableAt: { lte: new Date() }, completedAt: null, taskName: null },
+    where: { status: { in: ["QUEUED", "RETRY"] }, availableAt: { lte: new Date() }, completedAt: null, taskName: null },
     select: { id: true, assetId: true },
     orderBy: { createdAt: "asc" },
     take: Math.max(1, Math.min(limit, 100)),
   });
-  if (!jobs.length) return { selected: 0, dispatched: 0, failed: 0 };
+  if (!jobs.length) return { backfilled, selected: 0, dispatched: 0, failed: 0 };
   const parent = cloudTasksParent();
   const workerUrl = required("CLAMAV_WORKER_URL").replace(/\/$/, "");
   const oidcServiceAccountEmail = required("CLOUD_TASKS_OIDC_SERVICE_ACCOUNT");
@@ -73,7 +93,7 @@ async function dispatchQueuedJobs(limit = 50) {
       });
       if (!response.ok && response.status !== 409) throw new Error(`Cloud Tasks create failed: HTTP ${response.status}`);
       await prisma.malwareScanJob.updateMany({
-        where: { id: job.id, taskName: null, status: "QUEUED" },
+        where: { id: job.id, taskName: null, status: { in: ["QUEUED", "RETRY"] } },
         data: { taskName, dispatchedAt: new Date(), dispatchAttempts: { increment: 1 }, lastDispatchError: null },
       });
       dispatched += 1;
@@ -88,7 +108,7 @@ async function dispatchQueuedJobs(limit = 50) {
       }).catch(() => undefined);
     }
   }
-  return { selected: jobs.length, dispatched, failed };
+  return { backfilled, selected: jobs.length, dispatched, failed };
 }
 
 function json(response: import("node:http").ServerResponse, status: number, body: unknown) {
