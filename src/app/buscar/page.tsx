@@ -34,6 +34,10 @@ type LocationChoice = {
   slug: string;
 };
 
+type AvailableCity = LocationChoice & {
+  count: number;
+};
+
 type CardPerfil = {
   id: string;
   slug: string;
@@ -192,6 +196,10 @@ function BuscarContent() {
   const [locationSearch, setLocationSearch] = useState("");
   const [locationDraft, setLocationDraft] = useState<LocationChoice | null>(null);
   const [draftVirtual, setDraftVirtual] = useState(false);
+  const [locationView, setLocationView] = useState<"search" | "available">("search");
+  const [availableCities, setAvailableCities] = useState<AvailableCity[]>([]);
+  const [availableCitiesLoading, setAvailableCitiesLoading] = useState(false);
+  const [availableCitiesError, setAvailableCitiesError] = useState<string | null>(null);
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoMessage, setGeoMessage] = useState<string | null>(null);
   const [filtros, setFiltros] = useState<Set<QuickFilter>>(new Set());
@@ -341,6 +349,35 @@ function BuscarContent() {
     };
   }, [filtros, locationSelectionRequired, mainTab, selectedLocation, sortBy, subTab, virtualOnly]);
 
+  useEffect(() => {
+    if (!showLocationModal || locationView !== "available") return;
+
+    const controller = new AbortController();
+    fetch("/api/locations/available-cities", {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error ?? "Não foi possível carregar as cidades disponíveis agora.");
+        const cities = Array.isArray(data.cities) ? data.cities : [];
+        setAvailableCities(cities.map((item: { city: string; state: string; count: number }) => ({
+          ...cityChoice(item.city, item.state),
+          count: item.count,
+        })));
+      })
+      .catch((fetchError) => {
+        if (controller.signal.aborted) return;
+        setAvailableCities([]);
+        setAvailableCitiesError(fetchError instanceof Error ? fetchError.message : "Não foi possível carregar as cidades disponíveis agora.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setAvailableCitiesLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [locationView, showLocationModal]);
+
   function replaceQuery(updates: Record<string, string | null>) {
     const next = new URLSearchParams(params.toString());
     Object.entries(updates).forEach(([key, value]) => {
@@ -379,8 +416,42 @@ function BuscarContent() {
     setLocationDraft(selectedLocation);
     setDraftVirtual(virtualOnly);
     setLocationSearch("");
+    setLocationView("search");
     setGeoMessage(null);
     setShowLocationModal(true);
+  }
+
+  function showAvailableCityList() {
+    setAvailableCitiesLoading(true);
+    setAvailableCitiesError(null);
+    setLocationView("available");
+  }
+
+  function openAvailableCities() {
+    setLocationDraft(selectedLocation);
+    setDraftVirtual(false);
+    setLocationSearch("");
+    showAvailableCityList();
+    setGeoMessage(null);
+    setShowLocationModal(true);
+  }
+
+  function applyCityImmediately(city: LocationChoice) {
+    setStories([]);
+    setPerfis([]);
+    setShowStoriesFromOtherRegions(false);
+    setLocationDraft(city);
+    setDraftVirtual(false);
+    setSelectedLocation(city);
+    setVirtualOnly(false);
+    setShowLocationModal(false);
+    savePublicLocationPreference(city);
+    replaceQuery({
+      cidade: city.city,
+      estado: city.state.toLowerCase(),
+      virtual: null,
+      selecionarCidade: null,
+    });
   }
 
   function applyLocationChoice() {
@@ -647,6 +718,27 @@ function BuscarContent() {
         .location-modal-search input { width: 100%; min-height: 48px; border-radius: 12px; border: 1px solid var(--border-strong); background: #fff; color: var(--text-primary); padding: 0 14px 0 38px; outline: none; font-size: 15px; }
         .location-modal-search input::placeholder { color: #756f78; opacity: 1; }
         .location-modal-search input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring); }
+        .location-availability-toggle {
+          width: 100%;
+          min-height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-top: 10px;
+          padding: 0 13px;
+          border: 1px solid rgba(183,44,255,.3);
+          border-radius: 12px;
+          background: rgba(183,44,255,.07);
+          color: #7513ad;
+          font-size: 13px;
+          font-weight: 850;
+          text-align: left;
+          cursor: pointer;
+        }
+        .location-availability-toggle.active { border-color: var(--primary); background: var(--primary-soft); }
+        .location-available-heading { margin: 2px 0 12px; color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
+        .location-count { flex: 0 0 auto; color: #7513ad; font-size: 12px; font-weight: 800; }
         .location-modal-message { margin: 0 0 10px; color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
         .location-modal-empty { color: var(--text-secondary); font-size: 13px; }
         .location-modal-footer { flex: 0 0 auto; display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; padding: 14px 18px max(18px, env(safe-area-inset-bottom)); border-top: 1px solid var(--border); background: #fff; }
@@ -722,7 +814,7 @@ function BuscarContent() {
           background: linear-gradient(135deg, #e1a6ff, #b72cff 50%, #65009b);
           color: #fff;
         }
-        .profiles-empty-actions a, .coming-actions .secondary {
+        .profiles-empty-actions a, .profiles-empty-actions .secondary, .coming-actions .secondary {
           border: 1px solid rgba(183, 44, 255,0.22);
           background: #fff;
           color: #8f1fd1;
@@ -757,6 +849,10 @@ function BuscarContent() {
           geoMessage={geoMessage}
           locationSearch={locationSearch}
           locations={filteredLocations}
+          availableCities={availableCities}
+          availableCitiesError={availableCitiesError}
+          availableCitiesLoading={availableCitiesLoading}
+          locationView={locationView}
           onApply={applyLocationChoice}
           onClose={() => {
             if (locationSelectionRequired) {
@@ -766,7 +862,13 @@ function BuscarContent() {
             setShowLocationModal(false);
           }}
           onGeo={useApproximateLocation}
-          onSearch={setLocationSearch}
+          onSearch={(value) => {
+            setLocationView("search");
+            setLocationSearch(value);
+          }}
+          onShowAvailable={showAvailableCityList}
+          onShowSearch={() => setLocationView("search")}
+          onSelectAvailableCity={applyCityImmediately}
           onSelectCity={selectCity}
           onSelectVirtual={selectVirtual}
         />
@@ -889,16 +991,27 @@ function BuscarContent() {
             {!loading && !error && lista.length === 0 && (
               <div className="profiles-empty">
                 <div className="profiles-empty-inner">
-                  <span className="empty-kicker">Curadoria em andamento</span>
-                  <h2>Perfis premium em breve.</h2>
+                  <span className="empty-kicker">{selectedLocation && perfis.length === 0 ? "Sem resultados nesta cidade" : "Curadoria em andamento"}</span>
+                  <h2>{selectedLocation && perfis.length === 0 ? "Ainda não temos profissionais disponíveis nesta cidade." : "Perfis premium em breve."}</h2>
                   <p>
-                    {emptyContext
+                    {selectedLocation && perfis.length === 0
+                      ? `Você escolheu ${selectedLocation.label}. Veja outras cidades com perfis publicados, sem alterar sua localização automaticamente.`
+                      : emptyContext
                       ? `Estamos liberando apenas profissionais verificadas em ${emptyContext}. Novas presenças entram no ar assim que a curadoria for concluída.`
                       : "Estamos liberando apenas profissionais verificadas e alinhadas ao padrão Elite Modell. Novas presenças entram no ar assim que a curadoria for concluída."}
                   </p>
                   <div className="profiles-empty-actions">
-                    <button type="button" onClick={clearSearch}>Limpar busca</button>
-                    <Link href={ACCOUNT_ROUTES.cadastroAcompanhante}>Cadastre-se como acompanhante</Link>
+                    {selectedLocation && perfis.length === 0 ? (
+                      <>
+                        <button type="button" onClick={openAvailableCities}>Ver cidades com acompanhantes</button>
+                        <button type="button" className="secondary" onClick={clearSearch}>Limpar busca</button>
+                      </>
+                    ) : (
+                      <>
+                        <button type="button" onClick={clearSearch}>Limpar busca</button>
+                        <Link href={ACCOUNT_ROUTES.cadastroAcompanhante}>Cadastre-se como acompanhante</Link>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -916,29 +1029,43 @@ function BuscarContent() {
 function LocationModal({
   draft,
   draftVirtual,
+  availableCities,
+  availableCitiesError,
+  availableCitiesLoading,
   geoLoading,
   geoMessage,
   locationSearch,
+  locationView,
   locations,
   onApply,
   onClose,
   onGeo,
   onSearch,
+  onSelectAvailableCity,
   onSelectCity,
   onSelectVirtual,
+  onShowAvailable,
+  onShowSearch,
 }: {
   draft: LocationChoice | null;
   draftVirtual: boolean;
+  availableCities: AvailableCity[];
+  availableCitiesError: string | null;
+  availableCitiesLoading: boolean;
   geoLoading: boolean;
   geoMessage: string | null;
   locationSearch: string;
+  locationView: "search" | "available";
   locations: LocationChoice[];
   onApply: () => void;
   onClose: () => void;
   onGeo: () => void;
   onSearch: (value: string) => void;
+  onSelectAvailableCity: (city: LocationChoice) => void;
   onSelectCity: (city: LocationChoice) => void;
   onSelectVirtual: () => void;
+  onShowAvailable: () => void;
+  onShowSearch: () => void;
 }) {
   const [visualViewport, setVisualViewport] = useState<{ height: number; offsetTop: number; keyboardOpen: boolean } | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
@@ -969,7 +1096,7 @@ function LocationModal({
       aria-modal="true"
       aria-label="Selecionar localização"
       data-keyboard-open={visualViewport?.keyboardOpen ? "true" : "false"}
-      data-compact={visualViewport?.keyboardOpen || searchFocused ? "true" : "false"}
+      data-compact={visualViewport?.keyboardOpen || searchFocused || Boolean(visualViewport && visualViewport.height < 560) ? "true" : "false"}
       style={visualViewport ? { top: visualViewport.offsetTop, height: visualViewport.height } : undefined}
     >
       <div className="location-modal">
@@ -985,12 +1112,31 @@ function LocationModal({
             <SearchIcon style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)" }} />
             <input
               value={locationSearch}
-              onFocus={() => setSearchFocused(true)}
+              onFocus={() => {
+                setSearchFocused(true);
+                onShowSearch();
+              }}
               onChange={(event) => onSearch(event.target.value)}
               placeholder="Digite cidade ou UF"
               inputMode="search"
             />
           </div>
+          <button
+            type="button"
+            className={`location-availability-toggle ${locationView === "available" ? "active" : ""}`}
+            onClick={() => {
+              if (locationView === "available") {
+                onShowSearch();
+                return;
+              }
+              if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+              setSearchFocused(false);
+              onShowAvailable();
+            }}
+          >
+            <span>{locationView === "available" ? "Pesquisar outra cidade" : "Onde tem acompanhantes?"}</span>
+            <span aria-hidden="true">{locationView === "available" ? "←" : "→"}</span>
+          </button>
         </div>
 
         <div className="location-modal-extras">
@@ -1009,25 +1155,50 @@ function LocationModal({
         </div>
 
         <div className="location-list">
-          {locations.map((city) => {
-            const active = draft?.slug === city.slug && !draftVirtual;
-            return (
-              <button
-                key={city.slug}
-                type="button"
-                className={`location-option ${active ? "active" : ""}`}
-                onPointerDown={(event) => {
-                  event.preventDefault();
-                  onSelectCity(city);
-                }}
-                onClick={() => onSelectCity(city)}
-              >
-                <span>{city.label}</span>
-                {active && <span style={{ color: GOLD, fontWeight: 900 }}>Selecionada</span>}
-              </button>
-            );
-          })}
-          {locations.length === 0 && <p className="location-modal-empty">Nenhuma cidade sugerida encontrada. Tente outra busca.</p>}
+          {locationView === "available" ? (
+            <>
+              <p className="location-available-heading">Cidades com perfis publicados, em ordem de disponibilidade.</p>
+              {availableCitiesLoading && <p className="location-modal-empty" role="status">Carregando cidades...</p>}
+              {!availableCitiesLoading && availableCitiesError && <p className="location-modal-empty" role="alert">{availableCitiesError}</p>}
+              {!availableCitiesLoading && !availableCitiesError && availableCities.map((city) => (
+                <button
+                  key={city.slug}
+                  type="button"
+                  className={`location-option ${draft?.slug === city.slug && !draftVirtual ? "active" : ""}`}
+                  onClick={() => onSelectAvailableCity(city)}
+                  aria-label={`${city.label}: ${city.count} ${city.count === 1 ? "perfil público" : "perfis públicos"}`}
+                >
+                  <span>{city.label}</span>
+                  <span className="location-count">{city.count} {city.count === 1 ? "perfil" : "perfis"}</span>
+                </button>
+              ))}
+              {!availableCitiesLoading && !availableCitiesError && availableCities.length === 0 && (
+                <p className="location-modal-empty">Ainda não há cidades com perfis publicados.</p>
+              )}
+            </>
+          ) : (
+            <>
+              {locations.map((city) => {
+                const active = draft?.slug === city.slug && !draftVirtual;
+                return (
+                  <button
+                    key={city.slug}
+                    type="button"
+                    className={`location-option ${active ? "active" : ""}`}
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      onSelectCity(city);
+                    }}
+                    onClick={() => onSelectCity(city)}
+                  >
+                    <span>{city.label}</span>
+                    {active && <span style={{ color: GOLD, fontWeight: 900 }}>Selecionada</span>}
+                  </button>
+                );
+              })}
+              {locations.length === 0 && <p className="location-modal-empty">Nenhuma cidade sugerida encontrada. Tente outra busca.</p>}
+            </>
+          )}
         </div>
 
         <div className="location-modal-footer">
@@ -1036,9 +1207,11 @@ function LocationModal({
             type="button"
             className="location-modal-primary"
             onClick={onApply}
-            disabled={!draft && !draftVirtual}
+            disabled={locationView === "available" || (!draft && !draftVirtual)}
           >
-            {draftVirtual
+            {locationView === "available"
+              ? "Selecione uma cidade acima"
+              : draftVirtual
               ? "Ver acompanhantes online"
               : draft
                 ? `Ver acompanhantes em ${draft.label}`

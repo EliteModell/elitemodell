@@ -46,6 +46,21 @@ test("real APIs return the registered Vitória professional for every spelling",
   expect(embedded.professionals.every((profile: { state: string }) => profile.state === "ES")).toBe(true);
 });
 
+test("available cities expose only positive public totals in descending order", async ({ request }) => {
+  const response = await request.get("/api/locations/available-cities");
+  expect(response.ok()).toBe(true);
+  const data = await response.json() as {
+    cities: Array<{ city: string; state: string; count: number }>;
+  };
+
+  expect(data.cities.length).toBeGreaterThan(0);
+  expect(data.cities.every((item) => item.city && /^[A-Z]{2}$/.test(item.state) && item.count > 0)).toBe(true);
+  expect(data.cities.map((item) => item.count)).toEqual(
+    [...data.cities].map((item) => item.count).sort((left, right) => right - left),
+  );
+  expect(new Set(data.cities.map((item) => `${item.city}|${item.state}`)).size).toBe(data.cities.length);
+});
+
 test("Elite Stories permanece como primeiro item institucional", async ({ request }) => {
   const response = await request.get("/api/stories?city=Vitoria&state=ES", { headers: AGE_HEADERS });
   expect(response.ok()).toBe(true);
@@ -129,6 +144,68 @@ test.beforeEach(async ({ page, context }, testInfo) => {
     localStorage.setItem("elite_modell_ageConsentAccepted", "true");
     localStorage.setItem("elite_cookie_consent", "accepted");
   });
+});
+
+test("modal lists published cities and applies a selected city immediately", async ({ page }) => {
+  await page.route("**/api/locations/available-cities", (route) => route.fulfill({
+    json: {
+      cities: [
+        { city: "São Paulo", state: "SP", count: 4 },
+        { city: "Vitória", state: "ES", count: 1 },
+      ],
+    },
+  }));
+  await page.route("**/api/professionals?**", (route) => route.fulfill({
+    json: { professionals: [], total: 0, page: 1, pages: 0 },
+  }));
+  await page.route("**/api/stories?**", (route) => route.fulfill({ json: [] }));
+
+  await page.goto("/buscar?tab=acompanhantes&selecionarCidade=1");
+  const dialog = page.getByRole("dialog", { name: "Selecionar localização" });
+  await dialog.getByRole("button", { name: "Onde tem acompanhantes?" }).click();
+  await expect(dialog.getByRole("button", { name: "São Paulo, SP: 4 perfis públicos" })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Vitória, ES: 1 perfil público" })).toBeVisible();
+
+  await dialog.getByRole("button", { name: "Vitória, ES: 1 perfil público" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page).toHaveURL(/cidade=Vit%C3%B3ria&estado=es/);
+  await expect(page.getByRole("heading", { name: /Vitória, ES/ })).toBeVisible();
+});
+
+test("empty city keeps the visitor choice and offers available cities", async ({ page }) => {
+  await page.route("**/api/professionals?**", (route) => route.fulfill({
+    json: { professionals: [], total: 0, page: 1, pages: 0 },
+  }));
+  await page.route("**/api/stories?**", (route) => route.fulfill({ json: [] }));
+  await page.route("**/api/locations/available-cities", (route) => route.fulfill({
+    json: { cities: [{ city: "Vitória", state: "ES", count: 2 }] },
+  }));
+
+  await page.goto("/buscar?cidade=Manaus&estado=am");
+  await expect(page.getByRole("heading", { name: "Ainda não temos profissionais disponíveis nesta cidade." })).toBeVisible();
+  await expect(page).toHaveURL(/cidade=Manaus&estado=am/);
+  await page.getByRole("button", { name: "Ver cidades com acompanhantes" }).click();
+  await expect(page.getByRole("dialog", { name: "Selecionar localização" })
+    .getByRole("button", { name: "Vitória, ES: 2 perfis públicos" })).toBeVisible();
+  await expect(page).toHaveURL(/cidade=Manaus&estado=am/);
+});
+
+test("available cities remain reachable in the reduced iPhone keyboard viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 430 });
+  await page.route("**/api/locations/available-cities", (route) => route.fulfill({
+    json: { cities: [{ city: "Vitória", state: "ES", count: 2 }] },
+  }));
+  await page.goto("/buscar?tab=acompanhantes&selecionarCidade=1", { waitUntil: "load" });
+
+  const dialog = page.getByRole("dialog", { name: "Selecionar localização" });
+  await dialog.getByPlaceholder("Digite cidade ou UF").focus();
+  await dialog.getByRole("button", { name: "Onde tem acompanhantes?" }).click();
+  const city = dialog.getByRole("button", { name: "Vitória, ES: 2 perfis públicos" });
+  await expect(city).toBeVisible();
+  await expect.poll(() => city.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return rect.top >= 0 && rect.bottom <= (window.visualViewport?.height ?? window.innerHeight) + 1;
+  })).toBe(true);
 });
 
 test("visitante anonimo navega por cidade, filtros e perfil sem cadastro", async ({ browser }, testInfo) => {
@@ -226,7 +303,7 @@ test("Home still suggests national cities when ranking API is unavailable", asyn
 test("modal mantem Linhares acessivel no viewport reduzido pelo teclado", async ({ page }) => {
   for (const width of [375, 390, 430]) {
     await page.setViewportSize({ width, height: 430 });
-    await page.goto("/buscar?tab=acompanhantes&selecionarCidade=1", { waitUntil: "domcontentloaded" });
+    await page.goto("/buscar?tab=acompanhantes&selecionarCidade=1", { waitUntil: "load" });
     const dialog = page.getByRole("dialog", { name: "Selecionar localização" });
     await dialog.getByPlaceholder("Digite cidade ou UF").fill("Linhares");
     const choice = dialog.getByRole("button", { name: "Linhares, ES" });

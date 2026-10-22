@@ -11,6 +11,11 @@ export function publicProfessionalWhere(
   return {
     AND: [
       {
+        verified: true,
+        kycStatus: "APPROVED",
+        user: { blocked: false },
+      },
+      {
         OR: [
           { status: "ACTIVE", OR: [{ pauseUntil: null }, { pauseUntil: { lt: now } }] },
           { status: "PAUSED", verified: true, pauseUntil: { lte: now } },
