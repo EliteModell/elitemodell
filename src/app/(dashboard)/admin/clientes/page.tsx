@@ -10,6 +10,7 @@ import { brazilianPhoneStorageVariants, normalizeBrazilianPhone } from "@/lib/ph
 import { AdminHeader, AdminPagination, AdminPanel, AdminTable, StatusPill, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 const PAGE_SIZE = 30;
 
 function normalizedPhone(value: string | null | undefined) {
@@ -60,7 +61,15 @@ async function deleteTestAccount(formData: FormData) {
     where: { userId, mode: "EXECUTE", status: { in: ["PENDING", "PROCESSING", "RETRY", "LEGAL_HOLD"] } },
     orderBy: { createdAt: "desc" },
   });
-  if (existing) redirect(`/admin/clientes?q=${encodeURIComponent(email)}&deleteJob=${encodeURIComponent(existing.id)}`);
+  if (existing) {
+    // Every deletion step is idempotent. Resume an interrupted job instead of
+    // leaving the account permanently locked after a function timeout.
+    if (existing.status !== "LEGAL_HOLD") {
+      const resumed = await processDataDeletionJob(existing.id);
+      redirect(`/admin/clientes?q=${encodeURIComponent(email)}&deleteJob=${encodeURIComponent(resumed.id)}&deleteStatus=${encodeURIComponent(resumed.status)}`);
+    }
+    redirect(`/admin/clientes?q=${encodeURIComponent(email)}&deleteJob=${encodeURIComponent(existing.id)}&deleteStatus=${encodeURIComponent(existing.status)}`);
+  }
 
   const plan = await buildDeletionPlan(userId);
   const protocol = deletionProtocol();

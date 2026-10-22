@@ -25,5 +25,7 @@ test("exclusao administrativa exige master e confirma os tres identificadores", 
   expect(source).toContain("normalizedPhone(user.phone) === phone");
   expect(source).toContain("buildDeletionPlan(userId)");
   expect(source).toContain("processDataDeletionJob(queued.job.id)");
+  expect(source).toContain("processDataDeletionJob(existing.id)");
+  expect(source).toContain("export const maxDuration = 300");
   expect(source).toContain('type: "ADMIN_TEST_ACCOUNT_DELETION"');
 });
