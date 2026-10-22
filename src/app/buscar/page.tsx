@@ -14,6 +14,7 @@ import {
 } from "@/lib/brazilian-location";
 
 import { useCitySuggestions } from "@/lib/use-city-suggestions";
+import { savePublicLocationPreference } from "@/lib/public-location-preference";
 
 const GOLD = "#b72cff";
 const GOLD_DIM = "rgba(183, 44, 255,0.12)";
@@ -196,6 +197,7 @@ function BuscarContent() {
   const [filtros, setFiltros] = useState<Set<QuickFilter>>(new Set());
   const [perfis, setPerfis] = useState<CardPerfil[]>([]);
   const [stories, setStories] = useState<StoryGroup[]>([]);
+  const [showStoriesFromOtherRegions, setShowStoriesFromOtherRegions] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const geoAutoAttemptedRef = useRef(false);
@@ -209,7 +211,12 @@ function BuscarContent() {
     const timer = window.setTimeout(() => {
       setMainTab(getMainTab(nextParams.get("tab")));
       setSubTab(getSubTab(nextParams.get("sub")));
-      setSelectedLocation(getLocationFromParams(nextParams));
+      const nextLocation = getLocationFromParams(nextParams);
+      setSelectedLocation(nextLocation);
+      if (nextLocation) savePublicLocationPreference(nextLocation);
+      setStories([]);
+      setPerfis([]);
+      setShowStoriesFromOtherRegions(false);
       setVirtualOnly(nextParams.get("virtual") === "1");
       setDistance(getDistance(nextParams.get("distance")));
       setSortBy(getSort(nextParams.get("sort")));
@@ -228,7 +235,7 @@ function BuscarContent() {
     if (locationSelectionRequired) return;
     const controller = new AbortController();
     const query = new URLSearchParams();
-    if (selectedLocation) {
+    if (selectedLocation && !showStoriesFromOtherRegions) {
       query.set("city", selectedLocation.city);
       query.set("state", selectedLocation.state);
     }
@@ -242,7 +249,7 @@ function BuscarContent() {
         }
       });
     return () => controller.abort();
-  }, [locationSelectionRequired, selectedLocation]);
+  }, [locationSelectionRequired, selectedLocation, showStoriesFromOtherRegions]);
 
   useEffect(() => {
     if (mainTab !== "acompanhantes") return;
@@ -378,9 +385,13 @@ function BuscarContent() {
 
   function applyLocationChoice() {
     if (!locationDraft && !draftVirtual) return;
+    setStories([]);
+    setPerfis([]);
+    setShowStoriesFromOtherRegions(false);
     setSelectedLocation(draftVirtual ? null : locationDraft);
     setVirtualOnly(draftVirtual);
     setShowLocationModal(false);
+    savePublicLocationPreference(draftVirtual ? null : locationDraft);
     replaceQuery({
       cidade: draftVirtual ? null : locationDraft?.city ?? null,
       estado: draftVirtual ? null : locationDraft?.state.toLowerCase() ?? null,
@@ -427,7 +438,11 @@ function BuscarContent() {
       setDraftVirtual(false);
       setGeoMessage(`Localização detectada: ${choice.label}.`);
       if (applyImmediately) {
+        setStories([]);
+        setPerfis([]);
+        setShowStoriesFromOtherRegions(false);
         setSelectedLocation(choice);
+        savePublicLocationPreference(choice);
         replaceQuery({
           cidade: choice.city,
           estado: choice.state.toLowerCase(),
@@ -455,7 +470,11 @@ function BuscarContent() {
             .then((data) => {
               if (!data?.city) return;
               const choice = cityChoice(data.city, String(data.state ?? "").toUpperCase());
+              setStories([]);
+              setPerfis([]);
+              setShowStoriesFromOtherRegions(false);
               setSelectedLocation(choice);
+              savePublicLocationPreference(choice);
               const next = new URLSearchParams(params.toString());
               next.set("cidade", choice.city);
               next.set("estado", choice.state.toLowerCase());
@@ -478,6 +497,8 @@ function BuscarContent() {
     setDistance("any");
     setSortBy("relevance");
     setSubTab("mulheres");
+    setShowStoriesFromOtherRegions(false);
+    savePublicLocationPreference(null);
     window.history.replaceState(null, "", "/buscar");
   }
 
@@ -494,6 +515,7 @@ function BuscarContent() {
   }), [filtros, perfis]);
 
   const locationLabel = virtualOnly ? "Atendimento virtual" : selectedLocation?.label;
+  const hasRegionalStories = stories.some((story) => !story.institutional);
   const dynamicTitle = virtualOnly
     ? `Encontre acompanhantes ${SUB_LABEL[subTab]} em atendimento virtual`
     : selectedLocation
@@ -538,6 +560,8 @@ function BuscarContent() {
         .story-item { width: 72px; flex: 0 0 auto; color: #514b59; text-align: center; text-decoration: none; }
         .story-avatar { width: 64px; height: 64px; margin: 0 auto 7px; border-radius: 999px; padding: 2px; background: linear-gradient(135deg, #e1a6ff, #b72cff, #65009b); position: relative; }
         .story-avatar-inner { position: relative; width: 100%; height: 100%; border-radius: 999px; overflow: hidden; background: #fcf7ff; border: 2px solid #fff; }
+        .stories-region-notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -6px 0 20px; border: 1px solid rgba(183,44,255,.18); border-radius: 12px; padding: 12px 14px; background: #fff; color: #625b66; font-size: 12px; }
+        .stories-region-notice button { min-height: 36px; flex: 0 0 auto; border: 1px solid ${GOLD_MID}; border-radius: 999px; padding: 0 13px; background: #fff; color: #8f1fd1; font-weight: 850; cursor: pointer; }
         .dynamic-title { margin: 0 0 16px; max-width: 920px; color: #141212; font-family: var(--font-inter), Inter, sans-serif; font-size: clamp(1.75rem, 5vw, 3.7rem); line-height: 1.08; letter-spacing: -.03em; }
         .dynamic-title strong { color: ${GOLD}; font-weight: 900; }
         .filtros-scroll, .action-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; align-items: center; -webkit-overflow-scrolling: touch; }
@@ -716,6 +740,8 @@ function BuscarContent() {
           .location-modal-backdrop[data-compact="true"] .location-modal-extras { display: none; }
           .location-modal-backdrop[data-compact="true"] .location-list { max-height: none; padding-top: 8px; }
           .location-modal-backdrop[data-compact="true"] .location-modal-footer { padding-top: 8px; }
+          .stories-region-notice { align-items: flex-start; flex-direction: column; }
+          .stories-region-notice button { width: 100%; }
           .profiles-empty, .rooms-coming-soon { min-height: 300px; border-radius: 14px; padding: 36px 18px; }
           .profiles-empty-actions, .coming-actions { flex-direction: column; }
           .profiles-empty-actions button, .profiles-empty-actions a, .coming-actions a { width: 100%; }
@@ -774,6 +800,18 @@ function BuscarContent() {
         {mainTab === "acompanhantes" && !locationSelectionRequired && (
           <>
             {stories.length > 0 && <StoriesStrip stories={stories} />}
+            {selectedLocation && !showStoriesFromOtherRegions && !hasRegionalStories ? (
+              <div className="stories-region-notice" role="status">
+                <span>Nenhum story disponível em {selectedLocation.label} agora. O story institucional da Elite Modell continua disponível.</span>
+                <button type="button" onClick={() => setShowStoriesFromOtherRegions(true)}>Ver stories de outras regiões</button>
+              </div>
+            ) : null}
+            {selectedLocation && showStoriesFromOtherRegions ? (
+              <div className="stories-region-notice" role="status">
+                <span>Exibindo stories de outras regiões por sua escolha.</span>
+                <button type="button" onClick={() => setShowStoriesFromOtherRegions(false)}>Voltar para {selectedLocation.label}</button>
+              </div>
+            ) : null}
 
             <h1 className="dynamic-title">
               {virtualOnly ? (
@@ -948,8 +986,10 @@ function LocationModal({
             <input
               value={locationSearch}
               onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
               onChange={(event) => onSearch(event.target.value)}
               placeholder="Digite cidade ou UF"
+              inputMode="search"
             />
           </div>
         </div>

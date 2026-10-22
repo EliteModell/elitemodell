@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { normalizeLocationText } from "@/lib/brazilian-location";
 import { useCitySuggestions } from "@/lib/use-city-suggestions";
+import { savePublicLocationPreference } from "@/lib/public-location-preference";
 import type { CitySuggestion } from "@/lib/city-catalog";
 import styles from "./HomeCitySearch.module.css";
 type CityChoice = CitySuggestion;
@@ -16,6 +17,7 @@ export default function HomeCitySearch() {
   const [selected, setSelected] = useState<CityChoice | null>(null);
   const [focused, setFocused] = useState(false);
   const [message, setMessage] = useState("");
+  const [suggestionMaxHeight, setSuggestionMaxHeight] = useState(270);
   const normalizedInput = normalizeLocationText(input);
 
   const suggestions = useCitySuggestions(input, focused);
@@ -23,13 +25,23 @@ export default function HomeCitySearch() {
 
   useEffect(() => {
     if (!focused) return;
-    const keepSearchVisible = () => inputRef.current?.scrollIntoView({ block: "start" });
+    const keepSearchVisible = () => {
+      inputRef.current?.scrollIntoView({ block: "start" });
+      window.requestAnimationFrame(() => {
+        const inputBottom = inputRef.current?.getBoundingClientRect().bottom ?? 0;
+        const viewport = window.visualViewport;
+        const viewportBottom = (viewport?.offsetTop ?? 0) + (viewport?.height ?? window.innerHeight);
+        setSuggestionMaxHeight(Math.max(96, Math.min(270, Math.floor(viewportBottom - inputBottom - 16))));
+      });
+    };
     keepSearchVisible();
     const delayed = window.setTimeout(keepSearchVisible, 250);
     window.visualViewport?.addEventListener("resize", keepSearchVisible);
+    window.visualViewport?.addEventListener("scroll", keepSearchVisible);
     return () => {
       window.clearTimeout(delayed);
       window.visualViewport?.removeEventListener("resize", keepSearchVisible);
+      window.visualViewport?.removeEventListener("scroll", keepSearchVisible);
     };
   }, [focused, choices.length]);
 
@@ -38,6 +50,7 @@ export default function HomeCitySearch() {
     setInput(choice.label);
     setFocused(false);
     setMessage("");
+    savePublicLocationPreference({ city: choice.city, state: choice.state, label: choice.label });
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -68,7 +81,7 @@ export default function HomeCitySearch() {
         }}/>
       <button type="submit" aria-label="Buscar perfis"><Search aria-hidden="true" size={21}/></button>
     </div>
-    {focused && choices.length > 0 && <ul className={styles.suggestions} id="home-city-suggestions" role="listbox">
+    {focused && choices.length > 0 && <ul className={styles.suggestions} id="home-city-suggestions" role="listbox" style={{ maxHeight: suggestionMaxHeight }}>
       {choices.map((choice) => <li key={choice.id} role="option" aria-selected={selected?.id === choice.id}>
         <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => selectCity(choice)}>
           <strong>{choice.label}</strong><span>{choice.count ? "Perfis disponíveis" : "Brasil"}</span>

@@ -6,9 +6,9 @@ import { requiresDirectMediaDelivery } from "@/lib/public-professional-media";
 import { monitorUpload, parseUploadResponse, UPLOAD_PENDING_MESSAGE, type UploadApiPayload } from "@/lib/upload-response";
 
 type StoryItem = { id: string; mediaUrl: string; mediaType: string; thumbnail: string | null; views: number; createdAt: string };
-type StoryGroup = { userId: string; slug: string; nome: string; foto: string | null; stories: StoryItem[]; visto?: boolean };
+type StoryGroup = { userId: string; slug: string; nome: string; foto: string | null; stories: StoryItem[]; visto?: boolean; institutional?: boolean };
 
-export default function Stories() {
+export default function Stories({ city, state }: { city?: string; state?: string }) {
   const { data: session } = useSession();
   const rowRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -17,14 +17,20 @@ export default function Stories() {
   const [vistos, setVistos] = useState<Set<string>>(new Set());
   const [progresso, setProgresso] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [showAllRegions, setShowAllRegions] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const carregar = useCallback(async (signal?: AbortSignal) => {
     try {
-      const res = await fetch("/api/stories", { signal });
+      const query = new URLSearchParams();
+      if (city && state && !showAllRegions) {
+        query.set("city", city);
+        query.set("state", state);
+      }
+      const res = await fetch(`/api/stories${query.size ? `?${query}` : ""}`, { signal });
       if (res.ok) setGrupos(await res.json());
     } catch {}
-  }, []);
+  }, [city, showAllRegions, state]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -60,6 +66,11 @@ export default function Stories() {
   }
 
   function abrirGrupo(grupo: StoryGroup, idx = 0) {
+    if (grupo.institutional) {
+      window.location.assign(`/${grupo.slug}`);
+      return;
+    }
+    if (!grupo.stories[idx]) return;
     if (timerRef.current) clearInterval(timerRef.current);
     setAberto({ grupo, idx });
     setVistos((v) => new Set([...v, grupo.userId]));
@@ -109,6 +120,7 @@ export default function Stories() {
 
   const story = aberto ? aberto.grupo.stories[aberto.idx] : null;
   const canPostStory = Boolean(session?.user?.isProfessional);
+  const regionalStories = grupos.filter((group) => !group.institutional);
 
   if (grupos.length === 0 && !canPostStory) return null;
 
@@ -153,6 +165,19 @@ export default function Stories() {
           })}
 
         </div>
+
+        {city && state && regionalStories.length === 0 && !showAllRegions ? (
+          <div className="stories-region-message" role="status">
+            <span>Nenhum story disponível em {city}, {state} agora.</span>
+            <button type="button" onClick={() => setShowAllRegions(true)}>Ver stories de outras regiões</button>
+          </div>
+        ) : null}
+        {city && state && showAllRegions ? (
+          <div className="stories-region-message" role="status">
+            <span>Exibindo stories de outras regiões por sua escolha.</span>
+            <button type="button" onClick={() => setShowAllRegions(false)}>Voltar para {city}, {state}</button>
+          </div>
+        ) : null}
 
         {/* Setas navegação */}
         <button onClick={() => scroll("left")} style={{ position: "absolute", left: 0, top: "40%", transform: "translateY(-50%)", width: 28, height: 28, borderRadius: "50%", background: "rgba(6,14,27,0.9)", border: "1px solid rgba(183, 44, 255,0.2)", color: "#b72cff", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>‹</button>
@@ -206,7 +231,12 @@ export default function Stories() {
         </div>
       )}
 
-      <style>{`div::-webkit-scrollbar{display:none}`}</style>
+      <style>{`
+        div::-webkit-scrollbar{display:none}
+        .stories-region-message{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-10px 8px 18px;color:#aaa0b2;font-size:12px}
+        .stories-region-message button{min-height:36px;flex:0 0 auto;border:1px solid rgba(183,44,255,.38);border-radius:999px;padding:0 12px;background:transparent;color:#e1a6ff;font-weight:850;cursor:pointer}
+        @media(max-width:640px){.stories-region-message{align-items:flex-start;flex-direction:column}.stories-region-message button{width:100%}}
+      `}</style>
     </>
   );
 }

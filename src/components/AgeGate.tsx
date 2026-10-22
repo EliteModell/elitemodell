@@ -2,6 +2,7 @@
 
 import { NoPrefetchLink as Link } from "@/components/NoPrefetchLink";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
@@ -57,10 +58,23 @@ function hasAdultConsent() {
 
 export default function AgeGate() {
   const pathname = usePathname();
+  const { data: session, status: sessionStatus } = useSession();
   const acceptButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const [accepted, setAccepted] = useState(() => hasAdultConsent());
-  const visible = !shouldSkipGate(pathname) && !accepted;
+  const stronglyVerified = Boolean(session?.user?.adultVerified || session?.user?.role === "ADMIN");
+  const visible = sessionStatus !== "loading" && !shouldSkipGate(pathname) && !accepted && !stronglyVerified;
+
+  useEffect(() => {
+    const syncConsent = () => setAccepted(hasAdultConsent());
+    syncConsent();
+    window.addEventListener("pageshow", syncConsent);
+    window.addEventListener("storage", syncConsent);
+    return () => {
+      window.removeEventListener("pageshow", syncConsent);
+      window.removeEventListener("storage", syncConsent);
+    };
+  }, [pathname]);
 
   useEffect(() => {
     if (!visible) return;

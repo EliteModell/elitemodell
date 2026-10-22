@@ -1,5 +1,8 @@
 const RESERVED_PROFESSIONAL_NAMES = new Set([
   "cadastro de acompanhante",
+  "railson delas😈",
+  "sofia teste",
+  "teste profissional elite",
 ]);
 
 function normalizedDisplayName(value?: string | null) {
@@ -16,4 +19,9 @@ export function isProfessionalDisplayNameReady(value?: string | null) {
   return normalized.length >= 2 && !RESERVED_PROFESSIONAL_NAMES.has(normalized);
 }
 
-export const RESERVED_PUBLIC_PROFESSIONAL_NAMES = ["Cadastro de acompanhante"] as const;
+export const RESERVED_PUBLIC_PROFESSIONAL_NAMES = [
+  "Cadastro de acompanhante",
+  "Railson Delas😈",
+  "Sofia Teste",
+  "Teste Profissional Elite",
+] as const;

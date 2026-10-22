@@ -5,6 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import Stories from "@/components/Stories";
 import { requiresDirectMediaDelivery } from "@/lib/public-professional-media";
+import {
+  PUBLIC_LOCATION_EVENT,
+  readPublicLocationPreference,
+  type PublicLocationPreference,
+} from "@/lib/public-location-preference";
 
 type Professional = {
   id: string;
@@ -24,15 +29,47 @@ type Professional = {
 
 export default function HomeDiscoveryPreview() {
   const [professionals, setProfessionals] = useState<Professional[]>([]);
+  const [location, setLocation] = useState<PublicLocationPreference | null>(null);
+  const [showAllRegions, setShowAllRegions] = useState(false);
+  const viewAllHref = location
+    ? `/buscar?tab=acompanhantes&cidade=${encodeURIComponent(location.city)}&estado=${location.state.toLowerCase()}`
+    : "/buscar?tab=acompanhantes&selecionarCidade=1";
+
+  useEffect(() => {
+    const restoreTimer = window.setTimeout(() => {
+      const savedLocation = readPublicLocationPreference();
+      if (savedLocation) {
+        setProfessionals([]);
+        setLocation(savedLocation);
+      }
+    }, 0);
+    const handleLocationChange = (event: Event) => {
+      setProfessionals([]);
+      setLocation((event as CustomEvent<PublicLocationPreference | null>).detail);
+      setShowAllRegions(false);
+    };
+    window.addEventListener(PUBLIC_LOCATION_EVENT, handleLocationChange);
+    return () => {
+      window.clearTimeout(restoreTimer);
+      window.removeEventListener(PUBLIC_LOCATION_EVENT, handleLocationChange);
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/professionals?sortBy=recent&limit=12", { signal: controller.signal })
+    const query = new URLSearchParams({ sortBy: "recent", limit: "12" });
+    if (location && !showAllRegions) {
+      query.set("city", location.city);
+      query.set("state", location.state);
+    }
+    fetch(`/api/professionals?${query}`, { signal: controller.signal })
       .then((response) => response.ok ? response.json() : { professionals: [] })
       .then((data) => setProfessionals(data.professionals ?? []))
-      .catch(() => setProfessionals([]));
+      .catch(() => {
+        if (!controller.signal.aborted) setProfessionals([]);
+      });
     return () => controller.abort();
-  }, []);
+  }, [location, showAllRegions]);
 
   return (
     <section className="home-discovery">
@@ -40,12 +77,12 @@ export default function HomeDiscoveryPreview() {
         <div>
           <span>Descoberta ao vivo</span>
           <h2>Perfis e stories em destaque</h2>
-          <p>Explore antes de criar uma conta. Entre apenas quando quiser salvar, avaliar ou conversar.</p>
+          <p>{location && !showAllRegions ? `Perfis e stories em ${location.label}.` : "Explore antes de criar uma conta. Entre apenas quando quiser salvar, avaliar ou conversar."}</p>
         </div>
-        <Link href="/buscar?tab=acompanhantes&selecionarCidade=1">Ver todos</Link>
+        <Link href={viewAllHref}>Ver todos</Link>
       </div>
 
-      <Stories />
+      <Stories key={`${location?.city ?? "all"}-${location?.state ?? "all"}`} city={location?.city} state={location?.state} />
 
       {professionals.length > 0 ? (
         <div className="home-profile-row">
@@ -73,6 +110,11 @@ export default function HomeDiscoveryPreview() {
             </Link>
           ))}
         </div>
+      ) : location && !showAllRegions ? (
+        <div className="home-region-empty" role="status">
+          <p>Nenhum perfil público disponível em {location.label} neste momento.</p>
+          <button type="button" onClick={() => setShowAllRegions(true)}>Ver perfis de outras regiões</button>
+        </div>
       ) : null}
 
       <style>{`
@@ -96,6 +138,9 @@ export default function HomeDiscoveryPreview() {
         .home-profile-copy>span.is-online{color:#34d399}
         .home-profile-copy small{color:#b72cff}
         .home-profile-copy b{text-align:right;color:#e1a6ff;font-size:12px}
+        .home-region-empty{margin:8px 0 20px;border:1px solid rgba(183,44,255,.2);border-radius:16px;padding:18px;color:#c7c0b7;background:#0d0d0d}
+        .home-region-empty p{margin:0 0 12px}
+        .home-region-empty button{min-height:42px;border:1px solid rgba(183,44,255,.45);border-radius:999px;padding:0 16px;background:transparent;color:#e1a6ff;font-weight:900;cursor:pointer}
         @media(max-width:640px){.home-discovery{padding:46px 16px 10px}.home-discovery-head{align-items:start}.home-discovery-head p{font-size:13px}.home-profile-row{grid-auto-columns:78vw}}
       `}</style>
     </section>

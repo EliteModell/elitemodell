@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { suggestCities, parseCityQuery } from "../src/lib/city-catalog";
+import { isProfessionalDisplayNameReady } from "../src/lib/professional-display-name";
 import municipalities from "../src/data/brazilian-cities.json";
 
 const variants = ["Vit", "Vitória", "Vitoria", "Vitória ES", "Vitória, ES"];
@@ -50,6 +51,71 @@ test("Elite Stories permanece como primeiro item institucional", async ({ reques
   expect(response.ok()).toBe(true);
   const stories = await response.json();
   expect(stories[0]).toMatchObject({ userId: "elite-platform", nome: "Elite Stories", institutional: true });
+});
+
+test("contas internas conhecidas nunca ficam elegiveis para exibicao publica", async ({ request }) => {
+  for (const name of ["Railson Delas😈", "Sofia Teste", "Teste Profissional Elite"]) {
+    expect(isProfessionalDisplayNameReady(name)).toBe(false);
+  }
+  const response = await request.get("/api/professionals?sortBy=recent&limit=24", { headers: AGE_HEADERS });
+  expect(response.ok()).toBe(true);
+  const data = await response.json();
+  const names = data.professionals.map((profile: { displayName: string }) => profile.displayName.trim());
+  expect(names).not.toContain("Railson Delas😈");
+  expect(names).not.toContain("Sofia Teste");
+  expect(names).not.toContain("Teste Profissional Elite");
+});
+
+test("perfis e stories respeitam municipio e UF entre Linhares e Itauna", async ({ request }) => {
+  for (const location of [{ city: "Linhares", state: "ES" }, { city: "Itaúna", state: "MG" }]) {
+    const query = `city=${encodeURIComponent(location.city)}&state=${location.state}`;
+    const profilesResponse = await request.get(`/api/professionals?${query}`, { headers: AGE_HEADERS });
+    expect(profilesResponse.ok()).toBe(true);
+    const profiles = (await profilesResponse.json()).professionals;
+    expect(profiles.every((profile: { city: string; state: string }) => profile.city === location.city && profile.state === location.state)).toBe(true);
+
+    const storiesResponse = await request.get(`/api/stories?${query}`, { headers: AGE_HEADERS });
+    expect(storiesResponse.ok()).toBe(true);
+    const stories = await storiesResponse.json();
+    expect(stories[0]).toMatchObject({ userId: "elite-platform", institutional: true });
+    expect(stories.slice(1).every((story: { city: string; state: string }) => story.city === location.city && story.state === location.state)).toBe(true);
+  }
+});
+
+test("maioridade forte valida nao reabre aviso e sessao sem verificacao continua bloqueada", async ({ browser }) => {
+  for (const adultVerified of [true, false]) {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
+    await page.route("**/api/auth/session", (route) => route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        user: { id: "visitor", role: "GUEST", adultVerified },
+        expires: new Date(Date.now() + 60_000).toISOString(),
+      }),
+    }));
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const button = page.getByRole("button", { name: "Tenho 18 anos ou mais" });
+    if (adultVerified) await expect(button).toHaveCount(0);
+    else await expect(button).toBeVisible();
+    await context.close();
+  }
+});
+
+test("cidade sem stories locais nao recebe mistura automatica", async ({ page }) => {
+  const institutional = [{
+    userId: "elite-platform",
+    slug: "politica-conteudo",
+    nome: "Elite Stories",
+    foto: "/android-chrome-512x512.png",
+    institutional: true,
+    stories: [],
+  }];
+  await page.route("**/api/stories?city=Linhares&state=ES", (route) => route.fulfill({ json: institutional }));
+  await page.route("**/api/professionals?**", (route) => route.fulfill({ json: { professionals: [], total: 0, page: 1, pages: 0 } }));
+  await page.goto("/buscar?tab=acompanhantes&cidade=Linhares&estado=es");
+  await expect(page.getByText(/Nenhum story disponível em Linhares, ES/)).toBeVisible();
+  await expect(page.getByText("Elite Stories", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ver stories de outras regiões" })).toBeVisible();
 });
 
 test.beforeEach(async ({ page, context }, testInfo) => {
