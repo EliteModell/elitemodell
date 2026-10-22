@@ -62,16 +62,25 @@ test.describe("seguranca fail-closed de midia adulta", () => {
   });
 
   test("painel agrupa lotes por profissional e separa as fotos de 21/10/2026", async () => {
-    const [page, batch] = await Promise.all([
+    const [page, batch, home, listing] = await Promise.all([
       import("node:fs/promises").then((fs) => fs.readFile("src/app/(dashboard)/admin/moderacao/uploads/page.tsx", "utf8")),
-      import("node:fs/promises").then((fs) => fs.readFile("src/app/(dashboard)/admin/moderacao/uploads/ProfessionalBatchApproval.tsx", "utf8")),
+      import("node:fs/promises").then((fs) => fs.readFile("src/app/(dashboard)/admin/moderacao/uploads/CohortBatchApproval.tsx", "utf8")),
+      import("node:fs/promises").then((fs) => fs.readFile("src/components/home/HomeDiscoveryPreview.tsx", "utf8")),
+      import("node:fs/promises").then((fs) => fs.readFile("src/app/profissionais/page.tsx", "utf8")),
     ]);
     expect(page).toContain("ID profissional:");
     expect(page).toContain("Enviadas em 21/10/2026");
     expect(page).toContain("Fotos antigas (antes de 21/10/2026)");
-    expect(page).toContain("ownedAssets.some");
+    expect(page).toContain("Aprovação administrativa única do recorte");
+    expect(page).toContain("ownedAssets.length !== assetIds.length");
+    expect(page).toContain('const ACCOUNT_COHORT_START = new Date("2026-10-19T03:00:00.000Z")');
+    expect(page).toContain('const ACCOUNT_COHORT_END = new Date("2026-10-23T03:00:00.000Z")');
+    expect(page).toContain("owner: { createdAt: { gte: ACCOUNT_COHORT_START, lt: ACCOUNT_COHORT_END } }");
+    expect(page).toContain("A mídia não pertence ao recorte de contas de 19 a 22/10/2026.");
     expect(batch).toContain("Selecionar todas as elegíveis");
     expect(batch).toContain("selectedCount === 0");
+    expect(home).toContain("sortBy=recent&limit=12");
+    expect(listing).toContain("pro.user?.image ?? coverPhoto ?? null");
   });
 
   for (const malwareStatus of ["PENDING", "ERROR", "INFECTED"]) {

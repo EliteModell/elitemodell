@@ -316,7 +316,7 @@ function ProfessionalGridSkeleton() {
 function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: boolean }) {
   const photoCount = (pro.galleryUrls?.length ?? 0) + (pro.photos?.length ?? 0);
   const coverPhoto = pro.photos?.find((p) => p.cover)?.url ?? pro.image;
-  const profilePhoto = pro.user?.image ?? null;
+  const profilePhoto = pro.user?.image ?? coverPhoto ?? null;
   const specialtyNames = Array.from(new Set([...(pro.services ?? []), ...pro.specialties.map((s) => s.name)]));
 
   return (

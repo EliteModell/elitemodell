@@ -6,6 +6,7 @@ import { useFormStatus } from "react-dom";
 type BatchAsset = {
   id: string;
   originalName: string;
+  professionalName: string;
   previewUrl: string;
   malwareStatus: string;
   ageIdentityStatus: string;
@@ -17,7 +18,7 @@ function ApprovalButton({ selectedCount }: { selectedCount: number }) {
   const disabled = pending || selectedCount === 0;
   const title = selectedCount === 0
     ? "Selecione ao menos uma foto elegível e informe a justificativa."
-    : "A decisão será revalidada no servidor antes de qualquer publicação.";
+    : "Cada foto será revalidada no servidor antes de qualquer publicação.";
 
   return (
     <button
@@ -40,12 +41,10 @@ function ApprovalButton({ selectedCount }: { selectedCount: number }) {
   );
 }
 
-export function ProfessionalBatchApproval({
-  professionalId,
+export function CohortBatchApproval({
   assets,
   action,
 }: {
-  professionalId: string;
   assets: BatchAsset[];
   action: (formData: FormData) => Promise<void>;
 }) {
@@ -55,18 +54,17 @@ export function ProfessionalBatchApproval({
 
   if (!assets.length) {
     return (
-      <p style={{ margin: 0, color: "#fca5a5", fontSize: 13 }}>
-        Aprovação em lote desabilitada: nenhuma foto desta profissional passou por todos os controles obrigatórios.
+      <p style={{ margin: 0, color: "#b4adb0", fontSize: 13 }}>
+        Nenhuma foto deste recorte depende somente de decisão administrativa de conteúdo neste momento.
       </p>
     );
   }
 
   return (
     <form action={action} style={{ display: "grid", gap: 14 }}>
-      <input type="hidden" name="professionalId" value={professionalId} />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
         <p style={{ margin: 0, color: "#b4adb0", fontSize: 13 }}>
-          Habilitadas: foto de perfil, upload concluído, AV limpo, titular maior e identificada, consentimento registrado, cadastro elegível, nenhuma denúncia e todas as pessoas retratadas verificadas.
+          Esta fila contém somente fotos de contas criadas de 19 a 22/10/2026 cujos controles obrigatórios já passaram. A decisão humana de conteúdo continua obrigatória.
         </p>
         <button
           type="button"
@@ -81,7 +79,8 @@ export function ProfessionalBatchApproval({
           <label key={asset.id} style={{ display: "grid", gap: 8, padding: 10, border: "1px solid rgba(183,44,255,.35)", borderRadius: 10, background: "#09080a", cursor: "pointer" }}>
             {/* eslint-disable-next-line @next/next/no-img-element -- protected dynamic admin preview */}
             <img src={asset.previewUrl} alt={`Revisar ${asset.originalName}`} style={{ width: "100%", height: 190, objectFit: "contain", background: "#050506", borderRadius: 7 }} />
-            <span style={{ color: "#fff", fontWeight: 850, overflowWrap: "anywhere" }}>{asset.originalName}</span>
+            <span style={{ color: "#fff", fontWeight: 850 }}>{asset.professionalName}</span>
+            <span style={{ color: "#fff", fontSize: 13, overflowWrap: "anywhere" }}>{asset.originalName}</span>
             <span style={{ color: "#b4adb0", fontSize: 12 }}>
               AV {asset.malwareStatus} · idade {asset.ageIdentityStatus} · consentimento {asset.consentStatus}
             </span>

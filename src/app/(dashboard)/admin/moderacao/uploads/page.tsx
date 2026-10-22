@@ -12,10 +12,12 @@ import {
   rejectUploadAsset,
 } from "@/lib/upload-quarantine";
 import { AdminHeader, AdminPanel, StatusPill } from "../../_components/AdminPrimitives";
-import { ProfessionalBatchApproval } from "./ProfessionalBatchApproval";
+import { CohortBatchApproval } from "./CohortBatchApproval";
 
 export const dynamic = "force-dynamic";
 
+const ACCOUNT_COHORT_START = new Date("2026-10-19T03:00:00.000Z");
+const ACCOUNT_COHORT_END = new Date("2026-10-23T03:00:00.000Z");
 const OPERATIONAL_DAY_START = new Date("2026-10-21T03:00:00.000Z");
 const OPERATIONAL_DAY_END = new Date("2026-10-22T03:00:00.000Z");
 
@@ -26,6 +28,16 @@ async function reviewUpload(formData: FormData) {
   const action = String(formData.get("action") || "");
   const reason = String(formData.get("reason") || "").trim();
   if (!assetId || reason.length < 4) return;
+  const scopedAsset = await prisma.uploadAsset.findFirst({
+    where: {
+      id: assetId,
+      category: "image",
+      folder: { startsWith: "profiles" },
+      owner: { createdAt: { gte: ACCOUNT_COHORT_START, lt: ACCOUNT_COHORT_END } },
+    },
+    select: { id: true },
+  });
+  if (!scopedAsset) throw new Error("A mídia não pertence ao recorte de contas de 19 a 22/10/2026.");
 
   if (action === "APPROVE") {
     await approveUploadAsset(assetId, session.user.id, reason);
@@ -42,20 +54,21 @@ async function reviewUpload(formData: FormData) {
 async function batchApproveUploads(formData: FormData) {
   "use server";
   const { session } = await requireAdmin("reports:manage");
-  const professionalId = String(formData.get("professionalId") || "");
   const reason = String(formData.get("reason") || "").trim();
   const assetIds = Array.from(new Set(formData.getAll("assetIds").map(String).filter(Boolean))).slice(0, 50);
-  if (!professionalId || !assetIds.length || reason.length < 8) return;
+  if (!assetIds.length || reason.length < 8) return;
 
   const ownedAssets = await prisma.uploadAsset.findMany({
-    where: { id: { in: assetIds } },
-    select: { id: true, owner: { select: { professional: { select: { id: true } } } } },
+    where: {
+      id: { in: assetIds },
+      category: "image",
+      folder: { startsWith: "profiles" },
+      owner: { createdAt: { gte: ACCOUNT_COHORT_START, lt: ACCOUNT_COHORT_END } },
+    },
+    select: { id: true },
   });
-  if (
-    ownedAssets.length !== assetIds.length ||
-    ownedAssets.some((asset) => asset.owner.professional?.id !== professionalId)
-  ) {
-    throw new Error("O lote deve conter somente fotos da mesma profissional.");
+  if (ownedAssets.length !== assetIds.length) {
+    throw new Error("O lote deve conter somente fotos de contas criadas entre 19 e 22/10/2026.");
   }
 
   for (const assetId of assetIds) {
@@ -64,7 +77,6 @@ async function batchApproveUploads(formData: FormData) {
     } catch (cause) {
       console.error("[batch-media-review] ativo permaneceu privado", {
         assetId,
-        professionalId,
         error: cause instanceof Error ? cause.message : "Falha desconhecida",
       });
     }
@@ -80,9 +92,15 @@ async function synchronizeDiditAge(formData: FormData) {
 
   const professional = await prisma.professional.findUnique({
     where: { id: professionalId },
-    select: { userId: true, kycProvider: true, kycSessionId: true },
+    select: { userId: true, kycProvider: true, kycSessionId: true, user: { select: { createdAt: true } } },
   });
-  if (!professional || professional.kycProvider !== "DIDIT" || !professional.kycSessionId) return;
+  if (
+    !professional ||
+    professional.user.createdAt < ACCOUNT_COHORT_START ||
+    professional.user.createdAt >= ACCOUNT_COHORT_END ||
+    professional.kycProvider !== "DIDIT" ||
+    !professional.kycSessionId
+  ) return;
 
   try {
     await reconcileProfessionalDidit(professional.userId, professional.kycSessionId);
@@ -147,7 +165,12 @@ function blockerReason(code: string, asset: {
 export default async function AdminUploadModerationPage() {
   const { permissions } = await requireAdmin("reports:manage");
   const assets = await prisma.uploadAsset.findMany({
-    where: { status: { not: "APPROVED" } },
+    where: {
+      status: { not: "APPROVED" },
+      category: "image",
+      folder: { startsWith: "profiles" },
+      owner: { createdAt: { gte: ACCOUNT_COHORT_START, lt: ACCOUNT_COHORT_END } },
+    },
     orderBy: { createdAt: "asc" },
     take: 100,
     include: {
@@ -231,8 +254,8 @@ export default async function AdminUploadModerationPage() {
   return (
     <div>
       <AdminHeader
-        title="Uploads em quarentena"
-        subtitle="Fotos agrupadas por profissional. Sincronizar a Didit atualiza somente a maioridade da titular; publicar continua exigindo decisão humana."
+        title="Fotos das contas criadas de 19 a 22/10/2026"
+        subtitle="Recorte pelo horário de Brasília e pela criação da conta. Fotos enviadas depois também entram; cadastros anteriores ficam fora de todas as ações."
       />
       {stuckAssets.length > 0 ? (
         <AdminPanel>
@@ -244,8 +267,23 @@ export default async function AdminUploadModerationPage() {
       <AdminPanel>
         <h2 style={{ margin: "0 0 8px", color: "#fff", fontSize: 20 }}>Resumo da fila</h2>
         <p style={{ margin: 0, color: "#b4adb0", lineHeight: 1.6 }}>
-          {assets.length} arquivo(s) pendente(s), agrupados em {groups.length} profissional(is). {reviewableCount} foto(s) elegível(is) para revisão visual e aprovação humana.
+          {assets.length} foto(s) pendente(s), agrupadas em {groups.length} profissional(is) deste recorte. {reviewableCount} foto(s) dependem somente de revisão visual e podem entrar na aprovação administrativa em lote.
         </p>
+      </AdminPanel>
+      <AdminPanel>
+        <h2 style={{ margin: "0 0 10px", color: "#fff", fontSize: 20 }}>Aprovação administrativa única do recorte</h2>
+        <CohortBatchApproval
+          action={batchApproveUploads}
+          assets={reviewedAssets.filter(({ blockers }) => blockers.length === 0).map(({ asset }) => ({
+            id: asset.id,
+            originalName: asset.originalName,
+            professionalName: asset.owner.professional?.displayName ?? asset.owner.name ?? "Sem nome profissional",
+            previewUrl: `/api/admin/uploads/${asset.id}/preview`,
+            malwareStatus: asset.malwareStatus,
+            ageIdentityStatus: asset.ageIdentityStatus,
+            consentStatus: asset.consentStatus,
+          }))}
+        />
       </AdminPanel>
 
       <div style={{ display: "grid", gap: 18 }}>
@@ -258,7 +296,6 @@ export default async function AdminUploadModerationPage() {
           const professional = sample.owner.professional;
           const professionalName = professional?.displayName ?? sample.owner.name ?? "Sem nome profissional";
           const photos = items.filter(({ asset }) => asset.category === "image");
-          const eligible = items.filter(({ blockers }) => blockers.length === 0);
           const operationalDay = items.filter(({ asset }) => isOperationalDay(asset.createdAt));
           const old = items.filter(({ asset }) => asset.createdAt < OPERATIONAL_DAY_START);
           const otherDates = items.filter(({ asset }) => asset.createdAt >= OPERATIONAL_DAY_END);
@@ -313,22 +350,6 @@ export default async function AdminUploadModerationPage() {
                     Sincronização Didit indisponível: cadastro sem sessão Didit ativa vinculada.
                   </p>
                 )}
-
-                <div style={{ borderTop: "1px solid rgba(255,255,255,.1)", paddingTop: 14 }}>
-                  <h3 style={{ color: "#fff", margin: "0 0 10px", fontSize: 17 }}>Aprovação humana em lote desta profissional</h3>
-                  <ProfessionalBatchApproval
-                    professionalId={professional?.id ?? ""}
-                    action={batchApproveUploads}
-                    assets={eligible.map(({ asset }) => ({
-                      id: asset.id,
-                      originalName: asset.originalName,
-                      previewUrl: `/api/admin/uploads/${asset.id}/preview`,
-                      malwareStatus: asset.malwareStatus,
-                      ageIdentityStatus: asset.ageIdentityStatus,
-                      consentStatus: asset.consentStatus,
-                    }))}
-                  />
-                </div>
 
                 {dateSections.map((section) => (
                   <section key={section.key} aria-labelledby={`${key}-${section.key}`} style={{ display: "grid", gap: 12 }}>

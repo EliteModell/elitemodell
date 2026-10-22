@@ -27,7 +27,7 @@ export default function HomeDiscoveryPreview() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/professionals?sortBy=relevance&limit=8", { signal: controller.signal })
+    fetch("/api/professionals?sortBy=recent&limit=12", { signal: controller.signal })
       .then((response) => response.ok ? response.json() : { professionals: [] })
       .then((data) => setProfessionals(data.professionals ?? []))
       .catch(() => setProfessionals([]));
