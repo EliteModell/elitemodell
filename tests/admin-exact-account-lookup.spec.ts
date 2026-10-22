@@ -14,3 +14,16 @@ test("busca administrativa de conta é exata, restrita e auditada", () => {
   expect(source).not.toContain("access_token: true");
   expect(source).not.toContain("refresh_token: true");
 });
+
+test("exclusao administrativa exige master e confirma os tres identificadores", () => {
+  const source = readFileSync("src/app/(dashboard)/admin/clientes/page.tsx", "utf8");
+
+  expect(source).toContain('requireAdmin("settings:manage")');
+  expect(source).toContain('adminRole !== "ADMIN_MASTER"');
+  expect(source).toContain('confirmation !== `EXCLUIR ${userId}`');
+  expect(source).toContain("user?.email.toLowerCase() === email");
+  expect(source).toContain("normalizedPhone(user.phone) === phone");
+  expect(source).toContain("buildDeletionPlan(userId)");
+  expect(source).toContain("processDataDeletionJob(queued.job.id)");
+  expect(source).toContain('type: "ADMIN_TEST_ACCOUNT_DELETION"');
+});
