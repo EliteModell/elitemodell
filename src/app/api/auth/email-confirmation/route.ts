@@ -151,7 +151,8 @@ export async function POST(req: NextRequest) {
           if (!isTechnicalPhoneEmail(user.email)) {
             return NextResponse.json({ error: "Não foi possível validar a conta com segurança. Entre novamente e tente de novo." }, { status: 409 });
           }
-          if (!hasRecentPhoneProof(user)) {
+          const initialEmailAssociation = isTechnicalPhoneEmail(user.email) && user.phoneVerified;
+          if (!initialEmailAssociation && !hasRecentPhoneProof(user)) {
             return NextResponse.json({ error: "Confirme novamente seu telefone para alterar o e-mail." }, { status: 401 });
           }
           const created = await supabase.auth.admin.createUser({

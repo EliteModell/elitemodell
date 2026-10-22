@@ -1002,7 +1002,7 @@ export default function ProfissionalNovoPage() {
         setEditingEmail(false);
       }
       setEmailCooldown(60);
-      toast.success(`Solicitação aceita. Confira ${data.maskedEmail ?? "seu e-mail"} e a pasta de spam.`);
+      toast.success("Enviamos um link de confirmação para seu e-mail. Abra sua caixa de entrada para continuar.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível solicitar a confirmação agora.");
     } finally {
@@ -1268,7 +1268,7 @@ export default function ProfissionalNovoPage() {
         <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={184} height={61} priority />
         <section>
           <p className="eyebrow">Conta criada</p>
-          <h1>{hasTechnicalPhoneEmail ? "Associe seu e-mail" : "Confirme seu e-mail"}</h1>
+          <h1>Confirme seu e-mail para continuar</h1>
           {hasTechnicalPhoneEmail ? (
             <p>Seu telefone já foi confirmado. Informe um e-mail real para vinculá-lo com segurança à mesma conta e continuar seu cadastro.</p>
           ) : (
@@ -1280,7 +1280,7 @@ export default function ProfissionalNovoPage() {
           {editingEmail || hasTechnicalPhoneEmail ? (
             <div className="actions">
               <input type="email" autoComplete="email" value={replacementEmail} onChange={(event) => setReplacementEmail(event.target.value)} placeholder="novo@email.com" />
-              <button type="button" disabled={emailBusy || !replacementEmail.trim()} onClick={() => requestEmailConfirmation("change")}>Salvar e reenviar</button>
+              <button type="button" disabled={emailBusy || !replacementEmail.trim()} onClick={() => requestEmailConfirmation("change")}>Enviar e-mail de confirmação</button>
               {!hasTechnicalPhoneEmail ? <button type="button" className="secondary" onClick={() => setEditingEmail(false)}>Cancelar</button> : null}
             </div>
           ) : (

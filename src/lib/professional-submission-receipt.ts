@@ -3,12 +3,22 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { sendProfessionalSubmissionReceipt } from "@/lib/auth-email";
 
-export type SubmissionReceiptStatus = "PENDING" | "SENDING" | "SENT" | "FAILED";
+export type SubmissionReceiptStatus = "PENDING" | "SENDING" | "SENT" | "FAILED" | "NOT_REQUIRED";
+
+export async function markSubmissionReceiptNotRequired(professionalId: string): Promise<SubmissionReceiptStatus> {
+  await prisma.professionalSubmissionReceipt.upsert({
+    where: { professionalId },
+    create: { professionalId, status: "NOT_REQUIRED" },
+    update: { status: "NOT_REQUIRED", lastError: null },
+  });
+  return "NOT_REQUIRED";
+}
 
 export async function deliverProfessionalSubmissionReceipt(
   professionalId: string,
   email: string,
   name?: string | null,
+  pendingItems: string[] = [],
 ): Promise<SubmissionReceiptStatus> {
   await prisma.professionalSubmissionReceipt.upsert({
     where: { professionalId },
@@ -38,7 +48,7 @@ export async function deliverProfessionalSubmissionReceipt(
 
   try {
     const receipt = await prisma.professionalSubmissionReceipt.findUnique({ where: { professionalId }, select: { attempts: true } });
-    const providerId = await sendProfessionalSubmissionReceipt(email, professionalId, name, receipt?.attempts ?? 1);
+    const providerId = await sendProfessionalSubmissionReceipt(email, professionalId, name, receipt?.attempts ?? 1, pendingItems);
     await prisma.professionalSubmissionReceipt.update({
       where: { professionalId },
       data: { status: "SENT", providerId, sentAt: new Date(), lastError: null },

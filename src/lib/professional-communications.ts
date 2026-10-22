@@ -84,15 +84,30 @@ export async function deliverProfessionalCommunication(input: {
   notificationTitle: string;
   notificationBody: string;
   link?: string;
+  dedupeReason?: string;
   send: () => Promise<void>;
 }) {
-  await prisma.notification.create({ data: {
-    userId: input.userId,
-    type: input.type,
-    title: input.notificationTitle,
-    body: input.notificationBody,
-    link: input.link ?? "/profissional/notificacoes",
-  } });
+  if (input.dedupeReason) {
+    const delivered = await prisma.auditLog.findFirst({
+      where: { targetType: "PROFESSIONAL", targetId: input.professionalId, reason: input.dedupeReason },
+      select: { id: true },
+    });
+    if (delivered) return { emailStatus: "EMAIL_ALREADY_SENT" as const };
+  }
+  const notificationLink = input.link ?? "/profissional/notificacoes";
+  const existingNotification = input.dedupeReason ? await prisma.notification.findFirst({
+    where: { userId: input.userId, type: input.type, link: notificationLink },
+    select: { id: true },
+  }) : null;
+  if (!existingNotification) {
+    await prisma.notification.create({ data: {
+      userId: input.userId,
+      type: input.type,
+      title: input.notificationTitle,
+      body: input.notificationBody,
+      link: notificationLink,
+    } });
+  }
   if (!validEmail(input.email)) {
     await prisma.auditLog.create({ data: {
       adminId: input.adminId,
@@ -114,7 +129,7 @@ export async function deliverProfessionalCommunication(input: {
       targetType: "PROFESSIONAL",
       targetId: input.professionalId,
       changes: { communicationStatus: "EMAIL_SENT", communicationType: input.type },
-      reason: "Mensagem aceita pelo provedor de e-mail",
+      reason: input.dedupeReason ?? "Mensagem aceita pelo provedor de e-mail",
     } });
     return { emailStatus: "EMAIL_SENT" as const };
   } catch (error) {

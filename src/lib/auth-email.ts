@@ -225,20 +225,25 @@ export async function sendProfessionalSubmissionReceipt(
   professionalId: string,
   name?: string | null,
   deliveryAttempt = 1,
+  pendingItems: string[] = [],
 ): Promise<string | null> {
   const safeName = name?.trim().replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character] ?? character));
+  const safePendingItems = pendingItems.map((item) => escapeHtml(item));
   return sendAuthEmail(to, {
-    subject: "Seu cadastro na Elite Modell foi recebido",
+    subject: "💜 Seu cadastro na Elite Modell foi recebido!",
     html: `
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#ffffff;color:#17131a;border:1px solid #dfd1e5;border-radius:16px;overflow:hidden">
         <div style="height:4px;background:#7d179f"></div>
         <div style="padding:36px 30px">
           <div style="color:#7d179f;font-size:22px;font-weight:900;margin-bottom:24px">ELITE MODELL</div>
-          <h1 style="font-size:22px;margin:0 0 14px">Seu cadastro foi recebido</h1>
-          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Olá, ${safeName || "profissional"}.</p>
-          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Recebemos seu cadastro e salvamos todas as etapas concluídas.</p>
-          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">As verificações obrigatórias de identidade, maioridade e segurança das mídias continuarão normalmente.</p>
-          <p style="color:#625c68;line-height:1.7;margin:0">Avisaremos quando o perfil estiver disponível ou se houver algum item que precise ser corrigido. Você não precisa realizar um novo cadastro.</p>
+          <h1 style="font-size:22px;margin:0 0 14px">Seu cadastro foi recebido!</h1>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Olá, ${safeName || "profissional"}!</p>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Que bom ter você chegando à Elite Modell! 💜</p>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Você concluiu o preenchimento do seu cadastro com sucesso.</p>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Ainda estamos finalizando algumas verificações necessárias para disponibilizar seu perfil com segurança.</p>
+          ${safePendingItems.length ? `<ul style="color:#625c68;line-height:1.7;margin:0 0 12px">${safePendingItems.map((item) => `<li>${item}</li>`).join("")}</ul>` : ""}
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Você pode acompanhar o andamento pela sua conta. Caso alguma informação adicional seja necessária, avisaremos.</p>
+          <p style="color:#625c68;line-height:1.7;margin:0">Obrigada pela confiança e seja muito bem-vinda!<br><br>Com carinho,<br>Equipe Elite Modell 💜</p>
           <div style="margin-top:28px;padding-top:18px;border-top:1px solid #eee6f1;color:#77707b;font-size:12px">Esta mensagem não contém fotos, documentos, dados biométricos ou informações financeiras.</div>
         </div>
       </div>
@@ -278,22 +283,24 @@ export async function sendProfessionalApprovalEmail(to: string, name?: string | 
   }, professionalId ? { idempotencyKey: professionalApprovalEmailIdempotencyKey(professionalId) } : undefined);
 }
 
-export async function sendProfessionalPublishedEmail(to: string, name?: string | null, professionalId?: string): Promise<void> {
+export async function sendProfessionalPublishedEmail(to: string, name?: string | null, professionalId?: string, profileUrl = "/profissional"): Promise<void> {
   const safeName = name?.trim().replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character] ?? character));
+  const safeProfileUrl = escapeHtml(new URL(profileUrl, DEFAULT_SITE_URL).toString());
   await sendAuthEmail(to, {
-    subject: "Parabéns! Seu perfil na Elite Modell está liberado!",
+    subject: "💜 Bem-vinda à Elite Modell! Seu perfil está no ar!",
     html: `
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#ffffff;color:#17131a;border:1px solid #dfd1e5;border-radius:16px;overflow:hidden">
         <div style="height:4px;background:#7d179f"></div>
         <div style="padding:36px 30px">
           <div style="color:#7d179f;font-size:22px;font-weight:900;margin-bottom:24px">ELITE MODELL</div>
-          <h1 style="font-size:22px;margin:0 0 14px">Parabéns! Seu perfil está liberado!</h1>
+          <h1 style="font-size:22px;margin:0 0 14px">Bem-vinda à Elite Modell! Seu perfil está no ar!</h1>
           <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Olá${safeName ? `, ${safeName}` : ""}!</p>
-          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Parabéns! Seu cadastro foi aprovado e seu perfil já está disponível na Elite Modell.</p>
-          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Seja muito bem-vinda!</p>
-          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Agora você pode acessar sua conta, visualizar seu perfil e aproveitar os recursos da plataforma.</p>
-          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Agradecemos pela confiança e desejamos muito sucesso!</p>
-          <p style="color:#625c68;line-height:1.7;margin:0">Equipe Elite Modell<br><a href="https://www.elitemodell.com.br/" style="color:#7d179f">www.elitemodell.com.br</a></p>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">É um prazer receber você na Elite Modell! 💜</p>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Seu cadastro foi concluído com sucesso, suas verificações foram aprovadas e seu perfil já está disponível em nossa plataforma.</p>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Agora você pode acessar sua conta, atualizar suas informações, organizar suas fotos e aproveitar os recursos disponíveis para apresentar seu perfil.</p>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 18px">Estamos muito felizes em ter você conosco e desejamos muito sucesso nesta nova etapa!</p>
+          <p style="margin:0 0 22px"><a href="${safeProfileUrl}" style="display:inline-block;background:#7d179f;color:#ffffff;text-decoration:none;font-weight:800;padding:13px 20px;border-radius:10px">Acessar meu perfil</a></p>
+          <p style="color:#625c68;line-height:1.7;margin:0"><strong>Bem-vinda à Elite Modell!</strong><br><br>Com carinho,<br>Equipe Elite Modell 💜</p>
           <div style="margin-top:28px;padding-top:18px;border-top:1px solid #eee6f1;color:#77707b;font-size:12px">Esta mensagem não contém fotos, documentos, dados biométricos ou informações financeiras.</div>
         </div>
       </div>

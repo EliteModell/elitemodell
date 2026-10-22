@@ -122,7 +122,11 @@ export async function attemptAutomaticProfessionalPublication(
           profileUrl,
           blockers: [],
         } satisfies AutomaticPublicationResult,
-        communication: null,
+        communication: {
+          userId: professional.user.id,
+          email: professional.user.email,
+          name: professional.user.name,
+        },
       };
     }
 
@@ -245,7 +249,7 @@ export async function attemptAutomaticProfessionalPublication(
     };
   }, { maxWait: 5_000, timeout: 15_000 });
 
-  if (outcome.result.becamePublished && outcome.communication) {
+  if (outcome.result.published && outcome.communication) {
     const communication = outcome.communication;
     await deliverProfessionalCommunication({
       professionalId,
@@ -255,7 +259,8 @@ export async function attemptAutomaticProfessionalPublication(
       notificationTitle: "Seu perfil está no ar!",
       notificationBody: "Seu cadastro foi concluído e seu perfil já está disponível na Elite Modell.",
       link: outcome.result.profileUrl,
-      send: () => sendProfessionalPublishedEmail(communication.email!, communication.name, professionalId),
+      dedupeReason: "professional:profile-published-email:v1",
+      send: () => sendProfessionalPublishedEmail(communication.email!, communication.name, professionalId, outcome.result.profileUrl),
     }).catch((cause) => {
       console.error("[professional-auto-publication] falha na comunicação", {
         professionalId,
@@ -273,7 +278,7 @@ export async function attemptAutomaticProfessionalPublication(
         reason: cause instanceof Error ? cause.name : "unknown",
       });
     });
-    refreshPublicProfessionalPages();
+    if (outcome.result.becamePublished) refreshPublicProfessionalPages();
   }
 
   return outcome.result;

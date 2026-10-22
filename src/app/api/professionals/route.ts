@@ -22,7 +22,7 @@ import { professionalCityFilter, resolveExactCityQuery } from "@/lib/public-city
 import { publicProfessionalWhere } from "@/lib/public-professional-access";
 import { publicServiceLocation } from "@/lib/professional-location";
 import { controlledMediaAssetId, filterApprovedProfilePhotos, normalizeControlledMediaUrl } from "@/lib/public-professional-media";
-import { deliverProfessionalSubmissionReceipt } from "@/lib/professional-submission-receipt";
+import { deliverProfessionalSubmissionReceipt, markSubmissionReceiptNotRequired } from "@/lib/professional-submission-receipt";
 import { logAudit } from "@/lib/audit";
 import { professionalCompletion, issueChecklist } from "@/lib/professional-completeness";
 import { attemptAutomaticProfessionalPublication } from "@/lib/professional-auto-publication";
@@ -260,8 +260,10 @@ export async function POST(req: NextRequest) {
   });
   if (existing && !["DRAFT", "CORRECTION_REQUIRED"].includes(existing.status)) {
     if (existing.status === "PENDING_REVIEW") {
-      const receiptStatus = await deliverProfessionalSubmissionReceipt(existing.id, existing.user.email);
       const publication = await attemptAutomaticProfessionalPublication(existing.id, "registration-resubmission");
+      const receiptStatus = publication.published
+        ? await markSubmissionReceiptNotRequired(existing.id)
+        : await deliverProfessionalSubmissionReceipt(existing.id, existing.user.email, existing.user.name, publication.blockers.map((blocker) => blocker.label));
       return NextResponse.json({
         ok: true,
         professionalId: existing.id,
@@ -432,7 +434,6 @@ export async function POST(req: NextRequest) {
       changes: { moderationAction: existing?.status === "CORRECTION_REQUIRED" ? "resubmit" : "submit", resultingStatus: professional.status, identityStatus: diditVerification.status },
       reason: identityApproved ? "Cadastro enviado para análise administrativa" : "Informações iniciais recebidas; aguardando aprovação da identidade",
     });
-    const receiptStatus = await deliverProfessionalSubmissionReceipt(professional.id, user.email, user.name);
     await prisma.notification.create({
       data: {
         userId: session.user.id,
@@ -445,6 +446,9 @@ export async function POST(req: NextRequest) {
       },
     });
     const publication = await attemptAutomaticProfessionalPublication(professional.id, "registration-submitted");
+    const receiptStatus = publication.published
+      ? await markSubmissionReceiptNotRequired(professional.id)
+      : await deliverProfessionalSubmissionReceipt(professional.id, user.email, user.name, publication.blockers.map((blocker) => blocker.label));
     return NextResponse.json({
       ok: true,
       professionalId: professional.id,

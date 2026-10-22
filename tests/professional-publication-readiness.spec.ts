@@ -41,7 +41,8 @@ test.describe("prontidão da publicação profissional", () => {
     const email = fs.readFileSync(path.join(process.cwd(), "src/lib/auth-email.ts"), "utf8");
     expect(page).toContain("Parabéns! Seu perfil está liberado!");
     expect(page).toContain("Estamos finalizando as verificações necessárias.");
-    expect(email).toContain("Parabéns! Seu perfil na Elite Modell está liberado!");
+    expect(email).toContain("💜 Bem-vinda à Elite Modell! Seu perfil está no ar!");
+    expect(email).toContain("Acessar meu perfil");
     expect(email).toContain("professionalPublicationEmailIdempotencyKey(professionalId)");
   });
 
@@ -70,6 +71,9 @@ test.describe("prontidão da publicação profissional", () => {
     expect(providerDeliveryAt).toBeGreaterThan(receiptRecordAt);
     expect(delivery).toContain('data: { status: "FAILED", lastError: "provider_delivery_failed" }');
     expect(delivery).toContain('data: { status: "SENT", providerId, sentAt: new Date(), lastError: null }');
+    expect(route).toContain("publication.blockers.map((blocker) => blocker.label)");
+    expect(route).toContain("markSubmissionReceiptNotRequired");
+    expect(email).toContain("Ainda estamos finalizando algumas verificações necessárias");
     expect(email).toContain('"Idempotency-Key"');
     expect(route).not.toMatch(/professionalSubmissionReceipt\.(?:delete|deleteMany)/);
   });

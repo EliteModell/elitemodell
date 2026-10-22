@@ -70,6 +70,8 @@ test.describe("vinculo seguro de e-mail para conta criada por telefone", () => {
     expect(emailConfirmation).toContain('blockReason === "Conta excluida e pseudonimizada por solicitacao LGPD."');
     expect(emailConfirmation).toContain('releasedIdentity.email.startsWith("deleted+")');
     expect(emailConfirmation).toContain("supabase.auth.admin.deleteUser(targetAuthUser.id)");
+    expect(emailConfirmation).toContain("const initialEmailAssociation = isTechnicalPhoneEmail(user.email) && user.phoneVerified");
+    expect(emailConfirmation).toContain("if (!initialEmailAssociation && !hasRecentPhoneProof(user))");
     expect(phoneVerification).toContain("phoneVerifiedAt: new Date()");
     expect(phoneVerification).toContain("phoneVerifiedAt: now");
   });
