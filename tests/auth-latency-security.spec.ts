@@ -7,6 +7,8 @@ const auth = readFileSync(join(root, "src/lib/auth.ts"), "utf8");
 const adultAccess = readFileSync(join(root, "src/lib/adult-content-access.ts"), "utf8");
 const stories = readFileSync(join(root, "src/app/api/stories/route.ts"), "utf8");
 const reviews = readFileSync(join(root, "src/app/api/reviews/route.ts"), "utf8");
+const emailConfirmation = readFileSync(join(root, "src/app/api/auth/email-confirmation/route.ts"), "utf8");
+const phoneVerification = readFileSync(join(root, "src/app/api/auth/phone/verify-code/route.ts"), "utf8");
 
 test.describe("contrato de seguranca do auth context minimo", () => {
   test("usuario valido usa uma unica query SQL escalar", () => {
@@ -48,5 +50,24 @@ test.describe("contrato de seguranca do auth context minimo", () => {
     expect(stories).toContain("const session = adultAccess.session");
     expect(stories.match(/authorizeAdultContentRequest/g)?.length).toBe(2); // import + uma chamada GET
     expect(reviews).toContain("const session = adultAccess.session");
+  });
+});
+
+test.describe("vinculo seguro de e-mail para conta criada por telefone", () => {
+  test("nao exige identidade Supabase previa nem troca o e-mail antes da confirmacao", () => {
+    expect(emailConfirmation).toContain("isTechnicalPhoneEmail(user.email)");
+    expect(emailConfirmation).toContain("supabase.auth.admin.createUser");
+    expect(emailConfirmation).toContain("app_metadata: { prismaUserId: user.id, linkedFromPhone: true }");
+    expect(emailConfirmation).not.toContain("data: { email: targetEmail, emailVerified: null }");
+    expect(auth).toContain("authUser.app_metadata?.prismaUserId");
+    expect(auth).toContain("data: { email, emailVerified }");
+  });
+
+  test("exige telefone recente e trata conflito sem revelar a outra conta", () => {
+    expect(emailConfirmation).toContain("RECENT_PHONE_PROOF_MS");
+    expect(emailConfirmation).toContain("hasRecentPhoneProof(user)");
+    expect(emailConfirmation).toContain("Este e-mail já está vinculado a outra conta. Utilize outro endereço ou entre em contato com o suporte.");
+    expect(phoneVerification).toContain("phoneVerifiedAt: new Date()");
+    expect(phoneVerification).toContain("phoneVerifiedAt: now");
   });
 });

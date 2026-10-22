@@ -120,6 +120,9 @@ export const authOptions: NextAuthOptions = {
 
           if (!email) return null;
           const metadata = authUser.user_metadata ?? {};
+          const linkedPrismaUserId = typeof authUser.app_metadata?.prismaUserId === "string"
+            ? authUser.app_metadata.prismaUserId
+            : null;
           const credentialMap = credentials as Record<string, string | undefined>;
           const roleIntent = normalizeEntryRole(credentialMap.roleIntent ?? null);
           const isCadastroFlow = credentialMap.authFlow === "cadastro";
@@ -159,9 +162,9 @@ export const authOptions: NextAuthOptions = {
             Boolean(authUser.identities?.some((identity) => identity.provider === "google"));
 
           let user = await prisma.user.findFirst({
-            where: {
-              OR: [{ email }, ...(phone ? [{ phone }] : [])],
-            },
+            where: linkedPrismaUserId
+              ? { id: linkedPrismaUserId }
+              : { OR: [{ email }, ...(phone ? [{ phone }] : [])] },
             select: {
               id: true,
               name: true,
@@ -182,6 +185,37 @@ export const authOptions: NextAuthOptions = {
               blocked: true,
             },
           });
+
+          // A associação do e-mail de uma conta criada por telefone só é
+          // efetivada após o Supabase confirmar o link. app_metadata é
+          // controlado pelo servidor e aponta para a conta original.
+          if (user && linkedPrismaUserId && emailVerified && user.email.toLowerCase() !== email.toLowerCase()) {
+            const conflict = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+            if (conflict && conflict.id !== user.id) return null;
+            user = await prisma.user.update({
+              where: { id: user.id },
+              data: { email, emailVerified },
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+                phone: true,
+                emailVerified: true,
+                role: true,
+                accountType: true,
+                category: true,
+                birthDate: true,
+                lgpdConsent: true,
+                termsConsent: true,
+                clientProfile: { select: { id: true } },
+                hostProfile: { select: { id: true } },
+                professional: { select: { id: true, status: true } },
+                properties: { select: { status: true } },
+                blocked: true,
+              },
+            });
+          }
 
           if (!user) {
             const metadataAccountType =

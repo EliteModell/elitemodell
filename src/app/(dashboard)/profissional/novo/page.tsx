@@ -961,6 +961,8 @@ export default function ProfissionalNovoPage() {
     return `${local.slice(0, 2)}${"*".repeat(Math.max(3, local.length - 2))}@${domain}`;
   }
 
+  const hasTechnicalPhoneEmail = accountEmail?.toLowerCase().endsWith("@sms.elitemodell.local") ?? false;
+
   async function requestEmailConfirmation(action: "resend" | "change") {
     if (emailBusy || (action === "resend" && emailCooldown > 0)) return;
     setEmailBusy(true);
@@ -1242,14 +1244,20 @@ export default function ProfissionalNovoPage() {
         <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={184} height={61} priority />
         <section>
           <p className="eyebrow">Conta criada</p>
-          <h1>Confirme seu e-mail</h1>
-          <p>Enviamos um link para <strong>{maskEmail(accountEmail)}</strong>. Confirme o endereço antes de iniciar as etapas do cadastro de acompanhante.</p>
-          <p>Depois de confirmar, volte a esta aba e toque no botão abaixo. Confira também a pasta de spam.</p>
-          {editingEmail ? (
+          <h1>{hasTechnicalPhoneEmail ? "Associe seu e-mail" : "Confirme seu e-mail"}</h1>
+          {hasTechnicalPhoneEmail ? (
+            <p>Seu telefone já foi confirmado. Informe um e-mail real para vinculá-lo com segurança à mesma conta e continuar seu cadastro.</p>
+          ) : (
+            <>
+              <p>Enviamos um link para <strong>{maskEmail(accountEmail)}</strong>. Confirme o endereço antes de iniciar as etapas do cadastro de acompanhante.</p>
+              <p>Depois de confirmar, volte a esta aba e toque no botão abaixo. Confira também a pasta de spam.</p>
+            </>
+          )}
+          {editingEmail || hasTechnicalPhoneEmail ? (
             <div className="actions">
               <input type="email" autoComplete="email" value={replacementEmail} onChange={(event) => setReplacementEmail(event.target.value)} placeholder="novo@email.com" />
               <button type="button" disabled={emailBusy || !replacementEmail.trim()} onClick={() => requestEmailConfirmation("change")}>Salvar e reenviar</button>
-              <button type="button" className="secondary" onClick={() => setEditingEmail(false)}>Cancelar</button>
+              {!hasTechnicalPhoneEmail ? <button type="button" className="secondary" onClick={() => setEditingEmail(false)}>Cancelar</button> : null}
             </div>
           ) : (
             <div className="actions">

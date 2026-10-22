@@ -15,6 +15,16 @@ const inputSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("change"), email: z.string().trim().email() }),
 ]);
 
+const RECENT_PHONE_PROOF_MS = 30 * 60 * 1000;
+
+function isTechnicalPhoneEmail(email: string) {
+  return email.toLowerCase().endsWith("@sms.elitemodell.local");
+}
+
+function hasRecentPhoneProof(user: { phone: string | null; phoneVerified: boolean; phoneVerifiedAt: Date | null }) {
+  return Boolean(user.phone && user.phoneVerified && user.phoneVerifiedAt && Date.now() - user.phoneVerifiedAt.getTime() <= RECENT_PHONE_PROOF_MS);
+}
+
 function callbackUrl() {
   const params = new URLSearchParams({
     returnUrl: "/profissional/novo",
@@ -87,7 +97,7 @@ export async function POST(req: NextRequest) {
     const input = inputSchema.parse(await req.json());
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true, email: true, emailVerified: true },
+      select: { id: true, email: true, emailVerified: true, phone: true, phoneVerified: true, phoneVerifiedAt: true },
     });
     if (!user) return NextResponse.json({ error: "Conta não encontrada." }, { status: 404 });
     if (user.emailVerified) return NextResponse.json({ ok: true, verified: true, maskedEmail: maskEmail(user.email) });
@@ -98,19 +108,42 @@ export async function POST(req: NextRequest) {
       if (targetEmail !== user.email.toLowerCase()) {
         const conflict = await prisma.user.findUnique({ where: { email: targetEmail }, select: { id: true } });
         if (conflict && conflict.id !== user.id) {
-          return NextResponse.json({ error: "Este e-mail já está em uso." }, { status: 409 });
+          return NextResponse.json({ error: "Este e-mail já está vinculado a outra conta. Utilize outro endereço ou entre em contato com o suporte." }, { status: 409 });
+        }
+        const targetAuthUser = await findAuthUserByEmail(targetEmail);
+        const targetBelongsToCurrentUser = targetAuthUser?.app_metadata?.prismaUserId === user.id;
+        if (targetAuthUser && !targetBelongsToCurrentUser) {
+          return NextResponse.json({ error: "Este e-mail já está vinculado a outra conta. Utilize outro endereço ou entre em contato com o suporte." }, { status: 409 });
         }
         const authUser = await findAuthUserByEmail(user.email);
-        if (!authUser) return NextResponse.json({ error: "Não foi possível localizar a conta de autenticação." }, { status: 409 });
         const supabase = createSupabaseServerClient();
-        const updated = await supabase.auth.admin.updateUserById(authUser.id, {
-          email: targetEmail,
-          email_confirm: false,
-          user_metadata: { ...authUser.user_metadata, prismaUserId: user.id },
-        });
-        if (updated.error) throw updated.error;
-        await prisma.user.update({ where: { id: user.id }, data: { email: targetEmail, emailVerified: null } });
+        if (targetBelongsToCurrentUser) {
+          // Solicitação idempotente: o endereço continua pendente até o link
+          // ser confirmado e pode receber um novo envio com segurança.
+        } else if (authUser) {
+          const updated = await supabase.auth.admin.updateUserById(authUser.id, {
+            email: targetEmail,
+            email_confirm: false,
+            app_metadata: { ...authUser.app_metadata, prismaUserId: user.id },
+          });
+          if (updated.error) throw updated.error;
+        } else {
+          if (!isTechnicalPhoneEmail(user.email)) {
+            return NextResponse.json({ error: "Não foi possível validar a conta com segurança. Entre novamente e tente de novo." }, { status: 409 });
+          }
+          if (!hasRecentPhoneProof(user)) {
+            return NextResponse.json({ error: "Confirme novamente seu telefone para alterar o e-mail." }, { status: 401 });
+          }
+          const created = await supabase.auth.admin.createUser({
+            email: targetEmail,
+            email_confirm: false,
+            app_metadata: { prismaUserId: user.id, linkedFromPhone: true },
+          });
+          if (created.error) throw created.error;
+        }
       }
+    } else if (isTechnicalPhoneEmail(targetEmail)) {
+      return NextResponse.json({ error: "Informe um e-mail real para receber a confirmação." }, { status: 400 });
     }
 
     await sendConfirmation(targetEmail);

@@ -208,6 +208,43 @@ test("available cities remain reachable in the reduced iPhone keyboard viewport"
   })).toBe(true);
 });
 
+test("home story selector chooses one city without changing the main location", async ({ page }) => {
+  let requestedStoryRegion = "";
+  await page.addInitScript(() => {
+    localStorage.setItem("elite_modell_public_location", JSON.stringify({ city: "Salvador", state: "BA", label: "Salvador, BA" }));
+  });
+  await page.route("**/api/locations/available-cities", (route) => route.fulfill({ json: {
+    cities: [
+      { city: "Salvador", state: "BA", count: 3 },
+      { city: "Recife", state: "PE", count: 2 },
+    ],
+  } }));
+  await page.route("**/api/stories", (route) => route.fulfill({ json: [
+    { userId: "elite-platform", slug: "politica-conteudo", nome: "Elite Stories", foto: "/android-chrome-512x512.png", institutional: true, stories: [] },
+    { userId: "recife-story", slug: "recife-model", nome: "Recife Story", foto: null, city: "Recife", state: "PE", stories: [{ id: "story-1" }, { id: "story-2" }] },
+  ] }));
+  await page.route("**/api/stories?city=**", async (route) => {
+    const url = new URL(route.request().url());
+    const city = url.searchParams.get("city");
+    requestedStoryRegion = `${city}|${url.searchParams.get("state")}`;
+    await route.fulfill({ json: [
+      { userId: "elite-platform", slug: "politica-conteudo", nome: "Elite Stories", foto: "/android-chrome-512x512.png", institutional: true, stories: [] },
+      ...(city === "Recife" ? [{ userId: "recife-story", slug: "recife-model", nome: "Recife Story", foto: null, city: "Recife", state: "PE", stories: [{ id: "story-1", mediaUrl: "/test.jpg", mediaType: "image", thumbnail: null, views: 0, createdAt: new Date().toISOString() }] }] : []),
+    ] });
+  });
+  await page.route("**/api/professionals?**", (route) => route.fulfill({ json: { professionals: [], total: 0 } }));
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Ver stories de outras regiões" }).click();
+  const dialog = page.getByRole("dialog", { name: "Escolha uma cidade" });
+  await expect(dialog.getByText("2 stories disponíveis")).toBeVisible();
+  await dialog.getByRole("button", { name: /Recife, PE/ }).click();
+  await expect(page.getByText("Recife", { exact: true })).toBeVisible();
+  await expect.poll(() => requestedStoryRegion).toBe("Recife|PE");
+  await expect(page.getByText("Elite", { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("elite_modell_public_location"))).toContain("Salvador");
+});
+
 test("visitante anonimo navega por cidade, filtros e perfil sem cadastro", async ({ browser }, testInfo) => {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },

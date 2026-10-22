@@ -77,7 +77,7 @@ async function existingPhoneAccountResponse(phone: string) {
     where: { id: existing.id },
     data: {
       phoneVerified: true,
-      phoneVerifiedAt: existing.phoneVerifiedAt ?? new Date(),
+      phoneVerifiedAt: new Date(),
     },
   });
 
@@ -190,7 +190,7 @@ async function persistVerifiedPhone({
           data: {
             phone,
             phoneVerified: true,
-            phoneVerifiedAt: existing.phoneVerifiedAt ?? now,
+            phoneVerifiedAt: now,
             // Preservar tipo original se conta já tem tipo definido
             accountType: preserveExistingType ? existing.accountType : accountType,
             role: preserveExistingType ? existing.role : role,
