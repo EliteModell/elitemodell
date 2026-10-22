@@ -190,7 +190,7 @@ export function AdminProfessionalCard({
   ] as Array<[string, boolean]>;
 
   return (
-    <article className="pro-card" style={{ borderLeftColor: accent }}>
+    <article id={`professional-${pro.id}`} className="pro-card" style={{ borderLeftColor: accent }}>
       <header className="pro-card-head">
         <div className="pro-identity">
           {cover ? <img src={cover} alt="" loading="lazy" /> : <span style={{ color: accent }}>{(pro.displayName || "?")[0].toUpperCase()}</span>}

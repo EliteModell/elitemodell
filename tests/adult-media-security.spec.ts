@@ -61,6 +61,24 @@ test.describe("seguranca fail-closed de midia adulta", () => {
     expect(source).toContain("cover: visibleCount === 0");
   });
 
+  test("aprovacao profissional retoma fotos sem inventar decisao de conteudo", async () => {
+    const [uploads, professionals, panel, batch, submit] = await Promise.all([
+      import("node:fs/promises").then((fs) => fs.readFile("src/lib/upload-quarantine.ts", "utf8")),
+      import("node:fs/promises").then((fs) => fs.readFile("src/app/(dashboard)/admin/profissionais/page.tsx", "utf8")),
+      import("node:fs/promises").then((fs) => fs.readFile("src/app/(dashboard)/admin/moderacao/uploads/page.tsx", "utf8")),
+      import("node:fs/promises").then((fs) => fs.readFile("src/app/(dashboard)/admin/moderacao/uploads/CohortBatchApproval.tsx", "utf8")),
+      import("node:fs/promises").then((fs) => fs.readFile("src/app/api/professionals/route.ts", "utf8")),
+    ]);
+    expect(uploads).toContain("resumeProfessionalProfileAssetsAfterApproval");
+    expect(uploads).toContain("existingMalwarePassed");
+    expect(uploads).toContain("existingModerationPassed");
+    expect(professionals).toContain("resumeProfessionalProfileAssetsAfterApproval({");
+    expect(panel).toContain("Revisao visual administrativa em lote concluida: conteudo aprovado.");
+    expect(panel).toContain("Abrir cadastro e corrigir pendências");
+    expect(batch).not.toContain('name="reason"');
+    expect(submit).toContain("rejectReason: null");
+  });
+
   test("painel agrupa lotes por profissional e separa as fotos de 21/10/2026", async () => {
     const [page, batch, home, listing] = await Promise.all([
       import("node:fs/promises").then((fs) => fs.readFile("src/app/(dashboard)/admin/moderacao/uploads/page.tsx", "utf8")),
@@ -79,7 +97,8 @@ test.describe("seguranca fail-closed de midia adulta", () => {
     expect(page).toContain("A mídia não pertence ao recorte de contas de 19 a 22/10/2026.");
     expect(batch).toContain("Selecionar todas as elegíveis");
     expect(batch).toContain("selectedCount === 0");
-    expect(home).toContain("sortBy=recent&limit=12");
+    expect(home).toContain('new URLSearchParams({ sortBy: "recent", limit: "12" })');
+    expect(home).toContain('fetch(`/api/professionals?${query}`');
     expect(listing).toContain("pro.user?.image ?? coverPhoto ?? null");
   });
 

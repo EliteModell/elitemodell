@@ -17,7 +17,7 @@ function ApprovalButton({ selectedCount }: { selectedCount: number }) {
   const { pending } = useFormStatus();
   const disabled = pending || selectedCount === 0;
   const title = selectedCount === 0
-    ? "Selecione ao menos uma foto elegível e informe a justificativa."
+    ? "Selecione ao menos uma foto elegível."
     : "Cada foto será revalidada no servidor antes de qualquer publicação.";
 
   return (
@@ -99,13 +99,6 @@ export function CohortBatchApproval({
           </label>
         ))}
       </div>
-      <input
-        name="reason"
-        minLength={8}
-        required
-        placeholder="Justificativa obrigatória da revisão humana em lote"
-        style={{ border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, background: "#050506", color: "#fff", padding: 11 }}
-      />
       <ApprovalButton selectedCount={selected.length} />
     </form>
   );

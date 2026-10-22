@@ -362,6 +362,7 @@ export async function POST(req: NextRequest) {
       birthDate: profileData.birthDate ? new Date(profileData.birthDate) : undefined,
       status:    identityApproved ? "PENDING_REVIEW" as const : "DRAFT" as const,
       verified:  false,
+      rejectReason: null,
       docStatus: identityApproved ? "APPROVED" : diditVerification.status === "REJECTED" ? "REJECTED" : "PENDING",
       verifStatus: identityApproved ? "APPROVED" : diditVerification.status === "REJECTED" ? "REJECTED" : "PENDING",
       registrationSubmittedAt: new Date(),

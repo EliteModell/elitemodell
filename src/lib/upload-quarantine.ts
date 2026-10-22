@@ -289,11 +289,23 @@ export async function processUploadAsset(
     });
   }
 
+  const existingGates = publicationGate(asset);
+  if (existingGates.publishable) {
+    await promoteAsset(asset, suppliedBuffer);
+    await auditAsset(null, asset.id, "Processamento retomado com controles obrigatorios ja aprovados.", {
+      preservedMalwareStatus: asset.malwareStatus,
+      preservedModerationStatus: asset.moderationStatus,
+      preservedAdminReviewStatus: asset.adminReviewStatus,
+    });
+    return prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
+  }
+
   const settings = await prisma.platformSettings.findUnique({
     where: { id: "default" },
     select: { uploadSecurityEnabled: true, uploadAvProvider: true, uploadModerationProvider: true },
   });
-  if (process.env.UPLOAD_AV_ASYNC_ENABLED === "true" && settings?.uploadSecurityEnabled !== false) {
+  const existingMalwarePassed = asset.malwareStatus === "CLEAN" || asset.malwareStatus === "APPROVED";
+  if (!existingMalwarePassed && process.env.UPLOAD_AV_ASYNC_ENABLED === "true" && settings?.uploadSecurityEnabled !== false) {
     await enqueueMalwareScan(asset.id);
     return prisma.uploadAsset.update({
       where: { id: asset.id },
@@ -309,23 +321,33 @@ export async function processUploadAsset(
   const avProvider = settings?.uploadSecurityEnabled === false ? "MANUAL" : settings?.uploadAvProvider;
   const moderationProvider = settings?.uploadSecurityEnabled === false ? "MANUAL" : settings?.uploadModerationProvider;
 
-  const malware = await scanFileForVirus(buffer, asset.originalName, asset.detectedMimeType, { provider: avProvider });
+  const malware: SecurityResult = existingMalwarePassed
+    ? {
+        safe: true,
+        status: asset.malwareStatus as "CLEAN" | "APPROVED",
+        provider: asset.malwareProvider || "PRESERVED_VALID_RESULT",
+        providerVersion: asset.malwareProviderVersion || undefined,
+        reason: "Resultado valido preservado durante a retomada.",
+      }
+    : await scanFileForVirus(buffer, asset.originalName, asset.detectedMimeType, { provider: avProvider });
   const malwarePassed = malware.status === "CLEAN" || malware.status === "APPROVED";
   const malwareRejected = malware.status === "INFECTED" || malware.status === "REJECTED";
-  await prisma.uploadAsset.update({
-    where: { id: asset.id },
-    data: {
-      malwareStatus: malware.status,
-      malwareProvider: malware.provider,
-      malwareProviderVersion: malware.providerVersion,
-      malwareResult: safeResult(malware),
-      scanAttempts: { increment: 1 },
-      lastProcessedAt: new Date(),
-      status: malwareRejected ? "REJECTED" : malwarePassed ? "PENDING_MODERATION" : "QUARANTINED",
-      rejectedAt: malwareRejected ? new Date() : undefined,
-      failureReason: malwarePassed ? null : malware.reason || "Varredura antimalware nao concluiu com PASS.",
-    },
-  });
+  if (!existingMalwarePassed) {
+    await prisma.uploadAsset.update({
+      where: { id: asset.id },
+      data: {
+        malwareStatus: malware.status,
+        malwareProvider: malware.provider,
+        malwareProviderVersion: malware.providerVersion,
+        malwareResult: safeResult(malware),
+        scanAttempts: { increment: 1 },
+        lastProcessedAt: new Date(),
+        status: malwareRejected ? "REJECTED" : malwarePassed ? "PENDING_MODERATION" : "QUARANTINED",
+        rejectedAt: malwareRejected ? new Date() : undefined,
+        failureReason: malwarePassed ? null : malware.reason || "Varredura antimalware nao concluiu com PASS.",
+      },
+    });
+  }
   if (!malwarePassed) {
     if (!malwareRejected && options.enqueueRetry !== false) {
       await enqueueMalwareScan(asset.id).catch((cause) => {
@@ -340,25 +362,36 @@ export async function processUploadAsset(
   }
 
   const privateIdentityMaterial = asset.category === "document" || asset.folder.startsWith("documentos") || asset.folder.startsWith("verificacao");
-  const moderation: SecurityResult = privateIdentityMaterial
-    ? { safe: true, status: "APPROVED", provider: "DOCUMENT_PRIVATE", reason: "Documento privado fora de publicacao visual." }
-    : await moderateFileContent(buffer, asset.originalName, asset.detectedMimeType, { provider: moderationProvider });
+  const existingModerationPassed = asset.moderationStatus === "APPROVED";
+  const moderation: SecurityResult = existingModerationPassed
+    ? {
+        safe: true,
+        status: "APPROVED",
+        provider: asset.moderationProvider || "PRESERVED_VALID_RESULT",
+        providerVersion: asset.moderationProviderVersion || undefined,
+        reason: "Decisao de conteudo valida preservada durante a retomada.",
+      }
+    : privateIdentityMaterial
+      ? { safe: true, status: "APPROVED", provider: "DOCUMENT_PRIVATE", reason: "Documento privado fora de publicacao visual." }
+      : await moderateFileContent(buffer, asset.originalName, asset.detectedMimeType, { provider: moderationProvider });
   const moderationPassed = moderation.status === "APPROVED";
   const moderationRejected = moderation.status === "REJECTED";
-  await prisma.uploadAsset.update({
-    where: { id: asset.id },
-    data: {
-      moderationStatus: moderation.status,
-      moderationProvider: moderation.provider,
-      moderationProviderVersion: moderation.providerVersion,
-      moderationResult: safeResult(moderation),
-      moderationAttempts: { increment: 1 },
-      lastProcessedAt: new Date(),
-      status: moderationRejected ? "REJECTED" : moderationPassed ? "PROCESSING" : "QUARANTINED",
-      rejectedAt: moderationRejected ? new Date() : undefined,
-      failureReason: moderationPassed ? null : moderation.reason || "Moderacao nao concluiu com PASS.",
-    },
-  });
+  if (!existingModerationPassed) {
+    await prisma.uploadAsset.update({
+      where: { id: asset.id },
+      data: {
+        moderationStatus: moderation.status,
+        moderationProvider: moderation.provider,
+        moderationProviderVersion: moderation.providerVersion,
+        moderationResult: safeResult(moderation),
+        moderationAttempts: { increment: 1 },
+        lastProcessedAt: new Date(),
+        status: moderationRejected ? "REJECTED" : moderationPassed ? "PROCESSING" : "QUARANTINED",
+        rejectedAt: moderationRejected ? new Date() : undefined,
+        failureReason: moderationPassed ? null : moderation.reason || "Moderacao nao concluiu com PASS.",
+      },
+    });
+  }
   if (!moderationPassed) {
     await auditAsset(null, asset.id, "Resultado da moderacao de conteudo.", { moderation: safeResult(moderation), failClosed: !moderationRejected });
     return prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
@@ -385,6 +418,50 @@ export async function processUploadAsset(
     moderation: safeResult(moderation),
   });
   return prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
+}
+
+export async function resumeProfessionalProfileAssetsAfterApproval(input: {
+  professionalId: string;
+  userId: string;
+  actorId: string;
+}) {
+  const professional = await prisma.professional.findFirst({
+    where: {
+      id: input.professionalId,
+      userId: input.userId,
+      status: "ACTIVE",
+      verified: true,
+      kycStatus: "APPROVED",
+      user: { blocked: false },
+    },
+    select: { id: true },
+  });
+  if (!professional) throw new Error("Cadastro profissional ainda nao esta elegivel para retomar as fotos.");
+
+  const assets = await prisma.uploadAsset.findMany({
+    where: {
+      userId: input.userId,
+      category: "image",
+      folder: { startsWith: "profiles" },
+      status: { notIn: ["APPROVED", "REJECTED"] },
+    },
+    orderBy: { createdAt: "asc" },
+    take: 50,
+    select: { id: true },
+  });
+
+  const results = [] as Array<{ assetId: string; status: "fulfilled" | "rejected"; reason?: string }>;
+  for (const asset of assets) {
+    try {
+      await processUploadAsset(asset.id);
+      results.push({ assetId: asset.id, status: "fulfilled" });
+    } catch (cause) {
+      const reason = cause instanceof Error ? cause.message : "Falha desconhecida";
+      results.push({ assetId: asset.id, status: "rejected", reason });
+      await auditAsset(input.actorId, asset.id, "Falha ao retomar foto depois da aprovacao profissional.", { reason });
+    }
+  }
+  return results;
 }
 
 export async function approveUploadAsset(assetId: string, reviewerId: string, reason: string) {

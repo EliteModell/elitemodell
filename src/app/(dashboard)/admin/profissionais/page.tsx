@@ -15,6 +15,7 @@ import { AdminProfessionalCard } from "./AdminProfessionalCard";
 import { professionalAdministrativeApprovalIssues, professionalCompletion } from "@/lib/professional-completeness";
 import { deliverProfessionalApprovalSms, deliverProfessionalCommunication } from "@/lib/professional-communications";
 import { sendProfessionalLocationEmail, sendProfessionalReminderEmail } from "@/lib/professional-extra-email";
+import { resumeProfessionalProfileAssetsAfterApproval } from "@/lib/upload-quarantine";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 8;
@@ -279,6 +280,33 @@ async function reviewProfessional(formData: FormData) {
   if (!professional) return;
 
   if (action === "approve") {
+    const resumedMedia = await resumeProfessionalProfileAssetsAfterApproval({
+      professionalId: professional.id,
+      userId: professional.userId,
+      actorId: session.user.id,
+    }).catch((cause) => {
+      console.error("[professional-approval] falha ao retomar midias do perfil", {
+        professionalId: professional.id,
+        error: cause instanceof Error ? cause.message : "Falha desconhecida",
+      });
+      return [];
+    });
+    const failedMedia = resumedMedia.filter((result) => result.status === "rejected");
+    await logAudit({
+      adminId: session.user.id,
+      action: "SETTINGS_CHANGED",
+      targetType: "PROFESSIONAL",
+      targetId: professional.id,
+      changes: {
+        moderationAction: "resume-profile-media-after-approval",
+        attempted: resumedMedia.length,
+        failed: failedMedia.length,
+        failedAssetIds: failedMedia.map((result) => result.assetId),
+      },
+      reason: failedMedia.length
+        ? "Fotos retomadas parcialmente; falhas permanecem privadas para nova tentativa."
+        : "Fotos pendentes retomadas apos aprovacao profissional.",
+    });
     await deliverProfessionalCommunication({
       professionalId: id, userId: professional.userId, email: professional.user?.email, adminId: session.user.id,
       type: "PROFILE_APPROVED", notificationTitle: "Cadastro aprovado", notificationBody: "Seu cadastro foi aprovado. Complete informações opcionais no painel; a publicação continua sujeita à moderação.",
@@ -314,14 +342,16 @@ async function reviewProfessional(formData: FormData) {
   revalidatePath("/admin/profissionais");
 }
 
-export default async function AdminProfissionaisPage({ searchParams }: { searchParams?: Promise<{ status?: string; access?: string; page?: string }> }) {
+export default async function AdminProfissionaisPage({ searchParams }: { searchParams?: Promise<{ status?: string; access?: string; page?: string; professionalId?: string }> }) {
   await requireAdmin("professionals:review");
   const params = await searchParams;
   const status = params?.status;
   const accessFilter = params?.access;
   const page = pageNumber(params?.page);
+  const professionalId = params?.professionalId?.trim();
   const now = new Date();
   const where: Prisma.ProfessionalWhereInput = {};
+  if (professionalId) where.id = professionalId;
   if (status && status !== "ALL") where.status = status as "DRAFT" | "PENDING_REVIEW" | "CORRECTION_REQUIRED" | "ACTIVE" | "PAUSED" | "SUSPENDED" | "REJECTED";
   if (accessFilter === "TRIAL") Object.assign(where, { accessGrandfathered: false, freeAccessEndsAt: { gt: now } });
   if (accessFilter === "TRIAL_EXPIRED") Object.assign(where, { accessGrandfathered: false, freeAccessEndsAt: { lte: now }, billingStatus: "TRIAL_EXPIRED" });

@@ -1,10 +1,12 @@
 /* eslint-disable @next/next/no-img-element -- Admin preview is a protected dynamic endpoint. */
 
 import { revalidatePath } from "next/cache";
+import Link from "next/link";
 import { requireAdmin } from "@/lib/admin-access";
 import { reconcileProfessionalDidit } from "@/lib/didit-reconciliation";
 import { prisma } from "@/lib/prisma";
 import { manualMediaReviewBlockers } from "@/lib/manual-media-review";
+import { isProfessionalDisplayNameReady } from "@/lib/professional-display-name";
 import {
   approveUploadAsset,
   escalateUploadAsset,
@@ -27,7 +29,11 @@ async function reviewUpload(formData: FormData) {
   const assetId = String(formData.get("assetId") || "");
   const action = String(formData.get("action") || "");
   const reason = String(formData.get("reason") || "").trim();
-  if (!assetId || reason.length < 4) return;
+  if (!assetId || !["APPROVE", "REJECT", "REPROCESS", "ESCALATE"].includes(action)) return;
+  if (["REJECT", "ESCALATE"].includes(action) && reason.length < 4) return;
+  const effectiveReason = reason || (action === "APPROVE"
+    ? "Revisao visual administrativa concluida: conteudo aprovado."
+    : "Reprocessamento administrativo solicitado.");
   const scopedAsset = await prisma.uploadAsset.findFirst({
     where: {
       id: assetId,
@@ -40,13 +46,13 @@ async function reviewUpload(formData: FormData) {
   if (!scopedAsset) throw new Error("A mídia não pertence ao recorte de contas de 19 a 22/10/2026.");
 
   if (action === "APPROVE") {
-    await approveUploadAsset(assetId, session.user.id, reason);
+    await approveUploadAsset(assetId, session.user.id, effectiveReason);
   } else if (action === "REJECT") {
-    await rejectUploadAsset(assetId, session.user.id, reason);
+    await rejectUploadAsset(assetId, session.user.id, effectiveReason);
   } else if (action === "REPROCESS") {
     await processUploadAsset(assetId);
   } else if (action === "ESCALATE") {
-    await escalateUploadAsset(assetId, session.user.id, reason);
+    await escalateUploadAsset(assetId, session.user.id, effectiveReason);
   }
   revalidateModerationPaths();
 }
@@ -54,9 +60,9 @@ async function reviewUpload(formData: FormData) {
 async function batchApproveUploads(formData: FormData) {
   "use server";
   const { session } = await requireAdmin("reports:manage");
-  const reason = String(formData.get("reason") || "").trim();
+  const reason = "Revisao visual administrativa em lote concluida: conteudo aprovado.";
   const assetIds = Array.from(new Set(formData.getAll("assetIds").map(String).filter(Boolean))).slice(0, 50);
-  if (!assetIds.length || reason.length < 8) return;
+  if (!assetIds.length) return;
 
   const ownedAssets = await prisma.uploadAsset.findMany({
     where: {
@@ -143,8 +149,24 @@ function blockerReason(code: string, asset: {
   ageIdentityStatus: string;
   consentStatus: string;
   takedownStatus: string;
-  owner: { blocked: boolean; professional: { status: string; verified: boolean; kycStatus: string } | null };
+  owner: { blocked: boolean; professional: {
+    status: string;
+    verified: boolean;
+    kycStatus: string;
+    displayName: string;
+    rejectReason: string | null;
+    registrationSubmittedAt: Date | null;
+  } | null };
 }) {
+  const professional = asset.owner.professional;
+  const professionalIssues = professional ? [
+    professional.status === "DRAFT" || !professional.registrationSubmittedAt ? "cadastro ainda não concluído e enviado para análise" : null,
+    !isProfessionalDisplayNameReady(professional.displayName) ? "nome profissional ainda precisa ser informado" : null,
+    professional.kycStatus !== "APPROVED" ? `identidade e maioridade oficial ainda não aprovadas (Didit ${professional.kycStatus})` : null,
+    professional.status === "CORRECTION_REQUIRED" && professional.rejectReason ? `correção solicitada: ${professional.rejectReason}` : null,
+    !["DRAFT", "CORRECTION_REQUIRED"].includes(professional.status) && professional.status !== "ACTIVE" ? `cadastro com status ${professional.status}` : null,
+    professional.status === "ACTIVE" && !professional.verified ? "cadastro ativo ainda sem verificação administrativa" : null,
+  ].filter((reason): reason is string => Boolean(reason)) : [];
   const reasons: Record<string, string> = {
     NOT_PROFILE_IMAGE: "não é uma imagem da pasta de perfil",
     UPLOAD_INCOMPLETE: "upload ainda não foi concluído",
@@ -153,13 +175,13 @@ function blockerReason(code: string, asset: {
     CONSENT: `declaração de autoria e consentimento da mídia não está aprovada (atual: ${asset.consentStatus})`,
     TAKEDOWN: `mídia possui restrição ou retirada ativa (atual: ${asset.takedownStatus})`,
     OWNER_BLOCKED: `conta proprietária está bloqueada: ${asset.owner.blocked ? "sim" : "não"}`,
-    PROFESSIONAL_NOT_ELIGIBLE: asset.owner.professional
-      ? `cadastro profissional inelegível (status ${asset.owner.professional.status}, verificada ${asset.owner.professional.verified ? "sim" : "não"}, Didit ${asset.owner.professional.kycStatus})`
+    PROFESSIONAL_NOT_ELIGIBLE: professional
+      ? professionalIssues.join("; ") || `cadastro ainda não elegível (status ${professional.status}, verificada ${professional.verified ? "sim" : "não"})`
       : "arquivo não pertence a um cadastro profissional",
     DEPICTED_PEOPLE: "uma ou mais pessoas retratadas não têm maioridade e consentimento próprios confirmados, ou houve revogação",
     OPEN_REPORT: "existe denúncia aberta relacionada à mídia, à conta ou à profissional",
   };
-  return `${code}: ${reasons[code] ?? "controle obrigatório pendente"}`;
+  return reasons[code] ?? "controle obrigatório pendente";
 }
 
 export default async function AdminUploadModerationPage() {
@@ -177,6 +199,7 @@ export default async function AdminUploadModerationPage() {
       owner: {
         select: {
           id: true,
+          createdAt: true,
           name: true,
           email: true,
           blocked: true,
@@ -194,6 +217,8 @@ export default async function AdminUploadModerationPage() {
               kycProvider: true,
               kycSessionId: true,
               kycStatus: true,
+              rejectReason: true,
+              registrationSubmittedAt: true,
             },
           },
         },
@@ -317,11 +342,21 @@ export default async function AdminUploadModerationPage() {
                     <p style={{ color: "#b4adb0", margin: 0, lineHeight: 1.6, overflowWrap: "anywhere" }}>
                       ID profissional: {professional?.id ?? "sem cadastro"}<br />
                       ID da proprietária: {sample.owner.id}<br />
+                      Cadastro: {sample.owner.createdAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}<br />
                       Cidade: {city}{state ? `/${state}` : ""}<br />
                       Quantidade de fotos: {photos.length}
                     </p>
+                    {professional ? (
+                      <Link
+                        href={`/admin/profissionais?professionalId=${professional.id}#professional-${professional.id}`}
+                        style={{ display: "inline-block", marginTop: 8, color: "#e1a6ff", fontSize: 13, fontWeight: 850 }}
+                      >
+                        Abrir cadastro e corrigir pendências
+                      </Link>
+                    ) : null}
                   </div>
                   <div style={{ display: "grid", gap: 8, minWidth: 260 }}>
+                    <StatusPill tone={tone(professional?.status ?? "SEM CADASTRO")}>Cadastro: {professional?.status ?? "SEM CADASTRO"}</StatusPill>
                     <StatusPill tone={tone(professional?.kycStatus ?? "NOT_STARTED")}>Didit: {professional?.kycStatus ?? "SEM CADASTRO"}</StatusPill>
                     <span style={{ color: "#b4adb0", fontSize: 13 }}>Antivírus: {summarizeStatuses(photos.map(({ asset }) => asset.malwareStatus))}</span>
                     <span style={{ color: "#b4adb0", fontSize: 13 }}>Maioridade: {summarizeStatuses(photos.map(({ asset }) => asset.ageIdentityStatus))}</span>
@@ -404,8 +439,7 @@ export default async function AdminUploadModerationPage() {
                             <input
                               name="reason"
                               minLength={4}
-                              required
-                              placeholder="Justificativa obrigatória"
+                              placeholder="Motivo (obrigatório somente para rejeitar ou escalar)"
                               style={{ border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, background: "#050506", color: "#fff", padding: 10 }}
                             />
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -424,7 +458,7 @@ export default async function AdminUploadModerationPage() {
                                 disabled={blockers.length > 0}
                                 title={blockers.length
                                   ? `Aprovação desabilitada: ${blockers.map((blocker) => blockerReason(blocker, asset)).join("; ")}`
-                                  : "Habilitada após todos os gates; requer justificativa e decisão humana."}
+                                  : "Habilitada após todos os gates; o clique registra a decisão humana."}
                                 style={{ border: 0, borderRadius: 8, background: "#b72cff", color: "#080704", padding: "9px 12px", fontWeight: 950, opacity: blockers.length === 0 ? 1 : 0.45, cursor: blockers.length === 0 ? "pointer" : "not-allowed" }}
                               >
                                 Aprovar
