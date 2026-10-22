@@ -1,8 +1,12 @@
 import { z } from "zod";
-import { professionalOnboardingCompletion } from "@/lib/professional-completeness";
+import { professionalCompletion } from "@/lib/professional-completeness";
+import { isProfessionalDisplayNameReady } from "@/lib/professional-display-name";
 
 export const createProfessionalSchema = z.object({
-  displayName: z.string().min(2),
+  displayName: z.string().trim().min(2, "Informe seu nome profissional.").refine(
+    isProfessionalDisplayNameReady,
+    "Esse nome não pode ser usado como nome profissional.",
+  ),
   bio: z.string().optional().default(""),
   city: z.string().min(2),
   state: z.string().min(2),
@@ -70,7 +74,7 @@ export const createProfessionalSchema = z.object({
   kycSessionId: z.string().optional(),
   kycStatus: z.string().optional(),
 }).superRefine((data, ctx) => {
-  const result = professionalOnboardingCompletion({
+  const result = professionalCompletion({
     ...data,
     image: data.image,
     emailVerified: true,

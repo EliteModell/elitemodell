@@ -73,7 +73,7 @@ export default function ProfessionalVerificationSteps(props: Props) {
         </Section>
         <div style={{ padding: "14px 18px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 10, marginTop: 8 }}>
           <p style={{ margin: 0, fontSize: 12, color: "#b4adb0", lineHeight: 1.7 }}>
-            Ao enviar, você confirma ter <strong>18 anos ou mais</strong> e concorda com os Termos de Uso da plataforma. Seu perfil fica em análise por até <strong>3 dias úteis</strong> e só ficará visível após aprovação.
+            Ao enviar, você confirma ter <strong>18 anos ou mais</strong> e concorda com os Termos de Uso da plataforma. Seu perfil permanece privado até concluir as verificações obrigatórias e receber a aprovação final da equipe Elite Modell.
           </p>
         </div>
       </div>
@@ -92,7 +92,7 @@ export default function ProfessionalVerificationSteps(props: Props) {
         ]} />
       </Section>
 
-      <Section title="🔐 Verifique sua identidade" desc="Para aumentar a segurança da Elite Modell, precisamos confirmar sua identidade antes de enviar seu cadastro para análise.">
+      <Section title="🔐 Verifique sua identidade" desc="Para aumentar a segurança da Elite Modell, precisamos confirmar sua identidade. Se a Didit ainda estiver analisando, você poderá concluir o cadastro sem reenviar os dados.">
         <div style={{ display: "flex", gap: 14, alignItems: "flex-start", background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 12, padding: "16px 18px", marginBottom: 24 }}>
           <span style={{ fontSize: 22, flexShrink: 0, marginTop: 1 }}>🛡️</span>
           <div>
@@ -108,7 +108,7 @@ export default function ProfessionalVerificationSteps(props: Props) {
             <button data-field="kycSessionId" type="button" onClick={props.onStartVerification} disabled={cannotStart} style={{ width: "100%", minHeight: 52, padding: "14px 16px", borderRadius: 12, border: "none", background: cannotStart ? "#676064" : GOLD, color: cannotStart ? "#e7e0ea" : "#080808", fontSize: 15, fontWeight: 800, cursor: cannotStart ? "not-allowed" : "pointer", marginBottom: 14 }}>
               {props.startingVerification ? "Iniciando verificação..." : props.diditPending ? "Verificação em análise" : props.diditRejected && props.diditRetryAllowed ? "Tentar novamente" : props.diditRejected ? "Fale com o suporte" : "Verificar minha identidade"}
             </button>
-            {props.diditPending ? <div style={{ padding: "12px 14px", borderRadius: 10, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, fontSize: 13, fontWeight: 700, lineHeight: 1.55 }}>Documentos enviados com sucesso.<span style={{ display: "block", color: "#d8cfdd", fontSize: 12, fontWeight: 500, marginTop: 4 }}>Sua identidade está em análise. Não é necessário enviar novamente. Assim que a análise for concluída, você poderá continuar.</span></div> : null}
+            {props.diditPending ? <div style={{ padding: "12px 14px", borderRadius: 10, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: GOLD, fontSize: 13, fontWeight: 700, lineHeight: 1.55 }}>Documentos enviados com sucesso.<span style={{ display: "block", color: "#d8cfdd", fontSize: 12, fontWeight: 500, marginTop: 4 }}>Sua identidade está em análise. Não é necessário enviar novamente; você já pode continuar e concluir o cadastro.</span></div> : null}
             {props.diditRejected ? <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", color: "#ff8b8b", fontSize: 13, fontWeight: 700, lineHeight: 1.55 }} role="alert">{props.diditMessage ?? "Não foi possível concluir sua verificação de identidade."}{props.diditRetryAllowed ? <span style={{ display: "block", color: "#d8cfdd", fontSize: 12, fontWeight: 500, marginTop: 4 }}>Corrija o problema indicado antes de tentar novamente pelo botão acima.</span> : null}</div> : null}
             {!props.diditAvailable ? <div style={{ padding: "12px 14px", borderRadius: 10, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: "#e8b8ff", fontSize: 13, fontWeight: 700, lineHeight: 1.5 }}>A verificação Didit está temporariamente indisponível. Seu cadastro permanece salvo; tente novamente em alguns minutos.</div> : null}
             {props.diditRejected && <p><a href="mailto:suporte@elitemodell.com.br" style={{ color: "#e8b8ff" }}>Falar com o suporte</a></p>}

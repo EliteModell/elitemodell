@@ -24,7 +24,7 @@ import { publicServiceLocation } from "@/lib/professional-location";
 import { controlledMediaAssetId, filterApprovedProfilePhotos, normalizeControlledMediaUrl } from "@/lib/public-professional-media";
 import { deliverProfessionalSubmissionReceipt } from "@/lib/professional-submission-receipt";
 import { logAudit } from "@/lib/audit";
-import { professionalOnboardingCompletion } from "@/lib/professional-completeness";
+import { professionalCompletion, issueChecklist } from "@/lib/professional-completeness";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import { refreshExpiredProfessionalBoosts } from "@/lib/professional-timers";
 
@@ -266,6 +266,8 @@ export async function POST(req: NextRequest) {
         status: existing.status,
         alreadySubmitted: true,
         receiptStatus,
+        identityPending: existing.kycStatus !== "APPROVED",
+        identityStatus: existing.kycStatus,
       });
     }
     return NextResponse.json({ error: "Você já tem um perfil profissional." }, { status: 409 });
@@ -280,8 +282,7 @@ export async function POST(req: NextRequest) {
       select: { name: true, category: true, email: true, emailVerified: true, clientStatus: true, kycSessionId: true },
     });
 
-    // O telefone já foi verificado na entrada do fluxo; e-mail é opcional para o onboarding.
-    if (!user) {
+    if (!user?.emailVerified) {
       return NextResponse.json(
         {
           error: "Confirme seu e-mail antes de enviar o cadastro para análise.",
@@ -291,13 +292,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const completion = professionalOnboardingCompletion({ ...data, emailVerified: user?.emailVerified });
+    const completion = professionalCompletion({ ...data, emailVerified: user.emailVerified });
     if (completion.profileIssues.length) {
       return NextResponse.json({
         error: "Seu cadastro ainda não pode ser enviado.",
         code: "profile_incomplete",
         completion,
-        checklist: completion.issues,
+        checklist: issueChecklist({ ...data, emailVerified: user.emailVerified }),
       }, { status: 422 });
     }
 

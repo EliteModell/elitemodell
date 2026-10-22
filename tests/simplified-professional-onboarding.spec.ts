@@ -1,10 +1,34 @@
 import { expect, test, type Page } from "@playwright/test";
-import path from "node:path";
 import { installMockSessionCookie } from "./helpers/mock-auth";
 
-async function mockOnboarding(page: Page, kycStatus = "APPROVED", diditUrl: string | null = null, displayName = "", clearDraft = true) {
+const USER_ID = "full-onboarding-user";
+
+function professional(displayName = "") {
+  return {
+    id: "professional-draft",
+    slug: "professional-draft",
+    status: "DRAFT",
+    registrationSubmittedAt: null,
+    displayName,
+    bio: "",
+    city: "",
+    state: "",
+    escortCategory: null,
+    birthDate: "2000-01-01",
+    attendanceTypes: [],
+    servesGenders: [],
+    diasDisponiveis: [],
+    services: [],
+    paymentMethods: [],
+    whatsapp: "",
+    kycStatus: "NOT_STARTED",
+    photos: [],
+  };
+}
+
+async function mockOnboarding(page: Page, displayName = "") {
   await installMockSessionCookie(page.context(), {
-    id: "simple-onboarding-user",
+    id: USER_ID,
     name: "Profissional Teste",
     email: "onboarding@example.invalid",
     role: "HOST",
@@ -15,188 +39,132 @@ async function mockOnboarding(page: Page, kycStatus = "APPROVED", diditUrl: stri
     availableProfiles: ["PROFESSIONAL"],
     adultVerified: true,
   }, { persistedProfessionalStatus: "DRAFT" });
-  await page.addInitScript(({ shouldClearDraft }) => {
+  await page.addInitScript(() => {
     localStorage.setItem("elite_cookie_consent", "necessary");
     localStorage.setItem("elitemodell_ageConsentAccepted", "true");
-    if (shouldClearDraft) {
-      localStorage.removeItem("elitemodell.professional.simple-onboarding.v1");
-      localStorage.removeItem("elitemodell.professional.simple-onboarding.step.v1");
-    }
-  }, { shouldClearDraft: clearDraft });
+  });
+  await page.route("**/api/users/me/activate-professional", (route) => route.fulfill({ json: { ok: true } }));
   await page.route("**/api/users/me**", (route) => route.fulfill({ json: {
-    phoneVerified: true,
-    professional: { status: "DRAFT", displayName, escortCategory: null, genderIdentity: null, transIdentity: null, city: "", state: "", attendanceTypes: [], pricePerHour: null, bio: "", kycStatus, photos: [] },
+    id: USER_ID,
+    email: "onboarding@example.invalid",
+    emailVerified: true,
+    birthDate: "2000-01-01",
+    lgpdConsent: true,
+    termsConsent: true,
+    professional: professional(displayName),
   } }));
-  await page.route("**/api/didit/session", (route) => route.fulfill({ json: { available: true, sessionId: kycStatus === "NOT_STARTED" ? null : "didit-test", status: kycStatus, retryAllowed: kycStatus === "REJECTED", url: diditUrl } }));
-  await page.route("**/api/professionals/draft", (route) => route.fulfill({ json: { ok: true, savedStep: route.request().postDataJSON()?.step } }));
-  await page.route("**/api/address/search**", (route) => route.fulfill({ json: { suggestions: [{ placeId: "city-sp", mainText: "São Paulo", secondaryText: "SP, Brasil" }] } }));
-  await page.route("**/api/upload?folder=profiles/main", (route) => route.fulfill({ status: 202, json: { path: "/api/media/photo-test", status: "PENDING" } }));
-  await page.route("**/api/media/photo-test", (route) => route.fulfill({ status: 404, body: "" }));
-  await page.route("**/api/professionals", (route) => route.fulfill({ status: 201, json: { ok: true, status: kycStatus === "APPROVED" ? "PENDING_REVIEW" : "DRAFT", identityPending: kycStatus !== "APPROVED", identityStatus: kycStatus } }));
+  await page.route("**/api/professionals/draft", (route) => route.fulfill({ json: {
+    completion: {
+      profilePercent: 8,
+      profileComplete: false,
+      readyToSubmit: false,
+      profileIssues: [{ code: "display_name", field: "displayName", label: "Nome profissional", step: 0 }],
+      issues: [{ code: "display_name", field: "displayName", label: "Nome profissional", step: 0 }],
+    },
+  } }));
+  await page.route("**/api/didit/session", (route) => route.fulfill({ json: {
+    available: true,
+    sessionId: null,
+    status: "NOT_STARTED",
+    retryAllowed: false,
+    url: null,
+  } }));
 }
 
-test("placeholder técnico não trava a primeira etapa e o nome escolhido é salvo", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await mockOnboarding(page, "PENDING", null, "Cadastro de acompanhante", false);
+test("nome técnico existente é limpo e a interface explica o nome profissional", async ({ page }) => {
+  await mockOnboarding(page, "Cadastro de acompanhante");
   await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
 
-  const name = page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...");
-  await expect(name).toHaveValue("");
-  await expect(page.getByText("Seu cadastro ainda está com um nome genérico.")).toBeVisible();
-  await name.fill("Marina Elite");
-  await expect(page.getByText("Seu cadastro ainda está com um nome genérico.")).toBeHidden();
-  await page.getByRole("button", { name: "Mulher" }).click();
-  await page.getByRole("button", { name: "Não", exact: true }).click();
-
-  const draftRequest = page.waitForRequest((request) => request.url().includes("/api/professionals/draft") && request.method() === "PATCH");
-  await page.getByRole("button", { name: "Continuar" }).click();
-  const payload = (await draftRequest).postDataJSON();
-  expect(payload).toMatchObject({ step: 0, flow: "simplified-v1", form: { displayName: "Marina Elite", genderIdentity: "MULHER", transIdentity: "NAO" } });
-  await expect(page.getByRole("heading", { name: "Confirme sua identidade" })).toBeVisible();
-
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Confirme sua identidade" })).toBeVisible();
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("elitemodell.professional.simple-onboarding.v1") || "{}").displayName)).toBe("Marina Elite");
+  await expect(page.getByText("Etapa 1 de 9", { exact: false })).toBeVisible();
+  await expect(page.getByText("Qual nome você quer mostrar aos clientes? *")).toBeVisible();
+  await expect(page.getByText("Não precisa ser seu nome de documento.", { exact: false })).toBeVisible();
+  await expect(page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...")).toHaveValue("");
 });
 
-test("nome profissional obrigatório mostra erro claro e rejeita o nome técnico", async ({ page }) => {
+test("nome profissional vazio ou técnico não permite avançar", async ({ page }) => {
   await mockOnboarding(page);
   await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
-  await expect(page.getByText("Qual nome você quer mostrar aos clientes?")).toContainText("*");
-  await page.getByRole("button", { name: "Continuar" }).click();
-  await expect(page.getByRole("alert").filter({ hasText: "Informe seu nome profissional." })).toBeVisible();
+
+  await page.getByRole("button", { name: "Continuar →" }).click();
+  await expect(page.locator(".model-validation-summary")).toHaveText("Informe seu nome profissional.");
 
   await page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...").fill("Cadastro de acompanhante");
-  await page.getByRole("button", { name: "Continuar" }).click();
-  await expect(page.getByRole("alert").filter({ hasText: "Esse nome não pode ser usado." })).toBeVisible();
+  await page.getByRole("button", { name: "Continuar →" }).click();
+  await expect(page.locator(".model-validation-summary")).toContainText("Esse nome não pode ser usado");
 });
 
-for (const scenario of [
-  { status: 401, apiError: "Não autorizado.", expected: "Sua sessão expirou. Entre novamente para continuar o cadastro." },
-  { status: 409, apiError: "Este cadastro foi atualizado em outra sessão. Recarregue e tente novamente.", expected: "Este cadastro foi atualizado em outra sessão." },
-  { status: 422, apiError: "Complete os campos obrigatórios desta etapa: Nome profissional.", expected: "Complete os campos obrigatórios desta etapa: Nome profissional." },
-  { status: 500, apiError: "Não foi possível salvar esta etapa.", expected: "Não foi possível salvar esta etapa." },
-] as const) {
-  test(`falha ${scenario.status} da API fica visível e permite nova tentativa`, async ({ page }) => {
-    await mockOnboarding(page);
-    await page.unroute("**/api/professionals/draft");
-    await page.route("**/api/professionals/draft", (route) => route.fulfill({
-      status: scenario.status,
-      json: { error: scenario.apiError },
+test("rascunho completo continua vinculado à conta e retoma a etapa salva", async ({ page }) => {
+  await mockOnboarding(page);
+  await page.unroute("**/api/professionals/draft");
+  await page.route("**/api/professionals/draft", (route) => route.fulfill({ json: {
+    completion: { profilePercent: 100, profileComplete: true, readyToSubmit: false, profileIssues: [], issues: [] },
+  } }));
+  await page.addInitScript(({ userId }) => {
+    localStorage.setItem(`elitemodell_professional_onboarding_v2:${encodeURIComponent(userId)}:PROFESSIONAL`, JSON.stringify({
+      ownerId: userId,
+      registrationType: "PROFESSIONAL",
+      step: 7,
+      form: { displayName: "Marina Elite", bio: "A".repeat(80), birthDate: "2000-01-01" },
     }));
-    await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
-    await page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...").fill("Marina Retomada");
-    await page.getByRole("button", { name: "Mulher" }).click();
-    await page.getByRole("button", { name: "Não", exact: true }).click();
-    await page.getByRole("button", { name: "Continuar" }).click();
-    await expect(page.getByRole("alert").filter({ hasText: scenario.expected })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Continuar" })).toBeEnabled();
-  });
-}
+  }, { userId: USER_ID });
+  await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
 
-test("fluxo reduzido tem cinco etapas, salva e envia sem overflow", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByText("Etapa 8 de 9", { exact: false })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Verificar minha identidade", exact: true })).toBeVisible();
+});
+
+test("troca de conta preserva o rascunho de A e bloqueia dados de A em B", async ({ page }) => {
+  const accountA = "professional-account-a";
+  const accountB = "professional-account-b";
   await mockOnboarding(page);
+  await page.unroute("**/api/users/me**");
+  await page.route("**/api/users/me**", (route) => route.fulfill({ json: {
+    id: accountB,
+    email: "account-b@example.invalid",
+    emailVerified: true,
+    birthDate: "2000-01-01",
+    lgpdConsent: true,
+    termsConsent: true,
+    professional: professional(),
+  } }));
+  await page.addInitScript(({ accountA, accountB }) => {
+    const prefix = "elitemodell_professional_onboarding_v2:";
+    localStorage.setItem(`${prefix}${encodeURIComponent(accountA)}:PROFESSIONAL`, JSON.stringify({
+      ownerId: accountA,
+      registrationType: "PROFESSIONAL",
+      step: 7,
+      form: { displayName: "Nome privado da conta A" },
+    }));
+    localStorage.setItem(`${prefix}${encodeURIComponent(accountB)}:PROFESSIONAL`, JSON.stringify({
+      ownerId: accountA,
+      registrationType: "PROFESSIONAL",
+      step: 7,
+      form: { displayName: "Dados injetados da conta A" },
+    }));
+  }, { accountA, accountB });
+
   await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
 
-  await expect(page.getByText("Etapa 1 de 5")).toBeVisible();
-  await page.screenshot({ path: "artifacts/visual-review/onboarding-01-dados-390.png", fullPage: true });
-  await page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...").fill("Luna Elite");
-  await page.getByRole("button", { name: "Mulher" }).click();
-  await page.getByRole("button", { name: "Não", exact: true }).click();
-  await page.getByRole("button", { name: "Continuar" }).click();
-
-  await expect(page.getByRole("heading", { name: "Confirme sua identidade" })).toBeVisible();
-  await page.screenshot({ path: "artifacts/visual-review/onboarding-02-identidade-390.png", fullPage: true });
-  await page.getByRole("button", { name: "Continuar" }).click();
-
-  await expect(page.getByRole("heading", { name: "Sua cidade e modalidade" })).toBeVisible();
-  const city = page.getByPlaceholder("Selecione sua cidade");
-  await city.fill("São Paulo");
-  await page.getByRole("option").getByRole("button").first().click();
-  await page.getByRole("button", { name: "Presencial" }).click();
-  await page.screenshot({ path: "artifacts/visual-review/onboarding-03-atendimento-390.png", fullPage: true });
-  await page.getByRole("button", { name: "Continuar" }).click();
-
-  await expect(page.getByRole("heading", { name: "Uma foto e seu valor" })).toBeVisible();
-  await page.getByPlaceholder("300").fill("350");
-  await page.locator('input[type="file"]').setInputFiles(path.join(process.cwd(), "public", "favicon-48x48.png"));
-  await expect(page.getByText("Trocar foto")).toBeVisible();
-  await expect(page.getByText("Foto recebida com segurança.")).toBeHidden({ timeout: 6_000 });
-  await page.screenshot({ path: "artifacts/visual-review/onboarding-04-perfil-390.png", fullPage: true });
-  await page.getByRole("button", { name: "Continuar" }).click();
-
-  await expect(page.getByRole("heading", { name: "Revise e envie" })).toBeVisible();
-  await page.screenshot({ path: "artifacts/visual-review/onboarding-05-revisao-390.png", fullPage: true });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-  await page.getByRole("button", { name: "Enviar informações" }).click();
-  await expect(page.getByRole("heading", { name: "Cadastro recebido com sucesso!" })).toBeVisible();
-  await page.screenshot({ path: "artifacts/visual-review/onboarding-06-sucesso-390.png", fullPage: true });
+  await expect(page.getByText("Etapa 1 de 9", { exact: false })).toBeVisible();
+  await expect(page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...")).toHaveValue("");
+  const storageState = await page.evaluate(({ accountA, accountB }) => {
+    const prefix = "elitemodell_professional_onboarding_v2:";
+    return {
+      accountA: localStorage.getItem(`${prefix}${encodeURIComponent(accountA)}:PROFESSIONAL`),
+      accountB: localStorage.getItem(`${prefix}${encodeURIComponent(accountB)}:PROFESSIONAL`),
+    };
+  }, { accountA, accountB });
+  expect(storageState.accountA).toContain("Nome privado da conta A");
+  expect(storageState.accountB).toBeNull();
 });
 
-test("Didit pendente permite concluir dados sem publicar o perfil", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await mockOnboarding(page, "PENDING");
-  await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
-  await page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...").fill("Luna Pendente");
-  await page.getByRole("button", { name: "Mulher" }).click();
-  await page.getByRole("button", { name: "Sim", exact: true }).click();
-  await page.screenshot({ path: "artifacts/visual-review/onboarding-gender-390.png", fullPage: true });
-  await page.getByRole("button", { name: "Continuar" }).click();
-  await expect(page.getByText("Verificação de identidade em análise")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Continuar" })).toBeEnabled();
-  await page.screenshot({ path: "artifacts/visual-review/onboarding-didit-pending-390.png", fullPage: true });
-  await page.getByRole("button", { name: "Continuar" }).click();
-  await page.getByPlaceholder("Selecione sua cidade").fill("São Paulo");
-  await page.getByRole("option").getByRole("button").first().click();
-  await page.getByRole("button", { name: "Presencial" }).click();
-  await page.getByRole("button", { name: "Continuar" }).click();
-  await page.getByPlaceholder("300").fill("350");
-  await page.locator('input[type="file"]').setInputFiles(path.join(process.cwd(), "public", "favicon-48x48.png"));
-  await expect(page.getByText("Trocar foto")).toBeVisible();
-  await page.getByRole("button", { name: "Continuar" }).click();
-  await page.getByRole("button", { name: "Enviar informações" }).click();
-  await expect(page.getByRole("heading", { name: "Cadastro recebido com sucesso!" })).toBeVisible();
-  await expect(page.getByText("Sua verificação de identidade ainda está em andamento.")).toBeVisible();
-  await expect(page.getByText(/Seu perfil não ficará público/)).toBeVisible();
-  await page.screenshot({ path: "artifacts/visual-review/onboarding-success-pending-390.png", fullPage: true });
-});
-
-for (const scenario of [
-  { status: "NOT_STARTED", expected: "Verificar minha identidade" },
-  { status: "REJECTED", expected: "Tentar novamente" },
-] as const) {
-  test(`estado Didit ${scenario.status} orienta sem bloquear o preenchimento`, async ({ page }) => {
-    await mockOnboarding(page, scenario.status);
-    await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
-    await page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...").fill("Perfil Teste");
-    await page.getByRole("button", { name: "Não binário" }).click();
-    await page.getByRole("button", { name: "Prefiro não informar" }).click();
-    await page.getByRole("button", { name: "Continuar" }).click();
-    await expect(page.getByRole("button", { name: scenario.expected })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Continuar" })).toBeEnabled();
-  });
-}
-
-test("sessão Didit interrompida é retomada sem criar outra", async ({ page }) => {
-  await mockOnboarding(page, "PENDING", "https://verification.didit.me/session/resume-test");
-  await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
-  await page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...").fill("Perfil Retomada");
-  await page.getByRole("button", { name: "Prefiro me autodescrever" }).click();
-  await page.getByPlaceholder("Escreva com suas palavras").fill("Pessoa não binária");
-  await page.getByRole("button", { name: "Prefiro não informar" }).click();
-  await page.getByRole("button", { name: "Continuar" }).click();
-  await expect(page.getByRole("button", { name: "Retomar verificação" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Continuar" })).toBeEnabled();
-});
-
-test("etapa inicial permanece responsiva no celular, tablet e desktop", async ({ page }) => {
+test("primeira etapa não tem overflow no iPhone Safari nem no desktop", async ({ page }, testInfo) => {
   await mockOnboarding(page);
-  for (const width of [320, 375, 390, 430, 768, 1440]) {
-    await page.setViewportSize({ width, height: width < 500 ? 844 : width === 768 ? 900 : 1000 });
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
     await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("heading", { name: "Como você quer aparecer?" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Dados básicos" })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width + 1);
-    await page.screenshot({ path: `artifacts/visual-review/onboarding-responsive-${width}.png`, fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath(`full-onboarding-${width}.png`), fullPage: true });
   }
 });

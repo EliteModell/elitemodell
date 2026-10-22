@@ -36,12 +36,12 @@ export default async function ProfessionalAnalysisPage() {
   const professional = access.user.professional;
 
   if (!professional) redirect(ACCOUNT_ROUTES.onboardingAcompanhante);
-  if (professional.status === "DRAFT") redirect(ACCOUNT_ROUTES.onboardingAcompanhante);
   if (professional.status === "ACTIVE" || professional.status === "PAUSED") redirect(ACCOUNT_ROUTES.dashboardAcompanhante);
 
   const identity = await prisma.professional.findUnique({
-    where: { id: professional.id }, select: { kycProvider: true, kycSessionId: true },
+    where: { id: professional.id }, select: { kycProvider: true, kycSessionId: true, registrationSubmittedAt: true },
   });
+  if (professional.status === "DRAFT" && !identity?.registrationSubmittedAt) redirect(ACCOUNT_ROUTES.onboardingAcompanhante);
   let identityStatus: string | null = null;
   let identityMessage: string | null = null;
   if (identity?.kycProvider === "DIDIT" && identity.kycSessionId) {

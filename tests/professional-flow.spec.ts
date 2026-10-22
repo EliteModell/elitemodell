@@ -147,8 +147,7 @@ test.describe("Didit corrigida", () => {
     await expect(page.getByRole("button", { name: "Tentar novamente" })).toHaveCount(0);
   });
 
-  test("atualiza resultado sem recarregar e permite enviar cadastro para analise", async ({ page }) => {
-    let approved = false;
+  test("permite concluir com Didit pendente e informa que o perfil ainda nao esta publicado", async ({ page }) => {
     let submission: Record<string, unknown> | null = null;
     let savedStep: number | null = null;
     // This browser scenario simulates Didit and submission, including the new
@@ -157,28 +156,30 @@ test.describe("Didit corrigida", () => {
       if (route.request().method() === "PATCH") {
         savedStep = route.request().postDataJSON().step;
       }
-      await route.fulfill({ json: { completion: { issues: [], profileIssues: [], profilePercent: 100, profileComplete: true, readyToSubmit: approved } } });
+      await route.fulfill({ json: { completion: { issues: [], profileIssues: [], profilePercent: 100, profileComplete: true, readyToSubmit: false } } });
     });
     await page.route("**/api/didit/session", route => route.fulfill({ json: {
-      available: true, sessionId: "test-session", status: approved ? "APPROVED" : "PENDING",
-      retryAllowed: false, message: approved ? null : "Seus documentos estão em análise de identidade.", url: null,
+      available: true, sessionId: "test-session", status: "PENDING",
+      retryAllowed: false, message: "Seus documentos estão em análise de identidade.", url: null,
     } }));
     await page.route("**/api/professionals", async route => {
       submission = route.request().postDataJSON();
-      await route.fulfill({ status: 201, json: { status: "PENDING_REVIEW", receiptStatus: "SENT" } });
+      await route.fulfill({ status: 201, json: {
+        status: "DRAFT",
+        receiptStatus: "SENT",
+        identityPending: true,
+        identityStatus: "PENDING",
+      } });
     });
     await page.goto("/profissional/novo?didit=returned", { waitUntil: "domcontentloaded" });
-    const pendingActions = page.getByRole("button", { name: "Verificação em análise" });
-    await expect(pendingActions).toHaveCount(2);
-    await expect(pendingActions.first()).toBeDisabled();
-    await expect(pendingActions.nth(1)).toBeDisabled();
-    approved = true;
-    await expect(page.getByText("✓ Identidade verificada", { exact: true })).toBeVisible({ timeout: 25_000 });
-    await page.getByRole("button", { name: /Próximo|Continuar/ }).click();
+    const continuePending = page.getByRole("button", { name: "Continuar com verificação em análise →" });
+    await expect(continuePending).toBeEnabled();
+    await continuePending.click();
     expect(savedStep).toBe(7);
-    await page.getByRole("button", { name: "Enviar cadastro para análise" }).click();
-    await expect(page.getByRole("heading", { name: /Cadastro 100% conclu/ })).toBeVisible();
-    await expect(page.getByText(/Status: Em an/)).toBeVisible();
+    await page.getByRole("button", { name: "Concluir cadastro" }).click();
+    await expect(page.getByRole("heading", { name: "Cadastro recebido com sucesso!" })).toBeVisible();
+    await expect(page.getByText("Verificações em andamento", { exact: true })).toBeVisible();
+    await expect(page.getByText("A verificação de identidade e maioridade ainda não foi aprovada.", { exact: true })).toBeVisible();
     expect(submission).toMatchObject({ kycSessionId: "test-session" });
   });
 });

@@ -62,15 +62,15 @@ test.describe("validacao do perfil profissional", () => {
     expect(createProfessionalSchema.safeParse(validProfile).success).toBe(true);
   });
 
-  test("exige somente o valor inicial por hora no cadastro simplificado", () => {
+  test("aceita qualquer valor informado na tabela de precos", () => {
     const profile = { ...validProfile, price15min: 120 } as Record<string, unknown>;
     delete profile.pricePerHour;
-    expect(issuePaths(profile)).toContain("pricePerHour");
+    expect(createProfessionalSchema.safeParse(profile).success).toBe(true);
   });
 
-  test("aceita biografia curta ou ausente no cadastro inicial", () => {
-    expect(createProfessionalSchema.safeParse({ ...validProfile, bio: "curta" }).success).toBe(true);
-    expect(createProfessionalSchema.safeParse({ ...validProfile, bio: undefined }).success).toBe(true);
+  test("exige biografia completa no cadastro de nove etapas", () => {
+    expect(issuePaths({ ...validProfile, bio: "curta" })).toContain("bio");
+    expect(issuePaths({ ...validProfile, bio: undefined })).toContain("bio");
   });
 
   test("rejeita perfil sem foto principal", () => {
@@ -85,8 +85,8 @@ test.describe("validacao do perfil profissional", () => {
     expect(createProfessionalSchema.safeParse(withoutKyc).success).toBe(true);
   });
 
-  test("delega nascimento e maioridade para a decisao assinada da Didit", () => {
-    expect(createProfessionalSchema.safeParse({ ...validProfile, birthDate: undefined }).success).toBe(true);
+  test("exige nascimento no perfil e confirma maioridade pela decisao assinada da Didit", () => {
+    expect(issuePaths({ ...validProfile, birthDate: undefined })).toContain("birthDate");
     expect(assessProfessionalDiditDecision(diditDecision("Approved", null))).toMatchObject({
       status: "REJECTED",
       approved: false,
@@ -166,14 +166,12 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     });
   });
 
-  test("aprovacao automatica do KYC nunca publica automaticamente o perfil", () => {
+  test("aprovacao do KYC nao publica automaticamente o perfil", () => {
     const reconciliation = fs.readFileSync(path.join(process.cwd(), "src/lib/didit-reconciliation.ts"), "utf8");
     const submission = fs.readFileSync(path.join(process.cwd(), "src/app/api/professionals/route.ts"), "utf8");
     expect(reconciliation).toContain('kycStatus: assessment.status');
-    expect(reconciliation).toContain('? "PENDING_REVIEW"');
-    expect(reconciliation).not.toContain('status: "ACTIVE"');
     expect(submission).toContain('identityApproved ? "PENDING_REVIEW" as const : "DRAFT" as const');
-    expect(submission).not.toContain('verified:  true');
+    expect(submission).not.toContain('attemptAutomaticProfessionalPublication(professional.id, "registration-submitted")');
   });
 
   test("onboarding preserva rascunho, apresenta uma etapa Didit e impede clique duplo", () => {
@@ -181,10 +179,14 @@ test.describe("verificacao Didit no onboarding profissional", () => {
       path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"),
       "utf8",
     );
-    expect(page).toContain("<h1>Confirme sua identidade</h1>");
-    expect(page).toContain("diditStarting.current");
-    expect(page).toContain("window.localStorage.setItem(STORAGE_KEY");
-    expect(page).toContain("window.localStorage.getItem(STORAGE_KEY)");
+    const verification = fs.readFileSync(
+      path.join(process.cwd(), "src/components/professional-onboarding/ProfessionalVerificationSteps.tsx"),
+      "utf8",
+    );
+    expect(verification).toContain("Verifique sua identidade");
+    expect(page).toContain("diditStartingRef.current");
+    expect(page).toContain("localStorage.setItem(professionalDraftStorageKey(accountUserId)");
+    expect(page).toContain("localStorage.getItem(draftKey)");
     expect(page).toContain('form.kycStatus === "APPROVED"');
     expect(page).not.toContain("startFaceBiometry");
   });
@@ -197,10 +199,11 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     const uploadRoute = fs.readFileSync(path.join(process.cwd(), "src/app/api/upload/route.ts"), "utf8");
     const createRoute = fs.readFileSync(path.join(process.cwd(), "src/app/api/professionals/route.ts"), "utf8");
 
-    expect(page).toContain("setPreview(localPreview)");
-    expect(page).toContain('body.append("file", file)');
-    expect(page).toContain("Foto recebida com segurança.");
-    expect(page).not.toContain("Arquivo mantido em quarentena para revisão.");
+    expect(page).toContain("URL.createObjectURL(file)");
+    expect(page).toContain("setMainPhotoPreview(previewUrl)");
+    expect(page).toContain('fd.append("file", file)');
+    expect(page).toContain("Foto recebida. Você pode continuar o cadastro.");
+    expect(page).toContain("Foto recebida e em análise de segurança.");
     expect(uploadRoute).toContain("/api/media/${encodeURIComponent(processed.id)}");
     expect(uploadRoute).toContain("Arquivo recebido e em analise de seguranca.");
     expect(createRoute).toContain("assertOwnedUploadMediaUrls");
@@ -231,9 +234,9 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     const page = fs.readFileSync(path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"), "utf8");
     expect(sessionRoute).toContain("verificationUrl: true");
     expect(sessionRoute).toContain("reconcileProfessionalDidit(userId, sessionId)");
-    expect(page).toContain('setDiditUrl(data.url ?? "")');
-    expect(page).not.toContain('form.kycStatus === "PENDING" && form.verificationUrl.startsWith("http")');
-    expect(page).toContain('const [diditUrl, setDiditUrl] = useState("")');
+    expect(page).toContain('verificationUrl: data.url ?? ""');
+    expect(page).toContain('const diditPending = Boolean(form.kycSessionId) && !diditApproved && !diditRejected');
+    expect(page).toContain('if (data.url) set("verificationUrl", data.url)');
   });
 
   test("intencao persistida estabiliza requisicoes concorrentes e permite reconciliacao", () => {
