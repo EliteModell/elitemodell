@@ -37,6 +37,11 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "professional-pricing",
+      testMatch: "**/professional-pricing.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "admin-exact-account-lookup",
       testMatch: "**/admin-exact-account-lookup.spec.ts",
       use: { browserName: "chromium" },

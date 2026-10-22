@@ -145,7 +145,8 @@ export async function GET(req: NextRequest) {
         whatsapp: true,
         hidePhone: true,
         contactVisibility: true,
-        priceMin: true, pricePerHour: true, price30min: true,
+        priceMin: true, price15min: true, pricePerHour: true, price30min: true,
+        price2h: true, priceOvernight: true, priceWebcam: true,
         attendanceTypes: true, servesGenders: true,
         services: true,
         rating: true, totalReviews: true,
@@ -256,7 +257,7 @@ export async function POST(req: NextRequest) {
 
   const existing = await prisma.professional.findUnique({
     where: { userId: session.user.id },
-    select: { id: true, status: true, kycProvider: true, kycSessionId: true, kycStatus: true, user: { select: { email: true, name: true } } },
+    select: { id: true, status: true, kycProvider: true, kycSessionId: true, kycStatus: true, presentationVideoUrl: true, presentationVideoStatus: true, user: { select: { email: true, name: true } } },
   });
   if (existing && !["DRAFT", "CORRECTION_REQUIRED"].includes(existing.status)) {
     if (existing.status === "PENDING_REVIEW") {
@@ -326,13 +327,19 @@ export async function POST(req: NextRequest) {
     }
     const identityApproved = diditVerification.status === "APPROVED";
 
-    const { specialties, services, phone, whatsapp, image, galleryUrls, ...profileData } = data;
+    const { specialties, services, phone, whatsapp, image, galleryUrls, presentationVideoUrl, ...profileData } = data;
     await assertOwnedUploadMediaUrls({
       urls: [image, ...galleryUrls].filter((url): url is string => Boolean(url)),
       requestUrl: req.url,
       ownerId: session.user.id,
       allowedFolderPrefixes: ["profiles"],
     });
+    if (presentationVideoUrl) {
+      await assertOwnedUploadMediaUrls({
+        urls: [presentationVideoUrl], requestUrl: req.url, ownerId: session.user.id,
+        allowedFolderPrefixes: ["profile-videos"],
+      });
+    }
     const normalizedImage = normalizeControlledMediaUrl(image);
     const normalizedGalleryUrls = galleryUrls
       .map((url) => normalizeControlledMediaUrl(url))
@@ -355,6 +362,11 @@ export async function POST(req: NextRequest) {
       ...profileData,
       image: null,
       galleryUrls: [],
+      presentationVideoUrl: normalizeControlledMediaUrl(presentationVideoUrl),
+      presentationVideoStatus: presentationVideoUrl
+        ? (normalizeControlledMediaUrl(presentationVideoUrl) === normalizeControlledMediaUrl(existing?.presentationVideoUrl) ? existing?.presentationVideoStatus ?? "PENDING" : "PENDING")
+        : "NONE",
+      presentationVideoRejectReason: null,
       phone:     phone ? normalizePhone(phone) : undefined,
       whatsapp:  whatsapp ? normalizePhone(whatsapp) : undefined,
       verificationUrl: null,

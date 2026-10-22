@@ -9,6 +9,7 @@ import { assertOwnedUploadMediaUrls } from "@/lib/approved-media";
 import { normalizeControlledMediaUrl } from "@/lib/public-professional-media";
 import { professionalCompletion, professionalOnboardingCompletion } from "@/lib/professional-completeness";
 import { logAudit } from "@/lib/audit";
+import { professionalStartingPrice } from "@/lib/professional-pricing";
 
 const draftSchema = z.object({
   step: z.number().int().min(0).max(7),
@@ -197,7 +198,7 @@ export async function PATCH(req: NextRequest) {
             ...common,
             bio: text(form.bio),
             pricePerHour: number(form.pricePerHour),
-            priceMin: number(form.pricePerHour),
+            priceMin: professionalStartingPrice({ pricePerHour: number(form.pricePerHour) })?.value ?? null,
             image: null,
             galleryUrls: [],
             photos: { deleteMany: {}, create: normalized.map((url, order) => ({ url, order, cover: order === 0 })) },
@@ -245,7 +246,10 @@ export async function PATCH(req: NextRequest) {
       await prisma.professional.update({ where: { id: professional.id }, data: {
         ...common, price15min: number(form.price15min), price30min: number(form.price30min), pricePerHour: number(form.pricePerHour),
         price2h: number(form.price2h), priceOvernight: number(form.priceOvernight), priceWebcam: number(form.priceWebcam),
-        priceMin: number(form.pricePerHour), paymentMethods: list(form.paymentMethods),
+        priceMin: professionalStartingPrice({
+          price15min: number(form.price15min), price30min: number(form.price30min), pricePerHour: number(form.pricePerHour),
+          price2h: number(form.price2h), priceOvernight: number(form.priceOvernight), priceWebcam: number(form.priceWebcam),
+        })?.value ?? null, paymentMethods: list(form.paymentMethods),
       } });
     } else if (step === 5) {
       await prisma.professional.update({ where: { id: professional.id }, data: {
@@ -253,10 +257,18 @@ export async function PATCH(req: NextRequest) {
       } });
     } else if (step === 6) {
       const urls = [text(form.mainPhotoUrl), ...list(form.galleryUrls)].filter(Boolean);
+      const presentationVideoUrl = text(form.presentationVideoUrl);
       await assertOwnedUploadMediaUrls({ urls, requestUrl: req.url, ownerId: session.user.id, allowedFolderPrefixes: ["profiles"] });
+      if (presentationVideoUrl) await assertOwnedUploadMediaUrls({ urls: [presentationVideoUrl], requestUrl: req.url, ownerId: session.user.id, allowedFolderPrefixes: ["profile-videos"] });
       const normalized = urls.map((url) => normalizeControlledMediaUrl(url)).filter((url): url is string => Boolean(url));
       await prisma.professional.update({ where: { id: professional.id }, data: {
-        ...common, image: null, galleryUrls: [], photos: { deleteMany: {}, create: normalized.map((url, order) => ({ url, order, cover: order === 0 })) },
+        ...common, image: null, galleryUrls: [],
+        presentationVideoUrl: normalizeControlledMediaUrl(presentationVideoUrl),
+        presentationVideoStatus: presentationVideoUrl
+          ? (normalizeControlledMediaUrl(presentationVideoUrl) === normalizeControlledMediaUrl(professional.presentationVideoUrl) ? professional.presentationVideoStatus : "PENDING")
+          : "NONE",
+        presentationVideoRejectReason: null,
+        photos: { deleteMany: {}, create: normalized.map((url, order) => ({ url, order, cover: order === 0 })) },
       } });
     } else {
       await prisma.professional.update({ where: { id: professional.id }, data: common });

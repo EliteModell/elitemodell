@@ -7,6 +7,7 @@ import { ChevronDown, Flame, MapPin } from "lucide-react";
 import Stories from "@/components/Stories";
 import { StoryRegionSelector, type StoryRegion } from "@/components/home/StoryRegionSelector";
 import { requiresDirectMediaDelivery } from "@/lib/public-professional-media";
+import { professionalStartingPrice } from "@/lib/professional-pricing";
 
 type Professional = {
   id: string;
@@ -21,7 +22,12 @@ type Professional = {
   rating: number;
   totalReviews: number;
   priceMin?: number | null;
+  price15min?: number | null;
+  price30min?: number | null;
   pricePerHour?: number | null;
+  price2h?: number | null;
+  priceOvernight?: number | null;
+  priceWebcam?: number | null;
 };
 
 export default function HomeDiscoveryPreview() {
@@ -66,7 +72,9 @@ export default function HomeDiscoveryPreview() {
 
       {professionals.length > 0 ? (
         <div className="home-profile-row">
-          {professionals.map((professional) => (
+          {professionals.map((professional) => {
+            const startingPrice = professionalStartingPrice(professional);
+            return (
             <Link key={professional.id} href={`/profissionais/${professional.slug}`} className="home-profile-card">
               <div className="home-profile-photo">
                 {professional.image ? (
@@ -85,10 +93,11 @@ export default function HomeDiscoveryPreview() {
                 </div>
                 <span className={professional.online ? "is-online" : ""}>{professional.online ? "Online" : "Offline"}</span>
                 <small>★ {(professional.rating ?? 0).toFixed(1)} ({professional.totalReviews ?? 0})</small>
-                <b>{professional.priceMin ?? professional.pricePerHour ? `R$ ${(professional.priceMin ?? professional.pricePerHour)!.toLocaleString("pt-BR")}/h` : "Consultar"}</b>
+                <b>{startingPrice ? `A partir de R$ ${startingPrice.value.toLocaleString("pt-BR")} · ${startingPrice.shortLabel}` : "Consultar"}</b>
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
       ) : storyRegion ? (
         <div className="home-region-empty" role="status">

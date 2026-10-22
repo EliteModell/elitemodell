@@ -10,6 +10,7 @@ import PublicReportButton from "@/components/moderation/PublicReportButton";
 import ProfessionalContactAction from "@/components/professionals/ProfessionalContactAction";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { controlledMediaAssetId, resolvePublicProfileMedia } from "@/lib/public-professional-media";
+import { professionalPriceOptions, professionalStartingPrice } from "@/lib/professional-pricing";
 import styles from "./profile.module.css";
 
 const ActionAuthModal = dynamic(() => import("@/components/auth/ActionAuthModal"));
@@ -149,6 +150,7 @@ export default function ProfissionalProfilePage() {
   const resumedActionRef = useRef<string | null>(null);
 
   const [galeriaFiltro, setGaleriaFiltro] = useState<GaleriaFiltro>("todas");
+  const [valoresAbertos, setValoresAbertos] = useState(false);
   const [photoOpen, setPhotoOpen] = useState<number | null>(null);
   const [servicosAbertos, setServicosAbertos] = useState(false);
   const [caracteristicasAbertas, setCaracteristicasAbertas] = useState(true);
@@ -426,7 +428,8 @@ export default function ProfissionalProfilePage() {
   }));
 
   const idade = pro.age ?? calcAge(pro.birthDate);
-  const preco = pro.priceMin ?? pro.pricePerHour;
+  const priceOptions = professionalPriceOptions(pro);
+  const startingPrice = professionalStartingPrice(pro);
   const memberYear = new Date(pro.createdAt).getFullYear();
   const bookingBasePrice = pro.pricePerHour ?? pro.priceMin ?? bookingDuration;
 
@@ -532,12 +535,13 @@ export default function ProfissionalProfilePage() {
 
           {/* Cards preço + localização */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-            <div style={{ background: "#fff", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "14px 16px", boxShadow: "0 10px 28px rgba(37, 31, 32,.06)" }}>
+            <button type="button" onClick={() => { setValoresAbertos(true); window.setTimeout(() => refSobre.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }} style={{ background: "#fff", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "14px 16px", boxShadow: "0 10px 28px rgba(37, 31, 32,.06)", textAlign: "left", cursor: "pointer" }} aria-expanded={valoresAbertos}>
               <div style={{ fontSize: 10, color: GOLD, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>💰 Valores</div>
               <div style={{ fontSize: 10, color: "#aaa0b2", marginBottom: 2 }}>a partir de</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: GOLD, fontFamily: PLAYFAIR }}>{preco ? `R$ ${preco.toLocaleString("pt-BR")}/h` : "Consulte"}</div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: GOLD, fontFamily: PLAYFAIR }}>{startingPrice ? `R$ ${startingPrice.value.toLocaleString("pt-BR")}` : "Consulte"}</div>
+              {startingPrice ? <div style={{ fontSize: 10, color: "#686270", marginTop: 2 }}>{startingPrice.shortLabel} · ver todos</div> : null}
               {pro.attendanceTypes && <div style={{ fontSize: 11, color: "#aaa0b2", marginTop: 4 }}>{pro.attendanceTypes.join(", ")}</div>}
-            </div>
+            </button>
             <div style={{ background: "#fff", border: "1px solid #fcf7ff", borderRadius: 12, padding: "14px 16px", boxShadow: "0 10px 28px rgba(37, 31, 32,.06)" }}>
               <div style={{ fontSize: 10, color: GOLD, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>📍 Localização</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: "#141212", fontFamily: PLAYFAIR }}>{pro.city}</div>
@@ -704,7 +708,7 @@ export default function ProfissionalProfilePage() {
         {/* SOBRE MIM */}
         <div ref={refSobre} style={{ scrollMarginTop: 120 }}>
 
-          <section style={{ marginBottom: 28, paddingBottom: 28, borderBottom: `1px solid ${GOLD_DIM}` }}>
+          <section style={{ marginBottom: 28, paddingBottom: 28, borderBottom: `1px solid ${GOLD_DIM}` }} aria-label="Valores">
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fcf7ff", margin: 0, fontFamily: PLAYFAIR }}>Descrição</h2>
@@ -767,23 +771,19 @@ export default function ProfissionalProfilePage() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><path d="M12 16h.01"/></svg>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fcf7ff", margin: 0, fontFamily: PLAYFAIR }}>Valores</h2>
             </div>
-            <div style={{ border: `1px solid ${GOLD_DIM}`, borderRadius: 12, overflow: "hidden" }}>
-              {[
-                { label: "15 minutos", value: pro.price15min },
-                { label: "30 minutos", value: pro.price30min },
-                { label: "1 hora", value: pro.pricePerHour },
-                { label: "2 horas", value: pro.price2h },
-                { label: "Pernoite", value: pro.priceOvernight },
-                { label: "Vídeo chamada", value: pro.priceWebcam },
-              ].map((row, i, arr) => (
+            <button type="button" onClick={() => setValoresAbertos((open) => !open)} style={{ width: "100%", padding: "12px 16px", border: `1px solid ${GOLD_DIM}`, borderRadius: valoresAbertos ? "12px 12px 0 0" : 12, background: "#080808", color: "#fcf7ff", display: "flex", justifyContent: "space-between", cursor: "pointer", fontWeight: 700 }} aria-expanded={valoresAbertos}>
+              <span>{startingPrice ? `A partir de R$ ${startingPrice.value.toLocaleString("pt-BR")} · ${startingPrice.shortLabel}` : "Valores sob consulta"}</span><span>{valoresAbertos ? "−" : "+"}</span>
+            </button>
+            {valoresAbertos && priceOptions.length > 0 ? <div style={{ border: `1px solid ${GOLD_DIM}`, borderTop: 0, borderRadius: "0 0 12px 12px", overflow: "hidden" }}>
+              {priceOptions.map((row, i, arr) => (
                 <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: i % 2 === 0 ? "#080808" : "#080808", borderBottom: i < arr.length - 1 ? `1px solid ${GOLD_DIM}` : "none" }}>
                   <span style={{ fontSize: 13, color: "#b4adb0", fontStyle: "italic" }}>{row.label}</span>
                   <span style={{ fontSize: 14, color: row.value ? "#fcf7ff" : "#676064", fontWeight: row.value ? 700 : 400 }}>
-                    {row.value ? `R$ ${row.value.toLocaleString("pt-BR")}` : "Não realiza"}
+                    {`R$ ${row.value.toLocaleString("pt-BR")}`}
                   </span>
                 </div>
               ))}
-            </div>
+            </div> : null}
             {pro.paymentMethods && pro.paymentMethods.length > 0 && (
               <div style={{ marginTop: 16 }}>
                 <p style={{ fontSize: 12, color: "#aaa0b2", marginBottom: 8 }}>Formas de pagamento:</p>
@@ -1087,7 +1087,8 @@ export default function ProfissionalProfilePage() {
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 55, background: "rgba(255,255,255,0.96)", backdropFilter: "blur(12px)", borderTop: "1px solid #fcf7ff", boxShadow: "0 -10px 30px rgba(37, 31, 32,.08)", padding: "10px 16px calc(10px + env(safe-area-inset-bottom))", display: "flex", gap: 10, alignItems: "center" }}>
         <div style={{ flexShrink: 0 }}>
           <p style={{ margin: 0, fontSize: 9, color: "#aaa0b2" }}>a partir de</p>
-          <p style={{ margin: 0, fontSize: 17, fontWeight: 900, color: GOLD, fontFamily: PLAYFAIR, lineHeight: 1.1 }}>{preco ? `R$ ${preco.toLocaleString("pt-BR")}/h` : "Consulte"}</p>
+          <p style={{ margin: 0, fontSize: 17, fontWeight: 900, color: GOLD, fontFamily: PLAYFAIR, lineHeight: 1.1 }}>{startingPrice ? `R$ ${startingPrice.value.toLocaleString("pt-BR")}` : "Consulte"}</p>
+          {startingPrice ? <p style={{ margin: "2px 0 0", fontSize: 9, color: "#686270" }}>{startingPrice.shortLabel}</p> : null}
         </div>
         <button
           type="button"

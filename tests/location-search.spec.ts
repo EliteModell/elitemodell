@@ -279,13 +279,13 @@ test("visitante anonimo navega por cidade, filtros e perfil sem cadastro", async
     expect(session).toEqual({});
 
     const input = page.getByRole("combobox", { name: "Buscar acompanhantes por cidade" });
-    await input.fill("Itauna");
-    await page.getByRole("option").filter({ hasText: "Itaúna, MG" }).getByRole("button").click();
+    await input.fill("Vitoria ES");
+    await page.getByRole("option").filter({ hasText: "Vitória, ES" }).getByRole("button").click();
     await page.getByRole("button", { name: "Buscar perfis" }).click();
 
-    await expect(page).toHaveURL(/\/buscar\?.*cidade=Ita%C3%BAna.*estado=mg/i);
+    await expect(page).toHaveURL(/\/buscar\?.*cidade=Vit%C3%B3ria.*estado=es/i);
     await expect(page).not.toHaveURL(/\/login/);
-    await expect(page.getByRole("heading", { name: /Itaúna, MG/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Vitória, ES/ })).toBeVisible();
 
     const profileLink = page.locator('a[href^="/profissionais/"]').first();
     await expect(profileLink).toBeVisible({ timeout: 30_000 });
@@ -294,12 +294,12 @@ test("visitante anonimo navega por cidade, filtros e perfil sem cadastro", async
     await expect(page).not.toHaveURL(/\/login/);
 
     await page.goBack({ waitUntil: "domcontentloaded" });
-    await expect(page).toHaveURL(/\/buscar\?.*cidade=Ita%C3%BAna/i);
+    await expect(page).toHaveURL(/\/buscar\?.*cidade=Vit%C3%B3ria/i);
     await page.getByRole("button", { name: /Localização da busca.*Alterar/ }).click();
-    await page.getByPlaceholder("Digite cidade ou UF").fill("Vitoria ES");
-    await page.getByRole("button", { name: "Vitória, ES" }).click();
-    await page.getByRole("button", { name: /Ver acompanhantes em Vitória, ES/ }).click();
-    await expect(page).toHaveURL(/cidade=Vit%C3%B3ria.*estado=es/i);
+    await page.getByPlaceholder("Digite cidade ou UF").fill("Itauna MG");
+    await page.getByRole("button", { name: "Itaúna, MG" }).click();
+    await page.getByRole("button", { name: /Ver acompanhantes em Itaúna, MG/ }).click();
+    await expect(page).toHaveURL(/cidade=Ita%C3%BAna.*estado=mg/i);
 
     await page.getByRole("button", { name: "Online" }).click();
     await expect(page.getByRole("button", { name: "Online" })).toHaveClass(/active/);

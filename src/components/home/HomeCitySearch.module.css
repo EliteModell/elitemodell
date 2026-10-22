@@ -1,4 +1,4 @@
-.form { position: relative; width: min(100%, 510px); margin-top: 26px; }
+.form { position: relative; z-index: 10000; width: min(100%, 510px); margin-top: 26px; scroll-margin: 104px 0 220px; }
 .label { display: block; margin-bottom: 9px; color: #141212; font-size: 14px; font-weight: 800; }
 .control { min-height: 60px; padding: 5px; border: 1px solid #eadff0; border-radius: 999px; display: flex; align-items: stretch; background: rgba(255,255,255,.97); box-shadow: 0 10px 28px rgba(61,42,72,.08); transition: border-color .18s, box-shadow .18s; }
 .control.focused { border-color: var(--brand-primary, #b72cff); box-shadow: 0 0 0 3px var(--brand-focus, rgba(183,44,255,.1)), 0 10px 28px rgba(61,42,72,.08); }
@@ -9,9 +9,9 @@
 .control > button:hover { background: var(--brand-primary-hover, #8f1fd1); }
 .control > button:focus-visible { outline: 3px solid var(--brand-focus, rgba(183,44,255,.2)); outline-offset: 3px; }
 .control > button:active { transform: scale(.97); }
-.suggestions { position: absolute; z-index: 30; top: calc(100% + 8px); left: 0; right: 0; max-height: 270px; margin: 0; padding: 6px; overflow-y: auto; border: 1px solid #e7dcde; border-radius: 15px; list-style: none; background: #fff; box-shadow: 0 20px 45px rgba(49,27,36,.16); }
+.suggestions { position: absolute; z-index: 10001; top: calc(100% + 8px); left: 0; right: 0; max-height: 270px; margin: 0; padding: 6px; overflow-y: auto; border: 1px solid #e7dcde; border-radius: 15px; list-style: none; background: #fff; box-shadow: 0 20px 45px rgba(49,27,36,.16); }
 .suggestions li + li { border-top: 1px solid #f2e9ea; }
-.suggestions button { width: 100%; border: 0; border-radius: 10px; padding: 11px 13px; display: flex; align-items: baseline; justify-content: space-between; gap: 14px; color: #211a20; background: transparent; cursor: pointer; text-align: left; }
+.suggestions button { width: 100%; border: 0; border-radius: 10px; padding: 11px 13px; display: flex; align-items: baseline; justify-content: space-between; gap: 14px; color: #211a20; background: transparent; cursor: pointer; text-align: left; scroll-margin: 104px 0 180px; }
 .suggestions button:hover, .suggestions button:focus-visible { background: var(--brand-primary-soft, #faf0ff); outline: none; }
 .suggestions strong { font-size: 14px; }
 .suggestions span { overflow: hidden; color: #746c72; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }

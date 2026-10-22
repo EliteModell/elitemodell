@@ -384,6 +384,7 @@
 .heroCopy h1 { font-size: clamp(56px, 5.1vw, 78px); }
 .heroCopy h1 strong, .eyebrow, .tag { color: var(--brand-primary); }
 .heroActions { width: min(100%, 510px); margin-top: 20px; display: grid; gap: 12px; }
+.heroCopy:has([aria-expanded="true"]) .heroActions { visibility: hidden; pointer-events: none; }
 .heroCta { width: 100%; min-width: 0; min-height: 58px; margin-top: 0; border: 1.5px solid var(--brand-primary); border-radius: 999px; padding: 0 28px; background: var(--brand-primary); box-shadow: 0 12px 28px var(--brand-shadow); font-size: 17px; }
 .heroCtaSecondary { color: var(--brand-primary); background: rgba(255,255,255,.96); box-shadow: none; }
 .heroCta:hover, .cta:hover { border-color: var(--brand-primary-hover); box-shadow: 0 17px 34px var(--brand-shadow); }

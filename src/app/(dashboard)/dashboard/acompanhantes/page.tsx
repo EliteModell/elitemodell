@@ -8,6 +8,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import { ClientSensitiveAction } from "@/components/client-area/ClientSensitiveGate";
+import { professionalStartingPrice } from "@/lib/professional-pricing";
 import CitySelectorScreen from "@/components/client-area/CitySelectorScreen";
 import {
   BadgeCheck,
@@ -38,7 +39,12 @@ type Professional = {
   state: string;
   image?: string | null;
   priceMin?: number | null;
+  price15min?: number | null;
+  price30min?: number | null;
   pricePerHour?: number | null;
+  price2h?: number | null;
+  priceOvernight?: number | null;
+  priceWebcam?: number | null;
   escortCategory?: string | null;
   rating: number;
   totalReviews: number;
@@ -78,7 +84,7 @@ function ProfileCardSkeleton() {
 
 function ProfessionalCard({ p }: { p: Professional }) {
   const cover = p.photos?.find((ph) => ph.cover)?.url ?? p.image ?? null;
-  const price = p.pricePerHour ?? p.priceMin;
+  const price = professionalStartingPrice(p);
   const isOnline = p.featured || p.rating >= 4.7;
   const [saved, setSaved] = useState(false);
   const [savingFavorite, setSavingFavorite] = useState(false);
@@ -148,7 +154,7 @@ function ProfessionalCard({ p }: { p: Professional }) {
             {price ? (
               <div className="shrink-0 rounded-[6px] border border-[#b72cff]/28 bg-black/75 px-2.5 py-1.5 backdrop-blur-sm">
                 <p className="text-[13px] font-bold text-[#e1a6ff]">
-                  {price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/h
+                  {price.value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} · {price.shortLabel}
                 </p>
               </div>
             ) : null}

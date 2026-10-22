@@ -62,7 +62,10 @@ async function mockCompleteOnboarding(context: BrowserContext, page: Page) {
     birthDate: "2000-01-01",
     lgpdConsent: true,
     termsConsent: true,
-    professional: null,
+    professional: { id: "professional-visual", slug: "marina-teste-visual", status: "DRAFT", completionRulesVersion: 2 },
+  } }));
+  await page.route("**/api/upload?folder=profile-videos/**", route => route.fulfill({ status: 202, json: {
+    url: "/api/media/visual-video", assetId: "visual-video", status: "QUARANTINED",
   } }));
   await page.route("**/api/professionals/draft", route => route.fulfill({ json: {
     completion: { issues: [], profileIssues: [], profilePercent: 100, profileComplete: true, readyToSubmit: false },
@@ -105,6 +108,16 @@ for (const device of devices) {
       await expect(page.getByText(`Etapa ${index + 1} de 9`, { exact: false })).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(device.viewport.width + 1);
       await page.screenshot({ path: testInfo.outputPath(`${device.name}-etapa-${index + 1}.png`), fullPage: true });
+      if (index === 6) {
+        await expect(page.getByText("Vídeo de apresentação", { exact: true })).toBeVisible();
+        if (device.name === "iphone-14-pro-max-safari-simulado") {
+          await page.locator('input[accept*="video/mp4"]').first().setInputFiles({
+            name: "apresentacao-teste.mp4", mimeType: "video/mp4", buffer: Buffer.from("video-ficticio-controlado"),
+          });
+          await expect(page.locator("video").first()).toBeVisible();
+          await expect(page.getByText("Vídeo recebido e encaminhado para as verificações de segurança.", { exact: true })).toBeVisible();
+        }
+      }
       if (index === 2) {
         await page.getByRole("button", { name: "← Voltar", exact: true }).click();
         await expect(page.getByText("Etapa 2 de 9", { exact: false })).toBeVisible();

@@ -29,6 +29,7 @@ import {
   professionalDraftStorageKey,
 } from "@/lib/professional-draft-storage";
 import { isProfessionalDisplayNameReady, professionalDisplayNameForEditing } from "@/lib/professional-display-name";
+import { professionalStartingPrice } from "@/lib/professional-pricing";
 
 const ProfessionalVerificationSteps = dynamic(
   () => import("@/components/professional-onboarding/ProfessionalVerificationSteps"),
@@ -123,6 +124,9 @@ const IMAGE_EXTENSION_RE = /\.(jpe?g|png|webp|heic|heif)$/i;
 const GENERIC_MOBILE_MIME_TYPES = new Set(["", "application/octet-stream"]);
 const MAX_PROFILE_IMAGE_BYTES = 20 * 1024 * 1024;
 const MAX_ONBOARDING_GALLERY_PHOTOS = 20;
+const VIDEO_ACCEPT = "video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov";
+const VIDEO_MIME_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
+const MAX_PROFILE_VIDEO_BYTES = 50 * 1024 * 1024;
 const REMOTE_IMAGE_RE = /^(https?:\/\/|\/)/i;
 const ATTENDANCE_EXCLUSIONS: Record<string, string[]> = {
   "Somente local do cliente": ["Local próprio", "Hotéis", "Motéis", "Somente hotéis/motéis"],
@@ -379,6 +383,8 @@ export default function ProfissionalNovoPage() {
   const [correctionFields, setCorrectionFields] = useState<Array<{ code: string; label: string; step: number }>>([]);
   const [serverCompletion, setServerCompletion] = useState<CompletionState | null>(null);
   const [birthDateLockedFromAccount, setBirthDateLockedFromAccount] = useState(false);
+  const [professionalIdentity, setProfessionalIdentity] = useState<{ id: string; slug: string } | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [serverHydration, setServerHydration] = useState<{ ready: boolean; updatedAt: string | null }>({ ready: false, updatedAt: null });
   const [birthParts, setBirthParts] = useState({ day: "", month: "", year: "" });
   const birthMonthRef = useRef<HTMLInputElement>(null);
@@ -409,7 +415,7 @@ export default function ProfissionalNovoPage() {
     /* etapa 6 */
     phone: "", whatsapp: "", instagram: "", website: "",
     /* etapa 7 – fotos */
-    mainPhotoUrl: "", galleryUrls: [] as string[],
+    mainPhotoUrl: "", galleryUrls: [] as string[], presentationVideoUrl: "", presentationVideoStatus: "NONE",
     /* etapa 8 – documentos */
     docType: "", docFrenteUrl: "", docVersoUrl: "",
     docFrenteFile: null as File | null, docVersoFile: null as File | null,
@@ -606,6 +612,7 @@ export default function ProfissionalNovoPage() {
       }
 
       const professional = user.professional;
+      if (professional?.id && professional?.slug) setProfessionalIdentity({ id: professional.id, slug: professional.slug });
       const isCorrection = professional?.status === "CORRECTION_REQUIRED";
       const isLegacyRecovery = professional?.status === "PENDING_REVIEW" && !hasValidCurrentSubmission;
       const shouldRestore = isCorrection || isLegacyRecovery || professional?.status === "DRAFT";
@@ -661,6 +668,8 @@ export default function ProfissionalNovoPage() {
         website: shouldRestore ? (professional.website ?? current.website) : current.website,
         mainPhotoUrl: shouldRestore ? (professional.image ?? professional.photos?.find((photo: { cover?: boolean }) => photo.cover)?.url ?? professional.photos?.[0]?.url ?? current.mainPhotoUrl) : current.mainPhotoUrl,
         galleryUrls: shouldRestore ? (professional.galleryUrls ?? professional.photos?.filter((photo: { cover?: boolean }) => !photo.cover).map((photo: { url: string }) => photo.url) ?? []) : current.galleryUrls,
+        presentationVideoUrl: shouldRestore ? (professional.presentationVideoUrl ?? current.presentationVideoUrl) : current.presentationVideoUrl,
+        presentationVideoStatus: shouldRestore ? (professional.presentationVideoStatus ?? current.presentationVideoStatus) : current.presentationVideoStatus,
       }));
       if (loadedDate) {
         const [y, m, d] = loadedDate.split("-");
@@ -939,6 +948,37 @@ export default function ProfissionalNovoPage() {
     set("galleryUrls", form.galleryUrls.filter((item) => item !== reference));
   }
 
+  async function handlePresentationVideo(file: File) {
+    if (!professionalIdentity) return toast.error("Aguarde o cadastro ser preparado antes de enviar o vídeo.");
+    if (!VIDEO_MIME_TYPES.has(file.type)) return toast.error("Use um vídeo MP4, WebM ou MOV.");
+    if (file.size > MAX_PROFILE_VIDEO_BYTES) return toast.error("O vídeo deve ter no máximo 50MB.");
+    const preview = URL.createObjectURL(file);
+    localPreviewUrlsRef.current.add(preview);
+    setVideoPreview(preview);
+    setUploadingIdx(90);
+    try {
+      const uploaded = await uploadFile(file, `profile-videos/${professionalIdentity.id}`);
+      setForm((current) => ({ ...current, presentationVideoUrl: uploaded.reference, presentationVideoStatus: "PENDING" }));
+      toast.success("Vídeo recebido e encaminhado para as verificações de segurança.");
+    } catch (error) {
+      URL.revokeObjectURL(preview);
+      localPreviewUrlsRef.current.delete(preview);
+      setVideoPreview(null);
+      toast.error(error instanceof Error ? error.message : "Não foi possível enviar o vídeo.");
+    } finally {
+      setUploadingIdx(null);
+    }
+  }
+
+  function removePresentationVideo() {
+    if (videoPreview) {
+      URL.revokeObjectURL(videoPreview);
+      localPreviewUrlsRef.current.delete(videoPreview);
+    }
+    setVideoPreview(null);
+    setForm((current) => ({ ...current, presentationVideoUrl: "", presentationVideoStatus: "NONE" }));
+  }
+
   /* ── verificação Didit ────────────────────────────────── */
   async function startDigitVerification() {
     if (diditStartingRef.current || uploadingIdx === 100) return;
@@ -1127,11 +1167,16 @@ export default function ProfissionalNovoPage() {
         price2h: parseMoneyValue(form.price2h),
         priceOvernight: parseMoneyValue(form.priceOvernight),
         priceWebcam: parseMoneyValue(form.priceWebcam),
-        priceMin: parseMoneyValue(form.pricePerHour),
+        priceMin: professionalStartingPrice({
+          price15min: parseMoneyValue(form.price15min), price30min: parseMoneyValue(form.price30min),
+          pricePerHour: parseMoneyValue(form.pricePerHour), price2h: parseMoneyValue(form.price2h),
+          priceOvernight: parseMoneyValue(form.priceOvernight), priceWebcam: parseMoneyValue(form.priceWebcam),
+        })?.value,
         paymentMethods: form.paymentMethods,
         phone: form.phone, whatsapp: form.whatsapp, instagram: form.instagram, website: form.website,
         image: form.mainPhotoUrl || undefined,
         galleryUrls: form.galleryUrls,
+        presentationVideoUrl: form.presentationVideoUrl || undefined,
         verificationType: form.verificationType,
         verificationCode: generateVerificationCode(),
         kycProvider: form.kycProvider,
@@ -1891,6 +1936,23 @@ export default function ProfissionalNovoPage() {
                 Todo conteúdo pode passar por moderação. A foto principal/capa deve ser adequada para exibição inicial do perfil.
               </p>
             </div>
+          </Section>
+
+          <Section title="Vídeo de apresentação" desc="Opcional. Envie um vídeo curto para o perfil. Ele só será publicado depois do antivírus e da moderação.">
+            {videoPreview ? (
+              <video src={videoPreview} controls playsInline preload="metadata" style={{ width: "100%", maxHeight: 360, borderRadius: 12, background: "#050505", border: `1px solid ${GOLD_MID}` }} />
+            ) : form.presentationVideoUrl ? (
+              <div className="model-upload-received" style={{ minHeight: 130 }}><strong>Vídeo recebido ✓</strong><span>Status: {form.presentationVideoStatus === "APPROVED" ? "aprovado" : form.presentationVideoStatus === "REJECTED" ? "precisa de ajuste" : "em análise de segurança"}</span></div>
+            ) : (
+              <UploadZone label="Adicionar vídeo" accept={VIDEO_ACCEPT} preview={null} persisted={false} loading={uploadingIdx === 90} onFile={handlePresentationVideo} />
+            )}
+            {(videoPreview || form.presentationVideoUrl) ? (
+              <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+                <UploadZone label="Substituir vídeo" accept={VIDEO_ACCEPT} preview={null} persisted={false} loading={uploadingIdx === 90} onFile={handlePresentationVideo} />
+                <button type="button" onClick={removePresentationVideo} style={{ border: `1px solid ${GOLD_MID}`, background: "transparent", color: "#e1a6ff", padding: "0 16px", minHeight: 48, cursor: "pointer" }}>Remover</button>
+              </div>
+            ) : null}
+            <p style={{ margin: "10px 0 0", fontSize: 11 }}>MP4, WebM ou MOV · máximo 50MB · conteúdo próprio e autorizado.</p>
           </Section>
         </div>
       )}

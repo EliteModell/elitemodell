@@ -26,7 +26,7 @@ export default function HomeCitySearch() {
   useEffect(() => {
     if (!focused) return;
     const keepSearchVisible = () => {
-      inputRef.current?.scrollIntoView({ block: "start" });
+      inputRef.current?.scrollIntoView({ block: "center" });
       window.requestAnimationFrame(() => {
         const inputBottom = inputRef.current?.getBoundingClientRect().bottom ?? 0;
         const viewport = window.visualViewport;
@@ -72,7 +72,7 @@ export default function HomeCitySearch() {
         aria-autocomplete="list" aria-controls="home-city-suggestions" aria-expanded={focused && choices.length > 0}
         onFocus={() => {
           setFocused(true);
-          inputRef.current?.scrollIntoView({ block: "start" });
+          inputRef.current?.scrollIntoView({ block: "center" });
         }} onBlur={() => window.setTimeout(() => setFocused(false), 120)}
         onChange={(event) => {
           const value = event.target.value;

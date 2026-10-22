@@ -15,6 +15,7 @@ import {
 
 import { useCitySuggestions } from "@/lib/use-city-suggestions";
 import { savePublicLocationPreference } from "@/lib/public-location-preference";
+import { professionalStartingPrice } from "@/lib/professional-pricing";
 
 const GOLD = "#b72cff";
 const GOLD_DIM = "rgba(183, 44, 255,0.12)";
@@ -44,6 +45,7 @@ type CardPerfil = {
   nome: string;
   cidade: string;
   preco: number | null;
+  precoDuracao: string | null;
   foto: string | null;
   online: boolean;
   avaliacao: number;
@@ -290,7 +292,12 @@ function BuscarContent() {
           city: string;
           state: string;
           priceMin?: number | null;
+          price15min?: number | null;
+          price30min?: number | null;
           pricePerHour?: number | null;
+          price2h?: number | null;
+          priceOvernight?: number | null;
+          priceWebcam?: number | null;
           image?: string | null;
           rating?: number;
           totalReviews?: number;
@@ -309,12 +316,15 @@ function BuscarContent() {
           online?: boolean;
           verified?: boolean;
           sponsored?: boolean;
-        }) => ({
+        }) => {
+          const startingPrice = professionalStartingPrice(p);
+          return ({
           id: p.id,
           slug: p.slug,
           nome: p.displayName,
           cidade: `${p.city}, ${p.state}`,
-          preco: p.priceMin ?? p.pricePerHour ?? null,
+          preco: startingPrice?.value ?? null,
+          precoDuracao: startingPrice?.shortLabel ?? null,
           foto: p.image ?? p.photos?.[0]?.url ?? null,
           online: Boolean(p.online),
           avaliacao: p.rating ?? 0,
@@ -330,7 +340,8 @@ function BuscarContent() {
           contactAvailable: Boolean(p.contactAvailable),
           verified: Boolean(p.verified),
           sponsored: Boolean(p.sponsored),
-        }));
+        });
+        });
         setPerfis(list);
       } catch (err) {
         if (!controller.signal.aborted) {
@@ -1279,7 +1290,7 @@ function ProfileCard({ profile }: { profile: CardPerfil }) {
               <span style={{ fontSize: 11, color: profile.online ? "#15803d" : "#625b66", fontWeight: 600 }}>{profile.online ? "Online agora" : "Offline"}</span>
             </div>
             <span style={{ fontSize: 14, color: GOLD, fontWeight: 800, fontFamily: PLAYFAIR }}>
-              {profile.preco ? `R$${profile.preco}/h` : "Consultar"}
+              {profile.preco ? `R$${profile.preco} · ${profile.precoDuracao}` : "Consultar"}
             </span>
           </div>
 
