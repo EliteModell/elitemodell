@@ -31,3 +31,15 @@ test("exclusao administrativa exige master e confirma os tres identificadores", 
   expect(source).toContain('type: "ADMIN_TEST_ACCOUNT_DELETION"');
   expect(worker.indexOf("prisma.mediaDepictedPerson.deleteMany")).toBeLessThan(worker.indexOf("prisma.uploadAsset.deleteMany"));
 });
+
+test("aviso de recuperacao seleciona somente legado incompleto e e idempotente", () => {
+  const source = readFileSync("src/app/(dashboard)/admin/profissionais/page.tsx", "utf8");
+  const email = readFileSync("src/lib/professional-extra-email.ts", "utf8");
+  expect(source).toContain('status: { in: ["DRAFT", "PENDING_REVIEW"] }');
+  expect(source).toContain("registrationSubmittedAt: { not: null }");
+  expect(source).toContain("completionRulesVersion: { lt: 2 }");
+  expect(source).toContain("if (completion.profileComplete) continue");
+  expect(source).toContain("LEGACY_RECOVERY_NOTICE_REASON");
+  expect(source).toContain('type: "LEGACY_ONBOARDING_RECOVERED"');
+  expect(email).toContain('subject: "Seu cadastro foi liberado para continuar - Elite Modell"');
+});

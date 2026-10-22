@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -14,7 +15,7 @@ import { AdminHeader, buttonStyle } from "../_components/AdminPrimitives";
 import { AdminProfessionalsInfiniteList, type AdminProfessionalListItem } from "./AdminProfessionalsInfiniteList";
 import { professionalAdministrativeApprovalIssues, professionalCompletion } from "@/lib/professional-completeness";
 import { deliverProfessionalApprovalSms, deliverProfessionalCommunication } from "@/lib/professional-communications";
-import { sendProfessionalLocationEmail, sendProfessionalReminderEmail } from "@/lib/professional-extra-email";
+import { sendLegacyOnboardingRecoveryEmail, sendProfessionalLocationEmail, sendProfessionalReminderEmail } from "@/lib/professional-extra-email";
 import { resumeProfessionalProfileAssetsAfterApproval } from "@/lib/upload-quarantine";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +34,57 @@ const statusLabel: Record<string, string> = {
   SUSPENDED: "Suspensa",
   REJECTED: "Reprovada",
 };
+
+const LEGACY_RECOVERY_NOTICE_REASON = "professional:legacy-onboarding-recovery-notice:v1";
+
+async function notifyLegacyOnboardingRecoveries() {
+  "use server";
+  const { session, adminRole } = await requireAdmin("professionals:review");
+  if (adminRole !== "ADMIN_MASTER") return;
+  const possible = await prisma.professional.findMany({
+    where: {
+      status: { in: ["DRAFT", "PENDING_REVIEW"] },
+      registrationSubmittedAt: { not: null },
+      completionRulesVersion: { lt: 2 },
+    },
+    include: {
+      photos: { select: { url: true, cover: true } },
+      specialties: { select: { name: true } },
+      user: { select: { id: true, email: true, emailVerified: true, name: true } },
+    },
+  });
+  let notified = 0;
+  for (const professional of possible) {
+    const completion = professionalCompletion({ ...professional, emailVerified: professional.user.emailVerified });
+    if (completion.profileComplete) continue;
+    const duplicate = await prisma.auditLog.findFirst({
+      where: { targetType: "PROFESSIONAL", targetId: professional.id, reason: LEGACY_RECOVERY_NOTICE_REASON },
+      select: { id: true },
+    });
+    if (duplicate) continue;
+    await deliverProfessionalCommunication({
+      professionalId: professional.id,
+      userId: professional.user.id,
+      email: professional.user.emailVerified ? professional.user.email : null,
+      adminId: session.user.id,
+      type: "LEGACY_ONBOARDING_RECOVERED",
+      notificationTitle: "Seu cadastro foi liberado para continuar",
+      notificationBody: "O problema foi corrigido. Entre com o mesmo telefone e complete somente as etapas restantes; seus dados foram preservados.",
+      link: "/profissional/novo",
+      send: () => sendLegacyOnboardingRecoveryEmail(professional.user.email!, professional.user.name),
+    });
+    await logAudit({
+      adminId: session.user.id,
+      action: "SETTINGS_CHANGED",
+      targetType: "PROFESSIONAL",
+      targetId: professional.id,
+      reason: LEGACY_RECOVERY_NOTICE_REASON,
+      changes: { missingFields: completion.profileIssues.map((issue) => issue.field), channels: ["IN_APP", professional.user.emailVerified ? "EMAIL" : "EMAIL_SKIPPED"] },
+    });
+    notified += 1;
+  }
+  redirect(`/admin/profissionais?legacyNoticeSent=${notified}`);
+}
 
 type ProfessionalApprovalReview = {
   userId: string; displayName: string; status: string; image?: string | null; registrationSubmittedAt?: Date | null; bio: string; city: string; state: string; escortCategory: string | null;
@@ -443,7 +495,7 @@ async function loadMoreProfessionals(input: AdminProfessionalFilters & { offset:
   return { items, hasMore: offset + items.length < total };
 }
 
-export default async function AdminProfissionaisPage({ searchParams }: { searchParams?: Promise<{ status?: string; access?: string; kyc?: string; q?: string; professionalId?: string }> }) {
+export default async function AdminProfissionaisPage({ searchParams }: { searchParams?: Promise<{ status?: string; access?: string; kyc?: string; q?: string; professionalId?: string; legacyNoticeSent?: string }> }) {
   await requireAdmin("professionals:review");
   const params = await searchParams;
   const status = params?.status;
@@ -468,6 +520,17 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
       />
 
       {/* ── Filtros ── */}
+      {params?.legacyNoticeSent !== undefined ? (
+        <p style={{ marginBottom: 16, color: "#166534", fontWeight: 800 }}>
+          Aviso de recuperacao enviado para {Number(params.legacyNoticeSent) || 0} cadastro(s) afetado(s).
+        </p>
+      ) : null}
+      <form action={notifyLegacyOnboardingRecoveries} style={{ marginBottom: 20 }}>
+        <button type="submit" style={{ ...buttonStyle, color: "#fff", background: "#7d179f" }}>
+          Avisar cadastros antigos incompletos
+        </button>
+      </form>
+
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
         {["ALL", "DRAFT", "PENDING_REVIEW", "CORRECTION_REQUIRED", "ACTIVE", "PAUSED", "REJECTED", "SUSPENDED"].map((item) => {
           const active = item === (status ?? "ALL");

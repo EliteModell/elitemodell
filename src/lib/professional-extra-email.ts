@@ -24,6 +24,18 @@ export async function sendProfessionalReminderEmail(to: string, name: string | n
   });
 }
 
+export async function sendLegacyOnboardingRecoveryEmail(to: string, name: string | null | undefined) {
+  await sendAuthEmail(to, {
+    subject: "Seu cadastro foi liberado para continuar - Elite Modell",
+    html: html("Seu cadastro foi liberado para continuar", name, [
+      "Identificamos uma falha temporaria que pode ter interrompido seu cadastro profissional.",
+      "O problema foi corrigido e os dados que voce ja informou foram preservados.",
+      "Entre novamente com o mesmo telefone e continue pelas etapas restantes. Voce nao precisa criar outra conta.",
+      "Se precisar de ajuda, fale com o suporte da Elite Modell.",
+    ]),
+  });
+}
+
 export async function sendProfessionalLocationEmail(
   to: string,
   name: string | null | undefined,
