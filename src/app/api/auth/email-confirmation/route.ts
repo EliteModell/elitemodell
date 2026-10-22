@@ -110,7 +110,27 @@ export async function POST(req: NextRequest) {
         if (conflict && conflict.id !== user.id) {
           return NextResponse.json({ error: "Este e-mail já está vinculado a outra conta. Utilize outro endereço ou entre em contato com o suporte." }, { status: 409 });
         }
-        const targetAuthUser = await findAuthUserByEmail(targetEmail);
+        let targetAuthUser = await findAuthUserByEmail(targetEmail);
+        const linkedPrismaUserId = typeof targetAuthUser?.app_metadata?.prismaUserId === "string"
+          ? targetAuthUser.app_metadata.prismaUserId
+          : null;
+        if (targetAuthUser && linkedPrismaUserId && linkedPrismaUserId !== user.id) {
+          const releasedIdentity = await prisma.user.findUnique({
+            where: { id: linkedPrismaUserId },
+            select: { blocked: true, blockReason: true, email: true },
+          });
+          const wasAnonymizedByDeletion = Boolean(
+            releasedIdentity?.blocked
+            && releasedIdentity.blockReason === "Conta excluida e pseudonimizada por solicitacao LGPD."
+            && releasedIdentity.email.startsWith("deleted+"),
+          );
+          if (wasAnonymizedByDeletion) {
+            const supabase = createSupabaseServerClient();
+            const removed = await supabase.auth.admin.deleteUser(targetAuthUser.id);
+            if (removed.error && !/not found/i.test(removed.error.message)) throw removed.error;
+            targetAuthUser = null;
+          }
+        }
         const targetBelongsToCurrentUser = targetAuthUser?.app_metadata?.prismaUserId === user.id;
         if (targetAuthUser && !targetBelongsToCurrentUser) {
           return NextResponse.json({ error: "Este e-mail já está vinculado a outra conta. Utilize outro endereço ou entre em contato com o suporte." }, { status: 409 });
