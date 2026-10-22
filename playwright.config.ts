@@ -152,6 +152,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "professional-onboarding-visual-e2e",
+      testMatch: "**/professional-onboarding-visual-e2e.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "visual-responsive",
       testMatch: "**/visual-responsive.spec.ts",
       use: { browserName: "chromium" },

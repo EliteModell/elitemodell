@@ -430,7 +430,7 @@ export default function ProfissionalNovoPage() {
         return;
       }
 
-      const parsed = JSON.parse(rawDraft) as { ownerId?: string; registrationType?: string; step?: number; updatedAt?: string; form?: Partial<typeof form> };
+      const parsed = JSON.parse(rawDraft) as { ownerId?: string; registrationType?: string; draftVersion?: number; step?: number; updatedAt?: string; form?: Partial<typeof form> };
       if (!isOwnedProfessionalDraft(parsed, accountUserId)) {
         localStorage.removeItem(draftKey);
         draftLoadedRef.current = true;
@@ -446,6 +446,15 @@ export default function ProfissionalNovoPage() {
         delete safeDraftForm.kycProvider;
         delete safeDraftForm.kycSessionId;
         delete safeDraftForm.kycStatus;
+        if (parsed.draftVersion !== 3) {
+          delete safeDraftForm.attendanceTypes;
+          delete safeDraftForm.servesGenders;
+          delete safeDraftForm.idiomas;
+          delete safeDraftForm.diasDisponiveis;
+          delete safeDraftForm.services;
+          delete safeDraftForm.fetishes;
+          delete safeDraftForm.paymentMethods;
+        }
         setForm((current) => ({
           ...current,
           ...safeDraftForm,
@@ -506,7 +515,7 @@ export default function ProfissionalNovoPage() {
 
     const saveTimer = window.setTimeout(() => {
       try {
-        localStorage.setItem(professionalDraftStorageKey(accountUserId), JSON.stringify({ ownerId: accountUserId, registrationType: PROFESSIONAL_REGISTRATION_TYPE, step, form: draftForm, updatedAt: new Date().toISOString() }));
+        localStorage.setItem(professionalDraftStorageKey(accountUserId), JSON.stringify({ ownerId: accountUserId, registrationType: PROFESSIONAL_REGISTRATION_TYPE, draftVersion: 3, step, form: draftForm, updatedAt: new Date().toISOString() }));
         window.setTimeout(() => setDraftSaveError(false), 0);
       } catch (err) {
       console.warn("[professional-onboarding] Não foi possível salvar o rascunho local.", err);
@@ -600,6 +609,7 @@ export default function ProfissionalNovoPage() {
       const isCorrection = professional?.status === "CORRECTION_REQUIRED";
       const isLegacyRecovery = professional?.status === "PENDING_REVIEW" && !hasValidCurrentSubmission;
       const shouldRestore = isCorrection || isLegacyRecovery || professional?.status === "DRAFT";
+      const canRestoreCurrentSelections = Number(professional?.completionRulesVersion ?? 1) >= 2;
       const loadedDate = (professional?.birthDate ?? user.birthDate) ? String(professional?.birthDate ?? user.birthDate).slice(0, 10) : "";
       if (isCorrection) {
         setCorrectionReason(professional.rejectReason || "Revise os dados indicados pela equipe e reenvie o cadastro.");
@@ -630,21 +640,21 @@ export default function ProfissionalNovoPage() {
         isDepilada: shouldRestore ? Boolean(professional.isDepilada) : current.isDepilada,
         depilationStyle: shouldRestore ? (professional.depilationStyle ?? current.depilationStyle) : current.depilationStyle,
         bodyType: shouldRestore ? (professional.bodyType ?? current.bodyType) : current.bodyType,
-        attendanceTypes: shouldRestore ? (professional.attendanceTypes ?? []) : current.attendanceTypes,
-        servesGenders: shouldRestore ? (professional.servesGenders ?? []) : current.servesGenders,
-        idiomas: shouldRestore ? (professional.idiomas ?? []) : current.idiomas,
-        diasDisponiveis: shouldRestore ? (professional.diasDisponiveis ?? []) : current.diasDisponiveis,
+        attendanceTypes: shouldRestore && canRestoreCurrentSelections ? (professional.attendanceTypes ?? []) : current.attendanceTypes,
+        servesGenders: shouldRestore && canRestoreCurrentSelections ? (professional.servesGenders ?? []) : current.servesGenders,
+        idiomas: shouldRestore && canRestoreCurrentSelections ? (professional.idiomas ?? []) : current.idiomas,
+        diasDisponiveis: shouldRestore && canRestoreCurrentSelections ? (professional.diasDisponiveis ?? []) : current.diasDisponiveis,
         horarioInicio: shouldRestore ? (professional.horarioInicio ?? current.horarioInicio) : current.horarioInicio,
         horarioFim: shouldRestore ? (professional.horarioFim ?? current.horarioFim) : current.horarioFim,
-        services: shouldRestore ? (professional.services ?? []) : current.services,
-        fetishes: shouldRestore ? (professional.fetishes ?? []) : current.fetishes,
+        services: shouldRestore && canRestoreCurrentSelections ? (professional.services ?? []) : current.services,
+        fetishes: shouldRestore && canRestoreCurrentSelections ? (professional.fetishes ?? []) : current.fetishes,
         price15min: shouldRestore && professional.price15min != null ? String(professional.price15min) : current.price15min,
         price30min: shouldRestore && professional.price30min != null ? String(professional.price30min) : current.price30min,
         pricePerHour: shouldRestore && professional.pricePerHour != null ? String(professional.pricePerHour) : current.pricePerHour,
         price2h: shouldRestore && professional.price2h != null ? String(professional.price2h) : current.price2h,
         priceOvernight: shouldRestore && professional.priceOvernight != null ? String(professional.priceOvernight) : current.priceOvernight,
         priceWebcam: shouldRestore && professional.priceWebcam != null ? String(professional.priceWebcam) : current.priceWebcam,
-        paymentMethods: shouldRestore ? (professional.paymentMethods ?? []) : current.paymentMethods,
+        paymentMethods: shouldRestore && canRestoreCurrentSelections ? (professional.paymentMethods ?? []) : current.paymentMethods,
         phone: shouldRestore ? (professional.phone ?? user.phone ?? current.phone) : current.phone,
         whatsapp: shouldRestore ? (professional.whatsapp ?? current.whatsapp) : current.whatsapp,
         instagram: shouldRestore ? (professional.instagram ?? current.instagram) : current.instagram,
@@ -1307,7 +1317,7 @@ export default function ProfissionalNovoPage() {
         <p className="model-analysis-status">Status: <strong>{published ? "Publicado" : "Verificações em andamento"}</strong></p>
         <p>{published
           ? "Seja bem-vinda à Elite Modell! Seu perfil já está disponível para os clientes."
-          : "Estamos finalizando as verificações necessárias. Você receberá uma confirmação assim que seu perfil estiver disponível."}</p>
+          : "Seu perfil foi enviado e agora está em análise pela equipe Elite Modell. Você também receberá um e-mail com a confirmação do envio e os próximos passos."}</p>
         {!published && submissionResult.blockers?.length ? (
           <div className="model-pending-list" role="status">
             <strong>Pendências atuais</strong>

@@ -40,7 +40,7 @@ test.describe("prontidão da publicação profissional", () => {
     const page = fs.readFileSync(path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"), "utf8");
     const email = fs.readFileSync(path.join(process.cwd(), "src/lib/auth-email.ts"), "utf8");
     expect(page).toContain("Parabéns! Seu perfil está liberado!");
-    expect(page).toContain("Estamos finalizando as verificações necessárias.");
+    expect(page).toContain("Seu perfil foi enviado e agora está em análise pela equipe Elite Modell.");
     expect(email).toContain("💜 Bem-vinda à Elite Modell! Seu perfil está no ar!");
     expect(email).toContain("Acessar meu perfil");
     expect(email).toContain("professionalPublicationEmailIdempotencyKey(professionalId)");
@@ -73,7 +73,9 @@ test.describe("prontidão da publicação profissional", () => {
     expect(delivery).toContain('data: { status: "SENT", providerId, sentAt: new Date(), lastError: null }');
     expect(route).toContain("publication.blockers.map((blocker) => blocker.label)");
     expect(route).toContain("markSubmissionReceiptNotRequired");
-    expect(email).toContain("Ainda estamos finalizando algumas verificações necessárias");
+    expect(email).toContain("Agora nossa equipe irá analisar suas informações, fotos, identidade");
+    expect(email).toContain("em até 3 dias úteis");
+    expect(email).toContain("mensagem aceita pelo provedor");
     expect(email).toContain('"Idempotency-Key"');
     expect(route).not.toMatch(/professionalSubmissionReceipt\.(?:delete|deleteMany)/);
   });

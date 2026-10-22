@@ -172,7 +172,8 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     const publication = fs.readFileSync(path.join(process.cwd(), "src/lib/professional-auto-publication.ts"), "utf8");
     expect(reconciliation).toContain('kycStatus: assessment.status');
     expect(reconciliation).toContain('attemptAutomaticProfessionalPublication(outcome.professionalId, "didit-approved")');
-    expect(submission).toContain('identityApproved ? "PENDING_REVIEW" as const : "DRAFT" as const');
+    expect(submission).toContain('status:    "PENDING_REVIEW" as const');
+    expect(submission).toContain("KYC pendente impede aprovação");
     expect(submission).toContain('attemptAutomaticProfessionalPublication(professional.id, "registration-submitted")');
     expect(publication).toContain('status: "ACTIVE"');
     expect(publication).toContain('evaluateMediaPublicationGates({');

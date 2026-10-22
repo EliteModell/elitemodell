@@ -366,7 +366,9 @@ export async function POST(req: NextRequest) {
       slug,
       bio:       profileData.bio ?? "",
       birthDate: profileData.birthDate ? new Date(profileData.birthDate) : undefined,
-      status:    identityApproved ? "PENDING_REVIEW" as const : "DRAFT" as const,
+      // A submissão formal já foi validada acima. KYC pendente impede aprovação e
+      // publicação, mas não transforma novamente um cadastro enviado em rascunho.
+      status:    "PENDING_REVIEW" as const,
       verified:  false,
       rejectReason: null,
       docStatus: identityApproved ? "APPROVED" : diditVerification.status === "REJECTED" ? "REJECTED" : "PENDING",

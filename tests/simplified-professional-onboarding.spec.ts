@@ -139,6 +139,27 @@ test("rascunho local antigo nao sobrescreve nome e cidade mais novos do banco", 
   await expect(page.getByPlaceholder("Selecione sua cidade")).toHaveValue("Cidade do banco");
 });
 
+test("rascunho antigo sem proveniencia nao preseleciona servicos", async ({ page }) => {
+  await mockOnboarding(page);
+  await page.unroute("**/api/professionals/draft");
+  await page.route("**/api/professionals/draft", route => route.fulfill({ json: {
+    completion: { profilePercent: 100, profileComplete: true, readyToSubmit: false, profileIssues: [], issues: [] },
+  } }));
+  await page.addInitScript(({ userId }) => {
+    localStorage.setItem(`elitemodell_professional_onboarding_v2:${encodeURIComponent(userId)}:PROFESSIONAL`, JSON.stringify({
+      ownerId: userId,
+      registrationType: "PROFESSIONAL",
+      updatedAt: "2099-01-01T00:00:00.000Z",
+      step: 3,
+      form: { services: ["Acompanhamento"], fetishes: ["Legado invisivel"] },
+    }));
+  }, { userId: USER_ID });
+
+  await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText("Etapa 4 de 9", { exact: false })).toBeVisible();
+  await expect(page.getByText("Nenhum serviço selecionado", { exact: true })).toBeVisible();
+});
+
 test("troca de conta preserva o rascunho de A e bloqueia dados de A em B", async ({ page }) => {
   const accountA = "professional-account-a";
   const accountB = "professional-account-b";
@@ -173,6 +194,10 @@ test("troca de conta preserva o rascunho de A e bloqueia dados de A em B", async
 
   await expect(page.getByText("Etapa 1 de 9", { exact: false })).toBeVisible();
   await expect(page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...")).toHaveValue("");
+  await expect.poll(() => page.evaluate(({ accountB }) => {
+    const prefix = "elitemodell_professional_onboarding_v2:";
+    return localStorage.getItem(`${prefix}${encodeURIComponent(accountB)}:PROFESSIONAL`);
+  }, { accountB })).toBeNull();
   const storageState = await page.evaluate(({ accountA, accountB }) => {
     const prefix = "elitemodell_professional_onboarding_v2:";
     return {

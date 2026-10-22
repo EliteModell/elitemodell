@@ -217,6 +217,10 @@ export async function sendAuthEmail(
   }
 
   const payload = await res.json().catch(() => ({})) as { id?: string };
+  console.info("[auth-email] mensagem aceita pelo provedor.", {
+    providerMessageId: payload.id ?? null,
+    idempotent: Boolean(options?.idempotencyKey),
+  });
   return payload.id ?? null;
 }
 
@@ -230,7 +234,7 @@ export async function sendProfessionalSubmissionReceipt(
   const safeName = name?.trim().replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character] ?? character));
   const safePendingItems = pendingItems.map((item) => escapeHtml(item));
   return sendAuthEmail(to, {
-    subject: "💜 Seu cadastro na Elite Modell foi recebido!",
+    subject: "Recebemos seu cadastro na Elite Modell",
     html: `
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#ffffff;color:#17131a;border:1px solid #dfd1e5;border-radius:16px;overflow:hidden">
         <div style="height:4px;background:#7d179f"></div>
@@ -240,9 +244,10 @@ export async function sendProfessionalSubmissionReceipt(
           <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Olá, ${safeName || "profissional"}!</p>
           <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Que bom ter você chegando à Elite Modell! 💜</p>
           <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Você concluiu o preenchimento do seu cadastro com sucesso.</p>
-          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Ainda estamos finalizando algumas verificações necessárias para disponibilizar seu perfil com segurança.</p>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Agora nossa equipe irá analisar suas informações, fotos, identidade e as validações necessárias antes da liberação do perfil.</p>
           ${safePendingItems.length ? `<ul style="color:#625c68;line-height:1.7;margin:0 0 12px">${safePendingItems.map((item) => `<li>${item}</li>`).join("")}</ul>` : ""}
-          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Você pode acompanhar o andamento pela sua conta. Caso alguma informação adicional seja necessária, avisaremos.</p>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">A análise normalmente é concluída em até 3 dias úteis. Você pode acompanhar o andamento pela sua conta e será avisada quando houver uma atualização.</p>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Se for necessário algum ajuste ou informação complementar, entraremos em contato.</p>
           <p style="color:#625c68;line-height:1.7;margin:0">Obrigada pela confiança e seja muito bem-vinda!<br><br>Com carinho,<br>Equipe Elite Modell 💜</p>
           <div style="margin-top:28px;padding-top:18px;border-top:1px solid #eee6f1;color:#77707b;font-size:12px">Esta mensagem não contém fotos, documentos, dados biométricos ou informações financeiras.</div>
         </div>

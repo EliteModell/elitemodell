@@ -106,7 +106,7 @@ test.describe("Didit corrigida", () => {
     } }));
     await page.addInitScript((userId) => {
       localStorage.setItem("elite_cookie_consent", "necessary");
-      localStorage.setItem(`elitemodell_professional_onboarding_v2:${encodeURIComponent(userId)}:PROFESSIONAL`, JSON.stringify({ ownerId: userId, registrationType: "PROFESSIONAL", step: 7, form: {
+      localStorage.setItem(`elitemodell_professional_onboarding_v2:${encodeURIComponent(userId)}:PROFESSIONAL`, JSON.stringify({ ownerId: userId, registrationType: "PROFESSIONAL", draftVersion: 3, updatedAt: "2099-01-01T00:00:00.000Z", step: 7, form: {
         displayName: "Modelo Teste", bio: "Apresentação de teste. ".repeat(8), city: "São Paulo", state: "SP",
         escortCategory: "MULHER", birthDate: "2000-01-01", attendanceTypes: ["A domicílio"],
         servesGenders: ["Homens"], diasDisponiveis: ["Segunda"], services: ["Acompanhamento"],
