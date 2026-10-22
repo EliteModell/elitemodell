@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { buildEmailAuthCallbackUrl, canonicalizeRequestedEmailCallback } from "../src/lib/email-auth-callback";
-import { professionalSubmissionReceiptIdempotencyKey } from "../src/lib/email-idempotency";
+import { professionalApprovalEmailIdempotencyKey, professionalPublicationEmailIdempotencyKey, professionalSubmissionReceiptIdempotencyKey } from "../src/lib/email-idempotency";
 
 test.describe("prontidão da publicação profissional", () => {
   test("callback de confirmação usa domínio canônico e rejeita redirect externo", () => {
@@ -32,6 +32,17 @@ test.describe("prontidão da publicação profissional", () => {
     expect(first).toBe("professional-submission/profile_123");
     expect(professionalSubmissionReceiptIdempotencyKey("profile_123")).toBe(first);
     expect(professionalSubmissionReceiptIdempotencyKey("profile_456")).not.toBe(first);
+  });
+
+  test("publicação possui chave própria e mensagens somente após ACTIVE", () => {
+    expect(professionalPublicationEmailIdempotencyKey("profile_123")).toBe("professional-publication/profile_123");
+    expect(professionalApprovalEmailIdempotencyKey("profile_123")).not.toBe(professionalPublicationEmailIdempotencyKey("profile_123"));
+    const page = fs.readFileSync(path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"), "utf8");
+    const email = fs.readFileSync(path.join(process.cwd(), "src/lib/auth-email.ts"), "utf8");
+    expect(page).toContain("Parabéns! Seu perfil está liberado!");
+    expect(page).toContain("Estamos finalizando as verificações necessárias.");
+    expect(email).toContain("Parabéns! Seu perfil na Elite Modell está liberado!");
+    expect(email).toContain("professionalPublicationEmailIdempotencyKey(professionalId)");
   });
 
   test("migração do comprovante é aditiva e possui unicidade, índice e FK", () => {

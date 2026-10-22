@@ -210,6 +210,22 @@ async function promoteAsset(
     },
   });
   await ensureProfessionalPhotoReference(asset, controlledUrl);
+  if (asset.category === "image" && asset.folder.startsWith("profiles")) {
+    const professional = await prisma.professional.findUnique({
+      where: { userId: asset.userId },
+      select: { id: true },
+    });
+    if (professional) {
+      const { attemptAutomaticProfessionalPublication } = await import("@/lib/professional-auto-publication");
+      await attemptAutomaticProfessionalPublication(professional.id, "profile-media-approved").catch((cause) => {
+        console.error("[upload-security] publicação automática adiada", {
+          professionalId: professional.id,
+          assetId: asset.id,
+          reason: cause instanceof Error ? cause.name : "unknown",
+        });
+      });
+    }
+  }
   await provider.delete(asset.quarantineBucket, asset.quarantinePath).catch(() => undefined);
   return controlledUrl;
 }
@@ -468,7 +484,7 @@ export async function approveUploadAsset(assetId: string, reviewerId: string, re
   const asset = await prisma.uploadAsset.findUniqueOrThrow({
     where: { id: assetId },
     include: {
-      owner: { select: { blocked: true, professional: { select: { id: true, status: true, verified: true, kycStatus: true } } } },
+      owner: { select: { blocked: true, professional: { select: { id: true, status: true, verified: true, kycStatus: true, registrationSubmittedAt: true } } } },
       depictedPeople: { select: { ageStatus: true, consentStatus: true, revokedAt: true } },
     },
   });
@@ -496,6 +512,7 @@ export async function approveUploadAsset(assetId: string, reviewerId: string, re
     professionalStatus: professional?.status,
     professionalVerified: professional?.verified,
     professionalKycStatus: professional?.kycStatus,
+    professionalRegistrationSubmittedAt: professional?.registrationSubmittedAt,
     depictedPeople: asset.depictedPeople,
     hasOpenReport: Boolean(openReport),
   });

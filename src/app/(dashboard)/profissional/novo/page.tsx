@@ -1114,6 +1114,7 @@ export default function ProfissionalNovoPage() {
         receiptStatus?: string;
         identityPending?: boolean;
         identityStatus?: string;
+        publication?: { published?: boolean; profileUrl?: string; blockers?: Array<{ code: string; label: string }> };
       };
       if (!res.ok) {
         toast.error(responseError(data));
@@ -1123,10 +1124,11 @@ export default function ProfissionalNovoPage() {
       setSubmissionResult({
         status: data.status ?? "PENDING_REVIEW",
         receiptStatus: data.receiptStatus,
-        published: false,
-        blockers: data.identityPending
+        published: Boolean(data.publication?.published),
+        profileUrl: data.publication?.profileUrl,
+        blockers: data.publication?.blockers ?? (data.identityPending
           ? [{ code: "kyc", label: "A verificação de identidade e maioridade ainda não foi aprovada." }]
-          : [{ code: "manual_review", label: "Seu cadastro está aguardando a aprovação da equipe Elite Modell." }],
+          : []),
       });
     } catch {
       const recovered = await recoverSubmittedProfile();
@@ -1269,11 +1271,11 @@ export default function ProfissionalNovoPage() {
         <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={184} height={61} priority />
         <div aria-hidden="true" className="model-success-check">✓</div>
         <p className="model-success-eyebrow">{published ? "Perfil publicado" : "Cadastro recebido"}</p>
-        <h1>{published ? "Seu perfil está no ar!" : "Cadastro recebido com sucesso!"}</h1>
+        <h1>{published ? "Parabéns! Seu perfil está liberado!" : "Cadastro recebido com sucesso!"}</h1>
         <p className="model-analysis-status">Status: <strong>{published ? "Publicado" : "Verificações em andamento"}</strong></p>
         <p>{published
-          ? "Parabéns! Seu cadastro na Elite Modell foi concluído e seu perfil já está disponível na plataforma."
-          : "Recebemos suas informações. Seu cadastro foi enviado e você poderá acompanhar o andamento pela sua conta."}</p>
+          ? "Seja bem-vinda à Elite Modell! Seu perfil já está disponível para os clientes."
+          : "Estamos finalizando as verificações necessárias. Você receberá uma confirmação assim que seu perfil estiver disponível."}</p>
         {!published && submissionResult.blockers?.length ? (
           <div className="model-pending-list" role="status">
             <strong>Pendências atuais</strong>

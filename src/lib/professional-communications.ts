@@ -16,7 +16,10 @@ export async function deliverProfessionalApprovalSms(input: {
   professionalId: string;
   userId: string;
   adminId?: string;
+  dedupeReason?: string;
+  body?: string;
 }) {
+  const dedupeReason = input.dedupeReason ?? "professional:approval-sms";
   const [user, previous] = await Promise.all([
     prisma.user.findUnique({
       where: { id: input.userId },
@@ -34,7 +37,7 @@ export async function deliverProfessionalApprovalSms(input: {
       where: {
         targetType: "PROFESSIONAL",
         targetId: input.professionalId,
-        reason: "professional:approval-sms",
+        reason: dedupeReason,
       },
       select: { id: true },
     }),
@@ -57,7 +60,7 @@ export async function deliverProfessionalApprovalSms(input: {
     body: new URLSearchParams({
       To: phone,
       From: from,
-      Body: "Elite Modell: Seu cadastro foi aprovado! Você já pode acessar sua conta e aproveitar a plataforma. Obrigado pela confiança! www.elitemodell.com.br",
+      Body: input.body ?? "Elite Modell: Seu cadastro foi aprovado! Você já pode acessar sua conta e aproveitar a plataforma. Obrigado pela confiança! www.elitemodell.com.br",
     }),
   });
   await prisma.auditLog.create({ data: {
@@ -67,7 +70,7 @@ export async function deliverProfessionalApprovalSms(input: {
     targetType: "PROFESSIONAL",
     targetId: input.professionalId,
     changes: { communicationStatus: response.ok ? "SMS_SENT" : "SMS_FAILED", communicationType: "PROFILE_APPROVED" },
-    reason: "professional:approval-sms",
+    reason: dedupeReason,
   } });
   return { smsStatus: response.ok ? "SMS_SENT" as const : "SMS_FAILED" as const };
 }

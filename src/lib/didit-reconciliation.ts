@@ -137,5 +137,38 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
       reason: "Maioridade da titular sincronizada em mídias próprias após decisão oficial aprovada da Didit; consentimentos e demais pessoas retratadas permaneceram inalterados.",
     });
   }
+  if (outcome.response.status === "APPROVED" && outcome.professionalId) {
+    try {
+      const [{ processUploadAsset }, { attemptAutomaticProfessionalPublication }] = await Promise.all([
+        import("@/lib/upload-quarantine"),
+        import("@/lib/professional-auto-publication"),
+      ]);
+      const pendingAssets = await prisma.uploadAsset.findMany({
+        where: {
+          userId,
+          category: "image",
+          folder: { startsWith: "profiles" },
+          status: { notIn: ["APPROVED", "REJECTED"] },
+        },
+        orderBy: { createdAt: "asc" },
+        take: 20,
+        select: { id: true },
+      });
+      for (const asset of pendingAssets) {
+        await processUploadAsset(asset.id).catch((cause) => {
+          console.warn("[didit-reconciliation] mídia continua privada", {
+            assetId: asset.id,
+            reason: cause instanceof Error ? cause.name : "unknown",
+          });
+        });
+      }
+      await attemptAutomaticProfessionalPublication(outcome.professionalId, "didit-approved");
+    } catch (cause) {
+      console.error("[didit-reconciliation] publicação automática adiada", {
+        professionalId: outcome.professionalId,
+        reason: cause instanceof Error ? cause.name : "unknown",
+      });
+    }
+  }
   return outcome.response;
 }

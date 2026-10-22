@@ -25,6 +25,7 @@ import { controlledMediaAssetId, filterApprovedProfilePhotos, normalizeControlle
 import { deliverProfessionalSubmissionReceipt } from "@/lib/professional-submission-receipt";
 import { logAudit } from "@/lib/audit";
 import { professionalCompletion, issueChecklist } from "@/lib/professional-completeness";
+import { attemptAutomaticProfessionalPublication } from "@/lib/professional-auto-publication";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import { refreshExpiredProfessionalBoosts } from "@/lib/professional-timers";
 
@@ -260,14 +261,16 @@ export async function POST(req: NextRequest) {
   if (existing && !["DRAFT", "CORRECTION_REQUIRED"].includes(existing.status)) {
     if (existing.status === "PENDING_REVIEW") {
       const receiptStatus = await deliverProfessionalSubmissionReceipt(existing.id, existing.user.email);
+      const publication = await attemptAutomaticProfessionalPublication(existing.id, "registration-resubmission");
       return NextResponse.json({
         ok: true,
         professionalId: existing.id,
-        status: existing.status,
+        status: publication.status,
         alreadySubmitted: true,
         receiptStatus,
-        identityPending: existing.kycStatus !== "APPROVED",
+        identityPending: publication.blockers.some((blocker) => blocker.code === "kyc"),
         identityStatus: existing.kycStatus,
+        publication,
       });
     }
     return NextResponse.json({ error: "Você já tem um perfil profissional." }, { status: 409 });
@@ -441,14 +444,16 @@ export async function POST(req: NextRequest) {
         link: "/profissional/analise",
       },
     });
+    const publication = await attemptAutomaticProfessionalPublication(professional.id, "registration-submitted");
     return NextResponse.json({
       ok: true,
       professionalId: professional.id,
-      status: professional.status,
+      status: publication.status,
       alreadySubmitted: false,
       receiptStatus,
-      identityPending: !identityApproved,
+      identityPending: publication.blockers.some((blocker) => blocker.code === "kyc"),
       identityStatus: diditVerification.status,
+      publication,
     }, { status: existing ? 200 : 201 });
   } catch (err) {
     if (err instanceof z.ZodError) {

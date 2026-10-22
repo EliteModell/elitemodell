@@ -18,8 +18,6 @@ import { CohortBatchApproval } from "./CohortBatchApproval";
 
 export const dynamic = "force-dynamic";
 
-const ACCOUNT_COHORT_START = new Date("2026-10-19T03:00:00.000Z");
-const ACCOUNT_COHORT_END = new Date("2026-10-23T03:00:00.000Z");
 const OPERATIONAL_DAY_START = new Date("2026-10-21T03:00:00.000Z");
 const OPERATIONAL_DAY_END = new Date("2026-10-22T03:00:00.000Z");
 
@@ -39,11 +37,10 @@ async function reviewUpload(formData: FormData) {
       id: assetId,
       category: "image",
       folder: { startsWith: "profiles" },
-      owner: { createdAt: { gte: ACCOUNT_COHORT_START, lt: ACCOUNT_COHORT_END } },
     },
     select: { id: true },
   });
-  if (!scopedAsset) throw new Error("A mídia não pertence ao recorte de contas de 19 a 22/10/2026.");
+  if (!scopedAsset) throw new Error("A mídia não pertence a um perfil profissional.");
 
   if (action === "APPROVE") {
     await approveUploadAsset(assetId, session.user.id, effectiveReason);
@@ -69,12 +66,11 @@ async function batchApproveUploads(formData: FormData) {
       id: { in: assetIds },
       category: "image",
       folder: { startsWith: "profiles" },
-      owner: { createdAt: { gte: ACCOUNT_COHORT_START, lt: ACCOUNT_COHORT_END } },
     },
     select: { id: true },
   });
   if (ownedAssets.length !== assetIds.length) {
-    throw new Error("O lote deve conter somente fotos de contas criadas entre 19 e 22/10/2026.");
+    throw new Error("O lote deve conter somente fotos de perfis profissionais.");
   }
 
   for (const assetId of assetIds) {
@@ -102,8 +98,6 @@ async function synchronizeDiditAge(formData: FormData) {
   });
   if (
     !professional ||
-    professional.user.createdAt < ACCOUNT_COHORT_START ||
-    professional.user.createdAt >= ACCOUNT_COHORT_END ||
     professional.kycProvider !== "DIDIT" ||
     !professional.kycSessionId
   ) return;
@@ -160,7 +154,7 @@ function blockerReason(code: string, asset: {
 }) {
   const professional = asset.owner.professional;
   const professionalIssues = professional ? [
-    professional.status === "DRAFT" || !professional.registrationSubmittedAt ? "cadastro ainda não concluído e enviado para análise" : null,
+    !professional.registrationSubmittedAt ? "cadastro ainda não concluído e enviado para análise" : null,
     !isProfessionalDisplayNameReady(professional.displayName) ? "nome profissional ainda precisa ser informado" : null,
     professional.kycStatus !== "APPROVED" ? `identidade e maioridade oficial ainda não aprovadas (Didit ${professional.kycStatus})` : null,
     professional.status === "CORRECTION_REQUIRED" && professional.rejectReason ? `correção solicitada: ${professional.rejectReason}` : null,
@@ -191,7 +185,6 @@ export default async function AdminUploadModerationPage() {
       status: { not: "APPROVED" },
       category: "image",
       folder: { startsWith: "profiles" },
-      owner: { createdAt: { gte: ACCOUNT_COHORT_START, lt: ACCOUNT_COHORT_END } },
     },
     orderBy: { createdAt: "asc" },
     take: 100,
@@ -248,6 +241,7 @@ export default async function AdminUploadModerationPage() {
     professionalStatus: asset.owner.professional?.status,
     professionalVerified: asset.owner.professional?.verified,
     professionalKycStatus: asset.owner.professional?.kycStatus,
+    professionalRegistrationSubmittedAt: asset.owner.professional?.registrationSubmittedAt,
     depictedPeople: asset.depictedPeople,
     hasOpenReport: [asset.id, asset.controlledUrl, asset.userId, asset.owner.professional?.id]
       .some((target) => target ? reportedTargets.has(target) : false),
@@ -279,8 +273,8 @@ export default async function AdminUploadModerationPage() {
   return (
     <div>
       <AdminHeader
-        title="Fotos das contas criadas de 19 a 22/10/2026"
-        subtitle="Recorte pelo horário de Brasília e pela criação da conta. Fotos enviadas depois também entram; cadastros anteriores ficam fora de todas as ações."
+        title="Fila de fotos profissionais"
+        subtitle="Fotos profissionais aguardando verificações ou decisão visual. Nenhuma mídia é liberada sem todos os controles obrigatórios."
       />
       {stuckAssets.length > 0 ? (
         <AdminPanel>
@@ -292,11 +286,11 @@ export default async function AdminUploadModerationPage() {
       <AdminPanel>
         <h2 style={{ margin: "0 0 8px", color: "#fff", fontSize: 20 }}>Resumo da fila</h2>
         <p style={{ margin: 0, color: "#b4adb0", lineHeight: 1.6 }}>
-          {assets.length} foto(s) pendente(s), agrupadas em {groups.length} profissional(is) deste recorte. {reviewableCount} foto(s) dependem somente de revisão visual e podem entrar na aprovação administrativa em lote.
+          {assets.length} foto(s) pendente(s), agrupadas em {groups.length} profissional(is). {reviewableCount} foto(s) dependem somente de revisão visual e podem ser decididas em lote.
         </p>
       </AdminPanel>
       <AdminPanel>
-        <h2 style={{ margin: "0 0 10px", color: "#fff", fontSize: 20 }}>Aprovação administrativa única do recorte</h2>
+        <h2 style={{ margin: "0 0 10px", color: "#fff", fontSize: 20 }}>Revisão visual das mídias elegíveis</h2>
         <CohortBatchApproval
           action={batchApproveUploads}
           assets={reviewedAssets.filter(({ blockers }) => blockers.length === 0).map(({ asset }) => ({

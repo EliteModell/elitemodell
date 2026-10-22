@@ -166,12 +166,18 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     });
   });
 
-  test("aprovacao do KYC nao publica automaticamente o perfil", () => {
+  test("aprovacao do KYC reavalia publicacao sem ignorar as demais travas", () => {
     const reconciliation = fs.readFileSync(path.join(process.cwd(), "src/lib/didit-reconciliation.ts"), "utf8");
     const submission = fs.readFileSync(path.join(process.cwd(), "src/app/api/professionals/route.ts"), "utf8");
+    const publication = fs.readFileSync(path.join(process.cwd(), "src/lib/professional-auto-publication.ts"), "utf8");
     expect(reconciliation).toContain('kycStatus: assessment.status');
+    expect(reconciliation).toContain('attemptAutomaticProfessionalPublication(outcome.professionalId, "didit-approved")');
     expect(submission).toContain('identityApproved ? "PENDING_REVIEW" as const : "DRAFT" as const');
-    expect(submission).not.toContain('attemptAutomaticProfessionalPublication(professional.id, "registration-submitted")');
+    expect(submission).toContain('attemptAutomaticProfessionalPublication(professional.id, "registration-submitted")');
+    expect(publication).toContain('status: "ACTIVE"');
+    expect(publication).toContain('evaluateMediaPublicationGates({');
+    expect(publication).toContain('professional.kycStatus !== "APPROVED"');
+    expect(publication).toContain('professionalApprovalAccessData(tx, professional)');
   });
 
   test("onboarding preserva rascunho, apresenta uma etapa Didit e impede clique duplo", () => {

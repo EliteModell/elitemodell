@@ -305,7 +305,7 @@ async function reviewProfessional(formData: FormData) {
     await deliverProfessionalCommunication({
       professionalId: id, userId: professional.userId, email: professional.user?.email, adminId: session.user.id,
       type: "PROFILE_APPROVED", notificationTitle: "Cadastro aprovado", notificationBody: "Seu cadastro foi aprovado. Complete informações opcionais no painel; a publicação continua sujeita à moderação.",
-      link: "/profissional", send: () => sendProfessionalApprovalEmail(professional.user!.email!, professional.user!.name),
+      link: "/profissional", send: () => sendProfessionalApprovalEmail(professional.user!.email!, professional.user!.name, professional.id),
     });
     await deliverProfessionalApprovalSms({ professionalId: id, userId: professional.userId, adminId: session.user.id });
   } else if (action === "correction") {

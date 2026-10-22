@@ -12,6 +12,7 @@ export type ManualMediaReviewInput = {
   professionalStatus?: string | null;
   professionalVerified?: boolean | null;
   professionalKycStatus?: string | null;
+  professionalRegistrationSubmittedAt?: Date | string | null;
   depictedPeople?: Array<{
     ageStatus: string;
     consentStatus: string;
@@ -33,7 +34,10 @@ export function manualMediaReviewBlockers(input: ManualMediaReviewInput) {
   if (!passed(input.consentStatus)) blockers.push("CONSENT");
   if (input.takedownStatus !== "CLEAR") blockers.push("TAKEDOWN");
   if (input.ownerBlocked) blockers.push("OWNER_BLOCKED");
-  if (input.professionalStatus !== "ACTIVE" || !input.professionalVerified || input.professionalKycStatus !== "APPROVED") {
+  const publishedProfessional = input.professionalStatus === "ACTIVE" && input.professionalVerified;
+  const submittedProfessional = Boolean(input.professionalRegistrationSubmittedAt)
+    && ["DRAFT", "PENDING_REVIEW", "CORRECTION_REQUIRED"].includes(input.professionalStatus ?? "");
+  if ((!publishedProfessional && !submittedProfessional) || input.professionalKycStatus !== "APPROVED") {
     blockers.push("PROFESSIONAL_NOT_ELIGIBLE");
   }
   if (!input.depictedPeople?.length || input.depictedPeople.some((person) => (
