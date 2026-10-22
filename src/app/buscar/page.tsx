@@ -1013,7 +1013,16 @@ function LocationModal({
           {locations.map((city) => {
             const active = draft?.slug === city.slug && !draftVirtual;
             return (
-              <button key={city.slug} type="button" className={`location-option ${active ? "active" : ""}`} onClick={() => onSelectCity(city)}>
+              <button
+                key={city.slug}
+                type="button"
+                className={`location-option ${active ? "active" : ""}`}
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  onSelectCity(city);
+                }}
+                onClick={() => onSelectCity(city)}
+              >
                 <span>{city.label}</span>
                 {active && <span style={{ color: GOLD, fontWeight: 900 }}>Selecionada</span>}
               </button>
