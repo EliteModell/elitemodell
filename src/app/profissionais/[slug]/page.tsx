@@ -708,7 +708,7 @@ export default function ProfissionalProfilePage() {
         {/* SOBRE MIM */}
         <div ref={refSobre} style={{ scrollMarginTop: 120 }}>
 
-          <section style={{ marginBottom: 28, paddingBottom: 28, borderBottom: `1px solid ${GOLD_DIM}` }} aria-label="Valores">
+          <section style={{ marginBottom: 28, paddingBottom: 28, borderBottom: `1px solid ${GOLD_DIM}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fcf7ff", margin: 0, fontFamily: PLAYFAIR }}>Descrição</h2>
@@ -766,19 +766,19 @@ export default function ProfissionalProfilePage() {
           </section>
 
           {/* Tabela de valores */}
-          <section style={{ marginBottom: 28, paddingBottom: 28, borderBottom: `1px solid ${GOLD_DIM}` }}>
+          <section className={styles.pricingSection} style={{ marginBottom: 28, paddingBottom: 28, borderBottom: `1px solid ${GOLD_DIM}` }} aria-label="Valores">
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><path d="M12 16h.01"/></svg>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fcf7ff", margin: 0, fontFamily: PLAYFAIR }}>Valores</h2>
             </div>
-            <button type="button" onClick={() => setValoresAbertos((open) => !open)} style={{ width: "100%", padding: "12px 16px", border: `1px solid ${GOLD_DIM}`, borderRadius: valoresAbertos ? "12px 12px 0 0" : 12, background: "#080808", color: "#fcf7ff", display: "flex", justifyContent: "space-between", cursor: "pointer", fontWeight: 700 }} aria-expanded={valoresAbertos}>
+            <button className={styles.pricingToggle} type="button" onClick={() => setValoresAbertos((open) => !open)} style={{ width: "100%", padding: "12px 16px", border: `1px solid ${GOLD_DIM}`, borderRadius: valoresAbertos ? "12px 12px 0 0" : 12, background: "#fff", color: "#141212", display: "flex", justifyContent: "space-between", cursor: "pointer", fontWeight: 700 }} aria-expanded={valoresAbertos}>
               <span>{startingPrice ? `A partir de R$ ${startingPrice.value.toLocaleString("pt-BR")} · ${startingPrice.shortLabel}` : "Valores sob consulta"}</span><span>{valoresAbertos ? "−" : "+"}</span>
             </button>
             {valoresAbertos && priceOptions.length > 0 ? <div style={{ border: `1px solid ${GOLD_DIM}`, borderTop: 0, borderRadius: "0 0 12px 12px", overflow: "hidden" }}>
               {priceOptions.map((row, i, arr) => (
-                <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: i % 2 === 0 ? "#080808" : "#080808", borderBottom: i < arr.length - 1 ? `1px solid ${GOLD_DIM}` : "none" }}>
-                  <span style={{ fontSize: 13, color: "#b4adb0", fontStyle: "italic" }}>{row.label}</span>
-                  <span style={{ fontSize: 14, color: row.value ? "#fcf7ff" : "#676064", fontWeight: row.value ? 700 : 400 }}>
+                <div className={styles.pricingRow} key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: "#fff", borderBottom: i < arr.length - 1 ? `1px solid ${GOLD_DIM}` : "none" }}>
+                  <span className={styles.pricingLabel} style={{ fontSize: 13, color: "#686270", fontStyle: "italic" }}>{row.label}</span>
+                  <span className={styles.pricingValue} style={{ fontSize: 14, color: "#141212", fontWeight: row.value ? 700 : 400 }}>
                     {`R$ ${row.value.toLocaleString("pt-BR")}`}
                   </span>
                 </div>

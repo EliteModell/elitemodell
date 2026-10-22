@@ -47,6 +47,14 @@ function mockProfessional(photoUrls: string[], pendingMedia = 0) {
     galleryUrls: photoUrls.slice(1),
     verified: true,
     featured: false,
+    price15min: 150,
+    price30min: 200,
+    pricePerHour: 300,
+    price2h: null,
+    priceOvernight: 1_000,
+    priceWebcam: null,
+    priceMin: 150,
+    paymentMethods: ["Pix"],
     rating: 5,
     totalReviews: 0,
     profileViews: 0,
@@ -226,6 +234,27 @@ test.describe("contrato publico do perfil profissional", () => {
     expect(media.cover).toBeNull();
     expect(media.avatar).toBeNull();
     expect(media.gallery).toHaveLength(0);
+  });
+
+  test("abre a tabela com apenas as duracoes configuradas e contraste legivel", async ({ page }) => {
+    await mockPublicProfilePage(page, []);
+    await page.goto("/profissionais/victoria");
+
+    const pricing = page.getByRole("heading", { name: "Valores", exact: true }).locator("..").locator("..");
+    const toggle = pricing.getByRole("button");
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(toggle).toContainText("A partir de R$ 150 · 15 min");
+    await toggle.click();
+
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await expect(pricing).toContainText("15 minutos");
+    await expect(pricing).toContainText("30 minutos");
+    await expect(pricing).toContainText("1 hora");
+    await expect(pricing).toContainText("Pernoite");
+    await expect(pricing).not.toContainText("2 horas");
+    await expect(pricing).not.toContainText("Vídeo chamada");
+    await expect(toggle).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(toggle).toHaveCSS("color", "rgb(20, 18, 18)");
   });
 
   test("calcula presenca apenas dentro da janela e respeita privacidade", () => {

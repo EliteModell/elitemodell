@@ -43,6 +43,23 @@
   padding-top: 44px;
 }
 
+/* The public theme converts legacy dark surfaces to white. Keep the pricing
+   disclosure readable after that conversion instead of leaving white text on
+   a white button/table. */
+.pricingSection .pricingToggle.pricingToggle,
+.pricingSection .pricingRow.pricingRow {
+  background: #fff !important;
+  color: #141212 !important;
+}
+
+.pricingSection .pricingLabel.pricingLabel {
+  color: #686270 !important;
+}
+
+.pricingSection .pricingValue.pricingValue {
+  color: #141212 !important;
+}
+
 @media (min-width: 721px) {
   .coverIdentity {
     left: max(16px, calc((100vw - 720px) / 2 + 16px));
