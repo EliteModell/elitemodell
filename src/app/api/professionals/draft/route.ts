@@ -103,7 +103,7 @@ export async function PATCH(req: NextRequest) {
     const stepIssues = completion.issues.filter((issue) => issue.step === step);
     if (stepIssues.length) {
       return NextResponse.json({
-        error: "Complete os campos obrigatórios desta etapa.",
+        error: `Complete os campos obrigatórios desta etapa: ${stepIssues.map((issue) => issue.label).join(", ")}.`,
         code: "step_incomplete",
         step,
         issues: stepIssues,

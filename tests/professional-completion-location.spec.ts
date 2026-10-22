@@ -4,6 +4,8 @@ import path from "node:path";
 import { issueChecklist, issuesForStep, professionalAdministrativeApprovalIssues, professionalCompletion } from "../src/lib/professional-completeness";
 import { CITY_CHANGE_REQUIRES_VOUCHER, INITIAL_FREE_CITY_CHANGES, locationChangeNeedsReview, normalizeServiceLocation, publicServiceLocation } from "../src/lib/professional-location";
 import { professionalCityFilter, resolveExactCityQuery } from "../src/lib/public-city-search";
+import { professionalDisplayNameForEditing } from "../src/lib/professional-display-name";
+import { nameForPhoneAccount } from "../src/lib/phone-otp";
 
 const complete = {
   displayName: "Modelo Teste",
@@ -57,6 +59,13 @@ test.describe("aprovação administrativa cirúrgica", () => {
   test("bloqueia o nome provisório usado durante o cadastro", () => {
     const issues = professionalAdministrativeApprovalIssues({ ...approvalReady, displayName: "Cadastro de acompanhante" });
     expect(issues).toContainEqual(expect.objectContaining({ code: "display_name" }));
+  });
+
+  test("novo cadastro não transforma nome técnico em nome profissional", () => {
+    expect(nameForPhoneAccount("model")).toBeNull();
+    expect(professionalDisplayNameForEditing("Cadastro de acompanhante")).toBe("");
+    expect(professionalDisplayNameForEditing("Perfil em cadastro")).toBe("");
+    expect(professionalDisplayNameForEditing("Marina Elite")).toBe("Marina Elite");
   });
 });
 

@@ -3,6 +3,7 @@ import "server-only";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { type EntryAccountRole, isHostAccountType } from "@/lib/account-routes";
+import { professionalDisplayNameForEditing } from "@/lib/professional-display-name";
 
 export type ActiveProfileType = "CLIENTE" | "HOST" | "PROFESSIONAL" | "ADMIN";
 
@@ -127,8 +128,9 @@ export async function ensureProfileForIntent(userId: string, intent: EntryAccoun
       select: { id: true, name: true, email: true, category: true },
     });
 
-    const displayName = user.name?.trim() || "Perfil em cadastro";
-    const slug = await uniqueDraftProfessionalSlug(tx, userId, `${displayName}-${user.email ?? userId.slice(-8)}`);
+    const displayName = professionalDisplayNameForEditing(user.name);
+    const slugSeed = displayName || `profissional-${userId.slice(-8)}`;
+    const slug = await uniqueDraftProfessionalSlug(tx, userId, `${slugSeed}-${user.email ?? userId.slice(-8)}`);
     await tx.professional.upsert({
       where: { userId },
       create: {
