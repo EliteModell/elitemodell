@@ -1,3 +1,4 @@
+"use client";
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { StatusPill, buttonStyle } from "../_components/AdminPrimitives";
@@ -86,18 +87,27 @@ function providerLabel(provider?: string | null, sessionId?: string | null) {
   return "Manual";
 }
 
-function date(value?: Date | null, withTime = false) {
-  if (!value) return "Não informado";
-  return new Intl.DateTimeFormat("pt-BR", withTime
-    ? { dateStyle: "short", timeStyle: "short" }
-    : { dateStyle: "short" }).format(value);
+function asDate(value?: Date | string | null) {
+  if (!value) return null;
+  const parsed = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-function age(value?: Date | null) {
-  if (!value) return null;
+function date(value?: Date | string | null, withTime = false) {
+  if (!value) return "Não informado";
+  const parsed = asDate(value);
+  if (!parsed) return "Não informado";
+  return new Intl.DateTimeFormat("pt-BR", withTime
+    ? { dateStyle: "short", timeStyle: "short" }
+    : { dateStyle: "short" }).format(parsed);
+}
+
+function age(value?: Date | string | null) {
+  const parsed = asDate(value);
+  if (!parsed) return null;
   const now = new Date();
-  let years = now.getFullYear() - value.getFullYear();
-  if (now < new Date(now.getFullYear(), value.getMonth(), value.getDate())) years -= 1;
+  let years = now.getFullYear() - parsed.getFullYear();
+  if (now < new Date(now.getFullYear(), parsed.getMonth(), parsed.getDate())) years -= 1;
   return years;
 }
 

@@ -10,24 +10,19 @@ import { sendProfessionalApprovalEmail } from "@/lib/auth-email";
 import { sendProfessionalCorrectionEmail, sendProfessionalRejectionEmail } from "@/lib/professional-review-email";
 import { digitVendorDataBelongsToUser, fetchDigitSessionDecision } from "@/lib/didit";
 import { assessProfessionalDiditDecision } from "@/lib/professional-didit";
-import { AdminHeader, AdminPagination, buttonStyle } from "../_components/AdminPrimitives";
-import { AdminProfessionalCard } from "./AdminProfessionalCard";
+import { AdminHeader, buttonStyle } from "../_components/AdminPrimitives";
+import { AdminProfessionalsInfiniteList, type AdminProfessionalListItem } from "./AdminProfessionalsInfiniteList";
 import { professionalAdministrativeApprovalIssues, professionalCompletion } from "@/lib/professional-completeness";
 import { deliverProfessionalApprovalSms, deliverProfessionalCommunication } from "@/lib/professional-communications";
 import { sendProfessionalLocationEmail, sendProfessionalReminderEmail } from "@/lib/professional-extra-email";
 import { resumeProfessionalProfileAssetsAfterApproval } from "@/lib/upload-quarantine";
 
 export const dynamic = "force-dynamic";
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 12;
 const CORRECTION_FIELD_LABELS: Record<string, string> = {
   mainPhoto: "Foto principal", bio: "Biografia", services: "Serviços", location: "Localização",
   prices: "Valores", kyc: "Documento/KYC", contact: "Contato", availability: "Disponibilidade", other: "Outro",
 };
-
-function pageNumber(value?: string) {
-  const parsed = Number(value ?? "1");
-  return Number.isFinite(parsed) ? Math.max(1, Math.floor(parsed)) : 1;
-}
 
 const statusLabel: Record<string, string> = {
   DRAFT: "Cadastro incompleto",
@@ -342,116 +337,43 @@ async function reviewProfessional(formData: FormData) {
   revalidatePath("/admin/profissionais");
 }
 
-export default async function AdminProfissionaisPage({ searchParams }: { searchParams?: Promise<{ status?: string; access?: string; page?: string; professionalId?: string }> }) {
-  await requireAdmin("professionals:review");
-  const params = await searchParams;
-  const status = params?.status;
-  const accessFilter = params?.access;
-  const page = pageNumber(params?.page);
-  const professionalId = params?.professionalId?.trim();
-  const now = new Date();
-  const where: Prisma.ProfessionalWhereInput = {};
-  if (professionalId) where.id = professionalId;
-  if (status && status !== "ALL") where.status = status as "DRAFT" | "PENDING_REVIEW" | "CORRECTION_REQUIRED" | "ACTIVE" | "PAUSED" | "SUSPENDED" | "REJECTED";
-  if (accessFilter === "TRIAL") Object.assign(where, { accessGrandfathered: false, freeAccessEndsAt: { gt: now } });
-  if (accessFilter === "TRIAL_EXPIRED") Object.assign(where, { accessGrandfathered: false, freeAccessEndsAt: { lte: now }, billingStatus: "TRIAL_EXPIRED" });
-  if (accessFilter === "ACTIVE") Object.assign(where, { billingStatus: "ACTIVE" });
-  if (accessFilter === "GRANDFATHERED") Object.assign(where, { accessGrandfathered: true });
-  const billingSettings = await getProfessionalBillingSettings();
+type AdminProfessionalFilters = {
+  status?: string;
+  access?: string;
+  kyc?: string;
+  query?: string;
+  professionalId?: string;
+  snapshotAt: string;
+};
 
-  const [total, professionals] = await Promise.all([prisma.professional.count({ where }), prisma.professional.findMany({
+function professionalWhere(filters: AdminProfessionalFilters): Prisma.ProfessionalWhereInput {
+  const now = new Date();
+  const clauses: Prisma.ProfessionalWhereInput[] = [{ createdAt: { lte: new Date(filters.snapshotAt) } }];
+  if (filters.professionalId) clauses.push({ id: filters.professionalId });
+  if (filters.status && filters.status !== "ALL") {
+    clauses.push({ status: filters.status as "DRAFT" | "PENDING_REVIEW" | "CORRECTION_REQUIRED" | "ACTIVE" | "PAUSED" | "SUSPENDED" | "REJECTED" });
+  }
+  if (filters.kyc && filters.kyc !== "ALL") clauses.push({ kycStatus: filters.kyc });
+  if (filters.query) {
+    clauses.push({ OR: [
+      { displayName: { contains: filters.query, mode: "insensitive" } },
+      { user: { name: { contains: filters.query, mode: "insensitive" } } },
+    ] });
+  }
+  if (filters.access === "TRIAL") clauses.push({ accessGrandfathered: false, freeAccessEndsAt: { gt: now } });
+  if (filters.access === "TRIAL_EXPIRED") clauses.push({ accessGrandfathered: false, freeAccessEndsAt: { lte: now }, billingStatus: "TRIAL_EXPIRED" });
+  if (filters.access === "ACTIVE") clauses.push({ billingStatus: "ACTIVE" });
+  if (filters.access === "GRANDFATHERED") clauses.push({ accessGrandfathered: true });
+  return clauses.length === 1 ? clauses[0] : { AND: clauses };
+}
+
+async function professionalListItems(where: Prisma.ProfessionalWhereInput, offset: number) {
+  const professionals = await prisma.professional.findMany({
     where,
-    orderBy: [{ status: "asc" }, { createdAt: "desc" }],
-    skip: (page - 1) * PAGE_SIZE,
+    orderBy: [{ status: "asc" }, { createdAt: "desc" }, { id: "desc" }],
+    skip: offset,
     take: PAGE_SIZE,
-    select: {
-      id: true,
-      userId: true,
-      slug: true,
-      displayName: true,
-      city: true,
-      state: true,
-      bairro: true,
-      region: true,
-      address: true,
-      placeId: true,
-      latitude: true,
-      longitude: true,
-      phone: true,
-      instagram: true,
-      website: true,
-      escortCategory: true,
-      whatsapp: true,
-      hidePhone: true,
-      listingPhoneUntil: true,
-      hideAge: true,
-      status: true,
-      verified: true,
-      docStatus: true,
-      docFrenteUrl: true,
-      docVersoUrl: true,
-      verifStatus: true,
-      verificationCode: true,
-      verificationUrl: true,
-      verificationType: true,
-      kycProvider: true,
-      kycSessionId: true,
-      kycStatus: true,
-      rejectReason: true,
-      pauseUntil: true,
-      pauseReason: true,
-      boostActive: true,
-      boostUntil: true,
-      boostSource: true,
-      freeAccessStartedAt: true,
-      freeAccessEndsAt: true,
-      accessGrandfathered: true,
-      billingStatus: true,
-      subscriptionStartedAt: true,
-      subscriptionEndsAt: true,
-      presentationVideoUrl: true,
-      presentationVideoStatus: true,
-      presentationVideoRejectReason: true,
-      profileViews: true,
-      contactClicks: true,
-      rating: true,
-      totalReviews: true,
-      bio: true,
-      birthDate: true,
-      height: true,
-      attendanceTypes: true,
-      servesGenders: true,
-      idiomas: true,
-      diasDisponiveis: true,
-      horarioInicio: true,
-      horarioFim: true,
-      services: true,
-      servicesNotOffered: true,
-      amenities: true,
-      serviceCities: true,
-      approximateLocation: true,
-      priceMin: true,
-      priceMax: true,
-      price15min: true,
-      pricePerHour: true,
-      price30min: true,
-      price2h: true,
-      priceOvernight: true,
-      priceWebcam: true,
-      paymentMethods: true,
-      image: true,
-      registrationSubmittedAt: true,
-      completionRulesVersion: true,
-      currentServiceCity: true,
-      currentServiceState: true,
-      currentServiceNeighborhood: true,
-      additionalServiceNeighborhoods: true,
-      locationUpdatedAt: true,
-      locationVerificationStatus: true,
-      temporaryLocationFrom: true,
-      temporaryLocationUntil: true,
-      createdAt: true,
-      updatedAt: true,
+    include: {
       submissionReceipt: { select: { status: true, sentAt: true, createdAt: true, updatedAt: true } },
       user: {
         select: {
@@ -477,7 +399,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
         verificationStatus: true, riskReason: true, createdAt: true,
       } },
     },
-  })]);
+  });
   const auditEntries = professionals.length ? await prisma.auditLog.findMany({
     where: { targetType: { in: ["PROFESSIONAL", "CONTENT"] }, targetId: { in: professionals.map((professional) => professional.id) } },
     orderBy: { timestamp: "desc" },
@@ -493,6 +415,50 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
     if (entries.length < 6) entries.push(entry);
     auditsByProfessional.set(entry.targetId, entries);
   }
+  return professionals.map((professional) => ({
+    professional,
+    profileIssues: professionalProfileIssues(professional),
+    approvalIssues: professionalApprovalIssues(professional),
+    audits: auditsByProfessional.get(professional.id) ?? [],
+  })) as unknown as AdminProfessionalListItem[];
+}
+
+async function loadMoreProfessionals(input: AdminProfessionalFilters & { offset: number }) {
+  "use server";
+  await requireAdmin("professionals:review");
+  const filters: AdminProfessionalFilters = {
+    status: input.status?.slice(0, 40),
+    access: input.access?.slice(0, 40),
+    kyc: input.kyc?.slice(0, 40),
+    query: input.query?.trim().slice(0, 100),
+    professionalId: input.professionalId?.trim().slice(0, 100),
+    snapshotAt: Number.isNaN(Date.parse(input.snapshotAt)) ? new Date().toISOString() : input.snapshotAt,
+  };
+  const offset = Math.max(0, Math.min(10_000, Math.floor(Number(input.offset) || 0)));
+  const where = professionalWhere(filters);
+  const [items, total] = await Promise.all([
+    professionalListItems(where, offset),
+    prisma.professional.count({ where }),
+  ]);
+  return { items, hasMore: offset + items.length < total };
+}
+
+export default async function AdminProfissionaisPage({ searchParams }: { searchParams?: Promise<{ status?: string; access?: string; kyc?: string; q?: string; professionalId?: string }> }) {
+  await requireAdmin("professionals:review");
+  const params = await searchParams;
+  const status = params?.status;
+  const accessFilter = params?.access;
+  const kycFilter = params?.kyc;
+  const query = params?.q?.trim().slice(0, 100);
+  const professionalId = params?.professionalId?.trim();
+  const snapshotAt = new Date().toISOString();
+  const filters: AdminProfessionalFilters = { status, access: accessFilter, kyc: kycFilter, query, professionalId, snapshotAt };
+  const where = professionalWhere(filters);
+  const billingSettings = await getProfessionalBillingSettings();
+  const [total, initialItems] = await Promise.all([
+    prisma.professional.count({ where }),
+    professionalListItems(where, 0),
+  ]);
 
   return (
     <div>
@@ -513,6 +479,8 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
                 const query = new URLSearchParams();
                 if (item !== "ALL") query.set("status", item);
                 if (accessFilter) query.set("access", accessFilter);
+                if (kycFilter) query.set("kyc", kycFilter);
+                if (params?.q) query.set("q", params.q);
                 return `/admin/profissionais${query.size ? `?${query}` : ""}`;
               })()}
               style={{
@@ -535,35 +503,53 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
           const query = new URLSearchParams();
           if (status && status !== "ALL") query.set("status", status);
           if (item.key) query.set("access", item.key);
+          if (kycFilter) query.set("kyc", kycFilter);
+          if (params?.q) query.set("q", params.q);
           return <Link prefetch={false} key={item.key || "all-access"} href={`/admin/profissionais${query.size ? `?${query}` : ""}`} style={{ ...buttonStyle, textDecoration: "none", background: active ? "#f3dcff" : "#fff", color: active ? "#8f1fd1" : "#676170" }}>{item.label}</Link>;
         })}
       </div>
 
-      {/* ── Cards ── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {professionals.map((pro) => (
-          <AdminProfessionalCard
-            key={pro.id}
-            professional={pro}
-            profileIssues={professionalProfileIssues(pro)}
-            approvalIssues={professionalApprovalIssues(pro)}
-            audits={auditsByProfessional.get(pro.id) ?? []}
-            reviewAction={reviewProfessional}
-            billingEnabled={billingSettings.billingEnabled}
-          />
-        ))}
+      <form method="get" className="admin-professional-search">
+        {status && status !== "ALL" ? <input type="hidden" name="status" value={status} /> : null}
+        {accessFilter ? <input type="hidden" name="access" value={accessFilter} /> : null}
+        <label>
+          <span>Busca por nome</span>
+          <input name="q" type="search" defaultValue={params?.q ?? ""} placeholder="Nome profissional ou nome da conta" />
+        </label>
+        <label>
+          <span>Status KYC</span>
+          <select name="kyc" defaultValue={kycFilter ?? "ALL"}>
+            <option value="ALL">Todos</option>
+            <option value="NOT_STARTED">Não iniciada</option>
+            <option value="PENDING">Pendente</option>
+            <option value="APPROVED">Aprovada</option>
+            <option value="REJECTED">Reprovada</option>
+            <option value="KYC_MANUAL_PENDENTE">Análise manual</option>
+          </select>
+        </label>
+        <button type="submit">Aplicar filtros</button>
+        {(params?.q || kycFilter) ? <Link href="/admin/profissionais" prefetch={false}>Limpar busca</Link> : null}
+      </form>
 
-        {!professionals.length && (
-          <div style={{ textAlign: "center", padding: "48px 20px", color: "#aaa0b2", fontSize: 14 }}>
-            Nenhuma profissional encontrada para este filtro.
-          </div>
-        )}
-      </div>
+      <p className="admin-professional-total"><strong>{total.toLocaleString("pt-BR")}</strong> profissionais encontradas</p>
 
-      <div style={{ marginTop: 16 }}>
-        <AdminPagination basePath="/admin/profissionais" page={page} pageSize={PAGE_SIZE} total={total} query={{ status, access: accessFilter }} />
-      </div>
+      {/* ── Lista contínua ── */}
+      <AdminProfessionalsInfiniteList
+        key={`${status ?? "ALL"}:${accessFilter ?? "ALL"}:${kycFilter ?? "ALL"}:${query ?? ""}:${professionalId ?? ""}`}
+        initialItems={initialItems}
+        total={total}
+        filters={filters}
+        billingEnabled={billingSettings.billingEnabled}
+        loadMoreAction={loadMoreProfessionals}
+        reviewAction={reviewProfessional}
+      />
       <style>{`
+        .admin-professional-search { display:grid; grid-template-columns:minmax(220px,1fr) minmax(170px,240px) auto auto; align-items:end; gap:10px; margin:0 0 14px; padding:14px; border:1px solid #e7dfe9; border-radius:12px; background:#fff; }
+        .admin-professional-search label { display:grid; gap:5px; color:#625a67; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; }
+        .admin-professional-search input,.admin-professional-search select { min-height:42px; padding:9px 11px; border:1px solid #dcd3df; border-radius:9px; background:#fff; color:#29242d; font:inherit; font-size:14px; text-transform:none; letter-spacing:0; }
+        .admin-professional-search button,.admin-professional-search>a { min-height:42px; display:grid; place-items:center; padding:9px 14px; border:1px solid #8f1fd1; border-radius:9px; background:#8f1fd1; color:#fff; font-size:12px; font-weight:900; text-decoration:none; }
+        .admin-professional-search>a { border-color:#dcd3df; background:#fff; color:#625a67; }
+        .admin-professional-total { margin:0 0 14px; color:#625a67; font-size:14px; }
         .pro-card { background:#fff; border:1px solid #e7dfe9; border-left:4px solid; border-radius:14px; overflow:hidden; content-visibility:auto; contain-intrinsic-size:720px; color:#27232c; }
         .pro-card-head { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:14px 18px; background:#fcf9fd; }
         .pro-identity,.pro-head-status { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -594,7 +580,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
         .admin-didit-result { display:grid; gap:7px; padding:10px; border:1px solid #e6dcea; border-radius:9px; background:#fcf9fd; } .didit-decision,.didit-block { display:grid; gap:3px; padding:8px; border-radius:7px; background:#fff; border:1px solid #eee7f0; font-size:10px; overflow-wrap:anywhere; } .didit-decision.ok { border-color:#afe0c0; background:#effaf3; } .didit-decision.bad { border-color:#f1bbbb; background:#fff2f2; } .didit-block span { color:#746c78; } .didit-block em,.admin-evidence-error { color:#bd2929; font-style:normal; }
         .admin-evidence-modal { position:fixed; z-index:10000; inset:0; display:grid; place-items:center; padding:24px; background:rgba(13,9,15,.88); } .admin-evidence-modal>div { width:min(920px,100%); max-height:92dvh; overflow:auto; padding:14px; border-radius:14px; background:#fff; box-shadow:0 28px 90px rgba(0,0,0,.45); } .admin-evidence-modal header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; } .admin-evidence-modal button { border:0; border-radius:8px; padding:8px 11px; background:#761d91; color:#fff; font-weight:800; } .admin-evidence-modal img { display:block; width:100%; max-height:75dvh; object-fit:contain; background:#151217; border-radius:9px; }
         @media (max-width:1150px) { .pro-detail-layout { grid-template-columns:1fr; } .pro-actions { border-left:0; border-top:1px solid #e8e0eb; } .pro-actions form { position:static; } }
-        @media (max-width:760px) { .pro-card-head { align-items:flex-start; } .pro-head-status { justify-content:flex-start; } .pro-sections { grid-template-columns:1fr; padding:10px; } .pro-section { padding:13px; } .pro-detail-layout { display:block; } .pro-row { grid-template-columns:1fr; gap:2px; } .pro-metrics { grid-template-columns:repeat(2,1fr); } }
+        @media (max-width:760px) { .admin-professional-search { grid-template-columns:1fr; } .pro-card-head { align-items:flex-start; } .pro-head-status { justify-content:flex-start; } .pro-sections { grid-template-columns:1fr; padding:10px; } .pro-section { padding:13px; } .pro-detail-layout { display:block; } .pro-row { grid-template-columns:1fr; gap:2px; } .pro-metrics { grid-template-columns:repeat(2,1fr); } }
       `}</style>
     </div>
   );

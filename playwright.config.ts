@@ -107,6 +107,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "admin-professionals-infinite-scroll",
+      testMatch: "**/admin-professionals-infinite-scroll.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "auth-latency-security",
       testMatch: "**/auth-latency-security.spec.ts",
       use: { browserName: "chromium" },
