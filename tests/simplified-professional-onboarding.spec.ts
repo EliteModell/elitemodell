@@ -103,6 +103,7 @@ test("rascunho completo continua vinculado à conta e retoma a etapa salva", asy
     localStorage.setItem(`elitemodell_professional_onboarding_v2:${encodeURIComponent(userId)}:PROFESSIONAL`, JSON.stringify({
       ownerId: userId,
       registrationType: "PROFESSIONAL",
+      updatedAt: "2099-01-01T00:00:00.000Z",
       step: 7,
       form: { displayName: "Marina Elite", bio: "A".repeat(80), birthDate: "2000-01-01" },
     }));
@@ -111,6 +112,31 @@ test("rascunho completo continua vinculado à conta e retoma a etapa salva", asy
 
   await expect(page.getByText("Etapa 8 de 9", { exact: false })).toBeVisible();
   await expect(page.getByRole("button", { name: "Verificar minha identidade", exact: true })).toBeVisible();
+});
+
+test("rascunho local antigo nao sobrescreve nome e cidade mais novos do banco", async ({ page }) => {
+  await mockOnboarding(page);
+  await page.unroute("**/api/users/me**");
+  await page.route("**/api/users/me**", (route) => route.fulfill({ json: {
+    id: USER_ID,
+    email: "hydration@example.invalid",
+    emailVerified: true,
+    birthDate: "2000-01-01",
+    professional: { ...professional("Nome do banco"), city: "Cidade do banco", updatedAt: "2026-10-22T12:00:00.000Z" },
+  } }));
+  await page.addInitScript(({ userId }) => {
+    localStorage.setItem(`elitemodell_professional_onboarding_v2:${encodeURIComponent(userId)}:PROFESSIONAL`, JSON.stringify({
+      ownerId: userId,
+      registrationType: "PROFESSIONAL",
+      updatedAt: "2026-10-21T12:00:00.000Z",
+      step: 0,
+      form: { displayName: "Nome local antigo", city: "Cidade local antiga" },
+    }));
+  }, { userId: USER_ID });
+
+  await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
+  await expect(page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...")).toHaveValue("Nome do banco");
+  await expect(page.getByPlaceholder("Selecione sua cidade")).toHaveValue("Cidade do banco");
 });
 
 test("troca de conta preserva o rascunho de A e bloqueia dados de A em B", async ({ page }) => {

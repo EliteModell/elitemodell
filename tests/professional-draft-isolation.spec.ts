@@ -4,6 +4,8 @@ import {
   PROFESSIONAL_REGISTRATION_TYPE,
   professionalDraftStorageKey,
 } from "../src/lib/professional-draft-storage";
+import { brazilianPhoneStorageVariants, normalizeBrazilianPhone } from "../src/lib/phone-otp";
+import { readFileSync } from "node:fs";
 
 test.describe("isolamento do rascunho profissional", () => {
   test("contas A e B usam chaves distintas e nunca aceitam o envelope da outra conta", () => {
@@ -21,5 +23,22 @@ test.describe("isolamento do rascunho profissional", () => {
 
   test("tipo de cadastro faz parte obrigatória do vínculo", () => {
     expect(isOwnedProfessionalDraft({ ownerId: "account-a", registrationType: "CLIENT", form: {} }, "account-a")).toBe(false);
+  });
+
+  test("OTP e busca administrativa compartilham a mesma normalizacao brasileira", () => {
+    const expected = "11987654321";
+    for (const value of [expected, "+5511987654321", "(11) 98765-4321"]) {
+      expect(normalizeBrazilianPhone(value)).toBe(expected);
+      expect(brazilianPhoneStorageVariants(value)).toContain(expected);
+      expect(brazilianPhoneStorageVariants(value)).toContain("+5511987654321");
+    }
+  });
+
+  test("diagnostico usa exclusivamente a identidade da sessao", () => {
+    const source = readFileSync("src/app/api/professionals/onboarding-diagnostic/route.ts", "utf8");
+    expect(source).toContain("where: { id: session.user.id }");
+    expect(source).toContain('"Cache-Control": "private, no-store, max-age=0"');
+    expect(source).not.toContain("searchParams");
+    expect(source).not.toContain("request.json");
   });
 });

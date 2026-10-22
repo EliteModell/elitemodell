@@ -50,6 +50,7 @@ export async function GET() {
           transIdentity: true,
           registrationSubmittedAt: true,
           completionRulesVersion: true,
+          updatedAt: true,
           bio: true,
           birthDate: true,
           placeId: true,

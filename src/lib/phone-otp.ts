@@ -18,6 +18,17 @@ export function normalizeBrazilianPhone(value: string) {
   return withoutCountry.slice(0, 11);
 }
 
+export function brazilianPhoneStorageVariants(value: string) {
+  const digits = value.replace(/\D/g, "");
+  const national = normalizeBrazilianPhone(value);
+  const variants = new Set([national, `55${national}`, `+55${national}`, digits, `+${digits}`]);
+  if (national.length === 11) {
+    variants.add(`(${national.slice(0, 2)}) ${national.slice(2, 7)}-${national.slice(7)}`);
+    variants.add(`${national.slice(0, 2)} ${national.slice(2, 7)}-${national.slice(7)}`);
+  }
+  return [...variants].filter(Boolean);
+}
+
 export function isValidBrazilianMobilePhone(phone: string) {
   return /^[1-9]{2}9\d{8}$/.test(phone);
 }

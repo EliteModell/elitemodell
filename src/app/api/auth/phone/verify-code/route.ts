@@ -12,6 +12,7 @@ import {
   OTP_MAX_VERIFY_ATTEMPTS_PER_PHONE_WINDOW,
   OTP_TTL_MINUTES,
   PHONE_ACCOUNT_TYPES,
+  brazilianPhoneStorageVariants,
   createPhoneAuthToken,
   emailForPhone,
   formatBrazilianPhone,
@@ -55,8 +56,9 @@ type VerifiedConsent = {
 };
 
 async function existingPhoneAccountResponse(phone: string) {
-  const existing = await prisma.user.findFirst({
-    where: { phone },
+  const matches = await prisma.user.findMany({
+    where: { phone: { in: brazilianPhoneStorageVariants(phone) } },
+    take: 2,
     select: {
       id: true,
       accountType: true,
@@ -64,6 +66,8 @@ async function existingPhoneAccountResponse(phone: string) {
       phoneVerifiedAt: true,
     },
   });
+  if (matches.length > 1) throw new Error("Conflito de identidade: telefone vinculado a mais de uma conta.");
+  const existing = matches[0];
   if (!existing) return null;
 
   if (existing.blocked) {
@@ -76,6 +80,7 @@ async function existingPhoneAccountResponse(phone: string) {
   await prisma.user.update({
     where: { id: existing.id },
     data: {
+      phone,
       phoneVerified: true,
       phoneVerifiedAt: new Date(),
     },
@@ -166,15 +171,18 @@ async function persistVerifiedPhone({
     // OTP retries may arrive together. Serialize by normalized phone before the
     // read/write pair so two requests cannot create two verified owners.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`verified-phone:${phone}`}))`;
-    const existing = await tx.user.findFirst({
+    const existingMatches = await tx.user.findMany({
       where: {
         OR: [
-          { phone },
+          { phone: { in: brazilianPhoneStorageVariants(phone) } },
           { email: localEmail },
           { email: legacyEmail },
         ],
       },
+      take: 2,
     });
+    if (existingMatches.length > 1) throw new Error("Conflito de identidade: telefone vinculado a mais de uma conta.");
+    const existing = existingMatches[0];
 
     // Proteção contra mistura de tipos: nunca alterar accountType/role de conta existente.
     // Usuário existente pode ter sido criado via outro fluxo — preservar tipo original.

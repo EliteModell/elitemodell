@@ -6,7 +6,7 @@ test("busca administrativa de conta é exata, restrita e auditada", () => {
 
   expect(source).toContain('requireAdmin("clients:manage")');
   expect(source).toContain('email: { equals: value.toLowerCase(), mode: "insensitive" }');
-  expect(source).toContain("return { phone: { in: [...variants] } }");
+  expect(source).toContain("return { phone: { in: brazilianPhoneStorageVariants(value) } }");
   expect(source).toContain('action: "ADMIN_ACCESS"');
   expect(source).toContain('createHash("sha256")');
   expect(source).not.toContain("queryRaw");

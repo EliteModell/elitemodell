@@ -21,6 +21,7 @@ import {
   type ServiceDirection,
 } from "@/lib/professional-service-catalog";
 import ProfessionalCityAutocomplete from "@/components/professional-onboarding/ProfessionalCityAutocomplete";
+import OnboardingDiagnostic from "@/components/professional-onboarding/OnboardingDiagnostic";
 import {
   isOwnedProfessionalDraft,
   LEGACY_PROFESSIONAL_DRAFT_KEY,
@@ -378,6 +379,7 @@ export default function ProfissionalNovoPage() {
   const [correctionFields, setCorrectionFields] = useState<Array<{ code: string; label: string; step: number }>>([]);
   const [serverCompletion, setServerCompletion] = useState<CompletionState | null>(null);
   const [birthDateLockedFromAccount, setBirthDateLockedFromAccount] = useState(false);
+  const [serverHydration, setServerHydration] = useState<{ ready: boolean; updatedAt: string | null }>({ ready: false, updatedAt: null });
   const [birthParts, setBirthParts] = useState({ day: "", month: "", year: "" });
   const birthMonthRef = useRef<HTMLInputElement>(null);
   const birthYearRef = useRef<HTMLInputElement>(null);
@@ -417,7 +419,7 @@ export default function ProfissionalNovoPage() {
   });
 
   useEffect(() => {
-    if (!accountUserId || emailVerified !== true) return;
+    if (!accountUserId || emailVerified !== true || !serverHydration.ready) return;
     const draftKey = professionalDraftStorageKey(accountUserId);
     const restoreTimer = window.setTimeout(() => {
     try {
@@ -428,14 +430,17 @@ export default function ProfissionalNovoPage() {
         return;
       }
 
-      const parsed = JSON.parse(rawDraft) as { ownerId?: string; registrationType?: string; step?: number; form?: Partial<typeof form> };
+      const parsed = JSON.parse(rawDraft) as { ownerId?: string; registrationType?: string; step?: number; updatedAt?: string; form?: Partial<typeof form> };
       if (!isOwnedProfessionalDraft(parsed, accountUserId)) {
         localStorage.removeItem(draftKey);
         draftLoadedRef.current = true;
         return;
       }
       const ownedDraftForm = parsed.form as Partial<typeof form> | undefined;
-      if (ownedDraftForm && typeof ownedDraftForm === "object") {
+      const localUpdatedAt = Date.parse(parsed.updatedAt ?? "");
+      const databaseUpdatedAt = Date.parse(serverHydration.updatedAt ?? "");
+      const localDraftIsNewer = Number.isFinite(localUpdatedAt) && (!Number.isFinite(databaseUpdatedAt) || localUpdatedAt > databaseUpdatedAt);
+      if (localDraftIsNewer && ownedDraftForm && typeof ownedDraftForm === "object") {
         const safeDraftForm = { ...ownedDraftForm };
         delete safeDraftForm.verificationUrl;
         delete safeDraftForm.kycProvider;
@@ -457,7 +462,7 @@ export default function ProfissionalNovoPage() {
         }
       }
 
-      if (Number.isInteger(parsed.step)) {
+      if (localDraftIsNewer && Number.isInteger(parsed.step)) {
         setStep(Math.max(0, Math.min(Number(parsed.step), STEPS.length - 1)));
       }
     } catch (err) {
@@ -472,7 +477,7 @@ export default function ProfissionalNovoPage() {
     return () => {
       window.clearTimeout(restoreTimer);
     };
-  }, [accountUserId, emailVerified]);
+  }, [accountUserId, emailVerified, serverHydration]);
 
   useEffect(() => () => {
     localPreviewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
@@ -675,6 +680,7 @@ export default function ProfissionalNovoPage() {
           }
         }
       }
+      if (active) setServerHydration({ ready: true, updatedAt: professional?.updatedAt ?? null });
     }
 
     loadUserDefaults().catch(() => {});
@@ -1342,6 +1348,8 @@ export default function ProfissionalNovoPage() {
         </span>
         <button type="button" onClick={handleExit}>Sair</button>
       </header>
+
+      {accountUserId ? <OnboardingDiagnostic userId={accountUserId} displayedName={form.displayName} displayedCity={form.city} /> : null}
 
       {/* ── Header ── */}
       <div style={{ marginBottom: 28 }}>

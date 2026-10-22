@@ -6,14 +6,14 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
 import { buildDeletionPlan, processDataDeletionJob } from "@/lib/data-deletion-worker";
+import { brazilianPhoneStorageVariants, normalizeBrazilianPhone } from "@/lib/phone-otp";
 import { AdminHeader, AdminPagination, AdminPanel, AdminTable, StatusPill, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 30;
 
 function normalizedPhone(value: string | null | undefined) {
-  const digits = String(value ?? "").replace(/\D/g, "");
-  return digits.startsWith("55") && digits.length >= 12 ? digits.slice(2) : digits;
+  return normalizeBrazilianPhone(String(value ?? ""));
 }
 
 function deletionProtocol() {
@@ -117,13 +117,7 @@ function exactAccountLookup(query: string): Prisma.UserWhereInput | null {
   if (value.includes("@")) return { email: { equals: value.toLowerCase(), mode: "insensitive" } };
   const digits = value.replace(/\D/g, "");
   if (digits.length < 10 || digits.length > 13) return null;
-  const national = digits.startsWith("55") && digits.length >= 12 ? digits.slice(2) : digits;
-  const variants = new Set([digits, `+${digits}`, national, `55${national}`, `+55${national}`]);
-  if (national.length === 11) {
-    variants.add(`(${national.slice(0, 2)}) ${national.slice(2, 7)}-${national.slice(7)}`);
-    variants.add(`${national.slice(0, 2)} ${national.slice(2, 7)}-${national.slice(7)}`);
-  }
-  return { phone: { in: [...variants] } };
+  return { phone: { in: brazilianPhoneStorageVariants(value) } };
 }
 
 async function toggleClientBlock(formData: FormData) {
