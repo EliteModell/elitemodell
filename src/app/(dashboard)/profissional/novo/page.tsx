@@ -372,6 +372,7 @@ export default function ProfissionalNovoPage() {
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [accountUserId, setAccountUserId] = useState<string | null>(null);
   const [emailVerified, setEmailVerified] = useState<boolean | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [emailBusy, setEmailBusy] = useState(false);
   const [emailCooldown, setEmailCooldown] = useState(0);
   const [editingEmail, setEditingEmail] = useState(false);
@@ -425,7 +426,7 @@ export default function ProfissionalNovoPage() {
   });
 
   useEffect(() => {
-    if (!accountUserId || emailVerified !== true || !serverHydration.ready) return;
+    if (!accountUserId || !serverHydration.ready) return;
     const draftKey = professionalDraftStorageKey(accountUserId);
     const restoreTimer = window.setTimeout(() => {
     try {
@@ -500,7 +501,7 @@ export default function ProfissionalNovoPage() {
   }, []);
 
   useEffect(() => {
-    if (!draftLoadedRef.current || !accountUserId || emailVerified !== true) return;
+    if (!draftLoadedRef.current || !accountUserId) return;
     if (skipInitialDraftSaveRef.current) {
       skipInitialDraftSaveRef.current = false;
       return;
@@ -543,12 +544,15 @@ export default function ProfissionalNovoPage() {
     let active = true;
     const refreshStatus = async () => {
       try {
-        const response = await fetch("/api/users/me", { cache: "no-store" });
+        const response = await fetch("/api/auth/email-confirmation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "status" }),
+        });
         if (!response.ok) return;
-        const user = await response.json() as { email?: string; emailVerified?: string | boolean | null };
+        const user = await response.json() as { verified?: boolean };
         if (!active) return;
-        setAccountEmail(user.email ?? null);
-        if (user.emailVerified) window.location.reload();
+        if (user.verified) window.location.reload();
       } catch {
         // Mantém o aviso e permite uma nova tentativa quando a conexão voltar.
       }
@@ -568,6 +572,10 @@ export default function ProfissionalNovoPage() {
 
     async function loadUserDefaults() {
       const res = await fetch("/api/users/me", { cache: "no-store" });
+      if (res.status === 401) {
+        if (active) setSessionExpired(true);
+        return;
+      }
       if (!res.ok) return;
       let user = await res.json();
       if (!active) return;
@@ -575,17 +583,22 @@ export default function ProfissionalNovoPage() {
       setAccountUserId(user.id ?? null);
       setAccountEmail(user.email ?? null);
       setEmailVerified(Boolean(user.emailVerified));
-      if (!user.emailVerified) return;
 
       const activation = await fetch("/api/users/me/activate-professional", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
+      if (activation.status === 401) {
+        if (active) setSessionExpired(true);
+        return;
+      }
       if (!activation.ok || !active) return;
       const refreshed = await fetch("/api/users/me", { cache: "no-store" });
       if (!refreshed.ok || !active) return;
       user = await refreshed.json();
+      setAccountEmail(user.email ?? null);
+      setEmailVerified(Boolean(user.emailVerified));
 
       if (user.professional?.status === "ACTIVE" || user.professional?.status === "PAUSED") {
         router.replace(ACCOUNT_ROUTES.dashboardAcompanhante);
@@ -1063,9 +1076,13 @@ export default function ProfissionalNovoPage() {
   async function checkEmailConfirmation() {
     setEmailBusy(true);
     try {
-      const response = await fetch("/api/users/me", { cache: "no-store" });
-      const user = response.ok ? await response.json() as { emailVerified?: string | boolean | null } : null;
-      if (user?.emailVerified) {
+      const response = await fetch("/api/auth/email-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "status" }),
+      });
+      const user = response.ok ? await response.json() as { verified?: boolean } : null;
+      if (user?.verified) {
         window.location.reload();
         toast.success("E-mail confirmado. Você já pode concluir o envio.");
       } else {
@@ -1313,11 +1330,26 @@ export default function ProfissionalNovoPage() {
   const diditRejected = form.kycStatus === "REJECTED";
   const diditPending = Boolean(form.kycSessionId) && !diditApproved && !diditRejected;
 
+  if (sessionExpired) {
+    return (
+      <main className="model-email-gate">
+        <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={184} height={61} priority />
+        <section>
+          <p className="eyebrow">Cadastro preservado</p>
+          <h1>Entre novamente para continuar</h1>
+          <p>Sua sessão expirou. Confirme seu telefone para retomar o cadastro salvo sem criar outra conta.</p>
+          <div className="actions"><a href="/cadastro/acompanhante">Continuar com meu telefone</a></div>
+        </section>
+        <style>{EMAIL_GATE_STYLES}</style>
+      </main>
+    );
+  }
+
   if (emailVerified === null) {
     return <main className="model-email-gate"><Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={184} height={61} priority /><p>Preparando seu cadastro...</p><style>{EMAIL_GATE_STYLES}</style></main>;
   }
 
-  if (emailVerified === false) {
+  if (false && emailVerified === false) {
     return (
       <main className="model-email-gate">
         <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={184} height={61} priority />
@@ -1445,7 +1477,7 @@ export default function ProfissionalNovoPage() {
         </div>
       )}
 
-      {false && (
+      {emailVerified === false && (
         <div className="model-email-warning" role="status" style={{
           margin: "0 0 22px",
           padding: "14px 16px",
@@ -1458,7 +1490,7 @@ export default function ProfissionalNovoPage() {
         }}>
           <strong style={{ display: "block", color: GOLD, marginBottom: 4 }}>E-mail pendente de confirmação</strong>
           <p style={{ margin: "0 0 10px" }}>Você pode preencher as 9 etapas agora. Para enviar para análise, confirme o link solicitado para <strong>{maskEmail(accountEmail)}</strong>. Confira também a pasta de spam.</p>
-          {editingEmail ? (
+          {editingEmail || hasTechnicalPhoneEmail ? (
             <div className="model-email-actions">
               <input type="email" autoComplete="email" value={replacementEmail} onChange={(event) => setReplacementEmail(event.target.value)} placeholder="novo@email.com" />
               <button type="button" disabled={emailBusy || !replacementEmail.trim()} onClick={() => requestEmailConfirmation("change")}>Salvar e solicitar confirmação</button>

@@ -45,17 +45,9 @@ async function loadProfessional(userId: string) {
   });
 }
 
-async function hasConfirmedEmail(userId: string) {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { emailVerified: true } });
-  return Boolean(user?.emailVerified);
-}
-
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
-  if (!await hasConfirmedEmail(session.user.id)) {
-    return NextResponse.json({ error: "Confirme seu email antes de acessar o cadastro.", code: "EMAIL_NOT_CONFIRMED" }, { status: 403 });
-  }
   const professional = await loadProfessional(session.user.id);
   if (!professional) return NextResponse.json({ error: "Rascunho profissional não encontrado." }, { status: 404 });
   const lastCorrection = professional.status === "CORRECTION_REQUIRED"
@@ -84,9 +76,6 @@ export async function GET() {
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
-  if (!await hasConfirmedEmail(session.user.id)) {
-    return NextResponse.json({ error: "Confirme seu email antes de salvar o cadastro.", code: "EMAIL_NOT_CONFIRMED" }, { status: 403 });
-  }
   try {
     const { step, form, flow } = draftSchema.parse(await req.json());
     const professional = await loadProfessional(session.user.id);

@@ -29,11 +29,8 @@ export async function POST(req: NextRequest) {
     const pendingProfessionalPhone = await validatePendingProfessionalPhone(req, session.user.id);
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { phoneVerified: true, emailVerified: true },
+      select: { phoneVerified: true },
     });
-    if (!user?.emailVerified) {
-      return NextResponse.json({ error: "Confirme seu email antes de iniciar o cadastro de acompanhante.", code: "EMAIL_NOT_CONFIRMED" }, { status: 403 });
-    }
     if (!pendingProfessionalPhone) {
       if (!user?.phoneVerified) {
         throw new ProfessionalPhoneRegistrationError(

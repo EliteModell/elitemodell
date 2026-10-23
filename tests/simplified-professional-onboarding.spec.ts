@@ -26,6 +26,41 @@ function professional(displayName = "") {
   };
 }
 
+test("conta com telefone confirmado retoma o cadastro enquanto o e-mail esta pendente", async ({ page }) => {
+  await mockOnboarding(page, "Marina Retorno");
+  await page.unroute("**/api/users/me**");
+  await page.route("**/api/users/me**", (route) => route.fulfill({ json: {
+    id: USER_ID,
+    email: "pendente@example.invalid",
+    emailVerified: null,
+    birthDate: "2000-01-01",
+    professional: professional("Marina Retorno"),
+  } }));
+  await page.route("**/api/auth/email-confirmation", (route) => route.fulfill({ json: {
+    ok: true,
+    verified: false,
+    maskedEmail: "pe*****@example.invalid",
+  } }));
+
+  await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByText("Etapa 1 de 9", { exact: false })).toBeVisible();
+  await expect(page.getByText("E-mail pendente de", { exact: false })).toBeVisible();
+  await expect(page.getByText("Confirme seu e-mail para continuar")).toHaveCount(0);
+  await expect(page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...")).toHaveValue("Marina Retorno");
+});
+
+test("sessao expirada orienta reentrada sem criar uma nova conta", async ({ page }) => {
+  await mockOnboarding(page);
+  await page.unroute("**/api/users/me**");
+  await page.route("**/api/users/me**", (route) => route.fulfill({ status: 401, json: { error: "Sessao expirada." } }));
+
+  await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("heading", { name: "Entre novamente para continuar" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Continuar com meu telefone" })).toHaveAttribute("href", "/cadastro/acompanhante");
+});
+
 async function mockOnboarding(page: Page, displayName = "") {
   await installMockSessionCookie(page.context(), {
     id: USER_ID,

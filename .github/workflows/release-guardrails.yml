@@ -62,6 +62,7 @@ jobs:
           --project=professional-completion-location
           --project=professional-validation
           --project=adult-media-security
+          --project=auth-latency-security
           --grep-invert "API de midia privada recusa visitante"
           --workers=2
       - name: Validate browser flows without external writes
@@ -82,5 +83,6 @@ jobs:
             sleep 1
           done
           npx playwright test --project=professional-registration-conversion --grep "cadastro profissional por email exige confirmação" --workers=1 --retries=0
+          npx playwright test --project=simplified-professional-onboarding --grep "retoma o cadastro|sessao expirada" --workers=1 --retries=0
           npx playwright test --project=public-professional-profile --workers=1 --retries=0
           npx playwright test --project=adult-media-security --grep "API de midia privada recusa visitante" --workers=1 --retries=0
