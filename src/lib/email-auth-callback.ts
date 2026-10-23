@@ -1,5 +1,5 @@
 const PRODUCTION_ORIGIN = "https://www.elitemodell.com.br";
-const ALLOWED_QUERY_KEYS = new Set(["returnUrl", "role", "flow", "intent"]);
+const ALLOWED_QUERY_KEYS = new Set(["returnUrl", "role", "flow", "intent", "attempt"]);
 
 function canonicalOrigin() {
   const configured = process.env.NEXT_PUBLIC_APP_URL?.trim() || PRODUCTION_ORIGIN;
@@ -23,6 +23,7 @@ export function buildEmailAuthCallbackUrl(params: URLSearchParams) {
   params.forEach((value, key) => {
     if (!ALLOWED_QUERY_KEYS.has(key)) return;
     if (key === "returnUrl" && !safeInternalPath(value)) return;
+    if (key === "attempt" && !/^[0-9a-f-]{36}$/i.test(value)) return;
     output.searchParams.set(key, value);
   });
   return output.toString();

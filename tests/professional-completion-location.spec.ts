@@ -6,6 +6,7 @@ import { CITY_CHANGE_REQUIRES_VOUCHER, INITIAL_FREE_CITY_CHANGES, locationChange
 import { professionalCityFilter, resolveExactCityQuery } from "../src/lib/public-city-search";
 import { professionalDisplayNameForEditing } from "../src/lib/professional-display-name";
 import { nameForPhoneAccount } from "../src/lib/phone-otp";
+import { canonicalizeBrazilianLocation, citySearchVariants } from "../src/lib/brazilian-location";
 
 const complete = {
   displayName: "Modelo Teste",
@@ -150,6 +151,17 @@ test.describe("localização de atendimento", () => {
   test("normaliza UF sem alterar a cidade informada", () => {
     expect(normalizeServiceLocation({ city: " Vitória ", state: "es", neighborhood: " Praia do Canto " }))
       .toEqual({ city: "Vitória", state: "ES", neighborhood: "Praia do Canto" });
+  });
+
+  test("usa o catalogo nacional como fonte canonica, nao apenas cidades historicamente suportadas", () => {
+    expect(canonicalizeBrazilianLocation("florianopolis", "santa catarina")).toEqual({ city: "Florianópolis", state: "SC" });
+    expect(normalizeServiceLocation({ city: "  Florianopolis ", state: "sc" })).toEqual({ city: "Florianópolis", state: "SC", neighborhood: null });
+    expect(citySearchVariants("Florianopolis", "SC")).toContain("Florianópolis");
+  });
+
+  test("mantem cidades homonimas separadas pela UF", () => {
+    expect(citySearchVariants("Bom Jesus", "PI")).toContain("Bom Jesus");
+    expect(canonicalizeBrazilianLocation("Bom Jesus", "PI")).toEqual({ city: "Bom Jesus", state: "PI" });
   });
 
   test("KYC pendente envia mudança de cidade para revisão", () => {

@@ -24,6 +24,7 @@ import {
 import { authorizeAdultContentRequest } from "@/lib/adult-content-access";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import { isProfessionalDisplayNameReady } from "@/lib/professional-display-name";
+import { professionalDerivedPriceRange } from "@/lib/professional-pricing";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const limited = await enforceRateLimitAsync(`public-profile:${getClientIP(req)}`, 300, 60 * 1000, "Muitos perfis abertos em pouco tempo.");
@@ -301,14 +302,14 @@ const updateSchema = z.object({
   whatsapp: z.string().optional(),
   instagram: z.string().optional(),
   website: z.string().optional(),
-  priceMin: z.number().positive().optional(),
-  priceMax: z.number().positive().optional(),
-  pricePerHour: z.number().positive().optional(),
-  price15min: z.number().positive().optional(),
-  price30min: z.number().positive().optional(),
-  price2h: z.number().positive().optional(),
-  priceOvernight: z.number().positive().optional(),
-  priceWebcam: z.number().positive().optional(),
+  priceMin: z.number().positive().nullable().optional(),
+  priceMax: z.number().positive().nullable().optional(),
+  pricePerHour: z.number().positive().nullable().optional(),
+  price15min: z.number().positive().nullable().optional(),
+  price30min: z.number().positive().nullable().optional(),
+  price2h: z.number().positive().nullable().optional(),
+  priceOvernight: z.number().positive().nullable().optional(),
+  priceWebcam: z.number().positive().nullable().optional(),
   image: controlledMediaUrlSchema.nullable().optional(),
   galleryUrls: z.array(controlledMediaUrlSchema).max(12).optional(),
   photos: z.array(z.object({
@@ -354,6 +355,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
       return NextResponse.json({ error: "Altere cidade e bairro pela área de localização para preservar o histórico." }, { status: 409 });
     }
     const { specialties, presentationVideoUrl, phone, whatsapp, photos, image, galleryUrls, escortCategory, ...profileData } = data;
+    const nextPrices = {
+      price15min: data.price15min === undefined ? professional.price15min : data.price15min,
+      price30min: data.price30min === undefined ? professional.price30min : data.price30min,
+      pricePerHour: data.pricePerHour === undefined ? professional.pricePerHour : data.pricePerHour,
+      price2h: data.price2h === undefined ? professional.price2h : data.price2h,
+      priceOvernight: data.priceOvernight === undefined ? professional.priceOvernight : data.priceOvernight,
+      priceWebcam: data.priceWebcam === undefined ? professional.priceWebcam : data.priceWebcam,
+    };
+    const derivedPriceRange = professionalDerivedPriceRange(nextPrices);
     await assertApprovedMediaUrls({
       urls: [
         ...(data.image ? [data.image] : []),
@@ -380,6 +390,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
     const coverPhoto = normalizedPhotos?.find((photo) => photo.cover) ?? null;
     const updateData: Prisma.ProfessionalUpdateInput = {
       ...profileData,
+      ...derivedPriceRange,
       ...(image !== undefined && { image: image ? normalizeControlledMediaUrl(image) : null }),
       ...(galleryUrls !== undefined && {
         galleryUrls: galleryUrls

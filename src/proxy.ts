@@ -69,6 +69,7 @@ export async function proxy(request: NextRequest) {
     "/api/address/geocode",
     "/api/locations/cities",
     "/api/locations/available-cities",
+    "/api/release",
     "/api/didit/webhook",
     "/api/kyc/webhook",
   ];

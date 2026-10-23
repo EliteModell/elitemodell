@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { parseCityQuery, suggestCities, type CitySuggestion } from "@/lib/city-catalog";
-import { normalizeLocationText } from "@/lib/brazilian-location";
+import { citySearchVariants, normalizeLocationText } from "@/lib/brazilian-location";
 
 // Group stored spellings before matching so legacy accents/casing remain searchable.
 // Both discovery and result filtering resolve the same effective service fields.
@@ -26,7 +26,11 @@ export async function professionalCityFilter(city: string, state = ""): Promise<
   const query = parseCityQuery(city, state);
   const exact = resolveExactCityQuery(city, state);
   if (!exact) return { id: { in: [] } };
-  const cityVariants = Array.from(new Set([exact.city, city.trim(), query.city].filter(Boolean)));
+  const cityVariants = Array.from(new Set([
+    ...citySearchVariants(exact.city, exact.state),
+    ...citySearchVariants(city.trim(), exact.state),
+    query.city,
+  ].filter(Boolean)));
   const stateCode = query.state || exact.state;
   return {
     OR: cityVariants.flatMap((value) => [

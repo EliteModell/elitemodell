@@ -6,6 +6,7 @@ import { AppointmentStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { enforceRateLimitAsync } from "@/lib/security";
+import { professionalPriceForDuration } from "@/lib/professional-pricing";
 
 const createSchema = z.object({
   professionalSlug: z.string(),
@@ -83,12 +84,16 @@ export async function POST(req: NextRequest) {
     if (!professional || professional.status !== "ACTIVE" || !professional.verified || isPausedByDate) {
       return NextResponse.json({ error: "Profissional não disponível." }, { status: 404 });
     }
+    const selectedPrice = professionalPriceForDuration(professional, data.duration);
+    if (!selectedPrice) {
+      return NextResponse.json({ error: "Duração sem valor configurado pela profissional." }, { status: 400 });
+    }
 
     if (professional.userId === session.user.id) {
       return NextResponse.json({ error: "Você não pode agendar com você mesmo." }, { status: 400 });
     }
 
-    const originalPrice = professional.pricePerHour ?? professional.priceMin ?? data.duration;
+    const originalPrice = selectedPrice.value;
     const appointment = await prisma.$transaction(async (tx) => {
       const created = await tx.appointment.create({
         data: {

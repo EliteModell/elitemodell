@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { isAgeRestrictedRequest } from "../src/lib/age-gate-policy";
 import { createMediaAccessToken, verifyMediaAccessToken } from "../src/lib/media-access-token";
 import { evaluateMediaPublicationGates } from "../src/lib/media-security";
+import { CONTROLLED_MEDIA_SIGNED_URL_TTL_SECONDS, controlledMediaDeliveryMode } from "../src/lib/media-delivery";
 import { isReadyForHumanContentReview, manualMediaReviewBlockers } from "../src/lib/manual-media-review";
 import {
   AGE_DECLARATION_COOKIE,
@@ -23,6 +24,11 @@ const passingGates = {
 };
 
 test.describe("seguranca fail-closed de midia adulta", () => {
+  test("fotos aprovadas usam transferencia assinada curta sem tornar o bucket publico", () => {
+    expect(controlledMediaDeliveryMode("SUPABASE", "image")).toBe("SIGNED_REDIRECT");
+    expect(CONTROLLED_MEDIA_SIGNED_URL_TTL_SECONDS).toBeLessThanOrEqual(60);
+    expect(controlledMediaDeliveryMode("BUNNY", "image")).toBe("BUFFERED_FALLBACK");
+  });
   const humanReviewReady = {
     category: "image",
     folder: "profiles/photos",

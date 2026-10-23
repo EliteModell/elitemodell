@@ -20,7 +20,7 @@ import {
 } from "@/lib/public-professional-profile";
 import { professionalCityFilter, resolveExactCityQuery } from "@/lib/public-city-search";
 import { publicProfessionalWhere } from "@/lib/public-professional-access";
-import { publicServiceLocation } from "@/lib/professional-location";
+import { normalizeServiceLocation, publicServiceLocation } from "@/lib/professional-location";
 import { controlledMediaAssetId, filterApprovedProfilePhotos, normalizeControlledMediaUrl } from "@/lib/public-professional-media";
 import { deliverProfessionalSubmissionReceipt, markSubmissionReceiptNotRequired } from "@/lib/professional-submission-receipt";
 import { logAudit } from "@/lib/audit";
@@ -28,6 +28,8 @@ import { professionalCompletion, issueChecklist } from "@/lib/professional-compl
 import { attemptAutomaticProfessionalPublication } from "@/lib/professional-auto-publication";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import { refreshExpiredProfessionalBoosts } from "@/lib/professional-timers";
+import { normalizeBrazilianState } from "@/lib/brazilian-location";
+import { compareProfessionalStartingPrice } from "@/lib/professional-pricing";
 
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
@@ -88,9 +90,10 @@ export async function GET(req: NextRequest) {
   if (city) {
     andFilters.push(await professionalCityFilter(city, state ?? ""));
   } else if (state) {
+    const stateCode = normalizeBrazilianState(state);
     andFilters.push({ OR: [
-      { currentServiceState: { equals: state.toUpperCase(), mode: "insensitive" } },
-      { AND: [{ OR: [{ currentServiceState: null }, { currentServiceState: "" }] }, { state: { equals: state.toUpperCase(), mode: "insensitive" } }] },
+      { currentServiceState: { equals: stateCode, mode: "insensitive" } },
+      { AND: [{ OR: [{ currentServiceState: null }, { currentServiceState: "" }] }, { state: { equals: stateCode, mode: "insensitive" } }] },
     ] });
   }
   if (virtual) {
@@ -108,7 +111,24 @@ export async function GET(req: NextRequest) {
       andFilters.push({ OR: [{ genderIdentity: normalizedCategory }, { escortCategory: normalizedCategory }] });
     }
   }
-  if (priceMax) where.priceMin = { lte: Number(priceMax) };
+  if (priceMax && Number.isFinite(Number(priceMax))) {
+    const maximum = Number(priceMax);
+    andFilters.push({ OR: [
+      { price15min: { gt: 0, lte: maximum } },
+      { price30min: { gt: 0, lte: maximum } },
+      { pricePerHour: { gt: 0, lte: maximum } },
+      { price2h: { gt: 0, lte: maximum } },
+      { priceOvernight: { gt: 0, lte: maximum } },
+      { priceWebcam: { gt: 0, lte: maximum } },
+      {
+        AND: [
+          { price15min: null }, { price30min: null }, { pricePerHour: null },
+          { price2h: null }, { priceOvernight: null }, { priceWebcam: null },
+          { priceMin: { gt: 0, lte: maximum } },
+        ],
+      },
+    ] });
+  }
   if (specialty) {
     andFilters.push({
       OR: [
@@ -120,20 +140,12 @@ export async function GET(req: NextRequest) {
   if (andFilters.length > 0) where.AND = andFilters;
 
   const orderBy: Prisma.ProfessionalOrderByWithRelationInput[] =
-    sortBy === "price_asc"  ? [{ boostActive: "desc" }, { planPriority: "desc" }, { priceMin: "asc" }] :
-    sortBy === "price_desc" ? [{ boostActive: "desc" }, { planPriority: "desc" }, { priceMin: "desc" }] :
     sortBy === "reviews"    ? [{ boostActive: "desc" }, { planPriority: "desc" }, { totalReviews: "desc" }] :
     sortBy === "recent"     ? [{ boostActive: "desc" }, { planPriority: "desc" }, { createdAt: "desc" }] :
     sortBy === "online"     ? [{ boostActive: "desc" }, { planPriority: "desc" }, { lastOnlineAt: "desc" }, { rating: "desc" }] :
     [{ boostActive: "desc" }, { planPriority: "desc" }, { featured: "desc" }, { rating: "desc" }, { totalReviews: "desc" }];
 
-  const [professionals, total] = await Promise.all([
-    prisma.professional.findMany({
-      where,
-      orderBy,
-      skip: (page - 1) * limit,
-      take: limit,
-      select: {
+  const listSelect = {
         id: true, userId: true, slug: true, displayName: true,
         bio: true,
         city: true, state: true, bairro: true,
@@ -158,10 +170,55 @@ export async function GET(req: NextRequest) {
         user: { select: { image: true, premiumUntil: true } },
         photos: { where: { hiddenAt: null }, orderBy: { order: "asc" }, take: 8, select: { id: true, url: true, cover: true, order: true } },
         specialties: { select: { id: true, name: true } },
+  } satisfies Prisma.ProfessionalSelect;
+
+  const priceDirection = sortBy === "price_asc" ? "asc" : sortBy === "price_desc" ? "desc" : null;
+  let professionals: Prisma.ProfessionalGetPayload<{ select: typeof listSelect }>[];
+  let total: number;
+  if (priceDirection) {
+    const priceCandidates = await prisma.professional.findMany({
+      where,
+      select: {
+        id: true,
+        boostActive: true,
+        planPriority: true,
+        priceMin: true,
+        price15min: true,
+        price30min: true,
+        pricePerHour: true,
+        price2h: true,
+        priceOvernight: true,
+        priceWebcam: true,
       },
-    }),
-    prisma.professional.count({ where }),
-  ]);
+    });
+    priceCandidates.sort((left, right) =>
+      Number(right.boostActive) - Number(left.boostActive)
+      || right.planPriority - left.planPriority
+      || compareProfessionalStartingPrice(left, right, priceDirection)
+      || left.id.localeCompare(right.id)
+    );
+    total = priceCandidates.length;
+    const pageIds = priceCandidates.slice((page - 1) * limit, page * limit).map((candidate) => candidate.id);
+    const pageProfessionals = pageIds.length
+      ? await prisma.professional.findMany({ where: { id: { in: pageIds } }, select: listSelect })
+      : [];
+    const byId = new Map(pageProfessionals.map((professional) => [professional.id, professional]));
+    professionals = pageIds.flatMap((id) => {
+      const professional = byId.get(id);
+      return professional ? [professional] : [];
+    });
+  } else {
+    [professionals, total] = await Promise.all([
+      prisma.professional.findMany({
+        where,
+        orderBy,
+        skip: (page - 1) * limit,
+        take: limit,
+        select: listSelect,
+      }),
+      prisma.professional.count({ where }),
+    ]);
+  }
 
   const referencedAssetIds = Array.from(new Set(professionals.flatMap((professional) =>
     canonicalProfessionalPhotos({ photos: professional.photos, image: professional.image, galleryUrls: [] })
@@ -347,6 +404,11 @@ export async function POST(req: NextRequest) {
     const escortCategory = profileData.genderIdentity
       || profileData.escortCategory
       || (user?.category && ["MULHER", "TRANS", "HOMEM"].includes(user.category) ? user.category : undefined);
+    const serviceLocation = normalizeServiceLocation({
+      city: profileData.city,
+      state: profileData.state,
+      neighborhood: profileData.bairro,
+    });
 
     // garante slug único
     let slug = slugify(data.displayName);
@@ -360,6 +422,9 @@ export async function POST(req: NextRequest) {
 
     const professionalData = {
       ...profileData,
+      city: serviceLocation.city,
+      state: serviceLocation.state,
+      bairro: serviceLocation.neighborhood,
       image: null,
       galleryUrls: [],
       presentationVideoUrl: normalizeControlledMediaUrl(presentationVideoUrl),
@@ -387,9 +452,9 @@ export async function POST(req: NextRequest) {
       verifStatus: identityApproved ? "APPROVED" : diditVerification.status === "REJECTED" ? "REJECTED" : "PENDING",
       registrationSubmittedAt: new Date(),
       completionRulesVersion: 2,
-      currentServiceCity: profileData.city,
-      currentServiceState: profileData.state,
-      currentServiceNeighborhood: profileData.bairro ?? null,
+      currentServiceCity: serviceLocation.city,
+      currentServiceState: serviceLocation.state,
+      currentServiceNeighborhood: serviceLocation.neighborhood,
       locationUpdatedAt: new Date(),
       locationVerificationStatus: "VERIFIED",
     };

@@ -10,7 +10,7 @@ import PublicReportButton from "@/components/moderation/PublicReportButton";
 import ProfessionalContactAction from "@/components/professionals/ProfessionalContactAction";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { controlledMediaAssetId, resolvePublicProfileMedia } from "@/lib/public-professional-media";
-import { professionalPriceOptions, professionalStartingPrice } from "@/lib/professional-pricing";
+import { formatProfessionalPrice, professionalAppointmentPrices, professionalPriceForDuration, professionalPriceOptions, professionalStartingPrice } from "@/lib/professional-pricing";
 import styles from "./profile.module.css";
 
 const ActionAuthModal = dynamic(() => import("@/components/auth/ActionAuthModal"));
@@ -105,6 +105,11 @@ type SimilarPro = {
   image?: string | null;
   priceMin?: number | null;
   pricePerHour?: number | null;
+  price15min?: number | null;
+  price30min?: number | null;
+  price2h?: number | null;
+  priceOvernight?: number | null;
+  priceWebcam?: number | null;
 };
 
 function calcAge(birthDate?: string | null): number | null {
@@ -331,6 +336,10 @@ export default function ProfissionalProfilePage() {
       setBookingError("Escolha a data e o horário do atendimento.");
       return;
     }
+    if (!pro || !professionalPriceForDuration(pro, bookingDuration)) {
+      setBookingError("Escolha uma duração com valor configurado pela profissional.");
+      return;
+    }
 
     setBookingSaving(true);
     setBookingError(null);
@@ -432,7 +441,8 @@ export default function ProfissionalProfilePage() {
   const priceOptions = professionalPriceOptions(pro);
   const startingPrice = professionalStartingPrice(pro);
   const memberYear = new Date(pro.createdAt).getFullYear();
-  const bookingBasePrice = pro.pricePerHour ?? pro.priceMin ?? bookingDuration;
+  const bookingPrices = professionalAppointmentPrices(pro);
+  const bookingPrice = professionalPriceForDuration(pro, bookingDuration);
 
   return (
     <div className="public-profile-page" style={{ background: "#f7f7fa", minHeight: "100vh", color: "#141212", paddingBottom: 72 }}>
@@ -951,7 +961,7 @@ export default function ProfissionalProfilePage() {
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(6,14,27,0.85) 0%, transparent 50%)" }} />
                       <div style={{ position: "absolute", bottom: 8, left: 8 }}>
                         <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#fcf7ff", fontFamily: PLAYFAIR }}>{p.displayName}</p>
-                        {(p.priceMin ?? p.pricePerHour) && <p style={{ margin: "2px 0 0", fontSize: 11, color: GOLD, fontWeight: 700 }}>R${(p.priceMin ?? p.pricePerHour)!.toLocaleString("pt-BR")}/h</p>}
+                        <p style={{ margin: "2px 0 0", fontSize: 11, color: GOLD, fontWeight: 700 }}>{formatProfessionalPrice(p, "Desde")}</p>
                       </div>
                     </div>
                   </div>
@@ -1004,16 +1014,15 @@ export default function ProfissionalProfilePage() {
                     onChange={(event) => setBookingDuration(Number(event.target.value))}
                     style={{ minHeight: 44, borderRadius: 10, border: `1px solid ${GOLD_DIM}`, background: "#080808", color: "#fcf7ff", padding: "0 12px" }}
                   >
-                    <option value={30}>30 minutos</option>
-                    <option value={60}>1 hora</option>
-                    <option value={120}>2 horas</option>
+                    {!bookingPrice ? <option value="">Selecione uma duração com valor</option> : null}
+                    {bookingPrices.map(({ duration, price }) => <option key={duration} value={duration}>{price.label}</option>)}
                   </select>
                 </label>
 
                 <div style={{ border: `1px solid ${GOLD_DIM}`, borderRadius: 12, background: "#080808", padding: 14 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12, color: "#b4adb0", fontSize: 13 }}>
                     <span>Valor do atendimento</span>
-                    <strong style={{ color: "#fcf7ff" }}>R$ {bookingBasePrice.toLocaleString("pt-BR")}</strong>
+                    <strong style={{ color: "#fcf7ff" }}>{bookingPrice ? `R$ ${bookingPrice.value.toLocaleString("pt-BR")}` : "Sob consulta"}</strong>
                   </div>
                 </div>
 

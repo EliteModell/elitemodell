@@ -155,7 +155,7 @@ export default function FiltersModal({ onClose, onApply }: Props) {
                 <RangeSlider min={18} max={60} valueMin={filters.idadeMin} valueMax={filters.idadeMax}
                   labelMin={`${filters.idadeMin} anos`} labelMax={`${filters.idadeMax === 60 ? "+60" : filters.idadeMax} anos`}
                   onChange={(min, max) => setFilters((f) => ({ ...f, idadeMin: min, idadeMax: max }))} />
-                <SectionTitle>Preço por hora</SectionTitle>
+                <SectionTitle>Valor inicial anunciado</SectionTitle>
                 <RangeSlider min={50} max={1000} valueMin={filters.precoMin} valueMax={filters.precoMax}
                   labelMin={`R$${filters.precoMin}`} labelMax={`R$${filters.precoMax === 1000 ? "+999" : filters.precoMax}`}
                   onChange={(min, max) => setFilters((f) => ({ ...f, precoMin: min, precoMax: max }))} />
@@ -213,7 +213,7 @@ export default function FiltersModal({ onClose, onApply }: Props) {
                 <SectionTitle>Forma de pagamento</SectionTitle>
                 <TagGroup items={["Pix", "Dinheiro", "Cartão de crédito", "Cartão de débito", "Transferência"]}
                   selected={filters.pagamento} onToggle={(v) => toggleArr("pagamento", v)} />
-                <SectionTitle>Faixa de preço (por hora)</SectionTitle>
+                <SectionTitle>Faixa de valor inicial anunciado</SectionTitle>
                 <RangeSlider min={50} max={1000} valueMin={filters.precoMin} valueMax={filters.precoMax}
                   labelMin={`R$${filters.precoMin}`} labelMax={`R$${filters.precoMax === 1000 ? "+999" : filters.precoMax}`}
                   onChange={(min, max) => setFilters((f) => ({ ...f, precoMin: min, precoMax: max }))} />

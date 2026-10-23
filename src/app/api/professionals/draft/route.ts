@@ -10,6 +10,7 @@ import { normalizeControlledMediaUrl } from "@/lib/public-professional-media";
 import { professionalCompletion, professionalOnboardingCompletion } from "@/lib/professional-completeness";
 import { logAudit } from "@/lib/audit";
 import { professionalStartingPrice } from "@/lib/professional-pricing";
+import { normalizeServiceLocation } from "@/lib/professional-location";
 
 const draftSchema = z.object({
   step: z.number().int().min(0).max(7),
@@ -175,15 +176,16 @@ export async function PATCH(req: NextRequest) {
           },
         });
       } else if (step === 2) {
+        const serviceLocation = normalizeServiceLocation({ city: text(form.city), state: text(form.state) });
         await prisma.professional.update({
           where: { id: professional.id },
           data: {
             ...common,
-            city: text(form.city),
-            state: text(form.state).toUpperCase(),
+            city: serviceLocation.city,
+            state: serviceLocation.state,
             attendanceTypes: list(form.attendanceTypes),
-            currentServiceCity: text(form.city),
-            currentServiceState: text(form.state).toUpperCase(),
+            currentServiceCity: serviceLocation.city,
+            currentServiceState: serviceLocation.state,
             locationUpdatedAt: new Date(),
             locationVerificationStatus: "VERIFIED",
           },
@@ -211,15 +213,16 @@ export async function PATCH(req: NextRequest) {
     }
     if (step === 0) {
       const category = text(form.escortCategory);
+      const serviceLocation = normalizeServiceLocation({ city: text(form.city), state: text(form.state), neighborhood: text(form.bairro) });
       const typedCategory = ["MULHER", "HOMEM", "TRANS", "HETERO"].includes(category)
         ? category as "MULHER" | "HOMEM" | "TRANS" | "HETERO"
         : null;
       await prisma.professional.update({
         where: { id: professional.id },
         data: {
-          ...common, displayName: text(form.displayName), bio: text(form.bio), city: text(form.city), state: text(form.state).toUpperCase(),
+          ...common, displayName: text(form.displayName), bio: text(form.bio), city: serviceLocation.city, state: serviceLocation.state,
           bairro: text(form.bairro) || null, placeId: text(form.placeId) || null, escortCategory: category,
-          currentServiceCity: text(form.city), currentServiceState: text(form.state).toUpperCase(), currentServiceNeighborhood: text(form.bairro) || null,
+          currentServiceCity: serviceLocation.city, currentServiceState: serviceLocation.state, currentServiceNeighborhood: serviceLocation.neighborhood,
           locationUpdatedAt: new Date(), locationVerificationStatus: "VERIFIED",
           user: { update: { category: typedCategory } },
         },
