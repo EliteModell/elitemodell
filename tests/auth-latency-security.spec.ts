@@ -19,7 +19,9 @@ test.describe("contrato de seguranca do auth context minimo", () => {
     expect(auth).toContain('FROM ${table("User")} u');
     expect(auth).toContain('LEFT JOIN ${table("Professional")} p');
     expect(auth).toContain("Invalid database schema configured for auth context.");
-    expect(auth).not.toContain("clientProfile: { select: { id: true } },\n              hostProfile:");
+    const jwtCallback = auth.slice(auth.indexOf("async jwt({ token, user })"));
+    expect(jwtCallback).toContain("loadAuthContext(token.id as string)");
+    expect(jwtCallback).not.toContain("prisma.user.findUnique");
   });
 
   test("usuario bloqueado e removido invalidam a sessao", () => {
