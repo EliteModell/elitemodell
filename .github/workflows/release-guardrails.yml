@@ -36,9 +36,23 @@ jobs:
   browser-validation:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: e2e
+          POSTGRES_PASSWORD: e2e
+          POSTGRES_DB: elitemodell_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U e2e -d elitemodell_e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
-      DATABASE_URL: postgresql://invalid:invalid@127.0.0.1:5432/invalid
-      DIRECT_URL: postgresql://invalid:invalid@127.0.0.1:5432/invalid
+      DATABASE_URL: postgresql://e2e:e2e@127.0.0.1:5432/elitemodell_e2e
+      DIRECT_URL: postgresql://e2e:e2e@127.0.0.1:5432/elitemodell_e2e
       NEXTAUTH_SECRET: ci-only-synthetic-secret-not-used-outside-runner
       NEXTAUTH_URL: http://127.0.0.1:3000
       NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
@@ -53,6 +67,49 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - name: Prepare isolated synthetic browser database
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx prisma db push --skip-generate
+          node --input-type=module - <<'NODE'
+          import { PrismaClient } from "@prisma/client";
+          const prisma = new PrismaClient();
+          await prisma.user.create({
+            data: {
+              id: "full-onboarding-user",
+              name: "Profissional Teste",
+              email: "onboarding@example.invalid",
+              emailVerified: null,
+              phone: "+5511999999999",
+              phoneVerified: true,
+              accountType: "model",
+              role: "HOST",
+              birthDate: new Date("2000-01-01T00:00:00.000Z"),
+              lgpdConsent: true,
+              termsConsent: true,
+              professional: {
+                create: {
+                  slug: "professional-draft-e2e",
+                  displayName: "Profissional Teste",
+                  bio: "",
+                  city: "",
+                  state: "",
+                  paymentMethods: [],
+                  attendanceTypes: [],
+                  servesGenders: [],
+                  idiomas: [],
+                  diasDisponiveis: [],
+                  services: [],
+                  fetishes: [],
+                  galleryUrls: [],
+                  status: "DRAFT",
+                },
+              },
+            },
+          });
+          await prisma.$disconnect();
+          NODE
       - run: npx next typegen
       - run: npm run typecheck
       - name: Validate pricing, cities, identity and media contracts

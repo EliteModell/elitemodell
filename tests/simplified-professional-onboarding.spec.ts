@@ -27,7 +27,7 @@ function professional(displayName = "") {
 }
 
 test("conta com telefone confirmado retoma o cadastro enquanto o e-mail esta pendente", async ({ page }) => {
-  await mockOnboarding(page, "Marina Retorno", false);
+  await mockOnboarding(page, "Marina Retorno");
   await page.unroute("**/api/users/me**");
   await page.route("**/api/users/me**", (route) => route.fulfill({ json: {
     id: USER_ID,
@@ -51,7 +51,7 @@ test("conta com telefone confirmado retoma o cadastro enquanto o e-mail esta pen
 });
 
 test("sessao expirada orienta reentrada sem criar uma nova conta", async ({ page }) => {
-  await mockOnboarding(page, "", false);
+  await mockOnboarding(page);
   await page.unroute("**/api/users/me**");
   await page.route("**/api/users/me**", (route) => route.fulfill({ status: 401, json: { error: "Sessao expirada." } }));
 
