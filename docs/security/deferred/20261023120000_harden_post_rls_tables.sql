@@ -1,3 +1,6 @@
+-- DEFERRED SECURITY CHANGE: intentionally kept outside prisma/migrations.
+-- Apply only in a separately authorized security release after impact validation.
+--
 -- Tables introduced after 20260602181500_enable_supabase_rls must not inherit
 -- direct Data API access. The application accesses them through validated
 -- server-side Prisma routes. No anon/authenticated policies are intentionally

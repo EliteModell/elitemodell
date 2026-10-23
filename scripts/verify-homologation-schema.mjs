@@ -17,7 +17,6 @@ if (isolation.status !== 0) {
 const prisma = new PrismaClient();
 const requiredMigrations = [
   "20261023110000_add_professional_price15min",
-  "20261023120000_harden_post_rls_tables",
 ];
 
 try {
@@ -37,8 +36,7 @@ try {
     SELECT migration_name
     FROM public._prisma_migrations
     WHERE migration_name IN (
-      '20261023110000_add_professional_price15min',
-      '20261023120000_harden_post_rls_tables'
+      '20261023110000_add_professional_price15min'
     )
       AND finished_at IS NOT NULL
       AND rolled_back_at IS NULL

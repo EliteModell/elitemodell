@@ -9,10 +9,10 @@ Um schema separado dentro do banco de producao nao e isolamento suficiente: Auth
 ## Acao manual nos paineis
 
 1. No Supabase, habilitar Branching e vincular o repositorio/PR, sem importar dados ou objetos de Storage de producao.
-2. Na branch Supabase, aplicar as migrations Prisma existentes a um banco vazio, incluindo `20261023110000_add_professional_price15min` e `20261023120000_harden_post_rls_tables`.
+2. Na branch Supabase, aplicar as migrations Prisma existentes a um banco vazio, incluindo `20261023110000_add_professional_price15min`. O endurecimento RLS foi adiado para uma release de seguranca separada e esta preservado em `docs/security/deferred/20261023120000_harden_post_rls_tables.sql`; ele nao faz parte desta publicacao funcional.
 3. Configurar Auth com `site_url` e redirects apontando apenas para o alias estavel da Preview e localhost. Nao habilitar OAuth social nesta fase.
 4. Criar como privados os buckets `upload-quarantine`, `approved-media`, `documentos` e `moderation-evidence`. Nenhum bucket de homologacao deve ser publico.
-5. Aplicar RLS das migrations e as politicas de Storage de `supabase/homologation-storage.sql`.
+5. Aplicar as protecoes ja existentes nas migrations publicadas e as politicas de Storage de `supabase/homologation-storage.sql`. O novo pacote de endurecimento RLS permanece fora desta etapa.
 6. Na Vercel, criar overrides Preview limitados a `fix/onboarding-didit-pending-identity`, usando as credenciais emitidas pela branch Supabase.
 7. Preencher as variaveis publicas de `config/homologation-preview.variables.example`; manter todos os servicos secundarios desabilitados.
 8. Executar `npm run homolog:check-isolation` no ambiente da Preview. Escritas so podem comecar depois de resultado APROVADO.
