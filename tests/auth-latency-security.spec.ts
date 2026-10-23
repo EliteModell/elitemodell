@@ -9,6 +9,9 @@ const stories = readFileSync(join(root, "src/app/api/stories/route.ts"), "utf8")
 const reviews = readFileSync(join(root, "src/app/api/reviews/route.ts"), "utf8");
 const emailConfirmation = readFileSync(join(root, "src/app/api/auth/email-confirmation/route.ts"), "utf8");
 const phoneVerification = readFileSync(join(root, "src/app/api/auth/phone/verify-code/route.ts"), "utf8");
+const professionalActivation = readFileSync(join(root, "src/app/api/users/me/activate-professional/route.ts"), "utf8");
+const professionalDraft = readFileSync(join(root, "src/app/api/professionals/draft/route.ts"), "utf8");
+const professionalSubmission = readFileSync(join(root, "src/app/api/professionals/route.ts"), "utf8");
 
 test.describe("contrato de seguranca do auth context minimo", () => {
   test("usuario valido usa uma unica query SQL escalar", () => {
@@ -16,7 +19,9 @@ test.describe("contrato de seguranca do auth context minimo", () => {
     expect(auth).toContain('FROM ${table("User")} u');
     expect(auth).toContain('LEFT JOIN ${table("Professional")} p');
     expect(auth).toContain("Invalid database schema configured for auth context.");
-    expect(auth).not.toContain("clientProfile: { select: { id: true } },\n              hostProfile:");
+    const jwtCallback = auth.slice(auth.indexOf("async jwt({ token, user })"));
+    expect(jwtCallback).toContain("loadAuthContext(token.id as string)");
+    expect(jwtCallback).not.toContain("prisma.user.findUnique");
   });
 
   test("usuario bloqueado e removido invalidam a sessao", () => {
@@ -74,5 +79,21 @@ test.describe("vinculo seguro de e-mail para conta criada por telefone", () => {
     expect(emailConfirmation).toContain("if (!initialEmailAssociation && !hasRecentPhoneProof(user))");
     expect(phoneVerification).toContain("phoneVerifiedAt: new Date()");
     expect(phoneVerification).toContain("phoneVerifiedAt: now");
+  });
+
+  test("reconcilia confirmacao entre dispositivos sem liberar outra identidade", () => {
+    expect(emailConfirmation).toContain('z.literal("status")');
+    expect(emailConfirmation).toContain("findAuthUserForAccount(user.id, user.email)");
+    expect(emailConfirmation).toContain("linkedUserId && linkedUserId !== user.id");
+    expect(emailConfirmation).toContain("conflict && conflict.id !== user.id");
+    expect(emailConfirmation).toContain("emailVerified: new Date(authUser.email_confirmed_at)");
+  });
+
+  test("permite retomar rascunho pendente mas mantem envio final protegido", () => {
+    expect(professionalActivation).not.toContain("EMAIL_NOT_CONFIRMED");
+    expect(professionalDraft).not.toContain("EMAIL_NOT_CONFIRMED");
+    expect(professionalSubmission).toContain('code: "email_not_verified"');
+    expect(professionalSubmission).toContain("{ status: 428 }");
+    expect(professionalActivation).toContain("phoneVerified");
   });
 });

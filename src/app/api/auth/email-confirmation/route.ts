@@ -11,6 +11,7 @@ import { enforceRateLimitAsync } from "@/lib/security";
 import { buildEmailAuthCallbackUrl } from "@/lib/email-auth-callback";
 
 const inputSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("status") }),
   z.object({ action: z.literal("resend") }),
   z.object({ action: z.literal("change"), email: z.string().trim().email() }),
 ]);
@@ -81,26 +82,74 @@ async function sendConfirmation(email: string) {
   await sendAuthEmail(email, message);
 }
 
+async function findAuthUserForAccount(userId: string, email: string) {
+  const supabase = createSupabaseServerClient();
+  for (let page = 1; page <= 10; page += 1) {
+    const result = await supabase.auth.admin.listUsers({ page, perPage: 100 });
+    if (result.error) throw result.error;
+    const found = result.data.users.find((authUser) => {
+      const linkedUserId = typeof authUser.app_metadata?.prismaUserId === "string"
+        ? authUser.app_metadata.prismaUserId
+        : null;
+      return linkedUserId === userId || authUser.email?.toLowerCase() === email.toLowerCase();
+    });
+    if (found) return found;
+    if (result.data.users.length < 100) break;
+  }
+  return null;
+}
+
+async function reconcileConfirmedEmail(user: { id: string; email: string; emailVerified: Date | null }) {
+  if (user.emailVerified) return { verified: true, email: user.email };
+  const authUser = await findAuthUserForAccount(user.id, user.email);
+  if (!authUser?.email || !authUser.email_confirmed_at) return { verified: false, email: user.email };
+  const linkedUserId = typeof authUser.app_metadata?.prismaUserId === "string"
+    ? authUser.app_metadata.prismaUserId
+    : null;
+  const confirmedEmail = authUser.email.toLowerCase();
+  if (linkedUserId && linkedUserId !== user.id) return { verified: false, email: user.email };
+  if (!linkedUserId && confirmedEmail !== user.email.toLowerCase()) return { verified: false, email: user.email };
+  const conflict = await prisma.user.findUnique({ where: { email: confirmedEmail }, select: { id: true } });
+  if (conflict && conflict.id !== user.id) return { verified: false, email: user.email };
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { email: confirmedEmail, emailVerified: new Date(authUser.email_confirmed_at) },
+  });
+  return { verified: true, email: confirmedEmail };
+}
+
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Sessão expirada." }, { status: 401 });
 
+  let input: z.infer<typeof inputSchema>;
+  try {
+    input = inputSchema.parse(await req.json());
+  } catch (error) {
+    return NextResponse.json({
+      error: error instanceof z.ZodError ? "Informe uma ação válida." : "Não foi possível interpretar a solicitação.",
+    }, { status: 400 });
+  }
+
   const limited = await enforceRateLimitAsync(
-    `email-confirmation:${session.user.id}`,
-    4,
+    `email-confirmation:${input.action}:${session.user.id}`,
+    input.action === "status" ? 30 : 4,
     15 * 60 * 1000,
     "Aguarde alguns minutos antes de solicitar outro e-mail.",
   );
   if (limited) return limited;
 
   try {
-    const input = inputSchema.parse(await req.json());
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { id: true, email: true, emailVerified: true, phone: true, phoneVerified: true, phoneVerifiedAt: true },
     });
     if (!user) return NextResponse.json({ error: "Conta não encontrada." }, { status: 404 });
-    if (user.emailVerified) return NextResponse.json({ ok: true, verified: true, maskedEmail: maskEmail(user.email) });
+    const reconciled = await reconcileConfirmedEmail(user);
+    if (reconciled.verified) return NextResponse.json({ ok: true, verified: true, maskedEmail: maskEmail(reconciled.email) });
+    if (input.action === "status") {
+      return NextResponse.json({ ok: true, verified: false, maskedEmail: maskEmail(reconciled.email) });
+    }
 
     let targetEmail = user.email;
     if (input.action === "change") {
