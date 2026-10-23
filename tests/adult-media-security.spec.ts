@@ -29,6 +29,14 @@ test.describe("seguranca fail-closed de midia adulta", () => {
     expect(CONTROLLED_MEDIA_SIGNED_URL_TTL_SECONDS).toBeLessThanOrEqual(60);
     expect(controlledMediaDeliveryMode("BUNNY", "image")).toBe("BUFFERED_FALLBACK");
   });
+
+  test("variantes publicas usam transformacoes fechadas depois dos mesmos gates", async () => {
+    const source = await import("node:fs/promises").then((fs) => fs.readFile("src/app/api/media/[id]/route.ts", "utf8"));
+    expect(source).toContain("PUBLIC_IMAGE_VARIANTS");
+    expect(source).toContain('asset.category === "image"');
+    expect(source).toContain('requestedVariant in PUBLIC_IMAGE_VARIANTS');
+    expect(source.indexOf("evaluateMediaPublicationGates")).toBeLessThan(source.indexOf("PUBLIC_IMAGE_VARIANTS[requestedVariant"));
+  });
   const humanReviewReady = {
     category: "image",
     folder: "profiles/photos",

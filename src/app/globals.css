@@ -106,6 +106,42 @@ body {
   cursor: not-allowed;
 }
 
+[data-navigation-pending="true"] {
+  filter: brightness(0.88) saturate(1.1);
+}
+
+.global-navigation-progress {
+  position: fixed;
+  z-index: 20000;
+  inset: 0 0 auto;
+  height: 3px;
+  overflow: hidden;
+  pointer-events: none;
+  background: rgba(183, 44, 255, 0.16);
+}
+
+.global-navigation-progress::after {
+  content: "";
+  display: block;
+  width: 42%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7b1fa2, #b72cff, #e1a6ff);
+  animation: globalNavigationProgress 900ms ease-in-out infinite alternate;
+}
+
+@keyframes globalNavigationProgress {
+  from { transform: translateX(-15%); opacity: 0.72; }
+  to { transform: translateX(155%); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .global-navigation-progress::after {
+    width: 100%;
+    animation: none;
+  }
+}
+
 @supports (overflow: clip) {
   html,
   body {

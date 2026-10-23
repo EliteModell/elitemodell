@@ -43,6 +43,13 @@ export function normalizeControlledMediaUrl(value?: string | null) {
   return assetId ? `/api/media/${encodeURIComponent(assetId)}` : null;
 }
 
+export type ControlledMediaVariant = "avatar" | "card" | "cover";
+
+export function controlledMediaVariantUrl(value: string, variant: ControlledMediaVariant) {
+  const assetId = controlledMediaAssetId(value);
+  return assetId ? `/api/media/${encodeURIComponent(assetId)}?variant=${variant}` : value;
+}
+
 /**
  * Controlled media depends on the viewer's age/session cookies. The Next.js
  * image optimizer does not forward those headers, so these URLs must be
