@@ -28,7 +28,9 @@
     "scale:registration": "node scripts/test-registration-concurrency.mjs",
     "scale:upload-memory": "node scripts/benchmark-upload-memory.mjs",
     "release:check-context": "node scripts/verify-release-context.mjs --local-release",
-    "release:verify-public": "node scripts/verify-production-release.mjs"
+    "release:verify-public": "node scripts/verify-production-release.mjs",
+    "homolog:check-isolation": "node scripts/validate-homologation-isolation.mjs",
+    "homolog:check-schema": "node scripts/verify-homologation-schema.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

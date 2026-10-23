@@ -1,0 +1,31 @@
+# Non-secret contract for write-enabled Preview validation.
+# Configure these as branch-scoped Vercel Preview variables for PR #1.
+HOMOLOGATION_MODE=strict
+HOMOLOGATION_RUNTIME_ID=elite-pr-1
+HOMOLOGATION_EXPECTED_BRANCH=fix/onboarding-didit-pending-identity
+HOMOLOGATION_DATASET=synthetic-only
+HOMOLOGATION_ALLOWED_WRITES=supabase
+
+# Public identifiers, not credentials. The refs MUST differ.
+HOMOLOGATION_SUPABASE_PROJECT_REF=replace-with-preview-project-ref
+PRODUCTION_SUPABASE_PROJECT_REF=replace-with-production-project-ref
+
+# Service gates. Enable a service only after its sandbox has been verified.
+HOMOLOGATION_EMAIL_MODE=disabled
+HOMOLOGATION_DIDIT_MODE=disabled
+HOMOLOGATION_PAYMENT_MODE=disabled
+HOMOLOGATION_AV_MODE=disabled
+HOMOLOGATION_MODERATION_MODE=manual
+HOMOLOGATION_FIREBASE_MODE=disabled
+
+# Application URLs must reference the stable branch Preview alias.
+NEXT_PUBLIC_APP_URL=https://replace-with-pr-preview-alias.vercel.app
+NEXTAUTH_URL=https://replace-with-pr-preview-alias.vercel.app
+
+# Secrets are configured only in Vercel/Supabase dashboards, never in this file.
+# DATABASE_URL=
+# DIRECT_URL=
+# NEXT_PUBLIC_SUPABASE_URL=
+# NEXT_PUBLIC_SUPABASE_ANON_KEY=
+# SUPABASE_SERVICE_ROLE_KEY=
+# NEXTAUTH_SECRET=
