@@ -57,6 +57,55 @@ body {
   text-rendering: geometricPrecision;
 }
 
+/* Feedback imediato e consistente para controles interativos em toda a plataforma.
+   Mantemos baixa especificidade para que componentes possam especializar o estado. */
+:where(
+  a[href],
+  button,
+  summary,
+  label[for],
+  select,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  [role="button"],
+  [role="link"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"]
+) {
+  -webkit-tap-highlight-color: rgba(183, 44, 255, 0.16);
+  touch-action: manipulation;
+}
+
+:where(
+  a[href],
+  button,
+  summary,
+  label[for],
+  select,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  [role="button"],
+  [role="link"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"]
+):active:not(:disabled):not([aria-disabled="true"]) {
+  filter: brightness(0.9) saturate(1.08);
+}
+
+:where(button, input[type="button"], input[type="submit"], input[type="reset"])[aria-busy="true"] {
+  cursor: progress;
+}
+
+:where(button, input[type="button"], input[type="submit"], input[type="reset"]):disabled,
+:where([role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="option"])[aria-disabled="true"] {
+  filter: none;
+  cursor: not-allowed;
+}
+
 @supports (overflow: clip) {
   html,
   body {

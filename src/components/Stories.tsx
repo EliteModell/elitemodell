@@ -8,6 +8,27 @@ import { monitorUpload, parseUploadResponse, UPLOAD_PENDING_MESSAGE, type Upload
 type StoryItem = { id: string; mediaUrl: string; mediaType: string; thumbnail: string | null; views: number; createdAt: string };
 type StoryGroup = { userId: string; slug: string; nome: string; foto: string | null; stories: StoryItem[]; visto?: boolean; institutional?: boolean };
 
+const STORIES_CACHE_TTL_MS = 60_000;
+const storiesCache = new Map<string, { expiresAt: number; data: StoryGroup[] }>();
+const storiesRequests = new Map<string, Promise<StoryGroup[]>>();
+
+async function loadStories(url: string, signal?: AbortSignal, force = false) {
+  const cached = storiesCache.get(url);
+  if (!force && cached && cached.expiresAt > Date.now()) return cached.data;
+
+  const pending = storiesRequests.get(url) ?? fetch(url, { signal })
+    .then((response) => response.ok ? response.json() : [])
+    .then((data) => Array.isArray(data) ? data as StoryGroup[] : [])
+    .then((data) => {
+      storiesCache.set(url, { data, expiresAt: Date.now() + STORIES_CACHE_TTL_MS });
+      return data;
+    })
+    .finally(() => storiesRequests.delete(url));
+
+  storiesRequests.set(url, pending);
+  return pending;
+}
+
 export default function Stories({ city, state }: { city?: string; state?: string }) {
   const { data: session } = useSession();
   const rowRef = useRef<HTMLDivElement>(null);
@@ -19,13 +40,13 @@ export default function Stories({ city, state }: { city?: string; state?: string
   const [uploading, setUploading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const carregar = useCallback(async (signal?: AbortSignal) => {
+  const carregar = useCallback(async (signal?: AbortSignal, force = false) => {
     try {
       const query = new URLSearchParams();
       if (city) query.set("city", city);
       if (state) query.set("state", state);
-      const res = await fetch(`/api/stories${query.size ? `?${query}` : ""}`, { signal });
-      if (res.ok) setGrupos(await res.json());
+      const url = `/api/stories${query.size ? `?${query}` : ""}`;
+      setGrupos(await loadStories(url, signal, force));
     } catch {}
   }, [city, state]);
 
@@ -70,6 +91,13 @@ export default function Stories({ city, state }: { city?: string; state?: string
     if (!grupo.stories[idx]) return;
     if (timerRef.current) clearInterval(timerRef.current);
     setAberto({ grupo, idx });
+    const nextStory = grupo.stories[idx + 1];
+    const nextPreview = nextStory?.mediaType === "video" ? nextStory.thumbnail : nextStory?.mediaUrl;
+    if (nextPreview) {
+      const image = new window.Image();
+      image.decoding = "async";
+      image.src = nextPreview;
+    }
     setVistos((v) => new Set([...v, grupo.userId]));
     // registra view
     fetch(`/api/stories/${grupo.stories[idx].id}`, { method: "PATCH" }).catch(() => {});
@@ -104,13 +132,13 @@ export default function Stories({ city, state }: { city?: string; state?: string
             return;
           }
           await fetch("/api/stories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mediaUrl: result.url, mediaType: uploaded.type, thumbnail: uploaded.thumbnail }) });
-          await carregar();
+          await carregar(undefined, true);
         });
         return;
       }
       const { url, type, thumbnail } = uploaded;
       await fetch("/api/stories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mediaUrl: url, mediaType: type, thumbnail }) });
-      await carregar();
+      await carregar(undefined, true);
     } catch { alert("Erro ao publicar story."); }
     finally { setUploading(false); if (fileRef.current) fileRef.current.value = ""; }
   }
