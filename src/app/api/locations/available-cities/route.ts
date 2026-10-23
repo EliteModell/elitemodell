@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { canonicalizeBrazilianLocation, normalizeLocationText } from "@/lib/brazilian-location";
+import { canonicalizeBrazilianLocation } from "@/lib/brazilian-location";
+import { cityKey } from "@/lib/city-catalog";
 import { professionalCityGroups } from "@/lib/public-city-search";
 import { publicProfessionalWhere } from "@/lib/public-professional-access";
 import { publicServiceLocation } from "@/lib/professional-location";
@@ -29,7 +30,7 @@ export async function GET() {
       const location = canonicalizeBrazilianLocation(serviceLocation.city, serviceLocation.state);
       if (!location) continue;
 
-      const key = `${normalizeLocationText(location.city)}|${location.state}`;
+      const key = cityKey(location.city, location.state);
       const current = citiesByKey.get(key);
       citiesByKey.set(key, {
         ...location,

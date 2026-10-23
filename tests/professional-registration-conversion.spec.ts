@@ -312,7 +312,7 @@ test("explica por que o cadastro profissional ainda não pode avançar", async (
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ ok: true }),
+      body: JSON.stringify({ ok: true, verificationToken: "test-verification-token" }),
     });
   });
 
@@ -455,14 +455,20 @@ test("após validar o código entra direto no onboarding simplificado", async ({
 
 test("cadastro profissional por email exige confirmação antes do onboarding", async ({ page }) => {
   const captured: { signupPayload?: Record<string, unknown> } = {};
+  const trackingToken = "tracking-token-returned-only-to-the-browser";
 
   await page.route("**/api/auth/email-signup", async (route) => {
     captured.signupPayload = route.request().postDataJSON();
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ ok: true }),
+      headers: { "Cache-Control": "private, no-store, max-age=0" },
+      body: JSON.stringify({ ok: true, verificationToken: trackingToken }),
     });
+  });
+  await page.route("**/api/auth/email-verification-status", async (route) => {
+    expect(route.request().postDataJSON()).toEqual({ token: trackingToken });
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ status: "pending" }) });
   });
 
   await page.goto("/cadastro?tipo=acompanhante&telefoneValidado=1", { waitUntil: "domcontentloaded" });
@@ -490,6 +496,7 @@ test("cadastro profissional por email exige confirmação antes do onboarding", 
     termsConsent: true,
     ageConfirmed: true,
   });
+  expect(captured.signupPayload?.attemptId).toMatch(/^[0-9a-f-]{36}$/i);
 
   const redirectTo = new URL(String(captured.signupPayload?.redirectTo));
   expect(redirectTo.pathname).toBe("/auth/callback");

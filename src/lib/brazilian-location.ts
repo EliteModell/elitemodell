@@ -1,3 +1,5 @@
+import municipalities from "@/data/brazilian-cities.json";
+
 export type BrazilianLocation = {
   city: string;
   state: string;
@@ -92,10 +94,16 @@ export function canonicalizeBrazilianLocation(
     .trim();
 
   const normalizedCity = normalizeLocationText(city);
-  const supported = SUPPORTED_PUBLIC_LOCATIONS.find((location) =>
+  const catalogMatches = municipalities.filter((location) =>
     normalizeLocationText(location.city) === normalizedCity &&
     (!state || location.state === state)
   );
+  const supported = catalogMatches.length === 1
+    ? catalogMatches[0]
+    : SUPPORTED_PUBLIC_LOCATIONS.find((location) =>
+        normalizeLocationText(location.city) === normalizedCity &&
+        (!state || location.state === state)
+      );
 
   if (supported) {
     return { city: supported.city, state: supported.state };
@@ -104,11 +112,15 @@ export function canonicalizeBrazilianLocation(
   return city && state ? { city, state } : null;
 }
 
-export function citySearchVariants(cityValue: string) {
+export function citySearchVariants(cityValue: string, stateValue = "") {
   const normalized = normalizeLocationText(cityValue);
-  const canonical = SUPPORTED_PUBLIC_LOCATIONS.find(
-    (location) => normalizeLocationText(location.city) === normalized,
-  )?.city ?? cityValue.trim();
+  const state = normalizeBrazilianState(stateValue);
+  const matches = municipalities.filter(
+    (location) => normalizeLocationText(location.city) === normalized && (!state || location.state === state),
+  );
+  const canonical = (matches.length === 1 ? matches[0]?.city : undefined)
+    ?? SUPPORTED_PUBLIC_LOCATIONS.find((location) => normalizeLocationText(location.city) === normalized)?.city
+    ?? cityValue.trim();
 
   return Array.from(new Set([
     canonical,

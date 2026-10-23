@@ -25,6 +25,11 @@ type ProfileForm = {
   priceMin: string;
   priceMax: string;
   pricePerHour: string;
+  price15min: string;
+  price30min: string;
+  price2h: string;
+  priceOvernight: string;
+  priceWebcam: string;
   paymentMethods: string;
   attendanceTypes: string;
   servesGenders: string;
@@ -71,6 +76,11 @@ type MeResponse = {
     priceMin?: number | null;
     priceMax?: number | null;
     pricePerHour?: number | null;
+    price15min?: number | null;
+    price30min?: number | null;
+    price2h?: number | null;
+    priceOvernight?: number | null;
+    priceWebcam?: number | null;
     paymentMethods?: string[];
     attendanceTypes?: string[];
     servesGenders?: string[];
@@ -116,7 +126,8 @@ type ProfileSignal = {
 const emptyForm: ProfileForm = {
   displayName: "", escortCategory: "", bio: "", city: "", state: "", bairro: "",
   phone: "", whatsapp: "", instagram: "", website: "", priceMin: "", priceMax: "",
-  pricePerHour: "", paymentMethods: "", attendanceTypes: "", servesGenders: "", idiomas: "",
+  pricePerHour: "", price15min: "", price30min: "", price2h: "", priceOvernight: "", priceWebcam: "",
+  paymentMethods: "", attendanceTypes: "", servesGenders: "", idiomas: "",
   diasDisponiveis: "", horarioInicio: "08:00", horarioFim: "22:00", services: "",
   servicesNotOffered: "", amenities: "", serviceCities: "", approximateLocation: "", onlineVisible: true,
 };
@@ -128,7 +139,7 @@ const emptyFacts: ProfileFacts = {
 
 function parseMoneyValue(value: string) {
   const parsed = Number(value.replace(/\./g, "").replace(",", "."));
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
 function parseList(value: string) {
@@ -214,6 +225,11 @@ export default function EditarPerfilPage() {
           priceMin: professional.priceMin ? String(professional.priceMin) : "",
           priceMax: professional.priceMax ? String(professional.priceMax) : "",
           pricePerHour: professional.pricePerHour ? String(professional.pricePerHour) : "",
+          price15min: professional.price15min ? String(professional.price15min) : "",
+          price30min: professional.price30min ? String(professional.price30min) : "",
+          price2h: professional.price2h ? String(professional.price2h) : "",
+          priceOvernight: professional.priceOvernight ? String(professional.priceOvernight) : "",
+          priceWebcam: professional.priceWebcam ? String(professional.priceWebcam) : "",
           paymentMethods: (professional.paymentMethods ?? []).join(", "),
           attendanceTypes: (professional.attendanceTypes ?? []).join(", "),
           servesGenders: (professional.servesGenders ?? []).join(", "),
@@ -283,6 +299,11 @@ export default function EditarPerfilPage() {
           priceMin: parseMoneyValue(form.priceMin),
           priceMax: parseMoneyValue(form.priceMax),
           pricePerHour: parseMoneyValue(form.pricePerHour),
+          price15min: parseMoneyValue(form.price15min),
+          price30min: parseMoneyValue(form.price30min),
+          price2h: parseMoneyValue(form.price2h),
+          priceOvernight: parseMoneyValue(form.priceOvernight),
+          priceWebcam: parseMoneyValue(form.priceWebcam),
           paymentMethods: parseList(form.paymentMethods),
           attendanceTypes: parseList(form.attendanceTypes),
           servesGenders: parseList(form.servesGenders),
@@ -406,9 +427,12 @@ export default function EditarPerfilPage() {
             <Field label="WhatsApp"><input value={form.whatsapp} onChange={(event) => setForm({ ...form, whatsapp: event.target.value })} /></Field>
             <Field label="Instagram"><input value={form.instagram} onChange={(event) => setForm({ ...form, instagram: event.target.value })} /></Field>
             <Field label="Website"><input value={form.website} onChange={(event) => setForm({ ...form, website: event.target.value })} /></Field>
-            <Field label="Preço mínimo"><input inputMode="decimal" value={form.priceMin} onChange={(event) => setForm({ ...form, priceMin: event.target.value.replace(/[^\d,.]/g, "") })} /></Field>
-            <Field label="Preço máximo"><input inputMode="decimal" value={form.priceMax} onChange={(event) => setForm({ ...form, priceMax: event.target.value.replace(/[^\d,.]/g, "") })} /></Field>
+            <Field label="15 minutos"><input inputMode="decimal" value={form.price15min} onChange={(event) => setForm({ ...form, price15min: event.target.value.replace(/[^\d,.]/g, "") })} /></Field>
+            <Field label="30 minutos"><input inputMode="decimal" value={form.price30min} onChange={(event) => setForm({ ...form, price30min: event.target.value.replace(/[^\d,.]/g, "") })} /></Field>
             <Field label="Valor por hora"><input inputMode="decimal" value={form.pricePerHour} onChange={(event) => setForm({ ...form, pricePerHour: event.target.value.replace(/[^\d,.]/g, "") })} /></Field>
+            <Field label="2 horas"><input inputMode="decimal" value={form.price2h} onChange={(event) => setForm({ ...form, price2h: event.target.value.replace(/[^\d,.]/g, "") })} /></Field>
+            <Field label="Pernoite"><input inputMode="decimal" value={form.priceOvernight} onChange={(event) => setForm({ ...form, priceOvernight: event.target.value.replace(/[^\d,.]/g, "") })} /></Field>
+            <Field label="Vídeo chamada"><input inputMode="decimal" value={form.priceWebcam} onChange={(event) => setForm({ ...form, priceWebcam: event.target.value.replace(/[^\d,.]/g, "") })} /></Field>
             <Field label="Formas de pagamento"><input value={form.paymentMethods} onChange={(event) => setForm({ ...form, paymentMethods: event.target.value })} placeholder="Pix, Dinheiro, Cartão" /></Field>
           </FormGroup>
 

@@ -1,3 +1,5 @@
+import { canonicalizeBrazilianLocation, normalizeBrazilianState, normalizeLocationText } from "@/lib/brazilian-location";
+
 export type ServiceLocation = {
   city: string;
   state: string;
@@ -8,11 +10,19 @@ export const INITIAL_FREE_CITY_CHANGES = 3;
 export const CITY_CHANGE_REQUIRES_VOUCHER = true;
 
 export function normalizeServiceLocation(input: ServiceLocation): ServiceLocation {
+  const canonical = canonicalizeBrazilianLocation(input.city, input.state);
   return {
-    city: input.city.trim(),
-    state: input.state.trim().toUpperCase(),
+    city: canonical?.city ?? input.city.trim().replace(/\s+/g, " "),
+    state: canonical?.state ?? normalizeBrazilianState(input.state),
     neighborhood: input.neighborhood?.trim() || null,
   };
+}
+
+export function sameServiceLocation(left: ServiceLocation, right: ServiceLocation) {
+  const normalizedLeft = normalizeServiceLocation(left);
+  const normalizedRight = normalizeServiceLocation(right);
+  return normalizedLeft.state === normalizedRight.state
+    && normalizeLocationText(normalizedLeft.city) === normalizeLocationText(normalizedRight.city);
 }
 
 export function locationChangeNeedsReview(input: {

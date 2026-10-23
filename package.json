@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "turbo": "next dev --turbo",
-    "build": "prisma generate && next build --webpack",
+    "build": "node scripts/verify-release-context.mjs && prisma generate && next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
@@ -26,7 +26,9 @@
     "scale:db:benchmark": "node scripts/benchmark-scale-database.mjs",
     "scale:http": "node scripts/run-scale-load.mjs",
     "scale:registration": "node scripts/test-registration-concurrency.mjs",
-    "scale:upload-memory": "node scripts/benchmark-upload-memory.mjs"
+    "scale:upload-memory": "node scripts/benchmark-upload-memory.mjs",
+    "release:check-context": "node scripts/verify-release-context.mjs --local-release",
+    "release:verify-public": "node scripts/verify-production-release.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

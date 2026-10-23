@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { getPublicProfessionalWhere } from "@/lib/public-professional-access";
 import { controlledMediaAssetId, isApprovedProfileVisualAsset } from "@/lib/public-professional-media";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
+import { CONTROLLED_MEDIA_SIGNED_URL_TTL_SECONDS, controlledMediaDeliveryMode } from "@/lib/media-delivery";
 
 function safeFilename(value: string) {
   return value.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 120) || "media";
@@ -128,24 +129,36 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
   }
 
   const provider = getMediaStorageProvider(asset.storageProvider as MediaStorageName);
-  if (asset.category === "video") {
-    const signedUrl = await provider.getSignedUrl(asset.approvedBucket, asset.approvedPath, 60);
-    await prisma.auditLog.create({
+  const deliveryMode = controlledMediaDeliveryMode(provider.name, asset.category);
+  if (deliveryMode === "SIGNED_REDIRECT") {
+    let signedUrl: string;
+    try {
+      signedUrl = await provider.getSignedUrl(asset.approvedBucket, asset.approvedPath, CONTROLLED_MEDIA_SIGNED_URL_TTL_SECONDS);
+    } catch (cause) {
+      console.error("[media] nao foi possivel assinar arquivo aprovado", { assetId: asset.id, provider: provider.name, cause });
+      return NextResponse.json({ error: "Midia indisponivel." }, { status: 404, headers: ageGateCacheHeaders() });
+    }
+    if (asset.category === "video" || logicalPrivate || isOwner || isAdmin) await prisma.auditLog.create({
       data: {
         adminId: isAdmin ? adultAccess.session?.user.id ?? null : null,
         actorIdentifier: adultAccess.session?.user.id ?? "age-declared-visitor",
         action: "ADMIN_ACCESS",
         targetType: "CONTENT",
         targetId: asset.id,
-        reason: "Entrega controlada de video por URL temporaria.",
-        changes: { delivery: "SIGNED_REDIRECT", expiresInSeconds: 60, owner: isOwner },
+        reason: "Entrega controlada de midia por URL temporaria.",
+        changes: { delivery: "SIGNED_REDIRECT", expiresInSeconds: CONTROLLED_MEDIA_SIGNED_URL_TTL_SECONDS, owner: isOwner, category: asset.category },
         ipAddress: getClientIP(req),
         userAgent: req.headers.get("user-agent")?.slice(0, 300) ?? null,
       },
     }).catch(() => undefined);
     return NextResponse.redirect(signedUrl, {
       status: 307,
-      headers: { ...ageGateCacheHeaders(), "Cache-Control": "private, no-store, max-age=0" },
+      headers: {
+        ...ageGateCacheHeaders(),
+        "Cache-Control": "private, no-store, max-age=0",
+        "Referrer-Policy": "no-referrer",
+        "X-Robots-Tag": "noindex, nofollow, noarchive, noimageindex",
+      },
     });
   }
 

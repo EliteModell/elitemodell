@@ -4,6 +4,7 @@ import { requireCompanionPanel } from "@/lib/account-access";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { ProfessionalListingClient, type ProfessionalListingViewData } from "@/components/professional-dashboard/ProfessionalListingClient";
 import { refreshExpiredProfessionalBoosts } from "@/lib/professional-timers";
+import { formatProfessionalPrice, professionalPriceOptions } from "@/lib/professional-pricing";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -85,7 +86,7 @@ export default async function ProfessionalListingPage() {
     image: professional.image,
     services,
     ratingLabel: professional.rating.toLocaleString("pt-BR", { maximumFractionDigits: 1 }),
-    priceLabel: `R$ ${Math.round(professional.priceMin ?? professional.pricePerHour ?? 100)}`,
+    priceLabel: formatProfessionalPrice(professional),
     isHighlighted: professional.featured || isBoostActive,
     highlightPoints:
       (hasActivePlan ? 2000 : 0) +
@@ -96,7 +97,7 @@ export default async function ProfessionalListingPage() {
     tips: [
       { label: "Adicionar fotos recentes", done: allPhotosCount >= 3 },
       { label: "Manter agenda ativa", done: professional.schedule.length > 0 || professional.diasDisponiveis.length > 0 },
-      { label: "Completar valores e contatos", done: Boolean((professional.priceMin || professional.pricePerHour) && (professional.phone || professional.whatsapp)) },
+      { label: "Completar valores e contatos", done: Boolean(professionalPriceOptions(professional).length && (professional.phone || professional.whatsapp)) },
       { label: "Destaque opcional", done: professional.featured || isBoostActive },
     ],
   };

@@ -1,0 +1,41 @@
+name: Verify active deployment release
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: Domínio público de produção
+        required: true
+        default: https://www.elitemodell.com.br
+        type: string
+      commit_sha:
+        description: SHA completo esperado no deployment
+        required: true
+        type: string
+      environment:
+        description: Ambiente que deve estar ativo nessa URL
+        required: true
+        default: production
+        type: choice
+        options:
+          - production
+          - preview
+
+permissions:
+  contents: read
+
+jobs:
+  verify-active-sha:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Verify the active public deployment
+        env:
+          VERIFY_URL: ${{ inputs.url }}
+          EXPECTED_SHA: ${{ inputs.commit_sha }}
+          EXPECTED_ENVIRONMENT: ${{ inputs.environment }}
+        run: node scripts/verify-production-release.mjs --url "$VERIFY_URL" --sha "$EXPECTED_SHA" --environment "$EXPECTED_ENVIRONMENT"

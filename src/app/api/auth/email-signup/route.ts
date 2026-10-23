@@ -7,6 +7,7 @@ import { buildAuthEmail, sendAuthEmail } from "@/lib/auth-email";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import { canonicalizeRequestedEmailCallback } from "@/lib/email-auth-callback";
+import { createEmailSignupSuccessPayload } from "@/lib/email-verification-attempt";
 
 const schema = z.object({
   email: z.string().email(),
@@ -21,6 +22,7 @@ const schema = z.object({
   captchaToken: z.string().optional(),
   name: z.string().min(2),
   role: z.string().optional(),
+  attemptId: z.string().uuid(),
 });
 
 function publicErrorForSupabase(message?: string) {
@@ -142,17 +144,20 @@ export async function POST(req: NextRequest) {
     }
 
     await sendAuthEmail(email, authEmail);
+    const successPayload = createEmailSignupSuccessPayload({
+      userId: generated.data.user.id,
+      email,
+      attemptId: body.attemptId,
+      actionType: generated.actionType,
+    });
     console.info("[email-signup] solicitacao aceita pelo provedor", {
       emailDomain: email.split("@")[1] ?? "unknown",
       actionType: generated.actionType,
       draftSession: false,
-      requestIp,
     });
 
-    return NextResponse.json({
-      ok: true,
-      email,
-      actionType: generated.actionType,
+    return NextResponse.json(successPayload, {
+      headers: { "Cache-Control": "private, no-store, max-age=0" },
     });
   } catch (err) {
     if (err instanceof z.ZodError) {
@@ -166,9 +171,11 @@ export async function POST(req: NextRequest) {
       });
       return NextResponse.json({ error: err.message, code: err.code }, { status: err.status });
     }
-    console.error("[email-signup]", err);
+    console.error("[email-signup] falha inesperada", {
+      errorType: err instanceof Error ? err.name : "unknown",
+    });
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Nao foi possivel enviar o email de confirmacao." },
+      { error: "Nao foi possivel enviar o email de confirmacao." },
       { status: 500 }
     );
   }

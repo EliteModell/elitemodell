@@ -11,6 +11,7 @@ import { authorizeAdultContentRequest } from "@/lib/adult-content-access";
 import { controlledMediaAssetId, isPublishableStoryAsset, normalizeControlledMediaUrl } from "@/lib/public-professional-media";
 import { professionalCityFilter } from "@/lib/public-city-search";
 import { publicServiceLocation } from "@/lib/professional-location";
+import { normalizeBrazilianState } from "@/lib/brazilian-location";
 
 type StoryGroupResponse = {
   userId: string;
@@ -94,8 +95,8 @@ export async function GET(req: NextRequest) {
     ? await professionalCityFilter(city, state ?? "")
     : state
       ? { OR: [
-          { currentServiceState: { equals: state.toUpperCase(), mode: "insensitive" as const } },
-          { AND: [{ OR: [{ currentServiceState: null }, { currentServiceState: "" }] }, { state: { equals: state.toUpperCase(), mode: "insensitive" as const } }] },
+          { currentServiceState: { equals: normalizeBrazilianState(state), mode: "insensitive" as const } },
+          { AND: [{ OR: [{ currentServiceState: null }, { currentServiceState: "" }] }, { state: { equals: normalizeBrazilianState(state), mode: "insensitive" as const } }] },
         ] }
       : null;
 

@@ -1,0 +1,85 @@
+name: Release guardrails
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guardrails:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Exercise the Vercel Production guard
+        env:
+          VERCEL: "1"
+          VERCEL_ENV: production
+          VERCEL_GIT_COMMIT_REF: main
+          VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
+          VERCEL_GIT_REPO_OWNER: EliteModell
+          VERCEL_GIT_REPO_SLUG: elitemodell
+        run: node scripts/verify-release-context.mjs
+      - run: node --check scripts/verify-release-context.mjs
+      - run: node --check scripts/verify-production-release.mjs
+
+  browser-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://invalid:invalid@127.0.0.1:5432/invalid
+      DIRECT_URL: postgresql://invalid:invalid@127.0.0.1:5432/invalid
+      NEXTAUTH_SECRET: ci-only-synthetic-secret-not-used-outside-runner
+      NEXTAUTH_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_SUPABASE_URL: https://invalid.example
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: synthetic-invalid-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: synthetic-invalid-service-role-key
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run typecheck
+      - name: Validate pricing, cities, identity and media contracts
+        run: >-
+          npx playwright test
+          --project=professional-pricing
+          --project=professional-completion-location
+          --project=professional-validation
+          --project=adult-media-security
+          --grep-invert "API de midia privada recusa visitante"
+          --workers=2
+      - name: Validate browser flows without external writes
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run dev -- -H 127.0.0.1 -p 3000 > "$RUNNER_TEMP/next-dev.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 90); do
+            if curl --silent --fail http://127.0.0.1:3000/ >/dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 90 ]; then
+              cat "$RUNNER_TEMP/next-dev.log"
+              exit 1
+            fi
+            sleep 1
+          done
+          npx playwright test --project=professional-registration-conversion --grep "cadastro profissional por email exige confirmação" --workers=1 --retries=0
+          npx playwright test --project=public-professional-profile --workers=1 --retries=0
+          npx playwright test --project=adult-media-security --grep "API de midia privada recusa visitante" --workers=1 --retries=0
