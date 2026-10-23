@@ -19,13 +19,20 @@ export type MediaUploadInput = {
   overwrite?: boolean;
 };
 
+export type MediaTransform = {
+  width?: number;
+  height?: number;
+  resize?: "cover" | "contain" | "fill";
+  quality?: number;
+};
+
 export interface MediaStorageProvider {
   readonly name: MediaStorageName;
   upload(input: MediaUploadInput): Promise<void>;
   download(bucket: string, path: string): Promise<Buffer>;
   delete(bucket: string, path: string): Promise<void>;
   exists(bucket: string, path: string): Promise<boolean>;
-  getSignedUrl(bucket: string, path: string, expiresInSeconds: number): Promise<string>;
+  getSignedUrl(bucket: string, path: string, expiresInSeconds: number, transform?: MediaTransform): Promise<string>;
   getMetadata(bucket: string, path: string): Promise<MediaObjectMetadata | null>;
   copy(sourceBucket: string, sourcePath: string, destinationBucket: string, destinationPath: string): Promise<void>;
   move(sourceBucket: string, sourcePath: string, destinationBucket: string, destinationPath: string): Promise<void>;
@@ -62,10 +69,10 @@ export class SupabaseMediaStorageProvider implements MediaStorageProvider {
     return Boolean(await this.getMetadata(bucket, path));
   }
 
-  async getSignedUrl(bucket: string, path: string, expiresInSeconds: number) {
+  async getSignedUrl(bucket: string, path: string, expiresInSeconds: number, transform?: MediaTransform) {
     const { data, error } = await createSupabaseServerClient().storage
       .from(bucket)
-      .createSignedUrl(path, Math.min(Math.max(expiresInSeconds, 1), 900));
+      .createSignedUrl(path, Math.min(Math.max(expiresInSeconds, 1), 900), transform ? { transform } : undefined);
     if (error || !data?.signedUrl) throw new Error(error?.message || "Falha ao assinar URL Supabase.");
     return data.signedUrl;
   }
@@ -201,10 +208,11 @@ export class BunnyMediaStorageProvider implements MediaStorageProvider {
     return true;
   }
 
-  async getSignedUrl(bucket: string, path: string, expiresInSeconds: number): Promise<string> {
+  async getSignedUrl(bucket: string, path: string, expiresInSeconds: number, transform?: MediaTransform): Promise<string> {
     void bucket;
     void path;
     void expiresInSeconds;
+    void transform;
     throw new Error("Bunny CDN token authentication deve ser habilitada e validada no contrato antes da ativacao.");
   }
 

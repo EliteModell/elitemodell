@@ -9,7 +9,7 @@ import Navbar from "@/components/Navbar";
 import PublicReportButton from "@/components/moderation/PublicReportButton";
 import ProfessionalContactAction from "@/components/professionals/ProfessionalContactAction";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
-import { controlledMediaAssetId, resolvePublicProfileMedia } from "@/lib/public-professional-media";
+import { controlledMediaAssetId, controlledMediaVariantUrl, resolvePublicProfileMedia } from "@/lib/public-professional-media";
 import { formatProfessionalPrice, professionalAppointmentPrices, professionalPriceForDuration, professionalPriceOptions, professionalStartingPrice } from "@/lib/professional-pricing";
 import styles from "./profile.module.css";
 
@@ -462,7 +462,7 @@ export default function ProfissionalProfilePage() {
         <div data-testid="profile-cover" data-media-state={coverImage ? "image" : "fallback"} className={styles.cover}>
           {coverImage ? (
             <Image
-              src={coverImage}
+              src={controlledMediaVariantUrl(coverImage, "cover")}
               alt=""
               fill
               unoptimized={Boolean(controlledMediaAssetId(coverImage))}
@@ -497,7 +497,7 @@ export default function ProfissionalProfilePage() {
             <div data-testid="profile-avatar" data-media-state={profileImage ? "image" : "fallback"} className={styles.avatar} style={{ borderColor: GOLD }}>
               {profileImage ? (
                 <Image
-                  src={profileImage}
+                  src={controlledMediaVariantUrl(profileImage, "avatar")}
                   alt={pro.displayName}
                   fill
                   unoptimized={Boolean(controlledMediaAssetId(profileImage))}

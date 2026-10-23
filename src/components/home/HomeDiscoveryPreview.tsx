@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ChevronDown, Flame, MapPin } from "lucide-react";
 import Stories from "@/components/Stories";
 import { StoryRegionSelector, type StoryRegion } from "@/components/home/StoryRegionSelector";
-import { requiresDirectMediaDelivery } from "@/lib/public-professional-media";
+import { controlledMediaVariantUrl, requiresDirectMediaDelivery } from "@/lib/public-professional-media";
 import { professionalStartingPrice } from "@/lib/professional-pricing";
 
 type Professional = {
@@ -100,7 +100,7 @@ export default function HomeDiscoveryPreview() {
               <div className="home-profile-photo">
                 {professional.image ? (
                   <Image
-                    src={professional.image}
+                    src={controlledMediaVariantUrl(professional.image, "card")}
                     alt={professional.displayName}
                     fill
                     unoptimized={requiresDirectMediaDelivery(professional.image)}
@@ -147,7 +147,7 @@ export default function HomeDiscoveryPreview() {
         .home-profile-row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(200px,232px);gap:14px;overflow-x:auto;padding:2px 0 12px;scroll-snap-type:x proximity}
         .home-profile-card{scroll-snap-align:start;overflow:hidden;border:1px solid #eadcf1;border-radius:18px;background:#fff;color:#291335;text-decoration:none;box-shadow:0 16px 44px rgba(76,29,102,.12);transition:.2s ease}
         .home-profile-card:hover{transform:translateY(-3px);border-color:rgba(183, 44, 255,.45)}
-        .home-profile-photo{position:relative;aspect-ratio:4/5;background:linear-gradient(135deg,#17130b,#0b0b0b);overflow:hidden}
+        .home-profile-photo{position:relative;aspect-ratio:4/5;background:radial-gradient(circle at 72% 24%,rgba(225,166,255,.72),transparent 28%),linear-gradient(145deg,#f8eefc,#ead6f3 52%,#dcbbe9);overflow:hidden}
         .home-profile-gradient{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.72),transparent 48%)}
         .home-profile-badges{position:absolute;left:10px;right:10px;bottom:10px;display:flex;gap:6px;flex-wrap:wrap}
         .home-profile-badges span{border:1px solid rgba(183, 44, 255,.3);border-radius:999px;background:rgba(5,5,5,.78);padding:4px 8px;color:#e1a6ff;font-size:10px;font-weight:900}

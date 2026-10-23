@@ -12,6 +12,12 @@ import { controlledMediaAssetId, isApprovedProfileVisualAsset } from "@/lib/publ
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import { CONTROLLED_MEDIA_SIGNED_URL_TTL_SECONDS, controlledMediaDeliveryMode } from "@/lib/media-delivery";
 
+const PUBLIC_IMAGE_VARIANTS = {
+  avatar: { width: 192, height: 192, resize: "cover", quality: 60 },
+  card: { width: 640, height: 800, resize: "cover", quality: 55 },
+  cover: { width: 1200, height: 900, resize: "cover", quality: 60 },
+} as const;
+
 function safeFilename(value: string) {
   return value.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 120) || "media";
 }
@@ -133,7 +139,16 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
   if (deliveryMode === "SIGNED_REDIRECT") {
     let signedUrl: string;
     try {
-      signedUrl = await provider.getSignedUrl(asset.approvedBucket, asset.approvedPath, CONTROLLED_MEDIA_SIGNED_URL_TTL_SECONDS);
+      const requestedVariant = req.nextUrl.searchParams.get("variant");
+      const transform = asset.category === "image" && requestedVariant && requestedVariant in PUBLIC_IMAGE_VARIANTS
+        ? PUBLIC_IMAGE_VARIANTS[requestedVariant as keyof typeof PUBLIC_IMAGE_VARIANTS]
+        : undefined;
+      signedUrl = await provider.getSignedUrl(
+        asset.approvedBucket,
+        asset.approvedPath,
+        CONTROLLED_MEDIA_SIGNED_URL_TTL_SECONDS,
+        transform,
+      );
     } catch (cause) {
       console.error("[media] nao foi possivel assinar arquivo aprovado", { assetId: asset.id, provider: provider.name, cause });
       return NextResponse.json({ error: "Midia indisponivel." }, { status: 404, headers: ageGateCacheHeaders() });

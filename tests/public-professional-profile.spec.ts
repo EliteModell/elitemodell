@@ -7,6 +7,7 @@ import {
 import {
   adminControlledMediaPreviewUrl,
   controlledMediaAssetId,
+  controlledMediaVariantUrl,
   filterApprovedProfilePhotos,
   isPublishableStoryAsset,
   normalizeControlledMediaUrl,
@@ -140,6 +141,13 @@ test.describe("contrato publico do perfil profissional", () => {
     const absolute = "https://www.elitemodell.com.br/api/media/cover-id";
     expect(controlledMediaAssetId(absolute)).toBe("cover-id");
     expect(normalizeControlledMediaUrl(absolute)).toBe("/api/media/cover-id");
+  });
+
+  test("gera variantes controladas sem expor o bucket privado", () => {
+    expect(controlledMediaVariantUrl("/api/media/cover-id", "card"))
+      .toBe("/api/media/cover-id?variant=card");
+    expect(controlledMediaVariantUrl("https://cdn.example/photo.jpg", "card"))
+      .toBe("https://cdn.example/photo.jpg");
   });
 
   test("entrega midia controlada direto ao navegador para preservar os cookies de acesso", () => {
