@@ -53,6 +53,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - run: npx next typegen
       - run: npm run typecheck
       - name: Validate pricing, cities, identity and media contracts
         run: >-
