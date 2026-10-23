@@ -34,11 +34,12 @@ const PROFESSIONALS_CACHE_TTL_MS = 60_000;
 const professionalsCache = new Map<string, { expiresAt: number; data: Professional[] }>();
 const professionalsRequests = new Map<string, Promise<Professional[]>>();
 
-async function loadProfessionals(url: string, signal: AbortSignal) {
+async function loadProfessionals(query: URLSearchParams, signal: AbortSignal) {
+  const url = `/api/professionals?${query}`;
   const cached = professionalsCache.get(url);
   if (cached && cached.expiresAt > Date.now()) return cached.data;
 
-  const pending = professionalsRequests.get(url) ?? fetch(url, { signal })
+  const pending = professionalsRequests.get(url) ?? fetch(`/api/professionals?${query}`, { signal })
     .then((response) => response.ok ? response.json() : { professionals: [] })
     .then((data) => Array.isArray(data.professionals) ? data.professionals as Professional[] : [])
     .then((data) => {
@@ -68,8 +69,7 @@ export default function HomeDiscoveryPreview() {
       if (storyRegion.city) query.set("city", storyRegion.city);
       query.set("state", storyRegion.state);
     }
-    const url = `/api/professionals?${query}`;
-    void loadProfessionals(url, controller.signal)
+    void loadProfessionals(query, controller.signal)
       .then((data) => setProfessionals(data))
       .catch(() => {
         if (!controller.signal.aborted) setProfessionals([]);
