@@ -45,8 +45,7 @@ test.describe("home fiel à referência mobile", () => {
 
   test("conteúdo e rotas principais permanecem corretos", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Encontre o perfil certo para você.");
-    await expect(page.getByRole("main").getByText("Discrição • Segurança • Liberdade", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Elite Modell — sua conexão com o melhor, de forma discreta");
     await expect(page.getByRole("main").getByRole("link", { name: "Explorar perfis" }).first()).toHaveAttribute("href", "/buscar?tab=acompanhantes&selecionarCidade=1");
     await expect(page.getByRole("main").getByRole("link", { name: "Anunciar meu perfil" })).toHaveAttribute("href", "/cadastro/acompanhante");
     await expect(page.locator("nav img").first()).toHaveAttribute("src", /elite-modell-logo\.png/);
@@ -56,7 +55,7 @@ test.describe("home fiel à referência mobile", () => {
     test(`layout sem overflow e controles compactos em ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 844 });
       await page.goto("/", { waitUntil: "networkidle" });
-      await expect(page.getByRole("img", { name: "Modelo da Elite Modell" })).toBeVisible();
+      await expect(page.getByRole("img", { name: "Modelo em destaque na apresentação premium da Elite Modell" })).toBeVisible();
       await expect(page.getByRole("search", { name: "Buscar acompanhantes por cidade" })).toBeVisible();
       await expect(page.getByRole("main").getByRole("link", { name: "Explorar perfis" }).first()).toBeVisible();
       await expect(page.getByRole("main").getByRole("link", { name: "Anunciar meu perfil" })).toBeVisible();

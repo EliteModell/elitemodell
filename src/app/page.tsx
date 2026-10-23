@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import HomeCitySearch from "@/components/home/HomeCitySearch";
 import HomeDiscoveryPreview from "@/components/home/HomeDiscoveryPreview";
-import eliteHero from "@/../public/images/home/elite-hero-three-models.png";
+import originalEliteHero from "@/../public/hero-model.jpeg";
 import elitePurple from "@/assets/home/elite-destaque-roxo.jpg";
 import eliteGold from "@/assets/home/elite-destaque-dourado.jpg";
 import styles from "./home.module.css";
@@ -26,13 +26,20 @@ export default function HomePage() {
     <Navbar tone="light" accent="purple" />
     <main>
       <section className={styles.hero}>
-        <div className={styles.model}>
-          <Image src={eliteHero} alt="Modelo da Elite Modell" fill preload quality={75} sizes="(max-width: 900px) 100vw, 62vw" className={styles.modelImage}/>
+        <div className={styles.originalHeroVisual}>
+          <Image
+            src={originalEliteHero}
+            alt="Modelo em destaque na apresentação premium da Elite Modell"
+            preload
+            quality={75}
+            sizes="100vw"
+            className={styles.originalHeroImage}
+          />
+          <span className={styles.originalMarkCover} aria-hidden="true" />
+          <span className={styles.originalFade} aria-hidden="true" />
         </div>
-        <div className={styles.heroCopy}>
-          <span className={styles.heroEyebrow}>Discrição • Segurança • Liberdade</span>
-          <h1>Encontre o <br/>perfil certo <br/><strong>para você.</strong></h1>
-          <p>Acompanhantes verificadas, com privacidade, segurança e liberdade para viver boas experiências.</p>
+        <div className={styles.heroUtility}>
+          <h1 className={styles.srOnly}>Elite Modell — sua conexão com o melhor, de forma discreta</h1>
           <HomeCitySearch />
           <div className={styles.heroActions}>
             <Link href="/buscar?tab=acompanhantes&selecionarCidade=1" className={styles.heroCta}>Explorar perfis<ArrowRight aria-hidden="true" size={22}/></Link>
