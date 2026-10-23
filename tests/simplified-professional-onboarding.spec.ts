@@ -27,7 +27,7 @@ function professional(displayName = "") {
 }
 
 test("conta com telefone confirmado retoma o cadastro enquanto o e-mail esta pendente", async ({ page }) => {
-  await mockOnboarding(page, "Marina Retorno");
+  await mockOnboarding(page, "Marina Retorno", false);
   await page.unroute("**/api/users/me**");
   await page.route("**/api/users/me**", (route) => route.fulfill({ json: {
     id: USER_ID,
@@ -51,7 +51,7 @@ test("conta com telefone confirmado retoma o cadastro enquanto o e-mail esta pen
 });
 
 test("sessao expirada orienta reentrada sem criar uma nova conta", async ({ page }) => {
-  await mockOnboarding(page);
+  await mockOnboarding(page, "", false);
   await page.unroute("**/api/users/me**");
   await page.route("**/api/users/me**", (route) => route.fulfill({ status: 401, json: { error: "Sessao expirada." } }));
 
@@ -61,7 +61,7 @@ test("sessao expirada orienta reentrada sem criar uma nova conta", async ({ page
   await expect(page.getByRole("link", { name: "Continuar com meu telefone" })).toHaveAttribute("href", "/cadastro/acompanhante");
 });
 
-async function mockOnboarding(page: Page, displayName = "") {
+async function mockOnboarding(page: Page, displayName = "", usePersistedDraft = true) {
   await installMockSessionCookie(page.context(), {
     id: USER_ID,
     name: "Profissional Teste",
@@ -73,7 +73,7 @@ async function mockOnboarding(page: Page, displayName = "") {
     activeProfileType: "PROFESSIONAL",
     availableProfiles: ["PROFESSIONAL"],
     adultVerified: true,
-  }, { persistedProfessionalStatus: "DRAFT" });
+  }, usePersistedDraft ? { persistedProfessionalStatus: "DRAFT" } : {});
   await page.addInitScript(() => {
     localStorage.setItem("elite_cookie_consent", "necessary");
     localStorage.setItem("elitemodell_ageConsentAccepted", "true");
