@@ -257,6 +257,19 @@ test.describe("contrato publico do perfil profissional", () => {
     await expect(toggle).toHaveCSS("color", "rgb(20, 18, 18)");
   });
 
+  test("cartao de valores no topo abre e leva diretamente para a tabela", async ({ page }) => {
+    await mockPublicProfilePage(page, []);
+    await page.goto("/profissionais/victoria");
+
+    const pricing = page.getByRole("region", { name: "Valores" });
+    const topCard = page.getByRole("button", { name: /Valores a partir de R\$ 150/i });
+    await topCard.click();
+
+    await expect(pricing.getByRole("button")).toHaveAttribute("aria-expanded", "true");
+    await expect.poll(async () => pricing.evaluate((element) => element.getBoundingClientRect().top))
+      .toBeLessThanOrEqual(110);
+  });
+
   test("calcula presenca apenas dentro da janela e respeita privacidade", () => {
     const now = new Date("2026-06-12T12:00:00.000Z");
     expect(isProfessionalOnline("2026-06-12T11:50:00.000Z", true, now)).toBe(true);

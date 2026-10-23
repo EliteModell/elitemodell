@@ -158,6 +158,7 @@ export default function ProfissionalProfilePage() {
 
   const refGaleria = useRef<HTMLDivElement>(null);
   const refSobre = useRef<HTMLDivElement>(null);
+  const refValores = useRef<HTMLElement>(null);
   const refAvaliacoes = useRef<HTMLDivElement>(null);
 
   function scrollTo(ref: React.RefObject<HTMLDivElement | null>) {
@@ -535,7 +536,7 @@ export default function ProfissionalProfilePage() {
 
           {/* Cards preço + localização */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-            <button type="button" onClick={() => { setValoresAbertos(true); window.setTimeout(() => refSobre.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }} style={{ background: "#fff", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "14px 16px", boxShadow: "0 10px 28px rgba(37, 31, 32,.06)", textAlign: "left", cursor: "pointer" }} aria-expanded={valoresAbertos}>
+            <button type="button" onClick={() => { setValoresAbertos(true); window.setTimeout(() => refValores.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }} style={{ background: "#fff", border: `1px solid ${GOLD_MID}`, borderRadius: 12, padding: "14px 16px", boxShadow: "0 10px 28px rgba(37, 31, 32,.06)", textAlign: "left", cursor: "pointer" }} aria-expanded={valoresAbertos}>
               <div style={{ fontSize: 10, color: GOLD, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>💰 Valores</div>
               <div style={{ fontSize: 10, color: "#aaa0b2", marginBottom: 2 }}>a partir de</div>
               <div style={{ fontSize: 20, fontWeight: 900, color: GOLD, fontFamily: PLAYFAIR }}>{startingPrice ? `R$ ${startingPrice.value.toLocaleString("pt-BR")}` : "Consulte"}</div>
@@ -708,6 +709,37 @@ export default function ProfissionalProfilePage() {
         {/* SOBRE MIM */}
         <div ref={refSobre} style={{ scrollMarginTop: 120 }}>
 
+          {/* Tabela de valores em destaque no topo do conteúdo */}
+          <section ref={refValores} className={styles.pricingSection} style={{ marginBottom: 28, paddingBottom: 28, borderBottom: `1px solid ${GOLD_DIM}`, scrollMarginTop: 92 }} aria-label="Valores">
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><path d="M12 16h.01"/></svg>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fcf7ff", margin: 0, fontFamily: PLAYFAIR }}>Valores</h2>
+            </div>
+            <button className={styles.pricingToggle} type="button" onClick={() => setValoresAbertos((open) => !open)} style={{ width: "100%", padding: "12px 16px", border: `1px solid ${GOLD_DIM}`, borderRadius: valoresAbertos ? "12px 12px 0 0" : 12, background: "#fff", color: "#141212", display: "flex", justifyContent: "space-between", cursor: "pointer", fontWeight: 700 }} aria-expanded={valoresAbertos}>
+              <span>{startingPrice ? `A partir de R$ ${startingPrice.value.toLocaleString("pt-BR")} · ${startingPrice.shortLabel}` : "Valores sob consulta"}</span><span>{valoresAbertos ? "−" : "+"}</span>
+            </button>
+            {valoresAbertos && priceOptions.length > 0 ? <div style={{ border: `1px solid ${GOLD_DIM}`, borderTop: 0, borderRadius: "0 0 12px 12px", overflow: "hidden" }}>
+              {priceOptions.map((row, i, arr) => (
+                <div className={styles.pricingRow} key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: "#fff", borderBottom: i < arr.length - 1 ? `1px solid ${GOLD_DIM}` : "none" }}>
+                  <span className={styles.pricingLabel} style={{ fontSize: 13, color: "#686270", fontStyle: "italic" }}>{row.label}</span>
+                  <span className={styles.pricingValue} style={{ fontSize: 14, color: "#141212", fontWeight: row.value ? 700 : 400 }}>
+                    {`R$ ${row.value.toLocaleString("pt-BR")}`}
+                  </span>
+                </div>
+              ))}
+            </div> : null}
+            {pro.paymentMethods && pro.paymentMethods.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <p style={{ fontSize: 12, color: "#aaa0b2", marginBottom: 8 }}>Formas de pagamento:</p>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {pro.paymentMethods.map((m) => (
+                    <span key={m} style={{ padding: "4px 12px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 20, fontSize: 11, color: GOLD, fontWeight: 600 }}>{m}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
           <section style={{ marginBottom: 28, paddingBottom: 28, borderBottom: `1px solid ${GOLD_DIM}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -763,37 +795,6 @@ export default function ProfissionalProfilePage() {
                 {pro.serviceCities?.length ? <p style={{ margin: 0, color: "#b4adb0", fontSize: 13 }}><strong style={{ color: "#fcf7ff" }}>Cidades atendidas:</strong> {pro.serviceCities.join(", ")}</p> : null}
               </div>
             ) : null}
-          </section>
-
-          {/* Tabela de valores */}
-          <section className={styles.pricingSection} style={{ marginBottom: 28, paddingBottom: 28, borderBottom: `1px solid ${GOLD_DIM}` }} aria-label="Valores">
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><path d="M12 16h.01"/></svg>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#fcf7ff", margin: 0, fontFamily: PLAYFAIR }}>Valores</h2>
-            </div>
-            <button className={styles.pricingToggle} type="button" onClick={() => setValoresAbertos((open) => !open)} style={{ width: "100%", padding: "12px 16px", border: `1px solid ${GOLD_DIM}`, borderRadius: valoresAbertos ? "12px 12px 0 0" : 12, background: "#fff", color: "#141212", display: "flex", justifyContent: "space-between", cursor: "pointer", fontWeight: 700 }} aria-expanded={valoresAbertos}>
-              <span>{startingPrice ? `A partir de R$ ${startingPrice.value.toLocaleString("pt-BR")} · ${startingPrice.shortLabel}` : "Valores sob consulta"}</span><span>{valoresAbertos ? "−" : "+"}</span>
-            </button>
-            {valoresAbertos && priceOptions.length > 0 ? <div style={{ border: `1px solid ${GOLD_DIM}`, borderTop: 0, borderRadius: "0 0 12px 12px", overflow: "hidden" }}>
-              {priceOptions.map((row, i, arr) => (
-                <div className={styles.pricingRow} key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: "#fff", borderBottom: i < arr.length - 1 ? `1px solid ${GOLD_DIM}` : "none" }}>
-                  <span className={styles.pricingLabel} style={{ fontSize: 13, color: "#686270", fontStyle: "italic" }}>{row.label}</span>
-                  <span className={styles.pricingValue} style={{ fontSize: 14, color: "#141212", fontWeight: row.value ? 700 : 400 }}>
-                    {`R$ ${row.value.toLocaleString("pt-BR")}`}
-                  </span>
-                </div>
-              ))}
-            </div> : null}
-            {pro.paymentMethods && pro.paymentMethods.length > 0 && (
-              <div style={{ marginTop: 16 }}>
-                <p style={{ fontSize: 12, color: "#aaa0b2", marginBottom: 8 }}>Formas de pagamento:</p>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {pro.paymentMethods.map((m) => (
-                    <span key={m} style={{ padding: "4px 12px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 20, fontSize: 11, color: GOLD, fontWeight: 600 }}>{m}</span>
-                  ))}
-                </div>
-              </div>
-            )}
           </section>
 
           {/* Horário */}
