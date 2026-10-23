@@ -30,6 +30,28 @@ type Professional = {
   priceWebcam?: number | null;
 };
 
+const PROFESSIONALS_CACHE_TTL_MS = 60_000;
+const professionalsCache = new Map<string, { expiresAt: number; data: Professional[] }>();
+const professionalsRequests = new Map<string, Promise<Professional[]>>();
+
+async function loadProfessionals(query: URLSearchParams, signal: AbortSignal) {
+  const url = `/api/professionals?${query}`;
+  const cached = professionalsCache.get(url);
+  if (cached && cached.expiresAt > Date.now()) return cached.data;
+
+  const pending = professionalsRequests.get(url) ?? fetch(`/api/professionals?${query}`, { signal })
+    .then((response) => response.ok ? response.json() : { professionals: [] })
+    .then((data) => Array.isArray(data.professionals) ? data.professionals as Professional[] : [])
+    .then((data) => {
+      professionalsCache.set(url, { data, expiresAt: Date.now() + PROFESSIONALS_CACHE_TTL_MS });
+      return data;
+    })
+    .finally(() => professionalsRequests.delete(url));
+
+  professionalsRequests.set(url, pending);
+  return pending;
+}
+
 export default function HomeDiscoveryPreview() {
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [storyRegion, setStoryRegion] = useState<StoryRegion | null>(null);
@@ -47,9 +69,8 @@ export default function HomeDiscoveryPreview() {
       if (storyRegion.city) query.set("city", storyRegion.city);
       query.set("state", storyRegion.state);
     }
-    fetch(`/api/professionals?${query}`, { signal: controller.signal })
-      .then((response) => response.ok ? response.json() : { professionals: [] })
-      .then((data) => setProfessionals(data.professionals ?? []))
+    void loadProfessionals(query, controller.signal)
+      .then((data) => setProfessionals(data))
       .catch(() => {
         if (!controller.signal.aborted) setProfessionals([]);
       });
@@ -72,13 +93,22 @@ export default function HomeDiscoveryPreview() {
 
       {professionals.length > 0 ? (
         <div className="home-profile-row">
-          {professionals.map((professional) => {
+          {professionals.map((professional, index) => {
             const startingPrice = professionalStartingPrice(professional);
             return (
             <Link key={professional.id} href={`/profissionais/${professional.slug}`} className="home-profile-card">
               <div className="home-profile-photo">
                 {professional.image ? (
-                  <Image src={professional.image} alt={professional.displayName} fill unoptimized={requiresDirectMediaDelivery(professional.image)} sizes="240px" style={{ objectFit: "cover" }} />
+                  <Image
+                    src={professional.image}
+                    alt={professional.displayName}
+                    fill
+                    unoptimized={requiresDirectMediaDelivery(professional.image)}
+                    sizes="(max-width: 640px) 66vw, 232px"
+                    loading={index < 2 ? "eager" : "lazy"}
+                    fetchPriority={index < 2 ? "high" : "low"}
+                    style={{ objectFit: "cover" }}
+                  />
                 ) : null}
                 <div className="home-profile-gradient" />
                 <div className="home-profile-badges">
