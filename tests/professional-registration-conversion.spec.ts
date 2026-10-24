@@ -59,6 +59,23 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+test("cadastro abre no topo e sem reenquadramento nas larguras de iPhone", async ({ page }) => {
+  for (const width of [320, 375, 390, 414, 430]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: "Cadastre-se grátis como acompanhante" })).toBeVisible();
+
+    const layout = await page.evaluate(() => ({
+      scrollY: window.scrollY,
+      viewportWidth: document.documentElement.clientWidth,
+      documentWidth: document.documentElement.scrollWidth,
+    }));
+
+    expect(layout.scrollY).toBe(0);
+    expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth + 1);
+  }
+});
+
 test("apresenta a experiência premium e validação por canal", async ({ page }) => {
   await page.route("**/api/auth/phone/channels", async (route) => {
     await route.fulfill({

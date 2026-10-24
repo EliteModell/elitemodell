@@ -51,6 +51,30 @@ test.describe("home fiel à referência mobile", () => {
     await expect(page.locator("nav img").first()).toHaveAttribute("src", /elite-modell-logo\.png/);
   });
 
+  test("fotos promocionais ficam compactas e preparadas para ampliar a coleção", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const campaign = page.getByRole("region", { name: "Garotas-propaganda Elite Modell" });
+    await campaign.scrollIntoViewIfNeeded();
+
+    const images = campaign.getByRole("img");
+    await expect(images).toHaveCount(2);
+    const boxes = await images.evaluateAll((items) => items.map((item) => item.getBoundingClientRect()));
+    expect(Math.abs(boxes[0].height - boxes[1].height)).toBeLessThanOrEqual(1);
+    expect(boxes[0].width + boxes[1].width).toBeLessThanOrEqual(390);
+    await expect.poll(async () => (await campaign.boundingBox())?.height ?? 999).toBeLessThan(420);
+  });
+
+  test("toque recebe estado visual imediato sem atrasar a navegação", async ({ page }) => {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const announce = page.getByRole("main").getByRole("link", { name: "Anunciar meu perfil" });
+    await announce.dispatchEvent("pointerdown", { button: 0, pointerType: "touch", isPrimary: true });
+    await expect(announce).toHaveAttribute("data-interaction-active", "true");
+    await announce.dispatchEvent("pointerup", { button: 0, pointerType: "touch", isPrimary: true });
+    await expect(announce).toHaveAttribute("data-interaction-active", "true");
+    await expect.poll(() => announce.getAttribute("data-interaction-active")).toBeNull();
+  });
+
   for (const width of [320, 360, 375, 390, 414, 430, 768, 1024, 1440]) {
     test(`layout sem overflow e controles compactos em ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 844 });

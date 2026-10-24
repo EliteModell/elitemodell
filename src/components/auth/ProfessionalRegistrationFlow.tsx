@@ -17,7 +17,7 @@ import {
   Phone,
   SlidersHorizontal,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 import styles from "./ProfessionalRegistrationFlow.module.css";
@@ -192,10 +192,14 @@ export function ProfessionalRegistrationFlow({
     };
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!hydrated) return;
+    const root = document.documentElement;
+    const previousScrollBehavior = root.style.scrollBehavior;
+    root.style.scrollBehavior = "auto";
+    window.scrollTo(0, 0);
     headingRef.current?.focus({ preventScroll: true });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    root.style.scrollBehavior = previousScrollBehavior;
   }, [hydrated, stage]);
 
   useEffect(() => {

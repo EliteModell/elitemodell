@@ -10,6 +10,19 @@ import elitePurple from "@/assets/home/elite-destaque-roxo.jpg";
 import eliteGold from "@/assets/home/elite-destaque-dourado.jpg";
 import styles from "./home.module.css";
 
+const campaignPhotos = [
+  {
+    src: elitePurple,
+    alt: "Garota-propaganda Elite Modell com peças roxas e detalhes dourados",
+    position: "center top",
+  },
+  {
+    src: eliteGold,
+    alt: "Garota-propaganda Elite Modell com look dourado",
+    position: "center center",
+  },
+];
+
 const entries = [
   { tag: "Cliente", title: "Quero encontrar acompanhantes", description: "Veja perfis verificados e encontre a sua próxima experiência.", cta: "Explorar perfis", href: "/buscar?tab=acompanhantes&selecionarCidade=1" },
   { tag: "Acompanhante", title: "Quero anunciar meu perfil", description: "Crie seu perfil com segurança e comece a receber contatos.", cta: "Criar meu perfil", href: ACCOUNT_ROUTES.cadastroAcompanhante },
@@ -52,26 +65,19 @@ export default function HomePage() {
       <HomeDiscoveryPreview />
 
       <section className={styles.campaign} aria-label="Garotas-propaganda Elite Modell">
-        <div className={`${styles.campaignVisual} ${styles.campaignPurple}`}>
-          <Image
-            src={elitePurple}
-            alt="Garota-propaganda Elite Modell com peças roxas e detalhes dourados"
-            fill
-            quality={85}
-            sizes="(max-width: 620px) calc(100vw - 28px), (max-width: 900px) calc(100vw - 48px), 680px"
-            className={styles.campaignImage}
-          />
-        </div>
-        <div className={`${styles.campaignVisual} ${styles.campaignGold}`}>
-          <Image
-            src={eliteGold}
-            alt="Garota-propaganda Elite Modell com look dourado"
-            fill
-            quality={85}
-            sizes="(max-width: 620px) calc(100vw - 28px), (max-width: 900px) calc(100vw - 48px), 620px"
-            className={styles.campaignImage}
-          />
-        </div>
+        {campaignPhotos.map((photo) => (
+          <div className={styles.campaignVisual} key={photo.alt}>
+            <Image
+              src={photo.src}
+              alt={photo.alt}
+              fill
+              quality={85}
+              sizes="(max-width: 620px) 46vw, (max-width: 900px) 42vw, 620px"
+              className={styles.campaignImage}
+              style={{ objectPosition: photo.position }}
+            />
+          </div>
+        ))}
       </section>
 
       <section className={styles.trust} aria-label="Compromissos Elite Modell">
