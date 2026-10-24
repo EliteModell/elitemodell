@@ -49,9 +49,11 @@ test.describe("home fiel à referência mobile", () => {
     await expect(page.getByRole("main").getByRole("link", { name: "Explorar perfis" }).first()).toHaveAttribute("href", "/buscar?tab=acompanhantes&selecionarCidade=1");
     await expect(page.getByRole("main").getByRole("link", { name: "Anunciar meu perfil" })).toHaveAttribute("href", "/cadastro/acompanhante");
     await expect(page.locator("nav img").first()).toHaveAttribute("src", /elite-modell-logo\.png/);
+    await expect(page.getByRole("heading", { name: "Stories e perfis da região" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Profissionais em destaque" })).toBeVisible();
   });
 
-  test("fotos promocionais ficam compactas e preparadas para ampliar a coleção", async ({ page }) => {
+  test("fotos promocionais permanecem grandes e empilhadas verticalmente", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/", { waitUntil: "domcontentloaded" });
     const campaign = page.getByRole("region", { name: "Garotas-propaganda Elite Modell" });
@@ -60,9 +62,10 @@ test.describe("home fiel à referência mobile", () => {
     const images = campaign.getByRole("img");
     await expect(images).toHaveCount(2);
     const boxes = await images.evaluateAll((items) => items.map((item) => item.getBoundingClientRect()));
-    expect(Math.abs(boxes[0].height - boxes[1].height)).toBeLessThanOrEqual(1);
-    expect(boxes[0].width + boxes[1].width).toBeLessThanOrEqual(390);
-    await expect.poll(async () => (await campaign.boundingBox())?.height ?? 999).toBeLessThan(420);
+    expect(Math.abs(boxes[0].width - boxes[1].width)).toBeLessThanOrEqual(1);
+    expect(boxes[0].width).toBeGreaterThan(340);
+    expect(boxes[1].top).toBeGreaterThanOrEqual(boxes[0].bottom);
+    expect(boxes[1].top - boxes[0].bottom).toBeLessThanOrEqual(12);
   });
 
   test("toque recebe estado visual imediato sem atrasar a navegação", async ({ page }) => {
