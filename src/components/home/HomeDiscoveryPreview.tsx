@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Flame } from "lucide-react";
+import ProfessionalProfileLink from "@/components/professionals/ProfessionalProfileLink";
 import { controlledMediaVariantUrl, requiresDirectMediaDelivery } from "@/lib/public-professional-media";
 import { professionalStartingPrice } from "@/lib/professional-pricing";
 
@@ -29,6 +30,8 @@ type Professional = {
 };
 
 const PROFESSIONALS_CACHE_TTL_MS = 60_000;
+const HOME_PROFESSIONALS_QUERY = new URLSearchParams({ sortBy: "recent", limit: "12" });
+const HOME_PROFESSIONALS_URL = `/api/professionals?${HOME_PROFESSIONALS_QUERY}`;
 const professionalsCache = new Map<string, { expiresAt: number; data: Professional[] }>();
 const professionalsRequests = new Map<string, Promise<Professional[]>>();
 
@@ -51,12 +54,14 @@ async function loadProfessionals(query: URLSearchParams, signal: AbortSignal) {
 }
 
 export default function HomeDiscoveryPreview() {
-  const [professionals, setProfessionals] = useState<Professional[]>([]);
+  const [professionals, setProfessionals] = useState<Professional[]>(() => {
+    const cached = professionalsCache.get(HOME_PROFESSIONALS_URL);
+    return cached && cached.expiresAt > Date.now() ? cached.data : [];
+  });
 
   useEffect(() => {
     const controller = new AbortController();
-    const query = new URLSearchParams({ sortBy: "recent", limit: "12" });
-    void loadProfessionals(query, controller.signal)
+    void loadProfessionals(HOME_PROFESSIONALS_QUERY, controller.signal)
       .then((data) => setProfessionals(data))
       .catch(() => {
         if (!controller.signal.aborted) setProfessionals([]);
@@ -73,7 +78,17 @@ export default function HomeDiscoveryPreview() {
           {professionals.map((professional, index) => {
             const startingPrice = professionalStartingPrice(professional);
             return (
-            <Link key={professional.id} href={`/profissionais/${professional.slug}`} className="home-profile-card">
+            <ProfessionalProfileLink
+              key={professional.id}
+              preview={{
+                slug: professional.slug,
+                displayName: professional.displayName,
+                image: professional.image,
+                city: professional.city,
+                state: professional.state,
+              }}
+              className="home-profile-card"
+            >
               <div className="home-profile-photo">
                 {professional.image ? (
                   <Image
@@ -102,7 +117,7 @@ export default function HomeDiscoveryPreview() {
                 <small>★ {(professional.rating ?? 0).toFixed(1)} ({professional.totalReviews ?? 0})</small>
                 <b>{startingPrice ? `A partir de R$ ${startingPrice.value.toLocaleString("pt-BR")} · ${startingPrice.shortLabel}` : "Consultar"}</b>
               </div>
-            </Link>
+            </ProfessionalProfileLink>
             );
           })}
         </div>

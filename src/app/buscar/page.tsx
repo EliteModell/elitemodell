@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FiltersModal from "@/components/FiltersModal";
 import ProfessionalContactAction from "@/components/professionals/ProfessionalContactAction";
+import ProfessionalProfileLink from "@/components/professionals/ProfessionalProfileLink";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import {
   canonicalizeBrazilianLocation,
@@ -1265,7 +1266,10 @@ function ProfileCard({ profile }: { profile: CardPerfil }) {
         O <Link> cobre apenas foto + info para evitar <a> aninhado com o botão WhatsApp.
         O botão de WhatsApp é um <a> irmão, fora do <Link>.
       */}
-      <Link href={`/profissionais/${profile.slug}`} style={{ textDecoration: "none", display: "block" }}>
+      <ProfessionalProfileLink
+        preview={{ slug: profile.slug, displayName: profile.nome, image: profile.foto, city: profile.cidade }}
+        style={{ textDecoration: "none", display: "block" }}
+      >
         <div className="perfil-foto" style={{ background: "#1a2a40", position: "relative" }}>
           <Image
             src={profile.foto ?? "/android-chrome-512x512.png"}
@@ -1328,7 +1332,7 @@ function ProfileCard({ profile }: { profile: CardPerfil }) {
             </div>
           )}
         </div>
-      </Link>
+      </ProfessionalProfileLink>
 
       {/* Ação de contato fica fora do Link para não criar elementos interativos aninhados. */}
       {profile.contactAvailable && (

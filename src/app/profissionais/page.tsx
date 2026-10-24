@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import ProfessionalProfileLink from "@/components/professionals/ProfessionalProfileLink";
 import { requiresDirectMediaDelivery } from "@/lib/public-professional-media";
 import Navbar from "@/components/Navbar";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
@@ -320,7 +321,10 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
   const specialtyNames = Array.from(new Set([...(pro.services ?? []), ...pro.specialties.map((s) => s.name)]));
 
   return (
-    <Link href={`/profissionais/${pro.slug}`} style={{ textDecoration: "none", display: "block" }}>
+    <ProfessionalProfileLink
+      preview={{ slug: pro.slug, displayName: pro.displayName, image: coverPhoto ?? null, city: pro.city, state: pro.state }}
+      style={{ textDecoration: "none", display: "block" }}
+    >
       <div
         className={featured ? "prof-card featured" : "prof-card"}
         style={{
@@ -431,6 +435,6 @@ function ProfCard({ pro, featured = false }: { pro: ApiProfessional; featured?: 
           </div>
         </div>
       </div>
-    </Link>
+    </ProfessionalProfileLink>
   );
 }

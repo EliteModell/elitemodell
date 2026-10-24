@@ -83,6 +83,35 @@ test.describe("home fiel à referência mobile", () => {
     await expect.poll(() => announce.getAttribute("data-interaction-active")).toBeNull();
   });
 
+  test("card guarda somente a prévia pública necessária para a transição", async ({ page }) => {
+    await page.route("**/api/professionals?**", (route) => route.fulfill({ json: { professionals: [{
+      id: "victoria-id",
+      slug: "victoria",
+      displayName: "Victoria",
+      city: "Itaúna",
+      state: "MG",
+      image: "/mock-media/cover.jpg",
+      verified: true,
+      online: false,
+      sponsored: false,
+      rating: 5,
+      totalReviews: 2,
+      pricePerHour: 300,
+    }] } }));
+    await page.route("**/mock-media/cover.jpg", (route) => route.fulfill({
+      status: 200,
+      contentType: "image/png",
+      body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
+    }));
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const card = page.getByRole("link", { name: /Victoria/ });
+    await expect(card).toBeVisible();
+    await card.dispatchEvent("pointerdown", { pointerType: "touch", isPrimary: true, button: 0 });
+    await card.dispatchEvent("click", { button: 0 });
+    await expect.poll(() => page.evaluate(() => sessionStorage.getItem("elite_professional_navigation_preview:victoria")))
+      .toContain('"slug":"victoria"');
+  });
+
   for (const width of [320, 360, 375, 390, 414, 430, 768, 1024, 1440]) {
     test(`layout sem overflow e controles compactos em ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 844 });
