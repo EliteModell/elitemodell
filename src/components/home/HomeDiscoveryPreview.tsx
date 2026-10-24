@@ -109,7 +109,7 @@ export default function HomeDiscoveryPreview() {
       ) : null}
 
       <style>{`
-        .home-discovery{max-width:1280px;margin:0 auto;padding:30px 24px 28px;background:linear-gradient(145deg,#fff 0%,#fbf7fe 55%,#f3eafb 100%);color:#25112f}
+        .home-discovery{max-width:1280px;margin:0 auto;padding:30px 24px 8px;background:linear-gradient(145deg,#fff 0%,#fbf7fe 55%,#f3eafb 100%);color:#25112f}
         .home-profile-row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(200px,232px);gap:14px;overflow-x:auto;padding:2px 0 12px;scroll-snap-type:x proximity}
         .home-profile-card{scroll-snap-align:start;overflow:hidden;border:1px solid #eadcf1;border-radius:18px;background:#fff;color:#291335;text-decoration:none;box-shadow:0 16px 44px rgba(76,29,102,.12);transition:.2s ease}
         .home-profile-card:hover{transform:translateY(-3px);border-color:rgba(183, 44, 255,.45)}
@@ -125,7 +125,7 @@ export default function HomeDiscoveryPreview() {
         .home-profile-copy small{color:#b72cff}
         .home-profile-copy b{text-align:right;color:#e1a6ff;font-size:12px}
         .home-featured-heading h3{margin:0;color:#291335;font:800 24px var(--font-playfair),serif}.home-featured-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 12px}.home-featured-heading>div{display:flex;align-items:center;gap:9px}.home-featured-heading>div>svg{width:24px;height:24px;color:#8e24aa;fill:#8e24aa}.home-featured-heading p{margin:2px 0 0;color:#786a80;font-size:12px}.home-featured-heading>a{color:#7b1fa2;font-size:13px;font-weight:900;text-decoration:none}
-        @media(max-width:640px){.home-discovery{padding:24px 14px 18px;overflow:hidden}.home-profile-row{grid-auto-columns:66vw;margin-right:-14px;padding-right:14px}.home-featured-heading h3{font-size:21px}.home-featured-heading p{font-size:11px}.home-featured-heading>a{font-size:12px}}
+        @media(max-width:640px){.home-discovery{padding:24px 14px 8px;overflow:hidden}.home-profile-row{grid-auto-columns:66vw;margin-right:-14px;padding-right:14px}.home-featured-heading h3{font-size:21px}.home-featured-heading p{font-size:11px}.home-featured-heading>a{font-size:12px}}
       `}</style>
     </section>
   );

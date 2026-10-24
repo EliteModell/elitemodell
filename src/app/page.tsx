@@ -8,16 +8,24 @@ import HomeCitySearch from "@/components/home/HomeCitySearch";
 import HomeDiscoveryPreview from "@/components/home/HomeDiscoveryPreview";
 import elitePurple from "@/assets/home/elite-destaque-roxo.jpg";
 import eliteGold from "@/assets/home/elite-destaque-dourado.jpg";
+import elitePool from "@/assets/home/elite-destaque-piscina.jpg";
 import styles from "./home.module.css";
 
 const campaignPhotos = [
   {
     src: elitePurple,
     alt: "Garota-propaganda Elite Modell com peças roxas e detalhes dourados",
+    position: "center top",
   },
   {
     src: eliteGold,
     alt: "Garota-propaganda Elite Modell com look dourado",
+    position: "center bottom",
+  },
+  {
+    src: elitePool,
+    alt: "Garota-propaganda Elite Modell com look marrom junto à piscina",
+    position: "center center",
   },
 ];
 
@@ -69,9 +77,10 @@ export default function HomePage() {
               src={photo.src}
               alt={photo.alt}
               fill
-              quality={85}
+              quality={82}
               sizes="(max-width: 900px) calc(100vw - 28px), 752px"
               className={styles.campaignImage}
+              style={{ objectPosition: photo.position }}
             />
           </div>
         ))}
