@@ -60,12 +60,17 @@ test.describe("home fiel à referência mobile", () => {
     await campaign.scrollIntoViewIfNeeded();
 
     const images = campaign.getByRole("img");
-    await expect(images).toHaveCount(2);
+    await expect(images).toHaveCount(3);
+    await expect(images.nth(0)).toHaveAttribute("alt", /peças roxas/);
+    await expect(images.nth(1)).toHaveAttribute("alt", /look dourado/);
+    await expect(images.nth(2)).toHaveAttribute("alt", /look marrom junto à piscina/);
     const boxes = await images.evaluateAll((items) => items.map((item) => item.getBoundingClientRect()));
-    expect(Math.abs(boxes[0].width - boxes[1].width)).toBeLessThanOrEqual(1);
+    expect(boxes.every((box) => Math.abs(box.width - boxes[0].width) <= 1)).toBe(true);
     expect(boxes[0].width).toBeGreaterThan(340);
-    expect(boxes[1].top).toBeGreaterThanOrEqual(boxes[0].bottom);
-    expect(boxes[1].top - boxes[0].bottom).toBeLessThanOrEqual(12);
+    for (let index = 1; index < boxes.length; index += 1) {
+      expect(boxes[index].top).toBeGreaterThanOrEqual(boxes[index - 1].bottom);
+      expect(boxes[index].top - boxes[index - 1].bottom).toBeLessThanOrEqual(12);
+    }
   });
 
   test("toque recebe estado visual imediato sem atrasar a navegação", async ({ page }) => {
