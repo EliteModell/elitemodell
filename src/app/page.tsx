@@ -14,12 +14,10 @@ const campaignPhotos = [
   {
     src: elitePurple,
     alt: "Garota-propaganda Elite Modell com peças roxas e detalhes dourados",
-    position: "center top",
   },
   {
     src: eliteGold,
     alt: "Garota-propaganda Elite Modell com look dourado",
-    position: "center center",
   },
 ];
 
@@ -72,9 +70,8 @@ export default function HomePage() {
               alt={photo.alt}
               fill
               quality={85}
-              sizes="(max-width: 620px) 46vw, (max-width: 900px) 42vw, 620px"
+              sizes="(max-width: 900px) calc(100vw - 28px), 752px"
               className={styles.campaignImage}
-              style={{ objectPosition: photo.position }}
             />
           </div>
         ))}
