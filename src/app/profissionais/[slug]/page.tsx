@@ -8,8 +8,10 @@ import { useSession } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 import PublicReportButton from "@/components/moderation/PublicReportButton";
 import ProfessionalContactAction from "@/components/professionals/ProfessionalContactAction";
+import ProfessionalProfileLink from "@/components/professionals/ProfessionalProfileLink";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { controlledMediaAssetId, controlledMediaVariantUrl, resolvePublicProfileMedia } from "@/lib/public-professional-media";
+import { readProfessionalNavigationPreview, type ProfessionalNavigationPreview } from "@/lib/professional-navigation-preview";
 import { formatProfessionalPrice, professionalAppointmentPrices, professionalPriceForDuration, professionalPriceOptions, professionalStartingPrice } from "@/lib/professional-pricing";
 import styles from "./profile.module.css";
 
@@ -160,11 +162,20 @@ export default function ProfissionalProfilePage() {
   const [servicosAbertos, setServicosAbertos] = useState(false);
   const [caracteristicasAbertas, setCaracteristicasAbertas] = useState(true);
   const [failedMediaUrls, setFailedMediaUrls] = useState<string[]>([]);
+  const [navigationPreview, setNavigationPreview] = useState<ProfessionalNavigationPreview | null>(null);
+  const [loadedCoverUrl, setLoadedCoverUrl] = useState<string | null>(null);
 
   const refGaleria = useRef<HTMLDivElement>(null);
   const refSobre = useRef<HTMLDivElement>(null);
   const refValores = useRef<HTMLElement>(null);
   const refAvaliacoes = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setNavigationPreview(readProfessionalNavigationPreview(slug));
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [slug]);
 
   function scrollTo(ref: React.RefObject<HTMLDivElement | null>) {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -368,10 +379,34 @@ export default function ProfissionalProfilePage() {
   }
 
   if (loading) {
+    const previewImage = navigationPreview?.image
+      ? controlledMediaVariantUrl(navigationPreview.image, "card")
+      : null;
     return (
-      <div style={{ background: "#f7f7fa", minHeight: "100vh", color: "#141212", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "#f7f7fa", minHeight: "100vh", color: "#141212" }}>
         <Navbar />
-        <p style={{ color: GOLD, fontSize: 16 }}>Carregando perfil...</p>
+        <div className={styles.previewCover} data-testid="profile-navigation-preview">
+          {previewImage ? (
+            <Image
+              src={previewImage}
+              alt=""
+              fill
+              unoptimized={Boolean(controlledMediaAssetId(navigationPreview?.image))}
+              loading="eager"
+              fetchPriority="high"
+              sizes="100vw"
+              style={{ objectFit: "cover", objectPosition: "center 15%" }}
+            />
+          ) : null}
+          <div className={styles.previewShade} />
+          <div className={styles.previewIdentity}>
+            <h1>{navigationPreview?.displayName ?? "Abrindo perfil"}</h1>
+            <span>{navigationPreview?.city ?? "Perfil verificado Elite Modell"}</span>
+          </div>
+        </div>
+        <div className={styles.previewDetails} aria-label="Carregando dados do perfil">
+          <span /><span /><span />
+        </div>
       </div>
     );
   }
@@ -460,6 +495,17 @@ export default function ProfissionalProfilePage() {
       {/* COVER com nome overlay */}
       <div style={{ paddingTop: 64 }}>
         <div data-testid="profile-cover" data-media-state={coverImage ? "image" : "fallback"} className={styles.cover}>
+          {navigationPreview?.image ? (
+            <Image
+              src={controlledMediaVariantUrl(navigationPreview.image, "card")}
+              alt=""
+              fill
+              unoptimized={Boolean(controlledMediaAssetId(navigationPreview.image))}
+              loading="eager"
+              sizes="100vw"
+              style={{ objectFit: "cover", objectPosition: "center 15%" }}
+            />
+          ) : null}
           {coverImage ? (
             <Image
               src={controlledMediaVariantUrl(coverImage, "cover")}
@@ -469,8 +515,14 @@ export default function ProfissionalProfilePage() {
               preload
               sizes="100vw"
               quality={72}
+              onLoad={() => setLoadedCoverUrl(coverImage)}
               onError={() => markMediaFailed(coverImage)}
-              style={{ objectFit: "cover", objectPosition: "center 15%" }}
+              style={{
+                objectFit: "cover",
+                objectPosition: "center 15%",
+                opacity: loadedCoverUrl === coverImage || !navigationPreview?.image ? 1 : 0,
+                transition: "opacity 160ms ease-out",
+              }}
             />
           ) : pro.mediaPublication?.pending ? (
             <div data-testid="gallery-restricted" style={{ textAlign: "center", padding: "32px 16px", color: "#676064", marginBottom: 28 }}>
@@ -941,7 +993,11 @@ export default function ProfissionalProfilePage() {
             </div>
             <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }}>
               {similar.map((p) => (
-                <Link key={p.id} href={`/profissionais/${p.slug}`} style={{ textDecoration: "none", flexShrink: 0, width: 140 }}>
+                <ProfessionalProfileLink
+                  key={p.id}
+                  preview={{ slug: p.slug, displayName: p.displayName, image: p.image ?? null }}
+                  style={{ textDecoration: "none", flexShrink: 0, width: 140 }}
+                >
                   <div style={{ background: "#080808", border: `1px solid ${GOLD_DIM}`, borderRadius: 12, overflow: "hidden" }}>
                     <div style={{ height: 160, position: "relative", overflow: "hidden" }}>
                       {p.image ? (
@@ -965,7 +1021,7 @@ export default function ProfissionalProfilePage() {
                       </div>
                     </div>
                   </div>
-                </Link>
+                </ProfessionalProfileLink>
               ))}
             </div>
           </section>

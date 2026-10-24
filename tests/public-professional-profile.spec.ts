@@ -321,6 +321,49 @@ test.describe("contrato publico do perfil profissional", () => {
     await expect(page.getByTestId("gallery-image")).toHaveCount(2);
   });
 
+  test("reaproveita a foto real do card enquanto os dados completos carregam", async ({ page }) => {
+    await installMockSessionCookie(page.context(), MOCK_SESSION.user);
+    await page.addInitScript(() => {
+      sessionStorage.setItem("elite_modell_adult_consent_session", "accepted");
+      sessionStorage.setItem("elite_professional_navigation_preview:victoria", JSON.stringify({
+        slug: "victoria",
+        displayName: "Victoria",
+        image: "/mock-media/cover.jpg",
+        city: "Itaúna",
+        state: "MG",
+      }));
+    });
+    await page.route("**/api/auth/session", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(MOCK_SESSION),
+    }));
+    await page.route("**/mock-media/cover.jpg", (route) => route.fulfill({
+      status: 200,
+      contentType: "image/png",
+      body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
+    }));
+    let releaseProfile!: () => void;
+    const profileDelay = new Promise<void>((resolve) => { releaseProfile = resolve; });
+    await page.route("**/api/professionals/victoria", async (route) => {
+      await profileDelay;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(mockProfessional(["/mock-media/cover.jpg"])),
+      });
+    });
+    await page.route(/\/api\/professionals\?.*/, (route) => route.fulfill({ json: { professionals: [] } }));
+
+    await page.goto("/profissionais/victoria", { waitUntil: "domcontentloaded" });
+    const preview = page.getByTestId("profile-navigation-preview");
+    await expect(preview.getByRole("heading", { name: "Victoria" })).toBeVisible();
+    await expect(preview.locator("img")).toBeVisible();
+
+    releaseProfile();
+    await expect(page.getByTestId("profile-cover")).toHaveAttribute("data-media-state", "image");
+  });
+
   test("perfil aprovado permanece íntegro nos mobiles prioritários", async ({ page }) => {
     await mockPublicProfilePage(page, ["/mock-media/cover.jpg", "/mock-media/gallery.jpg"]);
     for (const width of [375, 390, 412, 430]) {
