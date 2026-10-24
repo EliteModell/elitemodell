@@ -107,7 +107,6 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      data-scroll-behavior="smooth"
       style={
         {
           "--font-inter": '"Inter", "Segoe UI Variable Text", "Segoe UI", Arial, Helvetica, sans-serif',

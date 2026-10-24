@@ -38,7 +38,7 @@ html {
   width: 100%;
   min-height: 100%;
   min-height: 100dvh;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   overflow-x: hidden;
   background: var(--background);
   color-scheme: dark;
@@ -110,6 +110,12 @@ body {
   filter: brightness(0.88) saturate(1.1);
 }
 
+[data-interaction-active="true"] {
+  filter: brightness(0.86) saturate(1.12);
+  transform: scale(0.985);
+  transition: transform 80ms ease-out, filter 80ms ease-out;
+}
+
 .global-navigation-progress {
   position: fixed;
   z-index: 20000;
@@ -118,6 +124,14 @@ body {
   overflow: hidden;
   pointer-events: none;
   background: rgba(183, 44, 255, 0.16);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 80ms ease-out;
+}
+
+.global-navigation-progress[data-visible="true"] {
+  opacity: 1;
+  visibility: visible;
 }
 
 .global-navigation-progress::after {
@@ -136,6 +150,11 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  [data-interaction-active="true"] {
+    transform: none;
+    transition: none;
+  }
+
   .global-navigation-progress::after {
     width: 100%;
     animation: none;
