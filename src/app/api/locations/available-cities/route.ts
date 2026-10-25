@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { canonicalizeBrazilianLocation } from "@/lib/brazilian-location";
 import { cityKey } from "@/lib/city-catalog";
 import { professionalCityGroups } from "@/lib/public-city-search";
-import { publicProfessionalWhere } from "@/lib/public-professional-access";
+import { publicProfessionalCategoryWhere, publicProfessionalWhere } from "@/lib/public-professional-access";
 import { publicServiceLocation } from "@/lib/professional-location";
 import { getProfessionalBillingSettings } from "@/lib/professional-access";
 import { publicCacheHeaders } from "@/lib/public-professional-profile";
@@ -15,14 +15,16 @@ type AvailableCity = {
   count: number;
 };
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const now = new Date();
 
   try {
     const billingSettings = await getProfessionalBillingSettings();
-    const groups = await professionalCityGroups(
-      publicProfessionalWhere(now, billingSettings.billingEnabled),
-    );
+    const eligibility = publicProfessionalWhere(now, billingSettings.billingEnabled);
+    const categoryFilter = publicProfessionalCategoryWhere(request.nextUrl.searchParams.get("category"));
+    const groups = await professionalCityGroups(categoryFilter
+      ? { AND: [eligibility, categoryFilter] }
+      : eligibility);
     const citiesByKey = new Map<string, AvailableCity>();
 
     for (const group of groups) {

@@ -31,20 +31,38 @@ export async function professionalCityFilter(city: string, state = ""): Promise<
     ...citySearchVariants(city.trim(), exact.state),
     query.city,
   ].filter(Boolean)));
+  // New writes are normalized, but legacy rows can contain surrounding spaces.
+  // Keep exact municipality matching while accepting those stored spellings.
+  const storedCityVariants = Array.from(new Set(cityVariants.flatMap((value) => [
+    value,
+    ` ${value}`,
+    `${value} `,
+  ])));
   const stateCode = query.state || exact.state;
   return {
-    OR: cityVariants.flatMap((value) => [
+    AND: [
       {
-        currentServiceCity: { equals: value, mode: "insensitive" as const },
-        currentServiceState: { equals: stateCode, mode: "insensitive" as const },
-      },
-      {
-        AND: [
-          { OR: [{ currentServiceCity: null }, { currentServiceCity: "" }] },
-          { city: { equals: value, mode: "insensitive" as const } },
-          { state: { equals: stateCode, mode: "insensitive" as const } },
+        OR: [
+          ...storedCityVariants.map((value) => ({ currentServiceCity: { equals: value, mode: "insensitive" as const } })),
+          {
+            AND: [
+              { OR: [{ currentServiceCity: null }, { currentServiceCity: "" }] },
+              { OR: storedCityVariants.map((value) => ({ city: { equals: value, mode: "insensitive" as const } })) },
+            ],
+          },
         ],
       },
-    ]),
+      {
+        OR: [
+          { currentServiceState: { equals: stateCode, mode: "insensitive" as const } },
+          {
+            AND: [
+              { OR: [{ currentServiceState: null }, { currentServiceState: "" }] },
+              { state: { equals: stateCode, mode: "insensitive" as const } },
+            ],
+          },
+        ],
+      },
+    ],
   };
 }

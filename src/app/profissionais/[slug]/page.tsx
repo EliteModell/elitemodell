@@ -11,7 +11,7 @@ import ProfessionalContactAction from "@/components/professionals/ProfessionalCo
 import ProfessionalProfileLink from "@/components/professionals/ProfessionalProfileLink";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { controlledMediaAssetId, controlledMediaVariantUrl, resolvePublicProfileMedia } from "@/lib/public-professional-media";
-import { readProfessionalNavigationPreview, type ProfessionalNavigationPreview } from "@/lib/professional-navigation-preview";
+import { loadProfessionalProfileData, readProfessionalNavigationPreview, type ProfessionalNavigationPreview } from "@/lib/professional-navigation-preview";
 import { formatProfessionalPrice, professionalAppointmentPrices, professionalPriceForDuration, professionalPriceOptions, professionalStartingPrice } from "@/lib/professional-pricing";
 import styles from "./profile.module.css";
 
@@ -244,13 +244,8 @@ export default function ProfissionalProfilePage() {
       setNotFound(false);
       setFailedMediaUrls([]);
       try {
-        const res = await fetch(`/api/professionals/${slug}`, {
-          signal: controller.signal,
-          cache: "default",
-        });
-        if (res.status === 404) { setNotFound(true); return; }
-        if (!res.ok) throw new Error();
-        const data: ApiProfessional = await res.json();
+        const data = await loadProfessionalProfileData<ApiProfessional>(slug);
+        if (controller.signal.aborted) return;
         setPro(data);
         void fetch(`/api/professionals/${slug}/track`, {
           method: "POST",

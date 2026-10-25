@@ -47,7 +47,10 @@ export default async function globalSetup(config: FullConfig) {
 
   console.log("\n[global-setup] Criando sessao assinada para a conta E2E configurada.");
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({
+    headless: true,
+    executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+  });
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     userAgent:

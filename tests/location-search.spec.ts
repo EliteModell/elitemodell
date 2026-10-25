@@ -68,6 +68,23 @@ test("Elite Stories permanece como primeiro item institucional", async ({ reques
   expect(stories[0]).toMatchObject({ userId: "elite-platform", nome: "Elite Stories", institutional: true });
 });
 
+test("contagens por categoria coincidem com as listagens das cidades", async ({ request }) => {
+  for (const category of ["MULHER", "TRANS", "HOMEM"]) {
+    const availableResponse = await request.get(`/api/locations/available-cities?category=${category}`);
+    expect(availableResponse.ok()).toBe(true);
+    const available = await availableResponse.json() as {
+      cities: Array<{ city: string; state: string; count: number }>;
+    };
+    for (const location of available.cities) {
+      const query = new URLSearchParams({ city: location.city, state: location.state, category, limit: "24" });
+      const listingResponse = await request.get(`/api/professionals?${query}`, { headers: AGE_HEADERS });
+      expect(listingResponse.ok()).toBe(true);
+      const listing = await listingResponse.json();
+      expect(listing.total, `${category} em ${location.city}, ${location.state}`).toBe(location.count);
+    }
+  }
+});
+
 test("contas internas conhecidas nunca ficam elegiveis para exibicao publica", async ({ request }) => {
   for (const name of ["Railson Delas😈", "Sofia Teste", "Teste Profissional Elite"]) {
     expect(isProfessionalDisplayNameReady(name)).toBe(false);
@@ -147,7 +164,7 @@ test.beforeEach(async ({ page, context }, testInfo) => {
 });
 
 test("modal lists published cities and applies a selected city immediately", async ({ page }) => {
-  await page.route("**/api/locations/available-cities", (route) => route.fulfill({
+  await page.route("**/api/locations/available-cities**", (route) => route.fulfill({
     json: {
       cities: [
         { city: "São Paulo", state: "SP", count: 4 },
@@ -177,7 +194,7 @@ test("empty city keeps the visitor choice and offers available cities", async ({
     json: { professionals: [], total: 0, page: 1, pages: 0 },
   }));
   await page.route("**/api/stories?**", (route) => route.fulfill({ json: [] }));
-  await page.route("**/api/locations/available-cities", (route) => route.fulfill({
+  await page.route("**/api/locations/available-cities**", (route) => route.fulfill({
     json: { cities: [{ city: "Vitória", state: "ES", count: 2 }] },
   }));
 
@@ -192,7 +209,7 @@ test("empty city keeps the visitor choice and offers available cities", async ({
 
 test("available cities remain reachable in the reduced iPhone keyboard viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 430 });
-  await page.route("**/api/locations/available-cities", (route) => route.fulfill({
+  await page.route("**/api/locations/available-cities**", (route) => route.fulfill({
     json: { cities: [{ city: "Vitória", state: "ES", count: 2 }] },
   }));
   await page.goto("/buscar?tab=acompanhantes&selecionarCidade=1", { waitUntil: "load" });
@@ -208,54 +225,29 @@ test("available cities remain reachable in the reduced iPhone keyboard viewport"
   })).toBe(true);
 });
 
-test("home discovery starts national and filters by state or city without changing the main location", async ({ page }) => {
-  const storyRequests: string[] = [];
+test("home discovery remains national without overwriting the saved location", async ({ page }) => {
+  const professionalRequests: string[] = [];
   await page.addInitScript(() => {
     localStorage.setItem("elite_modell_public_location", JSON.stringify({ city: "Salvador", state: "BA", label: "Salvador, BA" }));
   });
-  await page.route("**/api/locations/available-cities", (route) => route.fulfill({ json: {
-    cities: [
-      { city: "Salvador", state: "BA", count: 3 },
-      { city: "Recife", state: "PE", count: 2 },
-    ],
-  } }));
-  await page.route("**/api/stories**", async (route) => {
+  await page.route("**/api/professionals?**", async (route) => {
     const url = new URL(route.request().url());
-    const city = url.searchParams.get("city");
-    const state = url.searchParams.get("state");
-    storyRequests.push(`${city ?? "all"}|${state ?? "all"}`);
-    await route.fulfill({ json: [
-      { userId: "elite-platform", slug: "politica-conteudo", nome: "Elite Stories", foto: "/android-chrome-512x512.png", institutional: true, stories: [] },
-      ...(!state || state === "BA" ? [{ userId: "salvador-story", slug: "salvador-model", nome: "Salvador Story", foto: null, city: "Salvador", state: "BA", stories: [{ id: "story-ba", mediaUrl: "/test.jpg", mediaType: "image", thumbnail: null, views: 0, createdAt: new Date().toISOString() }] }] : []),
-      ...(!state || state === "PE" ? [{ userId: "recife-story", slug: "recife-model", nome: "Recife Story", foto: null, city: "Recife", state: "PE", stories: [{ id: "story-pe", mediaUrl: "/test.jpg", mediaType: "image", thumbnail: null, views: 0, createdAt: new Date().toISOString() }] }] : []),
-    ] });
+    professionalRequests.push(url.search);
+    await route.fulfill({ json: { professionals: [
+      { id: "salvador", slug: "salvador-model", displayName: "Salvador Model", city: "Salvador", state: "BA", image: null, verified: true, online: false, sponsored: false, rating: 5, totalReviews: 2, priceMin: 250 },
+      { id: "recife", slug: "recife-model", displayName: "Recife Model", city: "Recife", state: "PE", image: null, verified: true, online: false, sponsored: false, rating: 4.8, totalReviews: 1, priceMin: 300 },
+    ], total: 2 } });
   });
-  await page.route("**/api/professionals?**", (route) => route.fulfill({ json: { professionals: [], total: 0 } }));
 
   await page.goto("/");
-  const filter = page.getByRole("button", { name: /Todas as regiões/ });
-  await expect(filter).toBeVisible();
-  await expect(page.getByText("Salvador", { exact: true })).toBeVisible();
-  await expect(page.getByText("Recife", { exact: true })).toBeVisible();
-
-  await filter.click();
-  let dialog = page.getByRole("dialog", { name: "Escolha uma região" });
-  await dialog.getByRole("button", { name: /Bahia \(BA\)/ }).click();
-  await expect.poll(() => storyRequests.at(-1)).toBe("all|BA");
-  await expect(page.getByText("Salvador", { exact: true })).toBeVisible();
-  await expect(page.getByText("Recife", { exact: true })).toHaveCount(0);
-
-  await page.getByRole("button", { name: /Bahia \(BA\)/ }).click();
-  dialog = page.getByRole("dialog", { name: "Escolha uma região" });
-  await dialog.getByRole("button", { name: /Salvador, BA/ }).click();
-  await expect.poll(() => storyRequests.at(-1)).toBe("Salvador|BA");
-
-  await page.getByRole("button", { name: /Salvador, BA/ }).click();
-  dialog = page.getByRole("dialog", { name: "Escolha uma região" });
-  await dialog.getByRole("button", { name: /Todas as regiões/ }).click();
-  await expect.poll(() => storyRequests.at(-1)).toBe("all|all");
-  await expect(page.getByText("Recife", { exact: true })).toBeVisible();
-  await expect(page.getByText("Elite", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Profissionais em destaque" })).toBeVisible();
+  await expect(page.getByText("Salvador Model", { exact: true })).toBeVisible();
+  await expect(page.getByText("Recife Model", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Ver todos" })).toHaveAttribute("href", "/buscar?tab=acompanhantes");
+  await expect.poll(() => professionalRequests.some((search) => {
+    const query = new URLSearchParams(search);
+    return query.get("sortBy") === "recent" && query.get("limit") === "12" && !query.has("city") && !query.has("state");
+  })).toBe(true);
   await expect.poll(() => page.evaluate(() => localStorage.getItem("elite_modell_public_location"))).toContain("Salvador");
 });
 
