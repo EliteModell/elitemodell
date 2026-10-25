@@ -1,5 +1,5 @@
 "use client";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,7 +11,7 @@ import ProfessionalContactAction from "@/components/professionals/ProfessionalCo
 import ProfessionalProfileLink from "@/components/professionals/ProfessionalProfileLink";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { controlledMediaAssetId, controlledMediaVariantUrl, resolvePublicProfileMedia } from "@/lib/public-professional-media";
-import { loadProfessionalProfileData, readProfessionalNavigationPreview, type ProfessionalNavigationPreview } from "@/lib/professional-navigation-preview";
+import { loadProfessionalProfileData, readProfessionalNavigationPreview, subscribeProfessionalNavigationPreview } from "@/lib/professional-navigation-preview";
 import { formatProfessionalPrice, professionalAppointmentPrices, professionalPriceForDuration, professionalPriceOptions, professionalStartingPrice } from "@/lib/professional-pricing";
 import styles from "./profile.module.css";
 
@@ -162,20 +162,17 @@ export default function ProfissionalProfilePage() {
   const [servicosAbertos, setServicosAbertos] = useState(false);
   const [caracteristicasAbertas, setCaracteristicasAbertas] = useState(true);
   const [failedMediaUrls, setFailedMediaUrls] = useState<string[]>([]);
-  const [navigationPreview, setNavigationPreview] = useState<ProfessionalNavigationPreview | null>(null);
+  const navigationPreview = useSyncExternalStore(
+    subscribeProfessionalNavigationPreview,
+    () => readProfessionalNavigationPreview(slug),
+    () => null,
+  );
   const [loadedCoverUrl, setLoadedCoverUrl] = useState<string | null>(null);
 
   const refGaleria = useRef<HTMLDivElement>(null);
   const refSobre = useRef<HTMLDivElement>(null);
   const refValores = useRef<HTMLElement>(null);
   const refAvaliacoes = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setNavigationPreview(readProfessionalNavigationPreview(slug));
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [slug]);
 
   function scrollTo(ref: React.RefObject<HTMLDivElement | null>) {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });

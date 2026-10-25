@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Flame } from "lucide-react";
@@ -30,10 +30,83 @@ type Professional = {
 };
 
 const PROFESSIONALS_CACHE_TTL_MS = 60_000;
+const HOME_CACHE_STORAGE_KEY = "elite_home_professionals_cache:v1";
+const HOME_SCROLL_STORAGE_KEY = "elite_home_professionals_scroll:v1";
 const HOME_PROFESSIONALS_QUERY = new URLSearchParams({ sortBy: "recent", limit: "12" });
 const HOME_PROFESSIONALS_URL = `/api/professionals?${HOME_PROFESSIONALS_QUERY}`;
 const professionalsCache = new Map<string, { expiresAt: number; data: Professional[] }>();
 const professionalsRequests = new Map<string, Promise<Professional[]>>();
+
+function optionalNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function toPublicCardProfessional(value: unknown): Professional | null {
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as Record<string, unknown>;
+  if (
+    typeof candidate.id !== "string"
+    || typeof candidate.slug !== "string"
+    || typeof candidate.displayName !== "string"
+    || typeof candidate.city !== "string"
+    || typeof candidate.state !== "string"
+  ) return null;
+
+  return {
+    id: candidate.id,
+    slug: candidate.slug,
+    displayName: candidate.displayName,
+    city: candidate.city,
+    state: candidate.state,
+    image: typeof candidate.image === "string" && candidate.image.startsWith("/api/media/")
+      ? candidate.image
+      : null,
+    verified: candidate.verified === true,
+    online: candidate.online === true,
+    sponsored: candidate.sponsored === true,
+    rating: optionalNumber(candidate.rating) ?? 0,
+    totalReviews: optionalNumber(candidate.totalReviews) ?? 0,
+    priceMin: optionalNumber(candidate.priceMin),
+    price15min: optionalNumber(candidate.price15min),
+    price30min: optionalNumber(candidate.price30min),
+    pricePerHour: optionalNumber(candidate.pricePerHour),
+    price2h: optionalNumber(candidate.price2h),
+    priceOvernight: optionalNumber(candidate.priceOvernight),
+    priceWebcam: optionalNumber(candidate.priceWebcam),
+  };
+}
+
+function sanitizePublicCardProfessionals(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.map(toPublicCardProfessional).filter((item): item is Professional => item !== null);
+}
+
+function readStoredProfessionals() {
+  if (typeof window === "undefined") return null;
+  try {
+    const parsed = JSON.parse(window.sessionStorage.getItem(HOME_CACHE_STORAGE_KEY) ?? "null") as {
+      expiresAt?: number;
+      data?: Professional[];
+    } | null;
+    return parsed?.expiresAt && parsed.expiresAt > Date.now() && Array.isArray(parsed.data)
+      ? sanitizePublicCardProfessionals(parsed.data)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function storeProfessionals(data: Professional[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(HOME_CACHE_STORAGE_KEY, JSON.stringify({
+      data,
+      expiresAt: Date.now() + PROFESSIONALS_CACHE_TTL_MS,
+    }));
+  } catch {
+    // The in-memory cache remains available when session storage is blocked.
+  }
+}
 
 async function loadProfessionals(query: URLSearchParams, signal: AbortSignal) {
   const url = `/api/professionals?${query}`;
@@ -42,9 +115,10 @@ async function loadProfessionals(query: URLSearchParams, signal: AbortSignal) {
 
   const pending = professionalsRequests.get(url) ?? fetch(`/api/professionals?${query}`, { signal })
     .then((response) => response.ok ? response.json() : { professionals: [] })
-    .then((data) => Array.isArray(data.professionals) ? data.professionals as Professional[] : [])
+    .then((data) => sanitizePublicCardProfessionals(data.professionals))
     .then((data) => {
       professionalsCache.set(url, { data, expiresAt: Date.now() + PROFESSIONALS_CACHE_TTL_MS });
+      if (url === HOME_PROFESSIONALS_URL) storeProfessionals(data);
       return data;
     })
     .finally(() => professionalsRequests.delete(url));
@@ -56,8 +130,11 @@ async function loadProfessionals(query: URLSearchParams, signal: AbortSignal) {
 export default function HomeDiscoveryPreview() {
   const [professionals, setProfessionals] = useState<Professional[]>(() => {
     const cached = professionalsCache.get(HOME_PROFESSIONALS_URL);
-    return cached && cached.expiresAt > Date.now() ? cached.data : [];
+    return cached && cached.expiresAt > Date.now() ? cached.data : readStoredProfessionals() ?? [];
   });
+  const [preparedThrough, setPreparedThrough] = useState(3);
+  const rowRef = useRef<HTMLDivElement>(null);
+  const scrollFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -69,12 +146,46 @@ export default function HomeDiscoveryPreview() {
     return () => controller.abort();
   }, []);
 
+  useLayoutEffect(() => {
+    const row = rowRef.current;
+    if (!row || professionals.length === 0) return;
+    try {
+      const saved = Number(window.sessionStorage.getItem(HOME_SCROLL_STORAGE_KEY) ?? 0);
+      if (Number.isFinite(saved) && saved > 0) row.scrollLeft = saved;
+    } catch {
+      // Native browser restoration remains the fallback.
+    }
+  }, [professionals.length]);
+
+  useEffect(() => () => {
+    if (scrollFrameRef.current !== null) window.cancelAnimationFrame(scrollFrameRef.current);
+  }, []);
+
+  function prepareUpcomingCards() {
+    const row = rowRef.current;
+    if (!row) return;
+    try {
+      window.sessionStorage.setItem(HOME_SCROLL_STORAGE_KEY, String(row.scrollLeft));
+    } catch {
+      // Scroll persistence is an enhancement only.
+    }
+    if (scrollFrameRef.current !== null) return;
+    scrollFrameRef.current = window.requestAnimationFrame(() => {
+      scrollFrameRef.current = null;
+      const card = row.querySelector<HTMLElement>(".home-profile-card");
+      if (!card) return;
+      const cardStride = card.getBoundingClientRect().width + 14;
+      const lastVisible = Math.ceil((row.scrollLeft + row.clientWidth) / cardStride) - 1;
+      setPreparedThrough((current) => Math.min(professionals.length - 1, Math.max(current, lastVisible + 2)));
+    });
+  }
+
   return (
     <section className="home-discovery">
       <div className="home-featured-heading"><div><Flame aria-hidden="true" /><span><h3>Profissionais em destaque</h3><p>Conheça perfis publicados recentemente.</p></span></div><Link href="/buscar?tab=acompanhantes">Ver todos</Link></div>
 
       {professionals.length > 0 ? (
-        <div className="home-profile-row">
+        <div ref={rowRef} className="home-profile-row" onScroll={prepareUpcomingCards}>
           {professionals.map((professional, index) => {
             const startingPrice = professionalStartingPrice(professional);
             return (
@@ -97,8 +208,8 @@ export default function HomeDiscoveryPreview() {
                     fill
                     unoptimized={requiresDirectMediaDelivery(professional.image)}
                     sizes="(max-width: 640px) 66vw, 232px"
-                    loading={index < 2 ? "eager" : "lazy"}
-                    fetchPriority={index < 2 ? "high" : "low"}
+                    loading={index <= preparedThrough ? "eager" : "lazy"}
+                    fetchPriority={index < 2 ? "high" : "auto"}
                     style={{ objectFit: "cover" }}
                   />
                 ) : null}
