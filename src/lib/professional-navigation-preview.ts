@@ -15,6 +15,13 @@ const preloadedCovers = new Map<string, HTMLImageElement>();
 const prefetchedProfiles = new Map<string, Promise<unknown>>();
 const navigationPreviews = new Map<string, ProfessionalNavigationPreview>();
 const navigationPreviewListeners = new Set<() => void>();
+let activeNavigationPreview: ProfessionalNavigationPreview | null = null;
+
+export class ProfessionalProfileRequestError extends Error {
+  constructor(public readonly status: number | null) {
+    super(status === null ? "profile_network_error" : `profile_http_${status}`);
+  }
+}
 
 function storageKey(slug: string) {
   return `${STORAGE_PREFIX}${slug}`;
@@ -23,11 +30,29 @@ function storageKey(slug: string) {
 export function rememberProfessionalNavigationPreview(preview: ProfessionalNavigationPreview) {
   if (typeof window === "undefined") return;
   navigationPreviews.set(preview.slug, preview);
+  const previewImage = preview.image ? controlledMediaVariantUrl(preview.image, "card") : null;
+  const location = [preview.city, preview.state].filter(Boolean).join(", ");
+  window.document.documentElement.style.setProperty("--elite-profile-preview-name", JSON.stringify(preview.displayName));
+  window.document.documentElement.style.setProperty("--elite-profile-preview-location", JSON.stringify(location || "Perfil verificado Elite Modell"));
+  if (previewImage) {
+    window.document.documentElement.style.setProperty("--elite-profile-preview-image", `url(${JSON.stringify(previewImage)})`);
+  } else {
+    window.document.documentElement.style.removeProperty("--elite-profile-preview-image");
+  }
   try {
     window.sessionStorage.setItem(storageKey(preview.slug), JSON.stringify(preview));
   } catch {
     // Navigation still works when storage is unavailable.
   }
+  navigationPreviewListeners.forEach((listener) => listener());
+}
+
+export function clearProfessionalNavigationTransition() {
+  if (typeof window === "undefined") return;
+  activeNavigationPreview = null;
+  window.document.documentElement.style.removeProperty("--elite-profile-preview-name");
+  window.document.documentElement.style.removeProperty("--elite-profile-preview-location");
+  window.document.documentElement.style.removeProperty("--elite-profile-preview-image");
   navigationPreviewListeners.forEach((listener) => listener());
 }
 
@@ -61,6 +86,16 @@ export function subscribeProfessionalNavigationPreview(listener: () => void) {
   };
 }
 
+export function beginProfessionalNavigationTransition(preview: ProfessionalNavigationPreview) {
+  rememberProfessionalNavigationPreview(preview);
+  activeNavigationPreview = preview;
+  navigationPreviewListeners.forEach((listener) => listener());
+}
+
+export function readActiveProfessionalNavigationPreview() {
+  return activeNavigationPreview;
+}
+
 export function preloadProfessionalCover(preview: ProfessionalNavigationPreview) {
   if (typeof window === "undefined" || !preview.image) return;
   const url = controlledMediaVariantUrl(preview.image, "cover");
@@ -85,12 +120,14 @@ export function loadProfessionalProfileData<T>(slug: string): Promise<T> {
 
   const request = fetch(`/api/professionals/${encodeURIComponent(slug)}`, { cache: "default" })
     .then(async (response) => {
-      if (!response.ok) throw new Error(`profile_http_${response.status}`);
+      if (!response.ok) throw new ProfessionalProfileRequestError(response.status);
       return response.json() as Promise<T>;
     })
     .catch((error) => {
       prefetchedProfiles.delete(slug);
-      throw error;
+      throw error instanceof ProfessionalProfileRequestError
+        ? error
+        : new ProfessionalProfileRequestError(null);
     });
   prefetchedProfiles.set(slug, request);
 

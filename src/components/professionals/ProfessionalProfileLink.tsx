@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type ComponentPropsWithoutRef, useCallback, useEffect, useRef } from "react";
 import {
+  beginProfessionalNavigationTransition,
   preloadProfessionalCover,
   prefetchProfessionalProfileData,
   rememberProfessionalNavigationPreview,
@@ -50,7 +51,13 @@ export default function ProfessionalProfileLink({ preview, onClick, onFocus, onP
       // A horizontal swipe also emits touchstart on every card it crosses.
       // Keep that path lightweight and reserve the cover request for a click.
       onTouchStart={(event) => { warm(false, false); onTouchStart?.(event); }}
-      onClick={(event) => { warm(true, true); onClick?.(event); }}
+      onClick={(event) => {
+        warm(true, true);
+        onClick?.(event);
+        if (!event.defaultPrevented && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+          beginProfessionalNavigationTransition(preview);
+        }
+      }}
     />
   );
 }
