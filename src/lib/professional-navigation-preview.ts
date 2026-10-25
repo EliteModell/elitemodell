@@ -13,6 +13,8 @@ const MAX_PRELOADED_COVERS = 6;
 const MAX_PREFETCHED_PROFILES = 4;
 const preloadedCovers = new Map<string, HTMLImageElement>();
 const prefetchedProfiles = new Map<string, Promise<unknown>>();
+const navigationPreviews = new Map<string, ProfessionalNavigationPreview>();
+const navigationPreviewListeners = new Set<() => void>();
 
 function storageKey(slug: string) {
   return `${STORAGE_PREFIX}${slug}`;
@@ -20,30 +22,43 @@ function storageKey(slug: string) {
 
 export function rememberProfessionalNavigationPreview(preview: ProfessionalNavigationPreview) {
   if (typeof window === "undefined") return;
+  navigationPreviews.set(preview.slug, preview);
   try {
     window.sessionStorage.setItem(storageKey(preview.slug), JSON.stringify(preview));
   } catch {
     // Navigation still works when storage is unavailable.
   }
+  navigationPreviewListeners.forEach((listener) => listener());
 }
 
 export function readProfessionalNavigationPreview(slug: string) {
   if (typeof window === "undefined") return null;
+  const cached = navigationPreviews.get(slug);
+  if (cached) return cached;
   try {
     const raw = window.sessionStorage.getItem(storageKey(slug));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<ProfessionalNavigationPreview>;
     if (parsed.slug !== slug || typeof parsed.displayName !== "string") return null;
-    return {
+    const preview = {
       slug,
       displayName: parsed.displayName,
       image: typeof parsed.image === "string" ? parsed.image : null,
       city: typeof parsed.city === "string" ? parsed.city : null,
       state: typeof parsed.state === "string" ? parsed.state : null,
     } satisfies ProfessionalNavigationPreview;
+    navigationPreviews.set(slug, preview);
+    return preview;
   } catch {
     return null;
   }
+}
+
+export function subscribeProfessionalNavigationPreview(listener: () => void) {
+  navigationPreviewListeners.add(listener);
+  return () => {
+    navigationPreviewListeners.delete(listener);
+  };
 }
 
 export function preloadProfessionalCover(preview: ProfessionalNavigationPreview) {

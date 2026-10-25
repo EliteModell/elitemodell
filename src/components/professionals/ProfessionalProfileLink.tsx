@@ -19,9 +19,9 @@ export default function ProfessionalProfileLink({ preview, onClick, onFocus, onP
   const linkRef = useRef<HTMLAnchorElement>(null);
   const href = `/profissionais/${preview.slug}`;
 
-  const warm = useCallback((userIntent = true) => {
+  const warm = useCallback((userIntent = true, preloadCover = userIntent) => {
     rememberProfessionalNavigationPreview(preview);
-    preloadProfessionalCover(preview);
+    if (preloadCover) preloadProfessionalCover(preview);
     router.prefetch(href);
     prefetchProfessionalProfileData(preview.slug, userIntent);
   }, [href, preview, router]);
@@ -31,7 +31,9 @@ export default function ProfessionalProfileLink({ preview, onClick, onFocus, onP
     if (!link || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver((entries) => {
       if (!entries.some((entry) => entry.isIntersecting)) return;
-      warm(false);
+      // Passive visibility should warm navigation data without competing with
+      // carousel thumbnails for a larger 1200px profile cover download.
+      warm(false, false);
       observer.disconnect();
     }, { rootMargin: "160px" });
     observer.observe(link);
@@ -45,8 +47,10 @@ export default function ProfessionalProfileLink({ preview, onClick, onFocus, onP
       href={href}
       onPointerEnter={(event) => { warm(); onPointerEnter?.(event); }}
       onFocus={(event) => { warm(); onFocus?.(event); }}
-      onTouchStart={(event) => { warm(); onTouchStart?.(event); }}
-      onClick={(event) => { rememberProfessionalNavigationPreview(preview); onClick?.(event); }}
+      // A horizontal swipe also emits touchstart on every card it crosses.
+      // Keep that path lightweight and reserve the cover request for a click.
+      onTouchStart={(event) => { warm(false, false); onTouchStart?.(event); }}
+      onClick={(event) => { warm(true, true); onClick?.(event); }}
     />
   );
 }
