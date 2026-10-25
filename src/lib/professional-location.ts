@@ -46,9 +46,9 @@ export function publicServiceLocation(input: {
   state: string;
   bairro?: string | null;
 }) {
-  return {
+  return normalizeServiceLocation({
     city: input.currentServiceCity || input.city,
     state: input.currentServiceState || input.state,
     neighborhood: input.currentServiceNeighborhood || input.bairro || null,
-  };
+  });
 }

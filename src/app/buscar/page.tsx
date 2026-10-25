@@ -365,7 +365,8 @@ function BuscarContent() {
     if (!showLocationModal || locationView !== "available") return;
 
     const controller = new AbortController();
-    fetch("/api/locations/available-cities", {
+    const category = SUB_TO_CATEGORY[subTab];
+    fetch(`/api/locations/available-cities?category=${encodeURIComponent(category)}`, {
       cache: "no-store",
       signal: controller.signal,
     })
@@ -388,7 +389,7 @@ function BuscarContent() {
       });
 
     return () => controller.abort();
-  }, [locationView, showLocationModal]);
+  }, [locationView, showLocationModal, subTab]);
 
   function replaceQuery(updates: Record<string, string | null>) {
     const next = new URLSearchParams(params.toString());

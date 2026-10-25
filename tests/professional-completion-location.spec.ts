@@ -153,6 +153,15 @@ test.describe("localização de atendimento", () => {
       .toEqual({ city: "Vitória", state: "ES", neighborhood: "Praia do Canto" });
   });
 
+  test("cidade e UF efetivas fazem fallback independente para os campos cadastrais", async () => {
+    const serialized = JSON.stringify(await professionalCityFilter("Belo Horizonte", "MG"));
+    expect(serialized).toContain('"currentServiceCity":null');
+    expect(serialized).toContain('"currentServiceState":null');
+    expect(serialized).toContain('"city":{"equals":"Belo Horizonte"');
+    expect(serialized).toContain('"city":{"equals":"Belo Horizonte "');
+    expect(serialized).toContain('"state":{"equals":"MG"');
+  });
+
   test("usa o catalogo nacional como fonte canonica, nao apenas cidades historicamente suportadas", () => {
     expect(canonicalizeBrazilianLocation("florianopolis", "santa catarina")).toEqual({ city: "Florianópolis", state: "SC" });
     expect(normalizeServiceLocation({ city: "  Florianopolis ", state: "sc" })).toEqual({ city: "Florianópolis", state: "SC", neighborhood: null });

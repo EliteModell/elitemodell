@@ -9,6 +9,7 @@ const STORAGE_PATH = "tests/.auth/user.json";
 // Em CI, nenhum servidor está rodando previamente — usamos o dev server.
 // Localmente, reutilizamos o servidor já em execução para não precisar de build.
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
+const LOCAL_CHROMIUM = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
 export default defineConfig({
   testDir: "./tests",
@@ -29,6 +30,7 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     browserName: "chromium",
+    launchOptions: LOCAL_CHROMIUM ? { executablePath: LOCAL_CHROMIUM } : undefined,
     viewport: { width: 390, height: 844 },
     userAgent:
       "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",

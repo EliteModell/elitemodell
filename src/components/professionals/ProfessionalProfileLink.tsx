@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { type ComponentPropsWithoutRef, useCallback, useEffect, useRef } from "react";
 import {
   preloadProfessionalCover,
+  prefetchProfessionalProfileData,
   rememberProfessionalNavigationPreview,
   type ProfessionalNavigationPreview,
 } from "@/lib/professional-navigation-preview";
@@ -18,10 +19,11 @@ export default function ProfessionalProfileLink({ preview, onClick, onFocus, onP
   const linkRef = useRef<HTMLAnchorElement>(null);
   const href = `/profissionais/${preview.slug}`;
 
-  const warm = useCallback(() => {
+  const warm = useCallback((userIntent = true) => {
     rememberProfessionalNavigationPreview(preview);
     preloadProfessionalCover(preview);
     router.prefetch(href);
+    prefetchProfessionalProfileData(preview.slug, userIntent);
   }, [href, preview, router]);
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export default function ProfessionalProfileLink({ preview, onClick, onFocus, onP
     if (!link || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver((entries) => {
       if (!entries.some((entry) => entry.isIntersecting)) return;
-      warm();
+      warm(false);
       observer.disconnect();
     }, { rootMargin: "160px" });
     observer.observe(link);

@@ -19,7 +19,7 @@ import {
   isProfessionalOnline,
 } from "@/lib/public-professional-profile";
 import { professionalCityFilter, resolveExactCityQuery } from "@/lib/public-city-search";
-import { publicProfessionalWhere } from "@/lib/public-professional-access";
+import { publicProfessionalCategoryWhere, publicProfessionalWhere } from "@/lib/public-professional-access";
 import { normalizeServiceLocation, publicServiceLocation } from "@/lib/professional-location";
 import { controlledMediaAssetId, filterApprovedProfilePhotos, normalizeControlledMediaUrl } from "@/lib/public-professional-media";
 import { deliverProfessionalSubmissionReceipt, markSubmissionReceiptNotRequired } from "@/lib/professional-submission-receipt";
@@ -104,12 +104,8 @@ export async function GET(req: NextRequest) {
     });
   }
   if (category) {
-    const normalizedCategory = category.toUpperCase();
-    if (normalizedCategory === "TRANS") {
-      andFilters.push({ OR: [{ transIdentity: "SIM" }, { escortCategory: "TRANS" }] });
-    } else {
-      andFilters.push({ OR: [{ genderIdentity: normalizedCategory }, { escortCategory: normalizedCategory }] });
-    }
+    const categoryFilter = publicProfessionalCategoryWhere(category);
+    if (categoryFilter) andFilters.push(categoryFilter);
   }
   if (priceMax && Number.isFinite(Number(priceMax))) {
     const maximum = Number(priceMax);

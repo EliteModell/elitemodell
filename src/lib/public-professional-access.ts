@@ -31,6 +31,18 @@ export function publicProfessionalWhere(
   };
 }
 
+export function publicProfessionalCategoryWhere(category: string | null | undefined): Prisma.ProfessionalWhereInput | null {
+  if (!category) return null;
+  const normalizedCategory = category.trim().toUpperCase();
+  if (normalizedCategory === "TRANS") {
+    return { OR: [{ transIdentity: "SIM" }, { escortCategory: "TRANS" }] };
+  }
+  if (normalizedCategory === "MULHER" || normalizedCategory === "HOMEM") {
+    return { OR: [{ genderIdentity: normalizedCategory }, { escortCategory: normalizedCategory }] };
+  }
+  return { id: { in: [] } };
+}
+
 export async function getPublicProfessionalWhere(now = new Date()) {
   const settings = await getProfessionalBillingSettings();
   return publicProfessionalWhere(now, settings.billingEnabled);
