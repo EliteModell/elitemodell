@@ -9,9 +9,10 @@ import Navbar from "@/components/Navbar";
 import PublicReportButton from "@/components/moderation/PublicReportButton";
 import ProfessionalContactAction from "@/components/professionals/ProfessionalContactAction";
 import ProfessionalProfileLink from "@/components/professionals/ProfessionalProfileLink";
+import ProfessionalProfileTransition from "@/components/professionals/ProfessionalProfileTransition";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { controlledMediaAssetId, controlledMediaVariantUrl, resolvePublicProfileMedia } from "@/lib/public-professional-media";
-import { loadProfessionalProfileData, readProfessionalNavigationPreview, subscribeProfessionalNavigationPreview } from "@/lib/professional-navigation-preview";
+import { clearProfessionalNavigationTransition, loadProfessionalProfileData, ProfessionalProfileRequestError, readProfessionalNavigationPreview, subscribeProfessionalNavigationPreview } from "@/lib/professional-navigation-preview";
 import { formatProfessionalPrice, professionalAppointmentPrices, professionalPriceForDuration, professionalPriceOptions, professionalStartingPrice } from "@/lib/professional-pricing";
 import styles from "./profile.module.css";
 
@@ -136,7 +137,8 @@ export default function ProfissionalProfilePage() {
   const [pro, setPro] = useState<ApiProfessional | null>(null);
   const [similar, setSimilar] = useState<SimilarPro[]>([]);
   const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  const [loadError, setLoadError] = useState<"unavailable" | "network" | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingDate, setBookingDate] = useState("");
   const [bookingDuration, setBookingDuration] = useState(60);
@@ -168,6 +170,7 @@ export default function ProfissionalProfilePage() {
     () => null,
   );
   const [loadedCoverUrl, setLoadedCoverUrl] = useState<string | null>(null);
+  const [loadedAvatarUrl, setLoadedAvatarUrl] = useState<string | null>(null);
 
   const refGaleria = useRef<HTMLDivElement>(null);
   const refSobre = useRef<HTMLDivElement>(null);
@@ -238,7 +241,7 @@ export default function ProfissionalProfilePage() {
 
     async function loadProfile() {
       setLoading(true);
-      setNotFound(false);
+      setLoadError(null);
       setFailedMediaUrls([]);
       try {
         const data = await loadProfessionalProfileData<ApiProfessional>(slug);
@@ -249,18 +252,24 @@ export default function ProfissionalProfilePage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ eventType: "profile_view" }),
         }).catch(() => undefined);
-      } catch {
-        if (!controller.signal.aborted) setNotFound(true);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          clearProfessionalNavigationTransition();
+          const unavailable = error instanceof ProfessionalProfileRequestError
+            && (error.status === 404 || error.status === 410);
+          setLoadError(unavailable ? "unavailable" : "network");
+        }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
     }
     void loadProfile();
     return () => controller.abort();
-  }, [slug]);
+  }, [loadAttempt, slug]);
 
   useEffect(() => {
     if (!pro) return;
+    clearProfessionalNavigationTransition();
     const controller = new AbortController();
     void fetch(
       `/api/professionals?city=${encodeURIComponent(pro.city)}&state=${encodeURIComponent(pro.state)}&sortBy=rating&limit=4`,
@@ -371,43 +380,26 @@ export default function ProfissionalProfilePage() {
   }
 
   if (loading) {
-    const previewImage = navigationPreview?.image
-      ? controlledMediaVariantUrl(navigationPreview.image, "card")
-      : null;
-    return (
-      <div style={{ background: "#f7f7fa", minHeight: "100vh", color: "#141212" }}>
-        <Navbar />
-        <div className={styles.previewCover} data-testid="profile-navigation-preview">
-          {previewImage ? (
-            <Image
-              src={previewImage}
-              alt=""
-              fill
-              unoptimized={Boolean(controlledMediaAssetId(navigationPreview?.image))}
-              loading="eager"
-              fetchPriority="high"
-              sizes="100vw"
-              style={{ objectFit: "cover", objectPosition: "center 15%" }}
-            />
-          ) : null}
-          <div className={styles.previewShade} />
-          <div className={styles.previewIdentity}>
-            <h1>{navigationPreview?.displayName ?? "Abrindo perfil"}</h1>
-            <span>{navigationPreview?.city ?? "Perfil verificado Elite Modell"}</span>
-          </div>
-        </div>
-        <div className={styles.previewDetails} aria-label="Carregando dados do perfil">
-          <span /><span /><span />
-        </div>
-      </div>
-    );
+    return <ProfessionalProfileTransition slug={slug} />;
   }
 
-  if (notFound || !pro) {
+  if (loadError || !pro) {
     return (
-      <div style={{ background: "#f7f7fa", minHeight: "100vh", color: "#141212", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+      <div style={{ background: "#f7f7fa", minHeight: "100vh", color: "#141212", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: 24, textAlign: "center" }}>
         <Navbar />
-        <p style={{ color: "#fcf7ff", fontSize: 20, fontWeight: 700 }}>Perfil não encontrado</p>
+        <p style={{ color: "#141212", fontSize: 20, fontWeight: 700, margin: 0 }}>
+          {loadError === "network" ? "Não foi possível carregar o perfil" : "Perfil indisponível"}
+        </p>
+        <p style={{ color: "#676064", margin: 0, maxWidth: 420 }}>
+          {loadError === "network"
+            ? "Verifique sua conexão e tente novamente."
+            : "Este perfil não está publicado ou não está mais disponível."}
+        </p>
+        {loadError === "network" ? (
+          <button type="button" onClick={() => setLoadAttempt((current) => current + 1)} style={{ border: 0, borderRadius: 999, background: GOLD, color: "#fff", padding: "12px 18px", fontWeight: 850, cursor: "pointer" }}>
+            Tentar novamente
+          </button>
+        ) : null}
         <Link href="/buscar" style={{ color: GOLD, textDecoration: "none" }}>← Voltar para a busca</Link>
       </div>
     );
@@ -540,17 +532,31 @@ export default function ProfissionalProfilePage() {
           <div className={styles.profileSummary}>
             <div data-testid="profile-avatar" data-media-state={profileImage ? "image" : "fallback"} className={styles.avatar} style={{ borderColor: GOLD }}>
               {profileImage ? (
-                <Image
-                  src={controlledMediaVariantUrl(profileImage, "avatar")}
-                  alt={pro.displayName}
-                  fill
-                  unoptimized={Boolean(controlledMediaAssetId(profileImage))}
-                  sizes="88px"
-                  quality={62}
-                  loading="eager"
-                  onError={() => markMediaFailed(profileImage)}
-                  style={{ objectFit: "cover", objectPosition: "top" }}
-                />
+                <>
+                  {navigationPreview?.image && loadedAvatarUrl !== profileImage ? (
+                    <Image
+                      src={controlledMediaVariantUrl(navigationPreview.image, "card")}
+                      alt=""
+                      fill
+                      unoptimized={Boolean(controlledMediaAssetId(navigationPreview.image))}
+                      loading="eager"
+                      sizes="88px"
+                      style={{ objectFit: "cover", objectPosition: "top" }}
+                    />
+                  ) : null}
+                  <Image
+                    src={controlledMediaVariantUrl(profileImage, "avatar")}
+                    alt={pro.displayName}
+                    fill
+                    unoptimized={Boolean(controlledMediaAssetId(profileImage))}
+                    sizes="88px"
+                    quality={62}
+                    loading="eager"
+                    onLoad={() => setLoadedAvatarUrl(profileImage)}
+                    onError={() => markMediaFailed(profileImage)}
+                    style={{ objectFit: "cover", objectPosition: "top", opacity: loadedAvatarUrl === profileImage ? 1 : 0, transition: "opacity 120ms ease-out" }}
+                  />
+                </>
               ) : (
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: 28, fontWeight: 800, color: GOLD }}>
                   {pro.displayName.split(" ").map((n) => n[0]).slice(0, 2).join("")}

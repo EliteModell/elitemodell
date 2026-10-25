@@ -6,6 +6,7 @@ import Providers from "@/components/Providers";
 import AgeGateLoader from "@/components/AgeGateLoader";
 import CookiePreferences from "@/components/privacy/CookiePreferences";
 import ConsentAnalytics from "@/components/privacy/ConsentAnalytics";
+import ProfessionalNavigationTransitionOverlay from "@/components/professionals/ProfessionalNavigationTransitionOverlay";
 
 const siteUrl = "https://www.elitemodell.com.br";
 const publicBrandDescription =
@@ -125,6 +126,7 @@ export default function RootLayout({
         <Providers>
           <AgeGateLoader />
           <CookiePreferences />
+          <ProfessionalNavigationTransitionOverlay />
           {children}
         </Providers>
         <ConsentAnalytics />
