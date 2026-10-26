@@ -684,12 +684,15 @@ export default function ProfissionalProfilePage() {
                 <div data-testid="gallery-image" key={url} onClick={() => setPhotoOpen(i)}
                   style={{ aspectRatio: "3/4", overflow: "hidden", borderRadius: 6, cursor: "pointer", position: "relative", background: "#080808" }}>
                   <Image
-                    src={url}
+                    src={i === 0 && navigationPreview?.image === url
+                      ? controlledMediaVariantUrl(url, "card")
+                      : controlledMediaVariantUrl(url, "gallery")}
                     alt=""
                     fill
                     unoptimized={Boolean(controlledMediaAssetId(url))}
                     sizes="(max-width: 720px) 33vw, 220px"
-                    quality={60}
+                    loading={i < 3 ? "eager" : "lazy"}
+                    fetchPriority={i === 0 ? "high" : "auto"}
                     onError={() => markMediaFailed(url)}
                     style={{ objectFit: "cover", objectPosition: "top" }}
                   />
@@ -1188,6 +1191,7 @@ export default function ProfissionalProfilePage() {
               src={allPhotos[photoOpen]}
               alt=""
               fill
+              unoptimized={Boolean(controlledMediaAssetId(allPhotos[photoOpen]))}
               sizes="95vw"
               onError={() => {
                 markMediaFailed(allPhotos[photoOpen]);

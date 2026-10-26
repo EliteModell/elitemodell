@@ -146,8 +146,18 @@ test.describe("contrato publico do perfil profissional", () => {
   test("gera variantes controladas sem expor o bucket privado", () => {
     expect(controlledMediaVariantUrl("/api/media/cover-id", "card"))
       .toBe("/api/media/cover-id?variant=card");
+    expect(controlledMediaVariantUrl("/api/media/gallery-id", "gallery"))
+      .toBe("/api/media/gallery-id?variant=gallery");
     expect(controlledMediaVariantUrl("https://cdn.example/photo.jpg", "card"))
       .toBe("https://cdn.example/photo.jpg");
+  });
+
+  test("lightbox entrega a imagem original controlada direto ao navegador", async () => {
+    const source = await import("node:fs/promises").then((fs) =>
+      fs.readFile("src/app/profissionais/[slug]/page.tsx", "utf8"),
+    );
+    expect(source).toContain("src={allPhotos[photoOpen]}");
+    expect(source).toContain("unoptimized={Boolean(controlledMediaAssetId(allPhotos[photoOpen]))}");
   });
 
   test("entrega midia controlada direto ao navegador para preservar os cookies de acesso", () => {
