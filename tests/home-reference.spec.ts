@@ -51,19 +51,24 @@ test.describe("home fiel à referência mobile", () => {
     await expect(page.locator("nav img").first()).toHaveAttribute("src", /elite-modell-logo\.png/);
     await expect(page.getByRole("heading", { name: "Stories e perfis da região" })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Profissionais em destaque" })).toBeVisible();
+    await expect(page.getByText("Brida Nunes", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Conheça nossas musas" })).toBeVisible();
   });
 
   test("fotos promocionais permanecem grandes e empilhadas verticalmente", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    const campaign = page.getByRole("region", { name: "Garotas-propaganda Elite Modell" });
+    const campaign = page.getByRole("region", { name: "Conheça nossas musas" });
     await campaign.scrollIntoViewIfNeeded();
 
     const images = campaign.getByRole("img");
     await expect(images).toHaveCount(3);
-    await expect(images.nth(0)).toHaveAttribute("alt", /peças roxas/);
-    await expect(images.nth(1)).toHaveAttribute("alt", /look dourado/);
-    await expect(images.nth(2)).toHaveAttribute("alt", /look marrom junto à piscina/);
+    await expect(images.nth(0)).toHaveAttribute("alt", /Yasmin Mineira.*peças roxas/);
+    await expect(images.nth(1)).toHaveAttribute("alt", /Bruna Lambertini.*look dourado/);
+    await expect(images.nth(2)).toHaveAttribute("alt", /Juh Alves.*piscina/);
+    await expect(campaign.getByText("Yasmin Mineira", { exact: true })).toBeVisible();
+    await expect(campaign.getByText("Bruna Lambertini", { exact: true })).toBeVisible();
+    await expect(campaign.getByText("Juh Alves", { exact: true })).toBeVisible();
     const boxes = await images.evaluateAll((items) => items.map((item) => item.getBoundingClientRect()));
     expect(boxes.every((box) => Math.abs(box.width - boxes[0].width) <= 1)).toBe(true);
     expect(boxes[0].width).toBeGreaterThan(340);

@@ -14,17 +14,20 @@ import styles from "./home.module.css";
 const campaignPhotos = [
   {
     src: elitePurple,
-    alt: "Garota-propaganda Elite Modell com peças roxas e detalhes dourados",
+    name: "Yasmin Mineira",
+    alt: "Yasmin Mineira em campanha da Elite Modell com peças roxas e detalhes dourados",
     position: "center top",
   },
   {
     src: eliteGold,
-    alt: "Garota-propaganda Elite Modell com look dourado",
+    name: "Bruna Lambertini",
+    alt: "Bruna Lambertini em campanha da Elite Modell com look dourado",
     position: "center bottom",
   },
   {
     src: elitePool,
-    alt: "Garota-propaganda Elite Modell com look marrom junto à piscina",
+    name: "Juh Alves",
+    alt: "Juh Alves em campanha da Elite Modell junto à piscina",
     position: "center center",
   },
 ];
@@ -54,6 +57,7 @@ export default function HomePage() {
             sizes="(max-width: 760px) 72vw, 58vw"
             className={styles.modelImage}
           />
+          <span className={styles.heroModelName}>Brida Nunes</span>
         </div>
         <div className={styles.heroCopy}>
           <span className={styles.heroEyebrow}>Discrição • Segurança • Liberdade</span>
@@ -70,18 +74,20 @@ export default function HomePage() {
 
       <HomeDiscoveryPreview />
 
-      <section className={styles.campaign} aria-label="Garotas-propaganda Elite Modell">
+      <section className={styles.campaign} aria-labelledby="campaign-title">
+        <h2 className={styles.campaignTitle} id="campaign-title">Conheça nossas musas</h2>
         {campaignPhotos.map((photo) => (
-          <div className={styles.campaignVisual} key={photo.alt}>
+          <div className={styles.campaignVisual} key={photo.name}>
             <Image
               src={photo.src}
               alt={photo.alt}
               fill
-              quality={82}
+              quality={75}
               sizes="(max-width: 900px) calc(100vw - 28px), 752px"
               className={styles.campaignImage}
               style={{ objectPosition: photo.position }}
             />
+            <span className={styles.modelSignature}>{photo.name}</span>
           </div>
         ))}
       </section>
