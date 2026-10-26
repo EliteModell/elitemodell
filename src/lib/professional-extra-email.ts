@@ -62,3 +62,13 @@ export async function sendProfessionalKycActionEmail(to: string, name: string | 
     ]),
   });
 }
+
+export async function sendProfessionalKycApprovedEmail(to: string, name: string | null | undefined) {
+  await sendAuthEmail(to, {
+    subject: "Identidade verificada - Elite Modell",
+    html: html("Sua identidade foi verificada", name, [
+      "A verificação de identidade e maioridade foi aprovada.",
+      "Isso não significa, por si só, que o perfil já esteja aprovado ou publicado. Acompanhe o status real na sua área profissional.",
+    ]),
+  });
+}

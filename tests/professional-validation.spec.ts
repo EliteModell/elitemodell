@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createProfessionalSchema } from "../src/lib/professional-profile-schema";
 import { assessProfessionalDiditDecision } from "../src/lib/professional-didit";
+import { professionalRegistrationStatus } from "../src/lib/professional-registration-status";
 import { reconcileProfessionalDidit } from "../src/lib/didit-reconciliation";
 import { handleDigitWebhook } from "../src/lib/didit-webhook-handler";
 import { prisma } from "../src/lib/prisma";
@@ -56,6 +57,32 @@ function issuePaths(data: Record<string, unknown>) {
   const result = createProfessionalSchema.safeParse(data);
   return result.success ? [] : result.error.issues.map((issue) => issue.path.join("."));
 }
+
+test.describe("acompanhamento do cadastro profissional", () => {
+  const verifiedEmail = { email: "modelo@example.com", emailVerified: true };
+
+  test("deriva estados reais sem confundir identidade, aprovacao e publicacao", () => {
+    expect(professionalRegistrationStatus({ email: "phone_1@sms.elitemodell.local" }).id).toBe("email_missing");
+    expect(professionalRegistrationStatus({ email: "modelo@example.com", emailVerified: false }).id).toBe("email_unconfirmed");
+    expect(professionalRegistrationStatus({ ...verifiedEmail, professionalStatus: "DRAFT", firstIncompleteStep: 3 })).toMatchObject({ id: "incomplete", targetStep: 3 });
+    expect(professionalRegistrationStatus({ ...verifiedEmail, professionalStatus: "DRAFT", kycStatus: "PENDING" }).id).toBe("identity_pending");
+    expect(professionalRegistrationStatus({ ...verifiedEmail, professionalStatus: "PENDING_REVIEW", registrationSubmittedAt: "2026-10-26T10:00:00Z", kycStatus: "APPROVED" }).id).toBe("submitted");
+    expect(professionalRegistrationStatus({ ...verifiedEmail, professionalStatus: "CORRECTION_REQUIRED", correctionReason: "Troque a foto principal." })).toMatchObject({ id: "correction_required", description: "Troque a foto principal." });
+    expect(professionalRegistrationStatus({ ...verifiedEmail, professionalStatus: "ACTIVE", published: false }).id).toBe("approved");
+    expect(professionalRegistrationStatus({ ...verifiedEmail, professionalStatus: "ACTIVE", published: true, profileUrl: "/profissionais/modelo" }).id).toBe("published");
+  });
+});
+
+test("comunicacao de identidade usa servico existente com idempotencia e e-mail confirmado", () => {
+  const reconciliation = fs.readFileSync(path.join(process.cwd(), "src/lib/didit-reconciliation.ts"), "utf8");
+  const communications = fs.readFileSync(path.join(process.cwd(), "src/lib/professional-communications.ts"), "utf8");
+  expect(reconciliation).toContain("outcome.becameApproved");
+  expect(reconciliation).toContain("outcome.emailVerified");
+  expect(reconciliation).toContain('type: "KYC_APPROVED"');
+  expect(reconciliation).toContain('dedupeReason: "professional:kyc-approved-email:v1"');
+  expect(reconciliation).toContain("sendProfessionalKycApprovedEmail");
+  expect(communications).toContain("if (delivered) return { emailStatus: \"EMAIL_ALREADY_SENT\" as const }");
+});
 
 test.describe("validacao do perfil profissional", () => {
   test("aceita o payload minimo completo", () => {

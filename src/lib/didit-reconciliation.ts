@@ -11,7 +11,7 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`didit-professional:${userId}`}))`;
     const professional = await tx.professional.findFirst({
       where: { userId, kycProvider: "DIDIT", kycSessionId: sessionId },
-      select: { id: true, userId: true, status: true, kycStatus: true, registrationSubmittedAt: true, verificationUrl: true, user: { select: { email: true, name: true } } },
+      select: { id: true, userId: true, status: true, kycStatus: true, registrationSubmittedAt: true, verificationUrl: true, user: { select: { email: true, emailVerified: true, name: true } } },
     });
     if (!professional) throw new Error("didit_active_session_changed");
     const decision = await fetchDigitSessionDecision(sessionId);
@@ -86,7 +86,7 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
       response: { sessionId, status: assessment.status, rawStatus: decision.status,
         retryAllowed: assessment.retryAllowed, message: assessment.reason, url, starting: false },
       rejected, professionalId: professional.id ?? "", professionalUserId: professional.userId ?? "",
-      email: professional.user?.email ?? null, name: professional.user?.name ?? null, reason: assessment.reason,
+      email: professional.user?.email ?? null, emailVerified: Boolean(professional.user?.emailVerified), name: professional.user?.name ?? null, reason: assessment.reason,
       becameApproved: approved && professional.kycStatus !== "APPROVED",
       synchronizedMediaAgeCount,
       synchronizedOwnerDepictionCount,
@@ -121,6 +121,23 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
       changes: { kycStatus: "APPROVED", source: "didit-live-decision" },
       reason: "Documento, reconhecimento facial, prova de vida e maioridade confirmados pela Didit.",
     });
+    if (outcome.professionalUserId && outcome.emailVerified) {
+      const [{ deliverProfessionalCommunication }, { sendProfessionalKycApprovedEmail }] = await Promise.all([
+        import("@/lib/professional-communications"),
+        import("@/lib/professional-extra-email"),
+      ]);
+      await deliverProfessionalCommunication({
+        professionalId: outcome.professionalId,
+        userId: outcome.professionalUserId,
+        email: outcome.email,
+        type: "KYC_APPROVED",
+        notificationTitle: "Identidade verificada",
+        notificationBody: "Sua verificação de identidade e maioridade foi aprovada. A aprovação e a publicação do perfil possuem estados separados.",
+        link: "/profissional/novo?didit=returned",
+        dedupeReason: "professional:kyc-approved-email:v1",
+        send: () => sendProfessionalKycApprovedEmail(outcome.email!, outcome.name),
+      });
+    }
   }
   if ((outcome.synchronizedMediaAgeCount || outcome.synchronizedOwnerDepictionCount) && outcome.professionalId) {
     await logAudit({

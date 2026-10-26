@@ -83,7 +83,7 @@ export function professionalOnboardingCompletion(profile: ProfessionalCompletion
   const issues = kycApproved ? profileIssues : [...profileIssues, {
     code: "kyc",
     field: "kycSessionId",
-    label: "Verificação de identidade aprovada",
+    label: "Conclua a verificação de identidade e maioridade",
     step: 1,
     stepLabel: "Identidade",
   }];
@@ -148,7 +148,7 @@ const REQUIRED_CHECKS: Array<{
 const IDENTITY_CHECK = {
   code: "kyc",
   field: "kycSessionId",
-  label: "Verificação de identidade aprovada",
+  label: "Conclua a verificação de identidade e maioridade",
   step: 7,
 };
 
