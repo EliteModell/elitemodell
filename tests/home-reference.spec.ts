@@ -13,15 +13,22 @@ const ADULT_VIEWER = {
 };
 
 async function prepareHome(page: Page) {
+  await page.context().addCookies([{
+    name: "elite_modell_age_declaration",
+    value: "confirmed",
+    url: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000",
+  }]);
   await page.addInitScript(() => {
     sessionStorage.setItem("elite_modell_adult_consent_session", "accepted");
+    sessionStorage.setItem("elite_modell_adult_consent_at", new Date().toISOString());
     localStorage.setItem("elite_modell_ageConsentAccepted", "true");
+    localStorage.setItem("elite_modell_ageConsentAcceptedAt", new Date().toISOString());
     localStorage.setItem("elite_cookie_consent", "accepted");
   });
-  await page.route("**/api/address/search?**", (route) => route.fulfill({
+  await page.route("**/api/locations/cities?**", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
-    body: JSON.stringify({ suggestions: [{ placeId: "bh", mainText: "Belo Horizonte", secondaryText: "Minas Gerais, Brasil" }] }),
+    body: JSON.stringify({ cities: [{ id: "bh-mg", city: "Belo Horizonte", state: "MG", label: "Belo Horizonte, MG", count: 5 }] }),
   }));
 }
 
@@ -46,13 +53,27 @@ test.describe("home fiel à referência mobile", () => {
   test("conteúdo e rotas principais permanecem corretos", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Encontre o perfil certo para você.");
-    await expect(page.getByRole("main").getByRole("link", { name: "Explorar perfis" }).first()).toHaveAttribute("href", "/buscar?tab=acompanhantes&selecionarCidade=1");
+    const exploreProfiles = page.getByRole("main").getByRole("link", { name: "Explorar perfis" }).first();
+    const viewAll = page.getByRole("link", { name: "Ver todos" });
+    await expect(exploreProfiles).toHaveAttribute("href", "/buscar?tab=acompanhantes");
+    await expect(viewAll).toHaveAttribute("href", "/buscar?tab=acompanhantes");
     await expect(page.getByRole("main").getByRole("link", { name: "Anunciar meu perfil" })).toHaveAttribute("href", "/cadastro/acompanhante");
     await expect(page.locator("nav img").first()).toHaveAttribute("src", /elite-modell-logo\.png/);
     await expect(page.getByRole("heading", { name: "Stories e perfis da região" })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Profissionais em destaque" })).toBeVisible();
     await expect(page.getByText("Brida Nunes", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Conheça nossas musas" })).toBeVisible();
+  });
+
+  test("explorar perfis usa a mesma listagem de ver todos sem solicitar cidade", async ({ page }) => {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.getByRole("main").getByRole("link", { name: "Explorar perfis" }).first().click();
+
+    await expect(page).toHaveURL(/\/buscar\?tab=acompanhantes$/);
+    await expect(page.getByRole("heading", { name: "Onde deseja buscar?" })).toHaveCount(0);
+    await expect(page.getByText("Elite Stories", { exact: true })).toBeVisible();
+    await page.goBack({ waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(/\/$/);
   });
 
   test("fotos promocionais permanecem grandes e empilhadas verticalmente", async ({ page }) => {
