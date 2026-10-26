@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import * as path from "node:path";
 import { installMockSessionCookie } from "./helpers/mock-auth";
 
 const USER_ID = "full-onboarding-user";
@@ -46,8 +47,36 @@ test("conta com telefone confirmado retoma o cadastro enquanto o e-mail esta pen
 
   await expect(page.getByText("Etapa 1 de 9", { exact: false })).toBeVisible();
   await expect(page.getByText("E-mail pendente de", { exact: false })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Confirme seu e-mail" })).toBeVisible();
   await expect(page.getByText("Confirme seu e-mail para continuar")).toHaveCount(0);
   await expect(page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...")).toHaveValue("Marina Retorno");
+});
+
+test("e-mail ausente usa o estado correto e falha de envio nao cria confirmacao falsa", async ({ page }) => {
+  await mockOnboarding(page);
+  await page.unroute("**/api/users/me**");
+  await page.route("**/api/users/me**", (route) => route.fulfill({ json: {
+    id: USER_ID,
+    email: "phone_5511912345678@sms.elitemodell.local",
+    emailVerified: null,
+    birthDate: "2000-01-01",
+    professional: professional("Marina Retorno"),
+  } }));
+  await page.route("**/api/auth/email-confirmation", async (route) => {
+    const body = route.request().postDataJSON() as { action?: string } | null;
+    if (body?.action === "change") {
+      await route.fulfill({ status: 503, json: { error: "Serviço de e-mail temporariamente indisponível." } });
+      return;
+    }
+    await route.fulfill({ json: { ok: true, verified: false } });
+  });
+
+  await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "Falta informar seu e-mail para continuar" })).toBeVisible();
+  await page.getByPlaceholder("novo@email.com").fill("marina@example.com");
+  await page.getByRole("button", { name: "Salvar e solicitar confirmação" }).click();
+  await expect(page.getByText("Serviço de e-mail temporariamente indisponível.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Falta informar seu e-mail para continuar" })).toBeVisible();
 });
 
 test("sessao expirada orienta reentrada sem criar uma nova conta", async ({ page }) => {
@@ -193,6 +222,74 @@ test("rascunho antigo sem proveniencia nao preseleciona servicos", async ({ page
   await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
   await expect(page.getByText("Etapa 4 de 9", { exact: false })).toBeVisible();
   await expect(page.getByText("Nenhum serviço selecionado", { exact: true })).toBeVisible();
+});
+
+test("etapa de servicos deixa categorias claras, expansíveis e acessíveis no mobile", async ({ page }) => {
+  await mockOnboarding(page);
+  await page.unroute("**/api/professionals/draft");
+  await page.route("**/api/professionals/draft", route => route.fulfill({ json: {
+    completion: { profilePercent: 100, profileComplete: true, readyToSubmit: false, profileIssues: [], issues: [] },
+  } }));
+  await page.addInitScript(({ userId }) => {
+    localStorage.setItem(`elitemodell_professional_onboarding_v2:${encodeURIComponent(userId)}:PROFESSIONAL`, JSON.stringify({
+      ownerId: userId,
+      registrationType: "PROFESSIONAL",
+      updatedAt: "2099-01-01T00:00:00.000Z",
+      step: 3,
+      form: { services: [], fetishes: [] },
+    }));
+  }, { userId: USER_ID });
+
+  for (const { width, height } of [
+    { width: 320, height: 568 },
+    { width: 375, height: 667 },
+    { width: 390, height: 844 },
+    { width: 430, height: 932 },
+  ]) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
+
+    await expect(page.getByText("Etapa 4 de 9", { exact: false })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Continue de onde parou" })).toBeVisible();
+    const categories = page.locator(".model-service-category");
+    await expect(categories.first()).toHaveAttribute("open", "");
+    await expect(categories.nth(1)).not.toHaveAttribute("open", "");
+    await expect(page.getByText("Toque para ver e escolher as opções").first()).toBeVisible();
+
+    await categories.nth(1).locator("summary").click();
+    await expect(categories.nth(1)).toHaveAttribute("open", "");
+    await expect(categories.nth(1).locator(".model-service-chevron")).toBeVisible();
+
+    if (width === 390 && process.env.STEP4_SCREENSHOT_DIR) {
+      const selectedOption = categories.first().locator(".model-tag").first();
+      await selectedOption.click();
+      await expect(selectedOption).toHaveAttribute("aria-pressed", "true");
+      await page.screenshot({
+        path: path.join(process.env.STEP4_SCREENSHOT_DIR, "etapa-4-categorias-abertas.png"),
+        fullPage: true,
+      });
+      await categories.first().locator("summary").click();
+      await categories.nth(1).locator("summary").click();
+      await expect(categories.first()).not.toHaveAttribute("open", "");
+      await expect(categories.nth(1)).not.toHaveAttribute("open", "");
+      await page.screenshot({
+        path: path.join(process.env.STEP4_SCREENSHOT_DIR, "etapa-4-categorias-fechadas.png"),
+        fullPage: true,
+      });
+    }
+
+    const continueButton = page.locator(".model-step-actions").getByRole("button", { name: /Continuar/ });
+    await expect(continueButton).toBeVisible();
+    await continueButton.scrollIntoViewIfNeeded();
+    const continueBox = await continueButton.boundingBox();
+    expect(continueBox).not.toBeNull();
+    expect(continueBox!.y + continueBox!.height).toBeLessThanOrEqual(height);
+    const layout = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth);
+  }
 });
 
 test("troca de conta preserva o rascunho de A e bloqueia dados de A em B", async ({ page }) => {

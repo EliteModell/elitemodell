@@ -30,6 +30,7 @@ import {
 } from "@/lib/professional-draft-storage";
 import { isProfessionalDisplayNameReady, professionalDisplayNameForEditing } from "@/lib/professional-display-name";
 import { professionalStartingPrice } from "@/lib/professional-pricing";
+import { professionalRegistrationStatus } from "@/lib/professional-registration-status";
 
 const ProfessionalVerificationSteps = dynamic(
   () => import("@/components/professional-onboarding/ProfessionalVerificationSteps"),
@@ -387,6 +388,7 @@ export default function ProfissionalNovoPage() {
   const [professionalIdentity, setProfessionalIdentity] = useState<{ id: string; slug: string } | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [serverHydration, setServerHydration] = useState<{ ready: boolean; updatedAt: string | null }>({ ready: false, updatedAt: null });
+  const [registrationContext, setRegistrationContext] = useState<{ status: string; submittedAt: string | null; slug: string | null }>({ status: "DRAFT", submittedAt: null, slug: null });
   const [birthParts, setBirthParts] = useState({ day: "", month: "", year: "" });
   const birthMonthRef = useRef<HTMLInputElement>(null);
   const birthYearRef = useRef<HTMLInputElement>(null);
@@ -599,6 +601,11 @@ export default function ProfissionalNovoPage() {
       user = await refreshed.json();
       setAccountEmail(user.email ?? null);
       setEmailVerified(Boolean(user.emailVerified));
+      setRegistrationContext({
+        status: user.professional?.status ?? "DRAFT",
+        submittedAt: user.professional?.registrationSubmittedAt ?? null,
+        slug: user.professional?.slug ?? null,
+      });
 
       if (user.professional?.status === "ACTIVE" || user.professional?.status === "PAUSED") {
         router.replace(ACCOUNT_ROUTES.dashboardAcompanhante);
@@ -1329,6 +1336,33 @@ export default function ProfissionalNovoPage() {
   const diditApproved = form.kycStatus === "APPROVED";
   const diditRejected = form.kycStatus === "REJECTED";
   const diditPending = Boolean(form.kycSessionId) && !diditApproved && !diditRejected;
+  const registrationStatus = professionalRegistrationStatus({
+    professionalStatus: registrationContext.status,
+    registrationSubmittedAt: registrationContext.submittedAt,
+    kycStatus: form.kycStatus,
+    email: accountEmail,
+    emailVerified,
+    firstIncompleteStep: serverCompletion?.firstIncompleteStep ?? step,
+    correctionReason,
+    profileUrl: registrationContext.slug ? `/profissionais/${registrationContext.slug}` : null,
+  });
+
+  function followRegistrationStatus() {
+    if (registrationStatus.action === "email") {
+      if (hasTechnicalPhoneEmail) setEditingEmail(true);
+      window.setTimeout(() => document.getElementById("professional-email-status")?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
+      return;
+    }
+    if (registrationStatus.action === "analysis") {
+      router.push(ACCOUNT_ROUTES.analiseAcompanhante);
+      return;
+    }
+    const target = registrationStatus.action === "correction"
+      ? correctionFields[0]?.step ?? registrationStatus.targetStep ?? 0
+      : registrationStatus.targetStep ?? 0;
+    setStep(Math.max(0, Math.min(target, STEPS.length - 1)));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   if (sessionExpired) {
     return (
@@ -1450,11 +1484,20 @@ export default function ProfissionalNovoPage() {
       </div>
 
       <style>{`
-        .model-server-completion { margin:0 0 20px; padding:15px; border:1px solid rgba(183,44,255,.28); border-radius:16px; background:#0d0a10; color:#fff; }
+        .model-registration-status { margin:0 0 22px; padding:16px; border:1px solid var(--flow-border,#d8c9df); border-radius:18px; background:#fff; color:#171219; box-shadow:0 12px 34px rgba(59,31,83,.08); }
+        .model-registration-status[data-tone="warning"] { border-color:rgba(125,23,159,.42); background:#fdf8ff; }
+        .model-registration-status[data-tone="success"] { border-color:rgba(22,128,87,.30); background:#f2fbf7; }
+        .model-registration-status-copy { display:flex; align-items:flex-start; gap:12px; }
+        .model-registration-status-icon { display:grid; width:34px; height:34px; flex:0 0 auto; place-items:center; border-radius:999px; background:#f8eaff; color:#7d179f; font-weight:950; }
+        .model-registration-status[data-tone="success"] .model-registration-status-icon { background:#dff6e9; color:#16734d; }
+        .model-registration-status h2 { margin:0; color:#171219!important; font-size:16px; line-height:1.3; }
+        .model-registration-status p { margin:5px 0 0; color:#625c68!important; font-size:12px; line-height:1.55; }
+        .model-registration-status button { width:100%; min-height:46px; margin-top:13px; border:0; border-radius:13px; background:#7d179f; color:#fff; font-weight:850; }
+        .model-server-completion { margin:0 0 20px; padding:15px; border:1px solid var(--flow-border,#d8c9df); border-radius:16px; background:var(--flow-card,#fff); color:var(--flow-text,#171219); }
         .model-server-completion>div:first-child { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:12px; }
-        .model-server-completion span { color:#aaa0b2; }
-        .model-completion-bar { height:8px; margin-top:10px; overflow:hidden; border-radius:99px; background:#241b28; }
-        .model-completion-bar i { display:block; height:100%; border-radius:inherit; background:#b72cff; }
+        .model-server-completion span { color:var(--flow-muted,#625c68); }
+        .model-completion-bar { height:8px; margin-top:10px; overflow:hidden; border-radius:99px; background:#eadfee; }
+        .model-completion-bar i { display:block; height:100%; border-radius:inherit; background:var(--flow-brand,#7d179f); }
         .model-completion-list { display:grid; gap:6px; margin-top:12px; }
         .model-completion-list button { padding:9px 10px; border:1px solid rgba(239,68,68,.3); border-radius:9px; background:rgba(239,68,68,.08); color:#ffb4b4; text-align:left; }
         .model-correction-warning { margin:0 0 22px; padding:16px; border:1px solid rgba(183,44,255,.45); border-radius:16px; background:rgba(183,44,255,.10); color:#f7eaff; }
@@ -1464,6 +1507,17 @@ export default function ProfissionalNovoPage() {
         .model-correction-links { display:grid; gap:7px; margin-top:10px; }
         .model-correction-links button { padding:9px 10px; border:1px solid rgba(225,166,255,.35); border-radius:9px; background:#17111b; color:#e9c7fa; text-align:left; font-weight:700; }
       `}</style>
+
+      <section className="model-registration-status" data-tone={registrationStatus.tone} aria-label="Acompanhamento do cadastro" data-registration-status={registrationStatus.id}>
+        <div className="model-registration-status-copy">
+          <span className="model-registration-status-icon" aria-hidden="true">{registrationStatus.tone === "success" ? "✓" : "i"}</span>
+          <div>
+            <h2>{registrationStatus.title}</h2>
+            <p>{registrationStatus.description}</p>
+          </div>
+        </div>
+        <button type="button" onClick={followRegistrationStatus}>{registrationStatus.actionLabel}</button>
+      </section>
 
       {correctionReason && (
         <div className="model-correction-warning" role="alert">
@@ -1478,7 +1532,7 @@ export default function ProfissionalNovoPage() {
       )}
 
       {emailVerified === false && (
-        <div className="model-email-warning" role="status" style={{
+        <div id="professional-email-status" className="model-email-warning" role="status" style={{
           margin: "0 0 22px",
           padding: "14px 16px",
           borderRadius: 14,
@@ -1823,7 +1877,20 @@ export default function ProfissionalNovoPage() {
             </p>
             {PROFESSIONAL_SERVICE_CATEGORIES.map((category, index) => (
               <details className="model-service-category" key={category.id} open={index === 0}>
-                <summary>{category.label}<span>{category.options.filter((option) => isServiceOptionSelected(form.services, option)).length}</span></summary>
+                <summary>
+                  <span className="model-service-category-copy">
+                    <strong>{category.label}</strong>
+                    <small>Toque para ver e escolher as opções</small>
+                  </span>
+                  <span className="model-service-category-meta">
+                    <span className="model-service-count" aria-label={`${category.options.filter((option) => isServiceOptionSelected(form.services, option)).length} opções selecionadas`}>
+                      {category.options.filter((option) => isServiceOptionSelected(form.services, option)).length}
+                    </span>
+                    <svg className="model-service-chevron" aria-hidden="true" viewBox="0 0 24 24">
+                      <path d="m7 9.5 5 5 5-5" />
+                    </svg>
+                  </span>
+                </summary>
                 <div className="model-service-options">
                   {category.options.map((option) => (
                     <ServiceOption
@@ -1840,8 +1907,21 @@ export default function ProfissionalNovoPage() {
           </Section>
           {PROFESSIONAL_SPECIALTY_CATEGORIES.map((category) => (
             <Section key={category.id} title={category.label}>
-              <details className="model-service-category" open>
-                <summary>Ver opções<span>{category.options.filter((option) => isServiceOptionSelected(form.fetishes, option)).length}</span></summary>
+              <details className="model-service-category">
+                <summary>
+                  <span className="model-service-category-copy">
+                    <strong>Ver opções</strong>
+                    <small>Toque para ver e escolher as opções</small>
+                  </span>
+                  <span className="model-service-category-meta">
+                    <span className="model-service-count" aria-label={`${category.options.filter((option) => isServiceOptionSelected(form.fetishes, option)).length} opções selecionadas`}>
+                      {category.options.filter((option) => isServiceOptionSelected(form.fetishes, option)).length}
+                    </span>
+                    <svg className="model-service-chevron" aria-hidden="true" viewBox="0 0 24 24">
+                      <path d="m7 9.5 5 5 5-5" />
+                    </svg>
+                  </span>
+                </summary>
                 <div className="model-service-options">
                   {category.options.map((option) => (
                     <ServiceOption
@@ -1991,7 +2071,14 @@ export default function ProfissionalNovoPage() {
 
       {serverCompletion && (
         <section className="model-server-completion" aria-label="Completude do cadastro">
-          <div><strong>Cadastro: {serverCompletion.profilePercent}% concluido</strong><span>{serverCompletion.profileComplete ? "Dados obrigatorios completos" : String(serverCompletion.issues.filter((issue) => issue.step < 7).length) + " pendencia(s) nos dados"}</span></div>
+          <div>
+            <strong>{serverCompletion.readyToSubmit ? "Cadastro pronto para envio" : `Dados do cadastro: ${serverCompletion.profilePercent}% preenchidos`}</strong>
+            <span>{serverCompletion.readyToSubmit
+              ? "Todos os requisitos obrigatórios foram confirmados"
+              : serverCompletion.profileComplete
+                ? "Dados preenchidos; confira e-mail e identidade"
+                : `${serverCompletion.profileIssues.length} pendência(s) nos dados`}</span>
+          </div>
           <div className="model-completion-bar"><i style={{ width: serverCompletion.profilePercent + "%" }} /></div>
           {step === 8 && serverCompletion.issues.length > 0 && <div className="model-completion-list">{serverCompletion.issues.map((issue) => <button type="button" key={issue.field + ":" + issue.step} onClick={() => setStep(issue.step)}>X {issue.label} - etapa {issue.step + 1}</button>)}</div>}
         </section>
@@ -2191,42 +2278,95 @@ export default function ProfissionalNovoPage() {
           font-weight: 750;
         }
         .model-service-category {
-          margin-bottom: 10px;
+          margin-bottom: 12px;
           overflow: hidden;
-          border: 1px solid rgba(183, 44, 255, .24);
+          border: 1px solid var(--flow-border, #d8c9df);
           border-radius: 16px;
-          background: rgba(8, 8, 10, .72);
+          background: var(--flow-card, #fff);
+          box-shadow: 0 8px 24px rgba(59, 31, 83, .07);
+          transition: border-color .18s ease, box-shadow .18s ease;
+        }
+        .model-service-category[open] {
+          border-color: rgba(125, 23, 159, .48);
+          box-shadow: 0 12px 30px rgba(125, 23, 159, .11);
         }
         .model-service-category > summary {
           display: flex;
-          min-height: 52px;
+          min-height: 72px;
           align-items: center;
           justify-content: space-between;
           gap: 12px;
-          padding: 12px 14px;
-          color: #fff;
-          font-size: 14px;
-          font-weight: 850;
+          padding: 13px 14px 13px 16px;
+          color: var(--flow-text, #141212);
           cursor: pointer;
           list-style: none;
+          -webkit-tap-highlight-color: transparent;
         }
         .model-service-category > summary::-webkit-details-marker { display: none; }
-        .model-service-category > summary span {
+        .model-service-category > summary::marker { content: ""; }
+        .model-service-category-copy {
+          display: flex;
+          min-width: 0;
+          flex: 1;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .model-service-category-copy strong {
+          color: var(--flow-text, #141212) !important;
+          font-size: 15px;
+          font-weight: 850;
+          line-height: 1.25;
+        }
+        .model-service-category-copy small {
+          color: var(--flow-muted, #625c68);
+          font-size: 11px;
+          font-weight: 650;
+          line-height: 1.35;
+        }
+        .model-service-category-meta {
+          display: flex;
+          flex: 0 0 auto;
+          align-items: center;
+          gap: 8px;
+        }
+        .model-service-count {
           display: grid;
           min-width: 28px;
           height: 28px;
           place-items: center;
           border-radius: 999px;
-          background: rgba(183, 44, 255, .16);
-          color: #d77bff;
+          background: var(--flow-soft, #f8eaff);
+          color: var(--flow-brand, #7d179f);
           font-size: 11px;
+          font-weight: 850;
+        }
+        .model-service-chevron {
+          width: 28px;
+          height: 28px;
+          padding: 3px;
+          border-radius: 999px;
+          background: var(--flow-soft, #f8eaff);
+          color: var(--flow-brand, #7d179f);
+          transition: transform .18s ease;
+        }
+        .model-service-chevron path {
+          fill: none;
+          stroke: currentColor;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-width: 2.4;
+        }
+        .model-service-category[open] .model-service-chevron {
+          transform: rotate(180deg);
         }
         .model-service-options {
           display: flex;
           flex-wrap: wrap;
           align-items: flex-start;
           gap: 9px;
-          padding: 0 12px 14px;
+          padding: 14px 12px 16px;
+          border-top: 1px solid rgba(125, 23, 159, .12);
+          background: linear-gradient(180deg, rgba(248, 234, 255, .58), rgba(255, 255, 255, .88));
         }
         .model-service-option {
           display: flex;
@@ -2249,13 +2389,13 @@ export default function ProfissionalNovoPage() {
           border-radius: 999px !important;
           background: rgba(183, 44, 255, .08) !important;
           padding: 5px 9px !important;
-          color: #d9cfe0 !important;
+          color: var(--flow-brand, #7d179f) !important;
           font-size: 10px !important;
           font-weight: 800 !important;
         }
         .model-service-directions button[data-active="true"] {
-          border-color: #d77bff !important;
-          background: rgba(183, 44, 255, .26) !important;
+          border-color: var(--flow-brand, #7d179f) !important;
+          background: var(--flow-brand, #7d179f) !important;
           color: #fff !important;
         }
         .model-upload-received {
