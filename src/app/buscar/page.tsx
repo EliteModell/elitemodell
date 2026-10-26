@@ -17,6 +17,7 @@ import {
 import { useCitySuggestions } from "@/lib/use-city-suggestions";
 import { savePublicLocationPreference } from "@/lib/public-location-preference";
 import { professionalStartingPrice } from "@/lib/professional-pricing";
+import yasminRibeiroPhoto from "@/assets/home/yasmin-ribeiro.webp";
 
 const GOLD = "#b72cff";
 const GOLD_DIM = "rgba(183, 44, 255,0.12)";
@@ -639,14 +640,60 @@ function BuscarContent() {
           box-shadow: 0 8px 24px rgba(37, 31, 32,.06);
         }
         .location-bar span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .stories-strip { display: flex; gap: 12px; overflow-x: auto; padding: 2px 0 18px; margin-bottom: 6px; -webkit-overflow-scrolling: touch; }
+        .yasmin-feature {
+          position: relative;
+          width: 100%;
+          max-width: 520px;
+          aspect-ratio: .99 / 1;
+          margin: 0 0 5px;
+          overflow: hidden;
+          isolation: isolate;
+          border-radius: 19px;
+          background: #eadde8;
+          box-shadow: 0 8px 20px rgba(105, 42, 107, .11);
+          contain: layout paint;
+        }
+        .yasmin-feature-image { object-fit: cover; object-position: center 18%; }
+        .yasmin-feature-shade {
+          position: absolute;
+          inset: 58% 0 0;
+          z-index: 1;
+          pointer-events: none;
+          background: linear-gradient(180deg, transparent, rgba(25, 8, 34, .84));
+        }
+        .yasmin-feature-copy {
+          position: absolute;
+          right: 18px;
+          bottom: 20px;
+          left: 18px;
+          z-index: 2;
+          color: #fff;
+          text-shadow: 0 2px 12px rgba(15, 4, 20, .32);
+        }
+        .yasmin-feature-copy h2 {
+          margin: 0 0 7px;
+          font-family: Georgia, "Times New Roman", serif;
+          font-size: 31px;
+          font-weight: 400;
+          line-height: 1.06;
+          letter-spacing: -.03em;
+        }
+        .yasmin-feature-copy p {
+          margin: 0;
+          font-size: 12px;
+          font-weight: 800;
+          line-height: 1.2;
+          letter-spacing: .8px;
+          text-transform: uppercase;
+        }
+        .stories-strip { display: flex; gap: 18px; overflow-x: auto; padding: 15px 1px; margin: 5px 0 2px; border-bottom: 1px solid #eaddec; -webkit-overflow-scrolling: touch; }
         .stories-strip::-webkit-scrollbar, .filtros-scroll::-webkit-scrollbar, .action-scroll::-webkit-scrollbar { display: none; }
-        .story-item { width: 72px; flex: 0 0 auto; color: #514b59; text-align: center; text-decoration: none; }
-        .story-avatar { width: 64px; height: 64px; margin: 0 auto 7px; border-radius: 999px; padding: 2px; background: linear-gradient(135deg, #e1a6ff, #b72cff, #65009b); position: relative; }
+        .story-item { min-width: max-content; max-width: 150px; flex: 0 0 auto; display: flex; align-items: center; gap: 12px; color: #514b59; text-decoration: none; }
+        .story-avatar { width: 46px; height: 46px; flex: 0 0 46px; border-radius: 999px; padding: 2px; background: linear-gradient(135deg, #e1a6ff, #b72cff, #65009b); position: relative; }
         .story-avatar-inner { position: relative; width: 100%; height: 100%; border-radius: 999px; overflow: hidden; background: #fcf7ff; border: 2px solid #fff; }
         .stories-region-notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -6px 0 20px; border: 1px solid rgba(183,44,255,.18); border-radius: 12px; padding: 12px 14px; background: #fff; color: #625b66; font-size: 12px; }
         .stories-region-notice button { min-height: 36px; flex: 0 0 auto; border: 1px solid ${GOLD_MID}; border-radius: 999px; padding: 0 13px; background: #fff; color: #8f1fd1; font-weight: 850; cursor: pointer; }
-        .dynamic-title { margin: 0 0 16px; max-width: 920px; color: #141212; font-family: var(--font-inter), Inter, sans-serif; font-size: clamp(1.75rem, 5vw, 3.7rem); line-height: 1.08; letter-spacing: -.03em; }
+        .dynamic-title { margin: 18px 0 11px; max-width: 920px; color: #141212; font-family: var(--font-inter), Inter, sans-serif; font-size: clamp(1.25rem, 2.2vw, 1.65rem); line-height: 1.22; letter-spacing: -.021875rem; font-weight: 650; }
         .dynamic-title strong { color: ${GOLD}; font-weight: 900; }
         .filtros-scroll, .action-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; align-items: center; -webkit-overflow-scrolling: touch; }
         .filter-chip {
@@ -837,7 +884,7 @@ function BuscarContent() {
           .perfil-grid { grid-template-columns: 1fr; gap: 14px; }
           .perfil-foto { padding-top: 0; width: 100%; height: 320px; flex-shrink: 0; }
           .perfil-info { padding: 16px 18px; }
-          .dynamic-title { font-size: 1.85rem; }
+          .dynamic-title { font-size: 1.25rem; }
           .location-modal-backdrop { padding: 0; align-items: flex-end; }
           .location-modal { border-radius: 18px 18px 0 0; max-height: min(90dvh, 720px); }
           .location-modal-backdrop[data-compact="true"] { align-items: stretch; padding-top: max(4px, env(safe-area-inset-top)); }
@@ -850,6 +897,11 @@ function BuscarContent() {
           .profiles-empty, .rooms-coming-soon { min-height: 300px; border-radius: 14px; padding: 36px 18px; }
           .profiles-empty-actions, .coming-actions { flex-direction: column; }
           .profiles-empty-actions button, .profiles-empty-actions a, .coming-actions a { width: 100%; }
+        }
+        @media (max-width: 350px) {
+          .yasmin-feature { aspect-ratio: .94 / 1; }
+          .yasmin-feature-copy h2 { font-size: 28px; }
+          .dynamic-title { font-size: 1.1875rem; }
         }
       `}</style>
 
@@ -911,9 +963,26 @@ function BuscarContent() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "24px 16px 56px" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "12px 16px 56px" }}>
         {mainTab === "acompanhantes" && !locationSelectionRequired && (
           <>
+            <section className="yasmin-feature" aria-label="Yasmin Ribeiro, atriz pornô">
+              <Image
+                src={yasminRibeiroPhoto}
+                alt="Yasmin Ribeiro"
+                fill
+                preload
+                placeholder="blur"
+                quality={72}
+                sizes="(max-width: 640px) calc(100vw - 32px), 520px"
+                className="yasmin-feature-image"
+              />
+              <div className="yasmin-feature-shade" aria-hidden="true" />
+              <div className="yasmin-feature-copy">
+                <h2>Yasmin Ribeiro</h2>
+                <p>Atriz pornô</p>
+              </div>
+            </section>
             {stories.length > 0 && <StoriesStrip stories={stories} />}
             {selectedLocation && !showStoriesFromOtherRegions && !hasRegionalStories ? (
               <div className="stories-region-notice" role="status">
@@ -1248,7 +1317,7 @@ function StoriesStrip({ stories }: { stories: StoryGroup[] }) {
                 alt={story.nome}
                 fill
                 unoptimized={Boolean((story.foto ?? story.stories[0]?.thumbnail ?? story.stories[0]?.mediaUrl)?.startsWith("/api/media/"))}
-                sizes="64px"
+                sizes="46px"
                 style={{ objectFit: "cover" }}
               />
             </div>
