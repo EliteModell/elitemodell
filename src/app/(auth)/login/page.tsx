@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Existing auth error payloads are provider-specific. */
 
 import { Suspense, useState } from "react";
+import Image from "next/image";
 import { signIn, signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { NoPrefetchLink as Link } from "@/components/NoPrefetchLink";
@@ -241,7 +242,7 @@ function LoginContent() {
   }
 
   return (
-    <main className="auth-login-page">
+    <main className={`auth-login-page${roleIntent === "profissional" ? " professional-login-page" : ""}`}>
       <header className="auth-topbar">
         <button type="button" onClick={handleBack} aria-label="Voltar">
           <ArrowLeft size={18} />
@@ -252,11 +253,23 @@ function LoginContent() {
         <span className="country-pill"><Globe2 size={14} /> Brasil</span>
       </header>
 
-      <section className="login-hero" aria-labelledby="login-title">
-        <div className="login-mark"><Sparkles size={24} /></div>
-        <p className="eyebrow">Acesse a Elite Modell</p>
-        <h1 id="login-title">Entre como {roleIntent === "profissional" ? "profissional" : roleIntent === "anfitriao" ? "anfitrião" : roleIntent === "cliente" ? "cliente" : "sua conta"}</h1>
-        <p>Descubra novidades, gerencie sua conta e continue no painel correto em um ambiente premium.</p>
+      <section className={`login-hero${roleIntent === "profissional" ? " professional-login-hero" : ""}`} aria-labelledby="login-title">
+        {roleIntent === "profissional" && (
+          <>
+            <Image className="professional-portrait" src="/images/juh-alves-login.webp" alt="Juh Alves" width={1066} height={1351} sizes="(min-width: 768px) 360px, 58vw" priority />
+            <div className="professional-portrait-fade" aria-hidden="true" />
+            <div className="professional-identity">
+              <span className="professional-signature">Juh Alves</span>
+              <span className="professional-role">Atriz pornô</span>
+            </div>
+          </>
+        )}
+        <div className="login-hero-copy">
+          <div className="login-mark"><Sparkles size={24} /></div>
+          <p className="eyebrow">Acesse a Elite Modell</p>
+          <h1 id="login-title">Entre como {roleIntent === "profissional" ? "profissional" : roleIntent === "anfitriao" ? "anfitrião" : roleIntent === "cliente" ? "cliente" : "sua conta"}</h1>
+          <p>Descubra novidades, gerencie sua conta e continue no painel correto em um ambiente premium.</p>
+        </div>
       </section>
 
       <section className="auth-card" aria-label="Login">
@@ -403,8 +416,104 @@ const loginPageStyles = (
           font-weight: 800;
         }
         .login-hero {
+          position: relative;
           text-align: center;
           margin-bottom: 22px;
+        }
+        .professional-login-hero {
+          height: 330px;
+          overflow: hidden;
+          border: 1px solid #f0ddf6;
+          border-radius: 24px;
+          background: radial-gradient(circle at 82% 20%, rgba(225,166,255,.52), transparent 34%), linear-gradient(110deg, #fff 0%, #fcf7ff 48%, #f2dcf8 100%);
+          text-align: left;
+          isolation: isolate;
+        }
+        .professional-login-hero::after {
+          content: "";
+          position: absolute;
+          inset: auto 0 0;
+          z-index: 2;
+          height: 18%;
+          background: linear-gradient(0deg, #fcf7ff 0%, rgba(252,247,255,.72) 28%, transparent 100%);
+          pointer-events: none;
+        }
+        .professional-portrait {
+          position: absolute;
+          z-index: 1;
+          top: 0;
+          right: -6%;
+          width: 62%;
+          height: 100%;
+          object-fit: cover;
+          object-position: 50% 25%;
+          filter: saturate(.9) contrast(.97);
+          -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.55) 13%, #000 28%);
+          mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.55) 13%, #000 28%);
+        }
+        .professional-portrait-fade {
+          position: absolute;
+          z-index: 2;
+          inset: 0;
+          background: linear-gradient(90deg, #fff 0%, rgba(255,255,255,.98) 36%, rgba(255,255,255,.72) 49%, rgba(255,255,255,.08) 70%, transparent 82%);
+          pointer-events: none;
+        }
+        .professional-identity {
+          position: absolute;
+          z-index: 4;
+          top: 15px;
+          right: 15px;
+          display: grid;
+          justify-items: end;
+          gap: 7px;
+          transform: rotate(-4deg);
+        }
+        .professional-signature {
+          color: #fff;
+          font-family: "Snell Roundhand", "Apple Chancery", "Segoe Script", cursive;
+          font-size: 25px;
+          font-style: italic;
+          line-height: 1;
+          text-shadow: 0 2px 8px #3e164c, 0 1px 2px #2c1033;
+          white-space: nowrap;
+        }
+        .professional-role {
+          color: #fff;
+          font-size: 9px;
+          font-weight: 950;
+          letter-spacing: .16em;
+          line-height: 1;
+          text-shadow: 0 1px 5px rgba(44,16,51,.92);
+          text-transform: uppercase;
+          transform: rotate(4deg);
+          white-space: nowrap;
+        }
+        .professional-login-hero .login-hero-copy {
+          position: relative;
+          z-index: 3;
+          width: 54%;
+          max-width: 215px;
+          padding: 29px 0 20px 18px;
+        }
+        .professional-login-hero .eyebrow {
+          margin-bottom: 9px;
+          color: #807085;
+          font-size: 10px;
+          letter-spacing: .17em;
+          white-space: nowrap;
+        }
+        .professional-login-hero h1 {
+          font-size: clamp(29px, 8.4vw, 36px);
+          line-height: 1.02;
+          letter-spacing: -.035em;
+          text-wrap: initial;
+        }
+        .professional-login-hero .login-hero-copy > p:last-child {
+          max-width: 190px;
+          margin: 13px 0 0;
+          color: #645e6c;
+          font-size: 13px;
+          line-height: 1.45;
         }
         .login-mark {
           width: 58px;
@@ -712,6 +821,35 @@ const loginPageStyles = (
             max-width: 520px;
             padding-top: 28px;
           }
+          .professional-login-page { max-width: 850px; }
+          .professional-login-page .auth-card,
+          .professional-login-page .trust-section,
+          .professional-login-page .link-groups,
+          .professional-login-page .visibility-section {
+            max-width: 540px;
+            margin-right: auto;
+            margin-left: auto;
+          }
+          .professional-login-hero { height: 390px; }
+          .professional-portrait { right: 1%; width: 46%; object-position: 50% 23%; }
+          .professional-portrait-fade { background: linear-gradient(90deg, #fff 0%, #fff 45%, rgba(255,255,255,.76) 53%, rgba(255,255,255,.08) 72%, transparent 84%); }
+          .professional-login-hero .login-hero-copy { width: 54%; max-width: none; padding: 42px 0 24px 42px; }
+          .professional-login-hero h1 { max-width: 430px; font-size: 52px; }
+          .professional-login-hero .login-hero-copy > p:last-child { max-width: 355px; font-size: 16px; }
+          .professional-identity { top: 20px; right: 32px; }
+          .professional-signature { font-size: 32px; }
+          .professional-role { font-size: 10px; }
+        }
+        @media (max-width: 355px) {
+          .professional-login-page { padding-right: 10px; padding-left: 10px; }
+          .professional-login-hero { height: 310px; }
+          .professional-login-hero .login-hero-copy { width: 55%; padding: 24px 0 16px 13px; }
+          .professional-login-hero h1 { font-size: 28px; }
+          .professional-login-hero .login-hero-copy > p:last-child { max-width: 150px; font-size: 12px; }
+          .professional-portrait { right: -8%; width: 66%; }
+          .professional-identity { top: 12px; right: 9px; gap: 5px; }
+          .professional-signature { font-size: 21px; }
+          .professional-role { font-size: 8px; }
         }
   `}</style>
 );
