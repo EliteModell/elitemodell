@@ -65,7 +65,7 @@ export default function HomePage() {
           <p>Acompanhantes verificadas, com privacidade, segurança e liberdade para viver boas experiências.</p>
           <HomeCitySearch />
           <div className={styles.heroActions}>
-            <Link href="/buscar?tab=acompanhantes&selecionarCidade=1" className={styles.heroCta}>Explorar perfis<ArrowRight aria-hidden="true" size={22}/></Link>
+            <Link href="/buscar?tab=acompanhantes" className={styles.heroCta}>Explorar perfis<ArrowRight aria-hidden="true" size={22}/></Link>
             <Link href={ACCOUNT_ROUTES.cadastroAcompanhante} className={`${styles.heroCta} ${styles.heroCtaSecondary}`}>Anunciar meu perfil<ArrowRight aria-hidden="true" size={22}/></Link>
           </div>
           <span className={styles.ageNotice}>Ambiente exclusivo para maiores de 18 anos.</span>
