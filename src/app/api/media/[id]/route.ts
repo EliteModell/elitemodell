@@ -16,6 +16,7 @@ const PUBLIC_IMAGE_VARIANTS = {
   avatar: { width: 192, height: 192, resize: "cover", quality: 60 },
   card: { width: 640, height: 800, resize: "cover", quality: 55 },
   cover: { width: 1200, height: 900, resize: "cover", quality: 60 },
+  gallery: { width: 480, height: 640, resize: "cover", quality: 58 },
 } as const;
 
 function safeFilename(value: string) {

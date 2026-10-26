@@ -33,6 +33,7 @@ test.describe("seguranca fail-closed de midia adulta", () => {
   test("variantes publicas usam transformacoes fechadas depois dos mesmos gates", async () => {
     const source = await import("node:fs/promises").then((fs) => fs.readFile("src/app/api/media/[id]/route.ts", "utf8"));
     expect(source).toContain("PUBLIC_IMAGE_VARIANTS");
+    expect(source).toContain('gallery: { width: 480, height: 640');
     expect(source).toContain('asset.category === "image"');
     expect(source).toContain('requestedVariant in PUBLIC_IMAGE_VARIANTS');
     expect(source.indexOf("evaluateMediaPublicationGates")).toBeLessThan(source.indexOf("PUBLIC_IMAGE_VARIANTS[requestedVariant"));

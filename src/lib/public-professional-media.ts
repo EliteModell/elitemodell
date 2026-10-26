@@ -43,7 +43,7 @@ export function normalizeControlledMediaUrl(value?: string | null) {
   return assetId ? `/api/media/${encodeURIComponent(assetId)}` : null;
 }
 
-export type ControlledMediaVariant = "avatar" | "card" | "cover";
+export type ControlledMediaVariant = "avatar" | "card" | "cover" | "gallery";
 
 export function controlledMediaVariantUrl(value: string, variant: ControlledMediaVariant) {
   const assetId = controlledMediaAssetId(value);
