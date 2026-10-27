@@ -1,6 +1,7 @@
 import "server-only";
 import { professionalApprovalEmailIdempotencyKey, professionalPublicationEmailIdempotencyKey, professionalSubmissionReceiptIdempotencyKey } from "@/lib/email-idempotency";
 import { realAccountEmail } from "@/lib/account-email";
+import { beginEmailDelivery, markEmailAccepted, markEmailFailed } from "@/lib/email-delivery-tracking";
 
 export type AuthEmailActionType =
   | "signup"
@@ -188,40 +189,63 @@ export function buildAuthEmail(payload: AuthEmailPayload, options?: { confirmati
 export async function sendAuthEmail(
   to: string,
   email: AuthEmail,
-  options?: { idempotencyKey?: string; timeoutMs?: number },
+  options?: { idempotencyKey?: string; timeoutMs?: number; professionalId?: string; category?: string },
 ) {
   const deliverableEmail = realAccountEmail(to);
   if (!deliverableEmail) {
     throw new Error("Email recipient is missing or technical");
   }
+  let tracking: Awaited<ReturnType<typeof beginEmailDelivery>> | null = null;
+  try {
+    tracking = await beginEmailDelivery(deliverableEmail, email.subject, options);
+    if (tracking.providerMessageId && tracking.status !== "PENDING") return tracking.providerMessageId;
+  } catch (error) {
+    console.error("[auth-email] rastreamento indisponivel; envio preservado.", {
+      reason: error instanceof Error ? error.name : "unknown",
+    });
+  }
+
   const resendKey = process.env.RESEND_API_KEY;
   if (!resendKey) {
     console.error("[auth-email] RESEND_API_KEY ausente");
+    if (tracking) await markEmailFailed(tracking.id, "provider-not-configured").catch(() => undefined);
     throw new Error("Email provider not configured");
   }
 
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${resendKey}`,
-      "Content-Type": "application/json",
-      ...(options?.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : {}),
-    },
-    signal: AbortSignal.timeout(options?.timeoutMs ?? 12_000),
-    body: JSON.stringify({
-      from: process.env.EMAIL_FROM?.trim() || "Elite Modell <noreply@elitemodell.com.br>",
-      to: [deliverableEmail],
-      subject: email.subject,
-      html: email.html,
-    }),
-  });
+  let res: Response;
+  try {
+    res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+        ...(options?.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : {}),
+      },
+      signal: AbortSignal.timeout(options?.timeoutMs ?? 12_000),
+      body: JSON.stringify({
+        from: process.env.EMAIL_FROM?.trim() || "Elite Modell <noreply@elitemodell.com.br>",
+        to: [deliverableEmail],
+        subject: email.subject,
+        html: email.html,
+      }),
+    });
+  } catch (error) {
+    if (tracking) await markEmailFailed(tracking.id, error instanceof DOMException && error.name === "TimeoutError" ? "provider-timeout" : "provider-network-error").catch(() => undefined);
+    throw error;
+  }
 
   if (!res.ok) {
     console.error("[auth-email] Resend recusou a mensagem.", { status: res.status });
+    if (tracking) await markEmailFailed(tracking.id, `provider-http-${res.status}`).catch(() => undefined);
     throw new Error("Failed to send email");
   }
 
   const payload = await res.json().catch(() => ({})) as { id?: string };
+  if (tracking) await markEmailAccepted(tracking.id, payload.id ?? null).catch((error) => {
+    console.error("[auth-email] falha ao registrar aceite do provedor.", {
+      reason: error instanceof Error ? error.name : "unknown",
+    });
+  });
   console.info("[auth-email] mensagem aceita pelo provedor.", {
     providerMessageId: payload.id ?? null,
     idempotent: Boolean(options?.idempotencyKey),
@@ -261,10 +285,13 @@ export async function sendProfessionalSubmissionReceipt(
   }, {
     idempotencyKey: `${professionalSubmissionReceiptIdempotencyKey(professionalId)}:attempt-${deliveryAttempt}`,
     timeoutMs: 10_000,
+    professionalId,
+    category: "PROFESSIONAL_SUBMISSION",
   });
 }
 
-export async function sendProfessionalApprovalEmail(to: string, name?: string | null, professionalId?: string): Promise<void> {
+export async function sendProfessionalApprovalEmail(to: string, name?: string | null, professionalId?: string, profileUrl = "/profissional"): Promise<void> {
+  const safeProfileUrl = escapeHtml(new URL(profileUrl, DEFAULT_SITE_URL).toString());
   const base = `
     <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#0a0a0a;color:#fcf7ff;border:1px solid rgba(212,168,67,0.25);border-radius:12px;overflow:hidden">
       <div style="height:3px;background:linear-gradient(90deg,transparent,#b72cff,#e1a6ff,#b72cff,transparent)"></div>
@@ -279,6 +306,7 @@ export async function sendProfessionalApprovalEmail(to: string, name?: string | 
         <p style="color:#b4adb0;line-height:1.7;margin:12px 0">Seu cadastro na Elite Modell foi aprovado.</p>
         <p style="color:#b4adb0;line-height:1.7;margin:0">Você já pode acessar sua conta e aproveitar os recursos disponíveis na plataforma.</p>
         <p style="color:#b4adb0;line-height:1.7;margin:12px 0 0">Se ainda houver alguma informação pendente no perfil, você poderá completá-la na sua área de cadastro. A publicação continua sujeita às regras de segurança e moderação.</p>
+        <p style="margin:20px 0 0"><a href="${safeProfileUrl}" style="display:inline-block;background:#b72cff;color:#ffffff;text-decoration:none;font-weight:800;padding:13px 20px;border-radius:10px">Acessar meu perfil</a></p>
         <p style="color:#b4adb0;line-height:1.7;margin:24px 0 0">Atenciosamente,<br><strong style="color:#fcf7ff">Equipe Elite Modell</strong></p>
         <div style="margin-top:32px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.08);text-align:center;color:#aaa0b2;font-size:12px">
           Elite Modell - Plataforma premium adulta - Brasil
@@ -290,7 +318,11 @@ export async function sendProfessionalApprovalEmail(to: string, name?: string | 
   await sendAuthEmail(to, {
     subject: "Seu cadastro na Elite Modell foi aprovado!",
     html: base,
-  }, professionalId ? { idempotencyKey: professionalApprovalEmailIdempotencyKey(professionalId) } : undefined);
+  }, professionalId ? {
+    idempotencyKey: professionalApprovalEmailIdempotencyKey(professionalId),
+    professionalId,
+    category: "PROFESSIONAL_APPROVED",
+  } : { category: "PROFESSIONAL_APPROVED" });
 }
 
 export async function sendProfessionalPublishedEmail(to: string, name?: string | null, professionalId?: string, profileUrl = "/profissional"): Promise<void> {
@@ -315,5 +347,9 @@ export async function sendProfessionalPublishedEmail(to: string, name?: string |
         </div>
       </div>
     `,
-  }, professionalId ? { idempotencyKey: professionalPublicationEmailIdempotencyKey(professionalId) } : undefined);
+  }, professionalId ? {
+    idempotencyKey: professionalPublicationEmailIdempotencyKey(professionalId),
+    professionalId,
+    category: "PROFESSIONAL_PUBLISHED",
+  } : { category: "PROFESSIONAL_PUBLISHED" });
 }

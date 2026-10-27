@@ -39,6 +39,11 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "email-delivery-tracking",
+      testMatch: "**/email-delivery-tracking.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "professional-pricing",
       testMatch: "**/professional-pricing.spec.ts",
       use: { browserName: "chromium" },

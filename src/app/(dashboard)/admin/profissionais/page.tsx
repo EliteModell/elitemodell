@@ -329,10 +329,10 @@ async function reviewProfessional(formData: FormData) {
             rejectReason: null,
             ...accessData,
           },
-          select: { id: true, userId: true, user: { select: { email: true, name: true } } },
+          select: { id: true, userId: true, slug: true, user: { select: { email: true, name: true } } },
         });
       }, { maxWait: 5_000, timeout: 15_000 })
-    : await prisma.professional.update({ where: { id }, data, select: { id: true, userId: true, user: { select: { email: true, name: true } } } });
+    : await prisma.professional.update({ where: { id }, data, select: { id: true, userId: true, slug: true, user: { select: { email: true, name: true } } } });
   if (!professional) return;
 
   if (action === "approve") {
@@ -366,7 +366,7 @@ async function reviewProfessional(formData: FormData) {
     await deliverProfessionalCommunication({
       professionalId: id, userId: professional.userId, email: professional.user?.email, adminId: session.user.id,
       type: "PROFILE_APPROVED", notificationTitle: "Cadastro aprovado", notificationBody: "Seu cadastro foi aprovado. Complete informações opcionais no painel; a publicação continua sujeita à moderação.",
-      link: "/profissional", send: () => sendProfessionalApprovalEmail(professional.user!.email!, professional.user!.name, professional.id),
+      link: "/profissional", send: () => sendProfessionalApprovalEmail(professional.user!.email!, professional.user!.name, professional.id, `/profissionais/${professional.slug}`),
     });
     await deliverProfessionalApprovalSms({ professionalId: id, userId: professional.userId, adminId: session.user.id });
   } else if (action === "correction") {
@@ -461,7 +461,7 @@ async function professionalListItems(where: Prisma.ProfessionalWhereInput, offse
       } },
     },
   });
-  const auditEntries = professionals.length ? await prisma.auditLog.findMany({
+  const [auditEntries, emailDeliveries] = professionals.length ? await Promise.all([prisma.auditLog.findMany({
     where: { targetType: { in: ["PROFESSIONAL", "CONTENT"] }, targetId: { in: professionals.map((professional) => professional.id) } },
     orderBy: { timestamp: "desc" },
     take: PAGE_SIZE * 6,
@@ -469,18 +469,35 @@ async function professionalListItems(where: Prisma.ProfessionalWhereInput, offse
       id: true, targetId: true, action: true, reason: true, changes: true, actorIdentifier: true, timestamp: true,
       admin: { select: { name: true, email: true } },
     },
-  }) : [];
+  }), prisma.emailDelivery.findMany({
+    where: { professionalId: { in: professionals.map((professional) => professional.id) } },
+    orderBy: { createdAt: "desc" },
+    take: PAGE_SIZE * 8,
+    select: {
+      id: true, professionalId: true, recipientMasked: true, category: true, subject: true,
+      status: true, lastEvent: true, failureReason: true, createdAt: true, updatedAt: true,
+      acceptedAt: true, deliveredAt: true, rejectedAt: true, failedAt: true,
+    },
+  })]) : [[], []];
   const auditsByProfessional = new Map<string, typeof auditEntries>();
   for (const entry of auditEntries) {
     const entries = auditsByProfessional.get(entry.targetId) ?? [];
     if (entries.length < 6) entries.push(entry);
     auditsByProfessional.set(entry.targetId, entries);
   }
+  const deliveriesByProfessional = new Map<string, typeof emailDeliveries>();
+  for (const delivery of emailDeliveries) {
+    if (!delivery.professionalId) continue;
+    const entries = deliveriesByProfessional.get(delivery.professionalId) ?? [];
+    if (entries.length < 8) entries.push(delivery);
+    deliveriesByProfessional.set(delivery.professionalId, entries);
+  }
   return professionals.map((professional) => ({
     professional,
     profileIssues: professionalProfileIssues(professional),
     approvalIssues: professionalApprovalIssues(professional),
     audits: auditsByProfessional.get(professional.id) ?? [],
+    emailDeliveries: deliveriesByProfessional.get(professional.id) ?? [],
   })) as unknown as AdminProfessionalListItem[];
 }
 

@@ -18,6 +18,13 @@ type AuditEntry = {
   admin: { name: string | null; email: string } | null;
 };
 
+type EmailDeliveryEntry = {
+  id: string; recipientMasked: string; category: string; subject: string; status: string;
+  lastEvent: string | null; failureReason: string | null; createdAt: Date | string; updatedAt: Date | string;
+  acceptedAt: Date | string | null; deliveredAt: Date | string | null;
+  rejectedAt: Date | string | null; failedAt: Date | string | null;
+};
+
 export type AdminProfessionalRecord = {
   id: string; userId: string; slug: string; displayName: string; bio: string;
   city: string; state: string; bairro: string | null; region: string | null;
@@ -148,6 +155,7 @@ export function AdminProfessionalCard({
   approvalIssues,
   profileIssues,
   audits,
+  emailDeliveries,
   reviewAction,
   billingEnabled,
 }: {
@@ -155,6 +163,7 @@ export function AdminProfessionalCard({
   approvalIssues: string[];
   profileIssues: string[];
   audits: AuditEntry[];
+  emailDeliveries: EmailDeliveryEntry[];
   reviewAction: (formData: FormData) => Promise<void>;
   billingEnabled: boolean;
 }) {
@@ -344,8 +353,12 @@ export function AdminProfessionalCard({
               {lastAudit?.reason && <div className="pro-alert neutral"><b>Motivo da última moderação</b><span>{lastAudit.reason}</span></div>}
               <p className="pro-subtitle">Histórico de localização</p>
               {pro.locationChanges.length ? <ol className="pro-history">{pro.locationChanges.map((change) => <li key={change.id}><b>{change.changeType} · {change.verificationStatus}</b><span>{change.fromCity ?? "Não registrado"}/{change.fromState ?? "—"} → {change.toCity}/{change.toState} · {date(change.createdAt, true)}</span>{change.riskReason && <small>{change.riskReason}</small>}</li>)}</ol> : <p className="pro-empty">Nenhuma mudança de localização registrada</p>}
-              <p className="pro-subtitle">Comunicações</p>
-              {communicationAudits.length ? <ol className="pro-history">{communicationAudits.map((entry) => <li key={entry.id}><b>{JSON.stringify(entry.changes).includes("EMAIL_FAILED") ? "EMAIL_FAILED" : "EMAIL_SENT"}</b><span>{date(entry.timestamp, true)}</span><small>{entry.reason}</small></li>)}</ol> : <p className="pro-empty">Nenhuma comunicação registrada</p>}
+              <p className="pro-subtitle">Comunicações por e-mail</p>
+              {emailDeliveries.length ? <ol className="pro-history">{emailDeliveries.map((entry) => {
+                const labels: Record<string, string> = { PENDING: "Aguardando", ACCEPTED: "Aceito", DELIVERED: "Entregue", REJECTED: "Rejeitado", FAILED: "Falhou" };
+                const statusDate = entry.deliveredAt ?? entry.rejectedAt ?? entry.failedAt ?? entry.acceptedAt ?? entry.createdAt;
+                return <li key={entry.id}><b>{labels[entry.status] ?? entry.status} · {entry.category}</b><span>{date(statusDate, true)} · {entry.recipientMasked}</span><small>{entry.subject}{entry.failureReason ? ` · ${entry.failureReason}` : ""}</small></li>;
+              })}</ol> : communicationAudits.length ? <ol className="pro-history">{communicationAudits.map((entry) => <li key={entry.id}><b>{JSON.stringify(entry.changes).includes("EMAIL_FAILED") ? "Falhou (registro antigo)" : "Aceito (registro antigo)"}</b><span>{date(entry.timestamp, true)}</span><small>{entry.reason}</small></li>)}</ol> : <p className="pro-empty">Nenhuma comunicação registrada</p>}
               <p className="pro-subtitle">Alterações recentes</p>
               {audits.length ? <ol className="pro-history">{audits.map((entry) => <li key={entry.id}><b>{moderationAction(entry)}</b><span>{entry.admin?.name ?? entry.admin?.email ?? entry.actorIdentifier ?? "Sistema"} · {date(entry.timestamp, true)}</span>{entry.reason && <small>{entry.reason}</small>}</li>)}</ol> : <p className="pro-empty">Nenhuma ação administrativa registrada</p>}
             </Section>

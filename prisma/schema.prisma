@@ -656,6 +656,39 @@ model WebhookEvent {
 
 // ─── Review ──────────────────────────────────────────────────────────────────
 
+enum EmailDeliveryStatus {
+  PENDING
+  ACCEPTED
+  DELIVERED
+  REJECTED
+  FAILED
+}
+
+model EmailDelivery {
+  id                String              @id @default(cuid())
+  provider          String              @default("RESEND")
+  providerMessageId String?             @unique
+  idempotencyKey    String?             @unique
+  professionalId    String?
+  recipientHash     String
+  recipientMasked   String
+  category          String
+  subject           String
+  status            EmailDeliveryStatus @default(PENDING)
+  lastEvent         String?
+  lastEventAt       DateTime?
+  failureReason     String?             @db.Text
+  acceptedAt        DateTime?
+  deliveredAt       DateTime?
+  rejectedAt        DateTime?
+  failedAt          DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([professionalId, createdAt])
+  @@index([status, createdAt])
+}
+
 model Review {
   id            String   @id @default(cuid())
   bookingId     String   @unique

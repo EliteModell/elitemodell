@@ -72,6 +72,7 @@ export async function proxy(request: NextRequest) {
     "/api/release",
     "/api/didit/webhook",
     "/api/kyc/webhook",
+    "/api/webhooks/resend",
   ];
 
   const isPublic = publicRoutes.some(

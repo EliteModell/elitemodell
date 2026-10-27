@@ -13,11 +13,18 @@ type AuditEntry = {
   admin: { name: string | null; email: string } | null;
 };
 
+type EmailDeliveryEntry = {
+  id: string; recipientMasked: string; category: string; subject: string; status: string;
+  lastEvent: string | null; failureReason: string | null; createdAt: Date; updatedAt: Date;
+  acceptedAt: Date | null; deliveredAt: Date | null; rejectedAt: Date | null; failedAt: Date | null;
+};
+
 export type AdminProfessionalListItem = {
   professional: AdminProfessionalRecord;
   profileIssues: string[];
   approvalIssues: string[];
   audits: AuditEntry[];
+  emailDeliveries: EmailDeliveryEntry[];
 };
 
 type Filters = {
@@ -98,6 +105,7 @@ export function AdminProfessionalsInfiniteList({
             profileIssues={item.profileIssues}
             approvalIssues={item.approvalIssues}
             audits={item.audits}
+            emailDeliveries={item.emailDeliveries}
             reviewAction={reviewAction}
             billingEnabled={billingEnabled}
           />
