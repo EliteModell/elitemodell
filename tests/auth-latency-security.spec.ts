@@ -96,4 +96,13 @@ test.describe("vinculo seguro de e-mail para conta criada por telefone", () => {
     expect(professionalSubmission).toContain("{ status: 428 }");
     expect(professionalActivation).toContain("phoneVerified");
   });
+
+  test("unifica o limite de envio e informa o prazo real de reenvio", () => {
+    expect(emailConfirmation).toContain("email-confirmation:send-cooldown:${session.user.id}");
+    expect(emailConfirmation).toContain("email-confirmation:send-window:${session.user.id}");
+    expect(emailConfirmation).toContain("EMAIL_SEND_COOLDOWN_SECONDS");
+    expect(emailConfirmation).toContain('"Retry-After": String(EMAIL_SEND_COOLDOWN_SECONDS)');
+    expect(emailConfirmation).toContain("retryAfterSeconds: EMAIL_SEND_COOLDOWN_SECONDS");
+    expect(emailConfirmation).not.toContain("email-confirmation:${input.action}:${session.user.id}");
+  });
 });

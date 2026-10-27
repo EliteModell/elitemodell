@@ -43,6 +43,7 @@ const GOLD = "#b72cff";
 const GOLD_DIM = "rgba(183, 44, 255,0.10)";
 const GOLD_MID = "rgba(183, 44, 255,0.28)";
 const PLAYFAIR = "var(--font-playfair), serif";
+const EMAIL_COOLDOWN_STORAGE_PREFIX = "elite_professional_email_confirmation_cooldown";
 const EMAIL_GATE_STYLES = `.model-email-gate{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;background:radial-gradient(circle at 50% 20%,rgba(183,44,255,.18),transparent 38%),#080808;color:#fcf7ff;text-align:center;padding:32px 18px}.model-email-gate>img{width:184px;height:auto}.model-email-gate section{width:min(100%,430px);padding:28px 22px;border:1px solid rgba(183,44,255,.35);border-radius:20px;background:#111013}.model-email-gate h1{margin:4px 0 14px;font-size:30px}.model-email-gate p{color:#c8becd;line-height:1.6}.model-email-gate .eyebrow{margin:0;color:#d77bff;font-size:12px;font-weight:900;letter-spacing:2px;text-transform:uppercase}.model-email-gate .actions{display:grid;gap:10px;margin-top:22px}.model-email-gate button,.model-email-gate input{min-height:48px;border-radius:12px;font:inherit}.model-email-gate input{padding:0 14px;border:1px solid rgba(183,44,255,.58)!important;background:#080808!important;color:#fcf7ff!important;-webkit-text-fill-color:#fcf7ff!important;caret-color:#e1a6ff!important;opacity:1!important;color-scheme:dark;outline:none}.model-email-gate input::placeholder{color:#b9aebe!important;-webkit-text-fill-color:#b9aebe!important;opacity:1!important}.model-email-gate input:hover{border-color:rgba(225,166,255,.72)!important}.model-email-gate input:focus,.model-email-gate input:focus-visible{border-color:#e1a6ff!important;box-shadow:0 0 0 4px rgba(183,44,255,.22)!important}.model-email-gate input:read-only{color:#ded5e2!important;-webkit-text-fill-color:#ded5e2!important}.model-email-gate input:disabled{background:#242027!important;color:#c7bdcb!important;-webkit-text-fill-color:#c7bdcb!important;opacity:1!important}.model-email-gate input:-webkit-autofill,.model-email-gate input:-webkit-autofill:hover,.model-email-gate input:-webkit-autofill:focus,.model-email-gate input:-webkit-autofill:active{-webkit-text-fill-color:#fcf7ff!important;caret-color:#e1a6ff!important;-webkit-box-shadow:0 0 0 1000px #080808 inset!important;box-shadow:0 0 0 1000px #080808 inset!important;transition:background-color 9999s ease-out 0s}.model-email-gate input::selection{background:#d77bff;color:#13051c;-webkit-text-fill-color:#13051c}.model-email-gate button{border:0;background:#b72cff;color:#080808;font-weight:900}.model-email-gate button.secondary{border:1px solid rgba(183,44,255,.35);background:transparent;color:#d77bff}.model-email-gate button:disabled{opacity:.65;color:#24142b;cursor:not-allowed}`;
 
 const inputStyle: React.CSSProperties = {
@@ -538,10 +539,26 @@ export default function ProfissionalNovoPage() {
   }, [accountUserId, emailVerified, form, step]);
 
   useEffect(() => {
-    if (emailCooldown <= 0) return;
-    const timer = window.setInterval(() => setEmailCooldown((value) => Math.max(0, value - 1)), 1000);
-    return () => window.clearInterval(timer);
-  }, [emailCooldown]);
+    if (!accountUserId) return;
+    const key = `${EMAIL_COOLDOWN_STORAGE_PREFIX}:${accountUserId}`;
+    const refreshCooldown = () => {
+      const stored = Number(localStorage.getItem(key));
+      if (!Number.isFinite(stored) || stored <= Date.now()) {
+        localStorage.removeItem(key);
+        setEmailCooldown(0);
+        return;
+      }
+      setEmailCooldown(Math.max(1, Math.ceil((stored - Date.now()) / 1000)));
+    };
+    refreshCooldown();
+    const timer = window.setInterval(refreshCooldown, 1000);
+    const onVisibility = () => { if (document.visibilityState === "visible") refreshCooldown(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [accountUserId]);
 
   useEffect(() => {
     if (emailVerified !== false) return;
@@ -1063,8 +1080,31 @@ export default function ProfissionalNovoPage() {
   const isEmailMissing = !hasRealAccountEmail;
   const emailConfirmationRecipient = pendingEmailLabel ?? maskEmail(accountEmail);
 
+  function setServerEmailCooldown(response: Response, retryAfterSeconds?: number) {
+    const header = response.headers.get("Retry-After");
+    const headerSeconds = header && /^\d+$/.test(header.trim())
+      ? Number(header)
+      : header ? Math.ceil((Date.parse(header) - Date.now()) / 1000) : 0;
+    const candidate = retryAfterSeconds ?? headerSeconds;
+    const seconds = Number.isFinite(candidate) ? Math.max(0, Math.ceil(candidate)) : 0;
+    if (seconds <= 0) return;
+    setEmailCooldown(seconds);
+    if (accountUserId) {
+      localStorage.setItem(
+        `${EMAIL_COOLDOWN_STORAGE_PREFIX}:${accountUserId}`,
+        String(Date.now() + seconds * 1000),
+      );
+    }
+  }
+
+  function formatEmailCooldown(seconds: number) {
+    const minutes = Math.floor(seconds / 60);
+    const remainder = seconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+  }
+
   async function requestEmailConfirmation(action: "resend" | "change") {
-    if (emailBusy || (action === "resend" && emailCooldown > 0)) return;
+    if (emailBusy || emailCooldown > 0) return;
     setEmailBusy(true);
     try {
       const response = await fetch("/api/auth/email-confirmation", {
@@ -1072,7 +1112,8 @@ export default function ProfissionalNovoPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(action === "change" ? { action, email: replacementEmail } : { action }),
       });
-      const data = await response.json().catch(() => ({})) as { error?: unknown; maskedEmail?: string; verified?: boolean };
+      const data = await response.json().catch(() => ({})) as { error?: unknown; maskedEmail?: string; verified?: boolean; retryAfterSeconds?: number };
+      if (response.status === 429) setServerEmailCooldown(response, data.retryAfterSeconds);
       if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Não foi possível solicitar a confirmação agora.");
       if (data.verified) {
         window.location.reload();
@@ -1085,7 +1126,7 @@ export default function ProfissionalNovoPage() {
         setReplacementEmail("");
         setEditingEmail(false);
       }
-      setEmailCooldown(60);
+      setServerEmailCooldown(response, data.retryAfterSeconds);
       toast.success("Enviamos um link de confirmação para seu e-mail. Abra sua caixa de entrada para continuar.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível solicitar a confirmação agora.");
@@ -1416,13 +1457,13 @@ export default function ProfissionalNovoPage() {
           {editingEmail || isEmailMissing ? (
             <div className="actions">
               <input type="email" autoComplete="email" value={replacementEmail} onChange={(event) => setReplacementEmail(event.target.value)} placeholder="novo@email.com" />
-              <button type="button" disabled={emailBusy || !replacementEmail.trim()} onClick={() => requestEmailConfirmation("change")}>{emailBusy ? "Enviando..." : "Continuar e confirmar e-mail"}</button>
+              <button type="button" disabled={emailBusy || emailCooldown > 0 || !replacementEmail.trim()} onClick={() => requestEmailConfirmation("change")}>{emailCooldown > 0 ? `Tente novamente em ${formatEmailCooldown(emailCooldown)}` : emailBusy ? "Enviando..." : "Continuar e confirmar e-mail"}</button>
               {!isEmailMissing ? <button type="button" className="secondary" onClick={() => setEditingEmail(false)}>Cancelar</button> : null}
             </div>
           ) : (
             <div className="actions">
               <button type="button" disabled={emailBusy} onClick={checkEmailConfirmation}>{emailBusy ? "Verificando..." : "Já confirmei meu e-mail"}</button>
-              <button type="button" className="secondary" disabled={emailBusy || emailCooldown > 0} onClick={() => requestEmailConfirmation("resend")}>{emailCooldown > 0 ? `Reenviar em ${emailCooldown}s` : "Reenviar confirmação"}</button>
+              <button type="button" className="secondary" disabled={emailBusy || emailCooldown > 0} onClick={() => requestEmailConfirmation("resend")}>{emailCooldown > 0 ? `Reenviar em ${formatEmailCooldown(emailCooldown)}` : "Reenviar confirmação"}</button>
               <button type="button" className="secondary" onClick={() => setEditingEmail(true)}>Corrigir e-mail</button>
             </div>
           )}

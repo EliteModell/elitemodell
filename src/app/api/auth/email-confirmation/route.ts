@@ -18,6 +18,9 @@ const inputSchema = z.discriminatedUnion("action", [
 ]);
 
 const RECENT_PHONE_PROOF_MS = 30 * 60 * 1000;
+const EMAIL_SEND_COOLDOWN_SECONDS = 90;
+const EMAIL_SEND_WINDOW_MS = 15 * 60 * 1000;
+const EMAIL_SEND_WINDOW_LIMIT = 4;
 
 function hasRecentPhoneProof(user: { phone: string | null; phoneVerified: boolean; phoneVerifiedAt: Date | null }) {
   return Boolean(user.phone && user.phoneVerified && user.phoneVerifiedAt && Date.now() - user.phoneVerifiedAt.getTime() <= RECENT_PHONE_PROOF_MS);
@@ -131,13 +134,33 @@ export async function POST(req: NextRequest) {
     }, { status: 400 });
   }
 
-  const limited = await enforceRateLimitAsync(
-    `email-confirmation:${input.action}:${session.user.id}`,
-    input.action === "status" ? 30 : 4,
-    15 * 60 * 1000,
-    "Aguarde alguns minutos antes de solicitar outro e-mail.",
-  );
-  if (limited) return limited;
+  if (input.action === "status") {
+    const limited = await enforceRateLimitAsync(
+      `email-confirmation:status:${session.user.id}`,
+      30,
+      EMAIL_SEND_WINDOW_MS,
+      "Aguarde alguns instantes antes de atualizar novamente.",
+    );
+    if (limited) return limited;
+  } else {
+    // `change` e `resend` enviam a mesma mensagem. A chave compartilhada
+    // impede que alternar a ação contorne o intervalo mínimo entre envios.
+    const cooldown = await enforceRateLimitAsync(
+      `email-confirmation:send-cooldown:${session.user.id}`,
+      1,
+      EMAIL_SEND_COOLDOWN_SECONDS * 1000,
+      "Aguarde o tempo indicado antes de solicitar outro e-mail.",
+    );
+    if (cooldown) return cooldown;
+
+    const limited = await enforceRateLimitAsync(
+      `email-confirmation:send-window:${session.user.id}`,
+      EMAIL_SEND_WINDOW_LIMIT,
+      EMAIL_SEND_WINDOW_MS,
+      "Limite de reenvios atingido. Aguarde o tempo indicado.",
+    );
+    if (limited) return limited;
+  }
 
   try {
     const user = await prisma.user.findUnique({
@@ -222,7 +245,15 @@ export async function POST(req: NextRequest) {
     }
 
     await sendConfirmation(targetEmail);
-    return NextResponse.json({ ok: true, verified: false, maskedEmail: maskEmail(targetEmail) });
+    return NextResponse.json(
+      {
+        ok: true,
+        verified: false,
+        maskedEmail: maskEmail(targetEmail),
+        retryAfterSeconds: EMAIL_SEND_COOLDOWN_SECONDS,
+      },
+      { headers: { "Retry-After": String(EMAIL_SEND_COOLDOWN_SECONDS) } },
+    );
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Informe um e-mail válido." }, { status: 400 });

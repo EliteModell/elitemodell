@@ -105,6 +105,42 @@ test("e-mail real ainda nao confirmado aparece somente mascarado apos recarregar
   await expect(page.getByText("@sms.elitemodell.local", { exact: false })).toHaveCount(0);
 });
 
+test("HTTP 429 preserva no Safari o prazo real informado pelo servidor", async ({ page }) => {
+  await mockOnboarding(page);
+  await page.unroute("**/api/users/me**");
+  await page.route("**/api/users/me**", (route) => route.fulfill({ json: {
+    id: USER_ID,
+    email: "marina@example.com",
+    emailVerified: null,
+    birthDate: "2000-01-01",
+    professional: professional("Marina Retorno"),
+  } }));
+  let resendCalls = 0;
+  await page.route("**/api/auth/email-confirmation", async (route) => {
+    const body = route.request().postDataJSON() as { action?: string } | null;
+    if (body?.action === "resend") {
+      resendCalls += 1;
+      await route.fulfill({
+        status: 429,
+        headers: { "Retry-After": "90" },
+        json: { error: "Aguarde o tempo indicado antes de solicitar outro e-mail." },
+      });
+      return;
+    }
+    await route.fulfill({ json: { ok: true, verified: false, emailState: "unconfirmed", maskedEmail: "ma****@example.com" } });
+  });
+
+  await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
+  const resend = page.getByRole("button", { name: "Reenviar confirmação" });
+  await resend.click();
+  await expect(page.getByRole("button", { name: /Reenviar em 01:(29|30)/ })).toBeDisabled();
+  await page.getByRole("button", { name: /Reenviar em 01:/ }).evaluate((button: HTMLButtonElement) => button.click());
+  expect(resendCalls).toBe(1);
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("button", { name: /Reenviar em 01:/ })).toBeDisabled();
+});
+
 test("sessao expirada orienta reentrada sem criar uma nova conta", async ({ page }) => {
   await mockOnboarding(page);
   await page.unroute("**/api/users/me**");
