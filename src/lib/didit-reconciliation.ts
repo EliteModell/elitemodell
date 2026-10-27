@@ -54,8 +54,11 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
         tx.uploadAsset.updateMany({
           where: {
             userId,
-            category: "image",
-            folder: { startsWith: "profiles" },
+            category: { in: ["image", "video"] },
+            OR: [
+              { folder: { startsWith: "profiles" } },
+              { folder: { startsWith: "profile-videos" } },
+            ],
             ageIdentityStatus: { not: "PASS" },
           },
           data: { ageIdentityStatus: "PASS" },
@@ -64,8 +67,11 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
           where: {
             asset: {
               userId,
-              category: "image",
-              folder: { startsWith: "profiles" },
+              category: { in: ["image", "video"] },
+              OR: [
+                { folder: { startsWith: "profiles" } },
+                { folder: { startsWith: "profile-videos" } },
+              ],
             },
             personReference: { in: [userId, `user:${userId}`] },
             isUploader: true,
@@ -164,8 +170,11 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
       const pendingAssets = await prisma.uploadAsset.findMany({
         where: {
           userId,
-          category: "image",
-          folder: { startsWith: "profiles" },
+          category: { in: ["image", "video"] },
+          OR: [
+            { folder: { startsWith: "profiles" } },
+            { folder: { startsWith: "profile-videos" } },
+          ],
           status: { notIn: ["APPROVED", "REJECTED"] },
         },
         orderBy: { createdAt: "asc" },

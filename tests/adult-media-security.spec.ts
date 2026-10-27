@@ -126,7 +126,7 @@ test.describe("seguranca fail-closed de midia adulta", () => {
     expect(source).toContain("!requiresVerifiedProfessional || identityApproved");
   });
 
-  test("aprovacao profissional retoma fotos sem inventar decisao de conteudo", async () => {
+  test("aprovacao profissional retoma fotos e videos sem inventar decisao de conteudo", async () => {
     const [uploads, professionals, panel, batch, submit] = await Promise.all([
       import("node:fs/promises").then((fs) => fs.readFile("src/lib/upload-quarantine.ts", "utf8")),
       import("node:fs/promises").then((fs) => fs.readFile("src/app/(dashboard)/admin/profissionais/page.tsx", "utf8")),
@@ -137,6 +137,8 @@ test.describe("seguranca fail-closed de midia adulta", () => {
     expect(uploads).toContain("resumeProfessionalProfileAssetsAfterApproval");
     expect(uploads).toContain("existingMalwarePassed");
     expect(uploads).toContain("existingModerationPassed");
+    expect(uploads).toContain('category: { in: ["image", "video"] }');
+    expect(uploads).toContain('{ folder: { startsWith: "profile-videos" } }');
     expect(professionals).toContain("resumeProfessionalProfileAssetsAfterApproval({");
     expect(panel).toContain("Revisao visual administrativa em lote concluida: conteudo aprovado.");
     expect(panel).toContain("Abrir cadastro e corrigir pendências");

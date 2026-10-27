@@ -467,13 +467,16 @@ export async function resumeProfessionalProfileAssetsAfterApproval(input: {
     },
     select: { id: true },
   });
-  if (!professional) throw new Error("Cadastro profissional ainda nao esta elegivel para retomar as fotos.");
+  if (!professional) throw new Error("Cadastro profissional ainda nao esta elegivel para retomar as midias.");
 
   const assets = await prisma.uploadAsset.findMany({
     where: {
       userId: input.userId,
-      category: "image",
-      folder: { startsWith: "profiles" },
+      category: { in: ["image", "video"] },
+      OR: [
+        { folder: { startsWith: "profiles" } },
+        { folder: { startsWith: "profile-videos" } },
+      ],
       status: { notIn: ["APPROVED", "REJECTED"] },
     },
     orderBy: { createdAt: "asc" },
@@ -489,7 +492,7 @@ export async function resumeProfessionalProfileAssetsAfterApproval(input: {
     } catch (cause) {
       const reason = cause instanceof Error ? cause.message : "Falha desconhecida";
       results.push({ assetId: asset.id, status: "rejected", reason });
-      await auditAsset(input.actorId, asset.id, "Falha ao retomar foto depois da aprovacao profissional.", { reason });
+      await auditAsset(input.actorId, asset.id, "Falha ao retomar midia depois da aprovacao profissional.", { reason });
     }
   }
   return results;
