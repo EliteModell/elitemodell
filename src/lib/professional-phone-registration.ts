@@ -2,7 +2,9 @@ import type { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import {
+  brazilianPhoneStorageVariants,
   createPendingProfessionalPhoneToken,
+  phoneIdentityLockKey,
   verifyPendingProfessionalPhoneToken,
 } from "@/lib/phone-otp";
 
@@ -65,7 +67,7 @@ export async function validatePendingProfessionalPhone(req: NextRequest, userId?
   const verification = await prisma.phoneVerificationCode.findFirst({
     where: {
       id: pending.verificationId,
-      phone: pending.phone,
+      phone: { in: brazilianPhoneStorageVariants(pending.phone) },
       accountType: "model",
       usedAt: { not: null },
       sentAt: { not: null },
@@ -82,7 +84,7 @@ export async function validatePendingProfessionalPhone(req: NextRequest, userId?
 
   const phoneOwner = await prisma.user.findFirst({
     where: {
-      phone: pending.phone,
+      phone: { in: brazilianPhoneStorageVariants(pending.phone) },
       ...(userId ? { id: { not: userId } } : {}),
     },
     select: { id: true },
@@ -97,16 +99,49 @@ export async function validatePendingProfessionalPhone(req: NextRequest, userId?
 }
 
 export async function attachPendingProfessionalPhone(req: NextRequest, userId: string) {
-  const pending = await validatePendingProfessionalPhone(req, userId);
+  const pending = readPendingProfessionalPhone(req);
   if (!pending) return null;
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      phone: pending.phone,
-      phoneVerified: true,
-      phoneVerifiedAt: new Date(),
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${phoneIdentityLockKey(pending.phone)}))`;
+    const verification = await tx.phoneVerificationCode.findFirst({
+      where: {
+        id: pending.verificationId,
+        phone: pending.phone,
+        accountType: "model",
+        usedAt: { not: null },
+        sentAt: { not: null },
+        sendError: null,
+      },
+      select: { id: true },
+    });
+    if (!verification) {
+      throw new ProfessionalPhoneRegistrationError(
+        "A validação do telefone expirou. Confirme o telefone por SMS novamente.",
+      );
+    }
+
+    const phoneOwner = await tx.user.findFirst({
+      where: {
+        phone: { in: brazilianPhoneStorageVariants(pending.phone) },
+        id: { not: userId },
+      },
+      select: { id: true },
+    });
+    if (phoneOwner) {
+      throw new ProfessionalPhoneRegistrationError(
+        "Este telefone já está vinculado a outra conta.",
+      );
+    }
+
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        phone: pending.phone,
+        phoneVerified: true,
+        phoneVerifiedAt: new Date(),
+      },
+    });
   });
 
   return pending.phone;

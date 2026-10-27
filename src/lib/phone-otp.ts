@@ -29,6 +29,10 @@ export function brazilianPhoneStorageVariants(value: string) {
   return [...variants].filter(Boolean);
 }
 
+export function phoneIdentityLockKey(value: string) {
+  return `verified-phone:${normalizeBrazilianPhone(value)}`;
+}
+
 export function isValidBrazilianMobilePhone(phone: string) {
   return /^[1-9]{2}9\d{8}$/.test(phone);
 }

@@ -19,6 +19,7 @@ import {
   ProfessionalPhoneRegistrationError,
   validatePendingProfessionalPhone,
 } from "@/lib/professional-phone-registration";
+import { brazilianPhoneStorageVariants, phoneIdentityLockKey } from "@/lib/phone-otp";
 
 const schema = z.object({
   accessToken: z.string(),
@@ -169,13 +170,16 @@ export async function POST(req: NextRequest) {
     // lock para que double-click/retry não se transforme em P2002/HTTP 500.
     const identityKey = pendingProfessionalPhone?.phone ?? email.toLowerCase();
     const { user, created } = await prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`registration:${identityKey}`}))`;
+      const lockKey = pendingProfessionalPhone
+        ? phoneIdentityLockKey(pendingProfessionalPhone.phone)
+        : `registration:${identityKey}`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
       const lockedExisting = await tx.user.findUnique({ where: { email } });
 
       if (pendingProfessionalPhone) {
         const phoneOwner = await tx.user.findFirst({
           where: {
-            phone: pendingProfessionalPhone.phone,
+            phone: { in: brazilianPhoneStorageVariants(pendingProfessionalPhone.phone) },
             ...(lockedExisting ? { id: { not: lockedExisting.id } } : {}),
           },
           select: { id: true },

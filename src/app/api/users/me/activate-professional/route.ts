@@ -39,10 +39,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    await ensureProfileForIntent(session.user.id, "profissional", parsed.data.category);
     if (pendingProfessionalPhone) {
       await attachPendingProfessionalPhone(req, session.user.id);
     }
+    await ensureProfileForIntent(session.user.id, "profissional", parsed.data.category);
 
     const response = NextResponse.json({ ok: true });
     if (pendingProfessionalPhone) clearPendingProfessionalPhoneCookie(response);

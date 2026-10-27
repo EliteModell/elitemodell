@@ -20,6 +20,7 @@ import {
   isValidBrazilianMobilePhone,
   nameForPhoneAccount,
   normalizeBrazilianPhone,
+  phoneIdentityLockKey,
   redirectForPhoneAccount,
   roleForPhoneAccount,
   timingSafeCodeCompare,
@@ -56,36 +57,40 @@ type VerifiedConsent = {
 };
 
 async function existingPhoneAccountResponse(phone: string) {
-  const matches = await prisma.user.findMany({
-    where: { phone: { in: brazilianPhoneStorageVariants(phone) } },
-    take: 2,
-    select: {
-      id: true,
-      accountType: true,
-      blocked: true,
-      phoneVerifiedAt: true,
-    },
-  });
-  if (matches.length > 1) throw new Error("Conflito de identidade: telefone vinculado a mais de uma conta.");
-  const existing = matches[0];
-  if (!existing) return null;
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${phoneIdentityLockKey(phone)}))`;
+    const matches = await tx.user.findMany({
+      where: { phone: { in: brazilianPhoneStorageVariants(phone) } },
+      take: 2,
+      select: {
+        id: true,
+        accountType: true,
+        blocked: true,
+      },
+    });
+    if (matches.length > 1) throw new Error("Conflito de identidade: telefone vinculado a mais de uma conta.");
+    const existing = matches[0];
+    if (!existing || existing.blocked) return existing ? { existing, blocked: true as const } : null;
 
-  if (existing.blocked) {
+    await tx.user.update({
+      where: { id: existing.id },
+      data: {
+        phone,
+        phoneVerified: true,
+        phoneVerifiedAt: new Date(),
+      },
+    });
+    return { existing, blocked: false as const };
+  });
+  if (!result) return null;
+
+  if (result.blocked) {
     return NextResponse.json(
       { error: "Esta conta está indisponível. Entre em contato com o suporte." },
       { status: 403 },
     );
   }
-
-  await prisma.user.update({
-    where: { id: existing.id },
-    data: {
-      phone,
-      phoneVerified: true,
-      phoneVerifiedAt: new Date(),
-    },
-  });
-
+  const existing = result.existing;
   const accountType = PHONE_ACCOUNT_TYPES.find((type) => type === existing.accountType) ?? "model";
   return NextResponse.json({
     ok: true,
@@ -170,7 +175,7 @@ async function persistVerifiedPhone({
   return prisma.$transaction(async (tx) => {
     // OTP retries may arrive together. Serialize by normalized phone before the
     // read/write pair so two requests cannot create two verified owners.
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`verified-phone:${phone}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${phoneIdentityLockKey(phone)}))`;
     const existingMatches = await tx.user.findMany({
       where: {
         OR: [
@@ -228,6 +233,7 @@ async function persistVerifiedPhone({
           phone,
           accountType,
           usedAt: null,
+          expiresAt: { gt: now },
           id: { not: verificationId },
         },
         data: { usedAt: now },

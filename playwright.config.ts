@@ -79,6 +79,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "phone-registration-concurrency",
+      testMatch: "**/phone-registration-concurrency.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "professional-trial",
       testMatch: "**/professional-trial.spec.ts",
       use: { browserName: "chromium" },
