@@ -547,9 +547,13 @@ test.describe("reconciliacao Didit com respostas simuladas", () => {
     expect(mediaWrite?.data).toEqual({ ageIdentityStatus: "PASS" });
     expect(mediaWrite?.where).toMatchObject({
       userId: "user_test",
-      category: "image",
+      category: { in: ["image", "video"] },
       ageIdentityStatus: { not: "PASS" },
     });
+    expect(mediaWrite?.where?.OR).toEqual([
+      { folder: { startsWith: "profiles" } },
+      { folder: { startsWith: "profile-videos" } },
+    ]);
     expect(ownerWrite?.data).toEqual({
       ageStatus: "PASS",
       ageVerificationReference: "didit_session_test",
