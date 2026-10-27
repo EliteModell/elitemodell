@@ -27,7 +27,7 @@ const CORRECTION_FIELD_LABELS: Record<string, string> = {
 
 const statusLabel: Record<string, string> = {
   DRAFT: "Cadastro incompleto",
-  PENDING_REVIEW: "Pendente de aprovação",
+  PENDING_REVIEW: "Verificações em andamento",
   CORRECTION_REQUIRED: "Correção solicitada",
   ACTIVE: "Aprovada",
   PAUSED: "Pausada",

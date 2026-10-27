@@ -582,7 +582,7 @@ test.describe("Dashboard da profissional", () => {
       if (await acceptCookies.isVisible().catch(() => false)) await acceptCookies.click();
       await expect(page.getByRole("heading", { name: "Postar conteúdo" })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Foto de perfil" })).toBeVisible();
-      await expect(page.getByRole("heading", { name: "Vídeo de apresentação" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Vídeos da galeria" })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Minha listagem" })).toBeVisible();
 
       const hasHorizontalOverflow = await page.evaluate(

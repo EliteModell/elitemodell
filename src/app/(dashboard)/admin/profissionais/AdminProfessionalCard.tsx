@@ -73,7 +73,7 @@ export type AdminProfessionalRecord = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  DRAFT: "Cadastro iniciado", PENDING_REVIEW: "Aguardando aprovação", CORRECTION_REQUIRED: "Correção solicitada", ACTIVE: "Aprovada",
+  DRAFT: "Cadastro iniciado", PENDING_REVIEW: "Verificações em andamento", CORRECTION_REQUIRED: "Correção solicitada", ACTIVE: "Aprovada",
   PAUSED: "Pausada", SUSPENDED: "Suspensa", REJECTED: "Reprovada",
 };
 
@@ -195,7 +195,7 @@ export function AdminProfessionalCard({
   const currentIssues = pro.status === "PENDING_REVIEW" ? approvalIssues : profileIssues;
   const billing = resolveProfessionalAccess(pro, pro.user, pro.status === "ACTIVE" || pro.status === "PAUSED", new Date(), { billingEnabled });
   const billingLabel = {
-    PENDING_APPROVAL: "Aguardando aprovação",
+    PENDING_APPROVAL: "Aguardando verificações",
     TRIAL: "Trial ativo",
     ACTIVE: "Assinatura ativa",
     TRIAL_EXPIRED: "Trial encerrado",
@@ -206,7 +206,7 @@ export function AdminProfessionalCard({
   const lifecycle = [
     ["Cadastro iniciado", true], ["Cadastro concluído", profileIssues.length === 0],
     ["Enviado para análise", pro.status !== "DRAFT" || Boolean(pro.submissionReceipt)],
-    ["Aguardando aprovação", pro.status === "PENDING_REVIEW"], ["Aprovado", pro.status === "ACTIVE"],
+    ["Verificações em andamento", pro.status === "PENDING_REVIEW"], ["Aprovado", pro.status === "ACTIVE"],
     ["Reprovado", pro.status === "REJECTED"],
     ["Correção solicitada", pro.status === "CORRECTION_REQUIRED" || audits.some((a) => moderationAction(a) === "Solicitou correção")],
     ["Pausado", pro.status === "PAUSED"], ["Suspenso", pro.status === "SUSPENDED"], ["Bloqueado", pro.user.blocked],
@@ -285,7 +285,7 @@ export function AdminProfessionalCard({
                 const previewUrl = adminControlledMediaPreviewUrl(photo.url);
                 return <a href={previewUrl ?? "#"} target="_blank" rel="noreferrer" key={photo.id} className={photo.cover ? "cover" : ""}><img src={previewUrl ?? ""} alt={photo.caption ?? `Foto de ${pro.displayName}`} loading="lazy" /><span>{photo.cover ? "Principal · ampliar" : "Ampliar"}</span></a>;
               })}</div> : <p className="pro-empty">Nenhuma foto enviada</p>}
-              {pro.presentationVideoUrl && <div className="pro-admin-video"><video src={pro.presentationVideoUrl} controls preload="metadata" /><span>Vídeo de apresentação · {technicalStatus(pro.presentationVideoStatus)}</span></div>}
+              {pro.presentationVideoUrl && <div className="pro-admin-video"><video src={pro.presentationVideoUrl} controls preload="metadata" /><span>Vídeo da galeria · {technicalStatus(pro.presentationVideoStatus)}</span></div>}
               <p className="pro-subtitle">Serviços</p><Tags values={pro.services} empty="Nenhum serviço cadastrado" />
               <p className="pro-subtitle">Especialidades</p><Tags values={pro.specialties.map((item) => item.name)} empty="Nenhuma especialidade cadastrada" />
               <p className="pro-subtitle">Bio/descrição</p><p className="pro-bio">{pro.bio || "Não informada"}</p>
@@ -318,7 +318,7 @@ export function AdminProfessionalCard({
               <Row label="Verificado em" value={date(pro.user.kycReviewedAt, true)} />
               <Row label="ID da sessão" value={pro.kycSessionId ? <code>{pro.kycSessionId}</code> : null} />
               <Row label="Prova adicional" value={pro.verificationUrl ? (pro.verificationType ?? "Arquivo") : null} />
-              <Row label="Vídeo de apresentação" value={pro.presentationVideoUrl ? technicalStatus(pro.presentationVideoStatus) : "Não enviado"} />
+              <Row label="Vídeo da galeria" value={pro.presentationVideoUrl ? technicalStatus(pro.presentationVideoStatus) : "Não enviado"} />
               <AdminKycEvidence
                 professionalId={pro.id}
                 provider={pro.kycProvider}
@@ -337,7 +337,7 @@ export function AdminProfessionalCard({
             <Section title="STATUS / PENDÊNCIAS">
               <div className="pro-lifecycle">{lifecycle.map(([label, active]) => <span className={active ? "active" : ""} key={label}>{active ? "✓" : "○"} {label}</span>)}</div>
               {currentIssues.length ? (
-                <><p className="pro-subtitle danger">{pro.status === "PENDING_REVIEW" ? "Pendências para aprovação" : "Campos faltantes"} ({currentIssues.length})</p><div className="pro-issues">{currentIssues.map((issue) => <span key={issue}>{issue}</span>)}</div></>
+                <><p className="pro-subtitle danger">{pro.status === "PENDING_REVIEW" ? "Verificações pendentes" : "Campos faltantes"} ({currentIssues.length})</p><div className="pro-issues">{currentIssues.map((issue) => <span key={issue}>{issue}</span>)}</div></>
               ) : <div className="pro-alert ok">✓ Cadastro completo conforme as regras atuais</div>}
               {pro.rejectReason && <div className="pro-alert bad"><b>Motivo atual</b><span>{pro.rejectReason}</span></div>}
               {pro.pauseReason && <div className="pro-alert warn"><b>Motivo da pausa</b><span>{pro.pauseReason}</span></div>}

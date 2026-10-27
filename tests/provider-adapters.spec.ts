@@ -134,6 +134,15 @@ test.describe("adaptadores de fornecedores", () => {
     expect(result.provider).toBe("MANUAL");
   });
 
+  test("configuracao HTTP sem endpoint usa revisao humana e nunca aprova automaticamente", async () => {
+    process.env.MODERATION_ENABLED = "true";
+    const result = await moderateFileContent(Buffer.from("imagem"), "a.jpg", "image/jpeg", { provider: "HTTP" });
+    expect(result.safe).toBe(false);
+    expect(result.status).toBe("PENDING");
+    expect(result.provider).toBe("MANUAL");
+    expect(result.autoPublishEligible).not.toBe(true);
+  });
+
   test("adaptador HTTP valida decisao explicita do antivirus", async () => {
     const originalFetch = globalThis.fetch;
     process.env.AV_ENABLED = "true";

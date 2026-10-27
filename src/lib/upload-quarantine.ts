@@ -138,6 +138,171 @@ function publicationGate(asset: {
   });
 }
 
+function approvedEvidence(value?: string | null) {
+  return Boolean(value && ["PASS", "CLEAN", "APPROVED"].includes(value.toUpperCase()));
+}
+
+// These records are declarations supplied by the uploader. They are useful for
+// consent/audit matching, but are not a visual-analysis result and must never,
+// by themselves, prove that no additional person appears in the media.
+type DeclaredDepictedPersonRecord = {
+  personReference: string;
+  relationship: string | null;
+  isUploader: boolean;
+  isContentOwner: boolean;
+  ageStatus: string;
+  consentStatus: string;
+  ageVerificationReference: string | null;
+  consentReference: string | null;
+  revokedAt: Date | null;
+};
+
+function declaredRelationship(person: DeclaredDepictedPersonRecord) {
+  if (person.isUploader && person.isContentOwner
+    && ["SELF", "SELF_DECLARED", "DEPICTED_PERSON"].includes(person.relationship ?? "DEPICTED_PERSON")) {
+    return "SELF_DECLARED";
+  }
+  return person.relationship;
+}
+
+function declaredPeopleSignature(people: DeclaredDepictedPersonRecord[]) {
+  return people
+    .map((person) => JSON.stringify({
+      personReference: person.personReference,
+      relationship: declaredRelationship(person),
+      isUploader: person.isUploader,
+      isContentOwner: person.isContentOwner,
+      ageStatus: person.ageStatus,
+      consentStatus: person.consentStatus,
+      ageVerificationReference: person.ageVerificationReference,
+      consentReference: person.consentReference,
+      revoked: Boolean(person.revokedAt),
+    }))
+    .sort()
+    .join("|");
+}
+
+async function reusableModerationDecision(asset: {
+  id: string;
+  userId: string;
+  fileHash: string;
+  detectedMimeType: string;
+  category: string;
+  contentRating: string;
+  ageIdentityStatus: string;
+  consentStatus: string;
+}) {
+  if (!approvedEvidence(asset.ageIdentityStatus) || !approvedEvidence(asset.consentStatus)) return null;
+
+  const personSelect = {
+    personReference: true,
+    relationship: true,
+    isUploader: true,
+    isContentOwner: true,
+    ageStatus: true,
+    consentStatus: true,
+    ageVerificationReference: true,
+    consentReference: true,
+    revokedAt: true,
+  } as const;
+  const currentPeople = await prisma.mediaDepictedPerson.findMany({
+    where: { assetId: asset.id },
+    select: personSelect,
+  });
+  if (!currentPeople.length || currentPeople.some((person) => (
+    !approvedEvidence(person.ageStatus)
+    || !approvedEvidence(person.consentStatus)
+    || Boolean(person.revokedAt)
+  ))) return null;
+
+  const candidates = await prisma.uploadAsset.findMany({
+    where: {
+      id: { not: asset.id },
+      userId: asset.userId,
+      fileHash: asset.fileHash,
+      detectedMimeType: asset.detectedMimeType,
+      category: asset.category,
+      contentRating: asset.contentRating,
+      status: "APPROVED",
+      moderationStatus: "APPROVED",
+      takedownStatus: "CLEAR",
+      moderationProviderVersion: { not: null },
+    },
+    orderBy: { approvedAt: "desc" },
+    take: 5,
+    select: {
+      id: true,
+      controlledUrl: true,
+      moderationProvider: true,
+      moderationProviderVersion: true,
+      moderationResult: true,
+      depictedPeople: { select: personSelect },
+      owner: { select: { professional: { select: { id: true } } } },
+    },
+  });
+  const expectedSignature = declaredPeopleSignature(currentPeople);
+  for (const candidate of candidates) {
+    if (declaredPeopleSignature(candidate.depictedPeople) !== expectedSignature) continue;
+    const reportTargets = [candidate.id, candidate.controlledUrl, asset.userId, candidate.owner.professional?.id]
+      .filter((value): value is string => Boolean(value));
+    const openReport = await prisma.report.findFirst({
+      where: { status: { in: ["PENDING", "REVIEWING"] }, targetId: { in: reportTargets } },
+      select: { id: true },
+    });
+    if (!openReport) return candidate;
+  }
+  return null;
+}
+
+async function clearRedundantAdminReviewForApprovedDecision(asset: {
+  id: string;
+  userId: string;
+  controlledUrl: string | null;
+  malwareStatus: string;
+  moderationStatus: string;
+  moderationProvider: string | null;
+  moderationProviderVersion: string | null;
+  moderationResult: Prisma.JsonValue | null;
+  ageIdentityStatus: string;
+  consentStatus: string;
+  adminReviewRequired: boolean;
+  adminReviewStatus: string;
+  takedownStatus: string;
+}) {
+  if (!asset.adminReviewRequired
+    || asset.adminReviewStatus !== "PENDING"
+    || asset.takedownStatus !== "CLEAR"
+    || !approvedEvidence(asset.malwareStatus)
+    || !approvedEvidence(asset.moderationStatus)
+    || !approvedEvidence(asset.ageIdentityStatus)
+    || !approvedEvidence(asset.consentStatus)
+    || !asset.moderationProvider
+    || !asset.moderationProviderVersion
+    || !asset.moderationResult) return null;
+
+  const professional = await prisma.professional.findUnique({
+    where: { userId: asset.userId },
+    select: { id: true },
+  });
+  const targets = [asset.id, asset.controlledUrl, asset.userId, professional?.id]
+    .filter((value): value is string => Boolean(value));
+  const openReport = await prisma.report.findFirst({
+    where: { status: { in: ["PENDING", "REVIEWING"] }, targetId: { in: targets } },
+    select: { id: true },
+  });
+  if (openReport) return null;
+
+  return prisma.uploadAsset.update({
+    where: { id: asset.id },
+    data: {
+      adminReviewRequired: false,
+      adminReviewStatus: "NOT_REQUIRED",
+      failureReason: null,
+      lastProcessedAt: new Date(),
+    },
+  });
+}
+
 async function ensureProfessionalPhotoReference(asset: { userId: string; folder: string; category: string }, controlledUrl: string) {
   if (asset.category !== "image" || !asset.folder.startsWith("profiles")) return;
   const professional = await prisma.professional.findUnique({
@@ -315,6 +480,16 @@ export async function processUploadAsset(
     });
   }
 
+  const normalizedApprovedDecision = await clearRedundantAdminReviewForApprovedDecision(asset);
+  if (normalizedApprovedDecision) {
+    asset = normalizedApprovedDecision;
+    await auditAsset(null, asset.id, "Revisao administrativa redundante removida de decisao de conteudo valida.", {
+      moderationProvider: asset.moderationProvider,
+      moderationProviderVersion: asset.moderationProviderVersion,
+      preservedModerationDecision: true,
+    });
+  }
+
   const existingGates = publicationGate(asset);
   if (existingGates.publishable) {
     await promoteAsset(asset, suppliedBuffer);
@@ -378,7 +553,7 @@ export async function processUploadAsset(
     if (!malwareRejected && options.enqueueRetry !== false) {
       await enqueueMalwareScan(asset.id).catch((cause) => {
         console.error("[upload-quarantine] nao foi possivel enfileirar retry", {
-          assetId: asset.id,
+          assetId,
           reason: cause instanceof Error ? cause.message : "unknown",
         });
       });
@@ -388,6 +563,33 @@ export async function processUploadAsset(
   }
 
   const privateIdentityMaterial = asset.category === "document" || asset.folder.startsWith("documentos") || asset.folder.startsWith("verificacao");
+  if (asset.moderationStatus !== "APPROVED" && !privateIdentityMaterial) {
+    const reusableDecision = await reusableModerationDecision(asset);
+    if (reusableDecision) {
+      asset = await prisma.uploadAsset.update({
+        where: { id: asset.id },
+        data: {
+          moderationStatus: "APPROVED",
+          moderationProvider: reusableDecision.moderationProvider || "REUSED_APPROVED_DECISION",
+          moderationProviderVersion: `reused:${reusableDecision.moderationProviderVersion}`,
+          moderationResult: {
+            status: "APPROVED",
+            reason: "Decisao anterior reutilizada para o mesmo arquivo e as mesmas evidencias.",
+            sourceAssetId: reusableDecision.id,
+          },
+          adminReviewRequired: false,
+          adminReviewStatus: "NOT_REQUIRED",
+          failureReason: null,
+          lastProcessedAt: new Date(),
+        },
+      });
+      await auditAsset(null, asset.id, "Decisao de conteudo reutilizada para duplicata exata da mesma titular.", {
+        sourceAssetId: reusableDecision.id,
+        fileHashMatched: true,
+        declaredPeopleRecordsMatched: true,
+      });
+    }
+  }
   const existingModerationPassed = asset.moderationStatus === "APPROVED";
   const moderation: SecurityResult = existingModerationPassed
     ? {
@@ -423,6 +625,26 @@ export async function processUploadAsset(
     });
   }
   if (!moderationPassed) {
+    const requiresHumanContentReview = moderation.provider === "MANUAL"
+      && moderation.status === "PENDING"
+      && !moderationRejected;
+    if (requiresHumanContentReview) {
+      await prisma.uploadAsset.update({
+        where: { id: asset.id },
+        data: {
+          status: "PENDING_REVIEW",
+          adminReviewRequired: true,
+          adminReviewStatus: "PENDING",
+          failureReason: moderation.reason || "Aguardando revisao humana de conteudo.",
+          lastProcessedAt: new Date(),
+        },
+      });
+      await auditAsset(null, asset.id, "Midia encaminhada para revisao humana de conteudo.", {
+        moderation: safeResult(moderation),
+        failClosed: true,
+      });
+      return prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
+    }
     await auditAsset(null, asset.id, "Resultado da moderacao de conteudo.", { moderation: safeResult(moderation), failClosed: !moderationRejected });
     return prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
   }

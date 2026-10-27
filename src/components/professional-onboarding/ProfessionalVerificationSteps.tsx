@@ -73,7 +73,7 @@ export default function ProfessionalVerificationSteps(props: Props) {
         </Section>
         <div style={{ padding: "14px 18px", background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, borderRadius: 10, marginTop: 8 }}>
           <p style={{ margin: 0, fontSize: 12, color: "#b4adb0", lineHeight: 1.7 }}>
-            Ao enviar, você confirma ter <strong>18 anos ou mais</strong> e concorda com os Termos de Uso da plataforma. Seu perfil permanece privado até concluir as verificações obrigatórias e receber a aprovação final da equipe Elite Modell.
+            Ao enviar, você confirma ter <strong>18 anos ou mais</strong> e concorda com os Termos de Uso da plataforma. Seu perfil permanece privado até todas as verificações obrigatórias serem concluídas. Cadastros sem pendências são publicados automaticamente; inconsistências seguem para revisão.
           </p>
         </div>
       </div>

@@ -29,7 +29,7 @@ test.describe("galeria profissional de fotos e videos", () => {
     const page = read("src/app/(dashboard)/profissional/fotos/page.tsx");
     expect(page).toContain('title="Vídeos da galeria"');
     expect(page).toContain("video/mp4,video/webm,video/quicktime");
-    expect(page).toContain("multiple hidden onChange={handleVideoInput}");
+    expect(page).toContain("multiple hidden onChange={(event) => { void handleVideoInput(event); }}");
     expect(page).toContain("videoProgress[item.preview]");
     for (const state of ["Publicado", "Requer revisão", "Rejeitado", "Processando", "Em análise"]) {
       expect(page).toContain(state);

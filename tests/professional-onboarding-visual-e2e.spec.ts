@@ -109,7 +109,7 @@ for (const device of devices) {
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(device.viewport.width + 1);
       await page.screenshot({ path: testInfo.outputPath(`${device.name}-etapa-${index + 1}.png`), fullPage: true });
       if (index === 6) {
-        await expect(page.getByText("Vídeo de apresentação", { exact: true })).toBeVisible();
+        await expect(page.getByText("Vídeos da galeria", { exact: true })).toBeVisible();
         if (device.name === "iphone-14-pro-max-safari-simulado") {
           await page.locator('input[accept*="video/mp4"]').first().setInputFiles({
             name: "apresentacao-teste.mp4", mimeType: "video/mp4", buffer: Buffer.from("video-ficticio-controlado"),

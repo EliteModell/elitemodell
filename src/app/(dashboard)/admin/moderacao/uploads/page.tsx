@@ -35,8 +35,10 @@ async function reviewUpload(formData: FormData) {
   const scopedAsset = await prisma.uploadAsset.findFirst({
     where: {
       id: assetId,
-      category: "image",
-      folder: { startsWith: "profiles" },
+      OR: [
+        { category: "image", folder: { startsWith: "profiles" } },
+        { category: "video", folder: { startsWith: "profile-videos" } },
+      ],
     },
     select: { id: true },
   });
@@ -64,13 +66,15 @@ async function batchApproveUploads(formData: FormData) {
   const ownedAssets = await prisma.uploadAsset.findMany({
     where: {
       id: { in: assetIds },
-      category: "image",
-      folder: { startsWith: "profiles" },
+      OR: [
+        { category: "image", folder: { startsWith: "profiles" } },
+        { category: "video", folder: { startsWith: "profile-videos" } },
+      ],
     },
     select: { id: true },
   });
   if (ownedAssets.length !== assetIds.length) {
-    throw new Error("O lote deve conter somente fotos de perfis profissionais.");
+    throw new Error("O lote deve conter somente fotos ou vídeos de perfis profissionais.");
   }
 
   for (const assetId of assetIds) {
@@ -162,7 +166,7 @@ function blockerReason(code: string, asset: {
     professional.status === "ACTIVE" && !professional.verified ? "cadastro ativo ainda sem verificação administrativa" : null,
   ].filter((reason): reason is string => Boolean(reason)) : [];
   const reasons: Record<string, string> = {
-    NOT_PROFILE_IMAGE: "não é uma imagem da pasta de perfil",
+    NOT_PROFILE_MEDIA: "não é uma foto ou vídeo da galeria profissional",
     UPLOAD_INCOMPLETE: "upload ainda não foi concluído",
     MALWARE_SCAN: `antivírus ainda não aprovou o arquivo (atual: ${asset.malwareStatus})`,
     AGE_IDENTITY: `maioridade/identidade da titular ainda não está confirmada para a mídia (atual: ${asset.ageIdentityStatus})`,
@@ -183,8 +187,10 @@ export default async function AdminUploadModerationPage() {
   const assets = await prisma.uploadAsset.findMany({
     where: {
       status: { not: "APPROVED" },
-      category: "image",
-      folder: { startsWith: "profiles" },
+      OR: [
+        { category: "image", folder: { startsWith: "profiles" } },
+        { category: "video", folder: { startsWith: "profile-videos" } },
+      ],
     },
     orderBy: { createdAt: "asc" },
     take: 100,
@@ -273,8 +279,8 @@ export default async function AdminUploadModerationPage() {
   return (
     <div>
       <AdminHeader
-        title="Fila de fotos profissionais"
-        subtitle="Fotos profissionais aguardando verificações ou decisão visual. Nenhuma mídia é liberada sem todos os controles obrigatórios."
+        title="Fila de mídias profissionais"
+        subtitle="Fotos e vídeos aguardando verificações ou decisão visual. Nenhuma mídia é liberada sem todos os controles obrigatórios."
       />
       {stuckAssets.length > 0 ? (
         <AdminPanel>
@@ -286,7 +292,7 @@ export default async function AdminUploadModerationPage() {
       <AdminPanel>
         <h2 style={{ margin: "0 0 8px", color: "#fff", fontSize: 20 }}>Resumo da fila</h2>
         <p style={{ margin: 0, color: "#b4adb0", lineHeight: 1.6 }}>
-          {assets.length} foto(s) pendente(s), agrupadas em {groups.length} profissional(is). {reviewableCount} foto(s) dependem somente de revisão visual e podem ser decididas em lote.
+          {assets.length} mídia(s) pendente(s), agrupadas em {groups.length} profissional(is). {reviewableCount} mídia(s) dependem somente de revisão visual.
         </p>
       </AdminPanel>
       <AdminPanel>
@@ -295,6 +301,7 @@ export default async function AdminUploadModerationPage() {
           action={batchApproveUploads}
           assets={reviewedAssets.filter(({ blockers }) => blockers.length === 0).map(({ asset }) => ({
             id: asset.id,
+            kind: asset.category === "video" ? "VIDEO" as const : "IMAGE" as const,
             originalName: asset.originalName,
             professionalName: asset.owner.professional?.displayName ?? asset.owner.name ?? "Sem nome profissional",
             previewUrl: `/api/admin/uploads/${asset.id}/preview`,
@@ -315,6 +322,7 @@ export default async function AdminUploadModerationPage() {
           const professional = sample.owner.professional;
           const professionalName = professional?.displayName ?? sample.owner.name ?? "Sem nome profissional";
           const photos = items.filter(({ asset }) => asset.category === "image");
+          const videos = items.filter(({ asset }) => asset.category === "video");
           const operationalDay = items.filter(({ asset }) => isOperationalDay(asset.createdAt));
           const old = items.filter(({ asset }) => asset.createdAt < OPERATIONAL_DAY_START);
           const otherDates = items.filter(({ asset }) => asset.createdAt >= OPERATIONAL_DAY_END);
@@ -323,7 +331,7 @@ export default async function AdminUploadModerationPage() {
           const diditCanSync = Boolean(professional?.kycProvider === "DIDIT" && professional.kycSessionId);
           const dateSections = [
             { key: "day", title: "Enviadas em 21/10/2026", entries: operationalDay },
-            { key: "old", title: "Fotos antigas (antes de 21/10/2026)", entries: old },
+            { key: "old", title: "Mídias antigas (antes de 21/10/2026)", entries: old },
             { key: "other", title: "Outras datas", entries: otherDates },
           ].filter((section) => section.entries.length > 0);
 
@@ -338,7 +346,7 @@ export default async function AdminUploadModerationPage() {
                       ID da proprietária: {sample.owner.id}<br />
                       Cadastro: {sample.owner.createdAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}<br />
                       Cidade: {city}{state ? `/${state}` : ""}<br />
-                      Quantidade de fotos: {photos.length}
+                      Quantidade: {photos.length} foto(s) e {videos.length} vídeo(s)
                     </p>
                     {professional ? (
                       <Link

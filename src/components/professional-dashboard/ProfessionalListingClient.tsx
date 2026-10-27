@@ -44,7 +44,7 @@ export function ProfessionalListingClient({ data }: { data: ProfessionalListingV
   ];
   const contentActions = [
     { href: "/profissional/fotos", icon: ImagePlus, title: "Postar foto", description: "Adicione fotos recentes à sua galeria." },
-    { href: "/profissional/postar", icon: Video, title: "Postar vídeo", description: "Publique um vídeo curto de apresentação." },
+    { href: "/profissional/postar", icon: Video, title: "Postar vídeo", description: "Adicione ou substitua o vídeo da galeria do perfil." },
     { href: "/profissional/stories", icon: CirclePlay, title: "Postar story", description: "Atualize clientes com conteúdo temporário." },
     { href: "/profissional/agenda", icon: CalendarDays, title: "Atualizar agenda", description: "Mantenha horários e disponibilidade em dia." },
   ];

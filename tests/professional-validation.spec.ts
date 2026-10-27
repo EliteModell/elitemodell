@@ -273,6 +273,26 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     expect(publication).toContain('professionalApprovalAccessData(tx, professional)');
   });
 
+  test("interfaces distinguem verificacoes automaticas de revisao excepcional", () => {
+    const analysis = fs.readFileSync(
+      path.join(process.cwd(), "src/app/(dashboard)/profissional/analise/page.tsx"),
+      "utf8",
+    );
+    const verification = fs.readFileSync(
+      path.join(process.cwd(), "src/components/professional-onboarding/ProfessionalVerificationSteps.tsx"),
+      "utf8",
+    );
+    const adminCard = fs.readFileSync(
+      path.join(process.cwd(), "src/app/(dashboard)/admin/profissionais/AdminProfessionalCard.tsx"),
+      "utf8",
+    );
+    expect(analysis).toContain("perfil sera publicado automaticamente");
+    expect(analysis).toContain("inconsistencias ou risco continuam aguardando revisao ou correcao");
+    expect(analysis).not.toContain("A aprovacao final e manual");
+    expect(verification).toContain("Cadastros sem pendências são publicados automaticamente");
+    expect(adminCard).toContain('PENDING_REVIEW: "Verificações em andamento"');
+  });
+
   test("onboarding preserva rascunho, apresenta uma etapa Didit e impede clique duplo", () => {
     const page = fs.readFileSync(
       path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"),
@@ -298,6 +318,23 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     expect(page).toContain('const showRegistrationStatus = registrationStatus.id !== "incomplete"');
     expect(page).toContain("{showRegistrationStatus ? (");
     expect(page).toContain("localStorage.getItem(draftKey)");
+  });
+
+  test("video do cadastro e tratado como midia da galeria sem remover a seguranca", () => {
+    const page = fs.readFileSync(
+      path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"),
+      "utf8",
+    );
+    const schema = fs.readFileSync(path.join(process.cwd(), "src/lib/professional-profile-schema.ts"), "utf8");
+    const upload = fs.readFileSync(path.join(process.cwd(), "src/app/api/upload/route.ts"), "utf8");
+    const panel = fs.readFileSync(path.join(process.cwd(), "src/components/professional-dashboard/ProfessionalPostClient.tsx"), "utf8");
+    expect(page).toContain('title="Vídeos da galeria"');
+    expect(page).toContain("permanece privado durante as verificações de segurança e moderação");
+    expect(page).toContain('uploadFile(pending.file, `profile-videos/${professionalIdentity.id}`)');
+    expect(schema).toContain("presentationVideoUrl: z.string().optional()");
+    expect(schema).not.toContain("presentationVideoUrls");
+    expect(upload).toContain('folder.startsWith("profile-videos")');
+    expect(panel).toContain('title="Vídeo da galeria"');
   });
 
   test("upload do onboarding preserva preview local e aceita referencia privada controlada", () => {

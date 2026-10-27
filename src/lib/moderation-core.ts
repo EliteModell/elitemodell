@@ -329,6 +329,10 @@ export async function moderateFileContent(
     return pending("MANUAL", "Aguardando revisao humana de conteudo.");
   }
 
+  if (provider === "HTTP" && !process.env.CONTENT_MODERATION_ENDPOINT) {
+    return pending("MANUAL", "Moderacao automatica nao configurada; aguardando revisao humana de conteudo.");
+  }
+
   try {
     if (provider === "HTTP") {
       return await scanWithHttpProvider(

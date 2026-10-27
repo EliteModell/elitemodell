@@ -83,7 +83,7 @@ function ContentPreview({
   return (
     <div className={`${styles.preview} ${kind === "video" ? styles.videoPreview : styles.coverPreview}`} aria-hidden="true">
       <span className={styles.previewIcon}><Icon /></span>
-      <span className={styles.previewCaption}>{kind === "video" ? "Sua apresentação em vídeo" : "Sua capa em destaque"}</span>
+      <span className={styles.previewCaption}>{kind === "video" ? "Seu vídeo da galeria" : "Sua capa em destaque"}</span>
     </div>
   );
 }
@@ -189,8 +189,8 @@ export default async function ProfissionalDashPage() {
     },
     {
       id: "video",
-      title: "Vídeo de apresentação",
-      description: "Mostre um pouco da sua personalidade e aumente a confiança no seu perfil.",
+      title: "Vídeo da galeria",
+      description: "Adicione um vídeo à galeria para complementar as fotos do perfil.",
       status: (hasVideo ? "complete" : "recommended") as ItemStatus,
       label: hasVideo ? "Completo" : "Recomendado",
       href: "/profissional/postar",

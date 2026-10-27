@@ -27,7 +27,9 @@ function passed(value?: string | null) {
 
 export function manualMediaReviewBlockers(input: ManualMediaReviewInput) {
   const blockers: string[] = [];
-  if (input.category !== "image" || !input.folder.startsWith("profiles")) blockers.push("NOT_PROFILE_IMAGE");
+  const isProfileImage = input.category === "image" && input.folder.startsWith("profiles");
+  const isProfileVideo = input.category === "video" && input.folder.startsWith("profile-videos");
+  if (!isProfileImage && !isProfileVideo) blockers.push("NOT_PROFILE_MEDIA");
   if (!input.uploadCompletedAt) blockers.push("UPLOAD_INCOMPLETE");
   if (!passed(input.malwareStatus)) blockers.push("MALWARE_SCAN");
   if (!passed(input.ageIdentityStatus)) blockers.push("AGE_IDENTITY");

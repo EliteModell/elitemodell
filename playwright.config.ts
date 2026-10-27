@@ -134,6 +134,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "video-duration-limit",
+      testMatch: "**/video-duration-limit.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "admin-professionals-infinite-scroll",
       testMatch: "**/admin-professionals-infinite-scroll.spec.ts",
       use: { browserName: "chromium" },

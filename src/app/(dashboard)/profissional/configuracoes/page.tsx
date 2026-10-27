@@ -126,7 +126,7 @@ export default function ProfissionalConfiguracoesPage() {
     <div style={{ maxWidth: 880 }}>
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", marginBottom: 4 }}>Configurações profissionais</h1>
-        <p style={{ color: "#777", fontSize: 14 }}>Controle privacidade, pausa temporária, impulsionamento e vídeo de apresentação.</p>
+        <p style={{ color: "#777", fontSize: 14 }}>Controle privacidade, pausa temporária, impulsionamento e vídeo da galeria.</p>
       </div>
 
       <div style={{ display: "grid", gap: 16 }}>
@@ -217,8 +217,9 @@ export default function ProfissionalConfiguracoesPage() {
         </section>
 
         <section style={card}>
-          <h2 style={{ color: "#fff", fontSize: 17, margin: "0 0 8px" }}>Vídeo de apresentação</h2>
-          <p style={{ ...muted, margin: "0 0 14px" }}>Envie um vídeo curto. Ele fica pendente até aprovação da equipe antes de aparecer publicamente.</p>
+          <h2 style={{ color: "#fff", fontSize: 17, margin: "0 0 8px" }}>Vídeo da galeria</h2>
+          <p style={{ ...muted, margin: "0 0 14px" }}>Adicione ou substitua o vídeo da galeria. Ele permanece privado durante as verificações de segurança antes de aparecer publicamente.</p>
+          <p style={{ ...muted, margin: "0 0 14px" }}>Máximo de 30 segundos e 50 MB por vídeo · MP4, WebM ou MOV.</p>
           {settings.presentationVideoUrl ? (
             <div style={{ display: "grid", gap: 12 }}>
               <video src={settings.presentationVideoUrl} controls preload="none" style={{ width: "100%", maxHeight: 360, borderRadius: 10, background: "#050506" }} />

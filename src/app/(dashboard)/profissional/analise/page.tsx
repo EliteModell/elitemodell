@@ -26,8 +26,8 @@ function statusCopy(status: string | null | undefined) {
   }
 
   return {
-    title: "Cadastro enviado para analise",
-    body: "Seu perfil sera revisado pela equipe em ate 3 dias uteis. Voce sera avisada quando for aprovado.",
+    title: "Cadastro enviado com sucesso",
+    body: "As verificacoes obrigatorias estao em andamento. Quando identidade, dados e midias forem aprovados, o perfil sera publicado automaticamente e voce sera avisada.",
     tone: "pending" as const,
   };
 }
@@ -102,8 +102,9 @@ export default async function ProfessionalAnalysisPage() {
 
         <div className="mt-6 grid gap-3 rounded-[8px] border border-white/10 bg-white/[0.035] p-4 text-left">
           {[
-            "KYC e biometria ajudam a validar identidade, mas nao publicam o perfil automaticamente.",
-            "A aprovacao final e manual pela equipe Elite Modell.",
+            "Documentos enviados nao significam que a verificacao de identidade ja foi concluida.",
+            "Quando todas as verificacoes obrigatorias forem aprovadas, o perfil sera publicado automaticamente.",
+            "Situacoes com inconsistencias ou risco continuam aguardando revisao ou correcao.",
             "Enquanto estiver em analise, seu perfil nao aparece na busca publica.",
           ].map((item) => (
             <p key={item} className="flex gap-3 text-sm leading-6 text-white/60">

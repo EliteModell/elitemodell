@@ -40,7 +40,8 @@ test.describe("prontidão da publicação profissional", () => {
     const page = fs.readFileSync(path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"), "utf8");
     const email = fs.readFileSync(path.join(process.cwd(), "src/lib/auth-email.ts"), "utf8");
     expect(page).toContain("Parabéns! Seu perfil está liberado!");
-    expect(page).toContain("Seu perfil foi enviado e agora está em análise pela equipe Elite Modell.");
+    expect(page).toContain("Recebemos suas informações. Sua identidade está em análise e você será avisado por e-mail quando houver uma atualização.");
+    expect(page).not.toContain("Seu perfil foi enviado e agora está em análise pela equipe Elite Modell.");
     expect(email).toContain("💜 Bem-vinda à Elite Modell! Seu perfil está no ar!");
     expect(email).toContain("Acessar meu perfil");
     expect(email).toContain("professionalPublicationEmailIdempotencyKey(professionalId)");

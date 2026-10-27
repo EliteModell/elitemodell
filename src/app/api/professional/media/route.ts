@@ -64,7 +64,9 @@ export async function GET() {
     url: item.asset ? `/api/media/${encodeURIComponent(item.asset.id)}` : item.legacyUrl,
     mimeType: item.asset?.detectedMimeType ?? null,
     state: item.asset ? displayState(item.asset) : "PUBLISHED",
-    failureReason: item.asset?.status === "REJECTED" ? item.asset.failureReason : null,
+    failureReason: item.asset?.status === "REJECTED" || item.asset?.status === "PENDING_REVIEW"
+      ? item.asset.failureReason
+      : null,
     createdAt: item.createdAt,
   }));
 

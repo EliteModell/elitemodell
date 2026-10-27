@@ -33,7 +33,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   const failureReason = displayState === "REJECTED"
     ? "A mídia não atende aos critérios de publicação. Você pode solicitar revisão ao suporte."
     : displayState === "REVIEW_REQUIRED"
-      ? "A verificação automática não foi conclusiva. A mídia continua privada e pode ser revisada."
+      ? owned.failureReason || "A mídia continua privada e aguarda revisão de conteúdo pela equipe."
       : null;
 
   return NextResponse.json({

@@ -75,7 +75,9 @@ export async function POST(req: NextRequest) {
       adminReviewRequired: false,
       depictedPeople: [{
         personReference: session.user.id,
-        relationship: "SELF",
+        // The uploader identifies the avatar as their own image. This is a
+        // declaration provenance marker, not visual-analysis evidence.
+        relationship: "SELF_DECLARED",
         isUploader: true,
         isContentOwner: true,
         ageStatus: "PASS",

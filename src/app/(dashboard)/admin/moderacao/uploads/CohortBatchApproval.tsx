@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom";
 
 type BatchAsset = {
   id: string;
+  kind: "IMAGE" | "VIDEO";
   originalName: string;
   professionalName: string;
   previewUrl: string;
@@ -17,8 +18,8 @@ function ApprovalButton({ selectedCount }: { selectedCount: number }) {
   const { pending } = useFormStatus();
   const disabled = pending || selectedCount === 0;
   const title = selectedCount === 0
-    ? "Selecione ao menos uma foto elegível."
-    : "Cada foto será revalidada no servidor antes de qualquer publicação.";
+    ? "Selecione ao menos uma mídia elegível."
+    : "Cada mídia será revalidada no servidor antes de qualquer publicação.";
 
   return (
     <button
@@ -36,7 +37,7 @@ function ApprovalButton({ selectedCount }: { selectedCount: number }) {
         cursor: disabled ? "not-allowed" : "pointer",
       }}
     >
-      {pending ? "Validando e aprovando…" : `Aprovar ${selectedCount} foto(s) selecionada(s)`}
+      {pending ? "Validando e aprovando…" : `Aprovar ${selectedCount} mídia(s) selecionada(s)`}
     </button>
   );
 }
@@ -55,7 +56,7 @@ export function CohortBatchApproval({
   if (!assets.length) {
     return (
       <p style={{ margin: 0, color: "#b4adb0", fontSize: 13 }}>
-        Nenhuma foto deste recorte depende somente de decisão administrativa de conteúdo neste momento.
+        Nenhuma mídia depende somente de decisão administrativa de conteúdo neste momento.
       </p>
     );
   }
@@ -64,7 +65,7 @@ export function CohortBatchApproval({
     <form action={action} style={{ display: "grid", gap: 14 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
         <p style={{ margin: 0, color: "#b4adb0", fontSize: 13 }}>
-          Esta fila contém somente fotos de contas criadas de 19 a 22/10/2026 cujos controles obrigatórios já passaram. A decisão humana de conteúdo continua obrigatória.
+          Esta fila contém somente fotos e vídeos cujos controles obrigatórios já passaram. A decisão humana de conteúdo continua obrigatória.
         </p>
         <button
           type="button"
@@ -77,8 +78,12 @@ export function CohortBatchApproval({
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
         {assets.map((asset) => (
           <label key={asset.id} style={{ display: "grid", gap: 8, padding: 10, border: "1px solid rgba(183,44,255,.35)", borderRadius: 10, background: "#09080a", cursor: "pointer" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- protected dynamic admin preview */}
-            <img src={asset.previewUrl} alt={`Revisar ${asset.originalName}`} style={{ width: "100%", height: 190, objectFit: "contain", background: "#050506", borderRadius: 7 }} />
+            {asset.kind === "VIDEO" ? (
+              <video src={asset.previewUrl} controls preload="metadata" style={{ width: "100%", height: 190, objectFit: "contain", background: "#050506", borderRadius: 7 }} />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element -- protected dynamic admin preview
+              <img src={asset.previewUrl} alt={`Revisar ${asset.originalName}`} style={{ width: "100%", height: 190, objectFit: "contain", background: "#050506", borderRadius: 7 }} />
+            )}
             <span style={{ color: "#fff", fontWeight: 850 }}>{asset.professionalName}</span>
             <span style={{ color: "#fff", fontSize: 13, overflowWrap: "anywhere" }}>{asset.originalName}</span>
             <span style={{ color: "#b4adb0", fontSize: 12 }}>

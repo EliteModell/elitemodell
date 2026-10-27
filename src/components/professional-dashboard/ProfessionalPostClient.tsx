@@ -191,7 +191,7 @@ export function ProfessionalPostClient() {
         <Link className={styles.primaryButton} href="/profissional/fotos">Postar fotos</Link>
       </ContentCard>
 
-      <ContentCard id="video-apresentacao" icon={<FileVideo />} badge="Apresentação" title="Vídeo de apresentação" description="Envie um vídeo curto para deixar o perfil mais completo.">
+      <ContentCard id="video-apresentacao" icon={<FileVideo />} badge="Galeria" title="Vídeo da galeria" description="Adicione ou substitua o vídeo exibido na galeria do seu perfil.">
         <input ref={videoInputRef} type="file" accept="video/mp4,video/webm,video/quicktime" hidden onChange={handleVideoInput} />
         <div className={styles.videoGrid}>
           <div className={styles.videoPreview}>

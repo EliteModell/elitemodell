@@ -102,6 +102,73 @@ test.describe("seguranca fail-closed de midia adulta", () => {
     expect(isReadyForHumanContentReview(humanReviewReady)).toBe(true);
   });
 
+  test("libera foto e video elegiveis para decisao humana sem fingir moderacao automatica", () => {
+    expect(isReadyForHumanContentReview(humanReviewReady)).toBe(true);
+    expect(isReadyForHumanContentReview({
+      ...humanReviewReady,
+      category: "video",
+      folder: "profile-videos/professional-test",
+    })).toBe(true);
+    expect(manualMediaReviewBlockers({
+      ...humanReviewReady,
+      category: "video",
+      folder: "profiles/photos",
+    })).toContain("NOT_PROFILE_MEDIA");
+  });
+
+  test("moderacao manual encaminha para fila sem publicar nem depender de endpoint externo", async () => {
+    const [uploads, panel, statusRoute] = await Promise.all([
+      import("node:fs/promises").then((fs) => fs.readFile("src/lib/upload-quarantine.ts", "utf8")),
+      import("node:fs/promises").then((fs) => fs.readFile("src/app/(dashboard)/admin/moderacao/uploads/page.tsx", "utf8")),
+      import("node:fs/promises").then((fs) => fs.readFile("src/app/api/uploads/[id]/status/route.ts", "utf8")),
+    ]);
+    expect(uploads).toContain('moderation.provider === "MANUAL"');
+    expect(uploads).toContain('status: "PENDING_REVIEW"');
+    expect(uploads).toContain('adminReviewStatus: "PENDING"');
+    expect(panel).toContain('{ category: "video", folder: { startsWith: "profile-videos" } }');
+    expect(statusRoute).toContain("owned.failureReason");
+    expect(uploads).not.toContain("CONTENT_MODERATION_ENDPOINT");
+  });
+
+  test("reutiliza decisao somente para duplicata exata da mesma titular e com evidencias equivalentes", async () => {
+    const uploads = await import("node:fs/promises").then((fs) => fs.readFile("src/lib/upload-quarantine.ts", "utf8"));
+    expect(uploads).toContain("reusableModerationDecision");
+    expect(uploads).toContain("userId: asset.userId");
+    expect(uploads).toContain("fileHash: asset.fileHash");
+    expect(uploads).toContain("detectedMimeType: asset.detectedMimeType");
+    expect(uploads).toContain("contentRating: asset.contentRating");
+    expect(uploads).toContain("declaredPeopleSignature(candidate.depictedPeople) !== expectedSignature");
+    expect(uploads).toContain('status: { in: ["PENDING", "REVIEWING"] }');
+    expect(uploads).toContain('adminReviewStatus: "NOT_REQUIRED"');
+    expect(uploads).toContain("sourceAssetId: reusableDecision.id");
+  });
+
+  test("remove revisao administrativa redundante somente de decisao rastreavel e sem denuncia", async () => {
+    const uploads = await import("node:fs/promises").then((fs) => fs.readFile("src/lib/upload-quarantine.ts", "utf8"));
+    expect(uploads).toContain("clearRedundantAdminReviewForApprovedDecision");
+    expect(uploads).toContain("!asset.moderationProviderVersion");
+    expect(uploads).toContain("!asset.moderationResult");
+    expect(uploads).toContain('status: { in: ["PENDING", "REVIEWING"] }');
+    expect(uploads).toContain('adminReviewStatus: "NOT_REQUIRED"');
+    expect(uploads).toContain("Revisao administrativa redundante removida");
+  });
+
+  test("declaracoes de pessoas retratadas nao substituem verificacao de conteudo", async () => {
+    const [uploads, uploadRoute, avatarRoute] = await Promise.all([
+      import("node:fs/promises").then((fs) => fs.readFile("src/lib/upload-quarantine.ts", "utf8")),
+      import("node:fs/promises").then((fs) => fs.readFile("src/app/api/upload/route.ts", "utf8")),
+      import("node:fs/promises").then((fs) => fs.readFile("src/app/api/users/me/avatar/route.ts", "utf8")),
+    ]);
+    expect(uploads).toContain("These records are declarations supplied by the uploader");
+    expect(uploads).toContain("declaredPeopleSignature");
+    expect(uploads).toContain('["SELF", "SELF_DECLARED", "DEPICTED_PERSON"]');
+    expect(uploadRoute).toContain('relationship: "SELF_DECLARED"');
+    expect(avatarRoute).toContain('relationship: "SELF_DECLARED"');
+    expect(uploads).not.toContain("ownerAttestedDirectPublicationEligible");
+    expect(uploads).not.toContain("OWNER_ATTESTATION_POLICY");
+    expect(uploads).not.toContain("owner-only-v1");
+  });
+
   test("bloqueia lote quando AV, consentimento, pessoa retratada ou denuncia estao pendentes", () => {
     const blockers = manualMediaReviewBlockers({
       ...humanReviewReady,
@@ -155,7 +222,7 @@ test.describe("seguranca fail-closed de midia adulta", () => {
     ]);
     expect(page).toContain("ID profissional:");
     expect(page).toContain("Enviadas em 21/10/2026");
-    expect(page).toContain("Fotos antigas (antes de 21/10/2026)");
+    expect(page).toContain("Mídias antigas (antes de 21/10/2026)");
     expect(page).toContain("Revisão visual das mídias elegíveis");
     expect(page).toContain("ownedAssets.length !== assetIds.length");
     expect(page).not.toContain("ACCOUNT_COHORT_START");
@@ -192,6 +259,15 @@ test.describe("seguranca fail-closed de midia adulta", () => {
 
   test("publica somente quando todos os gates passam", () => {
     expect(evaluateMediaPublicationGates(passingGates)).toMatchObject({ publishable: true, blockers: [] });
+  });
+
+  test("declaracao sem moderacao aprovada permanece fora da publicacao", () => {
+    expect(evaluateMediaPublicationGates({
+      ...passingGates,
+      moderationStatus: "PENDING",
+      adminReviewRequired: false,
+      adminReviewStatus: "NOT_REQUIRED",
+    }).blockers).toContain("CONTENT_MODERATION");
   });
 
   test("token de midia expira e fica vinculado ao ativo", () => {

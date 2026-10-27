@@ -275,6 +275,9 @@ export async function POST(req: NextRequest) {
       adminReviewRequired: !isPrivate,
       depictedPeople: [{
         personReference: `user:${session.user.id}`,
+        // Provenance marker: this is the uploader's declaration, not a result
+        // from visual person detection or third-party identity verification.
+        relationship: "SELF_DECLARED",
         isUploader: true,
         isContentOwner: true,
         ageStatus: ownerIsAdult && (!adultContent || identityApproved) && (!requiresVerifiedProfessional || identityApproved) ? "PASS" : "PENDING",
