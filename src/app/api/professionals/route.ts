@@ -361,14 +361,26 @@ export async function POST(req: NextRequest) {
       }, { status: 422 });
     }
 
-    let diditVerification = {
+    let diditVerification: {
+      sessionId: string | null;
+      status: string;
+      submissionEligible: boolean;
+      providerChecked: boolean;
+    } = {
       sessionId: user.kycSessionId ?? existing?.kycSessionId ?? null,
       status: existing?.kycStatus ?? "NOT_STARTED",
+      submissionEligible: existing?.kycStatus === "APPROVED",
+      providerChecked: existing?.kycStatus === "APPROVED",
     };
     if (diditVerification.sessionId) {
       try {
         const reconciled = await reconcileProfessionalDidit(session.user.id, diditVerification.sessionId);
-        diditVerification = { sessionId: reconciled.sessionId, status: reconciled.status };
+        diditVerification = {
+          sessionId: reconciled.sessionId,
+          status: reconciled.status,
+          submissionEligible: reconciled.submissionEligible,
+          providerChecked: true,
+        };
       } catch (error) {
         // A indisponibilidade do provedor não apaga o preenchimento nem rebaixa uma
         // aprovação oficial que já foi reconciliada e persistida no servidor.
@@ -377,6 +389,30 @@ export async function POST(req: NextRequest) {
           reason: error instanceof Error ? error.name : "unknown",
         });
       }
+    }
+    if (!diditVerification.sessionId) {
+      return NextResponse.json({
+        error: "Inicie a verificação de identidade com a Didit antes de enviar o cadastro.",
+        code: "identity_not_started",
+      }, { status: 422 });
+    }
+    if (diditVerification.status === "REJECTED") {
+      return NextResponse.json({
+        error: "A verificação de identidade precisa de uma nova ação antes do envio.",
+        code: "identity_requires_action",
+      }, { status: 422 });
+    }
+    if (!diditVerification.providerChecked && diditVerification.status !== "APPROVED") {
+      return NextResponse.json({
+        error: "Não foi possível confirmar o estado da verificação agora. Seus dados estão salvos; tente novamente sem reenviar os documentos.",
+        code: "identity_status_unavailable",
+      }, { status: 503 });
+    }
+    if (!diditVerification.submissionEligible) {
+      return NextResponse.json({
+        error: "Finalize o envio do documento e da selfie na Didit. Se você acabou de concluir, aguarde alguns segundos e tente novamente.",
+        code: "identity_documents_incomplete",
+      }, { status: 422 });
     }
     const identityApproved = diditVerification.status === "APPROVED";
 

@@ -114,6 +114,14 @@ export function isPendingDigitStatus(status?: string | null) {
   return DIDIT_PENDING_STATUSES.has(status as DiditSessionStatus);
 }
 
+/**
+ * States that prove the applicant finished the hosted document/selfie flow.
+ * They are sufficient to submit a private registration, never to publish it.
+ */
+export function isSubmittedDigitStatus(status?: string | null) {
+  return status === "Approved" || status === "In Review" || status === "Resubmitted";
+}
+
 export function buildDigitVendorData(userId: string, intentId: string) {
   return `${userId}:didit-intent:${intentId}`;
 }

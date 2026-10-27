@@ -7,7 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { assertOwnedUploadMediaUrls } from "@/lib/approved-media";
 import { normalizeControlledMediaUrl } from "@/lib/public-professional-media";
-import { professionalCompletion, professionalOnboardingCompletion } from "@/lib/professional-completeness";
+import { professionalCompletion, professionalOnboardingCompletion, professionalSubmissionCompletion } from "@/lib/professional-completeness";
 import { logAudit } from "@/lib/audit";
 import { professionalStartingPrice } from "@/lib/professional-pricing";
 import { normalizeServiceLocation } from "@/lib/professional-location";
@@ -64,7 +64,7 @@ export async function GET() {
     ? changes.correctionFields.filter((item): item is string => typeof item === "string")
     : [];
   return NextResponse.json({
-    completion: professionalCompletion({
+    completion: professionalSubmissionCompletion({
       ...professional,
       specialties: professional.specialties,
       emailVerified: professional.user.emailVerified,
@@ -132,7 +132,7 @@ export async function PATCH(req: NextRequest) {
     };
     const completion = flow === "simplified-v1"
       ? professionalOnboardingCompletion(merged)
-      : professionalCompletion(merged);
+      : professionalSubmissionCompletion(merged);
     const stepIssues = completion.issues.filter((issue) => issue.step === step);
     if (stepIssues.length) {
       return NextResponse.json({
@@ -267,7 +267,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const saved = await loadProfessional(session.user.id);
-    const savedCompletion = professionalCompletion({ ...saved!, specialties: saved!.specialties, emailVerified: saved!.user.emailVerified });
+    const savedCompletion = professionalSubmissionCompletion({ ...saved!, specialties: saved!.specialties, emailVerified: saved!.user.emailVerified });
     return NextResponse.json({ ok: true, savedStep: step, completion: savedCompletion });
   } catch (error) {
     if (error instanceof z.ZodError) return NextResponse.json({ error: "Dados da etapa inválidos.", issues: error.issues }, { status: 400 });

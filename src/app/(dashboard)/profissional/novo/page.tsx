@@ -1425,11 +1425,11 @@ export default function ProfissionalNovoPage() {
         <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={184} height={61} priority />
         <div aria-hidden="true" className="model-success-check">✓</div>
         <p className="model-success-eyebrow">{published ? "Perfil publicado" : "Cadastro recebido"}</p>
-        <h1>{published ? "Parabéns! Seu perfil está liberado!" : "Cadastro recebido com sucesso!"}</h1>
+        <h1>{published ? "Parabéns! Seu perfil está liberado!" : "Cadastro enviado com sucesso!"}</h1>
         <p className="model-analysis-status">Status: <strong>{published ? "Publicado" : "Verificações em andamento"}</strong></p>
         <p>{published
           ? "Seja bem-vinda à Elite Modell! Seu perfil já está disponível para os clientes."
-          : "Seu perfil foi enviado e agora está em análise pela equipe Elite Modell. Você também receberá um e-mail com a confirmação do envio e os próximos passos."}</p>
+          : "Recebemos suas informações. Sua identidade está em análise e você será avisado por e-mail quando houver uma atualização."}</p>
         {!published && submissionResult.blockers?.length ? (
           <div className="model-pending-list" role="status">
             <strong>Pendências atuais</strong>
@@ -2123,7 +2123,7 @@ export default function ProfissionalNovoPage() {
         ) : (
           <button onClick={submit} disabled={loading}
             style={{ padding: "12px 32px", background: loading ? "#65009b" : GOLD, border: "none", borderRadius: 10, color: "#080808", fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}>
-            {loading ? "Enviando..." : "Concluir cadastro"}
+            {loading ? "Enviando..." : "Confirmar e enviar cadastro"}
           </button>
         )}
       </div>

@@ -25,6 +25,7 @@ import {
   digitWebhookAuditPayload,
   digitWebhookTargetsActiveSession,
   isSafeDigitVerificationUrl,
+  isSubmittedDigitStatus,
   normalizeDigitStatus,
   parseDigitIntentMarker,
   isDigitIntentInFlight,
@@ -199,6 +200,15 @@ function diditDecision(status: DiditDecision["status"], dateOfBirth: string | nu
 }
 
 test.describe("verificacao Didit no onboarding profissional", () => {
+  test("distingue documentos enviados de fluxo ainda incompleto", () => {
+    expect(isSubmittedDigitStatus("In Review")).toBe(true);
+    expect(isSubmittedDigitStatus("Resubmitted")).toBe(true);
+    expect(isSubmittedDigitStatus("Approved")).toBe(true);
+    expect(isSubmittedDigitStatus("Not Started")).toBe(false);
+    expect(isSubmittedDigitStatus("In Progress")).toBe(false);
+    expect(isSubmittedDigitStatus("Declined")).toBe(false);
+  });
+
   test("normaliza aprovacao, analise e recusa sem promover estado pendente", () => {
     expect(normalizeDigitStatus("Approved")).toBe("APPROVED");
     expect(normalizeDigitStatus("In Review")).toBe("PENDING");

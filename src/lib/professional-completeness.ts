@@ -182,6 +182,31 @@ export function professionalCompletion(profile: ProfessionalCompletionInput) {
   };
 }
 
+/**
+ * Submission and publication are deliberately separate states. A linked Didit
+ * session under review permits the private registration to be submitted, while
+ * professionalCompletion and the publication pipeline continue to require an
+ * approved identity.
+ */
+export function professionalSubmissionCompletion(profile: ProfessionalCompletionInput) {
+  const completion = professionalCompletion(profile);
+  const identitySubmitted = Boolean(
+    profile.kycSessionId
+    && ["PENDING", "APPROVED"].includes(profile.kycStatus ?? ""),
+  );
+  const issues = identitySubmitted
+    ? completion.profileIssues
+    : completion.issues;
+  return {
+    ...completion,
+    identitySubmitted,
+    identityPending: identitySubmitted && !completion.kycApproved,
+    readyToSubmit: completion.profileComplete && identitySubmitted && Boolean(profile.emailVerified),
+    firstIncompleteStep: issues.length ? Math.min(...issues.map((issue) => issue.step)) : 8,
+    issues,
+  };
+}
+
 export function issuesForStep(profile: ProfessionalCompletionInput, step: number) {
   return professionalCompletion(profile).issues.filter((issue) => issue.step === step);
 }

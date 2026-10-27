@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { digitVendorDataBelongsToUser, fetchDigitSessionDecision, isSafeDigitVerificationUrl } from "@/lib/didit";
+import { digitVendorDataBelongsToUser, fetchDigitSessionDecision, isSafeDigitVerificationUrl, isSubmittedDigitStatus } from "@/lib/didit";
 import { assessProfessionalDiditDecision } from "@/lib/professional-didit";
 import { logAudit } from "@/lib/audit";
 
@@ -84,6 +84,7 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
     }
     return {
       response: { sessionId, status: assessment.status, rawStatus: decision.status,
+        submissionEligible: isSubmittedDigitStatus(decision.status),
         retryAllowed: assessment.retryAllowed, message: assessment.reason, url, starting: false },
       rejected, professionalId: professional.id ?? "", professionalUserId: professional.userId ?? "",
       email: professional.user?.email ?? null, emailVerified: Boolean(professional.user?.emailVerified), name: professional.user?.name ?? null, reason: assessment.reason,

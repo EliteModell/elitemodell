@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
-import { issueChecklist, issuesForStep, professionalAdministrativeApprovalIssues, professionalCompletion } from "../src/lib/professional-completeness";
+import { issueChecklist, issuesForStep, professionalAdministrativeApprovalIssues, professionalCompletion, professionalSubmissionCompletion } from "../src/lib/professional-completeness";
 import { CITY_CHANGE_REQUIRES_VOUCHER, INITIAL_FREE_CITY_CHANGES, locationChangeNeedsReview, normalizeServiceLocation, publicServiceLocation } from "../src/lib/professional-location";
 import { professionalCityFilter, resolveExactCityQuery } from "../src/lib/public-city-search";
 import { professionalDisplayNameForEditing } from "../src/lib/professional-display-name";
@@ -97,6 +97,26 @@ test.describe("regra central de completude profissional", () => {
     expect(result.profileComplete).toBe(true);
     expect(result.kycApproved).toBe(false);
     expect(result.readyToSubmit).toBe(false);
+  });
+
+  test("KYC pendente permite submissão privada, mas continua bloqueando publicação", () => {
+    const pending = { ...complete, kycStatus: "PENDING" };
+    expect(professionalSubmissionCompletion(pending)).toMatchObject({
+      profileComplete: true,
+      identitySubmitted: true,
+      identityPending: true,
+      readyToSubmit: true,
+      issues: [],
+    });
+    expect(professionalCompletion(pending)).toMatchObject({
+      kycApproved: false,
+      readyToSubmit: false,
+    });
+  });
+
+  test("sessão ausente ou rejeitada não permite submissão", () => {
+    expect(professionalSubmissionCompletion({ ...complete, kycSessionId: null, kycStatus: "NOT_STARTED" }).readyToSubmit).toBe(false);
+    expect(professionalSubmissionCompletion({ ...complete, kycStatus: "REJECTED" }).readyToSubmit).toBe(false);
   });
 
   test("e-mail não confirmado permanece separado de perfil e KYC", () => {
