@@ -109,6 +109,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
           presentationVideoUrl: true,
           presentationVideoStatus: true,
           photos: { where: { hiddenAt: null }, select: { url: true } },
+          media: { where: { hiddenAt: null, assetId: asset.id }, select: { assetId: true } },
           user: { select: { image: true } },
         },
       }),
@@ -127,6 +128,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
       ...profile.photos.map((photo) => photo.url),
       profile.user.image,
       ...(profile.presentationVideoStatus === "APPROVED" ? [profile.presentationVideoUrl] : []),
+      ...profile.media.map((item) => item.assetId ? `/api/media/${encodeURIComponent(item.assetId)}` : null),
     ] : [];
     const storyUrls = stories.flatMap((story) => [story.mediaUrl, story.thumbnail]);
     const hasPublicReference = [...profileUrls, ...storyUrls].some((url) => controlledMediaAssetId(url) === asset.id);

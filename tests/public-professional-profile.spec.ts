@@ -400,12 +400,13 @@ test.describe("contrato publico do perfil profissional", () => {
     await expect(page.getByTestId("gallery-image")).toHaveCount(0);
   });
 
-  test("UI explica quando as fotos existem mas continuam restritas pela moderacao", async ({ page }) => {
+  test("UI nao revela ao visitante que existem fotos privadas em moderacao", async ({ page }) => {
     await mockPublicProfilePage(page, [], false, 4);
     await page.goto("/profissionais/victoria", { waitUntil: "domcontentloaded" });
 
     await expect(page.getByTestId("profile-cover")).toHaveAttribute("data-media-state", "fallback");
     await expect(page.getByTestId("gallery-image")).toHaveCount(0);
-    await expect(page.getByTestId("gallery-restricted")).toContainText("aguardando liberação");
+    await expect(page.getByTestId("profile-media-placeholder")).toBeVisible();
+    await expect(page.getByText("Fotos enviadas aguardando liberação")).toHaveCount(0);
   });
 });

@@ -39,6 +39,7 @@ type ApiProfessional = {
   avatar?: string | null;
   galleryUrls?: string[];
   mediaPublication?: { total: number; published: number; pending: number };
+  media?: Array<{ id: string; kind: "IMAGE" | "VIDEO"; role: string; order: number; caption?: string | null; url: string }>;
   phone?: string | null;
   whatsapp?: string | null;
   instagram?: string | null;
@@ -508,13 +509,12 @@ export default function ProfissionalProfilePage() {
                 transition: "opacity 160ms ease-out",
               }}
             />
-          ) : pro.mediaPublication?.pending ? (
-            <div data-testid="gallery-restricted" style={{ textAlign: "center", padding: "32px 16px", color: "#676064", marginBottom: 28 }}>
-              <p style={{ marginBottom: 6, fontWeight: 700 }}>Fotos enviadas aguardando liberação</p>
-              <p style={{ margin: 0, fontSize: 12 }}>As imagens permanecem privadas até concluírem todos os controles de segurança e moderação.</p>
-            </div>
           ) : (
-            <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #080808, #160022)" }} />
+            <div
+              data-testid="profile-media-placeholder"
+              aria-hidden="true"
+              style={{ width: "100%", height: "100%", background: "radial-gradient(circle at 78% 22%, rgba(183,44,255,.26), transparent 34%), linear-gradient(145deg, #100b15, #25112f 55%, #09070b)" }}
+            />
           )}
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(6,14,27,0.1) 0%, rgba(6,14,27,0.5) 45%, rgba(6,14,27,0.93) 100%)" }} />
           <div className={styles.coverIdentity}>
@@ -709,18 +709,18 @@ export default function ProfissionalProfilePage() {
           )}
 
           {/* Verificação */}
-          {(premiumVideoUrl || pro.presentationVideoUrl) && (
+          {(pro.media?.some((item) => item.kind === "VIDEO") || premiumVideoUrl || pro.presentationVideoUrl) && (
             <div style={{ marginBottom: 24 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "#fcf7ff", fontFamily: PLAYFAIR }}>Video de apresentacao</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#fcf7ff", fontFamily: PLAYFAIR }}>Vídeo da galeria</span>
               </div>
-              <video
-                src={premiumVideoUrl ?? pro.presentationVideoUrl ?? undefined}
-                controls
-                preload="none"
-                style={{ width: "100%", maxHeight: 420, borderRadius: 14, border: `1px solid ${GOLD_MID}`, background: "#050506" }}
-              />
+              <div style={{ display: "grid", gap: 14 }}>
+                {(pro.media?.filter((item) => item.kind === "VIDEO") ?? []).map((item) => (
+                  <video key={item.id} src={item.url} controls playsInline preload="metadata" style={{ width: "100%", maxHeight: 420, borderRadius: 14, border: `1px solid ${GOLD_MID}`, background: "#050506" }} />
+                ))}
+                {!pro.media?.some((item) => item.kind === "VIDEO") ? <video src={premiumVideoUrl ?? pro.presentationVideoUrl ?? undefined} controls playsInline preload="metadata" style={{ width: "100%", maxHeight: 420, borderRadius: 14, border: `1px solid ${GOLD_MID}`, background: "#050506" }} /> : null}
+              </div>
             </div>
           )}
           {!premiumVideoUrl && !pro.presentationVideoUrl && pro.hasPremiumVideo && (

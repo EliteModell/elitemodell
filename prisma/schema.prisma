@@ -831,25 +831,25 @@ model Professional {
   paymentMethods String[]
 
   // Perfil físico
-  escortCategory  String?
-  genderIdentity  String?
+  escortCategory        String?
+  genderIdentity        String?
   genderSelfDescription String?
-  transIdentity   String?
-  birthDate       DateTime?
-  hideAge         Boolean   @default(false)
-  height          Int?
-  weight          Int?
-  hairColor       String?
-  eyeColor        String?
-  ethnicity       String?
-  signo           String?
-  hasTattoos      Boolean   @default(false)
-  hasPiercing     Boolean   @default(false)
-  hasSilicone     Boolean   @default(false)
-  smoker          Boolean   @default(false)
-  isDepilada      Boolean   @default(true)
-  depilationStyle String?
-  bodyType        String?
+  transIdentity         String?
+  birthDate             DateTime?
+  hideAge               Boolean   @default(false)
+  height                Int?
+  weight                Int?
+  hairColor             String?
+  eyeColor              String?
+  ethnicity             String?
+  signo                 String?
+  hasTattoos            Boolean   @default(false)
+  hasPiercing           Boolean   @default(false)
+  hasSilicone           Boolean   @default(false)
+  smoker                Boolean   @default(false)
+  isDepilada            Boolean   @default(true)
+  depilationStyle       String?
+  bodyType              String?
 
   // Atendimento
   attendanceTypes String[]
@@ -932,6 +932,7 @@ model Professional {
 
   user              User                           @relation(fields: [userId], references: [id], onDelete: Cascade)
   photos            ProfessionalPhoto[]
+  media             ProfessionalMedia[]
   specialties       ProfessionalSpecialty[]
   schedule          Schedule[]
   appointments      Appointment[]
@@ -1138,10 +1139,11 @@ model UploadAsset {
   createdAt                 DateTime  @default(now())
   updatedAt                 DateTime  @updatedAt
 
-  owner          User                  @relation("UploadOwner", fields: [userId], references: [id], onDelete: Restrict)
-  reviewer       User?                 @relation("UploadReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
-  depictedPeople MediaDepictedPerson[]
-  malwareScanJob MalwareScanJob?
+  owner             User                  @relation("UploadOwner", fields: [userId], references: [id], onDelete: Restrict)
+  reviewer          User?                 @relation("UploadReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  depictedPeople    MediaDepictedPerson[]
+  malwareScanJob    MalwareScanJob?
+  professionalMedia ProfessionalMedia?
 
   @@unique([quarantineBucket, quarantinePath])
   @@index([userId, createdAt])
@@ -1153,22 +1155,22 @@ model UploadAsset {
 }
 
 model MalwareScanJob {
-  id             String   @id @default(cuid())
-  assetId        String   @unique
-  status         String   @default("QUEUED")
-  attempts       Int      @default(0)
-  maxAttempts    Int      @default(5)
-  availableAt    DateTime @default(now())
-  leaseToken     String?
-  leaseExpiresAt DateTime?
-  lastError      String?  @db.Text
-  taskName       String?  @unique
-  dispatchedAt   DateTime?
-  dispatchAttempts Int    @default(0)
-  lastDispatchError String? @db.Text
-  completedAt    DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                String    @id @default(cuid())
+  assetId           String    @unique
+  status            String    @default("QUEUED")
+  attempts          Int       @default(0)
+  maxAttempts       Int       @default(5)
+  availableAt       DateTime  @default(now())
+  leaseToken        String?
+  leaseExpiresAt    DateTime?
+  lastError         String?   @db.Text
+  taskName          String?   @unique
+  dispatchedAt      DateTime?
+  dispatchAttempts  Int       @default(0)
+  lastDispatchError String?   @db.Text
+  completedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   asset UploadAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
@@ -1228,6 +1230,27 @@ model ProfessionalPhoto {
 
   @@index([professionalId, cover, order])
   @@index([hiddenAt])
+}
+
+model ProfessionalMedia {
+  id             String    @id @default(cuid())
+  professionalId String
+  assetId        String?   @unique
+  legacyUrl      String?
+  kind           String
+  role           String    @default("GALLERY")
+  order          Int       @default(0)
+  caption        String?
+  hiddenAt       DateTime?
+  hiddenReason   String?   @db.Text
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  asset        UploadAsset? @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  @@index([professionalId, hiddenAt, order])
+  @@index([kind, hiddenAt])
 }
 
 model ProfessionalSpecialty {

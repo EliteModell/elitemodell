@@ -68,7 +68,7 @@ export function isApprovedProfileVisualAsset(asset: PublicProfileAsset) {
   return (
     asset.status === "APPROVED" &&
     (asset.category === "image" || asset.category === "video") &&
-    asset.folder.startsWith("profiles")
+    (asset.folder.startsWith("profiles") || asset.folder.startsWith("profile-videos"))
   );
 }
 

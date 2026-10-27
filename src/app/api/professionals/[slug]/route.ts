@@ -25,6 +25,7 @@ import { authorizeAdultContentRequest } from "@/lib/adult-content-access";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import { isProfessionalDisplayNameReady } from "@/lib/professional-display-name";
 import { professionalDerivedPriceRange } from "@/lib/professional-pricing";
+import { evaluateMediaPublicationGates } from "@/lib/media-security";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const limited = await enforceRateLimitAsync(`public-profile:${getClientIP(req)}`, 300, 60 * 1000, "Muitos perfis abertos em pouco tempo.");
@@ -128,6 +129,22 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
         orderBy: { order: "asc" },
         select: { id: true, url: true, caption: true, cover: true, order: true },
       },
+      media: {
+        where: { hiddenAt: null },
+        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+        select: {
+          id: true, kind: true, role: true, order: true, caption: true, legacyUrl: true,
+          asset: {
+            select: {
+              id: true, userId: true, folder: true, category: true, status: true,
+              approvedBucket: true, approvedPath: true, uploadCompletedAt: true,
+              malwareStatus: true, moderationStatus: true, ageIdentityStatus: true,
+              consentStatus: true, adminReviewRequired: true, adminReviewStatus: true,
+              takedownStatus: true,
+            },
+          },
+        },
+      },
       specialties: { select: { id: true, name: true } },
       reviews: {
         where: { hidden: false },
@@ -196,6 +213,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   }) : [];
   const photos = filterApprovedProfilePhotos(canonicalPhotos, photoAssets, professional.userId);
   const coverImage = photos.find((photo) => photo.cover)?.url ?? photos[0]?.url ?? null;
+  const galleryMedia = professional.media.flatMap((item) => {
+    const asset = item.asset;
+    if (!asset || asset.userId !== professional.userId || asset.status !== "APPROVED" || !asset.approvedBucket || !asset.approvedPath) return [];
+    const publishable = evaluateMediaPublicationGates({
+      uploadComplete: Boolean(asset.uploadCompletedAt), malwareStatus: asset.malwareStatus,
+      moderationStatus: asset.moderationStatus, ageIdentityStatus: asset.ageIdentityStatus,
+      consentStatus: asset.consentStatus, adminReviewRequired: asset.adminReviewRequired,
+      adminReviewStatus: asset.adminReviewStatus, takedownStatus: asset.takedownStatus,
+      ownerId: asset.userId,
+    }).publishable;
+    if (!publishable) return [];
+    return [{ id: item.id, kind: item.kind, role: item.role, order: item.order, caption: item.caption, url: `/api/media/${encodeURIComponent(asset.id)}` }];
+  });
   const premiumActive = Boolean(professional.user.premiumUntil && professional.user.premiumUntil > now);
   const contactVisibility = normalizeContactVisibility(
     professional.contactVisibility,
@@ -222,6 +252,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     image: coverImage,
     galleryUrls: photos.filter((photo) => !photo.cover).map((photo) => photo.url),
     photos,
+    media: galleryMedia,
     avatar: coverImage ?? stripLegacyPublicStorageUrl(professional.user.image),
     mediaPublication: {
       total: canonicalPhotos.length,

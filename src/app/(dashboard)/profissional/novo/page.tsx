@@ -67,7 +67,9 @@ type SubmissionResult = {
   profileUrl?: string;
   blockers?: Array<{ code: string; label: string }>;
 };
-type UploadResult = { reference: string; status: string; pendingReview: boolean };
+type UploadResult = { assetId: string; reference: string; status: string; pendingReview: boolean };
+type OnboardingVideo = { id: string; assetId: string | null; url: string | null; state: "ANALYZING" | "PROCESSING" | "REVIEW_REQUIRED" | "PUBLISHED" | "REJECTED" };
+type PendingVideo = { key: string; file: File; preview: string; progress: number };
 type CompletionState = {
   profilePercent: number;
   profileComplete: boolean;
@@ -130,6 +132,7 @@ const MAX_ONBOARDING_GALLERY_PHOTOS = 20;
 const VIDEO_ACCEPT = "video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov";
 const VIDEO_MIME_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
 const MAX_PROFILE_VIDEO_BYTES = 50 * 1024 * 1024;
+const MAX_ONBOARDING_GALLERY_VIDEOS = 10;
 const REMOTE_IMAGE_RE = /^(https?:\/\/|\/)/i;
 const ATTENDANCE_EXCLUSIONS: Record<string, string[]> = {
   "Somente local do cliente": ["Local próprio", "Hotéis", "Motéis", "Somente hotéis/motéis"],
@@ -223,12 +226,14 @@ function ServiceOption({
   );
 }
 
-function UploadZone({ label, accept, preview, persisted, onFile, loading }: {
+function UploadZone({ label, accept, preview, persisted, onFile, onFiles, multiple, loading }: {
   label: string;
   accept: string;
   preview?: string | null;
   persisted?: boolean;
   onFile: (f: File) => void;
+  onFiles?: (files: File[]) => void;
+  multiple?: boolean;
   loading?: boolean;
 }) {
   const ref = useRef<HTMLInputElement>(null);
@@ -287,9 +292,12 @@ function UploadZone({ label, accept, preview, persisted, onFile, loading }: {
         ref={ref}
         type="file"
         accept={accept}
+        multiple={multiple}
         style={{ display: "none" }}
         onChange={(e) => {
-          if (e.target.files?.[0]) onFile(e.target.files[0]);
+          const files = Array.from(e.target.files ?? []);
+          if (files.length && onFiles) onFiles(files);
+          else if (files[0]) onFile(files[0]);
           e.currentTarget.value = "";
         }}
       />
@@ -389,7 +397,9 @@ export default function ProfissionalNovoPage() {
   const [serverCompletion, setServerCompletion] = useState<CompletionState | null>(null);
   const [birthDateLockedFromAccount, setBirthDateLockedFromAccount] = useState(false);
   const [professionalIdentity, setProfessionalIdentity] = useState<{ id: string; slug: string } | null>(null);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [onboardingVideos, setOnboardingVideos] = useState<OnboardingVideo[]>([]);
+  const [pendingVideos, setPendingVideos] = useState<PendingVideo[]>([]);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const [serverHydration, setServerHydration] = useState<{ ready: boolean; updatedAt: string | null }>({ ready: false, updatedAt: null });
   const [registrationContext, setRegistrationContext] = useState<{ status: string; submittedAt: string | null; slug: string | null }>({ status: "DRAFT", submittedAt: null, slug: null });
   const [birthParts, setBirthParts] = useState({ day: "", month: "", year: "" });
@@ -653,7 +663,7 @@ export default function ProfissionalNovoPage() {
           profileUrl: user.professional.slug ? `/profissionais/${user.professional.slug}` : undefined,
           blockers: user.professional.kycStatus !== "APPROVED"
             ? [{ code: "kyc", label: "A verificação de identidade e maioridade ainda não foi aprovada." }]
-            : [{ code: "main_photo_security", label: "A foto principal ainda está nas verificações obrigatórias de antivírus e conteúdo." }],
+            : [{ code: "main_photo_security", label: "A foto principal ainda está nas verificações obrigatórias de segurança e conteúdo." }],
         });
         return;
       }
@@ -892,6 +902,7 @@ export default function ProfissionalNovoPage() {
       throw new Error("Não foi possível confirmar o recebimento do arquivo.");
     }
     return {
+      assetId: String(d.assetId ?? ""),
       reference: uploaded,
       status: String(d.status ?? "PENDING"),
       pendingReview: Number(res.status) === 202 || d.status !== "APPROVED",
@@ -972,6 +983,12 @@ export default function ProfissionalNovoPage() {
     }
   }
 
+  async function handleGalleryPhotos(files: File[]) {
+    const available = MAX_ONBOARDING_GALLERY_PHOTOS - form.galleryUrls.length;
+    if (files.length > available) return toast.error(`Você pode selecionar mais ${available} foto(s).`);
+    for (const file of files) await handleGalleryPhoto(file);
+  }
+
   function removeMainPhoto() {
     if (mainPhotoPreview) {
       URL.revokeObjectURL(mainPhotoPreview);
@@ -995,35 +1012,71 @@ export default function ProfissionalNovoPage() {
     set("galleryUrls", form.galleryUrls.filter((item) => item !== reference));
   }
 
-  async function handlePresentationVideo(file: File) {
-    if (!professionalIdentity) return toast.error("Aguarde o cadastro ser preparado antes de enviar o vídeo.");
-    if (!VIDEO_MIME_TYPES.has(file.type)) return toast.error("Use um vídeo MP4, WebM ou MOV.");
-    if (file.size > MAX_PROFILE_VIDEO_BYTES) return toast.error("O vídeo deve ter no máximo 50MB.");
-    const preview = URL.createObjectURL(file);
-    localPreviewUrlsRef.current.add(preview);
-    setVideoPreview(preview);
-    setUploadingIdx(90);
-    try {
-      const uploaded = await uploadFile(file, `profile-videos/${professionalIdentity.id}`);
-      setForm((current) => ({ ...current, presentationVideoUrl: uploaded.reference, presentationVideoStatus: "PENDING" }));
-      toast.success("Vídeo recebido e encaminhado para as verificações de segurança.");
-    } catch (error) {
-      URL.revokeObjectURL(preview);
-      localPreviewUrlsRef.current.delete(preview);
-      setVideoPreview(null);
-      toast.error(error instanceof Error ? error.message : "Não foi possível enviar o vídeo.");
-    } finally {
-      setUploadingIdx(null);
-    }
+  async function refreshOnboardingVideos() {
+    const response = await fetch("/api/professional/media", { cache: "no-store" });
+    if (!response.ok) return;
+    const payload = await response.json() as { items?: Array<OnboardingVideo & { kind: string }> };
+    setOnboardingVideos((payload.items ?? []).filter((item) => item.kind === "VIDEO"));
   }
 
-  function removePresentationVideo() {
-    if (videoPreview) {
-      URL.revokeObjectURL(videoPreview);
-      localPreviewUrlsRef.current.delete(videoPreview);
+  useEffect(() => {
+    if (!professionalIdentity) return;
+    const timer = window.setTimeout(() => { void refreshOnboardingVideos(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [professionalIdentity]);
+
+  function selectPresentationVideos(files: File[]) {
+    if (!professionalIdentity) return toast.error("Aguarde o cadastro ser preparado antes de enviar os vídeos.");
+    if (onboardingVideos.length + pendingVideos.length + files.length > MAX_ONBOARDING_GALLERY_VIDEOS) return toast.error("Máximo de 10 vídeos por perfil.");
+    const next: PendingVideo[] = [];
+    for (const file of files) {
+      if (!VIDEO_MIME_TYPES.has(file.type)) return toast.error("Use vídeos MP4, WebM ou MOV.");
+      if (file.size > MAX_PROFILE_VIDEO_BYTES) return toast.error("Cada vídeo deve ter no máximo 50MB.");
+      const preview = URL.createObjectURL(file);
+      localPreviewUrlsRef.current.add(preview);
+      next.push({ key: crypto.randomUUID(), file, preview, progress: 0 });
     }
-    setVideoPreview(null);
-    setForm((current) => ({ ...current, presentationVideoUrl: "", presentationVideoStatus: "NONE" }));
+    setPendingVideos((current) => [...current, ...next]);
+  }
+
+  async function uploadPresentationVideos() {
+    if (!professionalIdentity || !pendingVideos.length) return;
+    setUploadingIdx(90);
+    for (const pending of pendingVideos) {
+      try {
+        setPendingVideos((current) => current.map((item) => item.key === pending.key ? { ...item, progress: 15 } : item));
+        const uploaded = await uploadFile(pending.file, `profile-videos/${professionalIdentity.id}`);
+        if (!uploaded.assetId) throw new Error("O upload não retornou um identificador seguro.");
+        setPendingVideos((current) => current.map((item) => item.key === pending.key ? { ...item, progress: 80 } : item));
+        const linked = await fetch("/api/professional/media", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ assetId: uploaded.assetId, kind: "VIDEO" }) });
+        const linkedPayload = await linked.json().catch(() => ({}));
+        if (!linked.ok) throw new Error(typeof linkedPayload.error === "string" ? linkedPayload.error : "Não foi possível vincular o vídeo.");
+        setPendingVideos((current) => current.map((item) => item.key === pending.key ? { ...item, progress: 100 } : item));
+        if (!form.presentationVideoUrl) setForm((current) => ({ ...current, presentationVideoUrl: uploaded.reference, presentationVideoStatus: "PENDING" }));
+      } catch (cause) {
+        toast.error(cause instanceof Error ? cause.message : "Não foi possível enviar um dos vídeos.");
+      }
+    }
+    pendingVideos.forEach((item) => { URL.revokeObjectURL(item.preview); localPreviewUrlsRef.current.delete(item.preview); });
+    setPendingVideos([]);
+    setUploadingIdx(null);
+    await refreshOnboardingVideos();
+    toast.success("Vídeos recebidos e mantidos privados durante as verificações.");
+  }
+
+  function removePendingVideo(key: string) {
+    setPendingVideos((current) => {
+      const removed = current.find((item) => item.key === key);
+      if (removed) { URL.revokeObjectURL(removed.preview); localPreviewUrlsRef.current.delete(removed.preview); }
+      return current.filter((item) => item.key !== key);
+    });
+  }
+
+  async function removeOnboardingVideo(video: OnboardingVideo) {
+    if (video.id === "legacy-presentation-video") return;
+    const response = await fetch(`/api/professional/media?id=${encodeURIComponent(video.id)}`, { method: "DELETE" });
+    if (!response.ok) return toast.error("Não foi possível remover o vídeo.");
+    setOnboardingVideos((current) => current.filter((item) => item.id !== video.id));
   }
 
   /* ── verificação Didit ────────────────────────────────── */
@@ -1194,7 +1247,7 @@ export default function ProfissionalNovoPage() {
           profileUrl: user.professional?.slug ? `/profissionais/${user.professional.slug}` : undefined,
           blockers: user.professional?.status === "ACTIVE" ? [] : user.professional?.kycStatus !== "APPROVED"
             ? [{ code: "kyc", label: "A verificação de identidade e maioridade ainda não foi aprovada." }]
-            : [{ code: "main_photo_security", label: "A foto principal ainda está nas verificações obrigatórias de antivírus e conteúdo." }],
+            : [{ code: "main_photo_security", label: "A foto principal ainda está nas verificações obrigatórias de segurança e conteúdo." }],
         });
         return true;
       }
@@ -2063,8 +2116,10 @@ export default function ProfissionalNovoPage() {
                   <UploadZone label="" accept={IMAGE_ACCEPT}
                     preview={null}
                     persisted={false}
+                    multiple
                     loading={typeof uploadingIdx === "number" && uploadingIdx >= 0 && uploadingIdx < 90}
-                    onFile={handleGalleryPhoto} />
+                    onFile={handleGalleryPhoto}
+                    onFiles={handleGalleryPhotos} />
                 </div>
               )}
             </div>
@@ -2078,21 +2133,24 @@ export default function ProfissionalNovoPage() {
             </div>
           </Section>
 
-          <Section title="Vídeo de apresentação" desc="Opcional. Envie um vídeo curto para o perfil. Ele só será publicado depois do antivírus e da moderação.">
-            {videoPreview ? (
-              <video src={videoPreview} controls playsInline preload="metadata" style={{ width: "100%", maxHeight: 360, borderRadius: 12, background: "#050505", border: `1px solid ${GOLD_MID}` }} />
-            ) : form.presentationVideoUrl ? (
-              <div className="model-upload-received" style={{ minHeight: 130 }}><strong>Vídeo recebido ✓</strong><span>Status: {form.presentationVideoStatus === "APPROVED" ? "aprovado" : form.presentationVideoStatus === "REJECTED" ? "precisa de ajuste" : "em análise de segurança"}</span></div>
-            ) : (
-              <UploadZone label="Adicionar vídeo" accept={VIDEO_ACCEPT} preview={null} persisted={false} loading={uploadingIdx === 90} onFile={handlePresentationVideo} />
-            )}
-            {(videoPreview || form.presentationVideoUrl) ? (
-              <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-                <UploadZone label="Substituir vídeo" accept={VIDEO_ACCEPT} preview={null} persisted={false} loading={uploadingIdx === 90} onFile={handlePresentationVideo} />
-                <button type="button" onClick={removePresentationVideo} style={{ border: `1px solid ${GOLD_MID}`, background: "transparent", color: "#e1a6ff", padding: "0 16px", minHeight: 48, cursor: "pointer" }}>Remover</button>
-              </div>
-            ) : null}
-            <p style={{ margin: "10px 0 0", fontSize: 11 }}>MP4, WebM ou MOV · máximo 50MB · conteúdo próprio e autorizado.</p>
+          <Section title="Vídeos da galeria" desc={`Adicione até ${MAX_ONBOARDING_GALLERY_VIDEOS} vídeos. Você poderá incluir novos conteúdos posteriormente. (${onboardingVideos.length + pendingVideos.length}/${MAX_ONBOARDING_GALLERY_VIDEOS})`}>
+            <input ref={videoInputRef} type="file" accept={VIDEO_ACCEPT} multiple hidden onChange={(event) => { selectPresentationVideos(Array.from(event.target.files ?? [])); event.currentTarget.value = ""; }} />
+            <button type="button" onClick={() => videoInputRef.current?.click()} disabled={uploadingIdx === 90 || onboardingVideos.length + pendingVideos.length >= MAX_ONBOARDING_GALLERY_VIDEOS} style={{ width: "100%", minHeight: 54, border: `2px dashed ${GOLD_MID}`, borderRadius: 12, background: GOLD_DIM, color: "#e1a6ff", fontWeight: 800, cursor: "pointer" }}>Adicionar vídeos</button>
+            {pendingVideos.length ? <div style={{ display: "grid", gap: 12, marginTop: 14 }}>
+              {pendingVideos.map((item) => <div key={item.key} style={{ display: "grid", gridTemplateColumns: "100px 1fr auto", gap: 10, alignItems: "center" }}>
+                <video src={item.preview} muted playsInline preload="metadata" style={{ width: 100, height: 76, objectFit: "cover", borderRadius: 10, background: "#050505" }} />
+                <div><strong style={{ display: "block", fontSize: 12 }}>{item.file.name}</strong><div style={{ height: 6, borderRadius: 999, background: "#241c28", overflow: "hidden", marginTop: 8 }}><span style={{ display: "block", width: `${item.progress}%`, height: "100%", background: GOLD }} /></div></div>
+                <button type="button" onClick={() => removePendingVideo(item.key)} disabled={uploadingIdx === 90} style={{ border: `1px solid ${GOLD_MID}`, background: "transparent", color: "#e1a6ff", minHeight: 40 }}>Remover</button>
+              </div>)}
+              <button type="button" onClick={uploadPresentationVideos} disabled={uploadingIdx === 90} style={{ minHeight: 48, border: 0, borderRadius: 10, background: GOLD, color: "#080808", fontWeight: 900 }}>{uploadingIdx === 90 ? "Enviando..." : "Enviar vídeos selecionados"}</button>
+            </div> : null}
+            {onboardingVideos.length ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 12, marginTop: 16 }}>
+              {onboardingVideos.map((video, index) => <article key={video.id} style={{ border: `1px solid ${GOLD_MID}`, borderRadius: 12, overflow: "hidden", background: "#0b090c" }}>
+                {video.url ? <video src={video.url} controls playsInline preload="metadata" style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", background: "#050505" }} /> : <div className="model-upload-received"><strong>Vídeo {index + 1}</strong></div>}
+                <div style={{ padding: 10 }}><span style={{ display: "block", fontSize: 11, color: "#aaa0b2" }}>{video.state === "PUBLISHED" ? "Publicado" : video.state === "REJECTED" ? "Rejeitado" : video.state === "REVIEW_REQUIRED" ? "Requer revisão" : video.state === "PROCESSING" ? "Processando" : "Em análise"}</span><button type="button" disabled={video.id === "legacy-presentation-video"} onClick={() => void removeOnboardingVideo(video)} style={{ marginTop: 8, border: 0, background: "transparent", color: "#e1a6ff", cursor: "pointer" }}>Remover</button></div>
+              </article>)}
+            </div> : null}
+            <p style={{ margin: "10px 0 0", fontSize: 11 }}>MP4, WebM ou MOV · máximo 50MB por arquivo · conteúdo próprio e autorizado · mantido privado até concluir as verificações obrigatórias.</p>
           </Section>
         </div>
       )}

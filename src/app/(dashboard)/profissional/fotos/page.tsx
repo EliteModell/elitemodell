@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, ReactNode, RefObject } from "react";
 import toast from "react-hot-toast";
-import { Camera, ImageIcon, Images, Loader2, Trash2, UploadCloud, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, Film, ImageIcon, Images, Loader2, Trash2, UploadCloud, UserRound } from "lucide-react";
 import { PremiumHeroCard, PremiumSection } from "@/components/professional-dashboard/ProfessionalPremium";
 import { monitorUpload, parseUploadResponse, UPLOAD_PENDING_MESSAGE, type UploadApiPayload } from "@/lib/upload-response";
 
@@ -19,6 +19,21 @@ type PendingFile = {
   file: File;
   preview: string;
 };
+
+type GalleryMedia = {
+  id: string;
+  assetId: string | null;
+  kind: "IMAGE" | "VIDEO";
+  role: "GALLERY" | "COVER";
+  order: number;
+  caption: string | null;
+  url: string | null;
+  mimeType: string | null;
+  state: "ANALYZING" | "PROCESSING" | "REVIEW_REQUIRED" | "PUBLISHED" | "REJECTED";
+  failureReason: string | null;
+};
+
+type ContentRating = "STANDARD" | "ADULT_SUGGESTIVE" | "ADULT_EXPLICIT";
 
 type MeResponse = {
   id: string;
@@ -35,6 +50,9 @@ type MeResponse = {
 const IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_GALLERY = 12;
+const MAX_VIDEOS = 10;
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
 
 function formatSize(bytes: number) {
   return `${Math.round(bytes / 1024 / 1024)} MB`;
@@ -75,12 +93,18 @@ export default function ProfissionalFotosPage() {
   const [profilePending, setProfilePending] = useState<PendingFile | null>(null);
   const [coverPending, setCoverPending] = useState<PendingFile | null>(null);
   const [galleryPending, setGalleryPending] = useState<PendingFile[]>([]);
+  const [videos, setVideos] = useState<GalleryMedia[]>([]);
+  const [videoPending, setVideoPending] = useState<PendingFile[]>([]);
+  const [videoProgress, setVideoProgress] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [processingCount, setProcessingCount] = useState(0);
   const [contentDeclarationAccepted, setContentDeclarationAccepted] = useState(false);
+  const [contentRating, setContentRating] = useState<ContentRating>("STANDARD");
   const profileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   const galleryTotal = useMemo(() => gallery.length + galleryPending.length, [gallery.length, galleryPending.length]);
 
@@ -99,6 +123,11 @@ export default function ProfissionalFotosPage() {
         setProfilePhoto(media.profilePhoto);
         setCoverPhoto(media.coverPhoto);
         setGallery(media.gallery);
+        const mediaResponse = await fetch("/api/professional/media", { signal: controller.signal, cache: "no-store" });
+        if (mediaResponse.ok) {
+          const payload = await mediaResponse.json() as { items?: GalleryMedia[] };
+          setVideos((payload.items ?? []).filter((item) => item.kind === "VIDEO"));
+        }
       } catch {
         if (!controller.signal.aborted) toast.error("Não foi possível carregar suas fotos agora.");
       } finally {
@@ -114,8 +143,9 @@ export default function ProfissionalFotosPage() {
       if (profilePending) URL.revokeObjectURL(profilePending.preview);
       if (coverPending) URL.revokeObjectURL(coverPending.preview);
       galleryPending.forEach((item) => URL.revokeObjectURL(item.preview));
+      videoPending.forEach((item) => URL.revokeObjectURL(item.preview));
     };
-  }, [coverPending, galleryPending, profilePending]);
+  }, [coverPending, galleryPending, profilePending, videoPending]);
 
   function setSinglePending(kind: "profile" | "cover", file: File) {
     const error = validateImage(file);
@@ -162,15 +192,122 @@ export default function ProfissionalFotosPage() {
     setGalleryPending((current) => [...current, ...next]);
   }
 
+  function handleVideoInput(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (!files.length) return;
+    if (videos.length + videoPending.length + files.length > MAX_VIDEOS) {
+      toast.error(`Você pode manter até ${MAX_VIDEOS} vídeos na galeria.`);
+      return;
+    }
+    const next: PendingFile[] = [];
+    for (const file of files) {
+      if (!VIDEO_TYPES.includes(file.type)) {
+        toast.error("Envie vídeos MP4, WebM ou MOV.");
+        next.forEach((item) => URL.revokeObjectURL(item.preview));
+        return;
+      }
+      if (file.size > MAX_VIDEO_BYTES) {
+        toast.error("Cada vídeo pode ter no máximo 50 MB.");
+        next.forEach((item) => URL.revokeObjectURL(item.preview));
+        return;
+      }
+      next.push(createPending(file));
+    }
+    setVideoPending((current) => [...current, ...next]);
+  }
+
   async function uploadImage(file: File) {
     if (!profileId) throw new Error("Perfil profissional não encontrado.");
     const formData = new FormData();
     if (!contentDeclarationAccepted) throw new Error("Confirme a declaracao de autoria e autorizacao antes do upload.");
     formData.append("file", file);
     formData.append("contentDeclarationAccepted", "true");
+    formData.append("contentRating", contentRating);
     const res = await fetch(`/api/upload?folder=profiles/${profileId}`, { method: "POST", body: formData });
     const data: UploadApiPayload = await res.json().catch(() => ({}));
     return parseUploadResponse(res, data);
+  }
+
+  async function uploadVideo(file: File, progressKey: string) {
+    if (!profileId) throw new Error("Perfil profissional não encontrado.");
+    if (!contentDeclarationAccepted) throw new Error("Confirme a declaração de autoria e autorização antes do upload.");
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("contentDeclarationAccepted", "true");
+    formData.append("contentRating", contentRating);
+    setVideoProgress((current) => ({ ...current, [progressKey]: 10 }));
+    const response = await fetch(`/api/upload?folder=profile-videos/${profileId}`, { method: "POST", body: formData });
+    setVideoProgress((current) => ({ ...current, [progressKey]: 80 }));
+    const payload: UploadApiPayload = await response.json().catch(() => ({}));
+    const uploaded = parseUploadResponse(response, payload);
+    const linked = await fetch("/api/professional/media", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assetId: uploaded.assetId, kind: "VIDEO" }),
+    });
+    const linkedPayload = await linked.json().catch(() => ({}));
+    if (!linked.ok) throw new Error(typeof linkedPayload.error === "string" ? linkedPayload.error : "Não foi possível adicionar o vídeo à galeria.");
+    setVideoProgress((current) => ({ ...current, [progressKey]: 100 }));
+    return uploaded;
+  }
+
+  async function refreshVideos() {
+    const response = await fetch("/api/professional/media", { cache: "no-store" });
+    if (!response.ok) return;
+    const payload = await response.json() as { items?: GalleryMedia[] };
+    setVideos((payload.items ?? []).filter((item) => item.kind === "VIDEO"));
+  }
+
+  async function publishVideos() {
+    if (!videoPending.length) return;
+    setSavingKey("videos");
+    try {
+      for (const pending of videoPending) {
+        const key = pending.preview;
+        const uploaded = await uploadVideo(pending.file, key);
+        if (uploaded.pending) {
+          setProcessingCount((count) => count + 1);
+          void monitorUpload(uploaded.assetId, async () => {
+            await refreshVideos();
+            setProcessingCount((count) => Math.max(0, count - 1));
+          });
+        }
+      }
+      videoPending.forEach((item) => URL.revokeObjectURL(item.preview));
+      setVideoPending([]);
+      setVideoProgress({});
+      await refreshVideos();
+      toast.success("Vídeos recebidos. Eles permanecem privados durante as verificações.");
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Não foi possível enviar os vídeos.");
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
+  async function removeVideo(id: string) {
+    const response = await fetch(`/api/professional/media?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(typeof payload.error === "string" ? payload.error : "Não foi possível remover o vídeo.");
+    setVideos((current) => current.filter((item) => item.id !== id));
+  }
+
+  async function moveVideo(id: string, direction: -1 | 1) {
+    const index = videos.findIndex((item) => item.id === id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= videos.length) return;
+    const next = [...videos];
+    [next[index], next[target]] = [next[target], next[index]];
+    setVideos(next);
+    const response = await fetch("/api/professional/media", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order: next.filter((item) => item.id !== "legacy-presentation-video").map((item) => item.id) }),
+    });
+    if (!response.ok) {
+      setVideos(videos);
+      toast.error("Não foi possível reorganizar os vídeos.");
+    }
   }
 
   async function saveUserImage(image: string | null) {
@@ -198,6 +335,16 @@ export default function ProfissionalFotosPage() {
     if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Não foi possível salvar suas fotos agora.");
   }
 
+  async function refreshPublishedMedia() {
+    const response = await fetch("/api/users/me", { cache: "no-store" });
+    if (!response.ok) return;
+    const data: MeResponse = await response.json();
+    const media = normalizeMedia(data);
+    setProfilePhoto(media.profilePhoto);
+    setCoverPhoto(media.coverPhoto);
+    setGallery(media.gallery);
+  }
+
   async function publishProfilePhoto() {
     if (!profilePending) {
       toast.error("Escolha uma imagem válida.");
@@ -207,11 +354,18 @@ export default function ProfissionalFotosPage() {
     try {
       const uploaded = await uploadImage(profilePending.file);
       if (uploaded.pending || !uploaded.url) {
-        await saveUserImage(uploaded.reference);
-        setProfilePhoto(uploaded.reference);
-        void monitorUpload(uploaded.assetId, (result) => toast[result.status === "APPROVED" ? "success" : "error"](
-          result.status === "APPROVED" ? "Foto verificada e liberada para moderação." : result.failureReason || "A foto não passou pela verificação.",
-        ));
+        setProcessingCount((count) => count + 1);
+        void monitorUpload(uploaded.assetId, async (result) => {
+          try {
+            if (result.status === "APPROVED" && result.url) {
+              await saveUserImage(result.url);
+              await refreshPublishedMedia();
+              toast.success("Foto verificada e publicada automaticamente.");
+            } else toast.error(result.failureReason || "A foto precisa de revisão.");
+          } finally {
+            setProcessingCount((count) => Math.max(0, count - 1));
+          }
+        });
         URL.revokeObjectURL(profilePending.preview);
         setProfilePending(null);
         toast.success(UPLOAD_PENDING_MESSAGE);
@@ -238,11 +392,18 @@ export default function ProfissionalFotosPage() {
     try {
       const uploaded = await uploadImage(coverPending.file);
       if (uploaded.pending || !uploaded.url) {
-        await saveProfessionalPhotos(uploaded.reference, gallery);
-        setCoverPhoto(uploaded.reference);
-        void monitorUpload(uploaded.assetId, (result) => toast[result.status === "APPROVED" ? "success" : "error"](
-          result.status === "APPROVED" ? "Capa verificada e liberada para moderação." : result.failureReason || "A capa não passou pela verificação.",
-        ));
+        setProcessingCount((count) => count + 1);
+        void monitorUpload(uploaded.assetId, async (result) => {
+          try {
+            if (result.status === "APPROVED" && result.url) {
+              await saveProfessionalPhotos(result.url, gallery);
+              await refreshPublishedMedia();
+              toast.success("Capa verificada e publicada automaticamente.");
+            } else toast.error(result.failureReason || "A capa precisa de revisão.");
+          } finally {
+            setProcessingCount((count) => Math.max(0, count - 1));
+          }
+        });
         URL.revokeObjectURL(coverPending.preview);
         setCoverPending(null);
         toast.success(UPLOAD_PENDING_MESSAGE);
@@ -273,10 +434,17 @@ export default function ProfissionalFotosPage() {
         const result = await uploadImage(pending.file);
         if (result.pending || !result.url) {
           pendingCount += 1;
-          uploaded.push(result.reference);
-          void monitorUpload(result.assetId, (settled) => toast[settled.status === "APPROVED" ? "success" : "error"](
-            settled.status === "APPROVED" ? "Foto da galeria verificada e liberada para moderação." : settled.failureReason || "Uma foto não passou pela verificação.",
-          ));
+          setProcessingCount((count) => count + 1);
+          void monitorUpload(result.assetId, async (settled) => {
+            try {
+              if (settled.status === "APPROVED") {
+                await refreshPublishedMedia();
+                toast.success("Foto da galeria verificada e publicada automaticamente.");
+              } else toast.error(settled.failureReason || "Uma foto precisa de revisão.");
+            } finally {
+              setProcessingCount((count) => Math.max(0, count - 1));
+            }
+          });
         } else uploaded.push(result.url);
       }
       if (uploaded.length) {
@@ -363,6 +531,24 @@ export default function ProfissionalFotosPage() {
       />
 
       <section className="premium-card" style={{ padding: 18, marginBottom: 18 }}>
+        {processingCount > 0 ? (
+          <div role="status" style={{ marginBottom: 16, borderRadius: 12, padding: "12px 14px", background: "rgba(183,44,255,.1)", color: "#ead8f2", fontSize: 13 }}>
+            {processingCount} mídia(s) em análise. Elas continuam privadas e aparecerão automaticamente após a aprovação.
+          </div>
+        ) : null}
+        <label style={{ display: "grid", gap: 8, marginBottom: 16, color: "var(--elite-text-muted)", fontSize: 13 }}>
+          <span>Classificação da mídia</span>
+          <select
+            value={contentRating}
+            onChange={(event) => setContentRating(event.target.value as ContentRating)}
+            style={{ width: "100%", minHeight: 44, borderRadius: 12, border: "1px solid rgba(255,255,255,.14)", background: "#17131d", color: "#fff", padding: "0 12px" }}
+          >
+            <option value="STANDARD">Normal</option>
+            <option value="ADULT_SUGGESTIVE">Sensual ou sugestiva</option>
+            <option value="ADULT_EXPLICIT">Nudez ou conteúdo adulto explícito</option>
+          </select>
+          <span>A classificação será confirmada pelos controles automáticos. Informações incorretas mantêm a mídia privada para revisão.</span>
+        </label>
         <label style={{ display: "flex", gap: 10, alignItems: "flex-start", color: "var(--elite-text-muted)", fontSize: 13, lineHeight: 1.5 }}>
           <input
             type="checkbox"
@@ -458,8 +644,47 @@ export default function ProfissionalFotosPage() {
           )}
         </section>
       </PremiumSection>
+
+      <PremiumSection eyebrow="Galeria" title="Vídeos da galeria" description="Adicione vídeos ao seu perfil. Você também poderá incluir novos conteúdos posteriormente.">
+        <section className="premium-card" style={{ padding: 18 }}>
+          <div className="premium-upload-zone" style={{ padding: 22, cursor: "pointer" }} onClick={() => videoInputRef.current?.click()}>
+            <input ref={videoInputRef} type="file" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" multiple hidden onChange={handleVideoInput} />
+            <div style={{ display: "grid", placeItems: "center", gap: 10, textAlign: "center" }}>
+              <Film size={36} color="var(--elite-gold-light)" />
+              <strong style={{ color: "#fff" }}>Adicionar vídeos</strong>
+              <span style={{ color: "var(--elite-text-muted)", fontSize: 13 }}>MP4, WebM ou MOV · até {MAX_VIDEOS} vídeos · 50 MB cada.</span>
+              <span style={{ color: "var(--elite-text-muted)", fontSize: 12 }}>Os arquivos permanecem privados enquanto passam pelas verificações de segurança e conteúdo.</span>
+            </div>
+          </div>
+
+          {videoPending.length ? <div style={{ marginTop: 18, display: "grid", gap: 12 }}>
+            {videoPending.map((item) => <div key={item.preview} style={{ display: "grid", gridTemplateColumns: "96px 1fr auto", gap: 12, alignItems: "center" }}>
+              <video src={item.preview} muted playsInline preload="metadata" style={{ width: 96, height: 72, objectFit: "cover", borderRadius: 12, background: "#050506" }} />
+              <div><strong style={{ color: "#fff", fontSize: 13 }}>{item.file.name}</strong><div style={{ marginTop: 8, height: 6, borderRadius: 999, overflow: "hidden", background: "rgba(255,255,255,.1)" }}><span style={{ display: "block", width: `${videoProgress[item.preview] ?? 0}%`, height: "100%", background: "var(--elite-gold)" }} /></div></div>
+              <button type="button" className="premium-button-secondary" aria-label="Remover vídeo selecionado" onClick={() => setVideoPending((current) => current.filter((candidate) => candidate.preview !== item.preview))}><Trash2 size={16} /></button>
+            </div>)}
+            <button type="button" className="premium-button" disabled={savingKey === "videos"} onClick={publishVideos}>{savingKey === "videos" ? <Loader2 size={17} className="spin" /> : <UploadCloud size={17} />}{savingKey === "videos" ? "Enviando..." : "Enviar vídeos"}</button>
+          </div> : null}
+
+          <div style={{ marginTop: 22, display: "grid", gap: 14 }}>
+            {videos.map((item, index) => <article key={item.id} style={{ display: "grid", gridTemplateColumns: "minmax(120px, 220px) 1fr", gap: 14, border: "1px solid var(--elite-border-soft)", borderRadius: 18, padding: 12 }}>
+              {item.url ? <video src={item.url} controls playsInline preload="metadata" style={{ width: "100%", aspectRatio: "16 / 9", objectFit: "cover", borderRadius: 12, background: "#050506" }} /> : <div className="premium-empty-state">Prévia indisponível</div>}
+              <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 12 }}><div><strong style={{ color: "#fff" }}>Vídeo {index + 1}</strong><p style={{ margin: "6px 0 0", color: "var(--elite-text-muted)", fontSize: 13 }}>{mediaStateLabel(item.state)}</p>{item.failureReason ? <p style={{ color: "#fca5a5", fontSize: 12 }}>{item.failureReason}</p> : null}</div><div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}><button type="button" className="premium-button-secondary" disabled={index === 0 || item.id === "legacy-presentation-video"} onClick={() => moveVideo(item.id, -1)} aria-label="Mover vídeo para a esquerda"><ArrowLeft size={16} /></button><button type="button" className="premium-button-secondary" disabled={index === videos.length - 1 || item.id === "legacy-presentation-video"} onClick={() => moveVideo(item.id, 1)} aria-label="Mover vídeo para a direita"><ArrowRight size={16} /></button><button type="button" className="premium-button-secondary" disabled={item.id === "legacy-presentation-video"} onClick={() => void removeVideo(item.id).catch((cause) => toast.error(cause instanceof Error ? cause.message : "Não foi possível remover."))}><Trash2 size={16} /> Remover</button></div></div>
+            </article>)}
+            {!videos.length ? <div className="premium-empty-state">Nenhum vídeo adicionado à galeria.</div> : null}
+          </div>
+        </section>
+      </PremiumSection>
     </div>
   );
+}
+
+function mediaStateLabel(state: GalleryMedia["state"]) {
+  if (state === "PUBLISHED") return "Publicado";
+  if (state === "REVIEW_REQUIRED") return "Requer revisão";
+  if (state === "REJECTED") return "Rejeitado";
+  if (state === "PROCESSING") return "Processando";
+  return "Em análise";
 }
 
 function MediaEditor({
