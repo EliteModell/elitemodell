@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { enforceRateLimitAsync } from "@/lib/security";
 import { buildEmailAuthCallbackUrl } from "@/lib/email-auth-callback";
-import { isTechnicalPhoneEmail } from "@/lib/account-email";
+import { isTechnicalPhoneEmail, realAccountEmail } from "@/lib/account-email";
 
 const inputSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("status") }),
@@ -33,8 +33,10 @@ function callbackUrl() {
   return buildEmailAuthCallbackUrl(params);
 }
 
-function maskEmail(email: string) {
-  const [local, domain] = email.split("@");
+function maskEmail(email: string | null | undefined) {
+  const deliverableEmail = realAccountEmail(email);
+  if (!deliverableEmail) return null;
+  const [local, domain] = deliverableEmail.split("@");
   if (!local || !domain) return "endereço informado";
   const visible = local.slice(0, Math.min(2, local.length));
   return `${visible}${"*".repeat(Math.max(3, local.length - visible.length))}@${domain}`;
@@ -99,13 +101,14 @@ async function findAuthUserForAccount(userId: string, email: string) {
 async function reconcileConfirmedEmail(user: { id: string; email: string; emailVerified: Date | null }) {
   if (user.emailVerified) return { verified: true, email: user.email };
   const authUser = await findAuthUserForAccount(user.id, user.email);
-  if (!authUser?.email || !authUser.email_confirmed_at) return { verified: false, email: user.email };
+  if (!authUser?.email) return { verified: false, email: user.email };
   const linkedUserId = typeof authUser.app_metadata?.prismaUserId === "string"
     ? authUser.app_metadata.prismaUserId
     : null;
   const confirmedEmail = authUser.email.toLowerCase();
   if (linkedUserId && linkedUserId !== user.id) return { verified: false, email: user.email };
   if (!linkedUserId && confirmedEmail !== user.email.toLowerCase()) return { verified: false, email: user.email };
+  if (!authUser.email_confirmed_at) return { verified: false, email: confirmedEmail };
   const conflict = await prisma.user.findUnique({ where: { email: confirmedEmail }, select: { id: true } });
   if (conflict && conflict.id !== user.id) return { verified: false, email: user.email };
   await prisma.user.update({
@@ -145,7 +148,12 @@ export async function POST(req: NextRequest) {
     const reconciled = await reconcileConfirmedEmail(user);
     if (reconciled.verified) return NextResponse.json({ ok: true, verified: true, maskedEmail: maskEmail(reconciled.email) });
     if (input.action === "status") {
-      return NextResponse.json({ ok: true, verified: false, maskedEmail: maskEmail(reconciled.email) });
+      return NextResponse.json({
+        ok: true,
+        verified: false,
+        emailState: realAccountEmail(reconciled.email) ? "unconfirmed" : "missing",
+        maskedEmail: maskEmail(reconciled.email),
+      });
     }
 
     let targetEmail = user.email;

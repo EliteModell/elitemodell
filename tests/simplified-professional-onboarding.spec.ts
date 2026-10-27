@@ -46,7 +46,7 @@ test("conta com telefone confirmado retoma o cadastro enquanto o e-mail esta pen
   await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByText("Etapa 1 de 9", { exact: false })).toBeVisible();
-  await expect(page.getByText("E-mail pendente de", { exact: false })).toBeVisible();
+  await expect(page.getByText("Confirme seu e-mail", { exact: true }).first()).toBeVisible();
   await expect(page.locator('[data-registration-status="email_unconfirmed"]')).toBeVisible();
   await expect(page.getByText("Confirme seu e-mail para continuar")).toHaveCount(0);
   await expect(page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...")).toHaveValue("Marina Retorno");
@@ -73,10 +73,36 @@ test("e-mail ausente usa o estado correto e falha de envio nao cria confirmacao 
 
   await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
   await expect(page.locator('[data-registration-status="email_missing"]')).toBeVisible();
+  await expect(page.getByText("E-mail não informado", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("@sms.elitemodell.local", { exact: false })).toHaveCount(0);
   await page.getByPlaceholder("novo@email.com").fill("marina@example.com");
-  await page.getByRole("button", { name: "Salvar e solicitar confirmação" }).click();
+  await page.getByRole("button", { name: "Adicionar e-mail" }).last().click();
   await expect(page.getByText("Serviço de e-mail temporariamente indisponível.")).toBeVisible();
   await expect(page.locator('[data-registration-status="email_missing"]')).toBeVisible();
+});
+
+test("e-mail real ainda nao confirmado aparece somente mascarado apos recarregar", async ({ page }) => {
+  await mockOnboarding(page);
+  await page.unroute("**/api/users/me**");
+  await page.route("**/api/users/me**", (route) => route.fulfill({ json: {
+    id: USER_ID,
+    email: null,
+    emailVerified: null,
+    birthDate: "2000-01-01",
+    professional: professional("Marina Retorno"),
+  } }));
+  await page.route("**/api/auth/email-confirmation", (route) => route.fulfill({ json: {
+    ok: true,
+    verified: false,
+    emailState: "unconfirmed",
+    maskedEmail: "ma****@example.com",
+  } }));
+
+  await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
+
+  await expect(page.locator('[data-registration-status="email_unconfirmed"]')).toBeVisible();
+  await expect(page.getByText("ma****@example.com", { exact: true })).toBeVisible();
+  await expect(page.getByText("@sms.elitemodell.local", { exact: false })).toHaveCount(0);
 });
 
 test("sessao expirada orienta reentrada sem criar uma nova conta", async ({ page }) => {

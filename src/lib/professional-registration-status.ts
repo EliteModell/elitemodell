@@ -5,6 +5,7 @@ export type ProfessionalRegistrationStatusInput = {
   registrationSubmittedAt?: string | Date | null;
   kycStatus?: string | null;
   email?: string | null;
+  emailPending?: boolean;
   emailVerified?: boolean | string | Date | null;
   firstIncompleteStep?: number | null;
   correctionReason?: string | null;
@@ -23,12 +24,12 @@ export type ProfessionalRegistrationStatus = {
 };
 
 export function professionalRegistrationStatus(input: ProfessionalRegistrationStatusInput): ProfessionalRegistrationStatus {
-  if (!input.email || isTechnicalPhoneEmail(input.email)) {
+  if ((!input.email || isTechnicalPhoneEmail(input.email)) && !input.emailPending) {
     return {
       id: "email_missing",
-      title: "Falta informar seu e-mail para continuar",
-      description: "Informe um e-mail válido para receber a confirmação e acompanhar o cadastro.",
-      actionLabel: "Informar e-mail",
+      title: "E-mail não informado",
+      description: "Adicione seu e-mail para receber a confirmação do cadastro e as atualizações da sua verificação.",
+      actionLabel: "Adicionar e-mail",
       action: "email",
       tone: "warning",
     };

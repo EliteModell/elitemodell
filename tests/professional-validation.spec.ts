@@ -64,6 +64,12 @@ test.describe("e-mail tecnico de cadastro por telefone", () => {
     expect(isTechnicalPhoneEmail(technical.toUpperCase())).toBe(true);
     expect(realAccountEmail(technical)).toBeNull();
     expect(accountEmailLabel(technical)).toBe("E-mail não informado");
+    const currentUserApi = fs.readFileSync(path.join(process.cwd(), "src/app/api/users/me/route.ts"), "utf8");
+    const emailConfirmationApi = fs.readFileSync(path.join(process.cwd(), "src/app/api/auth/email-confirmation/route.ts"), "utf8");
+    expect(currentUserApi).toContain("email: publicEmail");
+    expect(currentUserApi).toContain("emailVerified: publicEmail ? user.emailVerified : null");
+    expect(emailConfirmationApi).toContain('emailState: realAccountEmail(reconciled.email) ? "unconfirmed" : "missing"');
+    expect(emailConfirmationApi).toContain("if (!deliverableEmail) return null");
   });
 
   test("preserva e-mail verdadeiro e trata ausencia", () => {
@@ -107,7 +113,12 @@ test.describe("acompanhamento do cadastro profissional", () => {
   const verifiedEmail = { email: "modelo@example.com", emailVerified: true };
 
   test("deriva estados reais sem confundir identidade, aprovacao e publicacao", () => {
-    expect(professionalRegistrationStatus({ email: "phone_1@sms.elitemodell.local" }).id).toBe("email_missing");
+    expect(professionalRegistrationStatus({ email: "phone_1@sms.elitemodell.local" })).toMatchObject({
+      id: "email_missing",
+      title: "E-mail não informado",
+      actionLabel: "Adicionar e-mail",
+    });
+    expect(professionalRegistrationStatus({ email: null, emailPending: true }).id).toBe("email_unconfirmed");
     expect(professionalRegistrationStatus({ email: "modelo@example.com", emailVerified: false }).id).toBe("email_unconfirmed");
     expect(professionalRegistrationStatus({ ...verifiedEmail, professionalStatus: "DRAFT", firstIncompleteStep: 3 })).toMatchObject({ id: "incomplete", targetStep: 3 });
     expect(professionalRegistrationStatus({ ...verifiedEmail, professionalStatus: "DRAFT", kycStatus: "PENDING" }).id).toBe("identity_pending");

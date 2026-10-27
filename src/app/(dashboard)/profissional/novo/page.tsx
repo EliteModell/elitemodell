@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import toast from "react-hot-toast";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
-import { isTechnicalPhoneEmail } from "@/lib/account-email";
+import { isTechnicalPhoneEmail, realAccountEmail } from "@/lib/account-email";
 import { validateBirthDate } from "@/lib/age-validation";
 import { loadSupabaseAuth } from "@/lib/supabase-auth-loader";
 import {
@@ -372,6 +372,7 @@ export default function ProfissionalNovoPage() {
   const [diditMessage, setDigitMessage] = useState<string | null>(null);
   const [diditRetryAllowed, setDigitRetryAllowed] = useState(false);
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
+  const [pendingEmailLabel, setPendingEmailLabel] = useState<string | null>(null);
   const [accountUserId, setAccountUserId] = useState<string | null>(null);
   const [emailVerified, setEmailVerified] = useState<boolean | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
@@ -553,9 +554,10 @@ export default function ProfissionalNovoPage() {
           body: JSON.stringify({ action: "status" }),
         });
         if (!response.ok) return;
-        const user = await response.json() as { verified?: boolean };
+        const user = await response.json() as { verified?: boolean; emailState?: "missing" | "unconfirmed"; maskedEmail?: string | null };
         if (!active) return;
         if (user.verified) window.location.reload();
+        setPendingEmailLabel(user.emailState === "unconfirmed" ? user.maskedEmail ?? "seu e-mail" : null);
       } catch {
         // Mantém o aviso e permite uma nova tentativa quando a conexão voltar.
       }
@@ -563,6 +565,7 @@ export default function ProfissionalNovoPage() {
     const onVisibility = () => { if (document.visibilityState === "visible") void refreshStatus(); };
     window.addEventListener("focus", refreshStatus);
     document.addEventListener("visibilitychange", onVisibility);
+    void refreshStatus();
     return () => {
       active = false;
       window.removeEventListener("focus", refreshStatus);
@@ -1044,12 +1047,16 @@ export default function ProfissionalNovoPage() {
 
   /* ── submit final ─────────────────────────────────────── */
   function maskEmail(value: string | null) {
-    if (!value || !value.includes("@")) return "seu e-mail";
-    const [local, domain] = value.split("@");
+    const deliverableEmail = realAccountEmail(value);
+    if (!deliverableEmail) return "seu e-mail";
+    const [local, domain] = deliverableEmail.split("@");
     return `${local.slice(0, 2)}${"*".repeat(Math.max(3, local.length - 2))}@${domain}`;
   }
 
   const hasTechnicalPhoneEmail = isTechnicalPhoneEmail(accountEmail);
+  const hasRealAccountEmail = Boolean(realAccountEmail(accountEmail) || pendingEmailLabel);
+  const isEmailMissing = !hasRealAccountEmail;
+  const emailConfirmationRecipient = pendingEmailLabel ?? maskEmail(accountEmail);
 
   async function requestEmailConfirmation(action: "resend" | "change") {
     if (emailBusy || (action === "resend" && emailCooldown > 0)) return;
@@ -1069,6 +1076,7 @@ export default function ProfissionalNovoPage() {
       }
       if (action === "change") {
         setAccountEmail(replacementEmail.trim().toLowerCase());
+        setPendingEmailLabel(maskEmail(replacementEmail.trim().toLowerCase()));
         setReplacementEmail("");
         setEditingEmail(false);
       }
@@ -1342,6 +1350,7 @@ export default function ProfissionalNovoPage() {
     registrationSubmittedAt: registrationContext.submittedAt,
     kycStatus: form.kycStatus,
     email: accountEmail,
+    emailPending: Boolean(pendingEmailLabel),
     emailVerified,
     firstIncompleteStep: serverCompletion?.firstIncompleteStep ?? step,
     correctionReason,
@@ -1350,7 +1359,7 @@ export default function ProfissionalNovoPage() {
 
   function followRegistrationStatus() {
     if (registrationStatus.action === "email") {
-      if (hasTechnicalPhoneEmail) setEditingEmail(true);
+      if (isEmailMissing) setEditingEmail(true);
       window.setTimeout(() => document.getElementById("professional-email-status")?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
       return;
     }
@@ -1543,13 +1552,15 @@ export default function ProfissionalNovoPage() {
           fontSize: 12,
           lineHeight: 1.6,
         }}>
-          <strong style={{ display: "block", color: GOLD, marginBottom: 4 }}>E-mail pendente de confirmação</strong>
-          <p style={{ margin: "0 0 10px" }}>Você pode preencher as 9 etapas agora. Para enviar para análise, confirme o link solicitado para <strong>{maskEmail(accountEmail)}</strong>. Confira também a pasta de spam.</p>
-          {editingEmail || hasTechnicalPhoneEmail ? (
+          <strong style={{ display: "block", color: GOLD, marginBottom: 4 }}>{isEmailMissing ? "E-mail não informado" : "Confirme seu e-mail"}</strong>
+          <p style={{ margin: "0 0 10px" }}>{isEmailMissing
+            ? "Adicione seu e-mail para receber a confirmação do cadastro e as atualizações da sua verificação."
+            : <>Enviamos um link de confirmação para <strong>{emailConfirmationRecipient}</strong>. Confira também a pasta de spam.</>}</p>
+          {editingEmail || isEmailMissing ? (
             <div className="model-email-actions">
               <input type="email" autoComplete="email" value={replacementEmail} onChange={(event) => setReplacementEmail(event.target.value)} placeholder="novo@email.com" />
-              <button type="button" disabled={emailBusy || !replacementEmail.trim()} onClick={() => requestEmailConfirmation("change")}>Salvar e solicitar confirmação</button>
-              <button type="button" className="secondary" onClick={() => setEditingEmail(false)}>Cancelar</button>
+              <button type="button" disabled={emailBusy || !replacementEmail.trim()} onClick={() => requestEmailConfirmation("change")}>{isEmailMissing ? "Adicionar e-mail" : "Salvar e solicitar confirmação"}</button>
+              {!isEmailMissing ? <button type="button" className="secondary" onClick={() => setEditingEmail(false)}>Cancelar</button> : null}
             </div>
           ) : (
             <div className="model-email-actions">
@@ -1560,6 +1571,21 @@ export default function ProfissionalNovoPage() {
               <button type="button" className="secondary" onClick={() => setEditingEmail(true)}>Corrigir e-mail</button>
             </div>
           )}
+        </div>
+      )}
+
+      {emailVerified === true && hasRealAccountEmail && step === 0 && (
+        <div id="professional-email-status" className="model-email-warning" role="status" style={{
+          margin: "0 0 22px",
+          padding: "14px 16px",
+          borderRadius: 14,
+          border: "1px solid rgba(80, 200, 140, 0.35)",
+          background: "rgba(80, 200, 140, 0.10)",
+          color: "#fcf7ff",
+          fontSize: 12,
+          lineHeight: 1.6,
+        }}>
+          <strong style={{ display: "block", color: "#8ee8b6" }}>E-mail verificado</strong>
         </div>
       )}
 

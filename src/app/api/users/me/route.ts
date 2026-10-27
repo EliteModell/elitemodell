@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { getHostRegistrationStatus, postLoginPathFromUser } from "@/lib/account-routes";
 import { deriveAvailableProfiles } from "@/lib/account-profiles";
 import { assertApprovedMediaUrls } from "@/lib/approved-media";
+import { realAccountEmail } from "@/lib/account-email";
 
 const updateSchema = z.object({
   name: z.string().min(2).optional(),
@@ -143,8 +144,13 @@ export async function GET() {
   });
 
   const hostStatus = getHostRegistrationStatus(user);
+  const publicEmail = realAccountEmail(user?.email);
   return NextResponse.json(user ? {
     ...user,
+    // Phone-only accounts keep a technical identifier in the database, but it
+    // is not a contact address and must never be exposed as one to the client.
+    email: publicEmail,
+    emailVerified: publicEmail ? user.emailVerified : null,
     hostStatus,
     availableProfiles: deriveAvailableProfiles(user),
     activeProfileType: session.user.activeProfileType,

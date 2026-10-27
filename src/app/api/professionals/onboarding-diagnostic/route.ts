@@ -5,9 +5,12 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { brazilianPhoneStorageVariants, normalizeBrazilianPhone } from "@/lib/phone-otp";
+import { realAccountEmail } from "@/lib/account-email";
 
-function maskEmail(value: string) {
-  const [local, domain = ""] = value.split("@");
+function maskEmail(value: string | null | undefined) {
+  const deliverableEmail = realAccountEmail(value);
+  if (!deliverableEmail) return "E-mail não informado";
+  const [local, domain = ""] = deliverableEmail.split("@");
   return `${local.slice(0, 2)}***@${domain}`;
 }
 
