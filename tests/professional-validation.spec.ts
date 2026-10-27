@@ -290,6 +290,16 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     expect(page).not.toContain("startFaceBiometry");
   });
 
+  test("formulario ativo nao exibe acao redundante de retomar a etapa atual", () => {
+    const page = fs.readFileSync(
+      path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"),
+      "utf8",
+    );
+    expect(page).toContain('const showRegistrationStatus = registrationStatus.id !== "incomplete"');
+    expect(page).toContain("{showRegistrationStatus ? (");
+    expect(page).toContain("localStorage.getItem(draftKey)");
+  });
+
   test("upload do onboarding preserva preview local e aceita referencia privada controlada", () => {
     const page = fs.readFileSync(
       path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"),

@@ -1402,6 +1402,7 @@ export default function ProfissionalNovoPage() {
     correctionReason,
     profileUrl: registrationContext.slug ? `/profissionais/${registrationContext.slug}` : null,
   });
+  const showRegistrationStatus = registrationStatus.id !== "incomplete";
 
   function followRegistrationStatus() {
     if (registrationStatus.action === "email") {
@@ -1564,16 +1565,18 @@ export default function ProfissionalNovoPage() {
         .model-correction-links button { padding:9px 10px; border:1px solid rgba(225,166,255,.35); border-radius:9px; background:#17111b; color:#e9c7fa; text-align:left; font-weight:700; }
       `}</style>
 
-      <section className="model-registration-status" data-tone={registrationStatus.tone} aria-label="Acompanhamento do cadastro" data-registration-status={registrationStatus.id}>
-        <div className="model-registration-status-copy">
-          <span className="model-registration-status-icon" aria-hidden="true">{registrationStatus.tone === "success" ? "✓" : "i"}</span>
-          <div>
-            <h2>{registrationStatus.title}</h2>
-            <p>{registrationStatus.description}</p>
+      {showRegistrationStatus ? (
+        <section className="model-registration-status" data-tone={registrationStatus.tone} aria-label="Acompanhamento do cadastro" data-registration-status={registrationStatus.id}>
+          <div className="model-registration-status-copy">
+            <span className="model-registration-status-icon" aria-hidden="true">{registrationStatus.tone === "success" ? "✓" : "i"}</span>
+            <div>
+              <h2>{registrationStatus.title}</h2>
+              <p>{registrationStatus.description}</p>
+            </div>
           </div>
-        </div>
-        <button type="button" onClick={followRegistrationStatus}>{registrationStatus.actionLabel}</button>
-      </section>
+          <button type="button" onClick={followRegistrationStatus}>{registrationStatus.actionLabel}</button>
+        </section>
+      ) : null}
 
       {correctionReason && (
         <div className="model-correction-warning" role="alert">

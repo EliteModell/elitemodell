@@ -240,6 +240,30 @@ test("rascunho completo continua vinculado à conta e retoma a etapa salva", asy
   await expect(page.getByRole("button", { name: "Verificar minha identidade", exact: true })).toBeVisible();
 });
 
+test("retorno após confirmar e-mail reabre a etapa 5 sem cartão de retomada redundante", async ({ page }) => {
+  await mockOnboarding(page);
+  await page.addInitScript(({ userId }) => {
+    localStorage.setItem(`elitemodell_professional_onboarding_v2:${encodeURIComponent(userId)}:PROFESSIONAL`, JSON.stringify({
+      ownerId: userId,
+      registrationType: "PROFESSIONAL",
+      updatedAt: "2099-01-01T00:00:00.000Z",
+      step: 4,
+      form: { displayName: "Marina Preservada", pricePerHour: "350", paymentMethods: ["Pix"] },
+    }));
+  }, { userId: USER_ID });
+
+  await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText("Etapa 5 de 9", { exact: false })).toBeVisible();
+  await expect(page.getByText("Continue de onde parou", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Continuar cadastro" })).toHaveCount(0);
+  await expect(page.getByPlaceholder("100").nth(2)).toHaveValue("350");
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.getByText("Etapa 5 de 9", { exact: false })).toBeVisible();
+  await expect(page.getByText("Continue de onde parou", { exact: true })).toHaveCount(0);
+  await expect(page.getByPlaceholder("100").nth(2)).toHaveValue("350");
+});
+
 test("rascunho local antigo nao sobrescreve nome e cidade mais novos do banco", async ({ page }) => {
   await mockOnboarding(page);
   await page.unroute("**/api/users/me**");
@@ -312,7 +336,7 @@ test("etapa de servicos deixa categorias claras, expansíveis e acessíveis no m
     await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
 
     await expect(page.getByText("Etapa 4 de 9", { exact: false })).toBeVisible();
-    await expect(page.locator('[data-registration-status="incomplete"]')).toBeVisible();
+    await expect(page.locator('[data-registration-status="incomplete"]')).toHaveCount(0);
     const categories = page.locator(".model-service-category");
     await expect(categories.first()).toHaveAttribute("open", "");
     await expect(categories.nth(1)).not.toHaveAttribute("open", "");
