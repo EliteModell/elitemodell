@@ -47,7 +47,7 @@ test("conta com telefone confirmado retoma o cadastro enquanto o e-mail esta pen
 
   await expect(page.getByText("Etapa 1 de 9", { exact: false })).toBeVisible();
   await expect(page.getByText("E-mail pendente de", { exact: false })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Confirme seu e-mail" })).toBeVisible();
+  await expect(page.locator('[data-registration-status="email_unconfirmed"]')).toBeVisible();
   await expect(page.getByText("Confirme seu e-mail para continuar")).toHaveCount(0);
   await expect(page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...")).toHaveValue("Marina Retorno");
 });
@@ -72,11 +72,11 @@ test("e-mail ausente usa o estado correto e falha de envio nao cria confirmacao 
   });
 
   await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Falta informar seu e-mail para continuar" })).toBeVisible();
+  await expect(page.locator('[data-registration-status="email_missing"]')).toBeVisible();
   await page.getByPlaceholder("novo@email.com").fill("marina@example.com");
   await page.getByRole("button", { name: "Salvar e solicitar confirmação" }).click();
   await expect(page.getByText("Serviço de e-mail temporariamente indisponível.")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Falta informar seu e-mail para continuar" })).toBeVisible();
+  await expect(page.locator('[data-registration-status="email_missing"]')).toBeVisible();
 });
 
 test("sessao expirada orienta reentrada sem criar uma nova conta", async ({ page }) => {
@@ -250,7 +250,7 @@ test("etapa de servicos deixa categorias claras, expansíveis e acessíveis no m
     await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
 
     await expect(page.getByText("Etapa 4 de 9", { exact: false })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Continue de onde parou" })).toBeVisible();
+    await expect(page.locator('[data-registration-status="incomplete"]')).toBeVisible();
     const categories = page.locator(".model-service-category");
     await expect(categories.first()).toHaveAttribute("open", "");
     await expect(categories.nth(1)).not.toHaveAttribute("open", "");

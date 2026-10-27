@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { enforceRateLimitAsync } from "@/lib/security";
 import { buildEmailAuthCallbackUrl } from "@/lib/email-auth-callback";
+import { isTechnicalPhoneEmail } from "@/lib/account-email";
 
 const inputSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("status") }),
@@ -17,10 +18,6 @@ const inputSchema = z.discriminatedUnion("action", [
 ]);
 
 const RECENT_PHONE_PROOF_MS = 30 * 60 * 1000;
-
-function isTechnicalPhoneEmail(email: string) {
-  return email.toLowerCase().endsWith("@sms.elitemodell.local");
-}
 
 function hasRecentPhoneProof(user: { phone: string | null; phoneVerified: boolean; phoneVerifiedAt: Date | null }) {
   return Boolean(user.phone && user.phoneVerified && user.phoneVerifiedAt && Date.now() - user.phoneVerifiedAt.getTime() <= RECENT_PHONE_PROOF_MS);

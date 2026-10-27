@@ -1,10 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
-
-function validEmail(value: string | null | undefined) {
-  return Boolean(value && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && !value.toLowerCase().endsWith("@sms.elitemodell.local"));
-}
+import { realAccountEmail } from "@/lib/account-email";
 
 function normalizedBrazilPhone(value: string | null | undefined) {
   const digits = value?.replace(/\D/g, "") ?? "";
@@ -108,7 +105,7 @@ export async function deliverProfessionalCommunication(input: {
       link: notificationLink,
     } });
   }
-  if (!validEmail(input.email)) {
+  if (!realAccountEmail(input.email)) {
     await prisma.auditLog.create({ data: {
       adminId: input.adminId,
       actorIdentifier: input.adminId ?? "SYSTEM",

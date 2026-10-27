@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { BrandMark } from "@/components/BrandMark";
+import { accountEmailLabel } from "@/lib/account-email";
 import {
   Bell,
   ChevronRight,
@@ -320,7 +321,7 @@ export function SideDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             </div>
             <div className="min-w-0">
               <p className="truncate text-[15px] font-bold text-[#f5f0e4]">{session?.user?.name ?? "Cliente Elite"}</p>
-              <p className="mt-0.5 truncate text-[12px] text-[#f5f0e4]/46">{session?.user?.email ?? "Conta discreta"}</p>
+              <p className="mt-0.5 truncate text-[12px] text-[#f5f0e4]/46">{session?.user?.email ? accountEmailLabel(session.user.email) : "Conta discreta"}</p>
               <p className="mt-2 inline-flex rounded-full border border-[#b72cff]/22 bg-[#b72cff]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase text-[#e1a6ff]">
                 acesso cliente
               </p>

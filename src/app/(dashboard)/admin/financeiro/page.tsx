@@ -8,6 +8,7 @@ import {
 } from "@/lib/payment-operations";
 import { toCents } from "@/lib/money";
 import { getProfessionalPlan } from "@/lib/professional-plans";
+import { accountEmailLabel } from "@/lib/account-email";
 import {
   AdminHeader,
   AdminPanel,
@@ -137,7 +138,7 @@ export default async function AdminFinanceiroPage() {
             {payments.map((payment) => (
               <tr key={payment.id}>
                 <td style={tdStyle}>
-                  <strong>{payment.user?.name ?? payment.user?.email ?? "Sem usuario"}</strong><br />
+                  <strong>{payment.user?.name ?? (payment.user ? accountEmailLabel(payment.user.email) : "Sem usuario")}</strong><br />
                   {accountTypeLabel(payment.user)} / {describePaymentReference(payment)}<br />
                   <small>{payment.createdAt.toLocaleString("pt-BR")}</small>
                 </td>

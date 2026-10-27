@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
+import { accountEmailLabel } from "@/lib/account-email";
 import { AdminHeader, AdminPanel, AdminTable, StatusPill, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
@@ -106,11 +107,11 @@ export default async function AdminAvaliacoesPage() {
                 </td>
                 <td style={tdStyle}>
                   Nota: {item.review.rating}/5<br />
-                  Autor: {item.review.author.name ?? item.review.author.email ?? "Cliente"}<br />
+                  Autor: {item.review.author.name ?? accountEmailLabel(item.review.author.email)}<br />
                   <span style={{ color: "#b4adb0" }}>{item.review.comment}</span>
                 </td>
                 <td style={tdStyle}>
-                  Enviada por {item.author.name ?? item.author.email ?? "Profissional"}<br />
+                  Enviada por {item.author.name ?? accountEmailLabel(item.author.email)}<br />
                   <span style={{ color: "#b4adb0" }}>{item.reason}</span>
                   {item.adminNote ? <p style={{ color: "#e1a6ff", margin: "8px 0 0" }}>Admin: {item.adminNote}</p> : null}
                 </td>

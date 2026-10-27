@@ -4,6 +4,7 @@ import path from "node:path";
 import { createProfessionalSchema } from "../src/lib/professional-profile-schema";
 import { assessProfessionalDiditDecision } from "../src/lib/professional-didit";
 import { professionalRegistrationStatus } from "../src/lib/professional-registration-status";
+import { accountEmailLabel, isTechnicalPhoneEmail, realAccountEmail } from "../src/lib/account-email";
 import { reconcileProfessionalDidit } from "../src/lib/didit-reconciliation";
 import { handleDigitWebhook } from "../src/lib/didit-webhook-handler";
 import { prisma } from "../src/lib/prisma";
@@ -52,6 +53,47 @@ const validProfile = {
   image: "/api/media/test-cover",
   kycSessionId: "kyc_test",
 };
+
+test.describe("e-mail tecnico de cadastro por telefone", () => {
+  test("mantem identificador interno fora da apresentacao", () => {
+    const technical = "phone_model_11917934340@sms.elitemodell.local";
+    expect(isTechnicalPhoneEmail(technical)).toBe(true);
+    expect(isTechnicalPhoneEmail(technical.toUpperCase())).toBe(true);
+    expect(realAccountEmail(technical)).toBeNull();
+    expect(accountEmailLabel(technical)).toBe("E-mail não informado");
+  });
+
+  test("preserva e-mail verdadeiro e trata ausencia", () => {
+    expect(isTechnicalPhoneEmail("modelo@example.com")).toBe(false);
+    expect(realAccountEmail(" Modelo@Example.com ")).toBe("modelo@example.com");
+    expect(accountEmailLabel("modelo@example.com")).toBe("modelo@example.com");
+    expect(accountEmailLabel(null)).toBe("E-mail não informado");
+  });
+
+  test("bloqueia recuperacao e entrega para dominio tecnico sem mudar o identificador", () => {
+    const recovery = fs.readFileSync(path.join(process.cwd(), "src/app/api/auth/password-recovery/route.ts"), "utf8");
+    const emailService = fs.readFileSync(path.join(process.cwd(), "src/lib/auth-email.ts"), "utf8");
+    const phoneAuth = fs.readFileSync(path.join(process.cwd(), "src/lib/phone-otp.ts"), "utf8");
+    expect(recovery).toContain("isTechnicalPhoneEmail(email)");
+    expect(emailService).toContain("realAccountEmail(to)");
+    expect(phoneAuth).toContain("@sms.elitemodell.local");
+  });
+
+  test("painel administrativo usa rotulo seguro sem nova consulta", () => {
+    const card = fs.readFileSync(path.join(process.cwd(), "src/app/(dashboard)/admin/profissionais/AdminProfessionalCard.tsx"), "utf8");
+    expect(card).toContain("accountEmailLabel(pro.user.email)");
+    expect(card).not.toContain('label="E-mail" value={pro.user.email}');
+    expect(card).toContain('label="Nome da conta"');
+    expect(card).toContain("PERFIL · ${completion.profilePercent}% PREENCHIDO");
+    expect(card).toContain("!isTechnicalPhoneEmail(pro.user.email)");
+  });
+
+  test("novos profissionais nao recebem e-mail ou telefone como nome por fallback", () => {
+    const auth = fs.readFileSync(path.join(process.cwd(), "src/lib/auth.ts"), "utf8");
+    expect(auth).toContain('(roleIntent === "profissional" ? null : authUser.email ?? phone ?? null)');
+  });
+
+});
 
 function issuePaths(data: Record<string, unknown>) {
   const result = createProfessionalSchema.safeParse(data);

@@ -9,6 +9,7 @@ import { checkRateLimitAsync } from "./rate-limit";
 import { getHostRegistrationStatus, normalizeEntryRole } from "./account-routes";
 import { deriveAvailableProfiles, ensureProfileForIntent, profileTypeFromIntent } from "./account-profiles";
 import { verifySignupDraftToken } from "./signup-draft-token";
+import { realAccountEmail } from "./account-email";
 
 function accountTypeFromRoleIntent(roleIntent: ReturnType<typeof normalizeEntryRole>) {
   if (roleIntent === "profissional") return "model";
@@ -137,15 +138,15 @@ export const authOptions: NextAuthOptions = {
           const category = ["MULHER", "HOMEM", "TRANS"].includes(rawCategory ?? "")
             ? rawCategory as "MULHER" | "HOMEM" | "TRANS"
             : null;
-          const emailVerified = authUser.email_confirmed_at
+          const emailVerified = authUser.email_confirmed_at && realAccountEmail(email)
             ? new Date(authUser.email_confirmed_at)
             : null;
-          const metadataName =
+          const explicitMetadataName =
             (metadata.name as string | undefined) ??
             (metadata.full_name as string | undefined) ??
-            authUser.email ??
-            phone ??
             null;
+          const metadataName = explicitMetadataName ??
+            (roleIntent === "profissional" ? null : authUser.email ?? phone ?? null);
           const metadataImage =
             (metadata.avatar_url as string | undefined) ??
             (metadata.picture as string | undefined) ??

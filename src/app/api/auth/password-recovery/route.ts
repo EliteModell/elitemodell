@@ -5,6 +5,7 @@ import { z } from "zod";
 import { buildAuthEmail, sendAuthEmail } from "@/lib/auth-email";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
+import { isTechnicalPhoneEmail } from "@/lib/account-email";
 
 const schema = z.object({
   email: z.string().email(),
@@ -38,6 +39,9 @@ export async function POST(req: NextRequest) {
   try {
     const body = schema.parse(await req.json());
     const email = body.email.trim().toLowerCase();
+    if (isTechnicalPhoneEmail(email)) {
+      return NextResponse.json({ ok: true });
+    }
     const supabase = createSupabaseServerClient();
     const redirectTo = recoveryRedirectUrl();
 

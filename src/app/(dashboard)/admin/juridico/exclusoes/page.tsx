@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
+import { accountEmailLabel } from "@/lib/account-email";
 import {
   AdminHeader,
   AdminPanel,
@@ -121,7 +122,7 @@ export default async function AdminDeletionJobsPage() {
                 <tr key={job.id}>
                   <td style={tdStyle}>
                     <strong>{job.user.name || "Titular"}</strong><br />
-                    {job.user.email}<br />
+                    {accountEmailLabel(job.user.email)}<br />
                     <small>{job.createdAt.toLocaleString("pt-BR")}</small>
                   </td>
                   <td style={tdStyle}>

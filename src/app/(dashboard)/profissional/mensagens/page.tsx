@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireCompanionPanel } from "@/lib/account-access";
+import { accountEmailLabel } from "@/lib/account-email";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -24,7 +25,7 @@ function formatDate(date: Date) {
 }
 
 function clientLabel(client: { name: string | null; email: string | null }) {
-  return client.name ?? client.email ?? "Cliente";
+  return client.name ?? (client.email ? accountEmailLabel(client.email) : "Cliente");
 }
 
 function initials(value: string) {

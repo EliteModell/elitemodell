@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { accountEmailLabel } from "@/lib/account-email";
 
 type Review = {
   id: string;
@@ -105,7 +106,7 @@ export default function ProfissionalAvaliacoesPage() {
             <article key={review.id} style={card}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                 <div>
-                  <strong style={{ color: "#fff" }}>{review.author?.name ?? review.author?.email ?? "Cliente"}</strong>
+                  <strong style={{ color: "#fff" }}>{review.author?.name ?? (review.author ? accountEmailLabel(review.author.email) : "Cliente")}</strong>
                   <p style={{ color: "#777", margin: "4px 0 0", fontSize: 12 }}>{new Date(review.createdAt).toLocaleDateString("pt-BR")}</p>
                 </div>
                 <div style={{ color: "#b72cff", fontWeight: 900 }}>{"★".repeat(review.rating)}<span style={{ color: "#333" }}>{"★".repeat(5 - review.rating)}</span></div>

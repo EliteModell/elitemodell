@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { BrandMark } from "@/components/BrandMark";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import { accountEmailLabel } from "@/lib/account-email";
 
 const DashSidebar = dynamic(() => import("@/components/DashSidebar"));
 const AdminSidebar = dynamic(() => import("@/components/admin/AdminSidebar"));
@@ -106,7 +107,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           mobileOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
           name={session?.user?.name}
-          email={session?.user?.email}
+          email={session?.user?.email ? accountEmailLabel(session.user.email) : null}
         />
       ) : (
         <DashSidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -132,7 +133,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
               <div className="min-w-0 lg:hidden">
                 <div className="w-[118px]"><BrandMark /></div>
-                <p className="truncate text-xs text-[#777b88]">{session?.user?.email ?? "Conta discreta"}</p>
+                <p className="truncate text-xs text-[#777b88]">{session?.user?.email ? accountEmailLabel(session.user.email) : "Conta discreta"}</p>
               </div>
             </div>
 

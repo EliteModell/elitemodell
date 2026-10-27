@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import toast from "react-hot-toast";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
+import { isTechnicalPhoneEmail } from "@/lib/account-email";
 import { validateBirthDate } from "@/lib/age-validation";
 import { loadSupabaseAuth } from "@/lib/supabase-auth-loader";
 import {
@@ -1048,7 +1049,7 @@ export default function ProfissionalNovoPage() {
     return `${local.slice(0, 2)}${"*".repeat(Math.max(3, local.length - 2))}@${domain}`;
   }
 
-  const hasTechnicalPhoneEmail = accountEmail?.toLowerCase().endsWith("@sms.elitemodell.local") ?? false;
+  const hasTechnicalPhoneEmail = isTechnicalPhoneEmail(accountEmail);
 
   async function requestEmailConfirmation(action: "resend" | "change") {
     if (emailBusy || (action === "resend" && emailCooldown > 0)) return;

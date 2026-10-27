@@ -1,3 +1,5 @@
+import { isTechnicalPhoneEmail } from "@/lib/account-email";
+
 export type ProfessionalRegistrationStatusInput = {
   professionalStatus?: string | null;
   registrationSubmittedAt?: string | Date | null;
@@ -19,10 +21,6 @@ export type ProfessionalRegistrationStatus = {
   targetStep?: number;
   tone: "neutral" | "warning" | "success";
 };
-
-function isTechnicalPhoneEmail(value: string | null | undefined) {
-  return Boolean(value?.toLowerCase().endsWith("@sms.elitemodell.local"));
-}
 
 export function professionalRegistrationStatus(input: ProfessionalRegistrationStatusInput): ProfessionalRegistrationStatus {
   if (!input.email || isTechnicalPhoneEmail(input.email)) {

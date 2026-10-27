@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
 import { MANUAL_PENDING_STATUS, PERSONA_PENDING_STATUS, personaProviderLabel } from "@/lib/persona";
+import { accountEmailLabel } from "@/lib/account-email";
 import { AdminHeader, AdminPanel, AdminTable, StatusPill, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
@@ -186,7 +187,7 @@ export default async function AdminKycPage() {
           <tbody>
             {professionals.map((pro) => (
               <tr key={pro.id}>
-                <td style={tdStyle}><strong>{pro.displayName}</strong><br />{pro.user.email}</td>
+                <td style={tdStyle}><strong>{pro.displayName}</strong><br />{accountEmailLabel(pro.user.email)}</td>
                 <td style={tdStyle}>
                   {personaProviderLabel(pro.kycProvider, pro.kycSessionId)}<br />
                   <span style={{ color: "#b4adb0" }}>{pro.kycSessionId ?? "sem inquiry/sessão"}</span>
@@ -235,7 +236,7 @@ export default async function AdminKycPage() {
               <tr key={client.id}>
                 <td style={tdStyle}>
                   {client.name ?? "Sem nome"}<br />
-                  {client.email}<br />
+                  {accountEmailLabel(client.email)}<br />
                   {client.kycIsSandbox && (
                     <span style={{
                       display: "inline-block", marginTop: 4, padding: "2px 8px",

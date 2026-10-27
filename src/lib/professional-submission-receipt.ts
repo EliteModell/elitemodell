@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { sendProfessionalSubmissionReceipt } from "@/lib/auth-email";
+import { realAccountEmail } from "@/lib/account-email";
 
 export type SubmissionReceiptStatus = "PENDING" | "SENDING" | "SENT" | "FAILED" | "NOT_REQUIRED";
 
@@ -20,6 +21,9 @@ export async function deliverProfessionalSubmissionReceipt(
   name?: string | null,
   pendingItems: string[] = [],
 ): Promise<SubmissionReceiptStatus> {
+  if (!realAccountEmail(email)) {
+    return markSubmissionReceiptNotRequired(professionalId);
+  }
   await prisma.professionalSubmissionReceipt.upsert({
     where: { professionalId },
     create: { professionalId, status: "PENDING" },

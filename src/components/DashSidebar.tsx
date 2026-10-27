@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- Avatars can be remote Google/Supabase URLs. */
 
 import Link from "next/link";
+import { accountEmailLabel } from "@/lib/account-email";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
@@ -176,7 +177,7 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
         if (!data?.professional) return;
         setProfessionalProfile({
           displayName: data.professional.displayName ?? session?.user?.name ?? "Perfil Elite",
-          email: data.email ?? session?.user?.email ?? "Conta profissional",
+          email: data.email || session?.user?.email ? accountEmailLabel(data.email ?? session?.user?.email) : "Conta profissional",
           image: data.professional.image ?? null,
           status: data.professional.status ?? "PENDING_REVIEW",
           planLabel: professionalPlanLabel(data.premiumUntil),
@@ -190,7 +191,9 @@ export default function DashSidebar({ mobileOpen, onClose }: Props) {
   }, [isProfessionalArea, session?.user?.email, session?.user?.name]);
 
   const sidebarName = professionalProfile?.displayName ?? session?.user?.name ?? "Perfil Elite";
-  const sidebarEmail = professionalProfile?.email ?? session?.user?.email ?? roleLabel(role);
+  const sidebarEmail = professionalProfile?.email || session?.user?.email
+    ? accountEmailLabel(professionalProfile?.email ?? session?.user?.email)
+    : roleLabel(role);
   const sidebarImage = professionalProfile?.image ?? session?.user?.image ?? null;
   const sidebarPlan = professionalProfile?.planLabel ?? roleLabel(role);
 

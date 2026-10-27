@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
+import { accountEmailLabel } from "@/lib/account-email";
 import { AdminHeader, AdminPanel, AdminTable, StatusPill, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +32,7 @@ export default async function AdminSuportePage() {
             {reports.map((report) => (
               <tr key={report.id}>
                 <td style={tdStyle}>Denuncia</td>
-                <td style={tdStyle}>{report.author.name ?? report.author.email}</td>
+                <td style={tdStyle}>{report.author.name ?? accountEmailLabel(report.author.email)}</td>
                 <td style={tdStyle}>{report.reason}<br />{report.description}</td>
                 <td style={tdStyle}><StatusPill tone={report.status === "PENDING" ? "danger" : "warning"}>{report.status}</StatusPill></td>
               </tr>
@@ -48,7 +49,7 @@ export default async function AdminSuportePage() {
           <tbody>
             {recentMessages.map((message) => (
               <tr key={message.id}>
-                <td style={tdStyle}>{message.sender.name ?? message.sender.email}</td>
+                <td style={tdStyle}>{message.sender.name ?? accountEmailLabel(message.sender.email)}</td>
                 <td style={tdStyle}>{message.booking.id}<br />{message.booking.status}</td>
                 <td style={tdStyle}>{message.content.slice(0, 160)}</td>
                 <td style={tdStyle}>{message.createdAt.toLocaleString("pt-BR")}</td>

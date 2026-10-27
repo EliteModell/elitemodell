@@ -7,6 +7,7 @@ import { Save, X } from "lucide-react";
 import ProfileHeaderCard from "@/components/client-area/ProfileHeaderCard";
 import ProfileInfoSection from "@/components/client-area/ProfileInfoSection";
 import type { ClientAgeVerificationStatus } from "@/lib/client-age-verification";
+import { isTechnicalPhoneEmail, realAccountEmail } from "@/lib/account-email";
 
 export type PremiumProfileData = {
   user: {
@@ -169,7 +170,7 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
 
       <ProfileHeaderCard
         name={profile.name}
-        email={profile.email}
+        email={realAccountEmail(profile.email)}
         image={profile.image}
         verified={profile.verified}
         uploading={uploading}
@@ -208,10 +209,10 @@ export default function PremiumProfile({ data }: { data: PremiumProfileData }) {
 
       <ProfileInfoSection
         name={profile.name}
-        email={profile.email}
+        email={realAccountEmail(profile.email)}
         phone={maskPhone(profile.phone ?? "") || "Não informado"}
         city={data.city}
-        emailVerified={Boolean(profile.emailVerified)}
+        emailVerified={Boolean(profile.emailVerified) && !isTechnicalPhoneEmail(profile.email)}
         phoneVerified={Boolean(profile.phoneVerified || profile.phoneVerifiedAt)}
         ageVerificationStatus={profile.ageVerificationStatus}
         ageVerified={profile.ageVerified}

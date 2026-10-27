@@ -1,5 +1,6 @@
 import "server-only";
 import { professionalApprovalEmailIdempotencyKey, professionalPublicationEmailIdempotencyKey, professionalSubmissionReceiptIdempotencyKey } from "@/lib/email-idempotency";
+import { realAccountEmail } from "@/lib/account-email";
 
 export type AuthEmailActionType =
   | "signup"
@@ -189,6 +190,10 @@ export async function sendAuthEmail(
   email: AuthEmail,
   options?: { idempotencyKey?: string; timeoutMs?: number },
 ) {
+  const deliverableEmail = realAccountEmail(to);
+  if (!deliverableEmail) {
+    throw new Error("Email recipient is missing or technical");
+  }
   const resendKey = process.env.RESEND_API_KEY;
   if (!resendKey) {
     console.error("[auth-email] RESEND_API_KEY ausente");
@@ -205,7 +210,7 @@ export async function sendAuthEmail(
     signal: AbortSignal.timeout(options?.timeoutMs ?? 12_000),
     body: JSON.stringify({
       from: process.env.EMAIL_FROM?.trim() || "Elite Modell <noreply@elitemodell.com.br>",
-      to: [to],
+      to: [deliverableEmail],
       subject: email.subject,
       html: email.html,
     }),

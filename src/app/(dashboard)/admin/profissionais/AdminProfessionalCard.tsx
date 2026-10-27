@@ -6,6 +6,7 @@ import { AdminKycEvidence } from "./AdminKycEvidence";
 import { professionalCompletion } from "@/lib/professional-completeness";
 import { resolveProfessionalAccess } from "@/lib/professional-access-policy";
 import { adminControlledMediaPreviewUrl } from "@/lib/public-professional-media";
+import { accountEmailLabel, isTechnicalPhoneEmail } from "@/lib/account-email";
 
 type AuditEntry = {
   id: string;
@@ -51,7 +52,7 @@ export type AdminProfessionalRecord = {
   user: {
     name: string | null; email: string; phone: string | null; city: string | null; state: string | null;
     birthDate: Date | null; category: string | null; blocked: boolean; blockReason: string | null;
-    termsConsent: boolean; lgpdConsent: boolean;
+    termsConsent: boolean; lgpdConsent: boolean; emailVerified: Date | null;
     blockedAt: Date | null; kycSubmittedAt: Date | null; kycReviewedAt: Date | null;
     kycRejectionReason: string | null; premiumUntil: Date | null; createdAt: Date; updatedAt: Date;
     uploadedAssets: unknown[];
@@ -174,7 +175,10 @@ export function AdminProfessionalCard({
   ].filter(([, value]) => value != null) as Array<[string, number]>;
   const submissionAudit = audits.find((entry) => ["Enviou para análise", "Reenviou após correção"].includes(moderationAction(entry)));
   const submittedAt = submissionAudit?.timestamp ?? pro.submissionReceipt?.createdAt ?? null;
-  const completion = professionalCompletion({ ...pro, emailVerified: true });
+  const completion = professionalCompletion({
+    ...pro,
+    emailVerified: Boolean(pro.user.emailVerified) && !isTechnicalPhoneEmail(pro.user.email),
+  });
   const communicationAudits = audits.filter((entry) => {
     const value = JSON.stringify(entry.changes ?? {});
     return value.includes("EMAIL_SENT") || value.includes("EMAIL_FAILED");
@@ -224,21 +228,21 @@ export function AdminProfessionalCard({
           <div className="pro-sections">
             <Section title="DADOS PESSOAIS / CONTATO">
               <Row label="Nome de exibição" value={pro.displayName} />
-              <Row label="Nome cadastrado" value={pro.user.name} />
+              <Row label="Nome da conta" value={pro.user.name} />
               <Row label="Nascimento" value={`${date(pro.birthDate ?? pro.user.birthDate)}${calculatedAge != null ? ` · ${calculatedAge} anos` : ""}`} />
               <Row label="Sexo/gênero" value={pro.escortCategory ?? pro.user.category} />
               <Row label="Altura" value={pro.height ? `${pro.height} cm` : null} />
               <Row label="Telefone" value={pro.phone ?? pro.user.phone} />
               <Row label="WhatsApp" value={pro.whatsapp} />
-              <Row label="E-mail" value={pro.user.email} />
+              <Row label="E-mail" value={accountEmailLabel(pro.user.email)} />
               <Row label="Conta criada" value={date(pro.user.createdAt, true)} />
               <Row label="Enviado para análise" value={submittedAt ? date(submittedAt, true) : pro.status === "DRAFT" ? "Ainda não enviado" : "Data não registrada (cadastro legado)"} />
               <Row label="Última atualização" value={date(pro.updatedAt, true)} />
             </Section>
 
-            <Section title={`CADASTRO · ${completion.profilePercent}% CONCLUÍDO`}>
+            <Section title={`PERFIL · ${completion.profilePercent}% PREENCHIDO`}>
               <div className="pro-completion"><i style={{ width: completion.profilePercent + "%" }} /></div>
-              <Row label="Dados obrigatórios" value={completion.profileComplete ? "Completos" : completion.profileIssues.length + " pendência(s)"} />
+              <Row label="Dados do perfil" value={completion.profileComplete ? "Completos" : completion.profileIssues.length + " pendência(s)"} />
               <Row label="KYC separado" value={completion.kycApproved ? "Aprovado" : "Pendente"} />
               <Row label="Pronto para enviar" value={completion.readyToSubmit ? "Sim" : "Não"} />
               <Row label="Regra" value={pro.completionRulesVersion >= 2 ? "Atual" : "Compatibilidade de legado"} />

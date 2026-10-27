@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
 import { buildDeletionPlan, processDataDeletionJob } from "@/lib/data-deletion-worker";
 import { brazilianPhoneStorageVariants, normalizeBrazilianPhone } from "@/lib/phone-otp";
+import { accountEmailLabel, isTechnicalPhoneEmail } from "@/lib/account-email";
 import { AdminHeader, AdminPagination, AdminPanel, AdminTable, StatusPill, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
@@ -237,7 +238,7 @@ export default async function AdminClientesPage({ searchParams }: { searchParams
           <tbody>
             {clients.map((client) => (
               <tr key={client.id}>
-                <td style={tdStyle}><strong>{client.name ?? "Sem nome"}</strong><br />{client.email}<br />{client.phone ?? "-"}</td>
+                <td style={tdStyle}><strong>{client.name ?? "Sem nome"}</strong><br />{accountEmailLabel(client.email)}<br />{client.phone ?? "-"}</td>
                 <td style={tdStyle}>
                   <StatusPill tone={client.blocked ? "danger" : client.clientStatus === "VERIFIED" ? "success" : "warning"}>
                     {client.blocked ? "BLOQUEADO" : client.clientStatus}
@@ -245,7 +246,7 @@ export default async function AdminClientesPage({ searchParams }: { searchParams
                   {client.blockReason ? <p style={{ color: "#ef4444", margin: "8px 0 0" }}>{client.blockReason}</p> : null}
                   {query ? <p style={{ margin: "8px 0 0", lineHeight: 1.55 }}>
                     Telefone confirmado: {client.phoneVerified ? "sim" : "não"}<br />
-                    E-mail confirmado: {client.emailVerified ? "sim" : "não"}<br />
+                    E-mail confirmado: {client.emailVerified && !isTechnicalPhoneEmail(client.email) ? "sim" : "não"}<br />
                     Perfil: {client.professional?.status ?? "não criado"}<br />
                     Rascunho: {client.professional?.status === "DRAFT" && !client.professional.registrationSubmittedAt ? "sim" : "não"}<br />
                     Envio formal: {client.professional?.registrationSubmittedAt ? client.professional.registrationSubmittedAt.toLocaleString("pt-BR") : "não"}<br />

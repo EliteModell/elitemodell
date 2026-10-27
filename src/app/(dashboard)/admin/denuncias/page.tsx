@@ -3,6 +3,7 @@ import { ReportStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
+import { accountEmailLabel } from "@/lib/account-email";
 import { AdminHeader, AdminPanel, AdminTable, StatusPill, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
@@ -195,7 +196,7 @@ export default async function AdminDenunciasPage() {
               <tr key={report.id}>
                 <td style={tdStyle}><strong>{report.reason}</strong><br />{report.description}<br />{report.evidence.length} evidencia(s)</td>
                 <td style={tdStyle}>{report.targetType}<br />{report.targetId}</td>
-                <td style={tdStyle}>{report.author.name ?? "Sem nome"}<br />{report.author.email}</td>
+                <td style={tdStyle}>{report.author.name ?? "Sem nome"}<br />{accountEmailLabel(report.author.email)}</td>
                 <td style={tdStyle}><StatusPill tone={report.status === "PENDING" ? "danger" : report.status === "REVIEWING" ? "warning" : "success"}>{report.status}</StatusPill></td>
                 <td style={tdStyle}>
                   <form action={updateReport} style={{ display: "grid", gap: 8 }}>
