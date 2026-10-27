@@ -122,8 +122,10 @@ export function isSubmittedDigitStatus(status?: string | null) {
   return status === "Approved" || status === "In Review" || status === "Resubmitted";
 }
 
-export function buildDigitVendorData(userId: string, intentId: string) {
-  return `${userId}:didit-intent:${intentId}`;
+export function buildDigitVendorData(userId: string) {
+  // Didit groups legitimate reverifications by vendor_data. Keep this stable
+  // per account; the one-off creation intent remains stored only in our DB.
+  return userId;
 }
 
 export function digitVendorDataBelongsToUser(vendorData: string | null | undefined, userId: string) {
@@ -216,7 +218,10 @@ export async function createDigitSession(vendorData: string, callbackUrl: string
   return res.json() as Promise<DiditSession>;
 }
 
-export async function findDigitSessionByVendorData(vendorData: string): Promise<DiditSessionSummary | null> {
+export async function findDigitSessionByVendorData(
+  vendorData: string,
+  createdAfter?: number,
+): Promise<DiditSessionSummary | null> {
   const { apiKey } = getDigitConfig();
   const url = new URL(`${DIDIT_API_BASE}/v2/sessions`);
   url.searchParams.set("vendor_data", vendorData);
@@ -238,8 +243,8 @@ export async function findDigitSessionByVendorData(vendorData: string): Promise<
           ? record.sessions
           : [];
 
-  for (const candidate of candidates) {
-    if (!candidate || typeof candidate !== "object") continue;
+  const matching = candidates.flatMap((candidate) => {
+    if (!candidate || typeof candidate !== "object") return [];
     const session = candidate as Record<string, unknown>;
     const sessionId = typeof session.session_id === "string" ? session.session_id : null;
     const sessionUrl = typeof session.url === "string"
@@ -249,17 +254,29 @@ export async function findDigitSessionByVendorData(vendorData: string): Promise<
         : null;
     const status = typeof session.status === "string" ? session.status as DiditSessionStatus : "Not Started";
     const owner = typeof session.vendor_data === "string" ? session.vendor_data : vendorData;
-    if (sessionId && owner === vendorData) {
-      return {
+    const createdAt = typeof session.created_at === "string" ? Date.parse(session.created_at) : Number.NaN;
+    const withinIntentWindow = createdAfter === undefined
+      || (Number.isFinite(createdAt) && createdAt >= createdAfter - 60_000);
+    if (sessionId && owner === vendorData && withinIntentWindow) {
+      return [{
         session_id: sessionId,
         url: isSafeDigitVerificationUrl(sessionUrl) ? sessionUrl : null,
         status,
         vendor_data: owner,
-      };
+        createdAt: Number.isFinite(createdAt) ? createdAt : 0,
+      }];
     }
-  }
+    return [];
+  }).sort((a, b) => b.createdAt - a.createdAt);
 
-  return null;
+  const session = matching[0];
+  if (!session) return null;
+  return {
+    session_id: session.session_id,
+    url: session.url,
+    status: session.status,
+    vendor_data: session.vendor_data,
+  };
 }
 
 export async function fetchDigitSessionDecision(sessionId: string): Promise<DiditDecision> {

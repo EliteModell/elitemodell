@@ -22,8 +22,10 @@ import {
   canRetryDigitStatus,
   createDigitIntentMarker,
   digitStatusWhenProviderUnavailable,
+  digitVendorDataBelongsToUser,
   digitWebhookAuditPayload,
   digitWebhookTargetsActiveSession,
+  findDigitSessionByVendorData,
   isSafeDigitVerificationUrl,
   isSubmittedDigitStatus,
   normalizeDigitStatus,
@@ -332,7 +334,9 @@ test.describe("verificacao Didit no onboarding profissional", () => {
       createdAt: 1_700_000_000_000,
       leaseAt: 1_700_000_000_000,
     });
-    expect(buildDigitVendorData("user-test", "intent-test")).toBe("user-test:didit-intent:intent-test");
+    expect(buildDigitVendorData("user-test")).toBe("user-test");
+    expect(digitVendorDataBelongsToUser("user-test", "user-test")).toBe(true);
+    expect(digitVendorDataBelongsToUser("user-test:didit-intent:legacy", "user-test")).toBe(true);
     const sessionRoute = fs.readFileSync(path.join(process.cwd(), "src/app/api/didit/session/route.ts"), "utf8");
     expect(sessionRoute).toContain("pg_advisory_xact_lock");
     expect(sessionRoute).toContain('kind: "starting"');
@@ -340,7 +344,7 @@ test.describe("verificacao Didit no onboarding profissional", () => {
   });
 
   test("webhook antigo nao pode atingir a sessao ativa e sessao atual pode", () => {
-    const vendorData = buildDigitVendorData("user-test", "intent-test");
+    const vendorData = buildDigitVendorData("user-test");
     expect(digitWebhookTargetsActiveSession({
       activeSessionId: "session-new",
       webhookSessionId: "session-old",
@@ -356,7 +360,7 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     expect(digitWebhookTargetsActiveSession({
       activeSessionId: "session-new",
       webhookSessionId: "session-new",
-      vendorData: buildDigitVendorData("other-user", "intent-test"),
+      vendorData: buildDigitVendorData("other-user"),
       userId: "user-test",
     })).toBe(false);
   });
@@ -593,5 +597,32 @@ test.describe("reconciliacao Didit com respostas simuladas", () => {
     profileStatus = "REJECTED";
     await reconcileProfessionalDidit("user_test", "didit_session_test");
     expect(writes.find(w => w.target === "professional")?.data.rejectReason).toBeUndefined();
+  });
+});
+
+test.describe("recuperacao segura de sessao Didit por conta", () => {
+  const originalFetch = globalThis.fetch;
+  const originalApiKey = process.env.DIDIT_API_KEY;
+
+  test.afterEach(() => {
+    globalThis.fetch = originalFetch;
+    if (originalApiKey === undefined) delete process.env.DIDIT_API_KEY;
+    else process.env.DIDIT_API_KEY = originalApiKey;
+  });
+
+  test("usa vendor_data estavel e recupera somente a sessao nova mais recente", async () => {
+    process.env.DIDIT_API_KEY = "test-key";
+    globalThis.fetch = async () => Response.json({ results: [
+      { session_id: "old", vendor_data: "user-test", status: "Approved", created_at: "2026-01-01T00:00:00Z", url: "https://verify.didit.me/old" },
+      { session_id: "newer", vendor_data: "user-test", status: "In Review", created_at: "2026-10-27T10:00:02Z", url: "https://verify.didit.me/newer" },
+      { session_id: "new", vendor_data: "user-test", status: "In Progress", created_at: "2026-10-27T10:00:01Z", url: "https://verify.didit.me/new" },
+      { session_id: "other", vendor_data: "other-user", status: "Approved", created_at: "2026-10-27T10:00:03Z", url: "https://verify.didit.me/other" },
+    ] });
+
+    await expect(findDigitSessionByVendorData("user-test", Date.parse("2026-10-27T10:00:00Z"))).resolves.toMatchObject({
+      session_id: "newer",
+      status: "In Review",
+      vendor_data: "user-test",
+    });
   });
 });

@@ -252,7 +252,8 @@ export async function POST() {
       return {
         kind: "reserved" as const,
         marker,
-        vendorData: buildDigitVendorData(session.user.id, intentId),
+        vendorData: buildDigitVendorData(session.user.id),
+        createdAfter: previousIntent && !previousIntentExpired ? previousIntent.createdAt : Date.now(),
         reconcile: Boolean(previousIntent && !previousIntentExpired),
       };
     }, { maxWait: 5_000, timeout: 10_000 });
@@ -273,7 +274,7 @@ export async function POST() {
     }
 
     let diditSession = reservation.reconcile
-      ? await findDigitSessionByVendorData(reservation.vendorData)
+      ? await findDigitSessionByVendorData(reservation.vendorData, reservation.createdAfter)
       : null;
     if (reservation.reconcile && !diditSession) {
       throw new Error("didit_reconciliation_pending");
