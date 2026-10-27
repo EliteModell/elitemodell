@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import styles from "./ProfessionalPostClient.module.css";
 import { monitorUpload, parseUploadResponse, UPLOAD_PENDING_MESSAGE, type UploadApiPayload } from "@/lib/upload-response";
+import { validateProfileVideoInBrowser } from "@/lib/client-video-duration";
 
 type PhotoRecord = { url: string; cover: boolean; order: number };
 type StoryItem = { id: string; mediaUrl: string; mediaType: "image" | "video"; thumbnail: string | null };
@@ -22,10 +23,6 @@ type MeResponse = {
   } | null;
 };
 type PendingVideo = { file: File; preview: string; duration: number };
-
-const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
-const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
-const MAX_VIDEO_SECONDS = 120;
 
 function videoStatusLabel(status?: string | null) {
   if (status === "APPROVED") return "Vídeo publicado";
@@ -44,29 +41,6 @@ function formatDuration(duration: number | null) {
   if (!duration || !Number.isFinite(duration)) return null;
   const total = Math.max(0, Math.round(duration));
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-}
-
-async function videoDuration(file: File) {
-  const url = URL.createObjectURL(file);
-  try {
-    const video = document.createElement("video");
-    video.preload = "metadata";
-    return await new Promise<number>((resolve, reject) => {
-      video.onloadedmetadata = () => resolve(video.duration || 0);
-      video.onerror = () => reject(new Error("video"));
-      video.src = url;
-    });
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
-
-async function inspectVideo(file: File) {
-  if (!VIDEO_TYPES.includes(file.type)) return { error: "Escolha um vídeo MP4, WebM ou MOV.", duration: 0 };
-  if (file.size > MAX_VIDEO_BYTES) return { error: "O arquivo é muito grande.", duration: 0 };
-  const duration = await videoDuration(file).catch(() => 0);
-  if (duration > MAX_VIDEO_SECONDS) return { error: `Use um vídeo de até ${MAX_VIDEO_SECONDS} segundos.`, duration };
-  return { error: null, duration };
 }
 
 function normalizeMedia(data: MeResponse) {
@@ -122,10 +96,10 @@ export function ProfessionalPostClient() {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return toast.error("Escolha um vídeo válido.");
-    const validation = await inspectVideo(file);
+    const validation = await validateProfileVideoInBrowser(file);
     if (validation.error) return toast.error(validation.error);
     if (pendingVideo) URL.revokeObjectURL(pendingVideo.preview);
-    setPendingVideo({ file, preview: URL.createObjectURL(file), duration: validation.duration });
+    setPendingVideo({ file, preview: URL.createObjectURL(file), duration: validation.duration ?? 0 });
   }
 
   async function publishVideo() {
@@ -227,7 +201,7 @@ export function ProfessionalPostClient() {
           <div className={styles.videoDetails}>
             <span className={`${styles.statusBadge} ${videoStatusTone(videoStatus)}`}>{videoStatusLabel(videoStatus)}</span>
             {pendingVideo ? <p className={styles.videoFeedback}>Preview pronto. Confira o vídeo antes de enviar.</p> : videoUrl ? <p className={styles.videoSuccess}><CheckCircle2 /> Seu vídeo foi enviado.</p> : null}
-            <p className={styles.videoRules}>Escolha um vídeo MP4, WebM ou MOV. Ele será mostrado no perfil quando estiver liberado para clientes.</p>
+            <p className={styles.videoRules}>MP4, WebM ou MOV · Máximo de 30 segundos e 50 MB. O arquivo permanece privado durante as verificações de segurança e só aparece na galeria quando estiver liberado.</p>
             <label className={styles.declaration}>
               <input type="checkbox" checked={contentDeclarationAccepted} onChange={(event) => setContentDeclarationAccepted(event.target.checked)} />
               <span>Confirmo que sou autora ou tenho autorização para publicar este vídeo, que não envolve menores, exploração, coerção, tráfico, imagem de terceiros sem autorização ou conteúdo proibido.</span>

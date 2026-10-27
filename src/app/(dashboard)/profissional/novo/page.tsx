@@ -32,6 +32,7 @@ import {
 import { isProfessionalDisplayNameReady, professionalDisplayNameForEditing } from "@/lib/professional-display-name";
 import { professionalStartingPrice } from "@/lib/professional-pricing";
 import { professionalRegistrationStatus } from "@/lib/professional-registration-status";
+import { validateProfileVideoInBrowser } from "@/lib/client-video-duration";
 
 const ProfessionalVerificationSteps = dynamic(
   () => import("@/components/professional-onboarding/ProfessionalVerificationSteps"),
@@ -130,8 +131,6 @@ const GENERIC_MOBILE_MIME_TYPES = new Set(["", "application/octet-stream"]);
 const MAX_PROFILE_IMAGE_BYTES = 20 * 1024 * 1024;
 const MAX_ONBOARDING_GALLERY_PHOTOS = 20;
 const VIDEO_ACCEPT = "video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov";
-const VIDEO_MIME_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
-const MAX_PROFILE_VIDEO_BYTES = 50 * 1024 * 1024;
 const MAX_ONBOARDING_GALLERY_VIDEOS = 10;
 const REMOTE_IMAGE_RE = /^(https?:\/\/|\/)/i;
 const ATTENDANCE_EXCLUSIONS: Record<string, string[]> = {
@@ -1025,13 +1024,16 @@ export default function ProfissionalNovoPage() {
     return () => window.clearTimeout(timer);
   }, [professionalIdentity]);
 
-  function selectPresentationVideos(files: File[]) {
+  async function selectPresentationVideos(files: File[]) {
     if (!professionalIdentity) return toast.error("Aguarde o cadastro ser preparado antes de enviar os vídeos.");
     if (onboardingVideos.length + pendingVideos.length + files.length > MAX_ONBOARDING_GALLERY_VIDEOS) return toast.error("Máximo de 10 vídeos por perfil.");
     const next: PendingVideo[] = [];
     for (const file of files) {
-      if (!VIDEO_MIME_TYPES.has(file.type)) return toast.error("Use vídeos MP4, WebM ou MOV.");
-      if (file.size > MAX_PROFILE_VIDEO_BYTES) return toast.error("Cada vídeo deve ter no máximo 50MB.");
+      const validation = await validateProfileVideoInBrowser(file);
+      if (validation.error) {
+        next.forEach((item) => URL.revokeObjectURL(item.preview));
+        return toast.error(validation.error);
+      }
       const preview = URL.createObjectURL(file);
       localPreviewUrlsRef.current.add(preview);
       next.push({ key: crypto.randomUUID(), file, preview, progress: 0 });
@@ -2134,7 +2136,7 @@ export default function ProfissionalNovoPage() {
           </Section>
 
           <Section title="Vídeos da galeria" desc={`Adicione até ${MAX_ONBOARDING_GALLERY_VIDEOS} vídeos. Você poderá incluir novos conteúdos posteriormente. (${onboardingVideos.length + pendingVideos.length}/${MAX_ONBOARDING_GALLERY_VIDEOS})`}>
-            <input ref={videoInputRef} type="file" accept={VIDEO_ACCEPT} multiple hidden onChange={(event) => { selectPresentationVideos(Array.from(event.target.files ?? [])); event.currentTarget.value = ""; }} />
+            <input ref={videoInputRef} type="file" accept={VIDEO_ACCEPT} multiple hidden onChange={(event) => { void selectPresentationVideos(Array.from(event.target.files ?? [])); event.currentTarget.value = ""; }} />
             <button type="button" onClick={() => videoInputRef.current?.click()} disabled={uploadingIdx === 90 || onboardingVideos.length + pendingVideos.length >= MAX_ONBOARDING_GALLERY_VIDEOS} style={{ width: "100%", minHeight: 54, border: `2px dashed ${GOLD_MID}`, borderRadius: 12, background: GOLD_DIM, color: "#e1a6ff", fontWeight: 800, cursor: "pointer" }}>Adicionar vídeos</button>
             {pendingVideos.length ? <div style={{ display: "grid", gap: 12, marginTop: 14 }}>
               {pendingVideos.map((item) => <div key={item.key} style={{ display: "grid", gridTemplateColumns: "100px 1fr auto", gap: 10, alignItems: "center" }}>
@@ -2150,7 +2152,7 @@ export default function ProfissionalNovoPage() {
                 <div style={{ padding: 10 }}><span style={{ display: "block", fontSize: 11, color: "#aaa0b2" }}>{video.state === "PUBLISHED" ? "Publicado" : video.state === "REJECTED" ? "Rejeitado" : video.state === "REVIEW_REQUIRED" ? "Requer revisão" : video.state === "PROCESSING" ? "Processando" : "Em análise"}</span><button type="button" disabled={video.id === "legacy-presentation-video"} onClick={() => void removeOnboardingVideo(video)} style={{ marginTop: 8, border: 0, background: "transparent", color: "#e1a6ff", cursor: "pointer" }}>Remover</button></div>
               </article>)}
             </div> : null}
-            <p style={{ margin: "10px 0 0", fontSize: 11 }}>MP4, WebM ou MOV · máximo 50MB por arquivo · conteúdo próprio e autorizado · mantido privado até concluir as verificações obrigatórias.</p>
+            <p style={{ margin: "10px 0 0", fontSize: 11 }}>Até 10 vídeos · Máximo de 30 segundos e 50 MB por vídeo · MP4, WebM ou MOV · cada arquivo permanece privado durante as verificações de segurança e moderação.</p>
           </Section>
         </div>
       )}

@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { ArrowLeft, ArrowRight, Camera, Film, ImageIcon, Images, Loader2, Trash2, UploadCloud, UserRound } from "lucide-react";
 import { PremiumHeroCard, PremiumSection } from "@/components/professional-dashboard/ProfessionalPremium";
 import { monitorUpload, parseUploadResponse, UPLOAD_PENDING_MESSAGE, type UploadApiPayload } from "@/lib/upload-response";
+import { validateProfileVideoInBrowser } from "@/lib/client-video-duration";
 
 type PhotoRecord = {
   id?: string;
@@ -51,8 +52,6 @@ const IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_GALLERY = 12;
 const MAX_VIDEOS = 10;
-const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
-const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
 
 function formatSize(bytes: number) {
   return `${Math.round(bytes / 1024 / 1024)} MB`;
@@ -192,7 +191,7 @@ export default function ProfissionalFotosPage() {
     setGalleryPending((current) => [...current, ...next]);
   }
 
-  function handleVideoInput(event: ChangeEvent<HTMLInputElement>) {
+  async function handleVideoInput(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
     if (!files.length) return;
@@ -202,13 +201,9 @@ export default function ProfissionalFotosPage() {
     }
     const next: PendingFile[] = [];
     for (const file of files) {
-      if (!VIDEO_TYPES.includes(file.type)) {
-        toast.error("Envie vídeos MP4, WebM ou MOV.");
-        next.forEach((item) => URL.revokeObjectURL(item.preview));
-        return;
-      }
-      if (file.size > MAX_VIDEO_BYTES) {
-        toast.error("Cada vídeo pode ter no máximo 50 MB.");
+      const validation = await validateProfileVideoInBrowser(file);
+      if (validation.error) {
+        toast.error(validation.error);
         next.forEach((item) => URL.revokeObjectURL(item.preview));
         return;
       }
@@ -648,11 +643,11 @@ export default function ProfissionalFotosPage() {
       <PremiumSection eyebrow="Galeria" title="Vídeos da galeria" description="Adicione vídeos ao seu perfil. Você também poderá incluir novos conteúdos posteriormente.">
         <section className="premium-card" style={{ padding: 18 }}>
           <div className="premium-upload-zone" style={{ padding: 22, cursor: "pointer" }} onClick={() => videoInputRef.current?.click()}>
-            <input ref={videoInputRef} type="file" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" multiple hidden onChange={handleVideoInput} />
+            <input ref={videoInputRef} type="file" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" multiple hidden onChange={(event) => { void handleVideoInput(event); }} />
             <div style={{ display: "grid", placeItems: "center", gap: 10, textAlign: "center" }}>
               <Film size={36} color="var(--elite-gold-light)" />
               <strong style={{ color: "#fff" }}>Adicionar vídeos</strong>
-              <span style={{ color: "var(--elite-text-muted)", fontSize: 13 }}>MP4, WebM ou MOV · até {MAX_VIDEOS} vídeos · 50 MB cada.</span>
+              <span style={{ color: "var(--elite-text-muted)", fontSize: 13 }}>Até {MAX_VIDEOS} vídeos · Máximo de 30 segundos e 50 MB por vídeo · MP4, WebM ou MOV.</span>
               <span style={{ color: "var(--elite-text-muted)", fontSize: 12 }}>Os arquivos permanecem privados enquanto passam pelas verificações de segurança e conteúdo.</span>
             </div>
           </div>

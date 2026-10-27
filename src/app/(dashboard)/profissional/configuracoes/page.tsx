@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { monitorUpload, parseUploadResponse, UPLOAD_PENDING_MESSAGE, type UploadApiPayload } from "@/lib/upload-response";
+import { validateProfileVideoInBrowser } from "@/lib/client-video-duration";
 
 type Settings = {
   id: string;
@@ -79,12 +80,9 @@ export default function ProfissionalConfiguracoesPage() {
 
   async function uploadVideo(file: File) {
     if (!settings) return;
-    if (!file.type.startsWith("video/")) {
-      toast.error("Envie um vídeo MP4, WebM ou MOV.");
-      return;
-    }
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error("O vídeo deve ter no máximo 50 MB.");
+    const validation = await validateProfileVideoInBrowser(file);
+    if (validation.error) {
+      toast.error(validation.error);
       return;
     }
     if (!contentDeclarationAccepted) {

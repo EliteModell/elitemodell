@@ -8,6 +8,11 @@ import { KYC_LEGAL_KEYS, PUBLICATION_LEGAL_KEYS, recordUserAcceptances } from "@
 import { requiresContentAuthorizationDeclaration } from "@/lib/legal-document-catalog";
 import { processUploadAsset, quarantineUpload } from "@/lib/upload-quarantine";
 import { isAgeOfMajority } from "@/lib/age-validation";
+import { inspectServerVideoDuration } from "@/lib/server-video-duration";
+import {
+  profileVideoDurationError,
+  PROFILE_VIDEO_DURATION_UNKNOWN_ERROR,
+} from "@/lib/video-duration-policy";
 
 // Tipos MIME permitidos por contexto. Alguns celulares enviam fotos validas com
 // MIME vazio ou application/octet-stream; nesses casos a assinatura binaria decide.
@@ -227,6 +232,23 @@ export async function POST(req: NextRequest) {
     ? folder.split("/").filter(Boolean)[1]
     : null;
   const buffer = Buffer.from(await file.arrayBuffer());
+  if (folder.startsWith("profile-videos")) {
+    const inspectedVideo = inspectServerVideoDuration(buffer, effectiveMime);
+    const durationError = profileVideoDurationError(inspectedVideo?.durationSeconds ?? null);
+    if (durationError) {
+      console.warn("[upload] video de perfil recusado pela duracao", {
+        folder: "profile-videos",
+        detectedType: effectiveMime,
+        size: file.size,
+        durationSeconds: inspectedVideo?.durationSeconds ?? null,
+        reason: inspectedVideo ? "DURATION_LIMIT" : "DURATION_UNREADABLE",
+      });
+      return NextResponse.json(
+        { error: inspectedVideo ? durationError : PROFILE_VIDEO_DURATION_UNKNOWN_ERROR },
+        { status: 400 },
+      );
+    }
+  }
   try {
     const storageFolder = propertyId
       ? `properties/${propertyId}`
