@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import toast from "react-hot-toast";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
-import { isTechnicalPhoneEmail, realAccountEmail } from "@/lib/account-email";
+import { realAccountEmail } from "@/lib/account-email";
 import { validateBirthDate } from "@/lib/age-validation";
 import { loadSupabaseAuth } from "@/lib/supabase-auth-loader";
 import {
@@ -588,7 +588,13 @@ export default function ProfissionalNovoPage() {
 
       setAccountUserId(user.id ?? null);
       setAccountEmail(user.email ?? null);
-      setEmailVerified(Boolean(user.emailVerified));
+      const hasVerifiedEmail = Boolean(user.emailVerified);
+      setEmailVerified(hasVerifiedEmail);
+
+      // Keep the phone-authenticated account and any old draft intact, but do
+      // not create or hydrate the nine-step profile before e-mail ownership is
+      // legitimately confirmed.
+      if (!hasVerifiedEmail) return;
 
       const activation = await fetch("/api/users/me/activate-professional", {
         method: "POST",
@@ -1053,7 +1059,6 @@ export default function ProfissionalNovoPage() {
     return `${local.slice(0, 2)}${"*".repeat(Math.max(3, local.length - 2))}@${domain}`;
   }
 
-  const hasTechnicalPhoneEmail = isTechnicalPhoneEmail(accountEmail);
   const hasRealAccountEmail = Boolean(realAccountEmail(accountEmail) || pendingEmailLabel);
   const isEmailMissing = !hasRealAccountEmail;
   const emailConfirmationRecipient = pendingEmailLabel ?? maskEmail(accountEmail);
@@ -1393,30 +1398,30 @@ export default function ProfissionalNovoPage() {
     return <main className="model-email-gate"><Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={184} height={61} priority /><p>Preparando seu cadastro...</p><style>{EMAIL_GATE_STYLES}</style></main>;
   }
 
-  if (false && emailVerified === false) {
+  if (emailVerified === false) {
     return (
-      <main className="model-email-gate">
+      <main id="professional-email-status" className="model-email-gate">
         <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={184} height={61} priority />
         <section>
-          <p className="eyebrow">Conta criada</p>
-          <h1>Confirme seu e-mail para continuar</h1>
-          {hasTechnicalPhoneEmail ? (
-            <p>Seu telefone já foi confirmado. Informe um e-mail real para vinculá-lo com segurança à mesma conta e continuar seu cadastro.</p>
+          <p className="eyebrow">Telefone confirmado</p>
+          <h1>{isEmailMissing ? "Informe seu e-mail" : "Confirme seu e-mail"}</h1>
+          {isEmailMissing ? (
+            <p>Informe um e-mail real para receber a confirmação do cadastro e as atualizações da sua verificação. Ele será vinculado com segurança à mesma conta.</p>
           ) : (
             <>
-              <p>Enviamos um link para <strong>{maskEmail(accountEmail)}</strong>. Confirme o endereço antes de iniciar as etapas do cadastro de acompanhante.</p>
-              <p>Depois de confirmar, volte a esta aba e toque no botão abaixo. Confira também a pasta de spam.</p>
+              <p>Enviamos um link de confirmação para <strong>{emailConfirmationRecipient}</strong>.</p>
+              <p>Depois de confirmar, volte a esta aba. O formulário será liberado automaticamente. Confira também a pasta de spam.</p>
             </>
           )}
-          {editingEmail || hasTechnicalPhoneEmail ? (
+          {editingEmail || isEmailMissing ? (
             <div className="actions">
               <input type="email" autoComplete="email" value={replacementEmail} onChange={(event) => setReplacementEmail(event.target.value)} placeholder="novo@email.com" />
-              <button type="button" disabled={emailBusy || !replacementEmail.trim()} onClick={() => requestEmailConfirmation("change")}>Enviar e-mail de confirmação</button>
-              {!hasTechnicalPhoneEmail ? <button type="button" className="secondary" onClick={() => setEditingEmail(false)}>Cancelar</button> : null}
+              <button type="button" disabled={emailBusy || !replacementEmail.trim()} onClick={() => requestEmailConfirmation("change")}>{emailBusy ? "Enviando..." : "Continuar e confirmar e-mail"}</button>
+              {!isEmailMissing ? <button type="button" className="secondary" onClick={() => setEditingEmail(false)}>Cancelar</button> : null}
             </div>
           ) : (
             <div className="actions">
-              <button type="button" disabled={emailBusy} onClick={checkEmailConfirmation}>Já confirmei meu e-mail</button>
+              <button type="button" disabled={emailBusy} onClick={checkEmailConfirmation}>{emailBusy ? "Verificando..." : "Já confirmei meu e-mail"}</button>
               <button type="button" className="secondary" disabled={emailBusy || emailCooldown > 0} onClick={() => requestEmailConfirmation("resend")}>{emailCooldown > 0 ? `Reenviar em ${emailCooldown}s` : "Reenviar confirmação"}</button>
               <button type="button" className="secondary" onClick={() => setEditingEmail(true)}>Corrigir e-mail</button>
             </div>
@@ -1538,54 +1543,6 @@ export default function ProfissionalNovoPage() {
               {correctionFields.map((item) => <button type="button" key={item.code} onClick={() => setStep(item.step)}>{item.label} · ir para etapa {item.step + 1}</button>)}
             </div>
           ) : <span>{"Revise os itens indicados e envie novamente. Seus dados e fotos foram preservados."}</span>}
-        </div>
-      )}
-
-      {emailVerified === false && (
-        <div id="professional-email-status" className="model-email-warning" role="status" style={{
-          margin: "0 0 22px",
-          padding: "14px 16px",
-          borderRadius: 14,
-          border: "1px solid rgba(183, 44, 255,0.35)",
-          background: "rgba(183, 44, 255,0.10)",
-          color: "#fcf7ff",
-          fontSize: 12,
-          lineHeight: 1.6,
-        }}>
-          <strong style={{ display: "block", color: GOLD, marginBottom: 4 }}>{isEmailMissing ? "E-mail não informado" : "Confirme seu e-mail"}</strong>
-          <p style={{ margin: "0 0 10px" }}>{isEmailMissing
-            ? "Adicione seu e-mail para receber a confirmação do cadastro e as atualizações da sua verificação."
-            : <>Enviamos um link de confirmação para <strong>{emailConfirmationRecipient}</strong>. Confira também a pasta de spam.</>}</p>
-          {editingEmail || isEmailMissing ? (
-            <div className="model-email-actions">
-              <input type="email" autoComplete="email" value={replacementEmail} onChange={(event) => setReplacementEmail(event.target.value)} placeholder="novo@email.com" />
-              <button type="button" disabled={emailBusy || !replacementEmail.trim()} onClick={() => requestEmailConfirmation("change")}>{isEmailMissing ? "Adicionar e-mail" : "Salvar e solicitar confirmação"}</button>
-              {!isEmailMissing ? <button type="button" className="secondary" onClick={() => setEditingEmail(false)}>Cancelar</button> : null}
-            </div>
-          ) : (
-            <div className="model-email-actions">
-              <button type="button" disabled={emailBusy || emailCooldown > 0} onClick={() => requestEmailConfirmation("resend")}>
-                {emailCooldown > 0 ? `Reenviar em ${emailCooldown}s` : emailBusy ? "Solicitando..." : "Reenviar confirmação"}
-              </button>
-              <button type="button" className="secondary" disabled={emailBusy} onClick={checkEmailConfirmation}>Já confirmei</button>
-              <button type="button" className="secondary" onClick={() => setEditingEmail(true)}>Corrigir e-mail</button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {emailVerified === true && hasRealAccountEmail && step === 0 && (
-        <div id="professional-email-status" className="model-email-warning" role="status" style={{
-          margin: "0 0 22px",
-          padding: "14px 16px",
-          borderRadius: 14,
-          border: "1px solid rgba(80, 200, 140, 0.35)",
-          background: "rgba(80, 200, 140, 0.10)",
-          color: "#fcf7ff",
-          fontSize: 12,
-          lineHeight: 1.6,
-        }}>
-          <strong style={{ display: "block", color: "#8ee8b6" }}>E-mail verificado</strong>
         </div>
       )}
 
