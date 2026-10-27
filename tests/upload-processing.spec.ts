@@ -15,7 +15,7 @@ test.describe("uploads em quarentena", () => {
       url: null,
       pending: true,
     });
-    expect(UPLOAD_PENDING_MESSAGE).toContain("aguardando verificação");
+    expect(UPLOAD_PENDING_MESSAGE).toContain("mantido privado");
   });
 
   test("resposta aprovada exige URL controlada", () => {
@@ -52,10 +52,20 @@ test.describe("uploads em quarentena", () => {
     }
   });
 
+  test("painel nao tenta publicar a referencia privada antes da aprovacao", () => {
+    const source = readFileSync("src/app/(dashboard)/profissional/fotos/page.tsx", "utf8");
+    expect(source).not.toContain("saveUserImage(uploaded.reference)");
+    expect(source).not.toContain("saveProfessionalPhotos(uploaded.reference");
+    expect(source).toContain("await saveUserImage(result.url)");
+    expect(source).toContain("await refreshPublishedMedia()");
+  });
+
   test("status e privado, somente leitura e nunca retorna URL antes de aprovado", () => {
     const source = readFileSync("src/app/api/uploads/[id]/status/route.ts", "utf8");
     expect(source).toContain("userId: session.user.id");
     expect(source).toContain('owned.status === "APPROVED" ? owned.controlledUrl : null');
+    expect(source).toContain('owned.status === "PENDING_REVIEW"');
+    expect(source).toContain('displayState === "PROCESSING"');
     expect(source).not.toContain("claimMalwareScan");
     expect(source).not.toContain("processUploadAsset");
   });

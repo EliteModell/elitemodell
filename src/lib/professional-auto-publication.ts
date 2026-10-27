@@ -176,7 +176,7 @@ export async function attemptAutomaticProfessionalPublication(
         code: "main_photo_security",
         label: rejected
           ? "A foto principal foi impedida pelas verificações de segurança; envie outra foto."
-          : "A foto principal ainda está nas verificações obrigatórias de antivírus e conteúdo.",
+          : "A foto principal ainda está nas verificações obrigatórias de segurança e conteúdo.",
       });
     }
 

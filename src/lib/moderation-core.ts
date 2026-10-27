@@ -1,4 +1,5 @@
 import net from "node:net";
+import { evaluateAutomatedMediaModeration, type AutomatedMediaModerationEvidence } from "@/lib/automated-media-moderation";
 
 export type SecurityStatus =
   | "CLEAN"
@@ -15,6 +16,8 @@ export type SecurityResult = {
   providerVersion?: string;
   reason?: string;
   details?: Record<string, unknown>;
+  autoPublishEligible?: boolean;
+  contentRating?: "STANDARD" | "ADULT_SUGGESTIVE" | "ADULT_EXPLICIT";
 };
 
 type ProviderOptions = {
@@ -193,6 +196,7 @@ async function scanWithHttpProvider(
     provider?: string;
     version?: string;
     labels?: unknown;
+    evidence?: AutomatedMediaModerationEvidence;
   } | null;
 
   if (!response.ok || !json || typeof json.safe !== "boolean") {
@@ -227,13 +231,43 @@ async function scanWithHttpProvider(
     );
   }
 
+  const decision = evaluateAutomatedMediaModeration(
+    json.evidence,
+    mimeType.startsWith("video/") ? "video" : "image",
+  );
+  if (!json.safe || decision.outcome === "REJECT") {
+    return {
+      safe: false,
+      status: "REJECTED",
+      provider: json.provider?.trim() || provider,
+      providerVersion: json.version?.trim() || undefined,
+      reason: json.reason || "O provedor bloqueou a midia pela politica de seguranca.",
+      details: decision.auditSummary,
+      autoPublishEligible: false,
+      contentRating: decision.contentRating ?? undefined,
+    };
+  }
+  if (decision.outcome !== "APPROVE") {
+    return {
+      safe: false,
+      status: "PENDING",
+      provider: json.provider?.trim() || provider,
+      providerVersion: json.version?.trim() || undefined,
+      reason: `Revisao necessaria: ${decision.blockers.join(", ") || "decisao automatica insuficiente"}.`,
+      details: decision.auditSummary,
+      autoPublishEligible: false,
+      contentRating: decision.contentRating ?? undefined,
+    };
+  }
   return {
-    safe: json.safe,
-    status: json.safe ? "APPROVED" : "REJECTED",
+    safe: true,
+    status: "APPROVED",
     provider: json.provider?.trim() || provider,
     providerVersion: json.version?.trim() || undefined,
     reason: json.reason,
-    details: json.labels === undefined ? undefined : { labels: json.labels },
+    details: decision.auditSummary,
+    autoPublishEligible: true,
+    contentRating: decision.contentRating ?? undefined,
   };
 }
 
@@ -325,9 +359,9 @@ export function publicUploadSecurityReady() {
   const avReady =
     (avProvider === "CLAMAV" && Boolean(process.env.CLAMAV_HOST)) ||
     (avProvider === "HTTP" && Boolean(process.env.AV_HTTP_ENDPOINT));
-  const moderationReady =
-    moderationProvider === "MANUAL" ||
-    (moderationProvider === "HTTP" && Boolean(process.env.CONTENT_MODERATION_ENDPOINT));
+  const moderationReady = moderationProvider === "HTTP"
+    && Boolean(process.env.CONTENT_MODERATION_ENDPOINT)
+    && process.env.CONTENT_MODERATION_CONTRACT_VERSION === "elite-media-moderation/v1";
   return avReady && moderationReady;
 }
 

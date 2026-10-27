@@ -39,13 +39,14 @@ export function parseUploadResponse(response: Pick<Response, "ok" | "status">, p
   };
 }
 
-export const UPLOAD_PENDING_MESSAGE = "Arquivo recebido, aguardando verificação.";
+export const UPLOAD_PENDING_MESSAGE = "Arquivo recebido e mantido privado enquanto concluímos as verificações.";
 
 export type UploadStatusPayload = {
   assetId: string;
   status: string;
   url: string | null;
   pending: boolean;
+  displayState?: "PROCESSING" | "PUBLISHED" | "REVIEW_REQUIRED" | "REJECTED";
   failureReason?: string | null;
 };
 

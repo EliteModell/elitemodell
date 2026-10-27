@@ -152,6 +152,7 @@ export async function POST(req: NextRequest) {
   const contentRating = (["STANDARD", "ADULT_SUGGESTIVE", "ADULT_EXPLICIT"] as const)
     .find((value) => value === contentRatingInput) ?? "STANDARD";
   const adultContent = contentRating !== "STANDARD";
+  const requiresVerifiedProfessional = folder.startsWith("profiles") || folder.startsWith("profile-videos");
   const depictedPeopleMode = String(formData.get("depictedPeopleMode") ?? "SELF_ONLY").toUpperCase();
   if (depictedPeopleMode !== "SELF_ONLY") {
     return NextResponse.json(
@@ -245,14 +246,16 @@ export async function POST(req: NextRequest) {
         : String(formData.get("visibility") ?? "PUBLIC").toUpperCase() === "SUBSCRIBERS"
           ? "SUBSCRIBERS"
           : "PUBLIC",
-      ageIdentityStatus: ownerIsAdult && (!adultContent || identityApproved) ? "PASS" : "PENDING",
+      ageIdentityStatus: ownerIsAdult && (!adultContent || identityApproved) && (!requiresVerifiedProfessional || identityApproved) ? "PASS" : "PENDING",
       consentStatus: contentDeclarationAccepted || isPrivate ? "PASS" : "PENDING",
-      adminReviewRequired: adultContent,
+      // Public media begins fail-closed. Only a versioned automated decision
+      // with complete evidence may waive human review during processing.
+      adminReviewRequired: !isPrivate,
       depictedPeople: [{
         personReference: `user:${session.user.id}`,
         isUploader: true,
         isContentOwner: true,
-        ageStatus: ownerIsAdult && (!adultContent || identityApproved) ? "PASS" : "PENDING",
+        ageStatus: ownerIsAdult && (!adultContent || identityApproved) && (!requiresVerifiedProfessional || identityApproved) ? "PASS" : "PENDING",
         consentStatus: contentDeclarationAccepted || isPrivate ? "PASS" : "PENDING",
         ageVerificationReference: owner?.professional?.kycSessionId ?? owner?.kycSessionId ?? null,
         consentReference: contentDeclarationAccepted ? "content-authorization-declaration:0.4-ready-for-legal-review" : null,

@@ -403,6 +403,7 @@ export async function processUploadAsset(
   const moderationPassed = moderation.status === "APPROVED";
   const moderationRejected = moderation.status === "REJECTED";
   if (!existingModerationPassed) {
+    const automatedApproval = moderationPassed && moderation.autoPublishEligible === true;
     await prisma.uploadAsset.update({
       where: { id: asset.id },
       data: {
@@ -411,6 +412,9 @@ export async function processUploadAsset(
         moderationProviderVersion: moderation.providerVersion,
         moderationResult: safeResult(moderation),
         moderationAttempts: { increment: 1 },
+        contentRating: moderation.contentRating ?? asset.contentRating,
+        adminReviewRequired: privateIdentityMaterial ? false : !automatedApproval,
+        adminReviewStatus: privateIdentityMaterial || automatedApproval ? "NOT_REQUIRED" : "PENDING",
         lastProcessedAt: new Date(),
         status: moderationRejected ? "REJECTED" : moderationPassed ? "PROCESSING" : "QUARANTINED",
         rejectedAt: moderationRejected ? new Date() : undefined,
@@ -442,6 +446,7 @@ export async function processUploadAsset(
   await auditAsset(null, asset.id, "Arquivo aprovado e promovido para armazenamento privado.", {
     malware: safeResult(malware),
     moderation: safeResult(moderation),
+    automaticPublication: moderation.autoPublishEligible === true,
   });
   return prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
 }

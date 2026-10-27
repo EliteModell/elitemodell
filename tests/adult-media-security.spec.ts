@@ -4,6 +4,7 @@ import { createMediaAccessToken, verifyMediaAccessToken } from "../src/lib/media
 import { evaluateMediaPublicationGates } from "../src/lib/media-security";
 import { CONTROLLED_MEDIA_SIGNED_URL_TTL_SECONDS, controlledMediaDeliveryMode } from "../src/lib/media-delivery";
 import { isReadyForHumanContentReview, manualMediaReviewBlockers } from "../src/lib/manual-media-review";
+import { AUTOMATED_MEDIA_MODERATION_CONTRACT, evaluateAutomatedMediaModeration } from "../src/lib/automated-media-moderation";
 import {
   AGE_DECLARATION_COOKIE,
   AGE_DECLARATION_MAX_AGE_SECONDS,
@@ -24,6 +25,49 @@ const passingGates = {
 };
 
 test.describe("seguranca fail-closed de midia adulta", () => {
+  const automatedEvidence = {
+    contractVersion: AUTOMATED_MEDIA_MODERATION_CONTRACT,
+    decision: "APPROVE",
+    policyVersion: "test-policy-1",
+    providerTaskId: "provider-task-1",
+    mediaKind: "image",
+    contentRating: "ADULT_EXPLICIT",
+    analysis: { complete: true, fullDurationCovered: false, audioAnalyzed: false },
+    file: { integrityPassed: true, normalized: true },
+    people: { count: 1, uploaderIdentityMatched: true, allAdultsVerified: true, allConsentsVerified: true },
+    risks: { minor: "CLEAR", illegal: "CLEAR", nonConsensual: "CLEAR", coercion: "CLEAR", violence: "CLEAR" },
+  };
+
+  test("permite automacao inclusive explicita somente com evidencias completas", () => {
+    expect(evaluateAutomatedMediaModeration(automatedEvidence, "image"))
+      .toMatchObject({ outcome: "APPROVE", contentRating: "ADULT_EXPLICIT", blockers: [] });
+  });
+
+  test("mantem privada a midia com contrato legado, menor, terceiros ou consentimento incompleto", () => {
+    const result = evaluateAutomatedMediaModeration({
+      ...automatedEvidence,
+      contractVersion: "legacy-safe-boolean",
+      people: { ...automatedEvidence.people, count: 2, allConsentsVerified: false },
+      risks: { ...automatedEvidence.risks, minor: "REVIEW" },
+    }, "image");
+    expect(result.outcome).toBe("REVIEW");
+    expect(result.blockers).toEqual(expect.arrayContaining(["CONTRACT_VERSION", "PEOPLE_COUNT", "CONSENT_VERIFICATION", "RISK_MINOR"]));
+  });
+
+  test("video exige analise integral e de audio", () => {
+    const result = evaluateAutomatedMediaModeration({ ...automatedEvidence, mediaKind: "video" }, "video");
+    expect(result.outcome).toBe("REVIEW");
+    expect(result.blockers).toEqual(expect.arrayContaining(["VIDEO_NOT_FULLY_ANALYZED", "AUDIO_NOT_ANALYZED"]));
+  });
+
+  test("decisao de bloqueio nunca e convertida em aprovacao", () => {
+    const result = evaluateAutomatedMediaModeration({
+      ...automatedEvidence,
+      decision: "REJECT",
+      risks: { ...automatedEvidence.risks, illegal: "BLOCK" },
+    }, "image");
+    expect(result.outcome).toBe("REJECT");
+  });
   test("fotos aprovadas usam transferencia assinada curta sem tornar o bucket publico", () => {
     expect(controlledMediaDeliveryMode("SUPABASE", "image")).toBe("SIGNED_REDIRECT");
     expect(CONTROLLED_MEDIA_SIGNED_URL_TTL_SECONDS).toBeLessThanOrEqual(60);
@@ -74,6 +118,12 @@ test.describe("seguranca fail-closed de midia adulta", () => {
     expect(source).toContain('asset.folder.startsWith("profiles")');
     expect(source).toContain("prisma.professionalPhoto.create");
     expect(source).toContain("cover: visibleCount === 0");
+  });
+
+  test("midia profissional normal tambem exige identidade e KYC aprovados", async () => {
+    const source = await import("node:fs/promises").then((fs) => fs.readFile("src/app/api/upload/route.ts", "utf8"));
+    expect(source).toContain('const requiresVerifiedProfessional = folder.startsWith("profiles")');
+    expect(source).toContain("!requiresVerifiedProfessional || identityApproved");
   });
 
   test("aprovacao profissional retoma fotos sem inventar decisao de conteudo", async () => {

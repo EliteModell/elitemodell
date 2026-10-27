@@ -23,14 +23,28 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   const owned = await prisma.uploadAsset.findFirst({ where: { id, userId: session.user.id }, select: PUBLIC_FIELDS });
   if (!owned) return NextResponse.json({ error: "Upload não encontrado." }, { status: 404 });
 
+  const displayState = owned.status === "APPROVED"
+    ? "PUBLISHED"
+    : owned.status === "REJECTED"
+      ? "REJECTED"
+      : owned.status === "PENDING_REVIEW"
+        ? "REVIEW_REQUIRED"
+        : "PROCESSING";
+  const failureReason = displayState === "REJECTED"
+    ? "A mídia não atende aos critérios de publicação. Você pode solicitar revisão ao suporte."
+    : displayState === "REVIEW_REQUIRED"
+      ? "A verificação automática não foi conclusiva. A mídia continua privada e pode ser revisada."
+      : null;
+
   return NextResponse.json({
     assetId: owned.id,
     status: owned.status,
     malwareStatus: owned.malwareStatus,
     moderationStatus: owned.moderationStatus,
     url: owned.status === "APPROVED" ? owned.controlledUrl : null,
-    pending: !["APPROVED", "REJECTED"].includes(owned.status),
-    failureReason: owned.status === "REJECTED" ? owned.failureReason : null,
+    displayState,
+    pending: displayState === "PROCESSING",
+    failureReason,
     lastProcessedAt: owned.lastProcessedAt,
   });
 }
