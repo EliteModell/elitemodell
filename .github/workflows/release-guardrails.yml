@@ -118,6 +118,7 @@ jobs:
           --project=professional-pricing
           --project=professional-completion-location
           --project=professional-validation
+          --project=professional-profile-visibility
           --project=adult-media-security
           --project=auth-latency-security
           --grep-invert "API de midia privada recusa visitante"

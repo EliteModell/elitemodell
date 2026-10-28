@@ -84,6 +84,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "professional-profile-visibility",
+      testMatch: "**/professional-profile-visibility.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "phone-registration-concurrency",
       testMatch: "**/phone-registration-concurrency.spec.ts",
       use: { browserName: "chromium" },

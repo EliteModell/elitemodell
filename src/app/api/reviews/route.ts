@@ -8,6 +8,7 @@ import { authOptions } from "@/lib/auth";
 import { ageGateCacheHeaders } from "@/lib/age-gate-policy";
 import { enforceRateLimitAsync, getClientIP, sanitizeInput } from "@/lib/security";
 import { authorizeAdultContentRequest } from "@/lib/adult-content-access";
+import { getPublicProfessionalWhere } from "@/lib/public-professional-access";
 
 const createSchema = z.object({
   professionalId: z.string().cuid(),
@@ -48,6 +49,17 @@ export async function GET(req: NextRequest) {
       select: { id: true, date: true },
     });
     return NextResponse.json({ eligible: Boolean(appointment), appointment }, { headers: ageGateCacheHeaders() });
+  }
+
+  const visibleProfessional = await prisma.professional.findFirst({
+    where: { ...(await getPublicProfessionalWhere()), id: professionalId },
+    select: { id: true },
+  });
+  if (!visibleProfessional) {
+    return NextResponse.json(
+      { error: "Profissional nao encontrado." },
+      { status: 404, headers: ageGateCacheHeaders() },
+    );
   }
 
   const reviews = await prisma.professionalReview.findMany({

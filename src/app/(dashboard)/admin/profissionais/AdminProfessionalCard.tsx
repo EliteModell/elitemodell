@@ -7,6 +7,7 @@ import { professionalCompletion } from "@/lib/professional-completeness";
 import { resolveProfessionalAccess } from "@/lib/professional-access-policy";
 import { adminControlledMediaPreviewUrl } from "@/lib/public-professional-media";
 import { accountEmailLabel, isTechnicalPhoneEmail } from "@/lib/account-email";
+import { PROFESSIONAL_PROFILE_VISIBILITY_LABELS, normalizeProfessionalProfileVisibility } from "@/lib/professional-profile-visibility";
 
 type AuditEntry = {
   id: string;
@@ -41,7 +42,7 @@ export type AdminProfessionalRecord = {
   priceOvernight: number | null; priceWebcam: number | null; paymentMethods: string[];
   image: string | null; presentationVideoUrl: string | null;
   presentationVideoStatus: string; presentationVideoRejectReason: string | null;
-  status: string; verified: boolean; docStatus: string; docFrenteUrl: string | null; docVersoUrl: string | null; verifStatus: string;
+  status: string; verified: boolean; profileVisibility: string; docStatus: string; docFrenteUrl: string | null; docVersoUrl: string | null; verifStatus: string;
   verificationUrl: string | null; verificationType: string | null;
   kycProvider: string | null; kycSessionId: string | null; kycStatus: string;
   rejectReason: string | null; pauseUntil: Date | null; pauseReason: string | null;
@@ -194,6 +195,7 @@ export function AdminProfessionalCard({
     return value.includes("EMAIL_SENT") || value.includes("EMAIL_FAILED");
   });
   const currentIssues = pro.status === "PENDING_REVIEW" ? approvalIssues : profileIssues;
+  const profileVisibility = normalizeProfessionalProfileVisibility(pro.profileVisibility);
   const billing = resolveProfessionalAccess(pro, pro.user, pro.status === "ACTIVE" || pro.status === "PAUSED", new Date(), { billingEnabled });
   const billingLabel = {
     PENDING_APPROVAL: "Aguardando liberação do perfil",
@@ -259,6 +261,7 @@ export function AdminProfessionalCard({
               <Row label="Envio para análise" value={registrationSubmitted ? "Enviado" : completion.readyToSubmit ? "Pode ser enviado" : "Ainda não pode ser enviado"} />
               <Row label="Análise administrativa" value={STATUS_LABEL[pro.status] ?? pro.status} />
               <Row label="Autorização de publicação" value={pro.status === "ACTIVE" && pro.verified ? "Autorizada" : "Não autorizada"} />
+              <Row label="Visibilidade pública" value={PROFESSIONAL_PROFILE_VISIBILITY_LABELS[profileVisibility]} />
               <Row label="Critério do percentual" value="Somente campos obrigatórios do perfil" />
               <Row label="Regra" value={pro.completionRulesVersion >= 2 ? "Atual" : "Compatibilidade de legado"} />
             </Section>
@@ -379,6 +382,20 @@ export function AdminProfessionalCard({
             </form>}
             <form action={reviewAction}>
               <input type="hidden" name="id" value={pro.id} />
+              <fieldset className="pro-visibility-fields">
+                <legend>Visibilidade do perfil</legend>
+                {([
+                  ["PUBLIC", "Público", "Pode aparecer na Home, buscas e perfil público."],
+                  ["SEARCH_ONLY", "Sem destaque", "Continua nas buscas, mas não aparece nos destaques da Home."],
+                  ["HIDDEN", "Oculto", "Fica fora de todas as superfícies públicas e continua acessível à administração."],
+                ] as const).map(([value, label, description]) => (
+                  <label key={value}>
+                    <input type="radio" name="profileVisibility" value={value} defaultChecked={profileVisibility === value} />
+                    <span><b>{label}</b><small>{description}</small></span>
+                  </label>
+                ))}
+                <button name="action" value="setVisibility" type="submit">Salvar visibilidade</button>
+              </fieldset>
               <button name="action" value="approve" disabled={!canApprove} title={!canApprove ? approvalIssues.join(", ") || "Este status não permite aprovação" : "Aprovar profissional"} className="pro-approve">
                 {canApprove ? "✓ Aprovar agora" : pro.status === "ACTIVE" ? "✓ Já aprovada" : "Aprovar (bloqueado)"}
               </button>

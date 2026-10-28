@@ -892,6 +892,7 @@ model Professional {
   status                         ProfessionalStatus        @default(PENDING_REVIEW)
   verified                       Boolean                   @default(false)
   featured                       Boolean                   @default(false)
+  profileVisibility              String                    @default("PUBLIC") // PUBLIC | SEARCH_ONLY | HIDDEN
   freeAccessStartedAt            DateTime?
   freeAccessEndsAt               DateTime?
   accessGrandfathered            Boolean                   @default(true)
@@ -945,6 +946,7 @@ model Professional {
   submissionReceipt ProfessionalSubmissionReceipt?
 
   @@index([status, featured, rating, totalReviews, createdAt])
+  @@index([status, profileVisibility, featured, createdAt])
   @@index([status, accessGrandfathered, freeAccessEndsAt])
   @@index([billingStatus, freeAccessEndsAt])
   @@index([status, boostActive, boostUntil])

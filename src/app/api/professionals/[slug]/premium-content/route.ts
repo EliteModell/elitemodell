@@ -27,6 +27,7 @@ export async function GET(
       select: {
         userId: true,
         status: true,
+        profileVisibility: true,
         pauseUntil: true,
         accessGrandfathered: true,
         freeAccessStartedAt: true,
@@ -63,6 +64,7 @@ export async function GET(
   if (
     !ownerOrAdmin &&
     (professional.status !== "ACTIVE" ||
+      professional.profileVisibility === "HIDDEN" ||
       Boolean(professional.pauseUntil && professional.pauseUntil > now) ||
       !access.canAppearInSearch)
   ) {

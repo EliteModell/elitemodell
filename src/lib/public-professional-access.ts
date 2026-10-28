@@ -13,6 +13,7 @@ export function publicProfessionalWhere(
       {
         verified: true,
         kycStatus: "APPROVED",
+        profileVisibility: { not: "HIDDEN" },
         user: { blocked: false },
       },
       {
@@ -29,6 +30,10 @@ export function publicProfessionalWhere(
       },
     ],
   };
+}
+
+export function publicHomeProfessionalWhere(): Prisma.ProfessionalWhereInput {
+  return { profileVisibility: "PUBLIC" };
 }
 
 export function publicProfessionalCategoryWhere(category: string | null | undefined): Prisma.ProfessionalWhereInput | null {

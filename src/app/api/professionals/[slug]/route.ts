@@ -95,6 +95,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       verified: true,
       kycStatus: true,
       featured: true,
+      profileVisibility: true,
       accessGrandfathered: true,
       freeAccessStartedAt: true,
       freeAccessEndsAt: true,
@@ -182,7 +183,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     now,
     billingSettings,
   );
-  if ((!effectivelyActive || isPausedByDate || !access.canAppearInSearch || !isProfessionalDisplayNameReady(professional.displayName)) && !canViewDraft) {
+  if ((!effectivelyActive || isPausedByDate || professional.profileVisibility === "HIDDEN" || !access.canAppearInSearch || !isProfessionalDisplayNameReady(professional.displayName)) && !canViewDraft) {
     return NextResponse.json(
       { error: "Profissional nao encontrado." },
       { status: 404, headers: ageGateCacheHeaders() },
@@ -297,6 +298,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   delete publicProfessional.subscriptionEndsAt;
   delete publicProfessional.lastOnlineAt;
   delete publicProfessional.onlineVisible;
+  delete publicProfessional.profileVisibility;
   delete publicProfessional.activePlanId;
   delete publicProfessional.presentationVideoRejectReason;
   delete publicProfessional.pauseReason;

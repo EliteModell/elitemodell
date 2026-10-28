@@ -32,6 +32,7 @@ export async function GET(
       userId: true,
       status: true,
       verified: true,
+      profileVisibility: true,
       kycStatus: true,
       pauseUntil: true,
       accessGrandfathered: true,
@@ -61,6 +62,7 @@ export async function GET(
   if (
     !professional ||
     professional.status !== "ACTIVE" ||
+    professional.profileVisibility === "HIDDEN" ||
     Boolean(professional.pauseUntil && professional.pauseUntil > now) ||
     !access?.canAppearInSearch
   ) {

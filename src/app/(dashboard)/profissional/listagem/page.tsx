@@ -53,7 +53,7 @@ export default async function ProfessionalListingPage() {
 
   const cityRanking = professional.city
     ? await prisma.professional.findMany({
-        where: { city: professional.city, status: "ACTIVE" },
+        where: { city: professional.city, status: "ACTIVE", profileVisibility: { not: "HIDDEN" } },
         select: { id: true },
         orderBy: [{ boostActive: "desc" }, { featured: "desc" }, { rating: "desc" }, { totalReviews: "desc" }, { createdAt: "asc" }],
         take: 500,

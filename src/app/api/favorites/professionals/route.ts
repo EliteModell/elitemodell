@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
         is: {
           status: "ACTIVE",
           verified: true,
+          profileVisibility: { not: "HIDDEN" },
           OR: [{ pauseUntil: null }, { pauseUntil: { lt: now } }],
         },
       },
@@ -76,6 +77,7 @@ export async function POST(req: NextRequest) {
       id: data.professionalId,
       status: "ACTIVE",
       verified: true,
+      profileVisibility: { not: "HIDDEN" },
       OR: [{ pauseUntil: null }, { pauseUntil: { lt: now } }],
     },
     select: { id: true },

@@ -230,7 +230,7 @@ test.describe("seguranca fail-closed de midia adulta", () => {
     expect(page).toContain("A mídia não pertence a um perfil profissional.");
     expect(batch).toContain("Selecionar todas as elegíveis");
     expect(batch).toContain("selectedCount === 0");
-    expect(home).toContain('new URLSearchParams({ sortBy: "recent", limit: "12" })');
+    expect(home).toContain('new URLSearchParams({ sortBy: "recent", limit: "12", placement: "home" })');
     expect(home).toContain('fetch(`/api/professionals?${query}`');
     expect(listing).toContain("pro.user?.image ?? coverPhoto ?? null");
   });

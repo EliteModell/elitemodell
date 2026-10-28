@@ -17,6 +17,7 @@ import { professionalAdministrativeApprovalIssues, professionalCompletion } from
 import { deliverProfessionalApprovalSms, deliverProfessionalCommunication } from "@/lib/professional-communications";
 import { sendLegacyOnboardingRecoveryEmail, sendProfessionalLocationEmail, sendProfessionalReminderEmail } from "@/lib/professional-extra-email";
 import { resumeProfessionalProfileAssetsAfterApproval } from "@/lib/upload-quarantine";
+import { normalizeProfessionalProfileVisibility } from "@/lib/professional-profile-visibility";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 12;
@@ -138,11 +139,31 @@ async function reviewProfessional(formData: FormData) {
   const moderationReason = reason.trim() || (action === "correction"
     ? "Corrija: " + correctionFields.map((field) => CORRECTION_FIELD_LABELS[field]).join(", ")
     : "");
-  const supportedActions = ["approve", "reject", "correction", "suspend", "block", "resume", "approveVideo", "rejectVideo", "disableBoost", "reminder", "approveLocation", "rejectLocation"];
+  const supportedActions = ["approve", "reject", "correction", "suspend", "block", "resume", "approveVideo", "rejectVideo", "disableBoost", "reminder", "approveLocation", "rejectLocation", "setVisibility"];
   if (!id || !supportedActions.includes(action)) return;
   if (action === "reminder" && formData.get("confirmReminder") !== "yes") return;
   if (action === "correction" && correctionFields.length === 0) return;
   if (["reject", "suspend", "block", "rejectVideo", "rejectLocation"].includes(action) && moderationReason.length < 4) return;
+
+  if (action === "setVisibility") {
+    const profileVisibility = normalizeProfessionalProfileVisibility(formData.get("profileVisibility"));
+    const current = await prisma.professional.findUnique({ where: { id }, select: { profileVisibility: true } });
+    if (!current || current.profileVisibility === profileVisibility) return;
+    await prisma.professional.update({ where: { id }, data: { profileVisibility } });
+    await logAudit({
+      adminId: session.user.id,
+      action: "SETTINGS_CHANGED",
+      targetType: "PROFESSIONAL",
+      targetId: id,
+      changes: { moderationAction: "profileVisibility", from: current.profileVisibility, to: profileVisibility },
+      reason: "professional:profile-visibility",
+    });
+    revalidatePath("/");
+    revalidatePath("/buscar");
+    revalidatePath("/profissionais");
+    revalidatePath("/admin/profissionais");
+    return;
+  }
 
   if (action === "reminder") {
     const target = await prisma.professional.findUnique({
@@ -661,9 +682,14 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
         .pro-history { margin:7px 0 0; padding-left:18px; } .pro-history li { padding:5px 0; font-size:11px; } .pro-history li span,.pro-history li small { display:block; color:#756e79; margin-top:2px; }
         .pro-actions { padding:18px; border-left:1px solid #e8e0eb; } .pro-actions form { display:flex; flex-direction:column; gap:10px; position:sticky; top:16px; } .pro-actions textarea { width:100%; box-sizing:border-box; min-height:76px; resize:vertical; padding:10px; color:#29242d; background:#faf9fb; border:1px solid #dcd3df; border-radius:8px; }
         .pro-reminder-form>label,.pro-correction-fields label { display:flex; align-items:flex-start; gap:7px; color:#4f4854; font-size:12px; line-height:1.35; }
+        .pro-visibility-fields { display:grid; gap:7px; margin:0; padding:10px; border:1px solid #e2d8e6; border-radius:9px; }
+        .pro-visibility-fields legend { padding:0 5px; color:#625a67; font-size:11px; font-weight:800; }
+        .pro-visibility-fields label { display:flex; align-items:flex-start; gap:8px; padding:7px; border-radius:7px; background:#faf7fb; color:#4f4854; font-size:11px; line-height:1.35; }
+        .pro-visibility-fields label span,.pro-visibility-fields label small { display:block; } .pro-visibility-fields label small { margin-top:2px; color:#756e79; }
+        .pro-visibility-fields button { min-height:36px; border:1px solid #cda6dc; border-radius:8px; background:#f8effb; color:#76208e; font-weight:900; }
         .pro-correction-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 10px; margin:0; padding:10px; border:1px solid #e2d8e6; border-radius:9px; }
         .pro-correction-fields legend { padding:0 5px; color:#625a67; font-size:11px; font-weight:800; }
-        .pro-actions input[type="checkbox"] { appearance:checkbox !important; -webkit-appearance:checkbox !important; width:16px !important; height:16px !important; min-width:16px; margin:0 !important; padding:0 !important; flex:0 0 16px; accent-color:#8f1fd1; }
+        .pro-actions input[type="checkbox"],.pro-actions input[type="radio"] { appearance:auto !important; -webkit-appearance:auto !important; width:16px !important; height:16px !important; min-width:16px; margin:0 !important; padding:0 !important; flex:0 0 16px; accent-color:#8f1fd1; }
         .pro-approve { padding:12px; border:0; border-radius:9px; background:linear-gradient(135deg,#15803d,#22c55e); color:#fff; font-weight:900; } .pro-approve:disabled { background:#eee9f0; color:#8b838f; cursor:not-allowed; }
         .pro-action-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; } .pro-action-grid button { padding:9px 7px; border-radius:8px; background:#fff; border:1px solid #dcd3df; color:#4b4450; font-weight:800; } .pro-action-grid .danger-button { color:#c52b2b; border-color:#f0b8b8; background:#fff6f6; } .pro-action-grid .warn-button { color:#b45d11; border-color:#efc897; background:#fff9f1; } .pro-action-grid .full { grid-column:1/-1; }
         .pro-admin-meta { margin-top:18px; } code { font-size:10px; overflow-wrap:anywhere; }

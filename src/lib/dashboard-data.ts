@@ -200,7 +200,7 @@ async function getCoreData(userId: string) {
         },
       }),
       prisma.professional.findMany({
-        where: { status: "ACTIVE" },
+        where: { status: "ACTIVE", profileVisibility: { not: "HIDDEN" } },
         orderBy: [{ featured: "desc" }, { rating: "desc" }, { totalReviews: "desc" }, { createdAt: "desc" }],
         take: 8,
         select: {

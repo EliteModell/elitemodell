@@ -19,7 +19,7 @@ import {
   isProfessionalOnline,
 } from "@/lib/public-professional-profile";
 import { professionalCityFilter, resolveExactCityQuery } from "@/lib/public-city-search";
-import { publicProfessionalCategoryWhere, publicProfessionalWhere } from "@/lib/public-professional-access";
+import { publicHomeProfessionalWhere, publicProfessionalCategoryWhere, publicProfessionalWhere } from "@/lib/public-professional-access";
 import { normalizeServiceLocation, publicServiceLocation } from "@/lib/professional-location";
 import { controlledMediaAssetId, filterApprovedProfilePhotos, normalizeControlledMediaUrl } from "@/lib/public-professional-media";
 import { deliverProfessionalSubmissionReceipt, markSubmissionReceiptNotRequired } from "@/lib/professional-submission-receipt";
@@ -62,6 +62,7 @@ export async function GET(req: NextRequest) {
   const priceMax  = searchParams.get("priceMax");
   const virtual   = searchParams.get("virtual") === "1";
   const sortBy    = searchParams.get("sortBy") ?? "rating";
+  const placement = searchParams.get("placement");
   const pageParam = Number(searchParams.get("page") ?? 1);
   const page      = Number.isFinite(pageParam) ? Math.max(1, Math.floor(pageParam)) : 1;
   const limitParam = Number(searchParams.get("limit") ?? 12);
@@ -75,6 +76,7 @@ export async function GET(req: NextRequest) {
   const andFilters: Prisma.ProfessionalWhereInput[] = [
     publicProfessionalWhere(now, billingSettings.billingEnabled),
   ];
+  if (placement === "home") andFilters.push(publicHomeProfessionalWhere());
 
   if (search) {
     const exactCity = resolveExactCityQuery(search);

@@ -29,13 +29,8 @@ type Professional = {
   priceWebcam?: number | null;
 };
 
-const PROFESSIONALS_CACHE_TTL_MS = 60_000;
-const HOME_CACHE_STORAGE_KEY = "elite_home_professionals_cache:v1";
 const HOME_SCROLL_STORAGE_KEY = "elite_home_professionals_scroll:v1";
-const HOME_PROFESSIONALS_QUERY = new URLSearchParams({ sortBy: "recent", limit: "12" });
-const HOME_PROFESSIONALS_URL = `/api/professionals?${HOME_PROFESSIONALS_QUERY}`;
-const professionalsCache = new Map<string, { expiresAt: number; data: Professional[] }>();
-const professionalsRequests = new Map<string, Promise<Professional[]>>();
+const HOME_PROFESSIONALS_QUERY = new URLSearchParams({ sortBy: "recent", limit: "12", placement: "home" });
 
 function optionalNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -81,57 +76,14 @@ function sanitizePublicCardProfessionals(value: unknown) {
   return value.map(toPublicCardProfessional).filter((item): item is Professional => item !== null);
 }
 
-function readStoredProfessionals() {
-  if (typeof window === "undefined") return null;
-  try {
-    const parsed = JSON.parse(window.sessionStorage.getItem(HOME_CACHE_STORAGE_KEY) ?? "null") as {
-      expiresAt?: number;
-      data?: Professional[];
-    } | null;
-    return parsed?.expiresAt && parsed.expiresAt > Date.now() && Array.isArray(parsed.data)
-      ? sanitizePublicCardProfessionals(parsed.data)
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-function storeProfessionals(data: Professional[]) {
-  if (typeof window === "undefined") return;
-  try {
-    window.sessionStorage.setItem(HOME_CACHE_STORAGE_KEY, JSON.stringify({
-      data,
-      expiresAt: Date.now() + PROFESSIONALS_CACHE_TTL_MS,
-    }));
-  } catch {
-    // The in-memory cache remains available when session storage is blocked.
-  }
-}
-
 async function loadProfessionals(query: URLSearchParams, signal: AbortSignal) {
-  const url = `/api/professionals?${query}`;
-  const cached = professionalsCache.get(url);
-  if (cached && cached.expiresAt > Date.now()) return cached.data;
-
-  const pending = professionalsRequests.get(url) ?? fetch(`/api/professionals?${query}`, { signal })
+  return fetch(`/api/professionals?${query}`, { signal, cache: "no-store" })
     .then((response) => response.ok ? response.json() : { professionals: [] })
-    .then((data) => sanitizePublicCardProfessionals(data.professionals))
-    .then((data) => {
-      professionalsCache.set(url, { data, expiresAt: Date.now() + PROFESSIONALS_CACHE_TTL_MS });
-      if (url === HOME_PROFESSIONALS_URL) storeProfessionals(data);
-      return data;
-    })
-    .finally(() => professionalsRequests.delete(url));
-
-  professionalsRequests.set(url, pending);
-  return pending;
+    .then((data) => sanitizePublicCardProfessionals(data.professionals));
 }
 
 export default function HomeDiscoveryPreview() {
-  const [professionals, setProfessionals] = useState<Professional[]>(() => {
-    const cached = professionalsCache.get(HOME_PROFESSIONALS_URL);
-    return cached && cached.expiresAt > Date.now() ? cached.data : readStoredProfessionals() ?? [];
-  });
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [preparedThrough, setPreparedThrough] = useState(3);
   const rowRef = useRef<HTMLDivElement>(null);
   const scrollFrameRef = useRef<number | null>(null);
