@@ -14,6 +14,7 @@ import {
   type FirebaseSmsAudit,
 } from "@/lib/firebase-phone-audit-client";
 import { readJsonResponse } from "@/lib/safe-json-response";
+import { publicErrorMessage } from "@/lib/public-error-message";
 
 type FlowMode = "client" | "model" | "host";
 type ScreenMode = "register" | "verify";
@@ -607,7 +608,7 @@ export function PhoneRegistrationClient({
           error: err instanceof Error ? err.message : "Falha ao solicitar SMS no Firebase.",
         });
       }
-      const message = err instanceof Error ? err.message : "Não foi possível enviar o código.";
+      const message = publicErrorMessage(err, "Não foi possível enviar o código.");
       setOtpStatus("error");
       setStatusMessage(message);
       toast.error(message);
@@ -681,7 +682,7 @@ export function PhoneRegistrationClient({
       router.replace(returnUrl ?? data.redirectTo ?? (mode === "host" ? "/anfitriao/imoveis/novo" : mode === "model" ? "/profissional/novo" : "/painel/cliente"));
       router.refresh();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Não foi possível verificar o código.";
+      const message = publicErrorMessage(err, "Não foi possível verificar o código.");
       setOtpStatus("error");
       setStatusMessage(message);
       toast.error(message);

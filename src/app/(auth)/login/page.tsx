@@ -14,6 +14,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { loadSupabaseAuth } from "@/lib/supabase-auth-loader";
 import { ACCOUNT_ROUTES, normalizeEntryRole, postLoginPathFromUser } from "@/lib/account-routes";
 import { buildAuthCallbackUrl } from "@/lib/auth-redirect";
+import { publicErrorMessage } from "@/lib/public-error-message";
 
 const GOLD = "#b72cff";
 const PROPERTY_DRAFT_KEY = "elitemodell_location_onboarding_v2";
@@ -171,7 +172,7 @@ function LoginContent() {
         router.refresh();
       }
     } catch (err: any) {
-      toast.error(authMsg[err?.code] ?? err?.message ?? "E-mail ou senha inválidos.");
+      toast.error(authMsg[err?.code] ?? publicErrorMessage(err, "E-mail ou senha inválidos."));
     } finally {
       setLoading(false);
     }
@@ -200,7 +201,7 @@ function LoginContent() {
       });
       if (error) throw error;
     } catch (err: any) {
-      toast.error(err?.message ?? "Erro ao entrar com Google.");
+      toast.error(publicErrorMessage(err, "Não foi possível entrar com Google."));
     } finally {
       setLoading(false);
     }

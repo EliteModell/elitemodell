@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { publicErrorMessage } from "@/lib/public-error-message";
 
 declare global {
   interface Window {
@@ -74,7 +75,7 @@ export const CaptchaField = forwardRef<CaptchaFieldHandle>(function CaptchaField
       })
       .catch((err) => {
         if (!active) return;
-        setError(err instanceof Error ? err.message : "Não foi possível carregar o CAPTCHA.");
+        setError(publicErrorMessage(err, "Não foi possível carregar a verificação de segurança."));
       });
 
     return () => {

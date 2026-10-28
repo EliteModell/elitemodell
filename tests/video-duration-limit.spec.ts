@@ -86,10 +86,14 @@ test("caixas truncadas e tamanhos inconsistentes sao rejeitados", () => {
 
 test("backend aplica a regra somente aos novos videos de perfil", async () => {
   const source = await readFile("src/app/api/upload/route.ts", "utf8");
+  const resumable = await readFile("src/app/api/uploads/resumable/route.ts", "utf8");
   expect(MAX_PROFILE_VIDEO_DURATION_SECONDS).toBe(30);
   expect(source).toContain('folder.startsWith("profile-videos")');
   expect(source).toContain("inspectServerVideoDuration(buffer, effectiveMime)");
   expect(source.indexOf("inspectServerVideoDuration(buffer, effectiveMime)")).toBeLessThan(source.indexOf("quarantineUpload({"));
+  expect(resumable).toContain("inspectServerVideoDuration(buffer, kind.mime)");
+  expect(resumable).toContain("MAX_RAW_VIDEO_BYTES");
+  expect(resumable).toContain("professionalMedia.upsert");
 });
 
 test("cadastro e paineis compartilham a validacao de navegador", async () => {
@@ -100,4 +104,17 @@ test("cadastro e paineis compartilham a validacao de navegador", async () => {
     "src/components/professional-dashboard/ProfessionalPostClient.tsx",
   ].map((path) => readFile(path, "utf8")));
   for (const source of files) expect(source).toContain("validateProfileVideoInBrowser");
+  for (const source of files) expect(source).toContain("uploadProfileVideoResumable");
+});
+
+test("upload resumivel usa TUS direto, progresso e retomada sem limite de 50 MB no navegador", async () => {
+  const client = await readFile("src/lib/resumable-video-upload.ts", "utf8");
+  const validation = await readFile("src/lib/client-video-duration.ts", "utf8");
+  expect(client).toContain("new tus.Upload");
+  expect(client).toContain("findPreviousUploads");
+  expect(client).toContain("resumeFromPreviousUpload");
+  expect(client).toContain("chunkSize: 6 * 1024 * 1024");
+  expect(client).toContain("onProgress");
+  expect(validation).not.toContain("MAX_PROFILE_VIDEO_BYTES");
+  expect(validation).not.toContain("video.load()");
 });

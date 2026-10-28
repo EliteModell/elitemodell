@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { supabaseAuth } from "@/lib/supabase-client";
 import { BrandMark } from "@/components/BrandMark";
+import { publicErrorMessage } from "@/lib/public-error-message";
 
 const GOLD = "#b72cff";
 
@@ -72,7 +73,7 @@ export function ResetPasswordClient() {
       router.replace(`${ACCOUNT_ROUTES.login}?role=cliente`);
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nao foi possivel atualizar a senha.");
+      toast.error(publicErrorMessage(err, "Não foi possível atualizar a senha."));
     } finally {
       setLoading(false);
     }

@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { monitorUpload, parseUploadResponse, UPLOAD_PENDING_MESSAGE, type UploadApiPayload } from "@/lib/upload-response";
+import { monitorUpload, UPLOAD_PENDING_MESSAGE } from "@/lib/upload-response";
 import { validateProfileVideoInBrowser } from "@/lib/client-video-duration";
+import { uploadProfileVideoResumable } from "@/lib/resumable-video-upload";
+import { videoUploadErrorMessage } from "@/lib/public-error-message";
 
 type Settings = {
   id: string;
@@ -91,12 +93,14 @@ export default function ProfissionalConfiguracoesPage() {
     }
     setUploadingVideo(true);
     try {
-      const body = new FormData();
-      body.append("file", file);
-      body.append("contentDeclarationAccepted", "true");
-      const res = await fetch(`/api/upload?folder=profile-videos/${settings.id}`, { method: "POST", body });
-      const data: UploadApiPayload = await res.json().catch(() => ({}));
-      const uploaded = parseUploadResponse(res, data);
+      const result = await uploadProfileVideoResumable({ file, professionalId: settings.id });
+      const uploaded = { ...result, reference: result.url ?? result.path, pending: result.status !== "APPROVED" };
+      const linked = await fetch("/api/professional/media", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assetId: uploaded.assetId, kind: "VIDEO" }),
+      });
+      if (!linked.ok) throw new Error("O vídeo foi recebido, mas não foi possível adicioná-lo à galeria.");
       if (uploaded.pending || !uploaded.url) {
         await save({ presentationVideoUrl: uploaded.reference }, UPLOAD_PENDING_MESSAGE);
         void monitorUpload(uploaded.assetId, (result) => toast[result.status === "APPROVED" ? "success" : "error"](
@@ -106,7 +110,8 @@ export default function ProfissionalConfiguracoesPage() {
       }
       await save({ presentationVideoUrl: uploaded.url }, "Seu vídeo foi enviado para análise.");
     } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : "Não foi possível concluir agora. Tente novamente.");
+      console.error("[professional-settings] Falha no upload resumível de vídeo.", cause);
+      toast.error(videoUploadErrorMessage(cause));
     } finally {
       setUploadingVideo(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -219,7 +224,7 @@ export default function ProfissionalConfiguracoesPage() {
         <section style={card}>
           <h2 style={{ color: "#fff", fontSize: 17, margin: "0 0 8px" }}>Vídeo da galeria</h2>
           <p style={{ ...muted, margin: "0 0 14px" }}>Adicione ou substitua o vídeo da galeria. Ele permanece privado durante as verificações de segurança antes de aparecer publicamente.</p>
-          <p style={{ ...muted, margin: "0 0 14px" }}>Máximo de 30 segundos e 50 MB por vídeo · MP4, WebM ou MOV.</p>
+          <p style={{ ...muted, margin: "0 0 14px" }}>Adicione vídeos de no máximo 30 segundos. A plataforma prepara e envia o arquivo com segurança.</p>
           {settings.presentationVideoUrl ? (
             <div style={{ display: "grid", gap: 12 }}>
               <video src={settings.presentationVideoUrl} controls preload="none" style={{ width: "100%", maxHeight: 360, borderRadius: 10, background: "#050506" }} />

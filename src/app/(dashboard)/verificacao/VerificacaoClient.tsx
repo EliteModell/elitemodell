@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { BrandMark } from "@/components/BrandMark";
+import { publicErrorMessage } from "@/lib/public-error-message";
 import {
   BadgeCheck,
   Clock,
@@ -62,7 +63,7 @@ export default function VerificacaoClient({ status, name, submittedAt, rejection
       toast.success("Solicitação enviada! Aguarde a análise.");
       router.refresh();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Erro ao enviar solicitação.");
+      toast.error(publicErrorMessage(err, "Não foi possível enviar a solicitação."));
     } finally {
       setSubmitting(false);
     }

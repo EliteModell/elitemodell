@@ -15,6 +15,7 @@ import type { CaptchaFieldHandle } from "@/components/auth/CaptchaField";
 import { validateBirthDate } from "@/lib/age-validation";
 import { buildAuthCallbackUrl } from "@/lib/auth-redirect";
 import { loadSupabaseAuth } from "@/lib/supabase-auth-loader";
+import { publicErrorMessage } from "@/lib/public-error-message";
 import {
   ACCOUNT_ROUTES,
   type CadastroTipo,
@@ -619,7 +620,7 @@ export default function CadastroPage() {
       console.error("[cadastro] falha ao gerar token anti-spam", {
         message: err instanceof Error ? err.message : "erro desconhecido",
       });
-      toast.error(err instanceof Error ? err.message : "Confirme a verificação anti-spam.");
+      toast.error(publicErrorMessage(err, "Não foi possível validar a proteção anti-spam. Tente novamente."));
       throw err;
     }
   }
@@ -784,7 +785,7 @@ export default function CadastroPage() {
       router.refresh();
     } catch (error) {
       verificationCompletingRef.current = false;
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel continuar o cadastro.");
+      toast.error(publicErrorMessage(error, "Não foi possível continuar o cadastro."));
       router.push(loginPathAfterEmailVerification());
     } finally {
       setLoading(false);
@@ -882,7 +883,7 @@ export default function CadastroPage() {
       await sendEmailSignup();
       toast.success("Email reenviado. Confira a caixa de entrada e o spam.");
     } catch (err: unknown) {
-      toast.error(asAuthError(err).message ?? "Nao foi possivel reenviar o email.");
+      toast.error(publicErrorMessage(asAuthError(err), "Não foi possível reenviar o e-mail."));
     } finally {
       setLoading(false);
     }
@@ -908,7 +909,7 @@ export default function CadastroPage() {
       if (error) throw error;
     } catch (err: unknown) {
       captchaRef.current?.reset();
-      toast.error(asAuthError(err).message ?? "Erro ao entrar com Google.");
+      toast.error(publicErrorMessage(asAuthError(err), "Não foi possível entrar com Google."));
     } finally {
       setLoading(false);
     }
@@ -965,7 +966,7 @@ export default function CadastroPage() {
       router.refresh();
     } catch (err: unknown) {
       captchaRef.current?.reset();
-      toast.error(asAuthError(err).message ?? "Nao foi possivel continuar o cadastro.");
+      toast.error(publicErrorMessage(asAuthError(err), "Não foi possível continuar o cadastro."));
     } finally {
       setLoading(false);
     }

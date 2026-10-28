@@ -329,8 +329,8 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     const upload = fs.readFileSync(path.join(process.cwd(), "src/app/api/upload/route.ts"), "utf8");
     const panel = fs.readFileSync(path.join(process.cwd(), "src/components/professional-dashboard/ProfessionalPostClient.tsx"), "utf8");
     expect(page).toContain('title="Vídeos da galeria"');
-    expect(page).toContain("permanece privado durante as verificações de segurança e moderação");
-    expect(page).toContain('uploadFile(pending.file, `profile-videos/${professionalIdentity.id}`)');
+    expect(page).toContain("A plataforma prepara e envia os arquivos com segurança");
+    expect(page).toContain("uploadProfileVideoResumable({");
     expect(schema).toContain("presentationVideoUrl: z.string().optional()");
     expect(schema).not.toContain("presentationVideoUrls");
     expect(upload).toContain('folder.startsWith("profile-videos")');

@@ -22,6 +22,7 @@ import toast from "react-hot-toast";
 
 import styles from "./ProfessionalRegistrationFlow.module.css";
 import { readJsonResponse } from "@/lib/safe-json-response";
+import { publicErrorMessage } from "@/lib/public-error-message";
 type RegistrationStage = "phone" | "verification";
 type VerificationChannel = "sms" | "whatsapp";
 
@@ -318,7 +319,7 @@ export function ProfessionalRegistrationFlow({
           : "Solicitação aceita. O SMS pode levar até 1 minuto para chegar.",
       );
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : friendlyError);
+      toast.error(publicErrorMessage(error, friendlyError));
     } finally {
       setSendingCode(false);
     }
@@ -380,7 +381,7 @@ export function ProfessionalRegistrationFlow({
       toast.success("Telefone confirmado com segurança.");
       router.replace(data.redirectTo || "/cadastro?tipo=acompanhante&telefoneValidado=1");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível validar o código.");
+      toast.error(publicErrorMessage(error, "Não foi possível validar o código."));
     } finally {
       setVerifyingCode(false);
     }

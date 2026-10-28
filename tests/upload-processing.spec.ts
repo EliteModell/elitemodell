@@ -47,7 +47,7 @@ test.describe("uploads em quarentena", () => {
       "src/components/professional-dashboard/ProfessionalPostClient.tsx",
     ]) {
       const source = readFileSync(file, "utf8");
-      expect(source).toContain("parseUploadResponse");
+      expect(source.includes("parseUploadResponse") || source.includes("uploadProfileVideoResumable")).toBe(true);
       expect(source).not.toContain("!uploadRes.ok || !uploaded.url");
     }
   });

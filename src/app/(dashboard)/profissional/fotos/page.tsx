@@ -8,6 +8,8 @@ import { ArrowLeft, ArrowRight, Camera, Film, ImageIcon, Images, Loader2, Trash2
 import { PremiumHeroCard, PremiumSection } from "@/components/professional-dashboard/ProfessionalPremium";
 import { monitorUpload, parseUploadResponse, UPLOAD_PENDING_MESSAGE, type UploadApiPayload } from "@/lib/upload-response";
 import { validateProfileVideoInBrowser } from "@/lib/client-video-duration";
+import { uploadProfileVideoResumable, videoUploadStageLabel, type VideoUploadStage } from "@/lib/resumable-video-upload";
+import { publicErrorMessage, videoUploadErrorMessage } from "@/lib/public-error-message";
 
 type PhotoRecord = {
   id?: string;
@@ -95,6 +97,7 @@ export default function ProfissionalFotosPage() {
   const [videos, setVideos] = useState<GalleryMedia[]>([]);
   const [videoPending, setVideoPending] = useState<PendingFile[]>([]);
   const [videoProgress, setVideoProgress] = useState<Record<string, number>>({});
+  const [videoStage, setVideoStage] = useState<Record<string, VideoUploadStage>>({});
   const [loading, setLoading] = useState(true);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [processingCount, setProcessingCount] = useState(0);
@@ -227,15 +230,15 @@ export default function ProfissionalFotosPage() {
   async function uploadVideo(file: File, progressKey: string) {
     if (!profileId) throw new Error("Perfil profissional não encontrado.");
     if (!contentDeclarationAccepted) throw new Error("Confirme a declaração de autoria e autorização antes do upload.");
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("contentDeclarationAccepted", "true");
-    formData.append("contentRating", contentRating);
-    setVideoProgress((current) => ({ ...current, [progressKey]: 10 }));
-    const response = await fetch(`/api/upload?folder=profile-videos/${profileId}`, { method: "POST", body: formData });
-    setVideoProgress((current) => ({ ...current, [progressKey]: 80 }));
-    const payload: UploadApiPayload = await response.json().catch(() => ({}));
-    const uploaded = parseUploadResponse(response, payload);
+    const uploaded = await uploadProfileVideoResumable({
+      file,
+      professionalId: profileId,
+      contentRating,
+      onProgress: ({ percentage, stage }) => {
+        setVideoProgress((current) => ({ ...current, [progressKey]: percentage }));
+        setVideoStage((current) => ({ ...current, [progressKey]: stage }));
+      },
+    });
     const linked = await fetch("/api/professional/media", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -244,7 +247,7 @@ export default function ProfissionalFotosPage() {
     const linkedPayload = await linked.json().catch(() => ({}));
     if (!linked.ok) throw new Error(typeof linkedPayload.error === "string" ? linkedPayload.error : "Não foi possível adicionar o vídeo à galeria.");
     setVideoProgress((current) => ({ ...current, [progressKey]: 100 }));
-    return uploaded;
+    return { ...uploaded, pending: uploaded.status !== "APPROVED" };
   }
 
   async function refreshVideos() {
@@ -272,10 +275,12 @@ export default function ProfissionalFotosPage() {
       videoPending.forEach((item) => URL.revokeObjectURL(item.preview));
       setVideoPending([]);
       setVideoProgress({});
+      setVideoStage({});
       await refreshVideos();
       toast.success("Vídeos recebidos. Eles permanecem privados durante as verificações.");
     } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : "Não foi possível enviar os vídeos.");
+      console.error("[professional-gallery] Falha no upload resumível de vídeo.", cause);
+      toast.error(videoUploadErrorMessage(cause));
     } finally {
       setSavingKey(null);
     }
@@ -372,7 +377,7 @@ export default function ProfissionalFotosPage() {
       setProfilePending(null);
       toast.success("Sua foto foi atualizada.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível enviar agora. Tente novamente.");
+      toast.error(publicErrorMessage(err, "Não foi possível enviar agora. Tente novamente."));
     } finally {
       setSavingKey(null);
     }
@@ -410,7 +415,7 @@ export default function ProfissionalFotosPage() {
       setCoverPending(null);
       toast.success("Capa atualizada com sucesso.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível enviar agora. Tente novamente.");
+      toast.error(publicErrorMessage(err, "Não foi possível enviar agora. Tente novamente."));
     } finally {
       setSavingKey(null);
     }
@@ -451,7 +456,7 @@ export default function ProfissionalFotosPage() {
       setGalleryPending([]);
       toast.success(pendingCount ? `${pendingCount} arquivo(s) recebido(s), aguardando verificação.` : uploaded.length === 1 ? "Foto publicada com sucesso." : "Fotos publicadas com sucesso.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível enviar agora. Tente novamente.");
+      toast.error(publicErrorMessage(err, "Não foi possível enviar agora. Tente novamente."));
     } finally {
       setSavingKey(null);
     }
@@ -464,7 +469,7 @@ export default function ProfissionalFotosPage() {
       setProfilePhoto(null);
       toast.success("Sua foto foi removida.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível remover agora. Tente novamente.");
+      toast.error(publicErrorMessage(err, "Não foi possível remover agora. Tente novamente."));
     } finally {
       setSavingKey(null);
     }
@@ -477,7 +482,7 @@ export default function ProfissionalFotosPage() {
       setCoverPhoto(null);
       toast.success("Capa removida.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível remover agora. Tente novamente.");
+      toast.error(publicErrorMessage(err, "Não foi possível remover agora. Tente novamente."));
     } finally {
       setSavingKey(null);
     }
@@ -491,7 +496,7 @@ export default function ProfissionalFotosPage() {
       setGallery(nextGallery);
       toast.success("Foto removida.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível remover agora. Tente novamente.");
+      toast.error(publicErrorMessage(err, "Não foi possível remover agora. Tente novamente."));
     } finally {
       setSavingKey(null);
     }
@@ -647,7 +652,7 @@ export default function ProfissionalFotosPage() {
             <div style={{ display: "grid", placeItems: "center", gap: 10, textAlign: "center" }}>
               <Film size={36} color="var(--elite-gold-light)" />
               <strong style={{ color: "#fff" }}>Adicionar vídeos</strong>
-              <span style={{ color: "var(--elite-text-muted)", fontSize: 13 }}>Até {MAX_VIDEOS} vídeos · Máximo de 30 segundos e 50 MB por vídeo · MP4, WebM ou MOV.</span>
+              <span style={{ color: "var(--elite-text-muted)", fontSize: 13 }}>Adicione até {MAX_VIDEOS} vídeos de no máximo 30 segundos cada.</span>
               <span style={{ color: "var(--elite-text-muted)", fontSize: 12 }}>Os arquivos permanecem privados enquanto passam pelas verificações de segurança e conteúdo.</span>
             </div>
           </div>
@@ -655,7 +660,7 @@ export default function ProfissionalFotosPage() {
           {videoPending.length ? <div style={{ marginTop: 18, display: "grid", gap: 12 }}>
             {videoPending.map((item) => <div key={item.preview} style={{ display: "grid", gridTemplateColumns: "96px 1fr auto", gap: 12, alignItems: "center" }}>
               <video src={item.preview} muted playsInline preload="metadata" style={{ width: 96, height: 72, objectFit: "cover", borderRadius: 12, background: "#050506" }} />
-              <div><strong style={{ color: "#fff", fontSize: 13 }}>{item.file.name}</strong><div style={{ marginTop: 8, height: 6, borderRadius: 999, overflow: "hidden", background: "rgba(255,255,255,.1)" }}><span style={{ display: "block", width: `${videoProgress[item.preview] ?? 0}%`, height: "100%", background: "var(--elite-gold)" }} /></div></div>
+              <div><strong style={{ color: "#fff", fontSize: 13 }}>{item.file.name}</strong><small>{videoUploadStageLabel(videoStage[item.preview] ?? "PREPARING")} · {videoProgress[item.preview] ?? 0}%</small><div style={{ marginTop: 8, height: 6, borderRadius: 999, overflow: "hidden", background: "rgba(255,255,255,.1)" }}><span style={{ display: "block", width: `${videoProgress[item.preview] ?? 0}%`, height: "100%", background: "var(--elite-gold)" }} /></div></div>
               <button type="button" className="premium-button-secondary" aria-label="Remover vídeo selecionado" onClick={() => setVideoPending((current) => current.filter((candidate) => candidate.preview !== item.preview))}><Trash2 size={16} /></button>
             </div>)}
             <button type="button" className="premium-button" disabled={savingKey === "videos"} onClick={publishVideos}>{savingKey === "videos" ? <Loader2 size={17} className="spin" /> : <UploadCloud size={17} />}{savingKey === "videos" ? "Enviando..." : "Enviar vídeos"}</button>
@@ -664,7 +669,7 @@ export default function ProfissionalFotosPage() {
           <div style={{ marginTop: 22, display: "grid", gap: 14 }}>
             {videos.map((item, index) => <article key={item.id} style={{ display: "grid", gridTemplateColumns: "minmax(120px, 220px) 1fr", gap: 14, border: "1px solid var(--elite-border-soft)", borderRadius: 18, padding: 12 }}>
               {item.url ? <video src={item.url} controls playsInline preload="metadata" style={{ width: "100%", aspectRatio: "16 / 9", objectFit: "cover", borderRadius: 12, background: "#050506" }} /> : <div className="premium-empty-state">Prévia indisponível</div>}
-              <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 12 }}><div><strong style={{ color: "#fff" }}>Vídeo {index + 1}</strong><p style={{ margin: "6px 0 0", color: "var(--elite-text-muted)", fontSize: 13 }}>{mediaStateLabel(item.state)}</p>{item.failureReason ? <p style={{ color: "#fca5a5", fontSize: 12 }}>{item.failureReason}</p> : null}</div><div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}><button type="button" className="premium-button-secondary" disabled={index === 0 || item.id === "legacy-presentation-video"} onClick={() => moveVideo(item.id, -1)} aria-label="Mover vídeo para a esquerda"><ArrowLeft size={16} /></button><button type="button" className="premium-button-secondary" disabled={index === videos.length - 1 || item.id === "legacy-presentation-video"} onClick={() => moveVideo(item.id, 1)} aria-label="Mover vídeo para a direita"><ArrowRight size={16} /></button><button type="button" className="premium-button-secondary" disabled={item.id === "legacy-presentation-video"} onClick={() => void removeVideo(item.id).catch((cause) => toast.error(cause instanceof Error ? cause.message : "Não foi possível remover."))}><Trash2 size={16} /> Remover</button></div></div>
+              <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 12 }}><div><strong style={{ color: "#fff" }}>Vídeo {index + 1}</strong><p style={{ margin: "6px 0 0", color: "var(--elite-text-muted)", fontSize: 13 }}>{mediaStateLabel(item.state)}</p>{item.failureReason ? <p style={{ color: "#fca5a5", fontSize: 12 }}>{publicErrorMessage(item.failureReason, "O vídeo precisa de uma nova tentativa.")}</p> : null}</div><div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}><button type="button" className="premium-button-secondary" disabled={index === 0 || item.id === "legacy-presentation-video"} onClick={() => moveVideo(item.id, -1)} aria-label="Mover vídeo para a esquerda"><ArrowLeft size={16} /></button><button type="button" className="premium-button-secondary" disabled={index === videos.length - 1 || item.id === "legacy-presentation-video"} onClick={() => moveVideo(item.id, 1)} aria-label="Mover vídeo para a direita"><ArrowRight size={16} /></button><button type="button" className="premium-button-secondary" disabled={item.id === "legacy-presentation-video"} onClick={() => void removeVideo(item.id).catch((cause) => toast.error(publicErrorMessage(cause, "Não foi possível remover.")))}><Trash2 size={16} /> Remover</button></div></div>
             </article>)}
             {!videos.length ? <div className="premium-empty-state">Nenhum vídeo adicionado à galeria.</div> : null}
           </div>

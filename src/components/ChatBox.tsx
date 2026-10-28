@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
+import { publicErrorMessage } from "@/lib/public-error-message";
 
 const GOLD = "#b72cff";
 const GOLD_DIM = "rgba(183, 44, 255,0.10)";
@@ -87,7 +88,7 @@ export default function ChatBox({ bookingId, title }: Props) {
       if (!res.ok) throw new Error(msg.error ?? "Erro ao enviar.");
       setMessages(prev => [...prev, msg]);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Erro ao enviar.");
+      toast.error(publicErrorMessage(err, "Não foi possível enviar a mensagem."));
       setInput(content);
     } finally { setSending(false); }
   }

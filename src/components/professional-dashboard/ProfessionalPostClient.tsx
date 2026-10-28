@@ -9,8 +9,10 @@ import {
   Loader2, Play, Plus, Sparkles, Star, Upload, UploadCloud, UserRound,
 } from "lucide-react";
 import styles from "./ProfessionalPostClient.module.css";
-import { monitorUpload, parseUploadResponse, UPLOAD_PENDING_MESSAGE, type UploadApiPayload } from "@/lib/upload-response";
+import { monitorUpload, UPLOAD_PENDING_MESSAGE } from "@/lib/upload-response";
 import { validateProfileVideoInBrowser } from "@/lib/client-video-duration";
+import { uploadProfileVideoResumable } from "@/lib/resumable-video-upload";
+import { videoUploadErrorMessage } from "@/lib/public-error-message";
 
 type PhotoRecord = { url: string; cover: boolean; order: number };
 type StoryItem = { id: string; mediaUrl: string; mediaType: "image" | "video"; thumbnail: string | null };
@@ -107,12 +109,14 @@ export function ProfessionalPostClient() {
     if (!contentDeclarationAccepted) return toast.error("Confirme a declaração de autoria e autorização antes de enviar.");
     setUploadingVideo(true);
     try {
-      const body = new FormData();
-      body.append("file", pendingVideo.file);
-      body.append("contentDeclarationAccepted", "true");
-      const uploadRes = await fetch(`/api/upload?folder=profile-videos/${professionalId}`, { method: "POST", body });
-      const payload: UploadApiPayload = await uploadRes.json().catch(() => ({}));
-      const uploaded = parseUploadResponse(uploadRes, payload);
+      const result = await uploadProfileVideoResumable({ file: pendingVideo.file, professionalId });
+      const uploaded = { ...result, reference: result.url ?? result.path, pending: result.status !== "APPROVED" };
+      const linked = await fetch("/api/professional/media", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assetId: uploaded.assetId, kind: "VIDEO" }),
+      });
+      if (!linked.ok) throw new Error("O vídeo foi recebido, mas não foi possível adicioná-lo à galeria.");
       if (uploaded.pending || !uploaded.url) {
         const updateRes = await fetch(`/api/professionals/${professionalSlug}`, {
           method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ presentationVideoUrl: uploaded.reference }),
@@ -141,7 +145,8 @@ export function ProfessionalPostClient() {
       setContentDeclarationAccepted(false);
       toast.success("Vídeo enviado com sucesso.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível enviar agora. Tente novamente.");
+      console.error("[professional-post] Falha no upload resumível de vídeo.", err);
+      toast.error(videoUploadErrorMessage(err));
     } finally {
       setUploadingVideo(false);
     }
@@ -201,7 +206,7 @@ export function ProfessionalPostClient() {
           <div className={styles.videoDetails}>
             <span className={`${styles.statusBadge} ${videoStatusTone(videoStatus)}`}>{videoStatusLabel(videoStatus)}</span>
             {pendingVideo ? <p className={styles.videoFeedback}>Preview pronto. Confira o vídeo antes de enviar.</p> : videoUrl ? <p className={styles.videoSuccess}><CheckCircle2 /> Seu vídeo foi enviado.</p> : null}
-            <p className={styles.videoRules}>MP4, WebM ou MOV · Máximo de 30 segundos e 50 MB. O arquivo permanece privado durante as verificações de segurança e só aparece na galeria quando estiver liberado.</p>
+            <p className={styles.videoRules}>Adicione vídeos de no máximo 30 segundos. A plataforma prepara e envia o arquivo com segurança.</p>
             <label className={styles.declaration}>
               <input type="checkbox" checked={contentDeclarationAccepted} onChange={(event) => setContentDeclarationAccepted(event.target.checked)} />
               <span>Confirmo que sou autora ou tenho autorização para publicar este vídeo, que não envolve menores, exploração, coerção, tráfico, imagem de terceiros sem autorização ou conteúdo proibido.</span>

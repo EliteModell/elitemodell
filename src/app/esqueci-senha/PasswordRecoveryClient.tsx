@@ -5,6 +5,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { ACCOUNT_ROUTES } from "@/lib/account-routes";
 import { BrandMark } from "@/components/BrandMark";
+import { publicErrorMessage } from "@/lib/public-error-message";
 
 const GOLD = "#b72cff";
 
@@ -38,7 +39,7 @@ export function PasswordRecoveryClient() {
       setSent(true);
       toast.success("Se o email existir, enviaremos o link de recuperacao.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nao foi possivel enviar o link.");
+      toast.error(publicErrorMessage(err, "Não foi possível enviar o link de recuperação."));
     } finally {
       setLoading(false);
     }

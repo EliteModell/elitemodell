@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { buildAuthCallbackUrl } from "@/lib/auth-redirect";
 import { loadSupabaseAuth } from "@/lib/supabase-auth-loader";
+import { publicErrorMessage } from "@/lib/public-error-message";
 
 export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
@@ -21,7 +22,7 @@ export default function AdminLoginPage() {
       });
       if (error) throw error;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro ao conectar com Google.");
+      setError(publicErrorMessage(err, "Não foi possível conectar com Google."));
       setLoading(false);
     }
   }

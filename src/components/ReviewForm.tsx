@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { publicErrorMessage } from "@/lib/public-error-message";
 
 const GOLD = "#b72cff";
 
@@ -31,7 +32,7 @@ export default function ReviewForm({ professionalId, appointmentId, onSubmitted 
       toast.success("Avaliação enviada!");
       onSubmitted?.();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Erro ao enviar avaliação.");
+      toast.error(publicErrorMessage(err, "Não foi possível enviar a avaliação."));
     } finally { setLoading(false); }
   }
 

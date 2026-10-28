@@ -33,6 +33,8 @@ import { isProfessionalDisplayNameReady, professionalDisplayNameForEditing } fro
 import { professionalStartingPrice } from "@/lib/professional-pricing";
 import { professionalRegistrationStatus } from "@/lib/professional-registration-status";
 import { validateProfileVideoInBrowser } from "@/lib/client-video-duration";
+import { uploadProfileVideoResumable, videoUploadStageLabel, type VideoUploadStage } from "@/lib/resumable-video-upload";
+import { publicErrorMessage, videoUploadErrorMessage } from "@/lib/public-error-message";
 
 const ProfessionalVerificationSteps = dynamic(
   () => import("@/components/professional-onboarding/ProfessionalVerificationSteps"),
@@ -70,7 +72,7 @@ type SubmissionResult = {
 };
 type UploadResult = { assetId: string; reference: string; status: string; pendingReview: boolean };
 type OnboardingVideo = { id: string; assetId: string | null; url: string | null; state: "ANALYZING" | "PROCESSING" | "REVIEW_REQUIRED" | "PUBLISHED" | "REJECTED" };
-type PendingVideo = { key: string; file: File; preview: string; progress: number };
+type PendingVideo = { key: string; file: File; preview: string; progress: number; stage: VideoUploadStage };
 type CompletionState = {
   profilePercent: number;
   profileComplete: boolean;
@@ -975,7 +977,7 @@ export default function ProfissionalNovoPage() {
         URL.revokeObjectURL(previewUrl);
         localPreviewUrlsRef.current.delete(previewUrl);
       }
-      toast.error(err instanceof Error ? err.message : "Não foi possível analisar esta foto agora. Tente novamente.");
+      toast.error(publicErrorMessage(err, "Não foi possível analisar esta foto agora. Tente novamente."));
     }
     finally {
       setUploadingIdx(null);
@@ -1036,7 +1038,7 @@ export default function ProfissionalNovoPage() {
       }
       const preview = URL.createObjectURL(file);
       localPreviewUrlsRef.current.add(preview);
-      next.push({ key: crypto.randomUUID(), file, preview, progress: 0 });
+      next.push({ key: crypto.randomUUID(), file, preview, progress: 0, stage: "PREPARING" });
     }
     setPendingVideos((current) => [...current, ...next]);
   }
@@ -1046,24 +1048,29 @@ export default function ProfissionalNovoPage() {
     setUploadingIdx(90);
     for (const pending of pendingVideos) {
       try {
-        setPendingVideos((current) => current.map((item) => item.key === pending.key ? { ...item, progress: 15 } : item));
-        const uploaded = await uploadFile(pending.file, `profile-videos/${professionalIdentity.id}`);
+        const uploaded = await uploadProfileVideoResumable({
+          file: pending.file,
+          professionalId: professionalIdentity.id,
+          onProgress: ({ percentage, stage }) => setPendingVideos((current) => current.map((item) => (
+            item.key === pending.key ? { ...item, progress: percentage, stage } : item
+          ))),
+        });
         if (!uploaded.assetId) throw new Error("O upload não retornou um identificador seguro.");
-        setPendingVideos((current) => current.map((item) => item.key === pending.key ? { ...item, progress: 80 } : item));
         const linked = await fetch("/api/professional/media", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ assetId: uploaded.assetId, kind: "VIDEO" }) });
         const linkedPayload = await linked.json().catch(() => ({}));
         if (!linked.ok) throw new Error(typeof linkedPayload.error === "string" ? linkedPayload.error : "Não foi possível vincular o vídeo.");
         setPendingVideos((current) => current.map((item) => item.key === pending.key ? { ...item, progress: 100 } : item));
-        if (!form.presentationVideoUrl) setForm((current) => ({ ...current, presentationVideoUrl: uploaded.reference, presentationVideoStatus: "PENDING" }));
+        if (!form.presentationVideoUrl) setForm((current) => ({ ...current, presentationVideoUrl: uploaded.url ?? uploaded.path, presentationVideoStatus: "PENDING" }));
       } catch (cause) {
-        toast.error(cause instanceof Error ? cause.message : "Não foi possível enviar um dos vídeos.");
+        console.error("[professional-onboarding] Falha no upload resumível de vídeo.", cause);
+        toast.error(videoUploadErrorMessage(cause));
       }
     }
     pendingVideos.forEach((item) => { URL.revokeObjectURL(item.preview); localPreviewUrlsRef.current.delete(item.preview); });
     setPendingVideos([]);
     setUploadingIdx(null);
     await refreshOnboardingVideos();
-    toast.success("Vídeos recebidos e mantidos privados durante as verificações.");
+    toast.success("Vídeos recebidos. A galeria será atualizada automaticamente após o processamento.");
   }
 
   function removePendingVideo(key: string) {
@@ -1184,7 +1191,7 @@ export default function ProfissionalNovoPage() {
       setServerEmailCooldown(response, data.retryAfterSeconds);
       toast.success("Enviamos um link de confirmação para seu e-mail. Abra sua caixa de entrada para continuar.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível solicitar a confirmação agora.");
+      toast.error(publicErrorMessage(error, "Não foi possível solicitar a confirmação agora."));
     } finally {
       setEmailBusy(false);
     }
@@ -2144,7 +2151,7 @@ export default function ProfissionalNovoPage() {
             {pendingVideos.length ? <div style={{ display: "grid", gap: 12, marginTop: 14 }}>
               {pendingVideos.map((item) => <div key={item.key} style={{ display: "grid", gridTemplateColumns: "100px 1fr auto", gap: 10, alignItems: "center" }}>
                 <video src={item.preview} muted playsInline preload="metadata" style={{ width: 100, height: 76, objectFit: "cover", borderRadius: 10, background: "#050505" }} />
-                <div><strong style={{ display: "block", fontSize: 12 }}>{item.file.name}</strong><div style={{ height: 6, borderRadius: 999, background: "#241c28", overflow: "hidden", marginTop: 8 }}><span style={{ display: "block", width: `${item.progress}%`, height: "100%", background: GOLD }} /></div></div>
+                <div><strong style={{ display: "block", fontSize: 12 }}>{item.file.name}</strong><small>{videoUploadStageLabel(item.stage)} · {item.progress}%</small><div style={{ height: 6, borderRadius: 999, background: "#241c28", overflow: "hidden", marginTop: 8 }}><span style={{ display: "block", width: `${item.progress}%`, height: "100%", background: GOLD }} /></div></div>
                 <button type="button" onClick={() => removePendingVideo(item.key)} disabled={uploadingIdx === 90} style={{ border: `1px solid ${GOLD_MID}`, background: "transparent", color: "#e1a6ff", minHeight: 40 }}>Remover</button>
               </div>)}
               <button type="button" onClick={uploadPresentationVideos} disabled={uploadingIdx === 90} style={{ minHeight: 48, border: 0, borderRadius: 10, background: GOLD, color: "#080808", fontWeight: 900 }}>{uploadingIdx === 90 ? "Enviando..." : "Enviar vídeos selecionados"}</button>
@@ -2155,7 +2162,7 @@ export default function ProfissionalNovoPage() {
                 <div style={{ padding: 10 }}><span style={{ display: "block", fontSize: 11, color: "#aaa0b2" }}>{video.state === "PUBLISHED" ? "Publicado" : video.state === "REJECTED" ? "Rejeitado" : video.state === "REVIEW_REQUIRED" ? "Requer revisão" : video.state === "PROCESSING" ? "Processando" : "Em análise"}</span><button type="button" disabled={video.id === "legacy-presentation-video"} onClick={() => void removeOnboardingVideo(video)} style={{ marginTop: 8, border: 0, background: "transparent", color: "#e1a6ff", cursor: "pointer" }}>Remover</button></div>
               </article>)}
             </div> : null}
-            <p style={{ margin: "10px 0 0", fontSize: 11 }}>Até 10 vídeos · Máximo de 30 segundos e 50 MB por vídeo · MP4, WebM ou MOV · cada arquivo permanece privado durante as verificações de segurança e moderação.</p>
+            <p style={{ margin: "10px 0 0", fontSize: 11 }}>Adicione até 10 vídeos de no máximo 30 segundos cada. A plataforma prepara e envia os arquivos com segurança.</p>
           </Section>
         </div>
       )}
