@@ -171,7 +171,7 @@ test.describe("validacao do perfil profissional", () => {
   test("exige nascimento no perfil e confirma maioridade pela decisao assinada da Didit", () => {
     expect(issuePaths({ ...validProfile, birthDate: undefined })).toContain("birthDate");
     expect(assessProfessionalDiditDecision(diditDecision("Approved", null))).toMatchObject({
-      status: "REJECTED",
+      status: "PENDING",
       approved: false,
     });
   });
@@ -241,7 +241,7 @@ test.describe("verificacao Didit no onboarding profissional", () => {
       approved: true,
     });
     expect(assessProfessionalDiditDecision(diditDecision("Approved", null))).toMatchObject({
-      status: "REJECTED",
+      status: "PENDING",
       approved: false,
     });
     expect(assessProfessionalDiditDecision(diditDecision("In Review"))).toMatchObject({
@@ -249,11 +249,11 @@ test.describe("verificacao Didit no onboarding profissional", () => {
       approved: false,
     });
     expect(assessProfessionalDiditDecision({ ...diditDecision("Approved"), id_verifications: [] })).toMatchObject({
-      status: "REJECTED",
+      status: "PENDING",
       approved: false,
     });
     expect(assessProfessionalDiditDecision({ ...diditDecision("Approved"), liveness_checks: [] })).toMatchObject({
-      status: "REJECTED",
+      status: "PENDING",
       approved: false,
     });
   });
@@ -576,6 +576,25 @@ test.describe("reconciliacao Didit com respostas simuladas", () => {
     expect(writes.find(w => w.target === "professional")?.data.kycStatus).toBe("REJECTED");
   });
 
+  test("decisão alterada antes do e-mail é reconciliada e não mantém reprovação antiga", async () => {
+    let reads = 0;
+    globalThis.fetch = async () => Response.json(reads++ === 0
+      ? diditDecision("Declined")
+      : diditDecision("Approved"));
+    await reconcileProfessionalDidit("user_test", "didit_session_test");
+    const professionalWrites = writes.filter(w => w.target === "professional");
+    expect(professionalWrites.at(-1)?.data).toMatchObject({ kycStatus: "APPROVED", rejectReason: null });
+  });
+
+  test("Approved parcial pede nova entrega do webhook sem registrar reprovação", async () => {
+    decision = { ...diditDecision("Approved"), liveness_checks: [] };
+    expect((await webhook("Approved")).status).toBe(500);
+    expect(writes.find(w => w.target === "professional")?.data).toMatchObject({
+      kycStatus: "PENDING",
+      rejectReason: null,
+    });
+  });
+
   test("decisao oficial aprovada sincroniza somente a maioridade da titular da midia", async () => {
     await reconcileProfessionalDidit("user_test", "didit_session_test");
     const mediaWrite = writes.find(w => w.target === "uploadAsset");
@@ -645,7 +664,7 @@ test.describe("reconciliacao Didit com respostas simuladas", () => {
   });
 
   test("maioridade nao confirmada exige suporte sem liberar novas tentativas", () => {
-    expect(assessProfessionalDiditDecision(diditDecision("Approved", null))).toMatchObject({ status: "REJECTED", retryAllowed: false });
+    expect(assessProfessionalDiditDecision(diditDecision("Approved", null))).toMatchObject({ status: "PENDING", retryAllowed: false });
     expect(assessProfessionalDiditDecision(diditDecision("Approved", "2020-01-01"))).toMatchObject({ status: "REJECTED", retryAllowed: false });
   });
 

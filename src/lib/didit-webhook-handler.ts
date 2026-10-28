@@ -89,7 +89,12 @@ export async function handleDigitWebhook(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
     // Re-read the current decision under the account lock, including for pending/declined events.
-    await reconcileProfessionalDidit(userId, sessionId);
+    const reconciled = await reconcileProfessionalDidit(userId, sessionId);
+    if (reconciled.rawStatus === "Approved" && reconciled.status === "PENDING") {
+      // Ask Didit to retry while its detailed decision converges. A partial
+      // Approved response must never be persisted as a rejection.
+      throw new Error("didit_approved_details_pending");
+    }
 
     await markWebhookEventDone("didit", eventId);
     return NextResponse.json({ received: true });

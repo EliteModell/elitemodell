@@ -43,12 +43,23 @@ export function assessProfessionalDiditDecision(decision: DiditDecision): {
     const livenessApproved = Boolean(decision.liveness_checks?.some((item) => item.status.toLowerCase() === "approved"));
     if (!documentApproved || !livenessApproved) {
       return {
-        status: DIDIT_REJECTED_STATUS,
+        // Didit's overall decision can become Approved shortly before the
+        // detailed checks are visible. Keep this transient state recoverable.
+        status: DIDIT_PENDING_STATUS,
         approved: false,
         retryAllowed: false,
-        reason: "A Didit não confirmou conjuntamente o documento, o reconhecimento facial e a prova de vida. Fale com o suporte.",
+        reason: "A Didit aprovou a sessão e estamos sincronizando os detalhes da verificação. Não é necessário enviar os documentos novamente.",
       };
     }
+  }
+
+  if (status === DIDIT_APPROVED_STATUS && !dateOfBirth) {
+    return {
+      status: DIDIT_PENDING_STATUS,
+      approved: false,
+      retryAllowed: false,
+      reason: "A Didit aprovou a sessão e estamos sincronizando a confirmação de maioridade. Não é necessário enviar os documentos novamente.",
+    };
   }
 
   if (status === DIDIT_APPROVED_STATUS && !isAdult(dateOfBirth)) {
@@ -56,9 +67,7 @@ export function assessProfessionalDiditDecision(decision: DiditDecision): {
       status: DIDIT_REJECTED_STATUS,
       approved: false,
       retryAllowed: false,
-      reason: dateOfBirth
-        ? "Não foi possível confirmar a idade mínima de 18 anos. Se os dados estiverem incorretos, fale com o suporte."
-        : "Não foi possível confirmar a data de nascimento no documento. Fale com o suporte para revisar a verificação.",
+      reason: "Não foi possível confirmar a idade mínima de 18 anos. Se os dados estiverem incorretos, fale com o suporte.",
     };
   }
 

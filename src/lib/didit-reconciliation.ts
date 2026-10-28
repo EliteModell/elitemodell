@@ -6,7 +6,7 @@ import { logAudit } from "@/lib/audit";
 /** Serialize decision reads and writes with session creation for this account.
  * Webhook payloads are notifications: the current provider decision is authoritative.
  */
-export async function reconcileProfessionalDidit(userId: string, sessionId: string) {
+export async function reconcileProfessionalDidit(userId: string, sessionId: string, allowDecisionFollowup = true) {
   const outcome = await prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`didit-professional:${userId}`}))`;
     const professional = await tx.professional.findFirst({
@@ -101,6 +101,26 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
   }, { maxWait: 5_000, timeout: 15_000 });
 
   if (outcome.rejected && outcome.professionalId && outcome.professionalUserId) {
+    let currentAssessment: ReturnType<typeof assessProfessionalDiditDecision> | null = null;
+    try {
+      const currentDecision = await fetchDigitSessionDecision(sessionId);
+      if (currentDecision.session_id === sessionId
+        && digitVendorDataBelongsToUser(currentDecision.vendor_data, userId)) {
+        currentAssessment = assessProfessionalDiditDecision(currentDecision);
+      }
+    } catch (cause) {
+      console.warn("[didit-reconciliation] e-mail de reprovação adiado: decisão atual indisponível", {
+        sessionId,
+        reason: cause instanceof Error ? cause.name : "unknown",
+      });
+    }
+    if (!currentAssessment) return outcome.response;
+    if (currentAssessment.status !== "REJECTED" && allowDecisionFollowup) {
+      // The decision changed between the database transaction and the
+      // notification. Reconcile the newer authoritative state instead.
+      return reconcileProfessionalDidit(userId, sessionId, false);
+    }
+    if (currentAssessment.status !== "REJECTED") return outcome.response;
     const recent = await prisma.notification.findFirst({
       where: { userId: outcome.professionalUserId, type: "KYC_REQUIRES_ACTION", createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
       select: { id: true },
