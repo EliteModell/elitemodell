@@ -73,7 +73,7 @@ export type AdminProfessionalRecord = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  DRAFT: "Cadastro iniciado", PENDING_REVIEW: "Verificações em andamento", CORRECTION_REQUIRED: "Correção solicitada", ACTIVE: "Aprovada",
+  DRAFT: "Cadastro iniciado", PENDING_REVIEW: "Análise do perfil", CORRECTION_REQUIRED: "Correção solicitada", ACTIVE: "Aprovada",
   PAUSED: "Pausada", SUSPENDED: "Suspensa", REJECTED: "Reprovada",
 };
 
@@ -195,7 +195,7 @@ export function AdminProfessionalCard({
   const currentIssues = pro.status === "PENDING_REVIEW" ? approvalIssues : profileIssues;
   const billing = resolveProfessionalAccess(pro, pro.user, pro.status === "ACTIVE" || pro.status === "PAUSED", new Date(), { billingEnabled });
   const billingLabel = {
-    PENDING_APPROVAL: "Aguardando verificações",
+    PENDING_APPROVAL: "Aguardando liberação do perfil",
     TRIAL: "Trial ativo",
     ACTIVE: "Assinatura ativa",
     TRIAL_EXPIRED: "Trial encerrado",
@@ -206,7 +206,7 @@ export function AdminProfessionalCard({
   const lifecycle = [
     ["Cadastro iniciado", true], ["Cadastro concluído", profileIssues.length === 0],
     ["Enviado para análise", pro.status !== "DRAFT" || Boolean(pro.submissionReceipt)],
-    ["Verificações em andamento", pro.status === "PENDING_REVIEW"], ["Aprovado", pro.status === "ACTIVE"],
+    ["Cadastro em análise", pro.status === "PENDING_REVIEW"], ["Aprovado", pro.status === "ACTIVE"],
     ["Reprovado", pro.status === "REJECTED"],
     ["Correção solicitada", pro.status === "CORRECTION_REQUIRED" || audits.some((a) => moderationAction(a) === "Solicitou correção")],
     ["Pausado", pro.status === "PAUSED"], ["Suspenso", pro.status === "SUSPENDED"], ["Bloqueado", pro.user.blocked],
@@ -337,7 +337,7 @@ export function AdminProfessionalCard({
             <Section title="STATUS / PENDÊNCIAS">
               <div className="pro-lifecycle">{lifecycle.map(([label, active]) => <span className={active ? "active" : ""} key={label}>{active ? "✓" : "○"} {label}</span>)}</div>
               {currentIssues.length ? (
-                <><p className="pro-subtitle danger">{pro.status === "PENDING_REVIEW" ? "Verificações pendentes" : "Campos faltantes"} ({currentIssues.length})</p><div className="pro-issues">{currentIssues.map((issue) => <span key={issue}>{issue}</span>)}</div></>
+                <><p className="pro-subtitle danger">{pro.status === "PENDING_REVIEW" ? "Pendências do perfil" : "Campos faltantes"} ({currentIssues.length})</p><div className="pro-issues">{currentIssues.map((issue) => <span key={issue}>{issue}</span>)}</div></>
               ) : <div className="pro-alert ok">✓ Cadastro completo conforme as regras atuais</div>}
               {pro.rejectReason && <div className="pro-alert bad"><b>Motivo atual</b><span>{pro.rejectReason}</span></div>}
               {pro.pauseReason && <div className="pro-alert warn"><b>Motivo da pausa</b><span>{pro.pauseReason}</span></div>}

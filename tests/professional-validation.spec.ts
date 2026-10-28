@@ -290,7 +290,10 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     expect(analysis).toContain("inconsistencias ou risco continuam aguardando revisao ou correcao");
     expect(analysis).not.toContain("A aprovacao final e manual");
     expect(verification).toContain("Cadastros sem pendências são publicados automaticamente");
-    expect(adminCard).toContain('PENDING_REVIEW: "Verificações em andamento"');
+    expect(adminCard).toContain('PENDING_REVIEW: "Análise do perfil"');
+    expect(adminCard).toContain('PENDING_APPROVAL: "Aguardando liberação do perfil"');
+    expect(adminCard).toContain('["Cadastro em análise", pro.status === "PENDING_REVIEW"]');
+    expect(adminCard).toContain('"Pendências do perfil"');
   });
 
   test("onboarding preserva rascunho, apresenta uma etapa Didit e impede clique duplo", () => {
