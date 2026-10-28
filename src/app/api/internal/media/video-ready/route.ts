@@ -10,8 +10,8 @@ import { processUploadAsset } from "@/lib/upload-quarantine";
 const bodySchema = z.object({ assetId: z.string().min(8).max(64) });
 
 function authorized(request: NextRequest) {
-  const expected = process.env.VIDEO_WORKER_CALLBACK_SECRET;
-  const received = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  const expected = process.env.VIDEO_WORKER_CALLBACK_SECRET?.trim();
+  const received = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
   if (!expected || !received) return false;
   const a = Buffer.from(expected);
   const b = Buffer.from(received);
