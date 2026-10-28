@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { timingSafeEqual } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -15,7 +15,16 @@ function authorized(request: NextRequest) {
   if (!expected || !received) return false;
   const a = Buffer.from(expected);
   const b = Buffer.from(received);
-  return a.length === b.length && timingSafeEqual(a, b);
+  const matches = a.length === b.length && timingSafeEqual(a, b);
+  if (!matches) {
+    console.warn("[video-ready] callback secret mismatch", {
+      expectedLength: a.length,
+      receivedLength: b.length,
+      expectedFingerprint: createHash("sha256").update(a).digest("hex").slice(0, 12),
+      receivedFingerprint: createHash("sha256").update(b).digest("hex").slice(0, 12),
+    });
+  }
+  return matches;
 }
 
 export async function POST(request: NextRequest) {
