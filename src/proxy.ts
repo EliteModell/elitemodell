@@ -73,6 +73,9 @@ export async function proxy(request: NextRequest) {
     "/api/didit/webhook",
     "/api/kyc/webhook",
     "/api/webhooks/resend",
+    // Autenticação máquina-a-máquina é validada com segredo e comparação
+    // constante dentro da própria rota; não depende de sessão NextAuth.
+    "/api/internal/media/video-ready",
   ];
 
   const isPublic = publicRoutes.some(

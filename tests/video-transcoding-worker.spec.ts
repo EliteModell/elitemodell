@@ -37,7 +37,9 @@ test("ativação é fail-safe e upload continua privado", async () => {
 
 test("callback exige segredo e reaproveita os controles existentes", async () => {
   const callback = await readFile("src/app/api/internal/media/video-ready/route.ts", "utf8");
+  const proxy = await readFile("src/proxy.ts", "utf8");
   expect(callback).toContain("timingSafeEqual");
   expect(callback).toContain("VIDEO_WORKER_CALLBACK_SECRET");
+  expect(proxy).toContain('"/api/internal/media/video-ready"');
   expect(callback).toContain("processUploadAsset(asset.id, buffer)");
 });
