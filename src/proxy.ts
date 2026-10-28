@@ -25,10 +25,10 @@ export async function proxy(request: NextRequest) {
       : NextResponse.redirect(new URL("/", request.url));
   }
   const unauthorized = () => isApiRoute
-    ? withAgeGateHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }))
+    ? withAgeGateHeaders(NextResponse.json({ error: "Não autorizado." }, { status: 401 }))
     : NextResponse.redirect(new URL("/login", request.url));
   const forbidden = (target = "/dashboard") => isApiRoute
-    ? withAgeGateHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }))
+    ? withAgeGateHeaders(NextResponse.json({ error: "Acesso negado." }, { status: 403 }))
     : NextResponse.redirect(new URL(target, request.url));
 
   if (/\.(?:avif|gif|ico|jpg|jpeg|png|svg|webp)$/i.test(pathname)) {

@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
     }
 
     // Rate limiting: máx 5 denúncias por hora
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.issues }, { status: 400 });
     }
 
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: "Não foi possível registrar a denúncia agora." }, { status: 500 });
   }
 }
 
@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (session?.user?.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -128,6 +128,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (error: unknown) {
     console.error("[GET REPORTS ERROR]", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: "Não foi possível atualizar a denúncia agora." }, { status: 500 });
   }
 }

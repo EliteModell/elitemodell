@@ -17,7 +17,7 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions);
     if (session?.user?.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
     }
 
     const { id: professionalId } = await params;
@@ -103,6 +103,6 @@ export async function POST(
     return NextResponse.json({ ...updated, idempotentReplay: !changed });
   } catch (error: unknown) {
     console.error("[VERIFY DOCS ERROR]", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: "Não foi possível concluir a verificação agora." }, { status: 500 });
   }
 }
