@@ -78,7 +78,12 @@ test.describe("regra central de completude profissional", () => {
   });
 
   test("opcionais ausentes não impedem o cadastro", () => {
-    expect(professionalCompletion(complete)).toMatchObject({ profileComplete: true, profilePercent: 100 });
+    expect(professionalCompletion(complete)).toMatchObject({
+      profileComplete: true,
+      profilePercent: 100,
+      completedRequired: 14,
+      requiredTotal: 14,
+    });
   });
 
   test("cadastro completo, KYC e e-mail permitem envio", () => {

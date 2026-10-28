@@ -92,8 +92,11 @@ test.describe("e-mail tecnico de cadastro por telefone", () => {
     const card = fs.readFileSync(path.join(process.cwd(), "src/app/(dashboard)/admin/profissionais/AdminProfessionalCard.tsx"), "utf8");
     expect(card).toContain("accountEmailLabel(pro.user.email)");
     expect(card).not.toContain('label="E-mail" value={pro.user.email}');
-    expect(card).toContain('label="Nome da conta"');
+    expect(card).toContain('label="Nome da conta (opcional)"');
     expect(card).toContain("PERFIL · ${completion.profilePercent}% PREENCHIDO");
+    expect(card).toContain("Campos obrigatórios do perfil");
+    expect(card).toContain("Autorização de publicação");
+    expect(card).toContain("Não cadastrada na conta");
     expect(card).toContain("!isTechnicalPhoneEmail(pro.user.email)");
   });
 

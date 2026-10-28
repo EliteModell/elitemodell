@@ -172,6 +172,8 @@ export function professionalCompletion(profile: ProfessionalCompletionInput) {
   const firstIncompleteStep = issues.length ? Math.min(...issues.map((issue) => issue.step)) : 8;
   return {
     profilePercent,
+    completedRequired,
+    requiredTotal: REQUIRED_CHECKS.length,
     profileComplete: profileIssues.length === 0,
     kycApproved,
     emailVerified: Boolean(profile.emailVerified),

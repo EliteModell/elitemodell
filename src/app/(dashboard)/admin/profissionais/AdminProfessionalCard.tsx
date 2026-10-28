@@ -184,6 +184,7 @@ export function AdminProfessionalCard({
   ].filter(([, value]) => value != null) as Array<[string, number]>;
   const submissionAudit = audits.find((entry) => ["Enviou para análise", "Reenviou após correção"].includes(moderationAction(entry)));
   const submittedAt = submissionAudit?.timestamp ?? pro.submissionReceipt?.createdAt ?? null;
+  const registrationSubmitted = Boolean(pro.registrationSubmittedAt ?? submittedAt);
   const completion = professionalCompletion({
     ...pro,
     emailVerified: Boolean(pro.user.emailVerified) && !isTechnicalPhoneEmail(pro.user.email),
@@ -216,7 +217,7 @@ export function AdminProfessionalCard({
     <article id={`professional-${pro.id}`} className="pro-card" style={{ borderLeftColor: accent }}>
       <header className="pro-card-head">
         <div className="pro-identity">
-          {cover ? <img src={cover} alt="" loading="lazy" /> : <span style={{ color: accent }}>{(pro.displayName || "?")[0].toUpperCase()}</span>}
+          {cover ? <img src={cover} alt="" width={44} height={44} loading="lazy" /> : <span style={{ color: accent }}>{(pro.displayName || "?")[0].toUpperCase()}</span>}
           <div>
             <Link href={`/profissionais/${pro.slug}`}>{pro.displayName || "(sem nome)"}</Link>
             <p>{[pro.city, pro.state].filter(Boolean).join("/") || "Local não informado"} · {pro.escortCategory ?? "categoria não informada"}</p>
@@ -237,7 +238,7 @@ export function AdminProfessionalCard({
           <div className="pro-sections">
             <Section title="DADOS PESSOAIS / CONTATO">
               <Row label="Nome de exibição" value={pro.displayName} />
-              <Row label="Nome da conta" value={pro.user.name} />
+              <Row label="Nome da conta (opcional)" value={pro.user.name || "Não cadastrado na conta"} />
               <Row label="Nascimento" value={`${date(pro.birthDate ?? pro.user.birthDate)}${calculatedAge != null ? ` · ${calculatedAge} anos` : ""}`} />
               <Row label="Sexo/gênero" value={pro.escortCategory ?? pro.user.category} />
               <Row label="Altura" value={pro.height ? `${pro.height} cm` : null} />
@@ -251,17 +252,22 @@ export function AdminProfessionalCard({
 
             <Section title={`PERFIL · ${completion.profilePercent}% PREENCHIDO`}>
               <div className="pro-completion"><i style={{ width: completion.profilePercent + "%" }} /></div>
-              <Row label="Dados do perfil" value={completion.profileComplete ? "Completos" : completion.profileIssues.length + " pendência(s)"} />
-              <Row label="KYC separado" value={completion.kycApproved ? "Aprovado" : "Pendente"} />
-              <Row label="Pronto para enviar" value={completion.readyToSubmit ? "Sim" : "Não"} />
+              <Row label="Campos obrigatórios do perfil" value={`${completion.completedRequired} de ${completion.requiredTotal} preenchidos`} />
+              <Row label="Cadastro profissional" value={completion.profileComplete ? "Completo" : completion.profileIssues.length + " pendência(s)"} />
+              <Row label="E-mail da conta" value={completion.emailVerified ? "Confirmado" : "Pendente"} />
+              <Row label="KYC / identidade" value={completion.kycApproved ? "Aprovado" : "Pendente"} />
+              <Row label="Envio para análise" value={registrationSubmitted ? "Enviado" : completion.readyToSubmit ? "Pode ser enviado" : "Ainda não pode ser enviado"} />
+              <Row label="Análise administrativa" value={STATUS_LABEL[pro.status] ?? pro.status} />
+              <Row label="Autorização de publicação" value={pro.status === "ACTIVE" && pro.verified ? "Autorizada" : "Não autorizada"} />
+              <Row label="Critério do percentual" value="Somente campos obrigatórios do perfil" />
               <Row label="Regra" value={pro.completionRulesVersion >= 2 ? "Atual" : "Compatibilidade de legado"} />
             </Section>
 
             <Section title="LOCALIZAÇÃO / ATUAÇÃO">
               <p className="pro-subtitle">Dados da conta</p>
-              <Row label="Cidade/UF da conta" value={[pro.user.city, pro.user.state].filter(Boolean).join("/")} />
-              <p className="pro-subtitle">Endereço do perfil (sem classificação no banco)</p>
-              <Row label="Endereço cadastrado" value={pro.address} />
+              <Row label="Cidade/UF registrada na conta (opcional)" value={[pro.user.city, pro.user.state].filter(Boolean).join("/") || "Não cadastrada na conta"} />
+              <p className="pro-subtitle">Endereço opcional do perfil (sem classificação no banco)</p>
+              <Row label="Endereço completo (opcional)" value={pro.address || "Não informado"} />
               <Row label="Bairro cadastrado" value={pro.bairro} />
               <p className="pro-subtitle">Área de atuação</p>
               <Row label="Cidade principal" value={[pro.city, pro.state].filter(Boolean).join("/")} />
@@ -279,7 +285,7 @@ export function AdminProfessionalCard({
                 <b>{pro.photos.length}<span>fotos</span></b><b>{pro.presentationVideoUrl ? 1 : 0}<span>vídeos</span></b>
                 <b>{pro.services.length}<span>serviços</span></b><b>{pro.specialties.length}<span>especialidades</span></b>
               </div>
-              {cover && <div className="pro-cover"><img src={cover} alt={`Foto principal de ${pro.displayName}`} loading="lazy" /><span>Foto principal</span></div>}
+              {cover && <div className="pro-cover"><img src={cover} alt={`Foto principal de ${pro.displayName}`} width={58} height={58} loading="lazy" /><span>Foto principal</span></div>}
               <p className="pro-subtitle">Galeria administrativa · {pro.photos.length} foto(s)</p>
               {pro.photos.length ? <div className="pro-gallery">{pro.photos.map((photo) => {
                 const previewUrl = adminControlledMediaPreviewUrl(photo.url);
