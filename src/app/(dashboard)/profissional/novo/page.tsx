@@ -1531,6 +1531,7 @@ export default function ProfissionalNovoPage() {
 
   if (submissionResult) {
     const published = Boolean(submissionResult.published || submissionResult.status === "ACTIVE");
+    const identityPending = submissionResult.blockers?.some((blocker) => blocker.code === "kyc") ?? false;
     return (
       <main className="model-submission-success">
         <Image src="/brand/elite-modell-logo.png" alt="Elite Modell" width={184} height={61} priority />
@@ -1540,7 +1541,9 @@ export default function ProfissionalNovoPage() {
         <p className="model-analysis-status">Status: <strong>{published ? "Publicado" : "Verificações em andamento"}</strong></p>
         <p>{published
           ? "Seja bem-vinda à Elite Modell! Seu perfil já está disponível para os clientes."
-          : "Recebemos suas informações. Sua identidade está em análise e você será avisado por e-mail quando houver uma atualização."}</p>
+          : identityPending
+            ? "Recebemos seu cadastro na Elite Modell! Seus documentos continuam em análise. Você será informado quando houver uma atualização sobre a aprovação do seu perfil."
+            : "Recebemos seu cadastro na Elite Modell! Você será informado quando houver uma atualização sobre a aprovação do seu perfil."}</p>
         {!published && submissionResult.blockers?.length ? (
           <div className="model-pending-list" role="status">
             <strong>Pendências atuais</strong>
@@ -2205,7 +2208,7 @@ export default function ProfissionalNovoPage() {
         {!isLast ? (
           <button onClick={next} disabled={loading}
             style={{ padding: "12px 32px", background: loading ? "#65009b" : GOLD, border: "none", borderRadius: 10, color: "#080808", fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}>
-            {loading ? "Salvando..." : step === 7 && diditPending ? "Continuar com verificação em análise →" : step === 7 && !diditApproved ? "Iniciar verificação para continuar" : "Continuar →"}
+            {loading ? "Salvando..." : step === 7 && diditPending ? "Finalizar meu cadastro" : step === 7 && !diditApproved ? "Iniciar verificação para continuar" : "Continuar →"}
           </button>
         ) : (
           <button onClick={submit} disabled={loading}

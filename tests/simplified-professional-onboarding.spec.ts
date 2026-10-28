@@ -461,7 +461,7 @@ test("envio legado incompleto do fluxo de cinco etapas retoma a primeira pendên
   await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByText("Etapa 2 de 9", { exact: false })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Cadastro recebido com sucesso!" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Cadastro enviado com sucesso!" })).toHaveCount(0);
   await expect(page.getByText("Seu cadastro anterior foi iniciado em uma versão antiga", { exact: false })).toBeVisible();
 });
 
@@ -487,7 +487,7 @@ test("envio atual completo continua na confirmação sem reabrir etapas", async 
 
   await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
 
-  await expect(page.getByRole("heading", { name: "Cadastro recebido com sucesso!" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cadastro enviado com sucesso!" })).toBeVisible();
 });
 
 test("primeira etapa não tem overflow no iPhone Safari nem no desktop", async ({ page }, testInfo) => {

@@ -135,7 +135,7 @@ for (const device of devices) {
     }
 
     await page.getByRole("button", { name: "Concluir cadastro" }).click();
-    await expect(page.getByRole("heading", { name: "Cadastro recebido com sucesso!" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Cadastro enviado com sucesso!" })).toBeVisible();
     await expect(page.getByText("Verificações em andamento", { exact: true })).toBeVisible();
     await testInfo.attach("erros-console-rede.json", { body: Buffer.from(JSON.stringify(errors, null, 2)), contentType: "application/json" });
     expect(errors).toEqual([]);
