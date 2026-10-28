@@ -1147,6 +1147,7 @@ model UploadAsset {
   reviewer          User?                 @relation("UploadReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
   depictedPeople    MediaDepictedPerson[]
   malwareScanJob    MalwareScanJob?
+  videoProcessingJob VideoProcessingJob?
   professionalMedia ProfessionalMedia?
 
   @@unique([quarantineBucket, quarantinePath])
@@ -1157,6 +1158,40 @@ model UploadAsset {
   @@index([takedownStatus, status, createdAt])
   @@index([storageProvider, approvedBucket, approvedPath])
   @@index([fileHash])
+}
+
+model VideoProcessingJob {
+  id                  String    @id @default(cuid())
+  assetId             String    @unique
+  status              String    @default("QUEUED")
+  attempts            Int       @default(0)
+  maxAttempts         Int       @default(4)
+  availableAt         DateTime  @default(now())
+  leaseToken          String?
+  leaseExpiresAt      DateTime?
+  sourceBucket        String
+  sourcePath          String
+  sourceSizeBytes     Int
+  outputBucket        String?
+  outputPath          String?
+  outputSizeBytes     Int?
+  outputHash          String?
+  outputWidth         Int?
+  outputHeight        Int?
+  outputDurationMs    Int?
+  outputCodec         String?
+  lastError           String?   @db.Text
+  completedAt         DateTime?
+  sourceDeleteAfter   DateTime?
+  sourceDeletedAt     DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  asset UploadAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([status, availableAt])
+  @@index([leaseExpiresAt])
+  @@index([sourceDeleteAfter, sourceDeletedAt])
 }
 
 model MalwareScanJob {

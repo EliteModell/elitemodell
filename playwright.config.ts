@@ -139,6 +139,11 @@ export default defineConfig({
       use: { browserName: "chromium" },
     },
     {
+      name: "video-transcoding-worker",
+      testMatch: "**/video-transcoding-worker.spec.ts",
+      use: { browserName: "chromium" },
+    },
+    {
       name: "admin-professionals-infinite-scroll",
       testMatch: "**/admin-professionals-infinite-scroll.spec.ts",
       use: { browserName: "chromium" },

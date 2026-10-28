@@ -15,6 +15,7 @@ import { profileVideoDurationError, PROFILE_VIDEO_DURATION_UNKNOWN_ERROR } from 
 
 const BUCKET = "approved-media";
 const MAX_RAW_VIDEO_BYTES = 500 * 1024 * 1024;
+const ASYNC_TRANSCODING_ENABLED = process.env.VIDEO_TRANSCODING_MODE === "cloud-run";
 const ALLOWED_MIME = new Set(["video/mp4", "video/quicktime", "video/webm", "application/octet-stream"]);
 
 const intentSchema = z.object({
@@ -180,6 +181,38 @@ export async function PATCH(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: "Não foi possível identificar o vídeo enviado." }, { status: 400 });
   const asset = await prisma.uploadAsset.findFirst({ where: { id: parsed.data.assetId, userId: identity.owner.id, uploadCompletedAt: null } });
   if (!asset) return NextResponse.json({ error: "Este envio já foi concluído ou não pertence à conta conectada." }, { status: 409 });
+  if (ASYNC_TRANSCODING_ENABLED) {
+    const professional = identity.owner.professional;
+    if (!professional) return NextResponse.json({ error: "Perfil profissional não encontrado." }, { status: 404 });
+    const supabase = createSupabaseServerClient();
+    const separator = asset.quarantinePath.lastIndexOf("/");
+    const directory = asset.quarantinePath.slice(0, separator);
+    const objectName = asset.quarantinePath.slice(separator + 1);
+    const listed = await supabase.storage.from(asset.quarantineBucket).list(directory, { search: objectName, limit: 2 });
+    const stored = listed.data?.find((item) => item.name === objectName);
+    const storedSize = Number(stored?.metadata?.size ?? stored?.metadata?.contentLength ?? 0);
+    if (listed.error || !stored || storedSize !== asset.sizeBytes) {
+      return NextResponse.json({ error: "O vídeo ainda não terminou de enviar. Aguarde e tente novamente." }, { status: 409 });
+    }
+    const currentVideos = await prisma.professionalMedia.count({ where: { professionalId: professional.id, kind: "VIDEO", hiddenAt: null } });
+    await prisma.$transaction(async (tx) => {
+      await tx.uploadAsset.update({ where: { id: asset.id }, data: { uploadCompletedAt: new Date(), status: "PROCESSING", failureReason: null } });
+      await tx.videoProcessingJob.upsert({
+        where: { assetId: asset.id },
+        create: { assetId: asset.id, sourceBucket: asset.quarantineBucket, sourcePath: asset.quarantinePath, sourceSizeBytes: asset.sizeBytes },
+        update: {},
+      });
+      await tx.professionalMedia.upsert({
+        where: { assetId: asset.id },
+        create: { professionalId: professional.id, assetId: asset.id, kind: "VIDEO", order: currentVideos },
+        update: { hiddenAt: null, hiddenReason: null },
+      });
+    });
+    return NextResponse.json({
+      assetId: asset.id, path: `/api/media/${encodeURIComponent(asset.id)}`, url: null,
+      status: "PROCESSING", type: "video", message: "Vídeo enviado. Estamos preparando seu vídeo.",
+    }, { status: 202 });
+  }
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase.storage.from(asset.quarantineBucket).download(asset.quarantinePath);
   if (error || !data) return NextResponse.json({ error: "O vídeo ainda não terminou de enviar. Aguarde e tente novamente." }, { status: 409 });

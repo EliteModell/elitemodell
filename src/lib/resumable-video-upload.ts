@@ -9,7 +9,7 @@ export type VideoUploadStage = "PREPARING" | "UPLOADING" | "PROCESSING" | "COMPL
 export function videoUploadStageLabel(stage: VideoUploadStage) {
   if (stage === "PREPARING") return "Preparando vídeo";
   if (stage === "UPLOADING") return "Enviando vídeo";
-  if (stage === "PROCESSING") return "Processando com segurança";
+  if (stage === "PROCESSING") return "Vídeo enviado. Estamos preparando seu vídeo.";
   return "Envio concluído";
 }
 

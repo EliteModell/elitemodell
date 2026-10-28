@@ -14,6 +14,7 @@ const PUBLIC_FIELDS = {
   controlledUrl: true,
   failureReason: true,
   lastProcessedAt: true,
+  videoProcessingJob: { select: { status: true, attempts: true, maxAttempts: true, outputSizeBytes: true, sourceSizeBytes: true } },
 } as const;
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
@@ -48,5 +49,12 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     pending: displayState === "PROCESSING",
     failureReason,
     lastProcessedAt: owned.lastProcessedAt,
+    videoProcessing: owned.videoProcessingJob ? {
+      status: owned.videoProcessingJob.status,
+      attempts: owned.videoProcessingJob.attempts,
+      maxAttempts: owned.videoProcessingJob.maxAttempts,
+      sourceBytes: owned.videoProcessingJob.sourceSizeBytes,
+      optimizedBytes: owned.videoProcessingJob.outputSizeBytes,
+    } : null,
   });
 }

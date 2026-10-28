@@ -1,0 +1,28 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: elitemodell-video-worker
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "3"
+        run.googleapis.com/cpu-throttling: "false"
+    spec:
+      containerConcurrency: 1
+      timeoutSeconds: 900
+      serviceAccountName: VIDEO_WORKER_SERVICE_ACCOUNT
+      containers:
+        - image: VIDEO_WORKER_IMAGE
+          resources:
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          env:
+            - name: VIDEO_SOURCE_RETENTION_HOURS
+              value: "24"
+            - name: REQUIRE_CLOUD_TASK_HEADER
+              value: "true"
+            - name: REQUIRE_CLOUD_SCHEDULER_HEADER
+              value: "true"
