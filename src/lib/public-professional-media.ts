@@ -6,6 +6,7 @@ export type PublicProfileAsset = {
   status: string;
   visibility?: string | null;
   moderationStatus?: string | null;
+  publicationDecisionType?: string | null;
   approvedBucket: string | null;
   approvedPath: string | null;
   uploadCompletedAt?: Date | string | null;
@@ -83,6 +84,7 @@ export function isPublishableStoryAsset(asset: PublicProfileAsset, ownerId: stri
       uploadComplete: Boolean(asset.uploadCompletedAt),
       malwareStatus: asset.malwareStatus,
       moderationStatus: asset.moderationStatus,
+      publicationDecisionType: asset.publicationDecisionType,
       ageIdentityStatus: asset.ageIdentityStatus,
       consentStatus: asset.consentStatus,
       adminReviewRequired: asset.adminReviewRequired,
@@ -112,6 +114,7 @@ export function filterApprovedProfilePhotos(
           uploadComplete: Boolean(asset.uploadCompletedAt),
           malwareStatus: asset.malwareStatus,
           moderationStatus: asset.moderationStatus,
+          publicationDecisionType: asset.publicationDecisionType,
           ageIdentityStatus: asset.ageIdentityStatus,
           consentStatus: asset.consentStatus,
           adminReviewRequired: asset.adminReviewRequired,

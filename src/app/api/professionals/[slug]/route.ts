@@ -138,7 +138,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
             select: {
               id: true, userId: true, folder: true, category: true, status: true,
               approvedBucket: true, approvedPath: true, uploadCompletedAt: true,
-              malwareStatus: true, moderationStatus: true, ageIdentityStatus: true,
+              malwareStatus: true, moderationStatus: true, publicationDecisionType: true, ageIdentityStatus: true,
               consentStatus: true, adminReviewRequired: true, adminReviewStatus: true,
               takedownStatus: true,
             },
@@ -205,7 +205,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     where: { id: { in: referencedAssetIds }, userId: professional.userId },
     select: {
       id: true, userId: true, folder: true, category: true, status: true, visibility: true,
-      moderationStatus: true, approvedBucket: true, approvedPath: true,
+      moderationStatus: true, publicationDecisionType: true, approvedBucket: true, approvedPath: true,
       uploadCompletedAt: true, malwareStatus: true, ageIdentityStatus: true,
       consentStatus: true, adminReviewRequired: true, adminReviewStatus: true,
       takedownStatus: true,
@@ -219,6 +219,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     const publishable = evaluateMediaPublicationGates({
       uploadComplete: Boolean(asset.uploadCompletedAt), malwareStatus: asset.malwareStatus,
       moderationStatus: asset.moderationStatus, ageIdentityStatus: asset.ageIdentityStatus,
+      publicationDecisionType: asset.publicationDecisionType,
       consentStatus: asset.consentStatus, adminReviewRequired: asset.adminReviewRequired,
       adminReviewStatus: asset.adminReviewStatus, takedownStatus: asset.takedownStatus,
       ownerId: asset.userId,

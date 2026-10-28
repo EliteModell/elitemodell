@@ -4,6 +4,7 @@ export type MediaPublicationGateInput = {
   uploadComplete: boolean;
   malwareStatus?: string | null;
   moderationStatus?: string | null;
+  publicationDecisionType?: string | null;
   ageIdentityStatus?: string | null;
   consentStatus?: string | null;
   adminReviewRequired?: boolean | null;
@@ -26,11 +27,17 @@ function passed(value?: string | null) {
   return Boolean(value && MEDIA_PASS_STATUSES.has(value.toUpperCase()));
 }
 
+function policyAttestationEnabled(value?: string | null) {
+  return value === "POLICY_ATTESTATION"
+    && process.env.SELF_DECLARATION_MEDIA_PUBLICATION_ENABLED === "true";
+}
+
 export function evaluateMediaPublicationGates(input: MediaPublicationGateInput) {
   const gates: Record<MediaPublicationGate, boolean> = {
     UPLOAD_COMPLETE: input.uploadComplete,
     MALWARE_SCAN: passed(input.malwareStatus),
-    CONTENT_MODERATION: passed(input.moderationStatus),
+    CONTENT_MODERATION: passed(input.moderationStatus)
+      || policyAttestationEnabled(input.publicationDecisionType),
     AGE_IDENTITY_REQUIREMENTS: passed(input.ageIdentityStatus),
     CONSENT_REQUIREMENTS: passed(input.consentStatus),
     ADMIN_REVIEW: input.adminReviewRequired ? passed(input.adminReviewStatus) : true,

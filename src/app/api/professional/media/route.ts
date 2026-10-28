@@ -22,7 +22,7 @@ const updateSchema = z.object({
   caption: z.string().trim().max(180).nullable().optional(),
 }).refine((value) => Boolean(value.order || value.mediaId), "Informe a mídia ou a nova ordem.");
 
-function displayState(asset: { status: string; moderationStatus: string; adminReviewRequired: boolean; adminReviewStatus: string }) {
+function displayState(asset: { status: string; moderationStatus: string; publicationDecisionType: string; adminReviewRequired: boolean; adminReviewStatus: string }) {
   if (asset.status === "APPROVED") return "PUBLISHED";
   if (asset.status === "REJECTED") return "REJECTED";
   if (asset.status === "PENDING_REVIEW" || (asset.adminReviewRequired && asset.adminReviewStatus === "PENDING")) return "REVIEW_REQUIRED";
@@ -47,7 +47,7 @@ export async function GET() {
       id: true, kind: true, role: true, order: true, caption: true, legacyUrl: true, createdAt: true,
       asset: {
         select: {
-          id: true, status: true, moderationStatus: true, adminReviewRequired: true,
+          id: true, status: true, moderationStatus: true, publicationDecisionType: true, adminReviewRequired: true,
           adminReviewStatus: true, controlledUrl: true, detectedMimeType: true, failureReason: true,
         },
       },
@@ -64,6 +64,7 @@ export async function GET() {
     url: item.asset ? `/api/media/${encodeURIComponent(item.asset.id)}` : item.legacyUrl,
     mimeType: item.asset?.detectedMimeType ?? null,
     state: item.asset ? displayState(item.asset) : "PUBLISHED",
+    publicationDecisionType: item.asset?.publicationDecisionType ?? "LEGACY",
     failureReason: item.asset?.status === "REJECTED" || item.asset?.status === "PENDING_REVIEW"
       ? item.asset.failureReason
       : null,
@@ -82,6 +83,7 @@ export async function GET() {
       url: professional.presentationVideoUrl,
       mimeType: null,
       state: professional.presentationVideoStatus === "APPROVED" ? "PUBLISHED" : professional.presentationVideoStatus === "REJECTED" ? "REJECTED" : "ANALYZING",
+      publicationDecisionType: "LEGACY",
       failureReason: null,
       createdAt: new Date(0),
     });

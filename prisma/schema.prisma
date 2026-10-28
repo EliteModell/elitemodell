@@ -1111,6 +1111,10 @@ model UploadAsset {
   moderationProvider        String?
   moderationProviderVersion String?
   moderationResult          Json?
+  publicationDecisionType   String    @default("UNDECIDED")
+  publicationPolicyVersion  String?
+  publicationDecisionAt     DateTime?
+  publicationEvidence       Json?
   quarantineBucket          String
   quarantinePath            String
   approvedBucket            String?
@@ -1149,6 +1153,7 @@ model UploadAsset {
   @@index([userId, createdAt])
   @@index([status, createdAt])
   @@index([malwareStatus, moderationStatus, createdAt])
+  @@index([publicationDecisionType, createdAt])
   @@index([takedownStatus, status, createdAt])
   @@index([storageProvider, approvedBucket, approvedPath])
   @@index([fileHash])

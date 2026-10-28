@@ -286,24 +286,21 @@ export async function POST(req: NextRequest) {
         consentReference: contentDeclarationAccepted ? "content-authorization-declaration:0.4-ready-for-legal-review" : null,
       }],
     });
-    const processed = await processUploadAsset(quarantined.id, buffer);
-    const type = detectedKind.category === "video" ? "video" : "image";
-    if (processed.status !== "REJECTED") {
-      await recordUserAcceptances({
+    await recordUserAcceptances({
         userId: session.user.id,
         userCategory: session.user.accountType,
         documentKeys: legalKeysForUpload(folder),
         source: "upload",
         acceptanceType: "CONTENT_UPLOAD",
         req,
-      });
-      if (requiresContentAuthorizationDeclaration(folder)) {
-        await prisma.contentDeclaration.create({
+    });
+    if (requiresContentAuthorizationDeclaration(folder)) {
+      await prisma.contentDeclaration.create({
           data: {
             userId: session.user.id,
-            storageBucket: processed.approvedBucket ?? processed.quarantineBucket,
-            storagePath: processed.approvedPath ?? processed.quarantinePath,
-            fileHash: processed.fileHash,
+            storageBucket: quarantined.quarantineBucket,
+            storagePath: quarantined.quarantinePath,
+            fileHash: quarantined.fileHash,
             declarationKey: "content-authorization-declaration",
             version: "0.4-ready-for-legal-review",
             statements: {
@@ -317,15 +314,10 @@ export async function POST(req: NextRequest) {
             ipAddress: requestIp,
             userAgent: req.headers.get("user-agent")?.slice(0, 300) ?? null,
           },
-        }).catch((error) => {
-          console.error("[upload] falha ao registrar declaracao de conteudo", {
-            assetId: processed.id,
-            userId: session.user.id,
-            error,
-          });
-        });
-      }
+      });
     }
+    const processed = await processUploadAsset(quarantined.id, buffer);
+    const type = detectedKind.category === "video" ? "video" : "image";
 
     if (processed.status === "APPROVED" && processed.controlledUrl) {
       if (isPrivate) {
@@ -370,6 +362,7 @@ export async function POST(req: NextRequest) {
         status: processed.status,
         malwareStatus: processed.malwareStatus,
         moderationStatus: processed.moderationStatus,
+        publicationDecisionType: processed.publicationDecisionType,
         type,
         message: "Arquivo recebido e em analise de seguranca.",
       },

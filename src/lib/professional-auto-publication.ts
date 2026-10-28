@@ -40,6 +40,7 @@ function mediaIsPublishable(asset: {
   uploadCompletedAt: Date | null;
   malwareStatus: string;
   moderationStatus: string;
+  publicationDecisionType: string;
   ageIdentityStatus: string;
   consentStatus: string;
   adminReviewRequired: boolean;
@@ -54,6 +55,7 @@ function mediaIsPublishable(asset: {
       uploadComplete: Boolean(asset.uploadCompletedAt),
       malwareStatus: asset.malwareStatus,
       moderationStatus: asset.moderationStatus,
+      publicationDecisionType: asset.publicationDecisionType,
       ageIdentityStatus: asset.ageIdentityStatus,
       consentStatus: asset.consentStatus,
       adminReviewRequired: asset.adminReviewRequired,
@@ -102,7 +104,7 @@ export async function attemptAutomaticProfessionalPublication(
               select: {
                 id: true, userId: true, folder: true, category: true, status: true,
                 approvedBucket: true, approvedPath: true, uploadCompletedAt: true,
-                malwareStatus: true, moderationStatus: true, ageIdentityStatus: true,
+                malwareStatus: true, moderationStatus: true, publicationDecisionType: true, ageIdentityStatus: true,
                 consentStatus: true, adminReviewRequired: true, adminReviewStatus: true,
                 takedownStatus: true,
               },

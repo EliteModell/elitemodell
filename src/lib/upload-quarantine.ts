@@ -9,6 +9,7 @@ import { moderateFileContent, scanFileForVirus, type SecurityResult } from "@/li
 import { enqueueMalwareScan } from "@/lib/clamav-scan-queue";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { evaluateSelfDeclarationPublication } from "@/lib/self-declaration-media-policy";
 
 const DEFAULT_QUARANTINE_BUCKET = "upload-quarantine";
 const DEFAULT_APPROVED_BUCKET = "approved-media";
@@ -119,6 +120,7 @@ function publicationGate(asset: {
   uploadCompletedAt: Date | null;
   malwareStatus: string;
   moderationStatus: string;
+  publicationDecisionType: string;
   ageIdentityStatus: string;
   consentStatus: string;
   adminReviewRequired: boolean;
@@ -129,6 +131,7 @@ function publicationGate(asset: {
     uploadComplete: Boolean(asset.uploadCompletedAt),
     malwareStatus: asset.malwareStatus,
     moderationStatus: asset.moderationStatus,
+    publicationDecisionType: asset.publicationDecisionType,
     ageIdentityStatus: asset.ageIdentityStatus,
     consentStatus: asset.consentStatus,
     adminReviewRequired: asset.adminReviewRequired,
@@ -625,28 +628,53 @@ export async function processUploadAsset(
     });
   }
   if (!moderationPassed) {
-    const requiresHumanContentReview = moderation.provider === "MANUAL"
-      && moderation.status === "PENDING"
-      && !moderationRejected;
-    if (requiresHumanContentReview) {
-      await prisma.uploadAsset.update({
+    const policyDecision = await evaluateSelfDeclarationPublication(asset.id);
+    if (policyDecision.allowed) {
+      asset = await prisma.uploadAsset.update({
         where: { id: asset.id },
         data: {
-          status: "PENDING_REVIEW",
-          adminReviewRequired: true,
-          adminReviewStatus: "PENDING",
-          failureReason: moderation.reason || "Aguardando revisao humana de conteudo.",
+          publicationDecisionType: "POLICY_ATTESTATION",
+          publicationPolicyVersion: policyDecision.policyVersion,
+          publicationDecisionAt: new Date(),
+          publicationEvidence: policyDecision.evidence,
+          adminReviewRequired: false,
+          adminReviewStatus: "POLICY_ATTESTATION",
+          status: "PROCESSING",
+          failureReason: null,
           lastProcessedAt: new Date(),
         },
       });
-      await auditAsset(null, asset.id, "Midia encaminhada para revisao humana de conteudo.", {
-        moderation: safeResult(moderation),
-        failClosed: true,
+      await auditAsset(null, asset.id, "Midia elegivel para publicacao pela politica de autodeclaracao.", {
+        policyVersion: policyDecision.policyVersion,
+        moderationStatusPreserved: asset.moderationStatus,
+        publicationDecisionType: "POLICY_ATTESTATION",
       });
+    } else {
+      const requiresHumanContentReview = moderation.provider === "MANUAL"
+        && moderation.status === "PENDING"
+        && !moderationRejected;
+      if (requiresHumanContentReview) {
+        await prisma.uploadAsset.update({
+          where: { id: asset.id },
+          data: {
+            status: "PENDING_REVIEW",
+            publicationDecisionType: "EXCEPTION_PENDING",
+            adminReviewRequired: true,
+            adminReviewStatus: "PENDING",
+            failureReason: policyDecision.reason || moderation.reason || "Aguardando revisao humana de conteudo.",
+            lastProcessedAt: new Date(),
+          },
+        });
+        await auditAsset(null, asset.id, "Midia encaminhada para revisao humana de conteudo.", {
+          moderation: safeResult(moderation),
+          policyBlockers: policyDecision.blockers,
+          failClosed: true,
+        });
+        return prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
+      }
+      await auditAsset(null, asset.id, "Resultado da moderacao de conteudo.", { moderation: safeResult(moderation), failClosed: !moderationRejected });
       return prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
     }
-    await auditAsset(null, asset.id, "Resultado da moderacao de conteudo.", { moderation: safeResult(moderation), failClosed: !moderationRejected });
-    return prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
   }
 
   const ready = await prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });

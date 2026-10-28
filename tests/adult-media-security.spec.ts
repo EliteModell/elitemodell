@@ -270,6 +270,45 @@ test.describe("seguranca fail-closed de midia adulta", () => {
     }).blockers).toContain("CONTENT_MODERATION");
   });
 
+  test("decisao de politica e separada de moderacao visual", () => {
+    const previous = process.env.SELF_DECLARATION_MEDIA_PUBLICATION_ENABLED;
+    try {
+      delete process.env.SELF_DECLARATION_MEDIA_PUBLICATION_ENABLED;
+      expect(evaluateMediaPublicationGates({
+        ...passingGates,
+        moderationStatus: "PENDING",
+        publicationDecisionType: "POLICY_ATTESTATION",
+        adminReviewRequired: false,
+      }).blockers).toContain("CONTENT_MODERATION");
+      process.env.SELF_DECLARATION_MEDIA_PUBLICATION_ENABLED = "true";
+      expect(evaluateMediaPublicationGates({
+        ...passingGates,
+        moderationStatus: "PENDING",
+        publicationDecisionType: "POLICY_ATTESTATION",
+        adminReviewRequired: false,
+        adminReviewStatus: "POLICY_ATTESTATION",
+      })).toMatchObject({ publishable: true, blockers: [] });
+    } finally {
+      if (previous === undefined) delete process.env.SELF_DECLARATION_MEDIA_PUBLICATION_ENABLED;
+      else process.env.SELF_DECLARATION_MEDIA_PUBLICATION_ENABLED = previous;
+    }
+  });
+
+  test("politica de autodeclaracao fica desativada e auditavel por padrao", async () => {
+    const [policy, upload] = await Promise.all([
+      import("node:fs/promises").then((fs) => fs.readFile("src/lib/self-declaration-media-policy.ts", "utf8")),
+      import("node:fs/promises").then((fs) => fs.readFile("src/lib/upload-quarantine.ts", "utf8")),
+    ]);
+    expect(policy).toContain('SELF_DECLARATION_MEDIA_PUBLICATION_ENABLED !== "true"');
+    expect(policy).toContain('visualAnalysisPerformed: false');
+    expect(policy).toContain('policyNature: "SELF_DECLARATION_WITH_REACTIVE_MODERATION"');
+    expect(policy).toContain('status: { in: ["PENDING", "REVIEWING"] }');
+    expect(policy).toContain('asset.moderationStatus !== "PENDING" || asset.moderationProvider !== "MANUAL"');
+    expect(upload).toContain('publicationDecisionType: "POLICY_ATTESTATION"');
+    expect(upload).toContain("moderationStatusPreserved: asset.moderationStatus");
+    expect(upload).not.toContain('moderationStatus: "POLICY_ATTESTATION"');
+  });
+
   test("token de midia expira e fica vinculado ao ativo", () => {
     const secret = "test-only-media-signing-key";
     const issuedAt = Date.parse("2026-10-01T12:00:00.000Z");

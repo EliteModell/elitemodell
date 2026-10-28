@@ -225,7 +225,7 @@ export async function GET(req: NextRequest) {
     where: { id: { in: referencedAssetIds } },
     select: {
       id: true, userId: true, folder: true, category: true, status: true, visibility: true,
-      moderationStatus: true, approvedBucket: true, approvedPath: true, uploadCompletedAt: true,
+      moderationStatus: true, publicationDecisionType: true, approvedBucket: true, approvedPath: true, uploadCompletedAt: true,
       malwareStatus: true, ageIdentityStatus: true, consentStatus: true,
       adminReviewRequired: true, adminReviewStatus: true, takedownStatus: true,
     },

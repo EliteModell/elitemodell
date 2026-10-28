@@ -151,7 +151,7 @@ export async function GET(req: NextRequest) {
     where: { id: { in: assetIds } },
     select: {
       id: true, userId: true, folder: true, category: true, status: true,
-      moderationStatus: true, approvedBucket: true, approvedPath: true,
+      moderationStatus: true, publicationDecisionType: true, approvedBucket: true, approvedPath: true,
       uploadCompletedAt: true, malwareStatus: true, ageIdentityStatus: true,
       consentStatus: true, adminReviewRequired: true, adminReviewStatus: true,
       takedownStatus: true,
@@ -249,7 +249,7 @@ export async function POST(req: NextRequest) {
         where: { id: assetId },
         select: {
           id: true, userId: true, folder: true, category: true, status: true,
-          moderationStatus: true, approvedBucket: true, approvedPath: true,
+          moderationStatus: true, publicationDecisionType: true, approvedBucket: true, approvedPath: true,
           uploadCompletedAt: true, malwareStatus: true, ageIdentityStatus: true,
           consentStatus: true, adminReviewRequired: true, adminReviewStatus: true,
           takedownStatus: true,
