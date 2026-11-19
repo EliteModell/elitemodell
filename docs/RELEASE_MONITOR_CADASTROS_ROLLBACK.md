@@ -15,6 +15,11 @@
 3. Confirmar que a implantação via GitHub está pronta e que `npm run release:verify-public -- --url https://www.elitemodell.com.br --sha <sha-aprovado>` identifica o SHA ativo.
 4. Validar no ambiente publicado a abertura do cadastro, a retomada de rascunho autorizado, a permissão administrativa e a recusa de exportação sem sessão. Usar uma conta de teste autorizada para verificações que alteram estado ou acionam provedores. Conferir se SMS aceito, e-mail entregue e e-mail confirmado aparecem como eventos distintos.
 
+## Publicação em duas etapas
+
+1. Com autorização específica para a aplicação, publicar via GitHub e Vercel sem executar migração. Confirmar o SHA ativo. Com a tabela ausente, os fluxos de cadastro operam normalmente, o painel informa que aguarda a telemetria e a exportação responde com HTTP 503. Os eventos desse intervalo não são coletados.
+2. Depois de validar a restauração do backup de produção e obter autorização para a migração, aplicar apenas `20261119120000_registration_monitor`. O painel e a gravação passam a usar a tabela existente assim que ela estiver visível para a aplicação. Conferir RLS, acesso administrativo e data do primeiro evento persistido.
+
 ## Rollback
 
 - Se a versão falhar, reverter o commit da aplicação em `main` pelo fluxo aprovado. Validar o SHA efetivamente servido e repetir as verificações funcionais. Manter o monitor indisponível até a correção.

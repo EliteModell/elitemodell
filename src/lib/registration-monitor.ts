@@ -1,4 +1,5 @@
 import { createHmac } from "node:crypto";
+import { Prisma } from "@prisma/client";
 import { after, type NextRequest, type NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -15,6 +16,17 @@ type RegistrationTrace = {
   providerReference?: string;
   outcome?: "EXISTING_ACCOUNT" | "ACCOUNT_COMPLETED" | "IDENTITY_PENDING" | "PREPARED" | "ERROR" | "EMAIL_VERIFIED" | "NO_CHANGE" | "PROFILE_SUBMITTED" | "STEP_SAVED" | "IDENTITY_APPROVED" | "IDENTITY_REJECTED";
 };
+
+let telemetryTableConfirmed = false;
+
+export async function registrationTelemetryReady() {
+  if (telemetryTableConfirmed) return true;
+  const [state] = await prisma.$queryRaw<{ ready: boolean }[]>`
+    SELECT to_regclass('public."RegistrationEvent"') IS NOT NULL AS ready
+  `;
+  telemetryTableConfirmed = state?.ready === true;
+  return telemetryTableConfirmed;
+}
 
 export function registrationIdentity(kind: "phone" | "email" | "account", value: string | null | undefined) {
   const secret = process.env.REGISTRATION_TELEMETRY_SECRET || process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
@@ -39,8 +51,13 @@ export function recordRegistrationEvent(stage: RegistrationStage, trace: Registr
   try {
     after(async () => {
       try {
+        if (!(await registrationTelemetryReady())) return;
         await prisma.registrationEvent.create({ data });
-      } catch {
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
+          telemetryTableConfirmed = false;
+          return;
+        }
         console.error("[registration-monitor] event_write_failed", { stage });
       }
     });

@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { requireAdmin } from "@/lib/admin-access";
 import { professionalRegistrationIdentity, registrationReportFilters, registrationStages } from "@/lib/registration-admin-report";
 import { prisma } from "@/lib/prisma";
+import { registrationTelemetryReady } from "@/lib/registration-monitor";
 import { twilioVerifyEnvironmentStatus } from "@/lib/twilio-verify";
 import { AdminHeader, AdminPagination, AdminPanel, AdminTable, StatCard, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
@@ -25,6 +26,19 @@ export default async function RegistrationMonitorPage({ searchParams }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const access = await requireAdmin("registration:monitor");
+  const telemetryReady = await registrationTelemetryReady().catch(() => null);
+  if (telemetryReady !== true) {
+    return (
+      <div>
+        <AdminHeader title="Monitor de cadastros" />
+        <AdminPanel>
+          {telemetryReady === null
+            ? <p role="alert">Não foi possível consultar o banco.</p>
+            : <p role="status">A coleta de eventos começa após a ativação da telemetria no banco.</p>}
+        </AdminPanel>
+      </div>
+    );
+  }
   const params = await searchParams;
   const filters = registrationReportFilters(params);
   const { hours, professional, stage } = filters;

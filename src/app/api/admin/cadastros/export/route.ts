@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { authorizeAdminRequest } from "@/lib/admin-access";
 import { prisma } from "@/lib/prisma";
+import { registrationTelemetryReady } from "@/lib/registration-monitor";
 import { professionalRegistrationIdentity, registrationCsvCell, registrationReportFilters } from "@/lib/registration-admin-report";
 
 const MAX_EXPORT_ROWS = 10_000;
@@ -8,6 +9,8 @@ const MAX_EXPORT_ROWS = 10_000;
 export async function GET(req: NextRequest) {
   const access = await authorizeAdminRequest("registration:export");
   if (!access.ok) return Response.json({ error: access.error }, { status: access.status });
+  const ready = await registrationTelemetryReady().catch(() => false);
+  if (!ready) return Response.json({ error: "Telemetria indisponível." }, { status: 503, headers: { "Cache-Control": "no-store" } });
 
   const filters = registrationReportFilters(Object.fromEntries(req.nextUrl.searchParams));
   if (["hours", "type", "stage", "professional", "identity"].some((key) => {
