@@ -387,6 +387,9 @@ export default function ProfissionalNovoPage() {
   const [diditAvailable, setDigitAvailable] = useState(false);
   const [diditMessage, setDigitMessage] = useState<string | null>(null);
   const [diditRetryAllowed, setDigitRetryAllowed] = useState(false);
+  const [diditStartFailed, setDiditStartFailed] = useState(false);
+  const [diditRetryUntil, setDiditRetryUntil] = useState(0);
+  const [diditRetrySeconds, setDiditRetrySeconds] = useState(0);
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [pendingEmailLabel, setPendingEmailLabel] = useState<string | null>(null);
   const [accountUserId, setAccountUserId] = useState<string | null>(null);
@@ -1106,18 +1109,33 @@ export default function ProfissionalNovoPage() {
   }
 
   /* ── verificação Didit ────────────────────────────────── */
+  useEffect(() => {
+    if (!diditRetryUntil) return;
+    const timer = window.setInterval(() => {
+      setDiditRetrySeconds(Math.max(0, Math.ceil((diditRetryUntil - Date.now()) / 1000)));
+    }, 250);
+    return () => window.clearInterval(timer);
+  }, [diditRetryUntil]);
+
   async function startDigitVerification() {
-    if (diditStartingRef.current || uploadingIdx === 100) return;
+    if (diditStartingRef.current || uploadingIdx === 100 || Date.now() < diditRetryUntil) return;
     if (form.kycStatus === "APPROVED") return;
 
     diditStartingRef.current = true;
+    setDiditStartFailed(false);
     setUploadingIdx(100);
     try {
       const res = await fetch("/api/didit/session", { method: "POST" });
       const data = await res.json().catch(() => ({})) as DiditStatusResponse & { reused?: boolean };
       if (!res.ok) {
         console.error("[Didit] Falha ao iniciar verificacao.", { status: res.status });
-        toast.error(data.error ?? "Não foi possível iniciar a verificação. Tente novamente.");
+        const seconds = Number(res.headers.get("Retry-After"));
+        if (Number.isFinite(seconds) && seconds > 0) {
+          setDiditRetrySeconds(seconds);
+          setDiditRetryUntil(Date.now() + seconds * 1000);
+        }
+        setDiditStartFailed(true);
+        if (data.error && [401, 403, 422].includes(res.status)) toast.error(data.error);
         return;
       }
 
@@ -1141,7 +1159,7 @@ export default function ProfissionalNovoPage() {
       }
     } catch (err) {
       console.error("[Didit] Erro de rede ao iniciar verificacao.", err);
-      toast.error("Não foi possível iniciar a verificação. Tente novamente.");
+      setDiditStartFailed(true);
     } finally {
       diditStartingRef.current = false;
       setUploadingIdx(null);
@@ -2251,8 +2269,20 @@ export default function ProfissionalNovoPage() {
           diditMessage={diditMessage}
           verificationUrl={form.verificationUrl}
           startingVerification={uploadingIdx === 100}
+          retrySeconds={diditRetrySeconds}
           onStartVerification={startDigitVerification}
         />
+      )}
+      {step === 7 && diditStartFailed && (
+        <div className="mt-4 rounded-lg border border-current p-4" role="status">
+          <p>Não conseguimos iniciar sua verificação de identidade neste momento. Seus dados estão salvos. Você pode tentar novamente ou entrar em contato com nossa equipe de suporte.</p>
+          <div className="mt-3 flex flex-wrap items-center gap-4">
+            <button type="button" onClick={startDigitVerification} disabled={uploadingIdx === 100 || diditRetrySeconds > 0}>
+              {uploadingIdx === 100 ? "Iniciando verificação..." : diditRetrySeconds ? `Tentar novamente em ${diditRetrySeconds}s` : "Tentar novamente"}
+            </button>
+            <a href="mailto:suporte@elitemodell.com.br">Falar com o suporte</a>
+          </div>
+        </div>
       )}
       {/* ── Navegação entre etapas ── */}
       </div>
@@ -2264,9 +2294,10 @@ export default function ProfissionalNovoPage() {
         </button>
 
         {!isLast ? (
-          <button onClick={next} disabled={loading || (step === 7 && Boolean(form.kycSessionId) && !canFinalizeIdentity)}
+          <button onClick={step === 7 && !canFinalizeIdentity ? startDigitVerification : next}
+            disabled={loading || (step === 7 && !canFinalizeIdentity && (uploadingIdx === 100 || diditRetrySeconds > 0 || diditPending || (diditRejected && !diditRetryAllowed)))}
             style={{ padding: "12px 32px", background: loading ? "#65009b" : GOLD, border: "none", borderRadius: 10, color: "#080808", fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}>
-            {loading ? "Salvando..." : step === 7 && canFinalizeIdentity ? "Finalizar meu cadastro" : step === 7 && diditPending ? "Aguardando confirmação da Didit" : step === 7 ? "Iniciar verificação para continuar" : "Continuar →"}
+            {loading ? "Salvando..." : step === 7 && uploadingIdx === 100 ? "Iniciando verificação..." : step === 7 && canFinalizeIdentity ? "Finalizar meu cadastro" : step === 7 && diditRetrySeconds > 0 ? `Tentar novamente em ${diditRetrySeconds}s` : step === 7 && diditPending ? "Aguardando confirmação da Didit" : step === 7 ? "Iniciar verificação para continuar" : "Continuar →"}
           </button>
         ) : (
           <button onClick={submit} disabled={loading || !canFinalizeIdentity}

@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { requireAdmin } from "@/lib/admin-access";
 import { professionalRegistrationIdentity, registrationReportFilters, registrationStages } from "@/lib/registration-admin-report";
 import { prisma } from "@/lib/prisma";
+import { isDigitAvailable, parseDigitIntentMarker } from "@/lib/didit";
 import { registrationTelemetryReady } from "@/lib/registration-monitor";
 import { twilioVerifyEnvironmentStatus } from "@/lib/twilio-verify";
 import { AdminHeader, AdminPagination, AdminPanel, AdminTable, StatCard, tdStyle, thStyle } from "../_components/AdminPrimitives";
@@ -37,6 +38,11 @@ export default async function RegistrationMonitorPage({ searchParams }: {
       prisma.professional.count({ where: { kycStatus: { in: ["PENDING", "KYC_MANUAL_PENDENTE"] } } }),
       prisma.phoneVerificationCode.count({ where: { accountType: "model", createdAt: { gte: since }, sentAt: { not: null }, sendError: null } }),
       prisma.phoneVerificationCode.count({ where: { accountType: "model", createdAt: { gte: since }, sendError: { not: null } } }),
+      prisma.professional.findMany({
+        where: { kycProvider: "DIDIT", kycSessionId: null, verificationUrl: { startsWith: "didit:creating:" } },
+        orderBy: { updatedAt: "desc" }, take: 30,
+        select: { id: true, updatedAt: true, verificationUrl: true },
+      }),
     ]).catch(() => null) : null;
     return (
       <div>
@@ -49,6 +55,23 @@ export default async function RegistrationMonitorPage({ searchParams }: {
             <StatCard label="Solicitações de código aceitas em 7 dias" value={legacy[3]} />
             <StatCard label="Erros de envio registrados em 7 dias" value={legacy[4]} />
           </div>
+        )}
+        {legacy && (
+          <AdminPanel>
+            <h2 className="font-semibold">Didit</h2>
+            <p>{isDigitAvailable() ? "Integração configurada. Disponibilidade remota depende da resposta da Didit." : "Configuração incompleta."}</p>
+            {legacy[5].length > 0 && <ul className="my-3 space-y-2">
+              {legacy[5].map((profile) => {
+                const intent = parseDigitIntentMarker(profile.verificationUrl);
+                return <li key={profile.id}>
+                  <Link href={`/admin/profissionais?professionalId=${profile.id}`}>Cadastro {profile.id.slice(-8)}</Link>
+                  {" · "}
+                  {intent && now - intent.leaseAt < 120_000 ? "Preparação em andamento" : "Sessão interrompida. Retomada disponível no cadastro."}
+                  {" · "}{formatDate.format(profile.updatedAt)}
+                </li>;
+              })}
+            </ul>}
+          </AdminPanel>
         )}
         <AdminPanel>
           {telemetryReady === null

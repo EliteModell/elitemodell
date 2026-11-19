@@ -30,6 +30,17 @@ import { enforceRateLimitAsync } from "@/lib/security";
 const DIGIT_INTENT_LEASE_MS = 2 * 60_000;
 const DIGIT_INTENT_EXPIRATION_MS = 24 * 60 * 60_000;
 
+function diditLeaseSeconds(leaseAt: number) {
+  return Math.max(1, Math.ceil((leaseAt + DIGIT_INTENT_LEASE_MS - Date.now()) / 1000));
+}
+
+function diditStartingResponse(leaseAt: number) {
+  return NextResponse.json(
+    { code: "DIDIT_STARTING" },
+    { status: 409, headers: { "Retry-After": String(diditLeaseSeconds(leaseAt)) } },
+  );
+}
+
 function appBaseUrl() {
   return (
     process.env.NEXT_PUBLIC_APP_URL?.trim() ||
@@ -134,8 +145,6 @@ export async function GET() {
 export const POST = monitorRegistration("IDENTITY", async (_req, trace) => {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
-  const limited = await enforceRateLimitAsync(`kyc-session:didit:${session.user.id}`, 3, 60 * 60 * 1000, "Muitas tentativas de iniciar verificação.");
-  if (limited) return limited;
   if (!canUseProfessionalKyc(session)) {
     return NextResponse.json({ error: "Apenas anunciantes podem iniciar verificacao." }, { status: 403 });
   }
@@ -181,15 +190,17 @@ export const POST = monitorRegistration("IDENTITY", async (_req, trace) => {
 
   const existing = await currentStatus(session.user.id);
   if (existing.starting) {
-    return NextResponse.json(
-      { error: "A verificacao esta sendo preparada. Tente novamente em instantes.", code: "DIDIT_STARTING" },
-      { status: 409 },
-    );
+    const intent = parseDigitIntentMarker(draft.verificationUrl);
+    if (intent && Date.now() - intent.leaseAt < DIGIT_INTENT_LEASE_MS) {
+      trace.skip = true;
+      return diditStartingResponse(intent.leaseAt);
+    }
   }
   if (existing.sessionId && existing.status === DIDIT_REJECTED_STATUS && !existing.retryAllowed) {
     return NextResponse.json({ error: existing.message, code: "DIDIT_SUPPORT_REQUIRED" }, { status: 409 });
   }
   if (existing.sessionId && existing.status !== DIDIT_REJECTED_STATUS) {
+    trace.skip = true;
     return NextResponse.json({
       provider: "DIDIT",
       ...existing,
@@ -201,6 +212,7 @@ export const POST = monitorRegistration("IDENTITY", async (_req, trace) => {
     });
   }
 
+  let leaseAt: number | undefined;
   try {
     const requestedIntentId = randomUUID();
     const reservation = await prisma.$transaction(async (tx) => {
@@ -229,7 +241,11 @@ export const POST = monitorRegistration("IDENTITY", async (_req, trace) => {
 
       const previousIntent = parseDigitIntentMarker(lockedProfessional.verificationUrl);
       if (previousIntent && Date.now() - previousIntent.leaseAt < DIGIT_INTENT_LEASE_MS) {
-        return { kind: "starting" as const };
+        return { kind: "starting" as const, leaseAt: previousIntent.leaseAt };
+      }
+      if (!previousIntent) {
+        const limited = await enforceRateLimitAsync(`kyc-session:didit:${session.user.id}`, 3, 60 * 60 * 1000);
+        if (limited) return { kind: "limited" as const, response: limited };
       }
 
       const previousIntentExpired = Boolean(
@@ -237,7 +253,8 @@ export const POST = monitorRegistration("IDENTITY", async (_req, trace) => {
       );
       const intentId = previousIntent?.intentId ?? requestedIntentId;
       const createdAfter = previousIntent?.createdAt ?? Date.now();
-      const marker = createDigitIntentMarker(intentId, createdAfter, Date.now());
+      const reservedAt = Date.now();
+      const marker = createDigitIntentMarker(intentId, createdAfter, reservedAt);
       await tx.user.update({
         where: { id: session.user.id },
         data: {
@@ -264,6 +281,7 @@ export const POST = monitorRegistration("IDENTITY", async (_req, trace) => {
       return {
         kind: "reserved" as const,
         marker,
+        reservedAt,
         vendorData: buildDigitVendorData(session.user.id),
         createdAfter,
         intentId,
@@ -273,6 +291,7 @@ export const POST = monitorRegistration("IDENTITY", async (_req, trace) => {
     }, { maxWait: 5_000, timeout: 10_000 });
 
     if (reservation.kind === "reused") {
+      trace.skip = true;
       return NextResponse.json({
         provider: "DIDIT",
         ...reservation,
@@ -281,11 +300,11 @@ export const POST = monitorRegistration("IDENTITY", async (_req, trace) => {
       });
     }
     if (reservation.kind === "starting") {
-      return NextResponse.json(
-        { error: "A verificacao esta sendo preparada. Tente novamente em instantes.", code: "DIDIT_STARTING" },
-        { status: 409 },
-      );
+      trace.skip = true;
+      return diditStartingResponse(reservation.leaseAt);
     }
+    if (reservation.kind === "limited") return reservation.response;
+    leaseAt = reservation.reservedAt;
 
     let diditSession = reservation.reconcile
       ? await findDigitSessionByVendorData(reservation.vendorData, reservation.createdAfter)
@@ -298,6 +317,8 @@ export const POST = monitorRegistration("IDENTITY", async (_req, trace) => {
       let createdAt = reservation.createdAfter;
       if (reservation.expired) {
         // Only rotate after a successful lookup confirmed no matching remote session.
+        const limited = await enforceRateLimitAsync(`kyc-session:didit:${session.user.id}`, 3, 60 * 60 * 1000);
+        if (limited) return limited;
         intentId = requestedIntentId;
         createdAt = Date.now();
         activeMarker = createDigitIntentMarker(intentId, createdAt);
@@ -306,6 +327,7 @@ export const POST = monitorRegistration("IDENTITY", async (_req, trace) => {
           data: { verificationUrl: activeMarker },
         });
         if (rotated.count !== 1) throw new Error("didit_intent_changed");
+        leaseAt = createdAt;
       }
       const callbackState = createDigitCallbackState(callbackSecret, createdAt);
       const callbackUrl = `${appBaseUrl()}/verificacao/callback?state=${encodeURIComponent(callbackState)}`;
@@ -366,7 +388,7 @@ export const POST = monitorRegistration("IDENTITY", async (_req, trace) => {
     });
     return NextResponse.json(
       { error: "Nao foi possivel iniciar a verificacao de identidade. Tente novamente." },
-      { status: 503, headers: { "Retry-After": String(DIGIT_INTENT_LEASE_MS / 1000) } },
+      { status: 503, headers: leaseAt === undefined ? undefined : { "Retry-After": String(diditLeaseSeconds(leaseAt)) } },
     );
   }
 });

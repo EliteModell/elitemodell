@@ -24,6 +24,7 @@ type Props = {
   diditMessage: string | null;
   verificationUrl: string;
   startingVerification: boolean;
+  retrySeconds: number;
   onStartVerification: () => void;
 };
 
@@ -55,7 +56,7 @@ function SummaryTiles({ items }: { items: Array<[string, string]> }) {
 
 export default function ProfessionalVerificationSteps(props: Props) {
   const location = `${props.city}${props.state ? `, ${props.state}` : ""}` || "—";
-  const cannotStart = props.startingVerification || !props.diditAvailable ||
+  const cannotStart = props.startingVerification || props.retrySeconds > 0 || !props.diditAvailable ||
     (props.diditRejected && !props.diditRetryAllowed) || props.diditPending;
 
   if (props.mode === "summary") {
@@ -118,15 +119,15 @@ export default function ProfessionalVerificationSteps(props: Props) {
           <div data-field="kycSessionId" role="status" aria-live="polite" style={{ padding: "16px 18px", borderRadius: 12, background: GOLD_DIM, color: "#fcf7ff" }}>
             <p style={{ margin: "0 0 12px" }}>{props.diditMessage ?? "Aguardando a confirmação de envio dos documentos pela Didit."}</p>
             {props.verificationUrl && props.diditAvailable && (
-              <button type="button" disabled={props.startingVerification} onClick={props.onStartVerification} style={{ minHeight: 44, border: 0, borderRadius: 8, background: GOLD, padding: "8px 16px", fontWeight: 800 }}>
-                Retomar verificação
+              <button type="button" disabled={props.startingVerification || props.retrySeconds > 0} onClick={props.onStartVerification} style={{ minHeight: 44, border: 0, borderRadius: 8, background: GOLD, padding: "8px 16px", fontWeight: 800 }}>
+                {props.startingVerification ? "Iniciando verificação..." : props.retrySeconds > 0 ? `Aguarde ${props.retrySeconds}s` : "Retomar verificação"}
               </button>
             )}
           </div>
         ) : (
           <>
             <button data-field="kycSessionId" type="button" onClick={props.onStartVerification} disabled={cannotStart} style={{ width: "100%", minHeight: 52, padding: "14px 16px", borderRadius: 12, border: "none", background: cannotStart ? "#676064" : GOLD, color: cannotStart ? "#e7e0ea" : "#080808", fontSize: 15, fontWeight: 800, cursor: cannotStart ? "not-allowed" : "pointer", marginBottom: 14 }}>
-              {props.startingVerification ? "Iniciando verificação..." : props.diditRejected && props.diditRetryAllowed ? "Tentar novamente" : props.diditRejected ? "Fale com o suporte" : "Verificar minha identidade"}
+              {props.startingVerification ? "Iniciando verificação..." : props.retrySeconds > 0 ? `Aguarde ${props.retrySeconds}s` : props.diditRejected && props.diditRetryAllowed ? "Tentar novamente" : props.diditRejected ? "Fale com o suporte" : "Verificar minha identidade"}
             </button>
             {props.diditRejected ? <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", color: "#ff8b8b", fontSize: 13, fontWeight: 700, lineHeight: 1.55 }} role="alert">{props.diditMessage ?? "Não foi possível concluir sua verificação de identidade."}{props.diditRetryAllowed ? <span style={{ display: "block", color: "#d8cfdd", fontSize: 12, fontWeight: 500, marginTop: 4 }}>Corrija o problema indicado antes de tentar novamente pelo botão acima.</span> : null}</div> : null}
             {!props.diditAvailable ? <div style={{ padding: "12px 14px", borderRadius: 10, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: "#e8b8ff", fontSize: 13, fontWeight: 700, lineHeight: 1.5 }}>A verificação Didit está temporariamente indisponível. Seu cadastro permanece salvo; tente novamente em alguns minutos.</div> : null}

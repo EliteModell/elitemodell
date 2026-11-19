@@ -68,17 +68,18 @@ export function recordRegistrationEvent(stage: RegistrationStage, trace: Registr
 
 export function monitorRegistration(
   stage: RegistrationStage,
-  handler: (req: NextRequest, trace: RegistrationTrace) => Promise<NextResponse>,
+  handler: (req: NextRequest, trace: RegistrationTrace & { skip?: boolean }) => Promise<NextResponse>,
 ) {
   return async (req: NextRequest) => {
-    const trace: RegistrationTrace = {};
+    const trace: RegistrationTrace & { skip?: boolean } = {};
     let status = 500;
     try {
       const response = await handler(req, trace);
       status = response.status;
       return response;
     } finally {
-      recordRegistrationEvent(stage, trace, status);
+      const { skip, ...event } = trace;
+      if (!skip) recordRegistrationEvent(stage, event, status);
     }
   };
 }

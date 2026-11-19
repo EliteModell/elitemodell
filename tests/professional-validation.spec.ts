@@ -59,6 +59,16 @@ const validProfile = {
   kycSessionId: "kyc_test",
 };
 
+test("Didit reaproveita a reserva antes de cobrar uma nova tentativa", () => {
+  const api = fs.readFileSync(path.join(process.cwd(), "src/app/api/didit/session/route.ts"), "utf8");
+  const screen = fs.readFileSync(path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"), "utf8");
+  expect(api.indexOf('kind: "starting" as const')).toBeLessThan(api.indexOf("kyc-session:didit:"));
+  expect(api).toContain("if (!previousIntent)");
+  expect(api).toContain('"Retry-After": String(diditLeaseSeconds(leaseAt))');
+  expect(screen).toContain("onClick={step === 7 && !canFinalizeIdentity ? startDigitVerification : next}");
+  expect(screen).toContain("onStartVerification={startDigitVerification}");
+});
+
 test("conflito de e-mail protege a titularidade e oferece recuperação e suporte", () => {
   const api = fs.readFileSync(path.join(process.cwd(), "src/app/api/auth/email-confirmation/route.ts"), "utf8");
   const screen = fs.readFileSync(path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"), "utf8");
