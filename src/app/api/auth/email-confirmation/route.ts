@@ -3,6 +3,7 @@ import { monitorRegistration, registrationAccountType, registrationIdentity } fr
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
+import { REGISTRATION_EMAIL_CONFLICT, REGISTRATION_EMAIL_CONFLICT_MESSAGE } from "@/lib/registration-email-conflict";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
@@ -194,9 +195,13 @@ export const POST = monitorRegistration("EMAIL_CONFIRMATION", async (req, trace)
     if (input.action === "change") {
       targetEmail = input.email.toLowerCase();
       if (targetEmail !== user.email.toLowerCase()) {
-        const conflict = await prisma.user.findUnique({ where: { email: targetEmail }, select: { id: true } });
-        if (conflict && conflict.id !== user.id) {
-          return NextResponse.json({ error: "Este e-mail já está vinculado a outra conta. Utilize outro endereço ou entre em contato com o suporte." }, { status: 409 });
+        const conflict = await prisma.user.findFirst({
+          where: { id: { not: user.id }, email: { equals: targetEmail, mode: "insensitive" } },
+          select: { id: true },
+        });
+        if (conflict) {
+          trace.reason = REGISTRATION_EMAIL_CONFLICT;
+          return NextResponse.json({ code: REGISTRATION_EMAIL_CONFLICT, error: REGISTRATION_EMAIL_CONFLICT_MESSAGE }, { status: 409 });
         }
         let targetAuthUser = await findAuthUserByEmail(targetEmail);
         const linkedPrismaUserId = typeof targetAuthUser?.app_metadata?.prismaUserId === "string"
@@ -221,9 +226,15 @@ export const POST = monitorRegistration("EMAIL_CONFIRMATION", async (req, trace)
         }
         const targetBelongsToCurrentUser = targetAuthUser?.app_metadata?.prismaUserId === user.id;
         if (targetAuthUser && !targetBelongsToCurrentUser) {
-          return NextResponse.json({ error: "Este e-mail já está vinculado a outra conta. Utilize outro endereço ou entre em contato com o suporte." }, { status: 409 });
+          trace.reason = REGISTRATION_EMAIL_CONFLICT;
+          return NextResponse.json({ code: REGISTRATION_EMAIL_CONFLICT, error: REGISTRATION_EMAIL_CONFLICT_MESSAGE }, { status: 409 });
         }
         const authUser = await findAuthUserByEmail(user.email);
+        const currentAuthOwner = authUser?.app_metadata?.prismaUserId;
+        if (typeof currentAuthOwner === "string" && currentAuthOwner && currentAuthOwner !== user.id) {
+          trace.reason = REGISTRATION_EMAIL_CONFLICT;
+          return NextResponse.json({ code: REGISTRATION_EMAIL_CONFLICT, error: REGISTRATION_EMAIL_CONFLICT_MESSAGE }, { status: 409 });
+        }
         const supabase = createSupabaseServerClient();
         if (targetBelongsToCurrentUser) {
           // Solicitação idempotente: o endereço continua pendente até o link

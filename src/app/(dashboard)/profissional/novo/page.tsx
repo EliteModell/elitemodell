@@ -1,5 +1,7 @@
 "use client";
 
+import { REGISTRATION_EMAIL_CONFLICT, REGISTRATION_EMAIL_CONFLICT_MESSAGE } from "@/lib/registration-email-conflict";
+
 import { canFinalizeProfessionalIdentity } from "@/lib/professional-identity-readiness";
 /* eslint-disable @next/next/no-img-element -- Upload previews can be blob/data/private URLs before the final hosted image is available. */
 import { useEffect, useRef, useState } from "react";
@@ -394,6 +396,7 @@ export default function ProfissionalNovoPage() {
   const [emailCooldown, setEmailCooldown] = useState(0);
   const [editingEmail, setEditingEmail] = useState(false);
   const [replacementEmail, setReplacementEmail] = useState("");
+  const [emailConflict, setEmailConflict] = useState(false);
   const [validationIssue, setValidationIssue] = useState<ValidationIssue | null>(null);
   const [draftSaveError, setDraftSaveError] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
@@ -1182,6 +1185,7 @@ export default function ProfissionalNovoPage() {
 
   async function requestEmailConfirmation(action: "resend" | "change") {
     if (emailBusy || emailCooldown > 0) return;
+    setEmailConflict(false);
     setEmailBusy(true);
     try {
       const response = await fetch("/api/auth/email-confirmation", {
@@ -1189,7 +1193,11 @@ export default function ProfissionalNovoPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(action === "change" ? { action, email: replacementEmail } : { action }),
       });
-      const data = await response.json().catch(() => ({})) as { error?: unknown; maskedEmail?: string; verified?: boolean; retryAfterSeconds?: number };
+      const data = await response.json().catch(() => ({})) as { code?: string; error?: unknown; maskedEmail?: string; verified?: boolean; retryAfterSeconds?: number };
+      if (response.status === 409 && data.code === REGISTRATION_EMAIL_CONFLICT) {
+        setEmailConflict(true);
+        return;
+      }
       if (response.status === 429) setServerEmailCooldown(response, data.retryAfterSeconds);
       if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Não foi possível solicitar a confirmação agora.");
       if (data.verified) {
@@ -1551,7 +1559,10 @@ export default function ProfissionalNovoPage() {
           )}
           {editingEmail || isEmailMissing ? (
             <div className="actions">
-              <input type="email" autoComplete="email" value={replacementEmail} onChange={(event) => setReplacementEmail(event.target.value)} placeholder="novo@email.com" />
+              <input type="email" autoComplete="email" value={replacementEmail} onChange={(event) => {
+                setReplacementEmail(event.target.value);
+                setEmailConflict(false);
+              }} placeholder="novo@email.com" />
               <button type="button" disabled={emailBusy || emailCooldown > 0 || !replacementEmail.trim()} onClick={() => requestEmailConfirmation("change")}>{emailCooldown > 0 ? `Tente novamente em ${formatEmailCooldown(emailCooldown)}` : emailBusy ? "Enviando..." : "Continuar e confirmar e-mail"}</button>
               {!isEmailMissing ? <button type="button" className="secondary" onClick={() => setEditingEmail(false)}>Cancelar</button> : null}
             </div>
@@ -1560,6 +1571,13 @@ export default function ProfissionalNovoPage() {
               <button type="button" disabled={emailBusy} onClick={checkEmailConfirmation}>{emailBusy ? "Verificando..." : "Já confirmei meu e-mail"}</button>
               <button type="button" className="secondary" disabled={emailBusy || emailCooldown > 0} onClick={() => requestEmailConfirmation("resend")}>{emailCooldown > 0 ? `Reenviar em ${formatEmailCooldown(emailCooldown)}` : "Reenviar confirmação"}</button>
               <button type="button" className="secondary" onClick={() => setEditingEmail(true)}>Corrigir e-mail</button>
+            </div>
+          )}
+          {emailConflict && (
+            <div className="actions">
+              <p role="alert">{REGISTRATION_EMAIL_CONFLICT_MESSAGE}</p>
+              <a className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#b72cff] px-4 font-bold text-black" href="/esqueci-senha">Recuperar meu acesso</a>
+              <a className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#b72cff] px-4 font-bold text-white" href="mailto:suporte@elitemodell.com.br">Falar com o suporte</a>
             </div>
           )}
         </section>

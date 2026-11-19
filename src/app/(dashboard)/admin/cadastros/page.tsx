@@ -26,11 +26,30 @@ export default async function RegistrationMonitorPage({ searchParams }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const access = await requireAdmin("registration:monitor");
+  // eslint-disable-next-line react-hooks/purity -- Each dynamic request defines its own reporting window.
+  const now = Date.now();
   const telemetryReady = await registrationTelemetryReady().catch(() => null);
   if (telemetryReady !== true) {
+    const since = new Date(now - 7 * 86_400_000);
+    const legacy = telemetryReady === false ? await Promise.all([
+      prisma.user.count({ where: { accountType: "model", phoneVerified: true, emailVerified: null } }),
+      prisma.professional.count({ where: { status: "DRAFT", registrationSubmittedAt: null } }),
+      prisma.professional.count({ where: { kycStatus: { in: ["PENDING", "KYC_MANUAL_PENDENTE"] } } }),
+      prisma.phoneVerificationCode.count({ where: { accountType: "model", createdAt: { gte: since }, sentAt: { not: null }, sendError: null } }),
+      prisma.phoneVerificationCode.count({ where: { accountType: "model", createdAt: { gte: since }, sendError: { not: null } } }),
+    ]).catch(() => null) : null;
     return (
       <div>
         <AdminHeader title="Monitor de cadastros" />
+        {legacy && (
+          <div className="my-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <StatCard label="Telefone confirmado, e-mail pendente" value={legacy[0]} />
+            <StatCard label="Rascunhos ainda não enviados" value={legacy[1]} />
+            <StatCard label="Verificações de identidade pendentes" value={legacy[2]} />
+            <StatCard label="Solicitações de código aceitas em 7 dias" value={legacy[3]} />
+            <StatCard label="Erros de envio registrados em 7 dias" value={legacy[4]} />
+          </div>
+        )}
         <AdminPanel>
           {telemetryReady === null
             ? <p role="alert">Não foi possível consultar o banco.</p>
@@ -45,8 +64,6 @@ export default async function RegistrationMonitorPage({ searchParams }: {
   const type = professional ? "model" : filters.type;
   const identity = professional ? await professionalRegistrationIdentity(professional) : filters.identity;
   const page = typeof params.page === "string" && /^\d{1,5}$/.test(params.page) ? Math.max(1, Number(params.page)) : 1;
-  // eslint-disable-next-line react-hooks/purity -- Each dynamic request defines its own reporting window.
-  const now = Date.now();
   const since = new Date(now - Number(hours) * 3_600_000);
   const inactiveBefore = new Date(now - 2 * 3_600_000);
   const baseWhere = { createdAt: { gte: since }, ...(type ? { accountType: type } : {}) };

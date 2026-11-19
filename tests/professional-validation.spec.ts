@@ -5,6 +5,7 @@ import { createProfessionalSchema } from "../src/lib/professional-profile-schema
 import { assessProfessionalDiditDecision } from "../src/lib/professional-didit";
 import { professionalRegistrationStatus } from "../src/lib/professional-registration-status";
 import { accountEmailLabel, isTechnicalPhoneEmail, realAccountEmail } from "../src/lib/account-email";
+import { REGISTRATION_EMAIL_CONFLICT, REGISTRATION_EMAIL_CONFLICT_MESSAGE } from "../src/lib/registration-email-conflict";
 import { reconcileProfessionalDidit } from "../src/lib/didit-reconciliation";
 import { handleDigitWebhook } from "../src/lib/didit-webhook-handler";
 import { prisma } from "../src/lib/prisma";
@@ -57,6 +58,18 @@ const validProfile = {
   image: "/api/media/test-cover",
   kycSessionId: "kyc_test",
 };
+
+test("conflito de e-mail protege a titularidade e oferece recuperação e suporte", () => {
+  const api = fs.readFileSync(path.join(process.cwd(), "src/app/api/auth/email-confirmation/route.ts"), "utf8");
+  const screen = fs.readFileSync(path.join(process.cwd(), "src/app/(dashboard)/profissional/novo/page.tsx"), "utf8");
+  expect(REGISTRATION_EMAIL_CONFLICT).toBe("EMAIL_ALREADY_ASSOCIATED");
+  expect(REGISTRATION_EMAIL_CONFLICT_MESSAGE).toContain("recuperar seu acesso");
+  expect(api).toContain('mode: "insensitive"');
+  expect(api).toContain("currentAuthOwner !== user.id");
+  expect(screen).toContain("data.code === REGISTRATION_EMAIL_CONFLICT");
+  expect(screen).toContain('href="/esqueci-senha">Recuperar meu acesso');
+  expect(screen).toContain('href="mailto:suporte@elitemodell.com.br">Falar com o suporte');
+});
 
 test.describe("e-mail tecnico de cadastro por telefone", () => {
   test("mantem identificador interno fora da apresentacao", () => {
