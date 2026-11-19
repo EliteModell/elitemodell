@@ -71,7 +71,10 @@ test.describe("vinculo seguro de e-mail para conta criada por telefone", () => {
   test("exige telefone recente e trata conflito sem revelar a outra conta", () => {
     expect(emailConfirmation).toContain("RECENT_PHONE_PROOF_MS");
     expect(emailConfirmation).toContain("hasRecentPhoneProof(user)");
-    expect(emailConfirmation).toContain("Este e-mail já está vinculado a outra conta. Utilize outro endereço ou entre em contato com o suporte.");
+    expect(emailConfirmation).toContain("trace.reason = REGISTRATION_EMAIL_CONFLICT");
+    expect(emailConfirmation).toContain("code: REGISTRATION_EMAIL_CONFLICT, error: REGISTRATION_EMAIL_CONFLICT_MESSAGE");
+    expect(emailConfirmation).toContain('email: { equals: targetEmail, mode: "insensitive" }');
+    expect(emailConfirmation).toContain("currentAuthOwner !== user.id");
     expect(emailConfirmation).toContain('blockReason === "Conta excluida e pseudonimizada por solicitacao LGPD."');
     expect(emailConfirmation).toContain('releasedIdentity.email.startsWith("deleted+")');
     expect(emailConfirmation).toContain("supabase.auth.admin.deleteUser(targetAuthUser.id)");

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import * as path from "node:path";
 import { installMockSessionCookie } from "./helpers/mock-auth";
+import { REGISTRATION_EMAIL_CONFLICT, REGISTRATION_EMAIL_CONFLICT_MESSAGE } from "../src/lib/registration-email-conflict";
 
 const USER_ID = "full-onboarding-user";
 
@@ -49,6 +50,30 @@ test("conta com telefone confirmado retoma o cadastro enquanto o e-mail esta pen
   await expect(page.getByText("Etapa 1 de 9", { exact: false })).toHaveCount(0);
   await expect(page.getByPlaceholder("Ex.: Gabriella, Mel, Alice...")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Já confirmei meu e-mail" })).toBeVisible();
+});
+
+test("retoma o cadastro com opções de recuperação e suporte quando o e-mail está em uso", async ({ page }) => {
+  await mockOnboarding(page);
+  await page.unroute("**/api/users/me**");
+  await page.route("**/api/users/me**", (route) => route.fulfill({ json: {
+    id: USER_ID, email: "phone_5511912345678@sms.elitemodell.local",
+    emailVerified: null, birthDate: "2000-01-01", professional: professional(),
+  } }));
+  await page.route("**/api/auth/email-confirmation", (route) => {
+    if (route.request().postDataJSON()?.action === "change") {
+      return route.fulfill({ status: 409, json: {
+        code: REGISTRATION_EMAIL_CONFLICT, error: REGISTRATION_EMAIL_CONFLICT_MESSAGE,
+      } });
+    }
+    return route.fulfill({ json: { ok: true, verified: false, emailState: "missing" } });
+  });
+  await page.goto("/profissional/novo", { waitUntil: "domcontentloaded" });
+  await page.getByPlaceholder("novo@email.com").fill("existente@example.invalid");
+  await page.getByRole("button", { name: "Continuar e confirmar e-mail" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: REGISTRATION_EMAIL_CONFLICT_MESSAGE })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Falar com o suporte" })).toHaveAttribute("href", "mailto:suporte@elitemodell.com.br");
+  await page.getByRole("link", { name: "Recuperar meu acesso" }).click();
+  await expect(page).toHaveURL(/\/esqueci-senha\/?$/);
 });
 
 test("e-mail ausente usa o estado correto e falha de envio nao cria confirmacao falsa", async ({ page }) => {
