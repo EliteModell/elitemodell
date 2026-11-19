@@ -151,7 +151,7 @@ export const POST = monitorRegistration("IDENTITY", async (_req, trace) => {
 
   const account = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { phoneVerified: true, phone: true },
+    select: { phoneVerified: true, phone: true, kycSessionId: true },
   });
   trace.accountType = "model";
   trace.provider = "DIDIT";
@@ -188,6 +188,10 @@ export const POST = monitorRegistration("IDENTITY", async (_req, trace) => {
     );
   }
 
+  if (draft.kycProvider === "DIDIT" && (draft.kycSessionId || account.kycSessionId)) {
+    const limited = await enforceRateLimitAsync(`kyc-read:didit:${session.user.id}`, 20, 5 * 60_000);
+    if (limited) return limited;
+  }
   const existing = await currentStatus(session.user.id);
   if (existing.starting) {
     const intent = parseDigitIntentMarker(draft.verificationUrl);
