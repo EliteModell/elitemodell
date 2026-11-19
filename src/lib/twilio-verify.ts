@@ -234,12 +234,57 @@ async function twilioReadJson<T>(url: string, config: TwilioVerifyConfig): Promi
 
   if (!response.ok) {
     throw new TwilioVerifyProviderError(
-      "Não foi possível confirmar a configuração do WhatsApp na Twilio.",
+      "Não foi possível consultar a Twilio.",
       response.status,
     );
   }
 
   return response.json() as Promise<T>;
+}
+
+type SmsAttempt = {
+  sid: string;
+  account_sid: string;
+  service_sid: string;
+  verification_sid: string;
+  date_created?: string;
+  conversion_status?: string;
+  channel?: string;
+  channel_data?: { message_status?: string; error_code?: string | number; country?: string; carrier?: string };
+};
+
+export async function readTwilioSmsDiagnostic(verificationSid: string) {
+  if (!/^VE[0-9a-f]{32}$/i.test(verificationSid)) throw new TypeError("Invalid verification SID");
+  const config = getTwilioVerifyConfig();
+  const query = new URLSearchParams({
+    VerificationSid: verificationSid,
+    VerifyServiceSid: config.serviceSid,
+    Channel: "sms",
+    PageSize: "50",
+  });
+  const [service, result] = await Promise.all([
+    twilioReadJson<{ sid: string; account_sid: string }>(`https://verify.twilio.com/v2/Services/${config.serviceSid}`, config),
+    twilioReadJson<{ attempts: SmsAttempt[]; meta?: { next_page_url?: string | null } }>(`https://verify.twilio.com/v2/Attempts?${query}`, config),
+  ]);
+
+  return {
+    accountSidSuffix: config.accountSid.slice(-8),
+    serviceSidSuffix: config.serviceSid.slice(-8),
+    serviceMatchesConfiguredAccount: service.sid === config.serviceSid && service.account_sid === config.accountSid,
+    hasMore: Boolean(result.meta?.next_page_url),
+    attempts: result.attempts.filter((attempt) =>
+      attempt.verification_sid === verificationSid && attempt.account_sid === config.accountSid &&
+      attempt.service_sid === config.serviceSid && attempt.channel === "sms"
+    ).map((attempt) => ({
+      attemptSid: attempt.sid,
+      createdAt: attempt.date_created,
+      conversionStatus: attempt.conversion_status,
+      deliveryStatus: attempt.channel_data?.message_status,
+      errorCode: attempt.channel_data?.error_code,
+      country: attempt.channel_data?.country,
+      carrier: attempt.channel_data?.carrier,
+    })),
+  };
 }
 
 export async function getTwilioWhatsAppAvailability(): Promise<TwilioWhatsAppAvailability> {

@@ -10,6 +10,7 @@ import { checkRateLimitAsync } from "../src/lib/rate-limit";
 import {
   checkTwilioVerification,
   getTwilioWhatsAppAvailability,
+  readTwilioSmsDiagnostic,
   sendTwilioSmsVerification,
   toBrazilianE164,
   TwilioVerifyProviderError,
@@ -817,6 +818,33 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     await expect(sendTwilioSmsVerification("+55 (47) 91234-9409")).resolves.toMatchObject({
       sid, status: "pending", attemptSids: [attemptSid],
     });
+  });
+
+  test("diagnóstico SMS consulta o serviço e remove dados pessoais da resposta", async () => {
+    configureTwilio();
+    const verification = "VE44444444444444444444444444444444";
+    globalThis.fetch = async (input, init) => {
+      const url = new URL(String(input));
+      expect(init?.method).toBe("GET");
+      if (url.pathname.endsWith("/Services/VA_test")) {
+        return Response.json({ sid: "VA_test", account_sid: "AC_test" });
+      }
+      expect(url.pathname).toBe("/v2/Attempts");
+      expect(url.searchParams.get("VerificationSid")).toBe(verification);
+      expect(url.searchParams.get("VerifyServiceSid")).toBe("VA_test");
+      const attempt = {
+        sid: "VL55555555555555555555555555555555", verification_sid: verification,
+        account_sid: "AC_test", service_sid: "VA_test", channel: "sms",
+        channel_data: { to: "+5500000000000", message_status: "undelivered", error_code: "30008" },
+      };
+      return Response.json({ attempts: [attempt, { ...attempt, account_sid: "other" }] });
+    };
+
+    const result = await readTwilioSmsDiagnostic(verification);
+    expect(result.serviceMatchesConfiguredAccount).toBe(true);
+    expect(result.attempts).toHaveLength(1);
+    expect(result.attempts[0]).toMatchObject({ deliveryStatus: "undelivered", errorCode: "30008" });
+    expect(JSON.stringify(result)).not.toContain("+5500000000000");
   });
 
   test("SMS e WhatsApp compartilham a mesma VerificationCheck", async () => {
