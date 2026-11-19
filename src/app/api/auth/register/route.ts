@@ -1,6 +1,7 @@
+import { monitorRegistration, registrationIdentity, registrationAccountType } from "@/lib/registration-monitor";
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { isAgeOfMajority } from "@/lib/age-validation";
@@ -19,7 +20,7 @@ import {
   ProfessionalPhoneRegistrationError,
   validatePendingProfessionalPhone,
 } from "@/lib/professional-phone-registration";
-import { brazilianPhoneStorageVariants, phoneIdentityLockKey } from "@/lib/phone-otp";
+import { brazilianPhoneStorageVariants, normalizeBrazilianPhone, phoneIdentityLockKey } from "@/lib/phone-otp";
 
 const schema = z.object({
   accessToken: z.string(),
@@ -63,7 +64,7 @@ function isTrustedOAuthProvider(authUser: {
   return provider === "google" || Boolean(authUser.identities?.some((identity) => identity.provider === "google"));
 }
 
-export async function POST(req: NextRequest) {
+export const POST = monitorRegistration("ACCOUNT", async (req, trace) => {
   const requestIp = getClientIP(req);
   const limited = await enforceRateLimitAsync(`register:${requestIp}`, 20, 60 * 60 * 1000, "Muitas tentativas de cadastro. Tente novamente mais tarde.");
   if (limited) return limited;
@@ -73,6 +74,8 @@ export async function POST(req: NextRequest) {
     const { accessToken, accountType, category, birthDate, lgpdConsent, termsConsent, ageConfirmed, captchaToken } = schema.parse(body);
     const profileIntent = roleIntentFor(accountType);
     const targetAccountType = publicAccountType(accountType);
+    trace.accountType = registrationAccountType(targetAccountType);
+    trace.provider = "SUPABASE";
     const headerCaptchaToken = req.headers.get("x-captcha-token");
     const effectiveCaptchaToken = captchaToken ?? headerCaptchaToken ?? "";
 
@@ -88,6 +91,7 @@ export async function POST(req: NextRequest) {
     const supabase = createSupabaseServerClient();
     const { data, error } = await supabase.auth.getUser(accessToken);
     if (error || !data.user) {
+      trace.reason = "SUPABASE_SESSION_INVALID";
       console.warn("[register] sessao Supabase invalida", {
         reason: error?.message ?? "usuario ausente",
         hasAccessToken: Boolean(accessToken),
@@ -99,18 +103,24 @@ export async function POST(req: NextRequest) {
 
     const authUser = data.user;
     const trustedOAuthProvider = isTrustedOAuthProvider(authUser);
-    const phone = authUser.phone?.replace(/\D/g, "").replace(/^55/, "");
+    const phone = authUser.phone ? normalizeBrazilianPhone(authUser.phone) : null;
     const email = authUser.email ?? (phone ? `phone_${phone}@sms.elitemodell.local` : null);
 
     if (!email) {
       return NextResponse.json({ error: "E-mail ou telefone não encontrado." }, { status: 400 });
     }
 
+    trace.identity = registrationIdentity("email", email);
     const existing = await prisma.user.findUnique({ where: { email } });
     const pendingProfessionalPhone =
       targetAccountType === "model"
         ? await validatePendingProfessionalPhone(req, existing?.id)
         : null;
+    const verifiedPhone = pendingProfessionalPhone?.phone ?? (existing?.phoneVerified ? existing.phone : null);
+    if (targetAccountType === "model" && verifiedPhone) {
+      trace.identity = registrationIdentity("phone", normalizeBrazilianPhone(verifiedPhone));
+    }
+    trace.provider = undefined;
     if (targetAccountType === "model" && !pendingProfessionalPhone && !existing?.phoneVerified) {
       throw new ProfessionalPhoneRegistrationError(
         "Confirme seu telefone antes de continuar o cadastro de acompanhante.",
@@ -255,6 +265,7 @@ export async function POST(req: NextRequest) {
       source: "auth-register",
       req,
     });
+    trace.outcome = "ACCOUNT_COMPLETED";
     const response = NextResponse.json(user, { status: created ? 201 : 200 });
     if (pendingProfessionalPhone) clearPendingProfessionalPhoneCookie(response);
     return response;
@@ -263,9 +274,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: err.issues }, { status: 400 });
     }
     if (err instanceof ProfessionalPhoneRegistrationError) {
+      trace.reason = "PROFESSIONAL_PHONE_PROOF_INVALID";
       return NextResponse.json({ error: err.message }, { status: 409 });
     }
     console.error("[register]", err);
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });
   }
-}
+});

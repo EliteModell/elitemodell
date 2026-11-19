@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 const EXPECTED_OWNER = "EliteModell";
 const EXPECTED_REPOSITORY = "elitemodell";
 const EXPECTED_PRODUCTION_BRANCH = "main";
+const REGISTRATION_PREVIEW_BRANCH = "homolog/registration-monitor-20261119";
 
 function fail(message) {
   console.error(`[release-context] BLOQUEADO: ${message}`);
@@ -45,6 +46,12 @@ function validateVercelProductionContext() {
 
 if (process.env.VERCEL === "1" && (process.env.VERCEL_ENV === "production" || process.env.VERCEL_TARGET_ENV === "production")) {
   validateVercelProductionContext();
+} else if (process.env.VERCEL === "1" && process.env.VERCEL_GIT_COMMIT_REF === REGISTRATION_PREVIEW_BRANCH) {
+  if (process.env.HOMOLOGATION_EXPECTED_BRANCH !== REGISTRATION_PREVIEW_BRANCH) {
+    fail("Configure as variáveis de isolamento para a branch de homologação.");
+  } else {
+    await import("./validate-homologation-isolation.mjs");
+  }
 } else if (process.argv.includes("--local-release")) {
   validateLocalContext();
 } else {

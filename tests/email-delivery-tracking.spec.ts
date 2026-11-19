@@ -1,3 +1,5 @@
+import { registrationCsvCell, registrationReportFilters } from "../src/lib/registration-admin-report";
+import { canFinalizeProfessionalIdentity } from "../src/lib/professional-identity-readiness";
 import { createHmac } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -56,4 +58,21 @@ test.describe("rastreamento de entrega do Resend", () => {
       { status: "REJECTED", lastEventAt: new Date("2026-10-27T12:07:00Z") },
     )).toBe(true);
   });
+});
+
+
+test("export neutraliza formulas e preserva filtros válidos", () => {
+  expect(registrationCsvCell("  =1+1")).toBe('"\'  =1+1"');
+  expect(registrationCsvCell('texto "legível"')).toBe('"texto ""legível"""');
+  expect(registrationReportFilters({ stage: "DRAFT", hours: "48", professional: "cmwjvig9i0005gbbtchxtvg6y" }))
+    .toMatchObject({ stage: "DRAFT", hours: "48", professional: "cmwjvig9i0005gbbtchxtvg6y" });
+  expect(registrationReportFilters({ stage: "UNKNOWN", hours: "1" })).toMatchObject({ stage: undefined, hours: "24" });
+});
+
+test("finalização exige autorização da sessão Didit atual", () => {
+  expect(canFinalizeProfessionalIdentity("current", null, "PENDING")).toBe(false);
+  expect(canFinalizeProfessionalIdentity("current", "old", "PENDING")).toBe(false);
+  expect(canFinalizeProfessionalIdentity("current", "current", "REJECTED")).toBe(false);
+  expect(canFinalizeProfessionalIdentity("current", "current", "PENDING")).toBe(true);
+  expect(canFinalizeProfessionalIdentity("current", "current", "APPROVED")).toBe(true);
 });

@@ -1,4 +1,6 @@
 "use client";
+
+import { normalizeBrazilianPhone } from "@/lib/brazilian-phone";
 import { useEffect, useMemo, useState } from "react";
 import type { ConfirmationResult, RecaptchaVerifier } from "firebase/auth";
 import { signIn, useSession } from "next-auth/react";
@@ -129,11 +131,12 @@ const copy: Record<FlowMode, {
 };
 
 function digits(value: string) {
-  return value.replace(/\D/g, "").slice(0, 11);
+  return normalizeBrazilianPhone(value);
 }
 
 function maskPhone(value: string) {
   const clean = digits(value);
+  if (clean.length > 11) return value;
   if (clean.length <= 2) return clean ? `(${clean}` : "";
   if (clean.length <= 7) return `(${clean.slice(0, 2)}) ${clean.slice(2)}`;
   return `(${clean.slice(0, 2)}) ${clean.slice(2, 7)}-${clean.slice(7)}`;

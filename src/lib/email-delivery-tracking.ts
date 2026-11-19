@@ -50,8 +50,6 @@ export async function markEmailAccepted(trackingId: string, providerMessageId: s
     data: {
       providerMessageId,
       status: "ACCEPTED",
-      lastEvent: "email.sent",
-      lastEventAt: new Date(),
       acceptedAt: new Date(),
       failureReason: null,
     },

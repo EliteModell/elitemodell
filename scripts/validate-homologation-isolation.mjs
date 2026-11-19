@@ -75,7 +75,7 @@ if (appUrl && authUrl && appUrl.origin !== authUrl.origin) {
 
 const previewRef = requireValue("HOMOLOGATION_SUPABASE_PROJECT_REF");
 const productionRef = requireValue("PRODUCTION_SUPABASE_PROJECT_REF");
-if (previewRef && productionRef && previewRef === productionRef) {
+if (previewRef && (previewRef === productionRef || previewRef === "jgvmpbrsxegwkrgjncsv")) {
   fail("O projeto Supabase de homologacao coincide com Production.");
 }
 
@@ -91,8 +91,11 @@ const directUrl = parseUrl("DIRECT_URL");
 for (const [name, url] of [["DATABASE_URL", databaseUrl], ["DIRECT_URL", directUrl]]) {
   if (url && !/^postgres(ql)?:$/.test(url.protocol)) fail(`${name} deve ser PostgreSQL.`);
 }
-if (directUrl && previewRef && !directUrl.hostname.includes(previewRef)) {
-  fail("DIRECT_URL nao pertence ao projeto Supabase de homologacao declarado.");
+for (const [name, url] of [["DATABASE_URL", databaseUrl], ["DIRECT_URL", directUrl]]) {
+  if (!url || !previewRef) continue;
+  const direct = url.hostname === `db.${previewRef}.supabase.co`;
+  const pooled = url.hostname.endsWith(".pooler.supabase.com") && url.username === `postgres.${previewRef}`;
+  if (!direct && !pooled) fail(`${name} nao pertence ao projeto Supabase de homologacao declarado.`);
 }
 if (databaseUrl && directUrl && databaseUrl.pathname !== directUrl.pathname) {
   fail("DATABASE_URL e DIRECT_URL apontam para bancos diferentes.");
@@ -132,6 +135,10 @@ const moderationMode = requireValue("HOMOLOGATION_MODERATION_MODE");
 if (moderationMode !== "manual") fail("A primeira fase exige moderacao manual e fail-closed.");
 if (hasAny(["CONTENT_MODERATION_ENDPOINT", "CONTENT_MODERATION_TOKEN"])) {
   fail("Integracao externa de moderacao presente durante a fase manual.");
+}
+
+if (hasAny(["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_VERIFY_SERVICE_SID", "TWILIO_MESSAGING_SERVICE_SID"])) {
+  fail("Credencial de SMS presente na homologacao inicial.");
 }
 
 if (value("MEDIA_STORAGE_PROVIDER").toUpperCase() === "BUNNY" || hasAny(["BUNNY_STORAGE_API_KEY", "BUNNY_CDN_SIGNING_KEY"])) {

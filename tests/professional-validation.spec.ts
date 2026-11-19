@@ -21,6 +21,7 @@ import {
   buildDigitVendorData,
   canRetryDigitStatus,
   createDigitIntentMarker,
+  createDigitSession,
   digitStatusWhenProviderUnavailable,
   digitVendorDataBelongsToUser,
   digitWebhookAuditPayload,
@@ -377,7 +378,7 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     expect(sessionRoute).toContain("pg_advisory_xact_lock");
     expect(sessionRoute).toContain("createDigitIntentMarker");
     expect(sessionRoute).toContain("findDigitSessionByVendorData");
-    expect(sessionRoute).toContain("verificationUrl: diditSession.url");
+    expect(sessionRoute).toContain("const verificationUrl = isSafeDigitVerificationUrl(diditSession.url)");
     expect(callback).toContain("hasActiveProfessionalDigit");
   });
 
@@ -712,4 +713,45 @@ test.describe("recuperacao segura de sessao Didit por conta", () => {
       vendor_data: "user-test",
     });
   });
+});
+
+test("Didit recupera sessoes na API v3 e envia chave idempotente nas repeticoes", async () => {
+  const initialFetch = globalThis.fetch;
+  const apiKey = process.env.DIDIT_API_KEY;
+  const workflow = process.env.DIDIT_WORKFLOW_ID;
+  process.env.DIDIT_API_KEY = "synthetic-test";
+  process.env.DIDIT_WORKFLOW_ID = "workflow-test";
+  try {
+    const calls: Array<{ key: string | null; body: string | undefined }> = [];
+    globalThis.fetch = async (input, init) => {
+      const url = new URL(String(input));
+      if (init?.method === "POST") {
+        calls.push({ key: new Headers(init.headers).get("Idempotency-Key"), body: init.body?.toString() });
+        return Response.json({ session_id: "same-session", url: "https://verify.didit.me/session/test", vendor_data: "owner" });
+      }
+      expect(url.pathname).toBe("/v3/sessions/");
+      expect(url.searchParams.get("vendor_data")).toBe("owner");
+      expect(url.searchParams.get("workflow_id")).toBe("workflow-test");
+      expect(url.searchParams.get("date_from")).toBe("2026-11-16T23:16:39.000Z");
+      return Response.json({ next: null, results: [{ session_id: "existing", session_url: "https://verify.didit.me/session/test", vendor_data: "owner", created_at: "2026-11-16T23:16:41Z" }] });
+    };
+    await expect(findDigitSessionByVendorData("owner", Date.parse("2026-11-16T23:16:39Z"))).resolves.toMatchObject({ session_id: "existing", url: "https://verify.didit.me/session/test" });
+    for (let count = 0; count < 2; count += 1) {
+      await createDigitSession("owner", "https://www.elitemodell.com.br/verificacao/callback?state=stable", "intent-stable-key");
+    }
+    expect(calls[0]?.key).toBe("intent-stable-key");
+    expect(calls[0]).toEqual(calls[1]);
+    globalThis.fetch = async () => Response.json({ results: [], next: "next-page" });
+    await expect(findDigitSessionByVendorData("owner")).rejects.toThrow("didit_reconciliation_inconclusive");
+    globalThis.fetch = async () => Response.json({ results: [], next: null });
+    await expect(findDigitSessionByVendorData("owner")).resolves.toBeNull();
+    globalThis.fetch = async () => new Response(null, { status: 503 });
+    await expect(findDigitSessionByVendorData("owner")).rejects.toThrow("503");
+  } finally {
+    globalThis.fetch = initialFetch;
+    if (apiKey === undefined) delete process.env.DIDIT_API_KEY;
+    else process.env.DIDIT_API_KEY = apiKey;
+    if (workflow === undefined) delete process.env.DIDIT_WORKFLOW_ID;
+    else process.env.DIDIT_WORKFLOW_ID = workflow;
+  }
 });

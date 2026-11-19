@@ -186,10 +186,17 @@ export function buildAuthEmail(payload: AuthEmailPayload, options?: { confirmati
   return null;
 }
 
+export class AuthEmailDeliveryError extends Error {
+  constructor(readonly reason: string, readonly providerStatus?: number) {
+    super(reason);
+    this.name = "AuthEmailDeliveryError";
+  }
+}
+
 export async function sendAuthEmail(
   to: string,
   email: AuthEmail,
-  options?: { idempotencyKey?: string; timeoutMs?: number; professionalId?: string; category?: string },
+  options?: { idempotencyKey?: string; timeoutMs?: number; professionalId?: string; category?: string; retryTransient?: boolean },
 ) {
   const deliverableEmail = realAccountEmail(to);
   if (!deliverableEmail) {
@@ -209,35 +216,47 @@ export async function sendAuthEmail(
   if (!resendKey) {
     console.error("[auth-email] RESEND_API_KEY ausente");
     if (tracking) await markEmailFailed(tracking.id, "provider-not-configured").catch(() => undefined);
-    throw new Error("Email provider not configured");
+    throw new AuthEmailDeliveryError("RESEND_NOT_CONFIGURED");
   }
 
+  const sendRequest = () => fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendKey}`,
+      "Content-Type": "application/json",
+      ...(options?.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : {}),
+    },
+    signal: AbortSignal.timeout(options?.timeoutMs ?? (options?.retryTransient ? 5_000 : 12_000)),
+    body: JSON.stringify({
+      from: process.env.EMAIL_FROM?.trim() || "Elite Modell <noreply@elitemodell.com.br>",
+      to: [deliverableEmail],
+      subject: email.subject,
+      html: email.html,
+    }),
+  });
   let res: Response;
   try {
-    res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendKey}`,
-        "Content-Type": "application/json",
-        ...(options?.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : {}),
-      },
-      signal: AbortSignal.timeout(options?.timeoutMs ?? 12_000),
-      body: JSON.stringify({
-        from: process.env.EMAIL_FROM?.trim() || "Elite Modell <noreply@elitemodell.com.br>",
-        to: [deliverableEmail],
-        subject: email.subject,
-        html: email.html,
-      }),
-    });
+    if (options?.retryTransient && options.idempotencyKey) {
+      const first = await sendRequest().catch(() => null);
+      if (first && first.status < 500) {
+        res = first;
+      } else {
+        await first?.body?.cancel().catch(() => undefined);
+        res = await sendRequest();
+      }
+    } else {
+      res = await sendRequest();
+    }
   } catch (error) {
-    if (tracking) await markEmailFailed(tracking.id, error instanceof DOMException && error.name === "TimeoutError" ? "provider-timeout" : "provider-network-error").catch(() => undefined);
-    throw error;
+    const timedOut = error instanceof DOMException && error.name === "TimeoutError";
+    if (tracking) await markEmailFailed(tracking.id, timedOut ? "provider-timeout" : "provider-network-error").catch(() => undefined);
+    throw new AuthEmailDeliveryError(timedOut ? "RESEND_TIMEOUT" : "RESEND_NETWORK_ERROR");
   }
 
   if (!res.ok) {
     console.error("[auth-email] Resend recusou a mensagem.", { status: res.status });
     if (tracking) await markEmailFailed(tracking.id, `provider-http-${res.status}`).catch(() => undefined);
-    throw new Error("Failed to send email");
+    throw new AuthEmailDeliveryError("RESEND_HTTP_ERROR", res.status);
   }
 
   const payload = await res.json().catch(() => ({})) as { id?: string };

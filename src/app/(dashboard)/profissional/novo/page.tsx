@@ -1,4 +1,6 @@
 "use client";
+
+import { canFinalizeProfessionalIdentity } from "@/lib/professional-identity-readiness";
 /* eslint-disable @next/next/no-img-element -- Upload previews can be blob/data/private URLs before the final hosted image is available. */
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
@@ -83,6 +85,7 @@ type CompletionState = {
   profileIssues: Array<{ field: string; label: string; step: number; stepLabel: string }>;
 };
 type DiditStatusResponse = {
+  submissionEligible?: boolean;
   available?: boolean;
   provider?: string;
   sessionId?: string | null;
@@ -378,6 +381,7 @@ export default function ProfissionalNovoPage() {
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const [mainPhotoPreview, setMainPhotoPreview] = useState<string | null>(null);
   const [galleryPreviews, setGalleryPreviews] = useState<Record<string, string>>({});
+  const [eligibleDiditSession, setEligibleDiditSession] = useState<string | null>(null);
   const [diditAvailable, setDigitAvailable] = useState(false);
   const [diditMessage, setDigitMessage] = useState<string | null>(null);
   const [diditRetryAllowed, setDigitRetryAllowed] = useState(false);
@@ -779,8 +783,18 @@ export default function ProfissionalNovoPage() {
       try {
         const response = await fetch("/api/didit/session", { cache: "no-store", signal: controller.signal });
         const data = await response.json().catch(() => ({})) as DiditStatusResponse;
-        if (!active || !response.ok || diditStartingRef.current) return;
+        if (!active || diditStartingRef.current) return;
+        if (!response.ok) {
+          setEligibleDiditSession(null);
+          if (response.status === 401) setDigitMessage("Sua sessão expirou. Entre novamente para retomar o rascunho.");
+          return;
+        }
+        if (typeof data.status !== "string") {
+          setEligibleDiditSession(null);
+          return;
+        }
         awaitingResult = data.status === "PENDING";
+        setEligibleDiditSession(data.submissionEligible && data.sessionId ? data.sessionId : null);
         setDigitAvailable(Boolean(data.available));
         setDigitMessage(data.message ?? null);
         setDigitRetryAllowed(Boolean(data.retryAllowed));
@@ -1099,11 +1113,12 @@ export default function ProfissionalNovoPage() {
       const res = await fetch("/api/didit/session", { method: "POST" });
       const data = await res.json().catch(() => ({})) as DiditStatusResponse & { reused?: boolean };
       if (!res.ok) {
-        console.error("[Didit] Falha ao iniciar verificacao.", { status: res.status, data });
+        console.error("[Didit] Falha ao iniciar verificacao.", { status: res.status });
         toast.error(data.error ?? "Não foi possível iniciar a verificação. Tente novamente.");
         return;
       }
 
+      setEligibleDiditSession(data.submissionEligible && data.sessionId ? data.sessionId : null);
       set("kycProvider", data.provider ?? "DIDIT");
       set("kycSessionId", data.sessionId ?? "");
       set("kycStatus", data.status ?? "PENDING");
@@ -1280,6 +1295,11 @@ export default function ProfissionalNovoPage() {
       return;
     }
 
+    if (!canFinalizeProfessionalIdentity(form.kycSessionId, eligibleDiditSession, form.kycStatus)) {
+      setStep(7);
+      toast.error("Confirme o envio da documentação na Didit antes de finalizar.");
+      return;
+    }
     submittingRef.current = true;
     setLoading(true);
     try {
@@ -1331,6 +1351,8 @@ export default function ProfissionalNovoPage() {
         body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({})) as {
+        ok?: boolean;
+        professionalId?: string;
         error?: unknown;
         status?: string;
         receiptStatus?: string;
@@ -1340,6 +1362,11 @@ export default function ProfissionalNovoPage() {
       };
       if (!res.ok) {
         toast.error(responseError(data));
+        return;
+      }
+      if (data.ok !== true || !data.professionalId) {
+        const recovered = await recoverSubmittedProfile();
+        if (!recovered) toast.error("O servidor não confirmou o envio. Seu rascunho continua salvo.");
         return;
       }
       if (accountUserId) localStorage.removeItem(professionalDraftStorageKey(accountUserId));
@@ -1403,12 +1430,12 @@ export default function ProfissionalNovoPage() {
       if (form.mainPhotoUrl.startsWith("blob:")) return { field: "mainPhotoUrl", message: "A foto está sendo processada, aguarde um momento." };
       if (!form.mainPhotoUrl || !REMOTE_IMAGE_RE.test(form.mainPhotoUrl)) return { field: "mainPhotoUrl", message: "Selecione e envie a foto principal do perfil para continuar." };
     }
-    if (targetStep === 7 && (form.kycStatus === "REJECTED" || !form.kycSessionId)) {
+    if (targetStep === 7 && (!canFinalizeProfessionalIdentity(form.kycSessionId, eligibleDiditSession, form.kycStatus))) {
       return {
         field: "kycSessionId",
         message: form.kycStatus === "REJECTED"
           ? diditMessage ?? "Confira a pendência na verificação de identidade antes de continuar."
-          : "Inicie sua verificação de identidade com a Didit para continuar. O resultado pode ficar pendente sem apagar seu cadastro.",
+          : diditMessage ?? "Conclua o envio do documento e da selfie na Didit. O rascunho continua salvo.",
       };
     }
     return null;
@@ -1433,7 +1460,11 @@ export default function ProfissionalNovoPage() {
         else toast.error(result.error ?? "Não foi possível salvar esta etapa.");
         return;
       }
-      if (result.completion) setServerCompletion(result.completion);
+      if (!result.completion) {
+        toast.error("O servidor não confirmou esta etapa. Seu rascunho continua salvo.");
+        return;
+      }
+      setServerCompletion(result.completion);
       setStep((current) => Math.min(current + 1, STEPS.length - 1));
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
@@ -1453,6 +1484,7 @@ export default function ProfissionalNovoPage() {
   const diditApproved = form.kycStatus === "APPROVED";
   const diditRejected = form.kycStatus === "REJECTED";
   const diditPending = Boolean(form.kycSessionId) && !diditApproved && !diditRejected;
+  const canFinalizeIdentity = canFinalizeProfessionalIdentity(form.kycSessionId, eligibleDiditSession, form.kycStatus);
   const registrationStatus = professionalRegistrationStatus({
     professionalStatus: registrationContext.status,
     registrationSubmittedAt: registrationContext.submittedAt,
@@ -2194,6 +2226,7 @@ export default function ProfissionalNovoPage() {
           whatsapp={form.whatsapp}
           diditApproved={diditApproved}
           diditPending={diditPending}
+          diditSubmissionEligible={canFinalizeIdentity}
           diditRejected={diditRejected}
           diditRetryAllowed={diditRetryAllowed}
           diditAvailable={diditAvailable}
@@ -2213,12 +2246,12 @@ export default function ProfissionalNovoPage() {
         </button>
 
         {!isLast ? (
-          <button onClick={next} disabled={loading}
+          <button onClick={next} disabled={loading || (step === 7 && Boolean(form.kycSessionId) && !canFinalizeIdentity)}
             style={{ padding: "12px 32px", background: loading ? "#65009b" : GOLD, border: "none", borderRadius: 10, color: "#080808", fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}>
-            {loading ? "Salvando..." : step === 7 && diditPending ? "Finalizar meu cadastro" : step === 7 && !diditApproved ? "Iniciar verificação para continuar" : "Continuar →"}
+            {loading ? "Salvando..." : step === 7 && canFinalizeIdentity ? "Finalizar meu cadastro" : step === 7 && diditPending ? "Aguardando confirmação da Didit" : step === 7 ? "Iniciar verificação para continuar" : "Continuar →"}
           </button>
         ) : (
-          <button onClick={submit} disabled={loading}
+          <button onClick={submit} disabled={loading || !canFinalizeIdentity}
             style={{ padding: "12px 32px", background: loading ? "#65009b" : GOLD, border: "none", borderRadius: 10, color: "#080808", fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}>
             {loading ? "Enviando..." : "Confirmar e enviar cadastro"}
           </button>

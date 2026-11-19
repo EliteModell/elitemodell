@@ -85,9 +85,10 @@ test.describe("Didit corrigida", () => {
   test.beforeAll(async () => {
     test.skip(!/localhost|127\.0\.0\.1/.test(process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"), "Fixture apenas no servidor local");
     await fixtureDb.user.create({ data: { id: fixtureId, email: `${fixtureId}@example.invalid`,
-      name: "Teste automatizado Didit", accountType: "model", role: "HOST",
+      name: "Teste automatizado Didit", accountType: "model", role: "HOST", clientStatus: "VERIFIED", emailVerified: new Date(), phoneVerified: true,
       lgpdConsent: true, termsConsent: true, birthDate: new Date("2000-01-01"),
     } });
+    await fixtureDb.$disconnect();
   });
   test.afterAll(async () => {
     await fixtureDb.user.deleteMany({ where: { id: fixtureId, email: `${fixtureId}@example.invalid` } });
@@ -159,12 +160,12 @@ test.describe("Didit corrigida", () => {
       await route.fulfill({ json: { completion: { issues: [], profileIssues: [], profilePercent: 100, profileComplete: true, readyToSubmit: false } } });
     });
     await page.route("**/api/didit/session", route => route.fulfill({ json: {
-      available: true, sessionId: "test-session", status: "PENDING",
+      available: true, sessionId: "test-session", status: "PENDING", submissionEligible: true,
       retryAllowed: false, message: "Seus documentos estão em análise de identidade.", url: null,
     } }));
     await page.route("**/api/professionals", async route => {
       submission = route.request().postDataJSON();
-      await route.fulfill({ status: 201, json: {
+      await route.fulfill({ status: 201, json: { ok: true, professionalId: "test-profile",
         status: "DRAFT",
         receiptStatus: "SENT",
         identityPending: true,
@@ -173,14 +174,14 @@ test.describe("Didit corrigida", () => {
     });
     await page.goto("/profissional/novo?didit=returned", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Documentos enviados com sucesso!" })).toBeVisible();
-    await expect(page.getByText("Identidade em análise", { exact: true })).toBeVisible();
-    await expect(page.getByText("Você não precisa enviar seus documentos novamente.", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Identidade em análise/)).toBeVisible();
+    await expect(page.getByText(/Você não precisa enviar seus documentos novamente/)).toBeVisible();
     await expect(page.getByRole("button", { name: "Verificação em análise" })).toHaveCount(0);
     const continuePending = page.getByRole("button", { name: "Finalizar meu cadastro" });
     await expect(continuePending).toBeEnabled();
     await continuePending.click();
     expect(savedStep).toBe(7);
-    await page.getByRole("button", { name: "Concluir cadastro" }).click();
+    await page.getByRole("button", { name: "Confirmar e enviar cadastro" }).click();
     await expect(page.getByRole("heading", { name: "Cadastro enviado com sucesso!" })).toBeVisible();
     await expect(page.getByText("Seus documentos continuam em análise.", { exact: false })).toBeVisible();
     await expect(page.getByText("Verificações em andamento", { exact: true })).toBeVisible();

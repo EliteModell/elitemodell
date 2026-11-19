@@ -1,6 +1,7 @@
+import { monitorRegistration, registrationIdentity } from "@/lib/registration-monitor";
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
@@ -91,10 +92,14 @@ async function markFirebaseSendResult({
   return NextResponse.json({ ok: true, provider: FIREBASE_PHONE_PROVIDER });
 }
 
-export async function POST(req: NextRequest) {
+export const POST = monitorRegistration("PHONE_SEND", async (req, trace) => {
   try {
     const body = schema.parse(await req.json());
     const phone = normalizeBrazilianPhone(body.phone);
+    trace.accountType = body.accountType;
+    trace.channel = "sms";
+    trace.provider = "FIREBASE";
+    if (isValidBrazilianMobilePhone(phone)) trace.identity = registrationIdentity("phone", phone);
     const requestIp = getClientIP(req);
 
     if (!isValidBrazilianMobilePhone(phone)) {
@@ -102,6 +107,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (body.action !== "prepare") {
+      if (body.action === "error") {
+        trace.outcome = "ERROR";
+        trace.reason = "FIREBASE_CLIENT_REPORTED_FAILURE";
+      }
       return markFirebaseSendResult({
         action: body.action,
         verificationId: body.verificationId,
@@ -111,6 +120,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    trace.outcome = "PREPARED";
     const limited = await enforceRateLimitAsync(
       `otp-firebase-send-ip:${requestIp}`,
       OTP_MAX_SENDS_PER_IP_PER_HOUR,
@@ -204,4 +214,4 @@ export async function POST(req: NextRequest) {
     console.error("[phone/firebase-send]", err);
     return NextResponse.json({ error: "Nao foi possivel registrar a solicitacao de SMS." }, { status: 500 });
   }
-}
+});

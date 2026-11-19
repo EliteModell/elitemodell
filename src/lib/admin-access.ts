@@ -22,6 +22,8 @@ export type AdminPermission =
   | "finance:adjust"
   | "settings:manage"
   | "staff:manage"
+  | "registration:export"
+  | "registration:monitor"
   | "audit:view"
   | "legal:manage"
   | "privacy:manage"
@@ -32,17 +34,17 @@ export const ADMIN_ROLE_PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
     "dashboard:view", "professionals:review", "hosts:review", "properties:review",
     "kyc:review", "clients:manage", "reports:manage", "support:manage",
     "finance:view", "finance:adjust", "settings:manage",
-    "staff:manage", "audit:view", "legal:manage", "privacy:manage",
+    "staff:manage", "audit:view", "registration:monitor", "registration:export", "legal:manage", "privacy:manage",
     "incidents:manage",
   ],
   ADMIN_GERAL: [
     "dashboard:view", "professionals:review", "hosts:review", "properties:review",
     "kyc:review", "clients:manage", "reports:manage", "support:manage",
-    "finance:view", "audit:view", "privacy:manage",
+    "finance:view", "audit:view", "registration:monitor", "registration:export", "privacy:manage",
   ],
   MODERADOR_CADASTROS: [
     "dashboard:view", "professionals:review", "hosts:review", "properties:review",
-    "kyc:review", "clients:manage", "audit:view",
+    "kyc:review", "clients:manage", "audit:view", "registration:monitor",
   ],
   MODERADOR_CONTEUDO: [
     "dashboard:view", "reports:manage", "professionals:review",

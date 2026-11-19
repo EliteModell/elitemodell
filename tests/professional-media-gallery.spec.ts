@@ -43,8 +43,8 @@ test.describe("galeria profissional de fotos e videos", () => {
     expect(onboarding).toContain('fetch("/api/professional/media"');
     expect(onboarding).toContain('kind: "VIDEO"');
     expect(onboarding).toContain("multiple hidden");
-    expect(onboarding).toContain("progress: 80");
-    expect(onboarding).toContain("presentationVideoUrl: uploaded.reference");
+    expect(onboarding).toContain("onProgress: ({ percentage, stage })");
+    expect(onboarding).toContain("presentationVideoUrl: uploaded.url ?? uploaded.path");
   });
 
   test("perfil publico libera somente ativos aprovados por todos os gates", () => {

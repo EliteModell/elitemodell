@@ -405,6 +405,7 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     const params = new URLSearchParams(twilioBody);
     expect(params.get("To")).toBe("+5511917934340");
     expect(params.get("Channel")).toBe("sms");
+    expect(data.expiresInSeconds).toBe(600);
     expect(params.get("RiskCheck")).toBe("disable");
     expect(params.has("CustomCode")).toBe(false);
   });
@@ -821,6 +822,20 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     expect(params.get("To")).toBe("+5511917934340");
     expect(params.get("Code")).toBe("123456");
     expect(result.approved).toBe(true);
+  });
+
+  test("valida pelo SID persistido e recusa número longo sem truncar", async () => {
+    configureTwilio();
+    const verificationSid = "VE" + "1".repeat(32);
+    globalThis.fetch = async (_input, init) => {
+      const params = new URLSearchParams(String(init?.body ?? ""));
+      expect(params.get("VerificationSid")).toBe(verificationSid);
+      expect(params.has("To")).toBe(false);
+      return Response.json({ sid: verificationSid, status: "approved" });
+    };
+    await expect(checkTwilioVerification("+55 (11) 91793-4340", "123456", verificationSid))
+      .resolves.toMatchObject({ approved: true, sid: verificationSid });
+    expect(() => toBrazilianE164("+55 (11) 91793-43400")).toThrow();
   });
 
   test("parser do frontend rejeita HTML sem executar response.json", async () => {

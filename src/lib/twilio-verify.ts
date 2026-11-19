@@ -7,6 +7,8 @@ export const TWILIO_NOT_CONFIGURED_ERROR = "Twilio não configurado no servidor"
 export const TWILIO_WHATSAPP_NOT_CONFIGURED_ERROR =
   "O envio pelo WhatsApp ainda não está disponível. Você pode receber o código por SMS.";
 
+export const TWILIO_VERIFY_TTL_SECONDS = 10 * 60;
+
 export type TwilioVerifyChannel = "sms" | "whatsapp";
 
 type TwilioVerifyPayload = {
@@ -163,6 +165,7 @@ async function twilioVerifyRequest(path: string, body: URLSearchParams) {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body,
+      signal: AbortSignal.timeout(8_000),
       cache: "no-store",
     },
   );
@@ -326,11 +329,16 @@ export function sendTwilioSmsVerification(phone: string) {
   return sendTwilioVerification(phone, "sms");
 }
 
-export async function checkTwilioVerification(phone: string, code: string) {
+export async function checkTwilioVerification(phone: string, code: string, verificationSid?: string | null) {
   const to = toBrazilianE164(phone);
   const payload = await twilioVerifyRequest(
     "VerificationCheck",
-    new URLSearchParams({ To: to, Code: code }),
+    new URLSearchParams({
+      ...(verificationSid && /^VE[0-9a-f]{32}$/i.test(verificationSid)
+        ? { VerificationSid: verificationSid }
+        : { To: to }),
+      Code: code,
+    }),
   );
 
   return {

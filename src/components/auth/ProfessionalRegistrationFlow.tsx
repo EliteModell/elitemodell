@@ -1,5 +1,7 @@
 "use client";
 
+import { normalizeBrazilianPhone } from "@/lib/brazilian-phone";
+
 import { NoPrefetchLink as Link } from "@/components/NoPrefetchLink";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
@@ -94,11 +96,12 @@ const benefits = [
 ];
 
 function onlyDigits(value: string) {
-  return value.replace(/\D/g, "").slice(0, 11);
+  return normalizeBrazilianPhone(value);
 }
 
 function formatPhone(value: string) {
   const digits = onlyDigits(value);
+  if (digits.length > 11) return value;
 
   if (digits.length <= 2) return digits;
   if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;

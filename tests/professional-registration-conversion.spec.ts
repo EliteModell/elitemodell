@@ -116,7 +116,7 @@ test("apresenta a experiência premium e validação por canal", async ({ page }
   await expect(page.getByLabel("Código de 6 dígitos")).toBeVisible();
 });
 
-test("telefone permanece legível e sem overflow nos viewports críticos", async ({ page }) => {
+test("telefone permanece legível e sem overflow nos viewports críticos", async ({ page }, testInfo) => {
   for (const width of MOBILE_WIDTHS) {
     await page.setViewportSize({ width, height: width <= 430 ? 844 : 900 });
     await page.goto("/cadastro/acompanhante", { waitUntil: "domcontentloaded" });
@@ -179,7 +179,7 @@ test("telefone permanece legível e sem overflow nos viewports críticos", async
       if (width === 390) {
         await validationSection.getByLabel(/Confirmo que tenho 18 anos ou mais/).check();
         await validationSection.screenshot({
-          path: "artifacts/visual-review/professional-registration-first-step-reorganized.png",
+          path: testInfo.outputPath("professional-registration-first-step-reorganized.png"),
         });
       }
     }

@@ -1,11 +1,13 @@
+import { monitorRegistration, registrationIdentity } from "@/lib/registration-monitor";
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import {
   TWILIO_NOT_CONFIGURED_ERROR,
+  TWILIO_VERIFY_TTL_SECONDS,
   TWILIO_WHATSAPP_NOT_CONFIGURED_ERROR,
   TwilioVerifyConfigurationError,
   TwilioVerifyProviderError,
@@ -21,7 +23,6 @@ import {
   OTP_MAX_SENDS_PER_IP_PER_HOUR,
   OTP_RESEND_SECONDS,
   OTP_SEND_WINDOW_MINUTES,
-  OTP_TTL_MINUTES,
   PHONE_ACCOUNT_TYPES,
   formatBrazilianPhone,
   hashOtpCode,
@@ -70,7 +71,7 @@ function retryDetails(retryAt: Date) {
   };
 }
 
-export async function POST(req: NextRequest) {
+export const POST = monitorRegistration("PHONE_SEND", async (req, trace) => {
   let verificationId: string | null = null;
   let maskedPhone = "desconhecido";
   let requestedChannel: TwilioVerifyChannel = "sms";
@@ -78,7 +79,11 @@ export async function POST(req: NextRequest) {
   try {
     const body = schema.parse(await req.json());
     requestedChannel = body.channel;
+    trace.channel = body.channel;
+    trace.provider = "TWILIO";
     const phone = normalizeBrazilianPhone(body.phone);
+    trace.accountType = body.accountType;
+    if (isValidBrazilianMobilePhone(phone)) trace.identity = registrationIdentity("phone", phone);
     const requestIp = getClientIP(req);
 
     if (isValidBrazilianMobilePhone(phone)) {
@@ -92,6 +97,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!isValidBrazilianMobilePhone(phone)) {
+      trace.reason = "INVALID_PHONE";
       return jsonError("Informe um celular brasileiro válido.", 400, "INVALID_PHONE");
     }
 
@@ -193,7 +199,7 @@ export async function POST(req: NextRequest) {
         // Campo legado obrigatório: o OTP real é criado e mantido exclusivamente
         // pela Twilio Verify e nunca é persistido pela aplicação.
         codeHash: hashOtpCode(phone, crypto.randomUUID()),
-        expiresAt: new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000),
+        expiresAt: new Date(Date.now() + TWILIO_VERIFY_TTL_SECONDS * 1000),
         requestIp: requestIp === "unknown" ? null : requestIp,
         termsConsent: body.termsConsent,
         lgpdConsent: body.lgpdConsent,
@@ -204,6 +210,7 @@ export async function POST(req: NextRequest) {
     verificationId = verification.id;
 
     const delivery = await sendTwilioVerification(phone, body.channel);
+    trace.providerReference = delivery.sid;
 
     console.info("[phone/send-code] delivery_response", {
       endpoint: "/api/auth/phone/send-code",
@@ -227,17 +234,21 @@ export async function POST(req: NextRequest) {
         ? "Solicitação aceita pela Twilio para entrega via WhatsApp"
         : "Solicitação aceita pela Twilio para entrega via SMS",
       phone: formatBrazilianPhone(phone),
-      expiresInSeconds: OTP_TTL_MINUTES * 60,
+      expiresInSeconds: TWILIO_VERIFY_TTL_SECONDS,
       resendInSeconds: OTP_RESEND_SECONDS,
       delivery: { provider: "twilio-verify", channel: body.channel },
     });
   } catch (err) {
+    if (err instanceof TwilioVerifyProviderError) trace.providerCode = err.providerCode;
+    trace.reason = err instanceof TwilioVerifyConfigurationError || err instanceof TwilioWhatsAppVerifyConfigurationError
+      ? "PROVIDER_CONFIGURATION"
+      : err instanceof TwilioVerifyProviderError ? "PROVIDER_SEND_REJECTED" : "SEND_FAILED";
     if (verificationId) {
       await prisma.phoneVerificationCode
         .update({
           where: { id: verificationId },
           data: {
-            sendError: err instanceof Error ? err.message.slice(0, 500) : "Erro ao enviar código.",
+            sendError: trace.providerCode ? "TWILIO_" + trace.providerCode : trace.reason,
           },
         })
         .catch(() => undefined);
@@ -321,8 +332,8 @@ export async function POST(req: NextRequest) {
     console.error("[phone/send-code] unexpected_error", {
       endpoint: "/api/auth/phone/send-code",
       phone: maskedPhone,
-      error: err instanceof Error ? err.message : "Erro desconhecido",
+      reason: trace.reason,
     });
     return jsonError("Não foi possível enviar o código agora. Tente novamente.", 500);
   }
-}
+});

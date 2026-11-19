@@ -1,3 +1,5 @@
+import { recordRegistrationEvent, registrationIdentity } from "@/lib/registration-monitor";
+import { normalizeBrazilianPhone } from "@/lib/brazilian-phone";
 import { prisma } from "@/lib/prisma";
 import { digitVendorDataBelongsToUser, fetchDigitSessionDecision, isSafeDigitVerificationUrl, isSubmittedDigitStatus } from "@/lib/didit";
 import { assessProfessionalDiditDecision } from "@/lib/professional-didit";
@@ -10,8 +12,8 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
   const outcome = await prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`didit-professional:${userId}`}))`;
     const professional = await tx.professional.findFirst({
-      where: { userId, kycProvider: "DIDIT", kycSessionId: sessionId },
-      select: { id: true, userId: true, status: true, kycStatus: true, registrationSubmittedAt: true, verificationUrl: true, user: { select: { email: true, emailVerified: true, name: true } } },
+      where: { userId, kycProvider: "DIDIT", OR: [{ kycSessionId: sessionId }, { kycSessionId: null, user: { kycSessionId: sessionId } }] },
+      select: { id: true, userId: true, status: true, kycSessionId: true, kycStatus: true, verifStatus: true, docStatus: true, registrationSubmittedAt: true, verificationUrl: true, user: { select: { email: true, emailVerified: true, name: true, phone: true, phoneVerified: true, clientStatus: true, kycSessionId: true, kycReviewedAt: true, kycRejectionReason: true } } },
     });
     if (!professional) throw new Error("didit_active_session_changed");
     const decision = await fetchDigitSessionDecision(sessionId);
@@ -24,27 +26,38 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
     const resumable = ["Not Started", "In Progress", "Awaiting User", "Not Finished"].includes(decision.status);
     const candidateUrl = isSafeDigitVerificationUrl(decision.session_url) ? decision.session_url : professional.verificationUrl;
     const url = resumable && isSafeDigitVerificationUrl(candidateUrl) ? candidateUrl : null;
-    await tx.user.updateMany({
-      where: { id: userId, kycSessionId: sessionId },
+    const clientStatus = approved ? "VERIFIED" : rejected ? "REJECTED" : "PENDING_REVIEW";
+    const identityDocumentStatus = approved ? "APPROVED" : rejected ? "REJECTED" : "PENDING";
+    const rejectionReason = rejected ? assessment.reason : null;
+    const finalDecision = approved || rejected;
+    const previous = professional.user;
+    const reviewedAt = finalDecision
+      ? professional.kycStatus === assessment.status && previous?.kycReviewedAt ? previous.kycReviewedAt : new Date()
+      : null;
+    if (previous?.clientStatus !== clientStatus || previous?.kycRejectionReason !== rejectionReason
+      || previous?.kycReviewedAt !== reviewedAt || previous?.kycSessionId === null) await tx.user.updateMany({
+      where: { id: userId, OR: [{ kycSessionId: sessionId }, { kycSessionId: null }] },
       data: {
-        clientStatus: approved ? "VERIFIED" : rejected ? "REJECTED" : "PENDING_REVIEW",
-        kycReviewedAt: approved || rejected ? new Date() : null,
-        kycRejectionReason: rejected ? assessment.reason : null,
+        clientStatus,
+        kycSessionId: sessionId,
+        kycReviewedAt: reviewedAt,
+        kycRejectionReason: rejectionReason,
       },
     });
-    await tx.professional.updateMany({
+    const moveToReview = approved && professional.status === "DRAFT" && Boolean(professional.registrationSubmittedAt);
+    if (professional.kycSessionId === null || professional.kycStatus !== assessment.status || professional.verificationUrl !== url
+      || professional.verifStatus !== identityDocumentStatus || professional.docStatus !== identityDocumentStatus || moveToReview) await tx.professional.updateMany({
       where: { userId, kycProvider: "DIDIT", kycSessionId: sessionId },
       data: {
+        kycSessionId: sessionId,
         kycStatus: assessment.status,
-        verifStatus: approved ? "APPROVED" : rejected ? "REJECTED" : "PENDING",
-        docStatus: approved ? "APPROVED" : rejected ? "REJECTED" : "PENDING",
+        verifStatus: identityDocumentStatus,
+        docStatus: identityDocumentStatus,
         // Never overwrite a manual moderation reason with identity status.
         rejectReason: professional.status === "REJECTED" || professional.status === "SUSPENDED"
           ? undefined : rejected ? assessment.reason : null,
         verificationUrl: url,
-        status: approved && professional.status === "DRAFT" && professional.registrationSubmittedAt
-          ? "PENDING_REVIEW"
-          : undefined,
+        status: moveToReview ? "PENDING_REVIEW" : undefined,
       },
     });
     let synchronizedMediaAgeCount = 0;
@@ -94,12 +107,26 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
         retryAllowed: assessment.retryAllowed, message: assessment.reason, url, starting: false },
       rejected, professionalId: professional.id ?? "", professionalUserId: professional.userId ?? "",
       email: professional.user?.email ?? null, emailVerified: Boolean(professional.user?.emailVerified), name: professional.user?.name ?? null, reason: assessment.reason,
+      changedStatus: professional.kycStatus !== assessment.status,
+      account: professional.user,
       becameApproved: approved && professional.kycStatus !== "APPROVED",
       synchronizedMediaAgeCount,
       synchronizedOwnerDepictionCount,
     };
   }, { maxWait: 5_000, timeout: 15_000 });
 
+  if (outcome.changedStatus && outcome.account) {
+    const { account } = outcome;
+    const identity = account.phone && account.phoneVerified
+      ? registrationIdentity("phone", normalizeBrazilianPhone(account.phone))
+      : registrationIdentity("email", account.email);
+    recordRegistrationEvent("IDENTITY", {
+      accountType: "model", identity, provider: "DIDIT",
+      outcome: outcome.response.status === "APPROVED" ? "IDENTITY_APPROVED"
+        : outcome.rejected ? "IDENTITY_REJECTED" : "IDENTITY_PENDING",
+      reason: outcome.rejected ? "DIDIT_REQUIRES_ACTION" : undefined,
+    }, 200);
+  }
   if (outcome.rejected && outcome.professionalId && outcome.professionalUserId) {
     let currentAssessment: ReturnType<typeof assessProfessionalDiditDecision> | null = null;
     try {

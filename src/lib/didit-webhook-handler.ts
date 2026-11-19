@@ -70,7 +70,7 @@ export async function handleDigitWebhook(req: NextRequest) {
 
   try {
     const activeProfessional = await prisma.professional.findFirst({
-      where: { kycProvider: "DIDIT", kycSessionId: sessionId },
+      where: { kycProvider: "DIDIT", OR: [{ kycSessionId: sessionId }, { kycSessionId: null, user: { kycSessionId: sessionId } }] },
       select: { userId: true },
     });
     if (!activeProfessional || !digitWebhookTargetsActiveSession({

@@ -1,6 +1,8 @@
+import { monitorRegistration, registrationIdentity } from "@/lib/registration-monitor";
+import { normalizeBrazilianPhone } from "@/lib/brazilian-phone";
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
@@ -73,11 +75,22 @@ export async function GET() {
   });
 }
 
-export async function PATCH(req: NextRequest) {
+export const PATCH = monitorRegistration("DRAFT", async (req, trace) => {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   try {
+    trace.accountType = "model";
+    const account = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { phone: true, phoneVerified: true, email: true },
+    });
+    if (account) {
+      trace.identity = account.phone && account.phoneVerified
+        ? registrationIdentity("phone", normalizeBrazilianPhone(account.phone))
+        : registrationIdentity("email", account.email);
+    }
     const { step, form, flow } = draftSchema.parse(await req.json());
+    trace.step = step;
     const professional = await loadProfessional(session.user.id);
     if (!professional) return NextResponse.json({ error: "Rascunho profissional não encontrado." }, { status: 404 });
     const persistedCompletion = professionalCompletion({
@@ -135,6 +148,7 @@ export async function PATCH(req: NextRequest) {
       : professionalSubmissionCompletion(merged);
     const stepIssues = completion.issues.filter((issue) => issue.step === step);
     if (stepIssues.length) {
+      trace.reason = "DRAFT_STEP_INCOMPLETE";
       return NextResponse.json({
         error: `Complete os campos obrigatórios desta etapa: ${stepIssues.map((issue) => issue.label).join(", ")}.`,
         code: "step_incomplete",
@@ -198,6 +212,7 @@ export async function PATCH(req: NextRequest) {
       }
       const saved = await loadProfessional(session.user.id);
       const savedCompletion = professionalOnboardingCompletion({ ...saved!, specialties: saved!.specialties, emailVerified: saved!.user.emailVerified });
+      trace.outcome = "STEP_SAVED";
       return NextResponse.json({ ok: true, savedStep: step, completion: savedCompletion });
     }
     if (step === 0) {
@@ -268,6 +283,7 @@ export async function PATCH(req: NextRequest) {
 
     const saved = await loadProfessional(session.user.id);
     const savedCompletion = professionalSubmissionCompletion({ ...saved!, specialties: saved!.specialties, emailVerified: saved!.user.emailVerified });
+    trace.outcome = "STEP_SAVED";
     return NextResponse.json({ ok: true, savedStep: step, completion: savedCompletion });
   } catch (error) {
     if (error instanceof z.ZodError) return NextResponse.json({ error: "Dados da etapa inválidos.", issues: error.issues }, { status: 400 });
@@ -275,4 +291,4 @@ export async function PATCH(req: NextRequest) {
     console.error("[professional/draft]", error);
     return NextResponse.json({ error: "Não foi possível salvar esta etapa." }, { status: 500 });
   }
-}
+});

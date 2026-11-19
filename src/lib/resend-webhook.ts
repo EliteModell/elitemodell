@@ -51,7 +51,11 @@ export async function handleResendWebhook(request: Request) {
       return Response.json({ ok: true, ignored: true });
     }
     if (shouldApplyResendEvent(delivery, update)) {
-      await prisma.emailDelivery.update({ where: { providerMessageId }, data: update });
+      const result = await prisma.emailDelivery.updateMany({
+        where: { providerMessageId, status: delivery.status, lastEventAt: delivery.lastEventAt },
+        data: update,
+      });
+      if (!result.count) throw new Error("Concurrent delivery update");
     }
     await markWebhookEventDone("RESEND", id);
     return Response.json({ ok: true });

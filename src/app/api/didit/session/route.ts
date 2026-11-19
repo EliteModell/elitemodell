@@ -1,3 +1,5 @@
+import { monitorRegistration, registrationIdentity } from "@/lib/registration-monitor";
+import { normalizeBrazilianPhone } from "@/lib/phone-otp";
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
@@ -26,7 +28,7 @@ import { professionalCompletion } from "@/lib/professional-completeness";
 import { enforceRateLimitAsync } from "@/lib/security";
 
 const DIGIT_INTENT_LEASE_MS = 2 * 60_000;
-const DIGIT_INTENT_EXPIRATION_MS = 7 * 24 * 60 * 60_000;
+const DIGIT_INTENT_EXPIRATION_MS = 24 * 60 * 60_000;
 
 function appBaseUrl() {
   return (
@@ -75,6 +77,7 @@ async function currentStatus(userId: string) {
     const starting = professional?.kycProvider === "DIDIT" && isDigitIntentInFlight(professional.verificationUrl);
     return {
       sessionId: null,
+      submissionEligible: false,
       status: starting ? DIDIT_PENDING_STATUS : "NOT_STARTED" as const,
       rawStatus: null,
       retryAllowed: !starting,
@@ -89,11 +92,12 @@ async function currentStatus(userId: string) {
   } catch (error) {
     console.warn("[Didit] Nao foi possivel atualizar o status da sessao.", {
       userId,
-      reason: error instanceof Error ? error.message : "unknown",
+      reason: error instanceof Error ? error.name : "unknown",
     });
     return {
       sessionId,
-      status: digitStatusWhenProviderUnavailable(),
+      status: professional?.kycStatus === DIDIT_APPROVED_STATUS ? DIDIT_APPROVED_STATUS : digitStatusWhenProviderUnavailable(),
+      submissionEligible: professional?.kycStatus === DIDIT_APPROVED_STATUS,
       rawStatus: null,
       retryAllowed: false,
       message: "Nao foi possivel confirmar o status atual na Didit. Tente novamente em instantes.",
@@ -110,9 +114,15 @@ export async function GET() {
     return NextResponse.json({ error: "Apenas anunciantes podem consultar a verificacao." }, { status: 403 });
   }
 
+  const limited = await enforceRateLimitAsync(
+    `kyc-read:didit:${session.user.id}`, 20, 5 * 60_000,
+    "Aguarde antes de consultar novamente a verificação.",
+  );
+  if (limited) return limited;
+
   const verification = isDigitAvailable()
     ? await currentStatus(session.user.id)
-    : { sessionId: null, status: "NOT_STARTED" as const, rawStatus: null, retryAllowed: false, message: null };
+    : { sessionId: null, status: "NOT_STARTED" as const, rawStatus: null, retryAllowed: false, message: null, submissionEligible: false };
 
   return NextResponse.json({
     available: isDigitAvailable(),
@@ -121,7 +131,7 @@ export async function GET() {
   });
 }
 
-export async function POST() {
+export const POST = monitorRegistration("IDENTITY", async (_req, trace) => {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
   const limited = await enforceRateLimitAsync(`kyc-session:didit:${session.user.id}`, 3, 60 * 60 * 1000, "Muitas tentativas de iniciar verificação.");
@@ -132,8 +142,13 @@ export async function POST() {
 
   const account = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { phoneVerified: true },
+    select: { phoneVerified: true, phone: true },
   });
+  trace.accountType = "model";
+  trace.provider = "DIDIT";
+  if (account?.phoneVerified && account.phone) {
+    trace.identity = registrationIdentity("phone", normalizeBrazilianPhone(account.phone));
+  }
   if (!account?.phoneVerified) {
     return NextResponse.json(
       { error: "Confirme seu telefone por SMS antes da verificacao de identidade.", code: "PHONE_NOT_VERIFIED" },
@@ -220,12 +235,9 @@ export async function POST() {
       const previousIntentExpired = Boolean(
         previousIntent && Date.now() - previousIntent.createdAt >= DIGIT_INTENT_EXPIRATION_MS,
       );
-      const intentId = previousIntent && !previousIntentExpired ? previousIntent.intentId : requestedIntentId;
-      const marker = createDigitIntentMarker(
-        intentId,
-        previousIntent && !previousIntentExpired ? previousIntent.createdAt : Date.now(),
-        Date.now(),
-      );
+      const intentId = previousIntent?.intentId ?? requestedIntentId;
+      const createdAfter = previousIntent?.createdAt ?? Date.now();
+      const marker = createDigitIntentMarker(intentId, createdAfter, Date.now());
       await tx.user.update({
         where: { id: session.user.id },
         data: {
@@ -253,8 +265,10 @@ export async function POST() {
         kind: "reserved" as const,
         marker,
         vendorData: buildDigitVendorData(session.user.id),
-        createdAfter: previousIntent && !previousIntentExpired ? previousIntent.createdAt : Date.now(),
-        reconcile: Boolean(previousIntent && !previousIntentExpired),
+        createdAfter,
+        intentId,
+        expired: previousIntentExpired,
+        reconcile: Boolean(previousIntent),
       };
     }, { maxWait: 5_000, timeout: 10_000 });
 
@@ -276,28 +290,36 @@ export async function POST() {
     let diditSession = reservation.reconcile
       ? await findDigitSessionByVendorData(reservation.vendorData, reservation.createdAfter)
       : null;
-    if (reservation.reconcile && !diditSession) {
-      throw new Error("didit_reconciliation_pending");
-    }
-    if (diditSession && !diditSession.url) {
-      throw new Error("didit_reconciliation_url_unavailable");
-    }
+    const recovered = Boolean(diditSession);
+    let activeMarker = reservation.marker;
     if (!diditSession) {
       const callbackSecret = process.env.DIDIT_WEBHOOK_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim() || "";
-      const callbackState = createDigitCallbackState(callbackSecret);
+      let intentId = reservation.intentId;
+      let createdAt = reservation.createdAfter;
+      if (reservation.expired) {
+        // Only rotate after a successful lookup confirmed no matching remote session.
+        intentId = requestedIntentId;
+        createdAt = Date.now();
+        activeMarker = createDigitIntentMarker(intentId, createdAt);
+        const rotated = await prisma.professional.updateMany({
+          where: { userId: session.user.id, verificationUrl: reservation.marker },
+          data: { verificationUrl: activeMarker },
+        });
+        if (rotated.count !== 1) throw new Error("didit_intent_changed");
+      }
+      const callbackState = createDigitCallbackState(callbackSecret, createdAt);
       const callbackUrl = `${appBaseUrl()}/verificacao/callback?state=${encodeURIComponent(callbackState)}`;
-      diditSession = await createDigitSession(reservation.vendorData, callbackUrl);
+      diditSession = await createDigitSession(reservation.vendorData, callbackUrl, intentId);
     }
-    if (
-      !digitVendorDataBelongsToUser(diditSession.vendor_data, session.user.id) ||
-      !isSafeDigitVerificationUrl(diditSession.url)
-    ) {
+    if (!diditSession.session_id || !digitVendorDataBelongsToUser(diditSession.vendor_data, session.user.id)
+      || (!recovered && !isSafeDigitVerificationUrl(diditSession.url))) {
       throw new Error("didit_session_response_invalid");
     }
+    const verificationUrl = isSafeDigitVerificationUrl(diditSession.url) ? diditSession.url : null;
 
     await prisma.$transaction(async (tx) => {
       const updated = await tx.professional.updateMany({
-        where: { userId: session.user.id, verificationUrl: reservation.marker },
+        where: { userId: session.user.id, verificationUrl: activeMarker },
         data: {
           kycProvider: "DIDIT",
           kycSessionId: diditSession.session_id,
@@ -305,7 +327,7 @@ export async function POST() {
           verifStatus: "PENDING",
           docStatus: "PENDING",
           rejectReason: null,
-          verificationUrl: diditSession.url,
+          verificationUrl,
         },
       });
       if (updated.count !== 1) throw new Error("didit_intent_changed");
@@ -322,11 +344,13 @@ export async function POST() {
       });
     });
 
+    trace.outcome = "IDENTITY_PENDING";
     const result = {
       sessionId: diditSession.session_id,
       status: DIDIT_PENDING_STATUS,
-      reused: reservation.reconcile,
-      url: diditSession.url,
+      submissionEligible: false,
+      reused: recovered,
+      url: verificationUrl,
     };
 
     return NextResponse.json({
@@ -335,13 +359,14 @@ export async function POST() {
       message: result.reused ? "Ja existe uma verificacao Didit em andamento." : "Verificacao de identidade Didit iniciada.",
     });
   } catch (error) {
+    trace.reason = "IDENTITY_SESSION_FAILED";
     console.error("[Didit] Falha ao criar ou salvar sessao.", {
       userId: session.user.id,
       reason: error instanceof Error ? error.message : "unknown",
     });
     return NextResponse.json(
       { error: "Nao foi possivel iniciar a verificacao de identidade. Tente novamente." },
-      { status: 502 },
+      { status: 503, headers: { "Retry-After": String(DIGIT_INTENT_LEASE_MS / 1000) } },
     );
   }
-}
+});

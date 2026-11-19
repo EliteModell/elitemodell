@@ -1,3 +1,5 @@
+import { monitorRegistration, registrationIdentity } from "@/lib/registration-monitor";
+import { normalizeBrazilianPhone } from "@/lib/phone-otp";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
@@ -295,7 +297,7 @@ export async function GET(req: NextRequest) {
   );
 }
 
-export async function POST(req: NextRequest) {
+export const POST = monitorRegistration("PROFILE", async (req, trace) => {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
 
@@ -335,15 +337,17 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
-    const data = createProfessionalSchema.parse(body);
-
+    trace.accountType = "model";
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { name: true, category: true, email: true, emailVerified: true, clientStatus: true, kycSessionId: true },
+      select: { name: true, category: true, email: true, emailVerified: true, phone: true, phoneVerified: true, clientStatus: true, kycSessionId: true },
     });
+    if (user?.phone && user.phoneVerified) trace.identity = registrationIdentity("phone", normalizeBrazilianPhone(user.phone));
+    else if (user?.email) trace.identity = registrationIdentity("email", user.email);
 
+    const data = createProfessionalSchema.parse(await req.json());
     if (!user?.emailVerified) {
+      trace.reason = "EMAIL_NOT_VERIFIED";
       return NextResponse.json(
         {
           error: "Confirme seu e-mail antes de enviar o cadastro para análise.",
@@ -355,6 +359,7 @@ export async function POST(req: NextRequest) {
 
     const completion = professionalCompletion({ ...data, emailVerified: user.emailVerified });
     if (completion.profileIssues.length) {
+      trace.reason = "PROFILE_INCOMPLETE";
       return NextResponse.json({
         error: "Seu cadastro ainda não pode ser enviado.",
         code: "profile_incomplete",
@@ -393,24 +398,28 @@ export async function POST(req: NextRequest) {
       }
     }
     if (!diditVerification.sessionId) {
+      trace.reason = "IDENTITY_NOT_STARTED";
       return NextResponse.json({
         error: "Inicie a verificação de identidade com a Didit antes de enviar o cadastro.",
         code: "identity_not_started",
       }, { status: 422 });
     }
     if (diditVerification.status === "REJECTED") {
+      trace.reason = "DIDIT_REQUIRES_ACTION";
       return NextResponse.json({
         error: "A verificação de identidade precisa de uma nova ação antes do envio.",
         code: "identity_requires_action",
       }, { status: 422 });
     }
     if (!diditVerification.providerChecked && diditVerification.status !== "APPROVED") {
+      trace.reason = "IDENTITY_STATUS_UNAVAILABLE";
       return NextResponse.json({
         error: "Não foi possível confirmar o estado da verificação agora. Seus dados estão salvos; tente novamente sem reenviar os documentos.",
         code: "identity_status_unavailable",
       }, { status: 503 });
     }
     if (!diditVerification.submissionEligible) {
+      trace.reason = "IDENTITY_DOCUMENTS_INCOMPLETE";
       return NextResponse.json({
         error: "Finalize o envio do documento e da selfie na Didit. Se você acabou de concluir, aguarde alguns segundos e tente novamente.",
         code: "identity_documents_incomplete",
@@ -558,6 +567,7 @@ export async function POST(req: NextRequest) {
         link: "/profissional/analise",
       },
     });
+    trace.outcome = "PROFILE_SUBMITTED";
     const publication = await attemptAutomaticProfessionalPublication(professional.id, "registration-submitted");
     const receiptStatus = publication.published
       ? await markSubmissionReceiptNotRequired(professional.id)
@@ -573,7 +583,12 @@ export async function POST(req: NextRequest) {
       publication,
     }, { status: existing ? 200 : 201 });
   } catch (err) {
+    if (err instanceof SyntaxError) {
+      trace.reason = "INVALID_JSON";
+      return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
+    }
     if (err instanceof z.ZodError) {
+      trace.reason = "PROFILE_VALIDATION_ERROR";
       return NextResponse.json({
         error: err.issues[0]?.message ?? "Revise os campos obrigatórios.",
         code: "validation_error",
@@ -586,4 +601,4 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });
   }
-}
+});

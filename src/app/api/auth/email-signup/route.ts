@@ -1,9 +1,11 @@
+import { monitorRegistration, registrationIdentity, registrationAccountType } from "@/lib/registration-monitor";
+import { readPendingProfessionalPhone } from "@/lib/professional-phone-registration";
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 import { isAgeOfMajority } from "@/lib/age-validation";
-import { buildAuthEmail, sendAuthEmail } from "@/lib/auth-email";
+import { AuthEmailDeliveryError, buildAuthEmail, sendAuthEmail } from "@/lib/auth-email";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import { canonicalizeRequestedEmailCallback } from "@/lib/email-auth-callback";
@@ -38,8 +40,9 @@ class EmailSignupError extends Error {
   }
 }
 
-function isAlreadyRegistered(message?: string) {
-  return /already|registered|exists|user/i.test(message ?? "");
+function isAlreadyRegistered(error: { code?: string; message: string }) {
+  return error.code === "user_already_exists" || error.code === "email_exists"
+    || /already (been )?(registered|in use|exists)/i.test(error.message);
 }
 
 async function generateSignupLink(input: z.infer<typeof schema>) {
@@ -70,7 +73,7 @@ async function generateSignupLink(input: z.infer<typeof schema>) {
     return { actionType: "signup" as const, data: signup.data };
   }
 
-  if (isAlreadyRegistered(signup.error.message)) {
+  if (isAlreadyRegistered(signup.error)) {
     throw new EmailSignupError(
       "Este email ja esta cadastrado. Entre com sua senha ou use Recuperar senha.",
       409,
@@ -78,10 +81,13 @@ async function generateSignupLink(input: z.infer<typeof schema>) {
     );
   }
 
+  const status = signup.error.status ?? 500;
+  if (status >= 500) throw new EmailSignupError("Não foi possível criar o cadastro agora.", 502, "SUPABASE_SIGNUP_FAILED");
+  if (status === 429) throw new EmailSignupError("Muitas tentativas. Aguarde e tente novamente.", 429, "SUPABASE_SIGNUP_LIMIT");
   throw new EmailSignupError(publicErrorForSupabase(signup.error.message));
 }
 
-export async function POST(req: NextRequest) {
+export const POST = monitorRegistration("EMAIL_SEND", async (req, trace) => {
   const requestIp = getClientIP(req);
   const limited = await enforceRateLimitAsync(
     `email-signup:${requestIp}`,
@@ -94,6 +100,17 @@ export async function POST(req: NextRequest) {
   try {
     const body = schema.parse(await req.json());
     const email = body.email.trim().toLowerCase();
+    trace.accountType = registrationAccountType(body.accountType);
+    trace.identity = registrationIdentity("email", email);
+    if (trace.accountType === "model") {
+      try {
+        const pending = readPendingProfessionalPhone(req);
+        if (pending) trace.identity = registrationIdentity("phone", pending.phone);
+      } catch {
+        // Expired phone proof does not prevent requesting an email.
+      }
+    }
+    trace.provider = "SUPABASE";
     let redirectTo: string;
     try {
       redirectTo = canonicalizeRequestedEmailCallback(body.redirectTo);
@@ -143,7 +160,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Nao foi possivel montar o email de confirmacao." }, { status: 500 });
     }
 
-    await sendAuthEmail(email, authEmail);
+    trace.provider = "RESEND";
+    trace.providerReference = (await sendAuthEmail(email, authEmail, {
+      category: "REGISTRATION_" + trace.accountType.toUpperCase(),
+      idempotencyKey: "signup/" + generated.data.user.id + "/" + body.attemptId,
+      retryTransient: true,
+    })) ?? undefined;
     const successPayload = createEmailSignupSuccessPayload({
       userId: generated.data.user.id,
       email,
@@ -164,12 +186,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Dados invalidos." }, { status: 400 });
     }
     if (err instanceof EmailSignupError) {
+      trace.reason = err.code;
       console.info("[email-signup] cadastro recusado", {
         code: err.code,
         status: err.status,
         requestIp,
       });
       return NextResponse.json({ error: err.message, code: err.code }, { status: err.status });
+    }
+    trace.reason = trace.provider === "RESEND" ? "EMAIL_SEND_FAILED" : "SIGNUP_ERROR";
+    if (err instanceof AuthEmailDeliveryError) {
+      trace.reason = err.reason;
+      trace.providerCode = err.providerStatus;
     }
     console.error("[email-signup] falha inesperada", {
       errorType: err instanceof Error ? err.name : "unknown",
@@ -179,4 +207,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

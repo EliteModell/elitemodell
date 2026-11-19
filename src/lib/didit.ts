@@ -193,7 +193,7 @@ export function isDigitAvailable() {
   return getDigitConfig().missing.length === 0;
 }
 
-export async function createDigitSession(vendorData: string, callbackUrl: string): Promise<DiditSession> {
+export async function createDigitSession(vendorData: string, callbackUrl: string, idempotencyKey?: string): Promise<DiditSession> {
   const { apiKey, workflowId } = getDigitConfig();
 
   const res = await fetch(`${DIDIT_API_BASE}/v3/session/`, {
@@ -201,6 +201,7 @@ export async function createDigitSession(vendorData: string, callbackUrl: string
     headers: {
       "x-api-key": apiKey,
       "Content-Type": "application/json",
+      ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
     },
     body: JSON.stringify({
       workflow_id: workflowId,
@@ -222,9 +223,11 @@ export async function findDigitSessionByVendorData(
   vendorData: string,
   createdAfter?: number,
 ): Promise<DiditSessionSummary | null> {
-  const { apiKey } = getDigitConfig();
-  const url = new URL(`${DIDIT_API_BASE}/v2/sessions`);
+  const { apiKey, workflowId } = getDigitConfig();
+  const url = new URL(`${DIDIT_API_BASE}/v3/sessions/`);
   url.searchParams.set("vendor_data", vendorData);
+  url.searchParams.set("workflow_id", workflowId);
+  if (createdAfter !== undefined) url.searchParams.set("date_from", new Date(createdAfter).toISOString());
 
   const res = await fetch(url, { headers: { "x-api-key": apiKey }, cache: "no-store", signal: AbortSignal.timeout(8_000) });
   if (!res.ok) {
@@ -233,30 +236,22 @@ export async function findDigitSessionByVendorData(
 
   const body = await res.json() as unknown;
   const record = body && typeof body === "object" ? body as Record<string, unknown> : {};
-  const candidates = Array.isArray(body)
-    ? body
-    : Array.isArray(record.results)
-      ? record.results
-      : Array.isArray(record.data)
-        ? record.data
-        : Array.isArray(record.sessions)
-          ? record.sessions
-          : [];
-
+  if (!Array.isArray(record.results)) throw new Error("didit_reconciliation_invalid_response");
+  const candidates: unknown[] = record.results;
   const matching = candidates.flatMap((candidate) => {
     if (!candidate || typeof candidate !== "object") return [];
     const session = candidate as Record<string, unknown>;
     const sessionId = typeof session.session_id === "string" ? session.session_id : null;
-    const sessionUrl = typeof session.url === "string"
-      ? session.url
+    const sessionUrl = typeof session.session_url === "string"
+      ? session.session_url
       : typeof session.verification_url === "string"
         ? session.verification_url
         : null;
     const status = typeof session.status === "string" ? session.status as DiditSessionStatus : "Not Started";
-    const owner = typeof session.vendor_data === "string" ? session.vendor_data : vendorData;
+    const owner = typeof session.vendor_data === "string" ? session.vendor_data : null;
     const createdAt = typeof session.created_at === "string" ? Date.parse(session.created_at) : Number.NaN;
     const withinIntentWindow = createdAfter === undefined
-      || (Number.isFinite(createdAt) && createdAt >= createdAfter - 60_000);
+      || (Number.isFinite(createdAt) && createdAt >= createdAfter);
     if (sessionId && owner === vendorData && withinIntentWindow) {
       return [{
         session_id: sessionId,
@@ -270,7 +265,10 @@ export async function findDigitSessionByVendorData(
   }).sort((a, b) => b.createdAt - a.createdAt);
 
   const session = matching[0];
-  if (!session) return null;
+  if (!session) {
+    if (record.next !== null || candidates.length > 0) throw new Error("didit_reconciliation_inconclusive");
+    return null;
+  }
   return {
     session_id: session.session_id,
     url: session.url,

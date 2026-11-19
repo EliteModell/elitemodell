@@ -17,6 +17,7 @@ const adminNav = [
   ["Suporte", "/admin/suporte", Headphones],
   ["Financeiro", "/admin/financeiro", Banknote],
   ["Funcionários", "/admin/funcionarios", UserCog],
+  ["Monitor de cadastros", "/admin/cadastros", ClipboardList],
   ["Auditoria", "/admin/auditoria", ClipboardList],
   ["Jurídico", "/admin/juridico", Scale],
   ["Configurações", "/admin/configuracoes", Settings],

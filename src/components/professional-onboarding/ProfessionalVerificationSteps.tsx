@@ -17,6 +17,7 @@ type Props = {
   whatsapp: string;
   diditApproved: boolean;
   diditPending: boolean;
+  diditSubmissionEligible: boolean;
   diditRejected: boolean;
   diditRetryAllowed: boolean;
   diditAvailable: boolean;
@@ -103,7 +104,7 @@ export default function ProfessionalVerificationSteps(props: Props) {
 
         {props.diditApproved ? (
           <div data-field="kycSessionId" style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e", fontSize: 15, fontWeight: 800 }}>✓ Identidade verificada</div>
-        ) : props.diditPending ? (
+        ) : props.diditPending && props.diditSubmissionEligible ? (
           <div data-field="kycSessionId" role="status" aria-live="polite" style={{ padding: "16px 18px", borderRadius: 12, background: GOLD_DIM, border: `1px solid ${GOLD_MID}`, color: "#fcf7ff" }}>
             <h4 style={{ margin: "0 0 8px", color: "#22c55e", fontSize: 16, fontWeight: 900 }}>✓ Documentos enviados com sucesso!</h4>
             <p style={{ margin: 0, color: "#d8cfdd", fontSize: 13, fontWeight: 500, lineHeight: 1.65 }}>
@@ -112,6 +113,15 @@ export default function ProfessionalVerificationSteps(props: Props) {
               <span style={{ display: "block", marginTop: 8 }}>Você não precisa enviar seus documentos novamente.</span>
             </p>
             <p style={{ margin: "14px 0 0", color: GOLD, fontSize: 13, fontWeight: 800 }}>🕒 Identidade em análise</p>
+          </div>
+        ) : props.diditPending ? (
+          <div data-field="kycSessionId" role="status" aria-live="polite" style={{ padding: "16px 18px", borderRadius: 12, background: GOLD_DIM, color: "#fcf7ff" }}>
+            <p style={{ margin: "0 0 12px" }}>{props.diditMessage ?? "Aguardando a confirmação de envio dos documentos pela Didit."}</p>
+            {props.verificationUrl && props.diditAvailable && (
+              <button type="button" disabled={props.startingVerification} onClick={props.onStartVerification} style={{ minHeight: 44, border: 0, borderRadius: 8, background: GOLD, padding: "8px 16px", fontWeight: 800 }}>
+                Retomar verificação
+              </button>
+            )}
           </div>
         ) : (
           <>

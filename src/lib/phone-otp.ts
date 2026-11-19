@@ -1,4 +1,6 @@
 import crypto from "crypto";
+import { normalizeBrazilianPhone } from "@/lib/brazilian-phone";
+export { normalizeBrazilianPhone } from "@/lib/brazilian-phone";
 
 export const PHONE_ACCOUNT_TYPES = ["client", "model", "host"] as const;
 export type PhoneAccountType = (typeof PHONE_ACCOUNT_TYPES)[number];
@@ -12,11 +14,6 @@ export const OTP_MAX_SENDS_PER_IP_PER_HOUR = 20;
 export const OTP_MAX_VERIFY_ATTEMPTS_PER_PHONE_WINDOW = 12;
 export const OTP_MAX_VERIFY_ATTEMPTS_PER_IP_WINDOW = 40;
 
-export function normalizeBrazilianPhone(value: string) {
-  const digits = value.replace(/\D/g, "");
-  const withoutCountry = digits.startsWith("55") && digits.length > 11 ? digits.slice(2) : digits;
-  return withoutCountry.slice(0, 11);
-}
 
 export function brazilianPhoneStorageVariants(value: string) {
   const digits = value.replace(/\D/g, "");

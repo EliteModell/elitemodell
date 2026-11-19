@@ -1,10 +1,12 @@
+import { normalizeBrazilianPhone } from "@/lib/phone-otp";
+import { monitorRegistration, registrationAccountType, registrationIdentity } from "@/lib/registration-monitor";
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
-import { buildAuthEmail, sendAuthEmail } from "@/lib/auth-email";
+import { AuthEmailDeliveryError, buildAuthEmail, sendAuthEmail } from "@/lib/auth-email";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { enforceRateLimitAsync } from "@/lib/security";
@@ -45,19 +47,20 @@ function maskEmail(email: string | null | undefined) {
   return `${visible}${"*".repeat(Math.max(3, local.length - visible.length))}@${domain}`;
 }
 
-async function findAuthUserByEmail(email: string) {
-  const supabase = createSupabaseServerClient();
-  for (let page = 1; page <= 10; page += 1) {
-    const result = await supabase.auth.admin.listUsers({ page, perPage: 100 });
-    if (result.error) throw result.error;
-    const found = result.data.users.find((user) => user.email?.toLowerCase() === email.toLowerCase());
-    if (found) return found;
-    if (result.data.users.length < 100) break;
-  }
-  return null;
+type LinkedAuthUser = { id: string; email: string | null; email_confirmed_at: string | null; app_metadata: Record<string, unknown> | null };
+
+async function findAuthUserByEmail(email: string): Promise<LinkedAuthUser | null> {
+  const [user] = await prisma.$queryRaw<LinkedAuthUser[]>`
+    SELECT id::text, email, email_confirmed_at::text, raw_app_meta_data AS app_metadata
+    FROM auth.users
+    WHERE email = ${email.trim().toLowerCase()} AND deleted_at IS NULL
+    ORDER BY email_confirmed_at DESC NULLS LAST, created_at, id
+    LIMIT 1
+  `;
+  return user ?? null;
 }
 
-async function sendConfirmation(email: string) {
+async function sendConfirmation(email: string, category: string) {
   const supabase = createSupabaseServerClient();
   const redirectTo = callbackUrl();
   const generated = await supabase.auth.admin.generateLink({
@@ -81,24 +84,26 @@ async function sendConfirmation(email: string) {
     },
   }, { confirmationCopy: true });
   if (!message) throw new Error("confirmation_email_unavailable");
-  await sendAuthEmail(email, message);
+  return sendAuthEmail(email, message, {
+    category,
+    idempotencyKey: "confirm/" + crypto.randomUUID(),
+    retryTransient: true,
+  });
 }
 
-async function findAuthUserForAccount(userId: string, email: string) {
-  const supabase = createSupabaseServerClient();
-  for (let page = 1; page <= 10; page += 1) {
-    const result = await supabase.auth.admin.listUsers({ page, perPage: 100 });
-    if (result.error) throw result.error;
-    const found = result.data.users.find((authUser) => {
-      const linkedUserId = typeof authUser.app_metadata?.prismaUserId === "string"
-        ? authUser.app_metadata.prismaUserId
-        : null;
-      return linkedUserId === userId || authUser.email?.toLowerCase() === email.toLowerCase();
-    });
-    if (found) return found;
-    if (result.data.users.length < 100) break;
-  }
-  return null;
+async function findAuthUserForAccount(userId: string, email: string): Promise<LinkedAuthUser | null> {
+  const [user] = await prisma.$queryRaw<LinkedAuthUser[]>`
+    SELECT id::text, email, email_confirmed_at::text, raw_app_meta_data AS app_metadata
+    FROM auth.users
+    WHERE deleted_at IS NULL AND (
+      raw_app_meta_data->>'prismaUserId' = ${userId}
+      OR (email = ${email.trim().toLowerCase()} AND raw_app_meta_data->>'prismaUserId' IS NULL)
+    )
+    ORDER BY (raw_app_meta_data->>'prismaUserId' = ${userId}) DESC NULLS LAST,
+             email_confirmed_at DESC NULLS LAST, created_at DESC, id
+    LIMIT 1
+  `;
+  return user ?? null;
 }
 
 async function reconcileConfirmedEmail(user: { id: string; email: string; emailVerified: Date | null }) {
@@ -121,7 +126,7 @@ async function reconcileConfirmedEmail(user: { id: string; email: string; emailV
   return { verified: true, email: confirmedEmail };
 }
 
-export async function POST(req: NextRequest) {
+export const POST = monitorRegistration("EMAIL_CONFIRMATION", async (req, trace) => {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Sessão expirada." }, { status: 401 });
 
@@ -165,12 +170,18 @@ export async function POST(req: NextRequest) {
   try {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true, email: true, emailVerified: true, phone: true, phoneVerified: true, phoneVerifiedAt: true },
+      select: { id: true, email: true, emailVerified: true, phone: true, phoneVerified: true, phoneVerifiedAt: true, accountType: true },
     });
     if (!user) return NextResponse.json({ error: "Conta não encontrada." }, { status: 404 });
+    trace.accountType = registrationAccountType(user.accountType ?? "client");
+    trace.identity = trace.accountType === "model" && user.phone && user.phoneVerified
+      ? registrationIdentity("phone", normalizeBrazilianPhone(user.phone))
+      : registrationIdentity("email", user.email);
     const reconciled = await reconcileConfirmedEmail(user);
+    if (reconciled.verified) trace.outcome = "EMAIL_VERIFIED";
     if (reconciled.verified) return NextResponse.json({ ok: true, verified: true, maskedEmail: maskEmail(reconciled.email) });
     if (input.action === "status") {
+      trace.outcome = "NO_CHANGE";
       return NextResponse.json({
         ok: true,
         verified: false,
@@ -244,7 +255,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Informe um e-mail real para receber a confirmação." }, { status: 400 });
     }
 
-    await sendConfirmation(targetEmail);
+    trace.provider = "RESEND";
+    trace.providerReference = (await sendConfirmation(targetEmail, "REGISTRATION_" + trace.accountType.toUpperCase())) ?? undefined;
     return NextResponse.json(
       {
         ok: true,
@@ -258,10 +270,15 @@ export async function POST(req: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Informe um e-mail válido." }, { status: 400 });
     }
+    trace.reason = "EMAIL_CONFIRMATION_FAILED";
+    if (error instanceof AuthEmailDeliveryError) {
+      trace.reason = error.reason;
+      trace.providerCode = error.providerStatus;
+    }
     console.error("[email-confirmation] falha", {
       userId: session.user.id,
       reason: error instanceof Error ? error.name : "unknown",
     });
     return NextResponse.json({ error: "Não foi possível solicitar a confirmação agora." }, { status: 502 });
   }
-}
+});

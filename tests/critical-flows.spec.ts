@@ -111,7 +111,6 @@ test.describe("Fluxo 1 — Cadastro", () => {
   test("/cadastro exibe opções de tipo de conta", async ({ page }) => {
     await bypassAgeGate(page);
     await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
-    await page.waitForLoadState("networkidle").catch(() => {});
     await expectCadastroChoiceOptions(page);
   });
 
@@ -119,7 +118,6 @@ test.describe("Fluxo 1 — Cadastro", () => {
     await bypassAgeGate(page);
     await seedHostDraft(page);
     await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
-    await page.waitForLoadState("networkidle").catch(() => {});
     await expectCadastroChoiceOptions(page);
     expect(page.url()).toMatch(/\/cadastro$/);
   });
@@ -129,7 +127,6 @@ test.describe("Fluxo 1 — Cadastro", () => {
     await seedHostDraft(page);
     await mockAuth(page);
     await page.goto("/cadastro", { waitUntil: "domcontentloaded" });
-    await page.waitForLoadState("networkidle").catch(() => {});
     await expectCadastroChoiceOptions(page);
   });
 
@@ -527,7 +524,7 @@ test.describe("Segurança — Proteção de rotas", () => {
 });
 
 test.describe("Fluxo público — Buscar prazer", () => {
-  test("CTA da Home abre a seleção de cidade antes da listagem", async ({ page }) => {
+  test("CTA da Home abre a listagem e mantém a busca por cidade disponível", async ({ page }) => {
     await bypassAgeGate(page);
     await page.route("**/api/auth/session", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: "null" })
@@ -547,8 +544,9 @@ test.describe("Fluxo público — Buscar prazer", () => {
     const cta = page.getByRole("link", { name: /Explorar perfis/i }).first();
     await expect(cta).toHaveAttribute(
       "href",
-      "/buscar?tab=acompanhantes&selecionarCidade=1",
+      "/buscar?tab=acompanhantes",
     );
+    await expect(page.getByRole("search", { name: "Buscar acompanhantes por cidade" })).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Perfis e stories em destaque" }),
     ).toHaveCount(0);
@@ -587,7 +585,7 @@ test.describe("Fluxo público — Buscar prazer", () => {
 
     await page.getByPlaceholder("Digite cidade ou UF").fill("Itauna");
     await page.getByRole("button", { name: "Itaúna, MG" }).click();
-    await page.getByRole("button", { name: "Buscar acompanhantes" }).click();
+    await page.getByRole("button", { name: /Ver acompanhantes em Itaúna/ }).click();
     await expect(page).toHaveURL(/cidade=Ita(%C3%BA|ú)na/i);
     await expect.poll(() => professionalRequests).toBeGreaterThan(0);
   });
@@ -646,8 +644,9 @@ test.describe("Fluxo público — Buscar prazer", () => {
     await expect(submit).toBeDisabled();
     await page.getByRole("button", { name: "Usar minha localização aproximada" }).click();
     await expect(page.getByText("Localização detectada: Itaúna, MG.")).toBeVisible();
-    await expect(submit).toBeEnabled();
-    await submit.click();
+    const applyLocation = page.getByRole("button", { name: /Ver acompanhantes em Itaúna/ });
+    await expect(applyLocation).toBeEnabled();
+    await applyLocation.click();
     await expect(page).toHaveURL(/cidade=Ita(%C3%BA|ú)na.*estado=mg/i);
   });
 });

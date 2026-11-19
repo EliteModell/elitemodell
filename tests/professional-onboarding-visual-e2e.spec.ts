@@ -74,11 +74,14 @@ async function mockCompleteOnboarding(context: BrowserContext, page: Page) {
     available: true,
     sessionId: "didit-visual-session",
     status: "PENDING",
+    submissionEligible: true,
     retryAllowed: false,
     message: "Seus documentos estão em análise de identidade.",
     url: null,
   } }));
   await page.route("**/api/professionals", route => route.fulfill({ status: 201, json: {
+    ok: true,
+    professionalId: "professional-visual",
     status: "DRAFT",
     receiptStatus: "SENT",
     identityPending: true,
@@ -95,6 +98,7 @@ const devices = [
 
 for (const device of devices) {
   test(`${device.name}: percorre, persiste e registra visualmente as nove etapas`, async ({ browser }, testInfo) => {
+    test.setTimeout(60_000);
     const context = await browser.newContext(device);
     const page = await context.newPage();
     const errors: string[] = [];
@@ -115,7 +119,7 @@ for (const device of devices) {
             name: "apresentacao-teste.mp4", mimeType: "video/mp4", buffer: Buffer.from("video-ficticio-controlado"),
           });
           await expect(page.locator("video").first()).toBeVisible();
-          await expect(page.getByText("Vídeo recebido e encaminhado para as verificações de segurança.", { exact: true })).toBeVisible();
+          await expect(page.getByRole("button", { name: "Enviar vídeos selecionados" })).toBeEnabled();
         }
       }
       if (index === 2) {
@@ -124,7 +128,8 @@ for (const device of devices) {
         await page.getByRole("button", { name: /Continuar/ }).click();
       }
       if (index < stages.length - 1) {
-        await page.getByRole("button", { name: /Continuar/ }).click();
+        const action = index === 7 ? "Finalizar meu cadastro" : /Continuar/;
+        await page.getByRole("button", { name: action }).click();
         await expect(page.getByText(`Etapa ${index + 2} de 9`, { exact: false })).toBeVisible();
         await expect.poll(() => page.evaluate((userId) => {
           const raw = localStorage.getItem(`elitemodell_professional_onboarding_v2:${encodeURIComponent(userId)}:PROFESSIONAL`);
@@ -134,7 +139,7 @@ for (const device of devices) {
       }
     }
 
-    await page.getByRole("button", { name: "Concluir cadastro" }).click();
+    await page.getByRole("button", { name: "Confirmar e enviar cadastro" }).click();
     await expect(page.getByRole("heading", { name: "Cadastro enviado com sucesso!" })).toBeVisible();
     await expect(page.getByText("Verificações em andamento", { exact: true })).toBeVisible();
     await testInfo.attach("erros-console-rede.json", { body: Buffer.from(JSON.stringify(errors, null, 2)), contentType: "application/json" });

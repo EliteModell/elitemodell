@@ -2125,3 +2125,23 @@ model SecurityIncident {
   @@index([status, discoveredAt])
   @@index([notificationDueAt])
 }
+
+model RegistrationEvent {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  identity          String?
+  accountType       String?
+  stage             String
+  outcome           String
+  status            Int
+  reason            String?
+  channel           String?
+  provider          String?
+  providerCode      Int?
+  providerReference String?
+  step              Int?
+
+  @@index([createdAt, id])
+  @@index([identity, createdAt])
+  @@index([accountType, createdAt])
+}

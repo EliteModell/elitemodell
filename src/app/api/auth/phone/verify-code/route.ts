@@ -1,6 +1,7 @@
+import { monitorRegistration, registrationIdentity } from "@/lib/registration-monitor";
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { recordConsentPreference, recordUserAcceptances, registrationDocumentKeys } from "@/lib/legal-acceptance";
@@ -145,7 +146,7 @@ async function verifyFirebasePhoneIdToken(idToken: string, expectedPhone: string
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    console.error("[firebase] Falha ao validar idToken de telefone.", data);
+    console.error("[firebase] Falha ao validar idToken de telefone.", { status: res.status });
     throw new Error("Nao foi possivel validar o codigo no Firebase.");
   }
 
@@ -245,21 +246,26 @@ async function persistVerifiedPhone({
       });
     }
 
-    return savedUser;
+    return { user: savedUser, created: !existing };
   });
 }
 
-export async function POST(req: NextRequest) {
+export const POST = monitorRegistration("PHONE_CHECK", async (req, trace) => {
   try {
     const body = schema.parse(await req.json());
     const phone = normalizeBrazilianPhone(body.phone);
+    trace.accountType = body.accountType;
+    if (isValidBrazilianMobilePhone(phone)) trace.identity = registrationIdentity("phone", phone);
     const requestIp = getClientIP(req);
 
     if (!isValidBrazilianMobilePhone(phone)) {
+      trace.reason = "INVALID_PHONE";
       return NextResponse.json({ error: "Informe um celular brasileiro valido." }, { status: 400 });
     }
 
     if (body.firebaseIdToken) {
+      trace.channel = "sms";
+      trace.provider = "FIREBASE";
       const consent = {
         termsConsent: Boolean(body.termsConsent),
         lgpdConsent: Boolean(body.lgpdConsent),
@@ -329,7 +335,10 @@ export async function POST(req: NextRequest) {
         });
 
         const existingAccountResponse = await existingPhoneAccountResponse(phone);
-        if (existingAccountResponse) return existingAccountResponse;
+        if (existingAccountResponse) {
+        trace.outcome = "EXISTING_ACCOUNT";
+        return existingAccountResponse;
+      }
 
         const response = NextResponse.json({
           ok: true,
@@ -342,11 +351,12 @@ export async function POST(req: NextRequest) {
         return response;
       }
 
-      const user = await persistVerifiedPhone({
+      const { user, created } = await persistVerifiedPhone({
         phone,
         accountType: body.accountType,
         consent,
       });
+      trace.outcome = created ? "ACCOUNT_COMPLETED" : "EXISTING_ACCOUNT";
       if (body.accountType === "model") await ensureProfileForIntent(user.id, "profissional");
       await recordPhoneLegalTrace(user, req, body.marketingConsent);
       console.info("[phone/verify-code] firebase_sms_verified", {
@@ -397,6 +407,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!verification) {
+      trace.reason = "NO_ACTIVE_VERIFICATION";
       return NextResponse.json(
         { code: "EXPIRED_CODE", error: "Código expirado. Solicite um novo código." },
         { status: 400 },
@@ -410,6 +421,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (verification.channel === "sms" || verification.channel === "whatsapp") trace.channel = verification.channel;
     let matches: boolean;
     if (verification.deliveryProvider === "twilio-verify") {
       console.info("[phone/verify-code] twilio_check_request", {
@@ -417,7 +429,9 @@ export async function POST(req: NextRequest) {
         phone: maskPhone(toBrazilianE164(phone)),
         channel: verification.channel,
       });
-      const check = await checkTwilioVerification(phone, body.code);
+      trace.provider = "TWILIO";
+      trace.providerReference = verification.providerMessageId ?? undefined;
+      const check = await checkTwilioVerification(phone, body.code, verification.providerMessageId);
       matches = check.approved;
       console.info("[phone/verify-code] twilio_check_response", {
         endpoint: "/api/auth/phone/verify-code",
@@ -432,6 +446,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!matches) {
+      trace.reason = "CODE_MISMATCH";
       await prisma.phoneVerificationCode.update({
         where: { id: verification.id },
         data: { attempts: { increment: 1 } },
@@ -463,7 +478,10 @@ export async function POST(req: NextRequest) {
       });
 
       const existingAccountResponse = await existingPhoneAccountResponse(phone);
-      if (existingAccountResponse) return existingAccountResponse;
+      if (existingAccountResponse) {
+        trace.outcome = "EXISTING_ACCOUNT";
+        return existingAccountResponse;
+      }
 
       const response = NextResponse.json({
         ok: true,
@@ -476,7 +494,7 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
-    const user = await persistVerifiedPhone({
+    const { user, created } = await persistVerifiedPhone({
       phone,
       accountType: body.accountType,
       consent: {
@@ -487,6 +505,7 @@ export async function POST(req: NextRequest) {
       },
       verificationId: verification.id,
     });
+    trace.outcome = created ? "ACCOUNT_COMPLETED" : "EXISTING_ACCOUNT";
     if (body.accountType === "model") await ensureProfileForIntent(user.id, "profissional");
     await recordPhoneLegalTrace(user, req, body.marketingConsent);
 
@@ -500,10 +519,11 @@ export async function POST(req: NextRequest) {
       redirectTo: redirectForPhoneAccount(body.accountType),
     });
   } catch (err) {
-    if (err instanceof z.ZodError) {
+    if (err instanceof z.ZodError || err instanceof SyntaxError) {
       return NextResponse.json({ error: "Dados invalidos." }, { status: 400 });
     }
     if (err instanceof TwilioVerifyConfigurationError) {
+      trace.reason = "PROVIDER_CONFIGURATION";
       console.error("[phone/verify-code] twilio_configuration", {
         endpoint: "/api/auth/phone/verify-code",
         channel: "sms",
@@ -519,16 +539,29 @@ export async function POST(req: NextRequest) {
         channel: "sms",
         status: err.status,
         providerCode: err.providerCode,
-        message: err.message,
       });
+      trace.providerCode = err.providerCode;
+      if (err.status === 429 || err.providerCode === 60202) {
+        trace.reason = "PROVIDER_CHECK_LIMIT";
+        return NextResponse.json(
+          { ok: false, code: "VERIFY_LIMIT", error: "Muitas tentativas. Solicite um novo código mais tarde." },
+          { status: 429, headers: { "Retry-After": String(err.retryAfterSeconds ?? 60) } },
+        );
+      }
+      if (err.status === 404 || err.providerCode === 20404) {
+        trace.reason = "PROVIDER_VERIFICATION_UNAVAILABLE";
+        return NextResponse.json(
+          { ok: false, code: "EXPIRED_CODE", error: "Esta verificação não está mais disponível. Solicite um novo código." },
+          { status: 400 },
+        );
+      }
+      trace.reason = "PROVIDER_CHECK_FAILED";
       return NextResponse.json(
-        err.status === 404 || err.providerCode === 20404 || err.providerCode === 60202
-          ? { ok: false, code: "EXPIRED_CODE", error: "Código expirado. Solicite um novo código." }
-          : { ok: false, code: "INVALID_CODE", error: "Código inválido. Confira e tente novamente." },
-        { status: err.status === 404 ? 400 : 502 },
+        { ok: false, error: "Não foi possível consultar o serviço de verificação. Tente novamente." },
+        { status: 502 },
       );
     }
-    console.error("[phone/verify-code]", err);
+    console.error("[phone/verify-code] unexpected_error");
     return NextResponse.json({ error: "Nao foi possivel verificar o codigo." }, { status: 500 });
   }
-}
+});
