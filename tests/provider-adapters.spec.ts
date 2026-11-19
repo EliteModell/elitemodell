@@ -387,7 +387,7 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     globalThis.fetch = async (input, init) => {
       expect(String(input)).toContain("/Services/VA_test/Verifications");
       twilioBody = String(init?.body ?? "");
-      return new Response(JSON.stringify({ sid: "VE_test", status: "pending" }), {
+      return new Response(JSON.stringify({ sid: "VE11111111111111111111111111111111", status: "pending" }), {
         status: 201,
         headers: { "content-type": "application/json" },
       });
@@ -555,7 +555,7 @@ test.describe("Twilio Verify no cadastro profissional", () => {
       }
       expect(url).toContain("/Services/VA_test/Verifications");
       twilioBody = String(init?.body ?? "");
-      return new Response(JSON.stringify({ sid: "VE_whatsapp", status: "pending" }), {
+      return new Response(JSON.stringify({ sid: "VE22222222222222222222222222222222", status: "pending" }), {
         status: 201,
         headers: { "content-type": "application/json" },
       });
@@ -741,7 +741,7 @@ test.describe("Twilio Verify no cadastro profissional", () => {
       return 0;
     };
     globalThis.fetch = async () =>
-      new Response(JSON.stringify({ sid: "VE_test", status: "pending" }), {
+      new Response(JSON.stringify({ sid: "VE11111111111111111111111111111111", status: "pending" }), {
         status: 201,
         headers: { "content-type": "application/json" },
       });
@@ -792,7 +792,7 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     let called = false;
     globalThis.fetch = async () => {
       called = true;
-      return new Response(JSON.stringify({ sid: "VE_recovered", status: "pending" }), {
+      return new Response(JSON.stringify({ sid: "VE33333333333333333333333333333333", status: "pending" }), {
         status: 201,
         headers: { "content-type": "application/json" },
       });
@@ -801,6 +801,22 @@ test.describe("Twilio Verify no cadastro profissional", () => {
     const response = await sendPhoneCode(request());
     expect(response.status).toBe(200);
     expect(called).toBe(true);
+  });
+
+  test("SMS exige uma verificação pendente e preserva a referência da tentativa", async () => {
+    configureTwilio();
+    globalThis.fetch = async () => Response.json({}, { status: 201 });
+    await expect(sendTwilioSmsVerification("47912349409")).rejects.toBeInstanceOf(TwilioVerifyProviderError);
+
+    const sid = "VE44444444444444444444444444444444";
+    const attemptSid = "VL55555555555555555555555555555555";
+    globalThis.fetch = async (_input, init) => {
+      expect(new URLSearchParams(String(init?.body)).get("To")).toBe("+5547912349409");
+      return Response.json({ sid, status: "pending", send_code_attempts: [{ attempt_sid: attemptSid, channel: "sms" }] }, { status: 201 });
+    };
+    await expect(sendTwilioSmsVerification("+55 (47) 91234-9409")).resolves.toMatchObject({
+      sid, status: "pending", attemptSids: [attemptSid],
+    });
   });
 
   test("SMS e WhatsApp compartilham a mesma VerificationCheck", async () => {

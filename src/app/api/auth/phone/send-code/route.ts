@@ -212,11 +212,14 @@ export const POST = monitorRegistration("PHONE_SEND", async (req, trace) => {
     const delivery = await sendTwilioVerification(phone, body.channel);
     trace.providerReference = delivery.sid;
 
-    console.info("[phone/send-code] delivery_response", {
+    console.info("[phone/send-code] verification_accepted", {
       endpoint: "/api/auth/phone/send-code",
       phone: maskedPhone,
       channel: body.channel,
       provider: "twilio-verify",
+      verificationSid: delivery.sid,
+      verificationStatus: delivery.status,
+      attemptSids: delivery.attemptSids,
     });
 
     await prisma.phoneVerificationCode.update({
@@ -224,7 +227,7 @@ export const POST = monitorRegistration("PHONE_SEND", async (req, trace) => {
       data: {
         sentAt: new Date(),
         deliveryProvider: "twilio-verify",
-        providerMessageId: delivery.sid ?? null,
+        providerMessageId: delivery.sid,
       },
     });
 

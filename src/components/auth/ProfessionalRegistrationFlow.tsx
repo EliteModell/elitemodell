@@ -319,7 +319,7 @@ export function ProfessionalRegistrationFlow({
       toast.success(
         requestedChannel === "whatsapp"
           ? "Solicitação aceita para entrega pelo WhatsApp."
-          : "Solicitação aceita. O SMS pode levar até 1 minuto para chegar.",
+          : "Solicitação de SMS aceita. Digite o código quando receber.",
       );
     } catch (error) {
       toast.error(publicErrorMessage(error, friendlyError));
@@ -622,7 +622,7 @@ export function ProfessionalRegistrationFlow({
                   </div>
                 ) : (
                   <div className={styles.codeArea}>
-                    <div className={styles.sentNotice}><Check size={18} aria-hidden="true" /> Solicitação aceita para {maskPhone(phone)} por {channel === "whatsapp" ? "WhatsApp" : "SMS"}. A entrega pode levar até 1 minuto.</div>
+                    <div className={styles.sentNotice}><Check size={18} aria-hidden="true" /> Solicitação aceita para {maskPhone(phone)} por {channel === "whatsapp" ? "WhatsApp" : "SMS"}. Se não receber o código, confira o número e use a opção de reenvio quando estiver disponível.</div>
                     <label htmlFor="verification-code">Código de 6 dígitos</label>
                     <input id="verification-code" className={styles.codeInput} type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" />
                     <button className={styles.primaryButton} type="button" disabled={verifyingCode || code.length !== 6} onClick={verifyCode}>{verifyingCode ? "Validando..." : "Validar e continuar"}</button>

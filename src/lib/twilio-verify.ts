@@ -16,6 +16,7 @@ type TwilioVerifyPayload = {
   status?: string;
   code?: number;
   message?: string;
+  send_code_attempts?: Array<{ attempt_sid?: string; channel?: string }>;
 };
 
 type TwilioVerifyServicePayload = {
@@ -205,9 +206,20 @@ export async function sendTwilioVerification(
     }),
   );
 
+  if (!payload || typeof payload.sid !== "string" || !/^VE[0-9a-f]{32}$/i.test(payload.sid) || payload.status !== "pending") {
+    throw new TwilioVerifyProviderError("A Twilio não confirmou uma verificação pendente.");
+  }
+
+  const attemptSids = Array.isArray(payload.send_code_attempts)
+    ? payload.send_code_attempts.flatMap((attempt) =>
+        attempt?.channel === channel && typeof attempt.attempt_sid === "string" && /^VL[0-9a-f]{32}$/i.test(attempt.attempt_sid)
+          ? [attempt.attempt_sid] : [],
+      )
+    : [];
   return {
     sid: payload.sid,
-    status: payload.status ?? "pending",
+    status: payload.status,
+    attemptSids,
     to,
   };
 }
