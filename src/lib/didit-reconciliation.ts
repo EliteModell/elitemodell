@@ -1,7 +1,7 @@
 import { recordRegistrationEvent, registrationIdentity } from "@/lib/registration-monitor";
 import { normalizeBrazilianPhone } from "@/lib/brazilian-phone";
 import { prisma } from "@/lib/prisma";
-import { digitVendorDataBelongsToUser, fetchDigitSessionDecision, isSafeDigitVerificationUrl, isSubmittedDigitStatus } from "@/lib/didit";
+import { digitVendorDataBelongsToUser, fetchDigitSessionDecision, isResumableDigitStatus, isSafeDigitVerificationUrl, isSubmittedDigitStatus } from "@/lib/didit";
 import { assessProfessionalDiditDecision } from "@/lib/professional-didit";
 import { logAudit } from "@/lib/audit";
 
@@ -23,7 +23,7 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
     const assessment = assessProfessionalDiditDecision(decision);
     const approved = assessment.status === "APPROVED";
     const rejected = assessment.status === "REJECTED";
-    const resumable = ["Not Started", "In Progress", "Awaiting User", "Not Finished"].includes(decision.status);
+    const resumable = isResumableDigitStatus(decision.status);
     const candidateUrl = isSafeDigitVerificationUrl(decision.session_url) ? decision.session_url : professional.verificationUrl;
     const url = resumable && isSafeDigitVerificationUrl(candidateUrl) ? candidateUrl : null;
     const clientStatus = approved ? "VERIFIED" : rejected ? "REJECTED" : "PENDING_REVIEW";
@@ -47,7 +47,7 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
     const moveToReview = approved && professional.status === "DRAFT" && Boolean(professional.registrationSubmittedAt);
     if (professional.kycSessionId === null || professional.kycStatus !== assessment.status || professional.verificationUrl !== url
       || professional.verifStatus !== identityDocumentStatus || professional.docStatus !== identityDocumentStatus || moveToReview) await tx.professional.updateMany({
-      where: { userId, kycProvider: "DIDIT", kycSessionId: sessionId },
+      where: { userId, kycProvider: "DIDIT", OR: [{ kycSessionId: sessionId }, { kycSessionId: null, user: { kycSessionId: sessionId } }] },
       data: {
         kycSessionId: sessionId,
         kycStatus: assessment.status,

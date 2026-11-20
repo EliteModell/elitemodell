@@ -114,6 +114,10 @@ export function isPendingDigitStatus(status?: string | null) {
   return DIDIT_PENDING_STATUSES.has(status as DiditSessionStatus);
 }
 
+export function isResumableDigitStatus(status?: string | null) {
+  return ["Not Started", "In Progress", "Awaiting User", "Not Finished"].includes(status ?? "");
+}
+
 /**
  * States that prove the applicant finished the hosted document/selfie flow.
  * They are sufficient to submit a private registration, never to publish it.
@@ -193,10 +197,29 @@ export function isDigitAvailable() {
   return getDigitConfig().missing.length === 0;
 }
 
-export async function createDigitSession(vendorData: string, callbackUrl: string, idempotencyKey?: string): Promise<DiditSession> {
+type DiditRequestObservation = { operation: "create" | "lookup"; durationMs: number; httpStatus: number | null; error: "timeout" | "network" | null };
+type DiditObserver = (observation: DiditRequestObservation) => void;
+
+async function fetchObservedDidit(operation: DiditRequestObservation["operation"], url: string | URL, init: RequestInit, observe?: DiditObserver) {
+  const start = performance.now();
+  let httpStatus: number | null = null;
+  let error: DiditRequestObservation["error"] = null;
+  try {
+    const response = await fetch(url, init);
+    httpStatus = response.status;
+    return response;
+  } catch (cause) {
+    error = init.signal?.aborted ? "timeout" : "network";
+    throw cause;
+  } finally {
+    observe?.({ operation, durationMs: Math.round(performance.now() - start), httpStatus, error });
+  }
+}
+
+export async function createDigitSession(vendorData: string, callbackUrl: string, idempotencyKey?: string, observe?: DiditObserver): Promise<DiditSession> {
   const { apiKey, workflowId } = getDigitConfig();
 
-  const res = await fetch(`${DIDIT_API_BASE}/v3/session/`, {
+  const res = await fetchObservedDidit("create", `${DIDIT_API_BASE}/v3/session/`, {
     method: "POST",
     headers: {
       "x-api-key": apiKey,
@@ -210,7 +233,7 @@ export async function createDigitSession(vendorData: string, callbackUrl: string
       language: "pt",
     }),
     signal: AbortSignal.timeout(10_000),
-  });
+  }, observe);
 
   if (!res.ok) {
     throw new Error(`Didit session creation failed with status ${res.status}`);
@@ -222,6 +245,7 @@ export async function createDigitSession(vendorData: string, callbackUrl: string
 export async function findDigitSessionByVendorData(
   vendorData: string,
   createdAfter?: number,
+  observe?: DiditObserver,
 ): Promise<DiditSessionSummary | null> {
   const { apiKey, workflowId } = getDigitConfig();
   const url = new URL(`${DIDIT_API_BASE}/v3/sessions/`);
@@ -229,7 +253,7 @@ export async function findDigitSessionByVendorData(
   url.searchParams.set("workflow_id", workflowId);
   if (createdAfter !== undefined) url.searchParams.set("date_from", new Date(createdAfter).toISOString());
 
-  const res = await fetch(url, { headers: { "x-api-key": apiKey }, cache: "no-store", signal: AbortSignal.timeout(8_000) });
+  const res = await fetchObservedDidit("lookup", url, { headers: { "x-api-key": apiKey }, cache: "no-store", signal: AbortSignal.timeout(8_000) }, observe);
   if (!res.ok) {
     throw new Error(`Didit session reconciliation failed with status ${res.status}`);
   }

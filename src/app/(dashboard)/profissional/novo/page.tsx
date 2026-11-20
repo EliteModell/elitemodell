@@ -388,6 +388,7 @@ export default function ProfissionalNovoPage() {
   const [diditMessage, setDigitMessage] = useState<string | null>(null);
   const [diditRetryAllowed, setDigitRetryAllowed] = useState(false);
   const [diditStartFailed, setDiditStartFailed] = useState(false);
+  const [diditSupportRef, setDiditSupportRef] = useState<string | null>(null);
   const [diditRetryUntil, setDiditRetryUntil] = useState(0);
   const [diditRetrySeconds, setDiditRetrySeconds] = useState(0);
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
@@ -1123,12 +1124,14 @@ export default function ProfissionalNovoPage() {
 
     diditStartingRef.current = true;
     setDiditStartFailed(false);
+    setDiditSupportRef(null);
     setUploadingIdx(100);
     try {
       const res = await fetch("/api/didit/session", { method: "POST" });
       const data = await res.json().catch(() => ({})) as DiditStatusResponse & { reused?: boolean };
-      if (!res.ok) {
+      if (!res.ok || (!data.url && !data.submissionEligible && data.status !== "APPROVED")) {
         console.error("[Didit] Falha ao iniciar verificacao.", { status: res.status });
+        setDiditSupportRef(res.headers.get("X-Correlation-Id"));
         const seconds = Number(res.headers.get("Retry-After"));
         if (Number.isFinite(seconds) && seconds > 0) {
           setDiditRetrySeconds(seconds);
@@ -2274,14 +2277,16 @@ export default function ProfissionalNovoPage() {
         />
       )}
       {step === 7 && diditStartFailed && (
-        <div className="mt-4 rounded-lg border border-current p-4" role="status">
+        <div className="model-didit-alert" role="status">
+          <strong>Verificação indisponível agora</strong>
           <p>Não conseguimos iniciar sua verificação de identidade neste momento. Seus dados estão salvos. Você pode tentar novamente ou entrar em contato com nossa equipe de suporte.</p>
-          <div className="mt-3 flex flex-wrap items-center gap-4">
+          <div className="model-didit-alert-actions">
             <button type="button" onClick={startDigitVerification} disabled={uploadingIdx === 100 || diditRetrySeconds > 0}>
               {uploadingIdx === 100 ? "Iniciando verificação..." : diditRetrySeconds ? `Tentar novamente em ${diditRetrySeconds}s` : "Tentar novamente"}
             </button>
             <a href="mailto:suporte@elitemodell.com.br">Falar com o suporte</a>
           </div>
+          {diditSupportRef && <small>Referência para suporte: {diditSupportRef}</small>}
         </div>
       )}
       {/* ── Navegação entre etapas ── */}
@@ -2899,6 +2904,18 @@ export default function ProfissionalNovoPage() {
           justify-content: space-between !important;
           gap: 14px !important;
           backdrop-filter: blur(16px);
+        }
+        .model-didit-alert { margin-block: 20px; padding: 18px; border: 1px solid #d8b4fe; border-radius: 14px; background: #faf5ff; color: #3b1758; }
+        .model-didit-alert p { margin: 8px 0 14px; }
+        .model-didit-alert small { display: block; margin-top: 12px; overflow-wrap: anywhere; }
+        .model-didit-alert-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+        .model-didit-alert-actions button, .model-didit-alert-actions a { display: inline-flex; align-items: center; justify-content: center; padding: 8px 14px; min-height: 44px; border: 1px solid #6b21a8; border-radius: 10px; font-weight: 750; }
+        .model-didit-alert-actions button { background: #6b21a8; color: #fff; }
+        .model-didit-alert-actions button:disabled { background: #e9d5ff; color: #492270; border-color: #e9d5ff; }
+        .model-didit-alert-actions a { color: #581c87; background: #fff; }
+        @media (prefers-color-scheme: dark) {
+          .model-didit-alert { background: #241337; color: #f5e8ff; border-color: #8052a6; }
+          .model-didit-alert-actions a { background: #31194b; color: #f5e8ff; border-color: #b88ee0; }
         }
         .model-step-actions button { min-height: 56px !important; flex: 1; font-weight: 900 !important; }
         .model-step-actions button:first-child {

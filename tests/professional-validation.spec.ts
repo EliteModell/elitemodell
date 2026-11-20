@@ -65,6 +65,9 @@ test("Didit reaproveita a reserva antes de cobrar uma nova tentativa", () => {
   expect(api.indexOf('kind: "starting" as const')).toBeLessThan(api.indexOf("kyc-session:didit:"));
   expect(api).toContain("if (!previousIntent)");
   expect(api).toContain('"Retry-After": String(diditLeaseSeconds(leaseAt))');
+  expect(api).toContain('response.headers.set("X-Correlation-Id", correlationId)');
+  expect(api).toContain('"recovered_link_missing", true');
+  expect(api).toContain('if (!existing.url && !existing.submissionEligible)');
   expect(screen).toContain("onClick={step === 7 && !canFinalizeIdentity ? startDigitVerification : next}");
   expect(screen).toContain("onStartVerification={startDigitVerification}");
 });
