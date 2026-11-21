@@ -2145,3 +2145,26 @@ model RegistrationEvent {
   @@index([identity, createdAt])
   @@index([accountType, createdAt])
 }
+
+model ManualIdentityAttempt {
+  id              String    @id
+  userId          String
+  documentType    String
+  backUnavailable Boolean   @default(false)
+  status          String    @default("PENDING")
+  noticeVersion   String
+  evidenceHashes  Json?
+  challengeDate   String
+  createdAt       DateTime  @default(now())
+  submittedAt     DateTime?
+  purgeAfter      DateTime
+  purgedAt        DateTime?
+  reviewVersion   Int       @default(0)
+  reviewedAt      DateTime?
+  reviewerId      String?
+  birthDate       DateTime? @db.Date
+
+  @@index([userId, createdAt])
+  @@index([status, submittedAt])
+  @@index([purgedAt, purgeAfter])
+}

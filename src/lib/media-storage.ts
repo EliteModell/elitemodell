@@ -17,6 +17,7 @@ export type MediaUploadInput = {
   contents: Buffer;
   contentType: string;
   overwrite?: boolean;
+  cacheControl?: string;
 };
 
 export type MediaTransform = {
@@ -48,6 +49,7 @@ export class SupabaseMediaStorageProvider implements MediaStorageProvider {
       .upload(input.path, input.contents, {
         contentType: input.contentType,
         upsert: input.overwrite ?? false,
+        ...(input.cacheControl !== undefined ? { cacheControl: input.cacheControl } : {}),
       });
     if (error && !(input.overwrite === false && /already exists|duplicate/i.test(error.message))) {
       throw new Error(`Falha no upload Supabase: ${error.message}`);

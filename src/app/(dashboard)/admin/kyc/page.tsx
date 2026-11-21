@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { identityEnabled, MANUAL_DOCUMENT_PROVIDER } from "@/lib/manual-identity-policy";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-access";
@@ -17,14 +19,16 @@ async function reviewProfessionalKyc(formData: FormData) {
   if (!id || !["approve", "reject"].includes(action)) return;
   if (action === "reject" && reason.trim().length < 4) return;
 
-  await prisma.professional.update({
-    where: { id },
+  const result = await prisma.professional.updateMany({
+    where: { id, ...(identityEnabled() ? { kycSessionId: { not: null } } : {}), OR: [{ kycProvider: null }, { kycProvider: { not: MANUAL_DOCUMENT_PROVIDER } }] },
     data: {
       kycStatus: action === "approve" ? "APPROVED" : "REJECTED",
       verifStatus: action === "approve" ? "APPROVED" : "REJECTED",
       rejectReason: action === "reject" ? reason : null,
     },
   });
+
+  if (!result.count) return;
 
   await logAudit({
     adminId: session.user.id,
@@ -170,6 +174,7 @@ export default async function AdminKycPage() {
 
   return (
     <div>
+      {identityEnabled() && <Link href="/admin/kyc/documental">Verifica??o documental manual</Link>}
       <AdminHeader title="KYC e verificação facial/manual" subtitle="Origem da verificação, Inquiry Persona, status retornado e revisão manual quando necessária." />
 
       <AdminPanel>

@@ -1,3 +1,4 @@
+import { MANUAL_DOCUMENT_PROVIDER } from "@/lib/manual-identity-policy";
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -143,6 +144,7 @@ export async function handlePersonaWebhook(req: NextRequest) {
         }),
         prisma.professional.updateMany({
           where: {
+            AND: [{ OR: [{ kycProvider: null }, { kycProvider: { not: MANUAL_DOCUMENT_PROVIDER } }] }],
             OR: [
               ...(referenceId ? [{ userId: referenceId }] : []),
               { kycSessionId: inquiryId },
@@ -178,6 +180,7 @@ export async function handlePersonaWebhook(req: NextRequest) {
         }),
         prisma.professional.updateMany({
           where: {
+            AND: [{ OR: [{ kycProvider: null }, { kycProvider: { not: MANUAL_DOCUMENT_PROVIDER } }] }],
             OR: [
               ...(referenceId ? [{ userId: referenceId }] : []),
               { kycSessionId: inquiryId },
@@ -209,6 +212,7 @@ export async function handlePersonaWebhook(req: NextRequest) {
         }),
         prisma.professional.updateMany({
           where: {
+            AND: [{ OR: [{ kycProvider: null }, { kycProvider: { not: MANUAL_DOCUMENT_PROVIDER } }] }],
             OR: [
               ...(referenceId ? [{ userId: referenceId }] : []),
               { kycSessionId: inquiryId },

@@ -165,7 +165,7 @@ export async function proxy(request: NextRequest) {
     if (!isAdmin && !isHostAccount) return forbidden(homeForToken());
   }
 
-  if (pathname === "/profissional/novo") {
+  if (pathname === "/profissional/novo" || pathname === "/profissional/identidade") {
     if (!isProfessionalAccount && !isAdmin) return forbidden(homeForToken());
     return NextResponse.next();
   }

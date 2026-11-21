@@ -68,7 +68,7 @@ test("Didit reaproveita a reserva antes de cobrar uma nova tentativa", () => {
   expect(api).toContain('response.headers.set("X-Correlation-Id", correlationId)');
   expect(api).toContain('"recovered_link_missing", true');
   expect(api).toContain('if (!existing.url && !existing.submissionEligible)');
-  expect(screen).toContain("onClick={step === 7 && !canFinalizeIdentity ? startDigitVerification : next}");
+  expect(screen).toContain(": startDigitVerification) : next}");
   expect(screen).toContain("onStartVerification={startDigitVerification}");
 });
 
@@ -299,7 +299,8 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     expect(submission).toContain('attemptAutomaticProfessionalPublication(professional.id, "registration-submitted")');
     expect(publication).toContain('status: "ACTIVE"');
     expect(publication).toContain('evaluateMediaPublicationGates({');
-    expect(publication).toContain('professional.kycStatus !== "APPROVED"');
+    expect(publication).toContain('professional.kycStatus === "APPROVED"');
+    expect(publication).toContain('manualAttemptAllowsPublication(professional.kycSessionId, current)');
     expect(publication).toContain('professionalApprovalAccessData(tx, professional)');
   });
 

@@ -1,3 +1,4 @@
+import { identityEnabled } from "@/lib/manual-identity-policy";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireAuthenticatedAccount } from "@/lib/account-access";
@@ -116,6 +117,7 @@ export default async function ProfessionalAnalysisPage() {
 
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
           {correctionRequired && <Link href={`${ACCOUNT_ROUTES.onboardingAcompanhante}?correction=1`} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-[8px] bg-[#b72cff] px-4 text-sm font-black text-white no-underline">Revisar e reenviar cadastro</Link>}
+          {identityEnabled() && identityOutstanding && <Link href="/profissional/identidade" className="inline-flex min-h-11 items-center rounded border px-4">Enviar documentos para análise</Link>}
           {identityOutstanding && !correctionRequired && <Link href={`${ACCOUNT_ROUTES.onboardingAcompanhante}?didit=returned`} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-[8px] border border-white/10 px-4 text-sm font-black text-white no-underline">Ver minha verificação</Link>}
           <Link href="/" className="inline-flex min-h-11 flex-1 items-center justify-center rounded-[8px] border border-white/10 px-4 text-sm font-black text-white/72 no-underline">
             Voltar ao inicio

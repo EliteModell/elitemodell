@@ -1,3 +1,4 @@
+import { identityEnabled } from "@/lib/manual-identity-policy";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -26,6 +27,9 @@ export async function POST(req: Request) {
     select: { clientStatus: true, termsConsent: true, lgpdConsent: true, accountType: true },
   });
 
+  if (identityEnabled() && (session.user.isProfessional || session.user.activeProfileType === "PROFESSIONAL" || ["model", "professional"].includes(user?.accountType ?? ""))) {
+    return NextResponse.json({ code: "MANUAL_DOCUMENT_REQUIRED" }, { status: 409 });
+  }
   if (!user) return NextResponse.json({ error: "Usuário não encontrado." }, { status: 404 });
   if (user.clientStatus === "VERIFIED") return NextResponse.json({ error: "Conta já verificada." }, { status: 400 });
   if (user.clientStatus === "PENDING_REVIEW") return NextResponse.json({ error: "Verificação já em análise." }, { status: 400 });

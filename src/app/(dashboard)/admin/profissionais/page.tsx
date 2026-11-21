@@ -1,3 +1,4 @@
+import { identityEnabled, MANUAL_DOCUMENT_PROVIDER, shouldReviewRegistrationManually } from "@/lib/manual-identity-policy";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
@@ -269,6 +270,9 @@ async function reviewProfessional(formData: FormData) {
           ? { status: "CORRECTION_REQUIRED" as const, verified: false, rejectReason: moderationReason }
           : { status: "REJECTED" as const, verified: false, rejectReason: moderationReason };
 
+  const resumeWhere = identityEnabled()
+    ? { status: "PAUSED" as const, verified: true }
+    : { OR: [{ kycProvider: null }, { kycProvider: { not: MANUAL_DOCUMENT_PROVIDER } }, { status: "PAUSED" as const, verified: true, kycStatus: "APPROVED" }] };
   const professional = action === "approve"
     ? await prisma.$transaction(async (tx) => {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`professional-approval:${id}`}))`;
@@ -325,7 +329,7 @@ async function reviewProfessional(formData: FormData) {
             freeAccessEndsAt: true,
           },
         });
-        if (current.status === "ACTIVE") return null;
+        if (current.status === "ACTIVE" || shouldReviewRegistrationManually(current)) return null;
         if (professionalApprovalIssues(current).length) return null;
         if (current.kycProvider === "DIDIT") {
           const active = await tx.professional.findUnique({ where: { id }, select: { kycSessionId: true, status: true } });
@@ -353,7 +357,7 @@ async function reviewProfessional(formData: FormData) {
           select: { id: true, userId: true, slug: true, user: { select: { email: true, name: true } } },
         });
       }, { maxWait: 5_000, timeout: 15_000 })
-    : await prisma.professional.update({ where: { id }, data, select: { id: true, userId: true, slug: true, user: { select: { email: true, name: true } } } });
+    : await prisma.professional.update({ where: { id, ...(action === "resume" ? resumeWhere : {}) }, data, select: { id: true, userId: true, slug: true, user: { select: { email: true, name: true } } } });
   if (!professional) return;
 
   if (action === "approve") {

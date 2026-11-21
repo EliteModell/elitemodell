@@ -1,3 +1,4 @@
+import { isManualIdentityStorageObject } from "@/lib/manual-identity-policy";
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
@@ -65,6 +66,9 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
       approvedPath: true,
     },
   });
+  if (asset && isManualIdentityStorageObject(asset.approvedBucket, asset.approvedPath)) {
+    return NextResponse.json({ error: "Midia indisponivel." }, { status: 404, headers: ageGateCacheHeaders() });
+  }
   const gates = asset ? evaluateMediaPublicationGates({
     uploadComplete: Boolean(asset.uploadCompletedAt),
     malwareStatus: asset.malwareStatus,

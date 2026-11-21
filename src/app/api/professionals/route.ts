@@ -1,3 +1,4 @@
+import { MANUAL_DOCUMENT_PROVIDER, manualRegistrationStatus, shouldReviewRegistrationManually } from "@/lib/manual-identity-policy";
 import { monitorRegistration, registrationIdentity } from "@/lib/registration-monitor";
 import { normalizeBrazilianPhone } from "@/lib/phone-otp";
 export const dynamic = "force-dynamic";
@@ -314,7 +315,7 @@ export const POST = monitorRegistration("PROFILE", async (req, trace) => {
 
   const existing = await prisma.professional.findUnique({
     where: { userId: session.user.id },
-    select: { id: true, status: true, kycProvider: true, kycSessionId: true, kycStatus: true, presentationVideoUrl: true, presentationVideoStatus: true, user: { select: { email: true, name: true } } },
+    select: { id: true, status: true, kycProvider: true, kycSessionId: true, kycStatus: true, verificationUrl: true, presentationVideoUrl: true, presentationVideoStatus: true, user: { select: { email: true, name: true } } },
   });
   if (existing && !["DRAFT", "CORRECTION_REQUIRED"].includes(existing.status)) {
     if (existing.status === "PENDING_REVIEW") {
@@ -379,7 +380,16 @@ export const POST = monitorRegistration("PROFILE", async (req, trace) => {
       submissionEligible: existing?.kycStatus === "APPROVED",
       providerChecked: existing?.kycStatus === "APPROVED",
     };
-    if (diditVerification.sessionId) {
+    const manualRegistration = shouldReviewRegistrationManually(existing, user.kycSessionId);
+    if (manualRegistration) {
+      const current = await prisma.manualIdentityAttempt.findFirst({
+        where: { userId: session.user.id, submittedAt: { not: null } }, orderBy: { submittedAt: "desc" },
+      });
+      const status = manualRegistrationStatus(current);
+      diditVerification = { sessionId: current?.id ?? null, status, submissionEligible: status === "PENDING" || status === "APPROVED", providerChecked: true };
+    }
+    const personaRegistration = existing?.kycProvider === "PERSONA" || diditVerification.sessionId?.startsWith("inq_");
+    if (!manualRegistration && !personaRegistration && diditVerification.sessionId) {
       try {
         const reconciled = await reconcileProfessionalDidit(session.user.id, diditVerification.sessionId);
         diditVerification = {
@@ -400,7 +410,7 @@ export const POST = monitorRegistration("PROFILE", async (req, trace) => {
     if (!diditVerification.sessionId) {
       trace.reason = "IDENTITY_NOT_STARTED";
       return NextResponse.json({
-        error: "Inicie a verificação de identidade com a Didit antes de enviar o cadastro.",
+        error: manualRegistration ? "Envie os documentos para análise antes de finalizar." : "Inicie a verificação de identidade com a Didit antes de enviar o cadastro.",
         code: "identity_not_started",
       }, { status: 422 });
     }
@@ -478,8 +488,8 @@ export const POST = monitorRegistration("PROFILE", async (req, trace) => {
       phone:     phone ? normalizePhone(phone) : undefined,
       whatsapp:  whatsapp ? normalizePhone(whatsapp) : undefined,
       verificationUrl: null,
-      verificationType: "biometria",
-      kycProvider: diditVerification.sessionId ? DIDIT_PROVIDER : existing?.kycProvider,
+      verificationType: manualRegistration ? "documental_manual" : "biometria",
+      kycProvider: manualRegistration ? MANUAL_DOCUMENT_PROVIDER : personaRegistration ? "PERSONA" : diditVerification.sessionId ? DIDIT_PROVIDER : existing?.kycProvider,
       kycSessionId: diditVerification.sessionId,
       kycStatus: diditVerification.status,
       escortCategory,
@@ -506,6 +516,13 @@ export const POST = monitorRegistration("PROFILE", async (req, trace) => {
       .filter((url, index, values) => values.indexOf(url) === index);
 
     const professional = await prisma.$transaction(async (tx) => {
+      if (manualRegistration) {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"manual-identity:" + session.user.id}))`;
+        const current = await tx.manualIdentityAttempt.findFirst({
+          where: { userId: session.user.id, submittedAt: { not: null } }, orderBy: { submittedAt: "desc" },
+        });
+        if (current?.id !== diditVerification.sessionId || manualRegistrationStatus(current) !== diditVerification.status) return null;
+      }
       const saved = existing
         ? await tx.professional.update({
           where: { userId: session.user.id },
@@ -547,6 +564,8 @@ export const POST = monitorRegistration("PROFILE", async (req, trace) => {
       });
       return saved;
     });
+
+    if (!professional) return NextResponse.json({ code: "identity_attempt_changed" }, { status: 409 });
 
     await logAudit({
       actorIdentifier: user.email,

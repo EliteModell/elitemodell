@@ -1,3 +1,4 @@
+import { isManualIdentityStorageObject } from "@/lib/manual-identity-policy";
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
@@ -29,6 +30,9 @@ export async function GET(
 
   const bucket = asset.approvedBucket ?? asset.quarantineBucket;
   const path = asset.approvedPath ?? asset.quarantinePath;
+  if (isManualIdentityStorageObject(bucket, path)) {
+    return NextResponse.json({ error: "Arquivo nao encontrado." }, { status: 404 });
+  }
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase.storage.from(bucket).download(path);
   if (error || !data) {

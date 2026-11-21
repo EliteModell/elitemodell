@@ -1,3 +1,4 @@
+import { identityEnabled, MANUAL_DOCUMENT_PROVIDER, manualAttemptAllowsPublication } from "@/lib/manual-identity-policy";
 import "server-only";
 
 import { revalidatePath } from "next/cache";
@@ -158,7 +159,14 @@ export async function attemptAutomaticProfessionalPublication(
       emailVerified: professional.user.emailVerified,
     });
     blockers.push(...completion.profileIssues.map((issue) => ({ code: issue.code, label: issue.label })));
-    if (!professional.kycSessionId || professional.kycStatus !== "APPROVED") {
+    let approvedIdentity = Boolean(professional.kycSessionId && professional.kycStatus === "APPROVED");
+    if (professional.kycProvider === MANUAL_DOCUMENT_PROVIDER) {
+      const current = identityEnabled() && approvedIdentity ? await tx.manualIdentityAttempt.findFirst({
+        where: { userId: professional.userId, submittedAt: { not: null } }, orderBy: { submittedAt: "desc" },
+      }) : null;
+      approvedIdentity = manualAttemptAllowsPublication(professional.kycSessionId, current);
+    }
+    if (!approvedIdentity) {
       blockers.push({ code: "kyc", label: "A verificação de identidade e maioridade ainda não foi aprovada." });
     }
 
