@@ -1,0 +1,27 @@
+.shell { max-width: 44rem; margin: auto; padding: clamp(1rem, 4vw, 2.5rem); }
+.card { display: grid; gap: 1rem; padding: clamp(1rem, 5vw, 2.25rem); background: #17151b; color: #f8f5f9; border: 1px solid #38313d; border-radius: 1.5rem; box-shadow: 0 12px 46px #0004; }
+.card h1 { font-size: clamp(1.55rem, 5vw, 2.4rem); line-height: 1.1; margin: 0; }
+.card h2 { margin: 0; font-size: 1.25rem; }
+.card p { margin: 0; line-height: 1.5; }
+.card progress { width: 100%; accent-color: #e6bcce; }
+.card select { display: block; width: 100%; min-height: 3rem; padding: .5rem; border-radius: .65rem; background: #26212a; color: #fff; }
+.frame { display: grid; place-items: center; min-height: 11rem; border: 2px dashed #b99aa9; border-radius: 1rem; padding: .75rem; text-align: center; animation: appear .2s ease-out; }
+.frame img { display: block; max-width: 100%; max-height: 23rem; object-fit: contain; }
+.card button { display: grid; place-items: center; min-height: 3rem; padding: .65rem 1rem; border-radius: .7rem; background: #e6bcce; color: #241620; font-weight: 700; cursor: pointer; }
+.card button:disabled { opacity: .5; cursor: default; }
+.card .secondary { background: #352d39; color: #fff; }
+.file input { display: block; max-width: 100%; margin-top: .4rem; }
+.check { display: flex; align-items: center; gap: .65rem; min-height: 2.75rem; }
+.notice { display: grid; gap: .7rem; padding: 1rem; background: #26212a; border-radius: .75rem; }
+.notice a { text-decoration: underline; }
+.actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+.actions button { flex: 1; }
+.status { color: #efcfde; }
+@keyframes appear { from { opacity: .65; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .frame { animation: none; } }
+
+
+.cameraPanel { display: grid; gap: .65rem; }
+.liveFrame { position: relative; background: #0d0c0e; border-radius: .75rem; overflow: hidden; }
+.liveFrame video { display: block; width: 100%; max-height: 23rem; object-fit: contain; }
+.liveFrame div { position: absolute; inset: 12%; border: 2px dashed #fff; border-radius: .6rem; pointer-events: none; }

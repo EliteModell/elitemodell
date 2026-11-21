@@ -1,0 +1,15 @@
+.shell { min-height: 100vh; background: radial-gradient(ellipse at top, #271823, #09080a 45rem); color: #f8f5f9; }
+.nav { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem clamp(1rem, 5vw, 4rem); border-bottom: 1px solid #51404e; }
+.nav strong { letter-spacing: .16em; }
+.nav a { color: #efcfde; text-decoration: underline; }
+.queue { display: grid; gap: 1rem; max-width: 58rem; margin: auto; padding: 2rem 1rem; }
+.queue h1 { font-size: clamp(1.6rem, 5vw, 2.6rem); line-height: 1.15; }
+.panel { border: 1px solid #473b47; border-radius: 1rem; background: #1b171d; padding: clamp(1rem, 4vw, 1.5rem); }
+.panel h2 { font-size: 1.25rem; }
+.status { color: #f0c9da; font-weight: 700; }
+.panel details { margin: 1rem 0; }
+.panel summary { cursor: pointer; }
+.panel textarea, .panel select, .panel input[type=date] { color-scheme: dark; background: #2c242d; }
+.evidence { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: 1rem; margin-top: 1rem; }
+.evidence img { display: block; width: 100%; border-radius: .5rem; }
+.reset { justify-self: start; border: 1px solid #675263; border-radius: .5rem; padding: .65rem 1rem; }

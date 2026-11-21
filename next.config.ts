@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["mercadopago"],
   async headers() {
     return [
+      { source: "/demo-identidade/:path*", headers: ageRestrictedHeaders },
       {
         source: "/profissional/:path*",
         headers: privateNoStoreHeaders,
