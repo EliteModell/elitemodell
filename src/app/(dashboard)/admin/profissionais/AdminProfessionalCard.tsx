@@ -400,6 +400,12 @@ export function AdminProfessionalCard({
                 const statusDate = entry.deliveredAt ?? entry.rejectedAt ?? entry.failedAt ?? entry.acceptedAt ?? entry.createdAt;
                 return <li key={entry.id}><b>{labels[entry.status] ?? entry.status} · {entry.category}</b><span>{date(statusDate, true)} · {entry.recipientMasked}</span><small>{entry.subject}{entry.failureReason ? ` · ${entry.failureReason}` : ""}</small></li>;
               })}</ol> : communicationAudits.length ? <ol className="pro-history">{communicationAudits.map((entry) => <li key={entry.id}><b>{JSON.stringify(entry.changes).includes("EMAIL_FAILED") ? "Falhou (registro antigo)" : "Aceito (registro antigo)"}</b><span>{date(entry.timestamp, true)}</span><small>{entry.reason}</small></li>)}</ol> : <p className="pro-empty">Nenhuma comunicação registrada</p>}
+              {pro.status === "ACTIVE" && pro.verified && emailDeliveries.some((entry) =>
+                ["PROFESSIONAL_APPROVED", "PROFESSIONAL_PUBLISHED"].includes(entry.category) && entry.status !== "DELIVERED",
+              ) && <form action={reviewAction}>
+                <input type="hidden" name="id" value={pro.id} />
+                <button type="submit" name="action" value="retryApprovalEmail" style={buttonStyle}>Verificar e-mail de aprovação e reenviar se falhou</button>
+              </form>}
               <p className="pro-subtitle">Alterações recentes</p>
               {audits.length ? <ol className="pro-history">{audits.map((entry) => <li key={entry.id}><b>{moderationAction(entry)}</b><span>{entry.admin?.name ?? entry.admin?.email ?? entry.actorIdentifier ?? "Sistema"} · {date(entry.timestamp, true)}</span>{entry.reason && <small>{entry.reason}</small>}</li>)}</ol> : <p className="pro-empty">Nenhuma ação administrativa registrada</p>}
             </Section>

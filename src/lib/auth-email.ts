@@ -1,5 +1,5 @@
 import "server-only";
-import { manualIdentityEmailIdempotencyKey, professionalApprovalEmailIdempotencyKey, professionalPublicationEmailIdempotencyKey, professionalSubmissionReceiptIdempotencyKey } from "@/lib/email-idempotency";
+import { manualIdentityEmailIdempotencyKey, professionalPublicationEmailIdempotencyKey, professionalSubmissionReceiptIdempotencyKey } from "@/lib/email-idempotency";
 import { realAccountEmail } from "@/lib/account-email";
 import { beginEmailDelivery, markEmailAccepted, markEmailFailed } from "@/lib/email-delivery-tracking";
 
@@ -196,7 +196,7 @@ export class AuthEmailDeliveryError extends Error {
 export async function sendAuthEmail(
   to: string,
   email: AuthEmail,
-  options?: { idempotencyKey?: string; timeoutMs?: number; professionalId?: string; category?: string; retryTransient?: boolean },
+  options?: { idempotencyKey?: string; timeoutMs?: number; professionalId?: string; category?: string; retryTransient?: boolean; requireTracking?: boolean },
 ) {
   const deliverableEmail = realAccountEmail(to);
   if (!deliverableEmail) {
@@ -207,6 +207,7 @@ export async function sendAuthEmail(
     tracking = await beginEmailDelivery(deliverableEmail, email.subject, options);
     if (tracking.providerMessageId && tracking.status !== "PENDING") return tracking.providerMessageId;
   } catch (error) {
+    if (options?.requireTracking) throw error;
     console.error("[auth-email] rastreamento indisponivel; envio preservado.", {
       reason: error instanceof Error ? error.name : "unknown",
     });
@@ -350,66 +351,29 @@ export async function sendProfessionalSubmissionReceipt(
   });
 }
 
-export async function sendProfessionalApprovalEmail(to: string, name?: string | null, professionalId?: string, profileUrl = "/profissional"): Promise<void> {
-  const safeProfileUrl = escapeHtml(new URL(profileUrl, DEFAULT_SITE_URL).toString());
-  const base = `
-    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#0a0a0a;color:#fcf7ff;border:1px solid rgba(212,168,67,0.25);border-radius:12px;overflow:hidden">
-      <div style="height:3px;background:linear-gradient(90deg,transparent,#b72cff,#e1a6ff,#b72cff,transparent)"></div>
-      <div style="padding:40px 32px">
-        <div style="margin-bottom:28px;text-align:center">
-          <span style="font-weight:900;font-size:24px">
-            <span style="background:linear-gradient(135deg,#fcf7ff,#b72cff,#e1a6ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent">elite</span><span style="color:#fcf7ff">modell</span>
-          </span>
-        </div>
-        <h2 style="color:#fcf7ff;font-size:22px;margin:0 0 12px">Cadastro aprovado</h2>
-        <p style="color:#b4adb0;line-height:1.7;margin:0">Olá${name?.trim() ? `, ${name.trim()}` : ""}.</p>
-        <p style="color:#b4adb0;line-height:1.7;margin:12px 0">Parabéns! Seu perfil foi aprovado pela equipe ELITE MODELL. Acesse sua conta para acompanhar a publicação e a disponibilidade do seu anúncio.</p>
-        <p style="color:#b4adb0;line-height:1.7;margin:0">Você já pode acessar sua conta e aproveitar os recursos disponíveis na plataforma.</p>
-        <p style="color:#b4adb0;line-height:1.7;margin:12px 0 0">Se ainda houver alguma informação pendente no perfil, você poderá completá-la na sua área de cadastro. A publicação continua sujeita às regras de segurança e moderação.</p>
-        <p style="margin:20px 0 0"><a href="${safeProfileUrl}" style="display:inline-block;background:#b72cff;color:#ffffff;text-decoration:none;font-weight:800;padding:13px 20px;border-radius:10px">Acessar meu perfil</a></p>
-        <p style="color:#b4adb0;line-height:1.7;margin:24px 0 0">Atenciosamente,<br><strong style="color:#fcf7ff">Equipe Elite Modell</strong></p>
-        <div style="margin-top:32px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.08);text-align:center;color:#aaa0b2;font-size:12px">
-          Elite Modell - Plataforma premium adulta - Brasil
-        </div>
-      </div>
-    </div>
-  `;
-
-  await sendAuthEmail(to, {
-    subject: "ELITE MODELL — Seu perfil foi aprovado!",
-    html: base,
-  }, professionalId ? {
-    idempotencyKey: professionalApprovalEmailIdempotencyKey(professionalId),
-    professionalId,
-    category: "PROFESSIONAL_APPROVED",
-  } : { category: "PROFESSIONAL_APPROVED" });
-}
-
-export async function sendProfessionalPublishedEmail(to: string, name?: string | null, professionalId?: string, profileUrl = "/profissional"): Promise<void> {
-  const safeName = name?.trim().replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character] ?? character));
-  const safeProfileUrl = escapeHtml(new URL(profileUrl, DEFAULT_SITE_URL).toString());
+export async function sendProfessionalPublishedEmail(to: string, professionalId: string, retryForDeliveryId?: string) {
+  const key = professionalPublicationEmailIdempotencyKey(professionalId);
   await sendAuthEmail(to, {
     subject: "ELITE MODELL — Seu perfil foi aprovado!",
     html: `
-      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#ffffff;color:#17131a;border:1px solid #dfd1e5;border-radius:16px;overflow:hidden">
-        <div style="height:4px;background:#7d179f"></div>
-        <div style="padding:36px 30px">
-          <div style="color:#7d179f;font-size:22px;font-weight:900;margin-bottom:24px">ELITE MODELL</div>
-          <h1 style="font-size:22px;margin:0 0 14px">Bem-vinda à Elite Modell! Seu perfil está no ar!</h1>
-          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Olá${safeName ? `, ${safeName}` : ""}!</p>
-          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">É um prazer receber você na Elite Modell! 💜</p>
-          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Parabéns! Seu perfil foi aprovado pela equipe ELITE MODELL. Acesse sua conta para acompanhar a publicação e a disponibilidade do seu anúncio.</p>
-          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Agora você pode acessar sua conta, atualizar suas informações, organizar suas fotos e aproveitar os recursos disponíveis para apresentar seu perfil.</p>
-          <p style="color:#625c68;line-height:1.7;margin:0 0 18px">Estamos muito felizes em ter você conosco e desejamos muito sucesso nesta nova etapa!</p>
-          <p style="margin:0 0 22px"><a href="${safeProfileUrl}" style="display:inline-block;background:#7d179f;color:#ffffff;text-decoration:none;font-weight:800;padding:13px 20px;border-radius:10px">Acessar meu perfil</a></p>
-          <p style="color:#625c68;line-height:1.7;margin:0"><strong>Bem-vinda à Elite Modell!</strong><br><br>Com carinho,<br>Equipe Elite Modell 💜</p>
-          <div style="margin-top:28px;padding-top:18px;border-top:1px solid #eee6f1;color:#77707b;font-size:12px">Esta mensagem não contém fotos, documentos, dados biométricos ou informações financeiras.</div>
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;color:#21172b;border:1px solid #e8def0;border-radius:16px;overflow:hidden">
+        <div style="height:4px;background:#7615ab"></div>
+        <div style="padding:32px">
+          <h1 style="font-size:22px;margin:0 0 20px;color:#7615ab">ELITE MODELL</h1>
+          <p>Olá!</p>
+          <p>Temos uma ótima notícia! Seu perfil na ELITE MODELL foi aprovado pela nossa equipe.</p>
+          <p>Seu cadastro foi concluído com sucesso e seu perfil está disponível na plataforma, conforme suas configurações de visibilidade.</p>
+          <p>Acesse sua conta para acompanhar seu anúncio.</p>
+          <p><a href="${DEFAULT_SITE_URL}/profissional">Acessar minha conta</a></p>
+          <p>Equipe ELITE MODELL</p>
         </div>
       </div>
     `,
-  }, professionalId ? {
-    idempotencyKey: professionalPublicationEmailIdempotencyKey(professionalId),
+  }, {
+    idempotencyKey: key + (retryForDeliveryId ? `:retry:${retryForDeliveryId}` : ""),
     professionalId,
     category: "PROFESSIONAL_PUBLISHED",
-  } : { category: "PROFESSIONAL_PUBLISHED" });
+    requireTracking: true,
+    retryTransient: true,
+  });
 }

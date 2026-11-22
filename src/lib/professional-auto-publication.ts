@@ -3,11 +3,10 @@ import "server-only";
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { sendProfessionalPublishedEmail } from "@/lib/auth-email";
 import { evaluateMediaPublicationGates } from "@/lib/media-security";
 import { professionalApprovalAccessData } from "@/lib/professional-access";
 import { professionalCompletion } from "@/lib/professional-completeness";
-import { deliverProfessionalApprovalSms, deliverProfessionalCommunication } from "@/lib/professional-communications";
+import { deliverProfessionalApprovalSms, deliverProfileApprovalCommunication } from "@/lib/professional-communications";
 import { controlledMediaAssetId } from "@/lib/public-professional-media";
 
 export type ProfessionalPublicationBlocker = {
@@ -83,6 +82,7 @@ function refreshPublicProfessionalPages() {
 export async function attemptAutomaticProfessionalPublication(
   professionalId: string,
   source: string,
+  adminId?: string,
 ): Promise<AutomaticPublicationResult> {
   const outcome = await prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`professional-auto-publication:${professionalId}`}))`;
@@ -94,7 +94,7 @@ export async function attemptAutomaticProfessionalPublication(
         user: {
           select: {
             id: true,
-            name: true,
+
             email: true,
             emailVerified: true,
             blocked: true,
@@ -125,15 +125,14 @@ export async function attemptAutomaticProfessionalPublication(
           profileUrl,
           blockers: [],
         } satisfies AutomaticPublicationResult,
-        communication: {
-          userId: professional.user.id,
-          email: professional.user.email,
-          name: professional.user.name,
-        },
+        communication: null,
       };
     }
 
     const blockers: ProfessionalPublicationBlocker[] = [];
+    if (professional.kycProvider === MANUAL_DOCUMENT_PROVIDER && (!adminId || professional.status !== "PENDING_REVIEW")) {
+      blockers.push({ code: "administrative_approval", label: "O perfil aguarda aprovação administrativa." });
+    }
     if (!["DRAFT", "PENDING_REVIEW", "CORRECTION_REQUIRED"].includes(professional.status)) {
       blockers.push({ code: "status", label: `Status ${professional.status} exige análise administrativa.` });
     }
@@ -228,17 +227,18 @@ export async function attemptAutomaticProfessionalPublication(
     });
     await tx.auditLog.create({
       data: {
-        actorIdentifier: "automatic-publication",
+        adminId,
+        actorIdentifier: adminId ?? "automatic-publication",
         action: "PROFESSIONAL_APPROVED",
         targetType: "PROFESSIONAL",
         targetId: professionalId,
-        reason: "professional:auto-publication",
+        reason: adminId ? "Aprovação administrativa do perfil." : "professional:auto-publication",
         changes: {
           source,
           resultingStatus: "ACTIVE",
           coverPhotoId: cover.id,
           publishablePhotoCount: publishablePhotos.length,
-          moderationAction: "automatic-publication",
+          moderationAction: adminId ? "approve" : "automatic-publication",
         },
       },
     });
@@ -254,23 +254,17 @@ export async function attemptAutomaticProfessionalPublication(
       communication: {
         userId: professional.user.id,
         email: professional.user.email,
-        name: professional.user.name,
       },
     };
   }, { maxWait: 5_000, timeout: 15_000 });
 
   if (outcome.result.published && outcome.communication) {
     const communication = outcome.communication;
-    await deliverProfessionalCommunication({
+    await deliverProfileApprovalCommunication({
       professionalId,
       userId: communication.userId,
       email: communication.email,
-      type: "PROFILE_PUBLISHED",
-      notificationTitle: "Seu perfil está no ar!",
-      notificationBody: "Seu cadastro foi concluído e seu perfil já está disponível na Elite Modell.",
-      link: outcome.result.profileUrl,
-      dedupeReason: "professional:profile-published-email:v1",
-      send: () => sendProfessionalPublishedEmail(communication.email!, communication.name, professionalId, outcome.result.profileUrl),
+      adminId,
     }).catch((cause) => {
       console.error("[professional-auto-publication] falha na comunicação", {
         professionalId,

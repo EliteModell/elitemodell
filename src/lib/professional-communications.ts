@@ -2,6 +2,9 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { realAccountEmail } from "@/lib/account-email";
+import { sendProfessionalPublishedEmail } from "@/lib/auth-email";
+import { recoverTrackedEmail } from "@/lib/email-delivery-recovery";
+import { professionalApprovalEmailIdempotencyKey, professionalPublicationEmailIdempotencyKey } from "@/lib/email-idempotency";
 
 function normalizedBrazilPhone(value: string | null | undefined) {
   const digits = value?.replace(/\D/g, "") ?? "";
@@ -141,4 +144,54 @@ export async function deliverProfessionalCommunication(input: {
     } });
     return { emailStatus: "EMAIL_FAILED" as const };
   }
+}
+
+function profileApprovalEmailKeys(professionalId: string) {
+  return [professionalPublicationEmailIdempotencyKey(professionalId), professionalApprovalEmailIdempotencyKey(professionalId)];
+}
+
+export async function deliverProfileApprovalCommunication(input: {
+  professionalId: string;
+  userId: string;
+  email: string | null | undefined;
+  adminId?: string;
+}) {
+  const previous = await prisma.emailDelivery.findFirst({
+    where: { idempotencyKey: { in: profileApprovalEmailKeys(input.professionalId) } },
+    select: { id: true },
+  });
+  if (previous) return;
+  await deliverProfessionalCommunication({
+    ...input,
+    type: "PROFILE_PUBLISHED",
+    notificationTitle: "Seu perfil foi aprovado!",
+    notificationBody: "Seu perfil está disponível conforme suas configurações de visibilidade.",
+    link: "/profissional",
+    dedupeReason: "professional:profile-published-email:v1",
+    send: () => sendProfessionalPublishedEmail(input.email!, input.professionalId),
+  });
+}
+
+export async function recoverProfileApprovalEmail(professionalId: string) {
+  const profile = await prisma.professional.findUnique({
+    where: { id: professionalId },
+    select: { status: true, verified: true, user: { select: { blocked: true, email: true, emailVerified: true } } },
+  });
+  const email = profile?.user.emailVerified && !profile.user.blocked ? realAccountEmail(profile.user.email) : null;
+  if (profile?.status !== "ACTIVE" || !profile.verified || !email) return "unavailable";
+  const [canonical, legacy] = profileApprovalEmailKeys(professionalId);
+  const deliveries = await prisma.emailDelivery.findMany({
+    where: { idempotencyKey: { in: [canonical, legacy] } },
+    select: { idempotencyKey: true, status: true },
+  });
+  if (deliveries.some((delivery) => delivery.status === "DELIVERED")) return "delivered";
+  // If old and new records coexist, a retry could duplicate a prior delivery.
+  if (deliveries.length !== 1 || !deliveries[0].idempotencyKey) return "unconfirmed";
+  return recoverTrackedEmail({
+    key: deliveries[0].idempotencyKey,
+    retryKey: canonical,
+    professionalId,
+    email,
+    send: (id) => sendProfessionalPublishedEmail(email, professionalId, id),
+  });
 }

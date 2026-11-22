@@ -697,7 +697,9 @@ export default function ProfissionalNovoPage() {
           profileUrl: user.professional.slug ? `/profissionais/${user.professional.slug}` : undefined,
           blockers: user.professional.kycStatus !== "APPROVED"
             ? [{ code: "kyc", label: "A verificação de identidade e maioridade ainda não foi aprovada." }]
-            : [{ code: "main_photo_security", label: "A foto principal ainda está nas verificações obrigatórias de segurança e conteúdo." }],
+            : user.professional.kycProvider === "MANUAL_DOCUMENT"
+              ? [{ code: "administrative_approval", label: "O perfil aguarda aprovação administrativa." }]
+              : [{ code: "main_photo_security", label: "A foto principal ainda está nas verificações obrigatórias de segurança e conteúdo." }],
         });
         return;
       }
@@ -1313,7 +1315,7 @@ export default function ProfissionalNovoPage() {
     try {
       const response = await fetch("/api/users/me", { cache: "no-store" });
       if (!response.ok) return false;
-      const user = await response.json() as { professional?: { status?: string; registrationSubmittedAt?: string | null; completionRulesVersion?: number; slug?: string; kycStatus?: string } };
+      const user = await response.json() as { professional?: { status?: string; registrationSubmittedAt?: string | null; completionRulesVersion?: number; slug?: string; kycStatus?: string; kycProvider?: string } };
       const draftResponse = await fetch("/api/professionals/draft", { cache: "no-store" });
       const draftState = draftResponse.ok ? await draftResponse.json() as { completion?: CompletionState } : null;
       const hasValidCurrentSubmission = Boolean(
@@ -1329,7 +1331,9 @@ export default function ProfissionalNovoPage() {
           profileUrl: user.professional?.slug ? `/profissionais/${user.professional.slug}` : undefined,
           blockers: user.professional?.status === "ACTIVE" ? [] : user.professional?.kycStatus !== "APPROVED"
             ? [{ code: "kyc", label: "A verificação de identidade e maioridade ainda não foi aprovada." }]
-            : [{ code: "main_photo_security", label: "A foto principal ainda está nas verificações obrigatórias de segurança e conteúdo." }],
+            : user.professional.kycProvider === "MANUAL_DOCUMENT"
+              ? [{ code: "administrative_approval", label: "O perfil aguarda aprovação administrativa." }]
+              : [{ code: "main_photo_security", label: "A foto principal ainda está nas verificações obrigatórias de segurança e conteúdo." }],
         });
         return true;
       }

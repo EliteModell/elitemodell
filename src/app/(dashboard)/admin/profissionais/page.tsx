@@ -8,14 +8,14 @@ import { hasAdminPermission, requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
 import { getProfessionalBillingSettings, professionalApprovalAccessData } from "@/lib/professional-access";
 import { type PublicProfileAsset } from "@/lib/public-professional-media";
-import { sendProfessionalApprovalEmail } from "@/lib/auth-email";
+
 import { sendProfessionalCorrectionEmail, sendProfessionalRejectionEmail } from "@/lib/professional-review-email";
 import { digitVendorDataBelongsToUser, fetchDigitSessionDecision } from "@/lib/didit";
 import { assessProfessionalDiditDecision } from "@/lib/professional-didit";
 import { AdminHeader, buttonStyle } from "../_components/AdminPrimitives";
 import { AdminProfessionalsInfiniteList, type AdminProfessionalListItem } from "./AdminProfessionalsInfiniteList";
 import { professionalAdministrativeApprovalIssues, professionalCompletion } from "@/lib/professional-completeness";
-import { deliverProfessionalApprovalSms, deliverProfessionalCommunication } from "@/lib/professional-communications";
+import { deliverProfessionalApprovalSms, deliverProfessionalCommunication, deliverProfileApprovalCommunication, recoverProfileApprovalEmail } from "@/lib/professional-communications";
 import { sendLegacyOnboardingRecoveryEmail, sendProfessionalLocationEmail, sendProfessionalReminderEmail } from "@/lib/professional-extra-email";
 import { resumeProfessionalProfileAssetsAfterApproval } from "@/lib/upload-quarantine";
 import { normalizeProfessionalProfileVisibility } from "@/lib/professional-profile-visibility";
@@ -140,11 +140,17 @@ async function reviewProfessional(formData: FormData) {
   const moderationReason = reason.trim() || (action === "correction"
     ? "Corrija: " + correctionFields.map((field) => CORRECTION_FIELD_LABELS[field]).join(", ")
     : "");
-  const supportedActions = ["approve", "reject", "correction", "suspend", "block", "resume", "approveVideo", "rejectVideo", "disableBoost", "reminder", "approveLocation", "rejectLocation", "setVisibility"];
+  const supportedActions = ["approve", "reject", "correction", "suspend", "block", "resume", "approveVideo", "rejectVideo", "disableBoost", "reminder", "approveLocation", "rejectLocation", "setVisibility", "retryApprovalEmail"];
   if (!id || !supportedActions.includes(action)) return;
   if (action === "reminder" && formData.get("confirmReminder") !== "yes") return;
   if (action === "correction" && correctionFields.length === 0) return;
   if (["reject", "suspend", "block", "rejectVideo", "rejectLocation"].includes(action) && moderationReason.length < 4) return;
+
+  if (action === "retryApprovalEmail") {
+    const result = await recoverProfileApprovalEmail(id).catch(() => "unavailable");
+    const query = new URLSearchParams({ professionalId: id, approvalEmail: result });
+    redirect("/admin/profissionais?" + query + "#professional-" + encodeURIComponent(id));
+  }
 
   if (action === "setVisibility") {
     const profileVisibility = normalizeProfessionalProfileVisibility(formData.get("profileVisibility"));
@@ -281,11 +287,7 @@ async function reviewProfessional(formData: FormData) {
     if (manualProfile) {
       if (manualProfile.status !== "PENDING_REVIEW" || manualProfile.kycStatus !== "APPROVED") return;
       const { attemptAutomaticProfessionalPublication } = await import("@/lib/professional-auto-publication");
-      const result = await attemptAutomaticProfessionalPublication(id, "manual-profile-admin-approval");
-      if (result.becamePublished) await logAudit({
-        adminId: session.user.id, action: "PROFESSIONAL_APPROVED", targetType: "PROFESSIONAL", targetId: id,
-        reason: "Aprovação administrativa do perfil após verificação documental.",
-      });
+      await attemptAutomaticProfessionalPublication(id, "manual-profile-admin-approval", session.user.id);
       revalidatePath("/admin/profissionais");
       return;
     }
@@ -360,7 +362,7 @@ async function reviewProfessional(formData: FormData) {
           }
         }
         const accessData = await professionalApprovalAccessData(tx, current);
-        return tx.professional.update({
+        const approved = await tx.professional.update({
           where: { id },
           data: {
             status: "ACTIVE",
@@ -373,6 +375,12 @@ async function reviewProfessional(formData: FormData) {
           },
           select: { id: true, userId: true, slug: true, user: { select: { email: true, name: true } } },
         });
+        await tx.auditLog.create({ data: {
+          adminId: session.user.id, action: "PROFESSIONAL_APPROVED", targetType: "PROFESSIONAL", targetId: id,
+          changes: { moderationAction: "approve", resultingStatus: "ACTIVE" },
+          reason: moderationReason || "professional:approve",
+        } });
+        return approved;
       }, { maxWait: 5_000, timeout: 15_000 })
     : await prisma.professional.update({ where: { id, ...(action === "resume" ? resumeWhere : {}) }, data, select: { id: true, userId: true, slug: true, user: { select: { email: true, name: true } } } });
   if (!professional) return;
@@ -405,10 +413,10 @@ async function reviewProfessional(formData: FormData) {
         ? "Fotos retomadas parcialmente; falhas permanecem privadas para nova tentativa."
         : "Fotos pendentes retomadas apos aprovacao profissional.",
     });
-    await deliverProfessionalCommunication({
+    await deliverProfileApprovalCommunication({
       professionalId: id, userId: professional.userId, email: professional.user?.email, adminId: session.user.id,
-      type: "PROFILE_APPROVED", notificationTitle: "Cadastro aprovado", notificationBody: "Seu cadastro foi aprovado. Complete informações opcionais no painel; a publicação continua sujeita à moderação.",
-      link: "/profissional", send: () => sendProfessionalApprovalEmail(professional.user!.email!, professional.user!.name, professional.id, `/profissionais/${professional.slug}`),
+    }).catch((error) => {
+      console.error("[professional-approval] falha na comunicação", { professionalId: id, reason: error instanceof Error ? error.name : "unknown" });
     });
     await deliverProfessionalApprovalSms({ professionalId: id, userId: professional.userId, adminId: session.user.id });
   } else if (action === "correction") {
@@ -429,12 +437,12 @@ async function reviewProfessional(formData: FormData) {
     await prisma.user.update({ where: { id: professional.userId }, data: { blocked: true, blockReason: moderationReason, blockedAt: new Date() } });
   }
 
-  await logAudit({
+  if (action !== "approve") await logAudit({
     adminId: session.user.id,
-    action: action === "approve" ? "PROFESSIONAL_APPROVED" : action === "reject" || action === "block" ? "PROFESSIONAL_REJECTED" : "SETTINGS_CHANGED",
+    action: action === "reject" || action === "block" ? "PROFESSIONAL_REJECTED" : "SETTINGS_CHANGED",
     targetType: "PROFESSIONAL",
     targetId: id,
-    changes: { moderationAction: action, correctionFields, resultingStatus: action === "approve" || action === "resume" ? "ACTIVE" : action === "suspend" ? "SUSPENDED" : action === "correction" ? "CORRECTION_REQUIRED" : "REJECTED" },
+    changes: { moderationAction: action, correctionFields, resultingStatus: action === "resume" ? "ACTIVE" : action === "suspend" ? "SUSPENDED" : action === "correction" ? "CORRECTION_REQUIRED" : "REJECTED" },
     reason: moderationReason || `professional:${action}`,
   });
   revalidatePath("/admin/profissionais");
@@ -572,7 +580,16 @@ async function loadMoreProfessionals(input: AdminProfessionalFilters & { offset:
   return { items, hasMore: offset + items.length < total };
 }
 
-export default async function AdminProfissionaisPage({ searchParams }: { searchParams?: Promise<{ status?: string; access?: string; kyc?: string; q?: string; professionalId?: string; legacyNoticeSent?: string }> }) {
+const approvalEmailResults: Record<string, string> = {
+  delivered: "O provedor confirmou a entrega do e-mail de aprovação.",
+  unconfirmed: "Entrega não confirmada. O e-mail não foi duplicado.",
+  rejected: "O provedor rejeitou a entrega. Confira o destinatário registrado.",
+  resent: "Reenvio aceito pelo provedor. A entrega ainda depende de confirmação.",
+  failed: "O reenvio falhou. Consulte o histórico de comunicação.",
+  unavailable: "O perfil ou o e-mail confirmado estão indisponíveis.",
+};
+
+export default async function AdminProfissionaisPage({ searchParams }: { searchParams?: Promise<{ status?: string; access?: string; kyc?: string; q?: string; professionalId?: string; legacyNoticeSent?: string; approvalEmail?: string }> }) {
   const { adminRole } = await requireAdmin("professionals:review");
   const params = await searchParams;
   const status = params?.status;
@@ -595,6 +612,10 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
         title="Acompanhantes e profissionais"
         subtitle="Analise cadastro, documentos, selfie/vídeo, KYC, fotos públicas, descrição, serviços, cidade e histórico de moderação."
       />
+
+      {params?.approvalEmail && Object.hasOwn(approvalEmailResults, params.approvalEmail) && (
+        <p role="status" className="mb-4 rounded border p-3">{approvalEmailResults[params.approvalEmail]}</p>
+      )}
 
       {/* ── Filtros ── */}
       {params?.legacyNoticeSent !== undefined ? (
