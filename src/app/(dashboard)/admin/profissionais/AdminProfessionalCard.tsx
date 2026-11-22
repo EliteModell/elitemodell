@@ -68,7 +68,7 @@ export type AdminProfessionalRecord = {
     termsConsent: boolean; lgpdConsent: boolean; emailVerified: Date | null;
     blockedAt: Date | null; kycSubmittedAt: Date | null; kycReviewedAt: Date | null;
     kycRejectionReason: string | null; premiumUntil: Date | null; createdAt: Date; updatedAt: Date;
-    uploadedAssets: unknown[];
+    uploadedAssets: Array<{ id: string; status: string }>;
   };
   photos: Array<{ id: string; url: string; cover: boolean; order: number; caption: string | null; createdAt: Date }>;
   specialties: Array<{ id: string; name: string }>;
