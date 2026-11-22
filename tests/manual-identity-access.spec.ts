@@ -15,6 +15,7 @@ function route(path: string, dependencies: Record<string, unknown>) {
   const exports: Record<string, (...args: unknown[]) => Promise<Response>> = {};
   const modules: Record<string, unknown> = {
     "next/server": { NextResponse: { json } },
+    "@/lib/manual-identity-runtime": { identityRuntimeEnabled: async () => true },
     "@/lib/manual-identity-policy": {
       identityEnabled: () => true,
       identityParts: () => ["front", "back", "portrait"],

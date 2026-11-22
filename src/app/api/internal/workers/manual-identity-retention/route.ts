@@ -1,11 +1,12 @@
+import { identityRuntimeEnabled } from "@/lib/manual-identity-runtime";
 import { Prisma } from "@prisma/client";
 import { timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { assertPrivateIdentityBucket, identityBucket, identityPath, identityStorage, privateIdentityHeaders } from "@/lib/manual-identity";
-import { identityEnabled, identityParts } from "@/lib/manual-identity-policy";
+import { identityParts } from "@/lib/manual-identity-policy";
 
 export async function POST(req: Request) {
-  if (!identityEnabled()) return new Response(null, { status: 404 });
+  if (!(await identityRuntimeEnabled())) return new Response(null, { status: 404 });
   const secret = process.env.CRON_SECRET?.trim();
   const expected = Buffer.from(secret ? "Bearer " + secret : "");
   const actual = Buffer.from(req.headers.get("authorization") ?? "");

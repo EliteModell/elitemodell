@@ -1,3 +1,4 @@
+import { identityRuntimeEnabled } from "@/lib/manual-identity-runtime";
 import { MANUAL_DOCUMENT_PROVIDER, manualRegistrationStatus, shouldReviewRegistrationManually } from "@/lib/manual-identity-policy";
 import { monitorRegistration, registrationIdentity } from "@/lib/registration-monitor";
 import { normalizeBrazilianPhone } from "@/lib/phone-otp";
@@ -381,6 +382,9 @@ export const POST = monitorRegistration("PROFILE", async (req, trace) => {
       providerChecked: existing?.kycStatus === "APPROVED",
     };
     const manualRegistration = shouldReviewRegistrationManually(existing, user.kycSessionId);
+    if (manualRegistration && !(await identityRuntimeEnabled())) {
+      return NextResponse.json({ error: "Verificação documental temporariamente indisponível." }, { status: 503 });
+    }
     if (manualRegistration) {
       const current = await prisma.manualIdentityAttempt.findFirst({
         where: { userId: session.user.id, submittedAt: { not: null } }, orderBy: { submittedAt: "desc" },

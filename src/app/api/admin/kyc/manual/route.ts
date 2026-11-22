@@ -1,12 +1,13 @@
+import { identityRuntimeEnabled } from "@/lib/manual-identity-runtime";
 import { authorizeAdminRequest } from "@/lib/admin-access";
 import { prisma } from "@/lib/prisma";
 import { assertPrivateIdentityBucket, identityBucket, identityPath, identityStorage, privateIdentityHeaders, sameIdentityOrigin } from "@/lib/manual-identity";
-import { confirmedAdult, identityEnabled, identityParts, MANUAL_DOCUMENT_PROVIDER, type IdentityPart } from "@/lib/manual-identity-policy";
+import { confirmedAdult, identityParts, MANUAL_DOCUMENT_PROVIDER, type IdentityPart } from "@/lib/manual-identity-policy";
 
 const json = (data: unknown, status = 200) => Response.json(data, { status, headers: privateIdentityHeaders });
 
 export async function GET(req: Request) {
-  if (!identityEnabled()) return json({}, 404);
+  if (!(await identityRuntimeEnabled())) return json({}, 404);
   const access = await authorizeAdminRequest("kyc:review");
   if (!access.ok) return json({}, access.status);
   const query = new URL(req.url).searchParams;
@@ -33,7 +34,7 @@ export async function GET(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  if (!identityEnabled()) return json({}, 404);
+  if (!(await identityRuntimeEnabled())) return json({}, 404);
   if (!sameIdentityOrigin(req)) return json({}, 403);
   const access = await authorizeAdminRequest("kyc:review");
   if (!access.ok) return json({}, access.status);

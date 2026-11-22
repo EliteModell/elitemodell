@@ -1,7 +1,8 @@
+import { identityRuntimeEnabled } from "@/lib/manual-identity-runtime";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-access";
-import { identityEnabled, identityParts } from "@/lib/manual-identity-policy";
+import { identityParts } from "@/lib/manual-identity-policy";
 import { prisma } from "@/lib/prisma";
 import { AdminHeader, AdminPanel } from "../../_components/AdminPrimitives";
 import Review from "./review";
@@ -12,7 +13,7 @@ const statuses: Record<string, string> = {
 };
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ profissional?: string; pagina?: string }> }) {
-  if (!identityEnabled()) notFound();
+  if (!(await identityRuntimeEnabled())) notFound();
   await requireAdmin("kyc:review");
   const query = await searchParams;
   const userId = typeof query.profissional === "string" ? query.profissional : undefined;

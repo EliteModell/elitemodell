@@ -1,4 +1,5 @@
-import { identityEnabled } from "@/lib/manual-identity-policy";
+import { identityStorageTargetsProduction } from "@/lib/manual-identity-policy";
+import { identityRuntimeEnabled } from "@/lib/manual-identity-runtime";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,8 @@ export async function GET() {
     production: environment === "production",
     branch: process.env.VERCEL_GIT_COMMIT_REF ?? null,
     commitSha: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
-    manualIdentityEnabled: identityEnabled(),
+    manualIdentityEnabled: await identityRuntimeEnabled(),
+    manualIdentityStorageMatched: identityStorageTargetsProduction(process.env.NEXT_PUBLIC_SUPABASE_URL),
   }, {
     headers: {
       "Cache-Control": "public, max-age=0, must-revalidate, no-transform",

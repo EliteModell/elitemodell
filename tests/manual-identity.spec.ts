@@ -105,7 +105,7 @@ test("reserva da Didit sem sessão usa o fluxo manual e preserva sessões histó
     expect(shouldReviewRegistrationManually({ ...reservation, verified: true })).toBe(false);
     delete process.env.DIRECT_URL;
     expect(identityEnabled()).toBe(true);
-    delete process.env.DATABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
     expect(identityEnabled()).toBe(false);
     expect(manualIdentitySelected()).toBe(true);
   } finally {

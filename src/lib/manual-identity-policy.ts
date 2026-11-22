@@ -47,14 +47,17 @@ export function manualIdentitySelected() {
 
 export function identityEnabled() {
   if (process.env.NODE_ENV === "production") {
-    // Prisma uses DATABASE_URL for requests. DIRECT_URL is reserved for migrations.
     return productionDeployment() && process.env.VERCEL_GIT_COMMIT_REF === "main" &&
-      identityTargetsProduction(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.DATABASE_URL);
+      identityStorageTargetsProduction(process.env.NEXT_PUBLIC_SUPABASE_URL);
   }
   return process.env.NODE_ENV === "development" && process.env.MANUAL_IDENTITY_LOCAL === "1" &&
     process.env.MANUAL_IDENTITY_DEMO !== "1" && identityTargetsAreIsolated(
       process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.DATABASE_URL, process.env.DIRECT_URL,
     );
+}
+
+export function identityStorageTargetsProduction(storage?: string) {
+  return identityTargetsMatchProject("jgvmpbrsxegwkrgjncsv", storage, []);
 }
 
 export function identityTargetsProduction(storage?: string, database?: string) {
