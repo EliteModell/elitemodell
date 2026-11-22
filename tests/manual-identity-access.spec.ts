@@ -14,7 +14,8 @@ function route(path: string, dependencies: Record<string, unknown>) {
   }).outputText;
   const exports: Record<string, (...args: unknown[]) => Promise<Response>> = {};
   const modules: Record<string, unknown> = {
-    "next/server": { NextResponse: { json }, after: () => undefined },
+        "next/server": { NextResponse: { json }, after: () => undefined },
+    "next/cache": { revalidatePath: () => undefined },
     "@/lib/manual-identity-runtime": { identityRuntimeEnabled: async () => true },
     "@/lib/manual-identity-policy": {
       identityEnabled: () => true,
@@ -138,6 +139,7 @@ test("aprovação manual atualiza apenas identidade e encaminha as outras travas
   const notifications: unknown[] = [];
   const afterResponse: Array<() => Promise<void>> = [];
   const emails: unknown[] = [];
+  let linkedProfile = false;
   const attempt = {
     id: attemptId, userId: "owner", reviewVersion: 0, status: "PENDING_REVIEW",
     purgeAfter: new Date(Date.now() + 60_000), purgedAt: null,
@@ -149,7 +151,7 @@ test("aprovação manual atualiza apenas identidade e encaminha as outras travas
       findFirst: async () => attempt,
       update: async () => ({}),
     },
-    professional: { updateMany: async ({ data }: { data: unknown }) => { updates.push(data); } },
+    professional: { updateMany: async ({ data }: { data: unknown }) => { if (linkedProfile) updates.push(data); return { count: linkedProfile ? 1 : 0 }; } },
     user: { findUnique: async () => ({ blocked: false }) },
     notification: { create: async ({ data }: { data: unknown }) => { notifications.push(data); } },
     auditLog: { create: async ({ data }: { data: unknown }) => { audits.push(data); } },
@@ -188,6 +190,12 @@ test("aprovação manual atualiza apenas identidade e encaminha as outras travas
   }));
   expect((await approve(1)).status).toBe(409);
   expect(updates).toEqual([]);
+  const unlinked = await approve(0);
+  expect(unlinked.status).toBe(409);
+  expect(await unlinked.json()).toEqual({ error: expect.stringContaining("não está vinculada") });
+  expect(audits).toHaveLength(0);
+  expect(afterResponse).toHaveLength(0);
+  linkedProfile = true;
   expect((await approve(0)).status).toBe(200);
   expect(updates).toEqual([{ kycStatus: "APPROVED", docStatus: "APPROVED", verifStatus: "APPROVED" }]);
   expect(audits).toHaveLength(1);

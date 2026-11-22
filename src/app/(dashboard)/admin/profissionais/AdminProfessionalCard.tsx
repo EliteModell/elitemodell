@@ -212,6 +212,11 @@ export function AdminProfessionalCard({
     return value.includes("EMAIL_SENT") || value.includes("EMAIL_FAILED");
   });
   const currentIssues = pro.status === "PENDING_REVIEW" ? approvalIssues : profileIssues;
+  const profileApprovalBlockers = [...new Set([
+    ...(!registrationSubmitted ? ["A profissional precisa voltar ao cadastro e clicar em Finalizar meu cadastro."] : []),
+    ...(isManual && manualAttempt?.status !== "APPROVED" ? ["A identidade ainda não foi aprovada na revisão documental."] : []),
+    ...approvalIssues.filter((issue) => !/cadastro ainda não enviado para análise/i.test(issue)),
+  ])];
   const profileVisibility = normalizeProfessionalProfileVisibility(pro.profileVisibility);
   const billing = resolveProfessionalAccess(pro, pro.user, pro.status === "ACTIVE" || pro.status === "PAUSED", new Date(), { billingEnabled });
   const billingLabel = {
@@ -416,9 +421,13 @@ export function AdminProfessionalCard({
                 ))}
                 <button name="action" value="setVisibility" type="submit">Salvar visibilidade</button>
               </fieldset>
-              <button name="action" value="approve" disabled={!canApprove} title={!canApprove ? approvalIssues.join(", ") || "Este status não permite aprovação" : "Aprovar profissional"} className="pro-approve">
+              <button name="action" value="approve" disabled={!canApprove} aria-describedby={!canApprove && pro.status !== "ACTIVE" ? `approval-blockers-${pro.id}` : undefined} className="pro-approve">
                 {canApprove ? "✓ Aprovar perfil" : pro.status === "ACTIVE" ? "✓ Já aprovada" : "Aprovar perfil (bloqueado)"}
               </button>
+              {!canApprove && pro.status !== "ACTIVE" && <div id={`approval-blockers-${pro.id}`} className="pro-alert bad">
+                <b>O que falta para aprovar o perfil</b>
+                <ul>{(profileApprovalBlockers.length ? profileApprovalBlockers : ["O estado atual do perfil impede a aprovação."]).map((item) => <li key={item}>{item}</li>)}</ul>
+              </div>}
               <fieldset className="pro-correction-fields"><legend>Ao solicitar correção, marque os itens</legend>{[
                 ["mainPhoto","Foto principal"],["bio","Biografia"],["services","Serviços"],["location","Localização"],
                 ["prices","Valores"],["kyc","Documento/KYC"],["contact","Contato"],["availability","Disponibilidade"],["other","Outro"],

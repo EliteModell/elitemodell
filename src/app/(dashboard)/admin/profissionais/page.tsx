@@ -675,7 +675,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
 
       {/* ── Lista contínua ── */}
       <AdminProfessionalsInfiniteList
-        key={`${status ?? "ALL"}:${accessFilter ?? "ALL"}:${kycFilter ?? "ALL"}:${query ?? ""}:${professionalId ?? ""}`}
+        key={snapshotAt}
         initialItems={initialItems}
         total={total}
         filters={filters}

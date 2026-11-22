@@ -53,7 +53,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
         <p>Nascimento cadastrado: {(account?.professional?.birthDate ?? account?.birthDate)?.toISOString().slice(0, 10).split("-").reverse().join("/") ?? "Indisponível"}
           {attempt.birthDate && " · Nascimento conferido: " + attempt.birthDate.toISOString().slice(0, 10).split("-").reverse().join("/")}</p>
         <p><Link href={"?profissional=" + encodeURIComponent(attempt.userId)}>Histórico da profissional</Link></p>
-        {account?.professional && <p><Link href={"/admin/profissionais?professionalId=" + encodeURIComponent(account.professional.id)}>Ver cadastro profissional</Link></p>}
+        {account?.professional && <p><Link prefetch={false} href={"/admin/profissionais?professionalId=" + encodeURIComponent(account.professional.id)}>Ver cadastro profissional</Link></p>}
         {available ? <div className="my-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {[...identityParts(attempt.backUnavailable)].sort((a, b) => ["front", "back", "portrait"].indexOf(a) - ["front", "back", "portrait"].indexOf(b)).map((part) => {
             const url = "/api/admin/kyc/manual?" + new URLSearchParams({ id: attempt.id, part });

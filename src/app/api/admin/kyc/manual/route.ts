@@ -1,5 +1,6 @@
 import { identityRuntimeEnabled } from "@/lib/manual-identity-runtime";
 import { after } from "next/server";
+import { revalidatePath } from "next/cache";
 import { sendManualIdentityEmail } from "@/lib/auth-email";
 import { authorizeAdminRequest } from "@/lib/admin-access";
 import { prisma } from "@/lib/prisma";
@@ -69,22 +70,23 @@ export async function PATCH(req: Request) {
         const exists = await Promise.all(identityParts(active.backUnavailable).map((part) => identityStorage.exists(identityBucket, identityPath(id, part))));
         if (exists.includes(false)) return false;
       }
-      await tx.manualIdentityAttempt.update({ where: { id }, data: {
-        status, reviewVersion: { increment: 1 }, reviewerId: access.session.user.id,
-        reviewedAt: new Date(), birthDate: status === "APPROVED" ? new Date(birth + "T00:00:00Z") : null,
-      } });
       const kycStatus = status === "APPROVED" ? "APPROVED" : status === "REJECTED" ? "REJECTED" : "PENDING";
-      await tx.professional.updateMany({
+      const linked = await tx.professional.updateMany({
         where: { userId: active.userId, kycProvider: MANUAL_DOCUMENT_PROVIDER, kycSessionId: id,
           verified: false, status: { in: ["DRAFT", "PENDING_REVIEW", "CORRECTION_REQUIRED"] } },
         data: { kycStatus, docStatus: kycStatus, verifStatus: kycStatus },
       });
+      if (linked.count === 0 && status === "APPROVED") return "PROFILE_NOT_LINKED" as const;
+      await tx.manualIdentityAttempt.update({ where: { id }, data: {
+        status, reviewVersion: { increment: 1 }, reviewerId: access.session.user.id,
+        reviewedAt: new Date(), birthDate: status === "APPROVED" ? new Date(birth + "T00:00:00Z") : null,
+      } });
       await tx.auditLog.create({ data: {
         adminId: access.session.user.id, action: "ADMIN_ACCESS", targetType: "USER", targetId: active.userId,
         reason: reason.trim(), changes: { method: "MANUAL_DOCUMENT", attemptId: id, status,
           reviewedEvidence: identityParts(active.backUnavailable), publicCorrection: correctionReason, checks: status === "APPROVED" ? { document: true, portrait: true, challenge: true, adult: true } : undefined },
       } });
-      await tx.notification.create({ data: {
+      if (status !== "PENDING_REVIEW") await tx.notification.create({ data: {
         userId: active.userId,
         type: "SYSTEM",
         title: "Atualização na verificação de identidade",
@@ -95,6 +97,14 @@ export async function PATCH(req: Request) {
       } });
       return { userId: active.userId };
     }, { timeout: 15_000 });
+    if (updated === "PROFILE_NOT_LINKED") {
+      return json({ error: "A tentativa não está vinculada ao cadastro vigente. Nenhuma aprovação foi gravada." }, 409);
+    }
+    if (updated) {
+      revalidatePath("/admin/kyc/documental");
+      revalidatePath("/admin/profissionais");
+      revalidatePath("/profissional/novo");
+    }
     if (updated && status !== "PENDING_REVIEW") {
       const event = status === "APPROVED" ? "approved" : status === "REJECTED" ? "rejected" : "resubmission";
       after(async () => {
