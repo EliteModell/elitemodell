@@ -166,6 +166,7 @@ export function AdminProfessionalCard({
   billingEnabled,
   manualAttempt,
   canReviewIdentity = false,
+  canReviewPhotos = false,
 }: {
   professional: AdminProfessionalRecord;
   approvalIssues: string[];
@@ -176,6 +177,7 @@ export function AdminProfessionalCard({
   billingEnabled: boolean;
   manualAttempt?: AdminManualAttempt | null;
   canReviewIdentity?: boolean;
+  canReviewPhotos?: boolean;
 }) {
   const isManual = pro.kycProvider === "MANUAL_DOCUMENT";
   const manualExpired = manualAttempt && (manualAttempt.purgedAt || new Date(manualAttempt.purgeAfter) <= new Date());
@@ -214,8 +216,9 @@ export function AdminProfessionalCard({
   const currentIssues = pro.status === "PENDING_REVIEW" ? approvalIssues : profileIssues;
   const photoIds = new Set(pro.photos.map((photo) => controlledMediaAssetId(photo.url)));
   const profilePhotoAssets = pro.user.uploadedAssets.filter((asset) => photoIds.has(asset.id));
+  const pendingPhoto = profilePhotoAssets.find((asset) => asset.status !== "APPROVED");
   const mediaUnderReview = isManual && profilePhotoAssets.length > 0 &&
-    profilePhotoAssets.every((asset) => asset.status === "QUARANTINED");
+    profilePhotoAssets.every((asset) => asset.status !== "APPROVED");
   const canApprove = pro.status === "PENDING_REVIEW" && approvalIssues.length === 0 &&
     (!isManual || manualAttempt?.status === "APPROVED" && !mediaUnderReview);
   const profileApprovalBlockers = [...new Set([
@@ -321,6 +324,8 @@ export function AdminProfessionalCard({
                 <b>{pro.services.length}<span>serviços</span></b><b>{pro.specialties.length}<span>especialidades</span></b>
               </div>
               {cover && <div className="pro-cover"><img src={cover} alt={`Foto principal de ${pro.displayName}`} width={58} height={58} loading="lazy" /><span>Foto principal</span></div>}
+              {canReviewPhotos && pendingPhoto && <Link href={`/admin/moderacao/uploads?assetId=${encodeURIComponent(pendingPhoto.id)}#foto-${pendingPhoto.id}`} prefetch={false}
+                style={{ ...buttonStyle, background: "#7615ab", color: "#fff" }}>Revisar foto do perfil</Link>}
               <p className="pro-subtitle">Galeria administrativa · {pro.photos.length} foto(s)</p>
               {pro.photos.length ? <div className="pro-gallery">{pro.photos.map((photo) => {
                 const previewUrl = adminControlledMediaPreviewUrl(photo.url);

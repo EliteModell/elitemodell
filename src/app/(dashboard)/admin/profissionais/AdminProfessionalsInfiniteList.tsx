@@ -43,6 +43,7 @@ export function AdminProfessionalsInfiniteList({
   filters,
   billingEnabled,
   canReviewIdentity = false,
+  canReviewPhotos = false,
   loadMoreAction,
   reviewAction,
 }: {
@@ -51,6 +52,7 @@ export function AdminProfessionalsInfiniteList({
   filters: Filters;
   billingEnabled: boolean;
   canReviewIdentity?: boolean;
+  canReviewPhotos?: boolean;
   loadMoreAction: (input: Filters & { offset: number }) => Promise<{ items: AdminProfessionalListItem[]; hasMore: boolean }>;
   reviewAction: (formData: FormData) => Promise<void>;
 }) {
@@ -113,6 +115,7 @@ export function AdminProfessionalsInfiniteList({
             billingEnabled={billingEnabled}
             manualAttempt={item.manualAttempt}
             canReviewIdentity={canReviewIdentity}
+            canReviewPhotos={canReviewPhotos}
           />
         ))}
         {!items.length ? (

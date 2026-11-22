@@ -102,6 +102,20 @@ test.describe("seguranca fail-closed de midia adulta", () => {
     expect(isReadyForHumanContentReview(humanReviewReady)).toBe(true);
   });
 
+  test("permite revisar foto limpa no rascunho documental e preserva os bloqueios", () => {
+    const draft = {
+      ...humanReviewReady,
+      professionalStatus: "DRAFT",
+      professionalVerified: false,
+      professionalKycProvider: "MANUAL_DOCUMENT",
+    };
+    expect(manualMediaReviewBlockers(draft)).toEqual([]);
+    expect(manualMediaReviewBlockers({ ...draft, malwareStatus: "PENDING" })).toContain("MALWARE_SCAN");
+    expect(manualMediaReviewBlockers({ ...draft, professionalKycStatus: "PENDING" })).toContain("PROFESSIONAL_NOT_ELIGIBLE");
+    expect(manualMediaReviewBlockers({ ...draft, depictedPeople: [{ ageStatus: "PENDING", consentStatus: "PASS" }] })).toContain("DEPICTED_PEOPLE");
+    expect(manualMediaReviewBlockers({ ...draft, professionalKycProvider: "DIDIT" })).toContain("PROFESSIONAL_NOT_ELIGIBLE");
+  });
+
   test("libera foto e video elegiveis para decisao humana sem fingir moderacao automatica", () => {
     expect(isReadyForHumanContentReview(humanReviewReady)).toBe(true);
     expect(isReadyForHumanContentReview({

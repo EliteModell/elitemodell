@@ -702,6 +702,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
         filters={filters}
         billingEnabled={billingSettings.billingEnabled}
         canReviewIdentity={hasAdminPermission(adminRole, "kyc:review")}
+        canReviewPhotos={hasAdminPermission(adminRole, "reports:manage")}
         loadMoreAction={loadMoreProfessionals}
         reviewAction={reviewProfessional}
       />

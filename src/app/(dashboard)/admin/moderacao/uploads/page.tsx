@@ -11,6 +11,7 @@ import {
   approveUploadAsset,
   escalateUploadAsset,
   processUploadAsset,
+  reprocessProfileImage,
   rejectUploadAsset,
 } from "@/lib/upload-quarantine";
 import { AdminHeader, AdminPanel, StatusPill } from "../../_components/AdminPrimitives";
@@ -40,7 +41,7 @@ async function reviewUpload(formData: FormData) {
         { category: "video", folder: { startsWith: "profile-videos" } },
       ],
     },
-    select: { id: true },
+    select: { id: true, category: true },
   });
   if (!scopedAsset) throw new Error("A mídia não pertence a um perfil profissional.");
 
@@ -49,7 +50,8 @@ async function reviewUpload(formData: FormData) {
   } else if (action === "REJECT") {
     await rejectUploadAsset(assetId, session.user.id, effectiveReason);
   } else if (action === "REPROCESS") {
-    await processUploadAsset(assetId);
+    if (scopedAsset.category === "image") await reprocessProfileImage(assetId);
+    else await processUploadAsset(assetId);
   } else if (action === "ESCALATE") {
     await escalateUploadAsset(assetId, session.user.id, effectiveReason);
   }
@@ -124,6 +126,7 @@ function revalidateModerationPaths() {
   revalidatePath("/cidade/[slug]", "page");
   revalidatePath("/profissionais/[slug]", "page");
   revalidatePath("/admin/moderacao/uploads");
+  revalidatePath("/admin/profissionais");
 }
 
 function tone(status: string) {
@@ -182,11 +185,12 @@ function blockerReason(code: string, asset: {
   return reasons[code] ?? "controle obrigatório pendente";
 }
 
-export default async function AdminUploadModerationPage() {
+export default async function AdminUploadModerationPage({ searchParams }: { searchParams: Promise<{ assetId?: string }> }) {
   const { permissions } = await requireAdmin("reports:manage");
+  const assetId = (await searchParams).assetId?.trim();
   const assets = await prisma.uploadAsset.findMany({
     where: {
-      status: { not: "APPROVED" },
+      ...(assetId ? { id: assetId } : { status: { not: "APPROVED" } }),
       OR: [
         { category: "image", folder: { startsWith: "profiles" } },
         { category: "video", folder: { startsWith: "profile-videos" } },
@@ -247,6 +251,7 @@ export default async function AdminUploadModerationPage() {
     professionalStatus: asset.owner.professional?.status,
     professionalVerified: asset.owner.professional?.verified,
     professionalKycStatus: asset.owner.professional?.kycStatus,
+    professionalKycProvider: asset.owner.professional?.kycProvider,
     professionalRegistrationSubmittedAt: asset.owner.professional?.registrationSubmittedAt,
     depictedPeople: asset.depictedPeople,
     hasOpenReport: [asset.id, asset.controlledUrl, asset.userId, asset.owner.professional?.id]
@@ -394,7 +399,7 @@ export default async function AdminUploadModerationPage() {
                       {section.title} ({section.entries.length})
                     </h3>
                     {section.entries.map(({ asset, blockers }) => (
-                      <div key={asset.id} style={{ display: "grid", gridTemplateColumns: "minmax(180px, 260px) minmax(0, 1fr)", gap: 18, padding: 14, border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, background: "#09080a" }}>
+                      <div key={asset.id} id={`foto-${asset.id}`} style={{ display: "grid", gridTemplateColumns: "minmax(180px, 260px) minmax(0, 1fr)", gap: 18, padding: 14, border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, background: "#09080a" }}>
                         <div style={{ minHeight: 180, border: "1px solid rgba(255,255,255,.12)", borderRadius: 8, overflow: "hidden", background: "#050506" }}>
                           {asset.category === "image" ? (
                             <img src={`/api/admin/uploads/${asset.id}/preview`} alt={`Foto ${asset.originalName} de ${professionalName}`} style={{ width: "100%", height: 220, objectFit: "contain" }} />
@@ -446,7 +451,7 @@ export default async function AdminUploadModerationPage() {
                             />
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                               <button name="action" value="REPROCESS" title="Executa novamente os controles automáticos; não publica sem todos os gates." style={{ border: "1px solid rgba(255,255,255,.16)", borderRadius: 8, background: "transparent", color: "#fff", padding: "9px 12px", fontWeight: 800 }}>
-                                Reprocessar
+                                {asset.category === "image" ? "Verificar foto agora" : "Reprocessar"}
                               </button>
                               <button name="action" value="REJECT" title="Requer justificativa e mantém o arquivo fora de publicação." style={{ border: "1px solid rgba(239,68,68,.4)", borderRadius: 8, background: "rgba(239,68,68,.12)", color: "#fca5a5", padding: "9px 12px", fontWeight: 800 }}>
                                 Rejeitar
@@ -457,7 +462,7 @@ export default async function AdminUploadModerationPage() {
                               <button
                                 name="action"
                                 value="APPROVE"
-                                disabled={blockers.length > 0}
+                                disabled={blockers.length > 0 || asset.status === "APPROVED" || asset.status === "REJECTED"}
                                 title={blockers.length
                                   ? `Aprovação desabilitada: ${blockers.map((blocker) => blockerReason(blocker, asset)).join("; ")}`
                                   : "Habilitada após todos os gates; o clique registra a decisão humana."}

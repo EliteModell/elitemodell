@@ -1,4 +1,5 @@
 import { MEDIA_PASS_STATUSES } from "@/lib/media-security";
+import { MANUAL_DOCUMENT_PROVIDER } from "@/lib/manual-identity-policy";
 
 export type ManualMediaReviewInput = {
   category: string;
@@ -12,6 +13,7 @@ export type ManualMediaReviewInput = {
   professionalStatus?: string | null;
   professionalVerified?: boolean | null;
   professionalKycStatus?: string | null;
+  professionalKycProvider?: string | null;
   professionalRegistrationSubmittedAt?: Date | string | null;
   depictedPeople?: Array<{
     ageStatus: string;
@@ -39,7 +41,9 @@ export function manualMediaReviewBlockers(input: ManualMediaReviewInput) {
   const publishedProfessional = input.professionalStatus === "ACTIVE" && input.professionalVerified;
   const submittedProfessional = Boolean(input.professionalRegistrationSubmittedAt)
     && ["DRAFT", "PENDING_REVIEW", "CORRECTION_REQUIRED"].includes(input.professionalStatus ?? "");
-  if ((!publishedProfessional && !submittedProfessional) || input.professionalKycStatus !== "APPROVED") {
+  const verifiedDocumentDraft = isProfileImage && input.professionalStatus === "DRAFT" &&
+    input.professionalKycProvider === MANUAL_DOCUMENT_PROVIDER;
+  if ((!publishedProfessional && !submittedProfessional && !verifiedDocumentDraft) || input.professionalKycStatus !== "APPROVED") {
     blockers.push("PROFESSIONAL_NOT_ELIGIBLE");
   }
   if (!input.depictedPeople?.length || input.depictedPeople.some((person) => (
