@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { StatusPill, buttonStyle } from "../_components/AdminPrimitives";
+
 import { AdminKycEvidence } from "./AdminKycEvidence";
 import { professionalCompletion } from "@/lib/professional-completeness";
 import { resolveProfessionalAccess } from "@/lib/professional-access-policy";
@@ -24,6 +25,10 @@ type EmailDeliveryEntry = {
   lastEvent: string | null; failureReason: string | null; createdAt: Date | string; updatedAt: Date | string;
   acceptedAt: Date | string | null; deliveredAt: Date | string | null;
   rejectedAt: Date | string | null; failedAt: Date | string | null;
+};
+
+export type AdminManualAttempt = {
+  id: string; status: string; submittedAt: Date | null; reviewedAt: Date | null; purgedAt: Date | null; purgeAfter: Date;
 };
 
 export type AdminProfessionalRecord = {
@@ -159,6 +164,8 @@ export function AdminProfessionalCard({
   emailDeliveries,
   reviewAction,
   billingEnabled,
+  manualAttempt,
+  canReviewIdentity = false,
 }: {
   professional: AdminProfessionalRecord;
   approvalIssues: string[];
@@ -167,8 +174,18 @@ export function AdminProfessionalCard({
   emailDeliveries: EmailDeliveryEntry[];
   reviewAction: (formData: FormData) => Promise<void>;
   billingEnabled: boolean;
+  manualAttempt?: AdminManualAttempt | null;
+  canReviewIdentity?: boolean;
 }) {
-  const canApprove = pro.status === "PENDING_REVIEW" && approvalIssues.length === 0;
+  const isManual = pro.kycProvider === "MANUAL_DOCUMENT";
+  const manualExpired = manualAttempt && (manualAttempt.purgedAt || new Date(manualAttempt.purgeAfter) <= new Date());
+  const reviewLink = canReviewIdentity && manualAttempt
+    ? "/admin/kyc/documental?" + new URLSearchParams({ profissional: pro.userId }) + "#tentativa-" + manualAttempt.id
+    : null;
+  const identityLabel = manualAttempt?.status === "PENDING_REVIEW"
+    ? manualExpired ? "Prazo vencido · aguarda novo envio" : "Em análise"
+    : manualAttempt?.status === "RESUBMISSION_REQUESTED" ? "Novo envio solicitado" : technicalStatus(manualAttempt?.status ?? pro.kycStatus);
+  const canApprove = pro.status === "PENDING_REVIEW" && approvalIssues.length === 0 && (!isManual || manualAttempt?.status === "APPROVED");
   const accent = pro.status === "ACTIVE" ? "#16a34a" : pro.status === "REJECTED" || pro.status === "SUSPENDED" ? "#dc2626" : pro.status === "PENDING_REVIEW" || pro.status === "CORRECTION_REQUIRED" ? "#9a25cf" : "#786f7e";
   const tone = pro.status === "ACTIVE" ? "success" : pro.status === "REJECTED" || pro.status === "SUSPENDED" ? "danger" : pro.status === "PENDING_REVIEW" || pro.status === "CORRECTION_REQUIRED" ? "warning" : "neutral";
   const cover = adminControlledMediaPreviewUrl(
@@ -184,7 +201,7 @@ export function AdminProfessionalCard({
     ["2 horas", pro.price2h], ["Pernoite", pro.priceOvernight], ["Webcam", pro.priceWebcam],
   ].filter(([, value]) => value != null) as Array<[string, number]>;
   const submissionAudit = audits.find((entry) => ["Enviou para análise", "Reenviou após correção"].includes(moderationAction(entry)));
-  const submittedAt = submissionAudit?.timestamp ?? pro.submissionReceipt?.createdAt ?? null;
+  const submittedAt = pro.registrationSubmittedAt ?? submissionAudit?.timestamp ?? pro.submissionReceipt?.createdAt ?? null;
   const registrationSubmitted = Boolean(pro.registrationSubmittedAt ?? submittedAt);
   const completion = professionalCompletion({
     ...pro,
@@ -228,8 +245,11 @@ export function AdminProfessionalCard({
         <div className="pro-head-status">
           <StatusPill tone={tone}>{STATUS_LABEL[pro.status] ?? pro.status}</StatusPill>
           <span className={`pro-kyc ${pro.kycStatus === "APPROVED" ? "ok" : pro.kycStatus === "REJECTED" ? "bad" : "pending"}`}>
-            KYC: {providerLabel(pro.kycProvider, pro.kycSessionId)} · {technicalStatus(pro.kycStatus)}
+            KYC: {providerLabel(pro.kycProvider, pro.kycSessionId)} · {identityLabel}
           </span>
+          {reviewLink && <Link href={reviewLink} prefetch={false} style={{ ...buttonStyle, background: "#7615ab", color: "#fff" }}>
+            {manualAttempt?.status === "PENDING_REVIEW" && !manualExpired ? "Analisar documentos" : "Ver verificação documental"}
+          </Link>}
           <small>Cadastro: {date(pro.createdAt)}</small>
         </div>
       </header>
@@ -248,7 +268,7 @@ export function AdminProfessionalCard({
               <Row label="WhatsApp" value={pro.whatsapp} />
               <Row label="E-mail" value={accountEmailLabel(pro.user.email)} />
               <Row label="Conta criada" value={date(pro.user.createdAt, true)} />
-              <Row label="Enviado para análise" value={submittedAt ? date(submittedAt, true) : pro.status === "DRAFT" ? "Ainda não enviado" : "Data não registrada (cadastro legado)"} />
+              <Row label="Cadastro enviado para análise" value={submittedAt ? date(submittedAt, true) : pro.status === "DRAFT" ? "Aguarda finalização pela profissional" : "Data não registrada (cadastro legado)"} />
               <Row label="Última atualização" value={date(pro.updatedAt, true)} />
             </Section>
 
@@ -257,8 +277,8 @@ export function AdminProfessionalCard({
               <Row label="Campos obrigatórios do perfil" value={`${completion.completedRequired} de ${completion.requiredTotal} preenchidos`} />
               <Row label="Cadastro profissional" value={completion.profileComplete ? "Completo" : completion.profileIssues.length + " pendência(s)"} />
               <Row label="E-mail da conta" value={completion.emailVerified ? "Confirmado" : "Pendente"} />
-              <Row label="KYC / identidade" value={completion.kycApproved ? "Aprovado" : "Pendente"} />
-              <Row label="Envio para análise" value={registrationSubmitted ? "Enviado" : completion.readyToSubmit ? "Pode ser enviado" : "Ainda não pode ser enviado"} />
+              <Row label="Identidade" value={identityLabel} />
+              <Row label="Cadastro para análise" value={registrationSubmitted ? "Enviado" : "Aguarda finalização pela profissional"} />
               <Row label="Análise administrativa" value={STATUS_LABEL[pro.status] ?? pro.status} />
               <Row label="Autorização de publicação" value={pro.status === "ACTIVE" && pro.verified ? "Autorizada" : "Não autorizada"} />
               <Row label="Visibilidade pública" value={PROFESSIONAL_PROFILE_VISIBILITY_LABELS[profileVisibility]} />
@@ -320,15 +340,15 @@ export function AdminProfessionalCard({
 
             <Section title="KYC / IDENTIDADE">
               <Row label="Método" value={providerLabel(pro.kycProvider, pro.kycSessionId)} />
-              <Row label="Status geral" value={technicalStatus(pro.kycStatus)} />
+              <Row label="Identidade" value={identityLabel} />
               <Row label="Documento" value={technicalStatus(pro.docStatus)} />
               <Row label="Facial/selfie" value={technicalStatus(pro.verifStatus)} />
-              <Row label="Enviado em" value={date(pro.user.kycSubmittedAt, true)} />
-              <Row label="Verificado em" value={date(pro.user.kycReviewedAt, true)} />
+              <Row label="Documentos enviados em" value={date(isManual ? manualAttempt?.submittedAt : pro.user.kycSubmittedAt, true)} />
+              <Row label="Última revisão de identidade" value={date(isManual ? manualAttempt?.reviewedAt : pro.user.kycReviewedAt, true)} />
               <Row label="ID da sessão" value={pro.kycSessionId ? <code>{pro.kycSessionId}</code> : null} />
-              <Row label="Prova adicional" value={pro.verificationUrl ? (pro.verificationType ?? "Arquivo") : null} />
+              {!isManual && <Row label="Prova adicional" value={pro.verificationUrl ? (pro.verificationType ?? "Arquivo") : null} />}
               <Row label="Vídeo da galeria" value={pro.presentationVideoUrl ? technicalStatus(pro.presentationVideoStatus) : "Não enviado"} />
-              <AdminKycEvidence
+              {!isManual && <AdminKycEvidence
                 professionalId={pro.id}
                 provider={pro.kycProvider}
                 sessionId={pro.kycSessionId}
@@ -337,7 +357,7 @@ export function AdminProfessionalCard({
                   ...(pro.docVersoUrl ? [{ label: "documento — verso", path: pro.docVersoUrl }] : []),
                   ...(pro.verificationUrl && !pro.verificationUrl.includes("didit.me") ? [{ label: "selfie/prova de vida", path: pro.verificationUrl }] : []),
                 ]}
-              />
+              />}
               {(kycDivergence || pro.user.kycRejectionReason || pro.presentationVideoRejectReason) && (
                 <div className="pro-alert bad"><b>Divergência identificada</b><span>{pro.user.kycRejectionReason ?? pro.presentationVideoRejectReason ?? "Os estados geral, documental e facial não coincidem."}</span></div>
               )}
@@ -397,7 +417,7 @@ export function AdminProfessionalCard({
                 <button name="action" value="setVisibility" type="submit">Salvar visibilidade</button>
               </fieldset>
               <button name="action" value="approve" disabled={!canApprove} title={!canApprove ? approvalIssues.join(", ") || "Este status não permite aprovação" : "Aprovar profissional"} className="pro-approve">
-                {canApprove ? "✓ Aprovar agora" : pro.status === "ACTIVE" ? "✓ Já aprovada" : "Aprovar (bloqueado)"}
+                {canApprove ? "✓ Aprovar perfil" : pro.status === "ACTIVE" ? "✓ Já aprovada" : "Aprovar perfil (bloqueado)"}
               </button>
               <fieldset className="pro-correction-fields"><legend>Ao solicitar correção, marque os itens</legend>{[
                 ["mainPhoto","Foto principal"],["bio","Biografia"],["services","Serviços"],["location","Localização"],

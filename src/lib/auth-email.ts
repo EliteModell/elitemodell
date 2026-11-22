@@ -272,6 +272,45 @@ export async function sendAuthEmail(
   return payload.id ?? null;
 }
 
+export async function sendManualIdentityEmail(input: {
+  email: string;
+  professionalId?: string;
+  attemptId: string;
+  event: "received" | "approved" | "rejected" | "resubmission";
+  reviewVersion?: number;
+  correctionReason?: string;
+}) {
+  const messages = {
+    received: {
+      subject: "Documentos recebidos",
+      body: "Olá! Recebemos seus documentos com sucesso. Sua identidade está em análise pela nossa equipe. Você receberá uma atualização quando a análise for concluída.",
+    },
+    approved: {
+      subject: "Identidade verificada",
+      body: "Sua verificação de identidade foi aprovada. Você já pode continuar as próximas etapas do seu cadastro.",
+    },
+    rejected: {
+      subject: "Resultado da verificação de identidade",
+      body: "A análise não confirmou sua identidade com as evidências enviadas. Use um documento válido e legível, tire uma nova selfie com o documento e siga as orientações da sua conta para reenviar.",
+    },
+    resubmission: {
+      subject: "Novo envio de documentos solicitado",
+      body: "Precisamos de novas imagens para confirmar sua identidade. Abra sua conta e reenvie fotos nítidas do documento e uma selfie segurando o documento com o desafio exibido na tela.",
+    },
+  };
+  const { subject, body } = messages[input.event];
+  const path = input.event === "approved" ? "/profissional/novo" : "/profissional/identidade";
+  await sendAuthEmail(input.email, {
+    subject: "ELITE MODELL — " + subject,
+    html: `<h1>ELITE MODELL</h1><p>${body}</p>${input.correctionReason ? `<p>${escapeHtml(input.correctionReason)}</p>` : ""}<p><a href="${DEFAULT_SITE_URL}${path}">Acessar minha conta</a></p>`,
+  }, {
+    idempotencyKey: `manual-identity:${input.attemptId}:${input.event}:${input.reviewVersion ?? 0}`,
+    professionalId: input.professionalId,
+    category: "IDENTITY_" + input.event.toUpperCase(),
+    retryTransient: true,
+  });
+}
+
 export async function sendProfessionalSubmissionReceipt(
   to: string,
   professionalId: string,
@@ -322,7 +361,7 @@ export async function sendProfessionalApprovalEmail(to: string, name?: string | 
         </div>
         <h2 style="color:#fcf7ff;font-size:22px;margin:0 0 12px">Cadastro aprovado</h2>
         <p style="color:#b4adb0;line-height:1.7;margin:0">Olá${name?.trim() ? `, ${name.trim()}` : ""}.</p>
-        <p style="color:#b4adb0;line-height:1.7;margin:12px 0">Seu cadastro na Elite Modell foi aprovado.</p>
+        <p style="color:#b4adb0;line-height:1.7;margin:12px 0">Parabéns! Seu perfil foi aprovado pela equipe ELITE MODELL. Acesse sua conta para acompanhar a publicação e a disponibilidade do seu anúncio.</p>
         <p style="color:#b4adb0;line-height:1.7;margin:0">Você já pode acessar sua conta e aproveitar os recursos disponíveis na plataforma.</p>
         <p style="color:#b4adb0;line-height:1.7;margin:12px 0 0">Se ainda houver alguma informação pendente no perfil, você poderá completá-la na sua área de cadastro. A publicação continua sujeita às regras de segurança e moderação.</p>
         <p style="margin:20px 0 0"><a href="${safeProfileUrl}" style="display:inline-block;background:#b72cff;color:#ffffff;text-decoration:none;font-weight:800;padding:13px 20px;border-radius:10px">Acessar meu perfil</a></p>
@@ -335,7 +374,7 @@ export async function sendProfessionalApprovalEmail(to: string, name?: string | 
   `;
 
   await sendAuthEmail(to, {
-    subject: "Seu cadastro na Elite Modell foi aprovado!",
+    subject: "ELITE MODELL — Seu perfil foi aprovado!",
     html: base,
   }, professionalId ? {
     idempotencyKey: professionalApprovalEmailIdempotencyKey(professionalId),
@@ -348,7 +387,7 @@ export async function sendProfessionalPublishedEmail(to: string, name?: string |
   const safeName = name?.trim().replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character] ?? character));
   const safeProfileUrl = escapeHtml(new URL(profileUrl, DEFAULT_SITE_URL).toString());
   await sendAuthEmail(to, {
-    subject: "💜 Bem-vinda à Elite Modell! Seu perfil está no ar!",
+    subject: "ELITE MODELL — Seu perfil foi aprovado!",
     html: `
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#ffffff;color:#17131a;border:1px solid #dfd1e5;border-radius:16px;overflow:hidden">
         <div style="height:4px;background:#7d179f"></div>
@@ -357,7 +396,7 @@ export async function sendProfessionalPublishedEmail(to: string, name?: string |
           <h1 style="font-size:22px;margin:0 0 14px">Bem-vinda à Elite Modell! Seu perfil está no ar!</h1>
           <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Olá${safeName ? `, ${safeName}` : ""}!</p>
           <p style="color:#625c68;line-height:1.7;margin:0 0 12px">É um prazer receber você na Elite Modell! 💜</p>
-          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Seu cadastro foi concluído com sucesso, suas verificações foram aprovadas e seu perfil já está disponível em nossa plataforma.</p>
+          <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Parabéns! Seu perfil foi aprovado pela equipe ELITE MODELL. Acesse sua conta para acompanhar a publicação e a disponibilidade do seu anúncio.</p>
           <p style="color:#625c68;line-height:1.7;margin:0 0 12px">Agora você pode acessar sua conta, atualizar suas informações, organizar suas fotos e aproveitar os recursos disponíveis para apresentar seu perfil.</p>
           <p style="color:#625c68;line-height:1.7;margin:0 0 18px">Estamos muito felizes em ter você conosco e desejamos muito sucesso nesta nova etapa!</p>
           <p style="margin:0 0 22px"><a href="${safeProfileUrl}" style="display:inline-block;background:#7d179f;color:#ffffff;text-decoration:none;font-weight:800;padding:13px 20px;border-radius:10px">Acessar meu perfil</a></p>

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin-access";
+import { hasAdminPermission, requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
 import { getProfessionalBillingSettings, professionalApprovalAccessData } from "@/lib/professional-access";
 import { type PublicProfileAsset } from "@/lib/public-professional-media";
@@ -273,6 +273,23 @@ async function reviewProfessional(formData: FormData) {
   const resumeWhere = identityEnabled()
     ? { status: "PAUSED" as const, verified: true }
     : { OR: [{ kycProvider: null }, { kycProvider: { not: MANUAL_DOCUMENT_PROVIDER } }, { status: "PAUSED" as const, verified: true, kycStatus: "APPROVED" }] };
+  if (action === "approve") {
+    const manualProfile = await prisma.professional.findFirst({
+      where: { id, kycProvider: MANUAL_DOCUMENT_PROVIDER },
+      select: { status: true, kycStatus: true },
+    });
+    if (manualProfile) {
+      if (manualProfile.status !== "PENDING_REVIEW" || manualProfile.kycStatus !== "APPROVED") return;
+      const { attemptAutomaticProfessionalPublication } = await import("@/lib/professional-auto-publication");
+      const result = await attemptAutomaticProfessionalPublication(id, "manual-profile-admin-approval");
+      if (result.becamePublished) await logAudit({
+        adminId: session.user.id, action: "PROFESSIONAL_APPROVED", targetType: "PROFESSIONAL", targetId: id,
+        reason: "Aprovação administrativa do perfil após verificação documental.",
+      });
+      revalidatePath("/admin/profissionais");
+      return;
+    }
+  }
   const professional = action === "approve"
     ? await prisma.$transaction(async (tx) => {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`professional-approval:${id}`}))`;
@@ -517,13 +534,22 @@ async function professionalListItems(where: Prisma.ProfessionalWhereInput, offse
     if (entries.length < 8) entries.push(delivery);
     deliveriesByProfessional.set(delivery.professionalId, entries);
   }
-  return professionals.map((professional) => ({
-    professional,
-    profileIssues: professionalProfileIssues(professional),
-    approvalIssues: professionalApprovalIssues(professional),
-    audits: auditsByProfessional.get(professional.id) ?? [],
-    emailDeliveries: deliveriesByProfessional.get(professional.id) ?? [],
-  })) as unknown as AdminProfessionalListItem[];
+  const manualAttempts = await prisma.manualIdentityAttempt.findMany({
+    where: { id: { in: professionals.flatMap((pro) => pro.kycProvider === MANUAL_DOCUMENT_PROVIDER && pro.kycSessionId ? [pro.kycSessionId] : []) }, submittedAt: { not: null } },
+    select: { id: true, userId: true, status: true, submittedAt: true, reviewedAt: true, purgedAt: true, purgeAfter: true },
+  });
+  const manualById = new Map(manualAttempts.map((attempt) => [attempt.id, attempt]));
+  return professionals.map((professional) => {
+    const manualAttempt = manualById.get(professional.kycSessionId ?? "");
+    return {
+      professional,
+      manualAttempt: manualAttempt?.userId === professional.userId ? manualAttempt : null,
+      profileIssues: professionalProfileIssues(professional),
+      approvalIssues: professionalApprovalIssues(professional),
+      audits: auditsByProfessional.get(professional.id) ?? [],
+      emailDeliveries: deliveriesByProfessional.get(professional.id) ?? [],
+    };
+  }) as unknown as AdminProfessionalListItem[];
 }
 
 async function loadMoreProfessionals(input: AdminProfessionalFilters & { offset: number }) {
@@ -547,7 +573,7 @@ async function loadMoreProfessionals(input: AdminProfessionalFilters & { offset:
 }
 
 export default async function AdminProfissionaisPage({ searchParams }: { searchParams?: Promise<{ status?: string; access?: string; kyc?: string; q?: string; professionalId?: string; legacyNoticeSent?: string }> }) {
-  await requireAdmin("professionals:review");
+  const { adminRole } = await requireAdmin("professionals:review");
   const params = await searchParams;
   const status = params?.status;
   const accessFilter = params?.access;
@@ -654,6 +680,7 @@ export default async function AdminProfissionaisPage({ searchParams }: { searchP
         total={total}
         filters={filters}
         billingEnabled={billingSettings.billingEnabled}
+        canReviewIdentity={hasAdminPermission(adminRole, "kyc:review")}
         loadMoreAction={loadMoreProfessionals}
         reviewAction={reviewProfessional}
       />

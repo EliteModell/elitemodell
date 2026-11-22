@@ -14,7 +14,7 @@ function route(path: string, dependencies: Record<string, unknown>) {
   }).outputText;
   const exports: Record<string, (...args: unknown[]) => Promise<Response>> = {};
   const modules: Record<string, unknown> = {
-    "next/server": { NextResponse: { json } },
+    "next/server": { NextResponse: { json }, after: () => undefined },
     "@/lib/manual-identity-runtime": { identityRuntimeEnabled: async () => true },
     "@/lib/manual-identity-policy": {
       identityEnabled: () => true,
@@ -136,6 +136,8 @@ test("aprovação manual atualiza apenas identidade e encaminha as outras travas
   const audits: unknown[] = [];
   const reevaluations: unknown[] = [];
   const notifications: unknown[] = [];
+  const afterResponse: Array<() => Promise<void>> = [];
+  const emails: unknown[] = [];
   const attempt = {
     id: attemptId, userId: "owner", reviewVersion: 0, status: "PENDING_REVIEW",
     purgeAfter: new Date(Date.now() + 60_000), purgedAt: null,
@@ -153,6 +155,8 @@ test("aprovação manual atualiza apenas identidade e encaminha as outras travas
     auditLog: { create: async ({ data }: { data: unknown }) => { audits.push(data); } },
   };
   const manual = route("admin/kyc/manual", {
+    "next/server": { after: (callback: () => Promise<void>) => afterResponse.push(callback) },
+    "@/lib/auth-email": { sendManualIdentityEmail: async (message: unknown) => { emails.push(message); } },
     "@/lib/admin-access": { authorizeAdminRequest: async () => ({ ok: true, session: { user: { id: "reviewer" } } }) },
     "@/lib/manual-identity-policy": {
       identityEnabled: () => true, confirmedAdult: () => true, identityParts: () => ["front"],
@@ -166,6 +170,7 @@ test("aprovação manual atualiza apenas identidade e encaminha as outras travas
     "@/lib/prisma": { prisma: {
       $transaction: (fn: (db: typeof tx) => unknown) => fn(tx),
       professional: { findFirst: async () => ({ id: "profile" }) },
+      user: { findUnique: async () => ({ email: "synthetic@example.invalid", emailVerified: true, professional: { id: "profile" } }) },
     } },
     "@/lib/professional-auto-publication": {
       attemptAutomaticProfessionalPublication: async (...args: unknown[]) => {
@@ -188,4 +193,7 @@ test("aprovação manual atualiza apenas identidade e encaminha as outras travas
   expect(audits).toHaveLength(1);
   expect(notifications).toEqual([expect.objectContaining({ userId: "owner", link: "/profissional/identidade" })]);
   expect(reevaluations).toEqual([["profile", "manual-document-approved"]]);
+  expect(afterResponse).toHaveLength(1);
+  await afterResponse[0]();
+  expect(emails).toEqual([expect.objectContaining({ attemptId, event: "approved", reviewVersion: 1, professionalId: "profile" })]);
 });

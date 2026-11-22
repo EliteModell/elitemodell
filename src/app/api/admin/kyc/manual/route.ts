@@ -1,8 +1,10 @@
 import { identityRuntimeEnabled } from "@/lib/manual-identity-runtime";
+import { after } from "next/server";
+import { sendManualIdentityEmail } from "@/lib/auth-email";
 import { authorizeAdminRequest } from "@/lib/admin-access";
 import { prisma } from "@/lib/prisma";
 import { assertPrivateIdentityBucket, identityBucket, identityPath, identityStorage, privateIdentityHeaders, sameIdentityOrigin } from "@/lib/manual-identity";
-import { confirmedAdult, identityParts, MANUAL_DOCUMENT_PROVIDER, type IdentityPart } from "@/lib/manual-identity-policy";
+import { confirmedAdult, IDENTITY_CORRECTION_REASONS, identityParts, MANUAL_DOCUMENT_PROVIDER, type IdentityPart } from "@/lib/manual-identity-policy";
 
 const json = (data: unknown, status = 200) => Response.json(data, { status, headers: privateIdentityHeaders });
 
@@ -39,10 +41,13 @@ export async function PATCH(req: Request) {
   const access = await authorizeAdminRequest("kyc:review");
   if (!access.ok) return json({}, access.status);
   const body = await req.json().catch(() => null);
-  const { id, status, version, reason, confirmed, birth, checks } = body ?? {};
+  const { id, status, version, reason, confirmed, birth, checks, correction } = body ?? {};
   if (typeof id !== "string" || !Number.isSafeInteger(version) || typeof reason !== "string" ||
       reason.trim().length < 5 || reason.length > 1000 || confirmed !== true ||
       !["APPROVED", "REJECTED", "RESUBMISSION_REQUESTED", "PENDING_REVIEW"].includes(status)) return json({}, 400);
+  const correctionReason = (status === "REJECTED" || status === "RESUBMISSION_REQUESTED") &&
+    typeof correction === "string" && Object.hasOwn(IDENTITY_CORRECTION_REASONS, correction)
+    ? IDENTITY_CORRECTION_REASONS[correction as keyof typeof IDENTITY_CORRECTION_REASONS] : undefined;
   if (status === "APPROVED" && (typeof birth !== "string" || !confirmedAdult(birth) ||
       checks?.document !== true || checks?.portrait !== true || checks?.challenge !== true)) {
     return json({ error: "Confirme maioridade, documento válido, correspondência visual e desafio." }, 422);
@@ -77,7 +82,7 @@ export async function PATCH(req: Request) {
       await tx.auditLog.create({ data: {
         adminId: access.session.user.id, action: "ADMIN_ACCESS", targetType: "USER", targetId: active.userId,
         reason: reason.trim(), changes: { method: "MANUAL_DOCUMENT", attemptId: id, status,
-          reviewedEvidence: identityParts(active.backUnavailable), checks: status === "APPROVED" ? { document: true, portrait: true, challenge: true, adult: true } : undefined },
+          reviewedEvidence: identityParts(active.backUnavailable), publicCorrection: correctionReason, checks: status === "APPROVED" ? { document: true, portrait: true, challenge: true, adult: true } : undefined },
       } });
       await tx.notification.create({ data: {
         userId: active.userId,
@@ -88,8 +93,25 @@ export async function PATCH(req: Request) {
           : "Precisamos que você envie novas fotos para confirmar sua identidade.",
         link: "/profissional/identidade",
       } });
-      return true;
+      return { userId: active.userId };
     }, { timeout: 15_000 });
+    if (updated && status !== "PENDING_REVIEW") {
+      const event = status === "APPROVED" ? "approved" : status === "REJECTED" ? "rejected" : "resubmission";
+      after(async () => {
+        try {
+          const account = await prisma.user.findUnique({
+            where: { id: updated.userId },
+            select: { email: true, emailVerified: true, professional: { select: { id: true } } },
+          });
+          if (account?.email && account.emailVerified) await sendManualIdentityEmail({
+            email: account.email, professionalId: account.professional?.id, attemptId: id,
+            event, reviewVersion: version + 1, correctionReason,
+          });
+        } catch {
+          // Delivery tracking records provider errors. A failed email must not undo the decision.
+        }
+      });
+    }
     if (updated && status === "APPROVED") {
       const profile = await prisma.professional.findFirst({
         where: { kycProvider: MANUAL_DOCUMENT_PROVIDER, kycSessionId: id, registrationSubmittedAt: { not: null } },

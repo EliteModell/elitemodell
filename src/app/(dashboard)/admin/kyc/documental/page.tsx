@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { AdminHeader, AdminPanel } from "../../_components/AdminPrimitives";
 import Review from "./review";
 
-const labels = { back: "Verso", front: "Frente", portrait: "Foto com documento" };
+const labels = { back: "Verso do documento", front: "Frente do documento", portrait: "Selfie segurando o documento" };
 const statuses: Record<string, string> = {
   PENDING_REVIEW: "Em análise", APPROVED: "Aprovado", REJECTED: "Reprovado", RESUBMISSION_REQUESTED: "Novo envio solicitado",
 };
@@ -25,7 +25,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
   });
   const accounts = await prisma.user.findMany({
     where: { id: { in: attempts.map((attempt) => attempt.userId) } },
-    select: { id: true, name: true, birthDate: true, professional: { select: { displayName: true, birthDate: true } } },
+    select: { id: true, name: true, birthDate: true, professional: { select: { id: true, displayName: true, birthDate: true } } },
   });
   const notes = await prisma.auditLog.findMany({
     where: { OR: attempts.map((attempt) => ({ targetType: "USER", targetId: attempt.userId, changes: { path: ["attemptId"], equals: attempt.id } })) },
@@ -46,22 +46,31 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
         const changes = note.changes as { attemptId?: string; status?: string } | null;
         return changes?.attemptId === attempt.id && changes.status;
       });
-      return <AdminPanel key={attempt.id}>
+      return <div id={"tentativa-" + attempt.id} key={attempt.id} className="scroll-mt-6"><AdminPanel>
         <h2>{account?.professional?.displayName ?? account?.name ?? "Cadastro indisponível"} · {attempt.documentType}</h2>
         <p>{statuses[attempt.status] ?? attempt.status} · Envio em {date.format(attempt.submittedAt!)}</p>
         <p>Data do desafio: {attempt.challengeDate.split("-").reverse().join("/")}{attempt.backUnavailable ? " · Verso declarado indisponível" : ""}</p>
         <p>Nascimento cadastrado: {(account?.professional?.birthDate ?? account?.birthDate)?.toISOString().slice(0, 10).split("-").reverse().join("/") ?? "Indisponível"}
           {attempt.birthDate && " · Nascimento conferido: " + attempt.birthDate.toISOString().slice(0, 10).split("-").reverse().join("/")}</p>
         <p><Link href={"?profissional=" + encodeURIComponent(attempt.userId)}>Histórico da profissional</Link></p>
-        {available ? <ul>{identityParts(attempt.backUnavailable).map((part) => <li key={part}>
-          <a target="_blank" rel="noopener noreferrer" href={"/api/admin/kyc/manual?" + new URLSearchParams({ id: attempt.id, part })}>{labels[part]}</a>
-        </li>)}</ul> : <p>Evidências indisponíveis pelo prazo de retenção.</p>}
+        {account?.professional && <p><Link href={"/admin/profissionais?professionalId=" + encodeURIComponent(account.professional.id)}>Ver cadastro profissional</Link></p>}
+        {available ? <div className="my-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {[...identityParts(attempt.backUnavailable)].sort((a, b) => ["front", "back", "portrait"].indexOf(a) - ["front", "back", "portrait"].indexOf(b)).map((part) => {
+            const url = "/api/admin/kyc/manual?" + new URLSearchParams({ id: attempt.id, part });
+            return <a key={part} target="_blank" rel="noopener noreferrer" href={url} className="grid gap-2 rounded-xl border p-3">
+
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img loading="lazy" src={url} alt={labels[part]} className="h-40 w-full rounded-lg bg-neutral-100 object-contain" />
+              <span>{labels[part]} · Ampliar</span>
+            </a>;
+          })}
+        </div> : <p>Evidências indisponíveis pelo prazo de retenção.</p>}
         {attemptNotes.length > 0 && <details><summary>Histórico de decisões</summary><ul>{attemptNotes.map((note) => <li key={note.id}>
           {date.format(note.timestamp)} · {note.adminId ?? "Administrador removido"} · {note.reason}
         </li>)}</ul></details>}
         {account && available && attempt.status === "PENDING_REVIEW" &&
           <Review key={attempt.reviewVersion} id={attempt.id} version={attempt.reviewVersion} />}
-      </AdminPanel>;
+      </AdminPanel></div>;
     })}
     {page > 1 && <Link href={pageLink(page - 1)}>Página anterior</Link>}
     {attempts.length > 25 && <Link href={pageLink(page + 1)}>Próxima página</Link>}

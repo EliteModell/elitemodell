@@ -42,7 +42,7 @@ test.describe("prontidão da publicação profissional", () => {
     expect(page).toContain("Parabéns! Seu perfil está liberado!");
     expect(page).toContain("Recebemos suas informações. Sua identidade está em análise e você será avisado por e-mail quando houver uma atualização.");
     expect(page).not.toContain("Seu perfil foi enviado e agora está em análise pela equipe Elite Modell.");
-    expect(email).toContain("💜 Bem-vinda à Elite Modell! Seu perfil está no ar!");
+    expect(email).toContain("ELITE MODELL — Seu perfil foi aprovado!");
     expect(email).toContain("Acessar meu perfil");
     expect(email).toContain("professionalPublicationEmailIdempotencyKey(professionalId)");
   });

@@ -1,5 +1,7 @@
 import { identityRuntimeEnabled } from "@/lib/manual-identity-runtime";
 import { createHash } from "node:crypto";
+import { after } from "next/server";
+import { sendManualIdentityEmail } from "@/lib/auth-email";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { isProfessionalCategory } from "@/lib/account-routes";
@@ -16,10 +18,10 @@ async function professionalAccount() {
   if (!session?.user?.id) return null;
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, blocked: true, emailVerified: true, phoneVerified: true, accountType: true, category: true, kycSessionId: true, professional: { select: { kycStatus: true, verified: true, kycProvider: true, kycSessionId: true, verificationUrl: true } } },
+    select: { id: true, email: true, blocked: true, emailVerified: true, phoneVerified: true, accountType: true, category: true, kycSessionId: true, professional: { select: { id: true, kycStatus: true, verified: true, kycProvider: true, kycSessionId: true, verificationUrl: true } } },
   });
   if (!user || user.blocked || (!user.professional && !["model", "professional"].includes(user.accountType) && !isProfessionalCategory(user.category))) return null;
-  return { canSubmit: Boolean(user.emailVerified && user.phoneVerified), manual: shouldReviewRegistrationManually(user.professional, user.kycSessionId), userId: user.id, verified: user.professional?.verified ?? false, kycStatus: user.professional?.kycStatus };
+  return { canSubmit: Boolean(user.emailVerified && user.phoneVerified), manual: shouldReviewRegistrationManually(user.professional, user.kycSessionId), userId: user.id, email: user.email, profileId: user.professional?.id, verified: user.professional?.verified ?? false, kycStatus: user.professional?.kycStatus };
 }
 
 export async function GET() {
@@ -119,6 +121,12 @@ export async function POST(req: Request) {
         data: { status: "PENDING_REVIEW", submittedAt, purgeAfter: new Date(submittedAt.getTime() + IDENTITY_RETENTION_DAYS * 86_400_000) },
       });
     }, { timeout: 25_000 });
+    const email = professional.email;
+    if (attempt?.status === "PENDING_REVIEW" && email) {
+      after(() => sendManualIdentityEmail({
+        email, professionalId: professional.profileId, attemptId: attempt.id, event: "received",
+      }).catch(() => undefined));
+    }
     return attempt ? json({ attempt }) : json({ error: "A tentativa expirou ou já existe outra verificação." }, 409);
   } catch {
     return json({ error: "Não foi possível enviar agora. Tente novamente com as mesmas fotos." }, 503);

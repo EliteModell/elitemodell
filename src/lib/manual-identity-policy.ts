@@ -2,6 +2,12 @@ export const IDENTITY_PARTS = ["back", "front", "portrait"] as const;
 export type IdentityPart = (typeof IDENTITY_PARTS)[number];
 export const IDENTITY_DOCUMENTS = ["RG", "CIN", "CNH"] as const;
 export const MAX_IDENTITY_IMAGE = 1_250_000;
+export const IDENTITY_CORRECTION_REASONS = {
+  document: "O documento está incompleto, ilegível ou precisa ser substituído. Envie um documento válido com todos os dados visíveis.",
+  portrait: "A selfie não permitiu confirmar a correspondência com o documento. Tire uma nova foto com boa iluminação e o rosto visível.",
+  challenge: "A frase ou a data pedida não ficou visível na selfie. Siga o desafio exibido antes de tirar a nova foto.",
+} as const;
+
 export const IDENTITY_NOTICE_VERSION = "manual-identity-v1";
 export const IDENTITY_RETENTION_DAYS = 30;
 

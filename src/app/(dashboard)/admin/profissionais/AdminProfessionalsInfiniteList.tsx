@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AdminProfessionalCard, type AdminProfessionalRecord } from "./AdminProfessionalCard";
+import { AdminProfessionalCard, type AdminProfessionalRecord, type AdminManualAttempt } from "./AdminProfessionalCard";
 
 type AuditEntry = {
   id: string;
@@ -25,6 +25,7 @@ export type AdminProfessionalListItem = {
   approvalIssues: string[];
   audits: AuditEntry[];
   emailDeliveries: EmailDeliveryEntry[];
+  manualAttempt?: AdminManualAttempt | null;
 };
 
 type Filters = {
@@ -41,6 +42,7 @@ export function AdminProfessionalsInfiniteList({
   total,
   filters,
   billingEnabled,
+  canReviewIdentity = false,
   loadMoreAction,
   reviewAction,
 }: {
@@ -48,6 +50,7 @@ export function AdminProfessionalsInfiniteList({
   total: number;
   filters: Filters;
   billingEnabled: boolean;
+  canReviewIdentity?: boolean;
   loadMoreAction: (input: Filters & { offset: number }) => Promise<{ items: AdminProfessionalListItem[]; hasMore: boolean }>;
   reviewAction: (formData: FormData) => Promise<void>;
 }) {
@@ -108,6 +111,8 @@ export function AdminProfessionalsInfiniteList({
             emailDeliveries={item.emailDeliveries}
             reviewAction={reviewAction}
             billingEnabled={billingEnabled}
+            manualAttempt={item.manualAttempt}
+            canReviewIdentity={canReviewIdentity}
           />
         ))}
         {!items.length ? (
