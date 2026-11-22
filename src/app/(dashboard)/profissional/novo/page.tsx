@@ -417,7 +417,6 @@ export default function ProfissionalNovoPage() {
   const [emailBusy, setEmailBusy] = useState(false);
   const [emailCooldown, setEmailCooldown] = useState(0);
   const [editingEmail, setEditingEmail] = useState(false);
-  const [replacementEmail, setReplacementEmail] = useState("");
   const [emailConflict, setEmailConflict] = useState(false);
   const [validationIssue, setValidationIssue] = useState<ValidationIssue | null>(null);
   const [draftSaveError, setDraftSaveError] = useState(false);
@@ -1222,7 +1221,7 @@ export default function ProfissionalNovoPage() {
     return `${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
   }
 
-  async function requestEmailConfirmation(action: "resend" | "change") {
+  async function requestEmailConfirmation(action: "resend" | "change", replacementEmail = "") {
     if (emailBusy || emailCooldown > 0) return;
     setEmailConflict(false);
     setEmailBusy(true);
@@ -1247,7 +1246,6 @@ export default function ProfissionalNovoPage() {
       if (action === "change") {
         setAccountEmail(replacementEmail.trim().toLowerCase());
         setPendingEmailLabel(maskEmail(replacementEmail.trim().toLowerCase()));
-        setReplacementEmail("");
         setEditingEmail(false);
       }
       setServerEmailCooldown(response, data.retryAfterSeconds);
@@ -1597,14 +1595,16 @@ export default function ProfissionalNovoPage() {
             </>
           )}
           {editingEmail || isEmailMissing ? (
-            <div className="actions">
-              <input type="email" autoComplete="email" value={replacementEmail} onChange={(event) => {
-                setReplacementEmail(event.target.value);
-                setEmailConflict(false);
-              }} placeholder="novo@email.com" />
-              <button type="button" disabled={emailBusy || emailCooldown > 0 || !replacementEmail.trim()} onClick={() => requestEmailConfirmation("change")}>{emailCooldown > 0 ? `Tente novamente em ${formatEmailCooldown(emailCooldown)}` : emailBusy ? "Enviando..." : "Continuar e confirmar e-mail"}</button>
+            <form className="actions" method="post" onSubmit={(event) => {
+              event.preventDefault();
+              const email = new FormData(event.currentTarget).get("email");
+              if (typeof email === "string" && email.trim()) void requestEmailConfirmation("change", email);
+            }}>
+              <label htmlFor="professional-confirmation-email" className="sr-only">E-mail</label>
+              <input id="professional-confirmation-email" name="email" type="email" autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false} required onInput={() => setEmailConflict(false)} placeholder="novo@email.com" />
+              <button type="submit" disabled={emailBusy || emailCooldown > 0}>{emailCooldown > 0 ? `Tente novamente em ${formatEmailCooldown(emailCooldown)}` : emailBusy ? "Enviando..." : "Continuar e confirmar e-mail"}</button>
               {!isEmailMissing ? <button type="button" className="secondary" onClick={() => setEditingEmail(false)}>Cancelar</button> : null}
-            </div>
+            </form>
           ) : (
             <div className="actions">
               <button type="button" disabled={emailBusy} onClick={checkEmailConfirmation}>{emailBusy ? "Verificando..." : "Já confirmei meu e-mail"}</button>
