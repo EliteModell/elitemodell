@@ -5,7 +5,7 @@ import { isProfessionalCategory } from "@/lib/account-routes";
 import { prisma } from "@/lib/prisma";
 import { enforceRateLimitAsync } from "@/lib/security";
 import { assertPrivateIdentityBucket, identityBucket, identityPath, identityStorage, normalizeIdentityImage, privateIdentityHeaders, sameIdentityOrigin } from "@/lib/manual-identity";
-import { brazilDate, identityEnabled, identityParts, IDENTITY_DOCUMENTS, IDENTITY_NOTICE_VERSION, IDENTITY_RETENTION_DAYS, MANUAL_DOCUMENT_PROVIDER, shouldReviewRegistrationManually } from "@/lib/manual-identity-policy";
+import { brazilDate, identityEnabled, identityParts, IDENTITY_DOCUMENTS, IDENTITY_NOTICE_VERSION, IDENTITY_RETENTION_DAYS, MANUAL_DOCUMENT_PROVIDER, manualIdentitySelected, shouldReviewRegistrationManually } from "@/lib/manual-identity-policy";
 
 const json = (data: unknown, status = 200) => Response.json(data, { status, headers: privateIdentityHeaders });
 const select = { id: true, status: true, documentType: true, submittedAt: true, purgeAfter: true } as const;
@@ -22,7 +22,9 @@ async function professionalAccount() {
 }
 
 export async function GET() {
-  if (!identityEnabled()) return json({}, 404);
+  if (!identityEnabled()) {
+    return manualIdentitySelected() ? json({}, 503) : json({ manualDefault: false });
+  }
   const professional = await professionalAccount();
   if (!professional) return json({ error: "Cadastro profissional necessário." }, 403);
   const attempt = await prisma.manualIdentityAttempt.findFirst({

@@ -379,20 +379,22 @@ function MoneyInput({ value, onChange }: { value: string; onChange: (value: stri
 export default function ProfissionalNovoPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [manualIdentityAvailable, setManualIdentityAvailable] = useState(false);
+  const [identityMethod, setIdentityMethod] = useState<"loading" | "manual" | "external" | "unavailable">("loading");
+  const manualIdentityAvailable = identityMethod === "manual";
+  const externalIdentityAvailable = identityMethod === "external";
   const [manualIdentityReady, setManualIdentityReady] = useState(false);
   useEffect(() => {
     if (step < 7) return;
     const controller = new AbortController();
     const refresh = () => void fetch("/api/kyc/manual", { signal: controller.signal }).then(async (response) => {
-      if (response.ok) {
-        const data = await response.json();
-        if (!controller.signal.aborted) {
-          setManualIdentityAvailable(Boolean(data.manualDefault));
-          setManualIdentityReady(["PENDING_REVIEW", "APPROVED"].includes(data.attempt?.status));
-        }
-      }
-    }).catch(() => undefined);
+      if (!response.ok) throw new Error("Identity method unavailable");
+      const data = await response.json();
+      if (controller.signal.aborted) return;
+      setIdentityMethod(data.manualDefault === true ? "manual" : data.manualDefault === false ? "external" : "unavailable");
+      setManualIdentityReady(["PENDING_REVIEW", "APPROVED"].includes(data.attempt?.status));
+    }).catch(() => {
+      if (!controller.signal.aborted) setIdentityMethod("unavailable");
+    });
     refresh();
     window.addEventListener("focus", refresh);
     return () => { controller.abort(); window.removeEventListener("focus", refresh); };
@@ -795,7 +797,7 @@ export default function ProfissionalNovoPage() {
   }, [router]);
 
   useEffect(() => {
-    if (step < 7 || manualIdentityAvailable) return;
+    if (step < 7 || !externalIdentityAvailable) return;
     let active = true;
     let refreshing = false;
     let awaitingResult = true;
@@ -852,7 +854,7 @@ export default function ProfissionalNovoPage() {
       window.removeEventListener("focus", refreshDigitStatus);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [step, form.kycSessionId, manualIdentityAvailable]);
+  }, [step, form.kycSessionId, externalIdentityAvailable]);
 
   function set<K extends keyof typeof form>(field: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -1136,7 +1138,7 @@ export default function ProfissionalNovoPage() {
   }, [diditRetryUntil]);
 
   async function startDigitVerification() {
-    if (diditStartingRef.current || uploadingIdx === 100 || Date.now() < diditRetryUntil) return;
+    if (!externalIdentityAvailable || diditStartingRef.current || uploadingIdx === 100 || Date.now() < diditRetryUntil) return;
     if (form.kycStatus === "APPROVED") return;
 
     diditStartingRef.current = true;
@@ -1340,7 +1342,7 @@ export default function ProfissionalNovoPage() {
       return;
     }
 
-    if (!(manualIdentityAvailable ? manualIdentityReady : canFinalizeProfessionalIdentity(form.kycSessionId, eligibleDiditSession, form.kycStatus))) {
+    if (!canFinalizeIdentity) {
       setStep(7);
       toast.error("Confirme o envio da documentação antes de finalizar.");
       return;
@@ -1475,7 +1477,7 @@ export default function ProfissionalNovoPage() {
       if (form.mainPhotoUrl.startsWith("blob:")) return { field: "mainPhotoUrl", message: "A foto está sendo processada, aguarde um momento." };
       if (!form.mainPhotoUrl || !REMOTE_IMAGE_RE.test(form.mainPhotoUrl)) return { field: "mainPhotoUrl", message: "Selecione e envie a foto principal do perfil para continuar." };
     }
-    if (targetStep === 7 && (!(manualIdentityAvailable ? manualIdentityReady : canFinalizeProfessionalIdentity(form.kycSessionId, eligibleDiditSession, form.kycStatus)))) {
+    if (targetStep === 7 && !canFinalizeIdentity) {
       return {
         field: "kycSessionId",
         message: form.kycStatus === "REJECTED"
@@ -1529,7 +1531,7 @@ export default function ProfissionalNovoPage() {
   const diditApproved = form.kycStatus === "APPROVED";
   const diditRejected = form.kycStatus === "REJECTED";
   const diditPending = Boolean(form.kycSessionId) && !diditApproved && !diditRejected;
-  const canFinalizeIdentity = (manualIdentityAvailable ? manualIdentityReady : canFinalizeProfessionalIdentity(form.kycSessionId, eligibleDiditSession, form.kycStatus));
+  const canFinalizeIdentity = manualIdentityAvailable ? manualIdentityReady : externalIdentityAvailable && canFinalizeProfessionalIdentity(form.kycSessionId, eligibleDiditSession, form.kycStatus);
   const registrationStatus = professionalRegistrationStatus({
     professionalStatus: registrationContext.status,
     registrationSubmittedAt: registrationContext.submittedAt,
@@ -2271,7 +2273,7 @@ export default function ProfissionalNovoPage() {
         </section>
       )}
 
-      {(step === 7 || step === 8) && !manualIdentityAvailable && (
+      {(step === 7 || step === 8) && externalIdentityAvailable && (
         <ProfessionalVerificationSteps
           mode={step === 7 ? "verification" : "summary"}
           displayName={form.displayName}
@@ -2298,10 +2300,13 @@ export default function ProfissionalNovoPage() {
         <div className="model-didit-alert" role="status">
           <strong>Verificação documental manual</strong>
           <p>{manualIdentityReady ? "Documentos recebidos. Você já pode finalizar o cadastro. O perfil fica privado enquanto a identidade e os demais requisitos estiverem em análise." : "Envie as imagens do documento e a foto segurando o documento para nossa equipe analisar."}</p>
-          {manualIdentityReady && <a href="/profissional/identidade" target="_blank" rel="noopener noreferrer">Consultar análise documental</a>}
+          <div className="model-didit-alert-actions"><a href="/profissional/identidade">{manualIdentityReady ? "Consultar análise documental" : "Enviar documentos"}</a></div>
         </div>
       )}
-      {step === 7 && !manualIdentityAvailable && diditStartFailed && (
+      {(step === 7 || step === 8) && !manualIdentityAvailable && !externalIdentityAvailable && (
+        <p role="status">{identityMethod === "loading" ? "Carregando a verificação de identidade…" : "Não foi possível carregar a verificação. Atualize a página para tentar novamente."}</p>
+      )}
+      {step === 7 && externalIdentityAvailable && diditStartFailed && (
         <div className="model-didit-alert" role="status">
           <strong>Verificação indisponível agora</strong>
           <p>Não conseguimos iniciar sua verificação de identidade neste momento. Seus dados estão salvos. Você pode tentar novamente ou entrar em contato com nossa equipe de suporte.</p>
@@ -2324,10 +2329,10 @@ export default function ProfissionalNovoPage() {
         </button>
 
         {!isLast ? (
-          <button onClick={step === 7 && !canFinalizeIdentity ? (manualIdentityAvailable ? () => window.open("/profissional/identidade", "_blank", "noopener,noreferrer") : startDigitVerification) : next}
-            disabled={loading || (step === 7 && !manualIdentityAvailable && !canFinalizeIdentity && (uploadingIdx === 100 || diditRetrySeconds > 0 || diditPending || (diditRejected && !diditRetryAllowed)))}
+          <button onClick={step === 7 && !canFinalizeIdentity ? (manualIdentityAvailable ? () => router.push("/profissional/identidade") : startDigitVerification) : next}
+            disabled={loading || (step === 7 && (!manualIdentityAvailable && !externalIdentityAvailable || externalIdentityAvailable && !canFinalizeIdentity && (uploadingIdx === 100 || diditRetrySeconds > 0 || diditPending || (diditRejected && !diditRetryAllowed))))}
             style={{ padding: "12px 32px", background: loading ? "#65009b" : GOLD, border: "none", borderRadius: 10, color: "#080808", fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}>
-            {loading ? "Salvando..." : step === 7 && uploadingIdx === 100 ? "Iniciando verificação..." : step === 7 && canFinalizeIdentity ? "Finalizar meu cadastro" : step === 7 && manualIdentityAvailable ? "Enviar documentos" : step === 7 && diditRetrySeconds > 0 ? `Tentar novamente em ${diditRetrySeconds}s` : step === 7 && diditPending ? "Aguardando confirmação da Didit" : step === 7 ? "Iniciar verificação para continuar" : "Continuar →"}
+            {loading ? "Salvando..." : step === 7 && !manualIdentityAvailable && !externalIdentityAvailable ? "Verificação de identidade" : step === 7 && externalIdentityAvailable && uploadingIdx === 100 ? "Iniciando verificação..." : step === 7 && canFinalizeIdentity ? "Finalizar meu cadastro" : step === 7 && manualIdentityAvailable ? "Enviar documentos" : step === 7 && diditRetrySeconds > 0 ? `Tentar novamente em ${diditRetrySeconds}s` : step === 7 && diditPending ? "Aguardando confirmação da Didit" : step === 7 ? "Iniciar verificação para continuar" : "Continuar →"}
           </button>
         ) : (
           <button onClick={submit} disabled={loading || !canFinalizeIdentity}

@@ -22,8 +22,8 @@ export const MANUAL_DOCUMENT_PROVIDER = "MANUAL_DOCUMENT";
 
 export function shouldReviewRegistrationManually(profile: { kycProvider?: string | null; kycSessionId?: string | null; verificationUrl?: string | null; kycStatus?: string | null; verified?: boolean } | null, userSessionId?: string | null) {
   if (profile?.kycProvider === MANUAL_DOCUMENT_PROVIDER) return true;
-  return identityEnabled() && !profile?.verified && profile?.kycStatus !== "APPROVED" && !profile?.kycSessionId && !userSessionId &&
-    !(profile?.kycProvider === "DIDIT" && profile.verificationUrl);
+  return identityEnabled() && !profile?.verified && profile?.kycStatus !== "APPROVED" &&
+    !profile?.kycSessionId && !userSessionId;
 }
 
 export function manualRegistrationStatus(attempt: { status: string; submittedAt: Date | null; purgeAfter: Date; purgedAt: Date | null; reviewedAt: Date | null; reviewerId: string | null } | null, now = new Date()) {
@@ -35,6 +35,10 @@ export function manualRegistrationStatus(attempt: { status: string; submittedAt:
 
 export function manualAttemptAllowsPublication(sessionId: string | null, current: (NonNullable<Parameters<typeof manualRegistrationStatus>[0]> & { id: string }) | null) {
   return Boolean(sessionId && current?.id === sessionId && manualRegistrationStatus(current) === "APPROVED");
+}
+
+export function manualIdentitySelected() {
+  return process.env.VERCEL_ENV === "production" || identityEnabled();
 }
 
 export function identityEnabled() {

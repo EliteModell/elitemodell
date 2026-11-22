@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import sharp from "sharp";
 import { normalizeIdentityImage } from "../src/lib/manual-identity-image";
-import { brazilDate, confirmedAdult, identityParts, MAX_IDENTITY_IMAGE, sameIdentityOrigin, identityTargetsAreIsolated, identityTargetsProduction, manualRegistrationStatus, manualAttemptAllowsPublication } from "../src/lib/manual-identity-policy";
+import { brazilDate, confirmedAdult, identityParts, MAX_IDENTITY_IMAGE, sameIdentityOrigin, identityTargetsAreIsolated, identityTargetsProduction, manualRegistrationStatus, manualAttemptAllowsPublication, identityEnabled, manualIdentitySelected, shouldReviewRegistrationManually } from "../src/lib/manual-identity-policy";
 
 test("confirma maioridade pela data civil no Brasil", () => {
   expect(brazilDate(new Date("2026-11-22T01:30:00Z"))).toBe("2026-11-21");
@@ -85,4 +85,31 @@ test("modo de produção exige banco e Storage exclusivos da ELITE MODELL", () =
   expect(identityTargetsProduction(api, pool, "postgresql://test@127.0.0.1/test")).toBe(false);
   expect(identityTargetsProduction("https://jbdshpbtqspzfzjngqbg.supabase.co", pool, direct)).toBe(false);
   expect(identityTargetsProduction(api, pool)).toBe(false);
+});
+
+test("reserva da Didit sem sessão usa o fluxo manual e preserva sessões históricas", () => {
+  const db = "postgresql://postgres@db.jgvmpbrsxegwkrgjncsv.supabase.co/postgres";
+  const config = {
+    NODE_ENV: "production", VERCEL_ENV: "production", VERCEL_GIT_COMMIT_REF: "main",
+    NEXT_PUBLIC_SUPABASE_URL: "https://jgvmpbrsxegwkrgjncsv.supabase.co",
+    DATABASE_URL: db, DIRECT_URL: db,
+  };
+  const before = Object.entries(config).map(([key]) => [key, process.env[key]] as const);
+  Object.assign(process.env, config);
+  try {
+    const reservation = { kycProvider: "DIDIT", kycStatus: "PENDING", verificationUrl: "didit:creating:synthetic:123" };
+    expect(shouldReviewRegistrationManually(reservation)).toBe(true);
+    expect(shouldReviewRegistrationManually({ ...reservation, kycSessionId: "existing-session" })).toBe(false);
+    expect(shouldReviewRegistrationManually(reservation, "existing-account-session")).toBe(false);
+    expect(shouldReviewRegistrationManually({ ...reservation, kycStatus: "APPROVED" })).toBe(false);
+    expect(shouldReviewRegistrationManually({ ...reservation, verified: true })).toBe(false);
+    delete process.env.DIRECT_URL;
+    expect(identityEnabled()).toBe(false);
+    expect(manualIdentitySelected()).toBe(true);
+  } finally {
+    for (const [key, value] of before) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 });

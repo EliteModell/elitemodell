@@ -1,4 +1,4 @@
-import { identityEnabled, MANUAL_DOCUMENT_PROVIDER } from "@/lib/manual-identity-policy";
+import { manualIdentitySelected, MANUAL_DOCUMENT_PROVIDER } from "@/lib/manual-identity-policy";
 import { monitorRegistration, registrationIdentity } from "@/lib/registration-monitor";
 import { normalizeBrazilianPhone } from "@/lib/phone-otp";
 export const dynamic = "force-dynamic";
@@ -192,7 +192,7 @@ export const POST = monitorRegistration("IDENTITY", async (_req, trace) => {
     include: { photos: { select: { url: true, cover: true } }, specialties: { select: { name: true } } },
   });
   if (!draft) return NextResponse.json({ error: "Rascunho profissional não encontrado." }, { status: 409 });
-  if (draft.kycProvider === MANUAL_DOCUMENT_PROVIDER || (identityEnabled() && !draft.kycSessionId && !account.kycSessionId && !parseDigitIntentMarker(draft.verificationUrl))) {
+  if (draft.kycProvider === MANUAL_DOCUMENT_PROVIDER || (manualIdentitySelected() && !draft.kycSessionId && !account.kycSessionId)) {
     return NextResponse.json({ code: "MANUAL_DOCUMENT_REQUIRED" }, { status: 409 });
   }
   const beforeIdentity = professionalCompletion({ ...draft, specialties: draft.specialties, emailVerified: true })
@@ -246,7 +246,7 @@ export const POST = monitorRegistration("IDENTITY", async (_req, trace) => {
     }, { status: existing.url ? 200 : 202 }), existing.url ? "session_reused" : "already_submitted", true, Boolean(existing.url));
   }
 
-  if (identityEnabled()) return NextResponse.json({ code: "MANUAL_DOCUMENT_REQUIRED" }, { status: 409 });
+  if (manualIdentitySelected()) return NextResponse.json({ code: "MANUAL_DOCUMENT_REQUIRED" }, { status: 409 });
 
   let leaseAt: number | undefined;
   try {

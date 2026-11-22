@@ -1,4 +1,4 @@
-import { identityEnabled } from "@/lib/manual-identity-policy";
+import { manualIdentitySelected } from "@/lib/manual-identity-policy";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     select: { clientStatus: true, termsConsent: true, lgpdConsent: true, accountType: true },
   });
 
-  if (identityEnabled() && (session.user.isProfessional || session.user.activeProfileType === "PROFESSIONAL" || ["model", "professional"].includes(user?.accountType ?? ""))) {
+  if (manualIdentitySelected() && (session.user.isProfessional || session.user.activeProfileType === "PROFESSIONAL" || ["model", "professional"].includes(user?.accountType ?? ""))) {
     return NextResponse.json({ code: "MANUAL_DOCUMENT_REQUIRED" }, { status: 409 });
   }
   if (!user) return NextResponse.json({ error: "Usuário não encontrado." }, { status: 404 });

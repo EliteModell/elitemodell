@@ -1,4 +1,4 @@
-import { identityEnabled } from "@/lib/manual-identity-policy";
+import { manualIdentitySelected } from "@/lib/manual-identity-policy";
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
@@ -88,7 +88,7 @@ export async function POST() {
     return NextResponse.json({ error: "Apenas anunciantes podem iniciar biometria." }, { status: 403 });
   }
 
-  if (identityEnabled()) return NextResponse.json({ code: "MANUAL_DOCUMENT_REQUIRED" }, { status: 409 });
+  if (manualIdentitySelected()) return NextResponse.json({ code: "MANUAL_DOCUMENT_REQUIRED" }, { status: 409 });
   const personaConfig = getPersonaConfig();
   if (!shouldUsePersonaProvider()) {
     console.warn("[KYC] Persona indisponivel: variaveis ausentes.", {

@@ -128,6 +128,7 @@ export default function ManualIdentityWizard() {
       <h1>Verificação de identidade</h1>
       {locked || sent ? <>
         <strong className={styles.status}>{labels[status] ?? status}</strong>
+        <p><a href="/profissional/novo">Voltar ao cadastro profissional</a></p>
         {status === "PENDING_REVIEW" && <><h2>Seus documentos foram enviados com segurança</h2>
           <p>Nossa equipe irá analisar sua identidade. Consulte esta página para acompanhar a decisão.</p></>}
       </> : <>
