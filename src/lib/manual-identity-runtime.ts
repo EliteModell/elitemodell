@@ -1,11 +1,11 @@
 import "server-only";
-import { identityEnabled, identityTargetsProduction } from "@/lib/manual-identity-policy";
+import { identityEnabled, identityTargetsProduction, MANUAL_IDENTITY_PRODUCTION_STORAGE } from "@/lib/manual-identity-policy";
 import { prisma } from "@/lib/prisma";
 
 export async function identityRuntimeEnabled() {
   if (!identityEnabled()) return false;
   if (process.env.NODE_ENV !== "production") return true;
-  if (identityTargetsProduction(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.DATABASE_URL)) return true;
+  if (identityTargetsProduction(MANUAL_IDENTITY_PRODUCTION_STORAGE, process.env.DATABASE_URL)) return true;
 
   // Check the connected cluster when the runtime connection string is unavailable
   // or uses a hostname that does not identify the Supabase project.

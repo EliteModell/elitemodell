@@ -5,6 +5,7 @@ export const MAX_IDENTITY_IMAGE = 1_250_000;
 export const IDENTITY_NOTICE_VERSION = "manual-identity-v1";
 export const IDENTITY_RETENTION_DAYS = 30;
 
+export const MANUAL_IDENTITY_PRODUCTION_STORAGE = "https://jgvmpbrsxegwkrgjncsv.supabase.co";
 export const MANUAL_IDENTITY_BUCKET = "documentos";
 export const MANUAL_IDENTITY_PREFIX = "manual-identity-v1";
 
@@ -47,8 +48,7 @@ export function manualIdentitySelected() {
 
 export function identityEnabled() {
   if (process.env.NODE_ENV === "production") {
-    return productionDeployment() && process.env.VERCEL_GIT_COMMIT_REF === "main" &&
-      identityStorageTargetsProduction(process.env.NEXT_PUBLIC_SUPABASE_URL);
+    return productionDeployment() && process.env.VERCEL_GIT_COMMIT_REF === "main";
   }
   return process.env.NODE_ENV === "development" && process.env.MANUAL_IDENTITY_LOCAL === "1" &&
     process.env.MANUAL_IDENTITY_DEMO !== "1" && identityTargetsAreIsolated(
@@ -56,9 +56,6 @@ export function identityEnabled() {
     );
 }
 
-export function identityStorageTargetsProduction(storage?: string) {
-  return identityTargetsMatchProject("jgvmpbrsxegwkrgjncsv", storage, []);
-}
 
 export function identityTargetsProduction(storage?: string, database?: string) {
   return identityTargetsMatchProject("jgvmpbrsxegwkrgjncsv", storage, [database]);

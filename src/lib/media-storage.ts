@@ -43,8 +43,10 @@ export interface MediaStorageProvider {
 export class SupabaseMediaStorageProvider implements MediaStorageProvider {
   readonly name = "SUPABASE" as const;
 
+  constructor(private readonly client = createSupabaseServerClient) {}
+
   async upload(input: MediaUploadInput) {
-    const { error } = await createSupabaseServerClient().storage
+    const { error } = await this.client().storage
       .from(input.bucket)
       .upload(input.path, input.contents, {
         contentType: input.contentType,
@@ -57,13 +59,13 @@ export class SupabaseMediaStorageProvider implements MediaStorageProvider {
   }
 
   async download(bucket: string, path: string) {
-    const { data, error } = await createSupabaseServerClient().storage.from(bucket).download(path);
+    const { data, error } = await this.client().storage.from(bucket).download(path);
     if (error || !data) throw new Error(error?.message || "Objeto Supabase nao encontrado.");
     return Buffer.from(await data.arrayBuffer());
   }
 
   async delete(bucket: string, path: string) {
-    const { error } = await createSupabaseServerClient().storage.from(bucket).remove([path]);
+    const { error } = await this.client().storage.from(bucket).remove([path]);
     if (error) throw new Error(`Falha ao remover objeto Supabase: ${error.message}`);
   }
 
@@ -72,7 +74,7 @@ export class SupabaseMediaStorageProvider implements MediaStorageProvider {
   }
 
   async getSignedUrl(bucket: string, path: string, expiresInSeconds: number, transform?: MediaTransform) {
-    const { data, error } = await createSupabaseServerClient().storage
+    const { data, error } = await this.client().storage
       .from(bucket)
       .createSignedUrl(path, Math.min(Math.max(expiresInSeconds, 1), 900), transform ? { transform } : undefined);
     if (error || !data?.signedUrl) throw new Error(error?.message || "Falha ao assinar URL Supabase.");
@@ -84,7 +86,7 @@ export class SupabaseMediaStorageProvider implements MediaStorageProvider {
     const filename = segments.pop();
     if (!filename) return null;
     const folder = segments.join("/");
-    const { data, error } = await createSupabaseServerClient().storage.from(bucket).list(folder, {
+    const { data, error } = await this.client().storage.from(bucket).list(folder, {
       search: filename,
       limit: 10,
     });
@@ -102,7 +104,7 @@ export class SupabaseMediaStorageProvider implements MediaStorageProvider {
 
   async copy(sourceBucket: string, sourcePath: string, destinationBucket: string, destinationPath: string) {
     if (sourceBucket === destinationBucket) {
-      const { error } = await createSupabaseServerClient().storage
+      const { error } = await this.client().storage
         .from(sourceBucket)
         .copy(sourcePath, destinationPath);
       if (error) throw new Error(`Falha ao copiar objeto Supabase: ${error.message}`);
@@ -120,7 +122,7 @@ export class SupabaseMediaStorageProvider implements MediaStorageProvider {
 
   async move(sourceBucket: string, sourcePath: string, destinationBucket: string, destinationPath: string) {
     if (sourceBucket === destinationBucket) {
-      const { error } = await createSupabaseServerClient().storage
+      const { error } = await this.client().storage
         .from(sourceBucket)
         .move(sourcePath, destinationPath);
       if (error) throw new Error(`Falha ao mover objeto Supabase: ${error.message}`);
@@ -132,7 +134,7 @@ export class SupabaseMediaStorageProvider implements MediaStorageProvider {
 
   async healthCheck() {
     try {
-      const { error } = await createSupabaseServerClient().storage.listBuckets();
+      const { error } = await this.client().storage.listBuckets();
       return error ? { ok: false, detail: error.message } : { ok: true, detail: "Supabase Storage acessivel." };
     } catch (cause) {
       return { ok: false, detail: cause instanceof Error ? cause.message : "Falha desconhecida." };

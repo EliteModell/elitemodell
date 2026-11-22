@@ -106,6 +106,8 @@ test("reserva da Didit sem sessão usa o fluxo manual e preserva sessões histó
     delete process.env.DIRECT_URL;
     expect(identityEnabled()).toBe(true);
     delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    expect(identityEnabled()).toBe(true);
+    process.env.VERCEL_GIT_COMMIT_REF = "preview";
     expect(identityEnabled()).toBe(false);
     expect(manualIdentitySelected()).toBe(true);
   } finally {
