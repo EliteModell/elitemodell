@@ -81,6 +81,7 @@ export function isPublishableStoryAsset(asset: PublicProfileAsset, ownerId: stri
     asset.folder.startsWith("stories") &&
     Boolean(asset.approvedBucket && asset.approvedPath) &&
     evaluateMediaPublicationGates({
+      category: asset.category, folder: asset.folder,
       uploadComplete: Boolean(asset.uploadCompletedAt),
       malwareStatus: asset.malwareStatus,
       moderationStatus: asset.moderationStatus,
@@ -111,6 +112,7 @@ export function filterApprovedProfilePhotos(
         // SUBSCRIBERS remains restricted and is never widened here.
         (asset.visibility === "PUBLIC" || asset.visibility === "PRIVATE") &&
         evaluateMediaPublicationGates({
+          category: asset.category, folder: asset.folder,
           uploadComplete: Boolean(asset.uploadCompletedAt),
           malwareStatus: asset.malwareStatus,
           moderationStatus: asset.moderationStatus,

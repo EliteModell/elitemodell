@@ -70,6 +70,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
     return NextResponse.json({ error: "Midia indisponivel." }, { status: 404, headers: ageGateCacheHeaders() });
   }
   const gates = asset ? evaluateMediaPublicationGates({
+    category: asset.category, folder: asset.folder,
     uploadComplete: Boolean(asset.uploadCompletedAt),
     malwareStatus: asset.malwareStatus,
     moderationStatus: asset.moderationStatus,

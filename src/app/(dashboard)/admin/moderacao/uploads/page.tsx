@@ -5,6 +5,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/admin-access";
 import { reconcileProfessionalDidit } from "@/lib/didit-reconciliation";
 import { prisma } from "@/lib/prisma";
+import { PROFILE_IMAGE_REENCODED } from "@/lib/media-security";
 import { manualMediaReviewBlockers } from "@/lib/manual-media-review";
 import { isProfessionalDisplayNameReady } from "@/lib/professional-display-name";
 import {
@@ -414,7 +415,9 @@ export default async function AdminUploadModerationPage({ searchParams }: { sear
                         <div>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
                             <StatusPill tone={tone(asset.status)}>{asset.status}</StatusPill>
-                            <StatusPill tone={tone(asset.malwareStatus)}>AV: {asset.malwareStatus}</StatusPill>
+                                                        <StatusPill tone={asset.malwareStatus === PROFILE_IMAGE_REENCODED ? "success" : tone(asset.malwareStatus)}>
+                              {asset.malwareStatus === PROFILE_IMAGE_REENCODED ? "Imagem validada e regravada" : "Validação técnica: " + asset.malwareStatus}
+                            </StatusPill>
                             <StatusPill tone={tone(asset.moderationStatus)}>Conteúdo: {asset.moderationStatus}</StatusPill>
                             <StatusPill tone={tone(asset.ageIdentityStatus)}>Idade: {asset.ageIdentityStatus}</StatusPill>
                             <StatusPill tone={tone(asset.consentStatus)}>Consentimento: {asset.consentStatus}</StatusPill>
@@ -451,7 +454,7 @@ export default async function AdminUploadModerationPage({ searchParams }: { sear
                             />
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                               <button name="action" value="REPROCESS" title="Executa novamente os controles automáticos; não publica sem todos os gates." style={{ border: "1px solid rgba(255,255,255,.16)", borderRadius: 8, background: "transparent", color: "#fff", padding: "9px 12px", fontWeight: 800 }}>
-                                {asset.category === "image" ? "Verificar foto agora" : "Reprocessar"}
+                                {asset.category === "image" ? "Validar e regravar foto" : "Reprocessar"}
                               </button>
                               <button name="action" value="REJECT" title="Requer justificativa e mantém o arquivo fora de publicação." style={{ border: "1px solid rgba(239,68,68,.4)", borderRadius: 8, background: "rgba(239,68,68,.12)", color: "#fca5a5", padding: "9px 12px", fontWeight: 800 }}>
                                 Rejeitar
@@ -462,7 +465,7 @@ export default async function AdminUploadModerationPage({ searchParams }: { sear
                               <button
                                 name="action"
                                 value="APPROVE"
-                                disabled={blockers.length > 0 || asset.status === "APPROVED" || asset.status === "REJECTED"}
+                                disabled={blockers.length > 0 || asset.status === "APPROVED" || asset.status === "REJECTED" || asset.category === "image" && asset.malwareStatus !== PROFILE_IMAGE_REENCODED}
                                 title={blockers.length
                                   ? `Aprovação desabilitada: ${blockers.map((blocker) => blockerReason(blocker, asset)).join("; ")}`
                                   : "Habilitada após todos os gates; o clique registra a decisão humana."}

@@ -3,7 +3,7 @@ import "server-only";
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { evaluateMediaPublicationGates } from "@/lib/media-security";
+import { evaluateMediaPublicationGates, PROFILE_IMAGE_REENCODED } from "@/lib/media-security";
 import { professionalApprovalAccessData } from "@/lib/professional-access";
 import { professionalCompletion } from "@/lib/professional-completeness";
 import { deliverProfessionalApprovalSms, deliverProfileApprovalCommunication } from "@/lib/professional-communications";
@@ -52,6 +52,7 @@ function mediaIsPublishable(asset: {
     && asset.folder.startsWith("profiles")
     && Boolean(asset.approvedBucket && asset.approvedPath)
     && evaluateMediaPublicationGates({
+      category: asset.category, folder: asset.folder,
       uploadComplete: Boolean(asset.uploadCompletedAt),
       malwareStatus: asset.malwareStatus,
       moderationStatus: asset.moderationStatus,
@@ -187,6 +188,12 @@ export async function attemptAutomaticProfessionalPublication(
           ? "A foto principal foi impedida pelas verificações de segurança; envie outra foto."
           : "A foto principal ainda está nas verificações obrigatórias de segurança e conteúdo.",
       });
+    }
+
+    if (!adminId && publishablePhotos.some((photo) =>
+      assetsById.get(controlledMediaAssetId(photo.url) ?? "")?.malwareStatus === PROFILE_IMAGE_REENCODED,
+    )) {
+      blockers.push({ code: "administrative_approval", label: "O perfil aguarda aprovação administrativa." });
     }
 
     const finalBlockers = uniqueBlockers(blockers);

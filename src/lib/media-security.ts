@@ -1,7 +1,15 @@
 export const MEDIA_PASS_STATUSES = new Set(["PASS", "CLEAN", "APPROVED"]);
 
+export const PROFILE_IMAGE_REENCODED = "IMAGE_REENCODED";
+
+function mediaTechnicalCheckPassed(status?: string | null, profileImage = false) {
+  return (profileImage && status === PROFILE_IMAGE_REENCODED) || Boolean(status && MEDIA_PASS_STATUSES.has(status.toUpperCase()));
+}
+
 export type MediaPublicationGateInput = {
   uploadComplete: boolean;
+  category?: string | null;
+  folder?: string | null;
   malwareStatus?: string | null;
   moderationStatus?: string | null;
   publicationDecisionType?: string | null;
@@ -33,14 +41,15 @@ function policyAttestationEnabled(value?: string | null) {
 }
 
 export function evaluateMediaPublicationGates(input: MediaPublicationGateInput) {
+  const profileImage = input.category === "image" && Boolean(input.folder?.startsWith("profiles"));
   const gates: Record<MediaPublicationGate, boolean> = {
     UPLOAD_COMPLETE: input.uploadComplete,
-    MALWARE_SCAN: passed(input.malwareStatus),
+    MALWARE_SCAN: mediaTechnicalCheckPassed(input.malwareStatus, profileImage),
     CONTENT_MODERATION: passed(input.moderationStatus)
-      || policyAttestationEnabled(input.publicationDecisionType),
+      || (input.malwareStatus !== PROFILE_IMAGE_REENCODED && policyAttestationEnabled(input.publicationDecisionType)),
     AGE_IDENTITY_REQUIREMENTS: passed(input.ageIdentityStatus),
     CONSENT_REQUIREMENTS: passed(input.consentStatus),
-    ADMIN_REVIEW: input.adminReviewRequired ? passed(input.adminReviewStatus) : true,
+    ADMIN_REVIEW: (input.adminReviewRequired || input.malwareStatus === PROFILE_IMAGE_REENCODED) ? passed(input.adminReviewStatus) : true,
     TAKEDOWN_CLEAR: (input.takedownStatus ?? "CLEAR") === "CLEAR",
     OWNER_PRESENT: Boolean(input.ownerId),
   };

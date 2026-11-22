@@ -1,4 +1,4 @@
-import { MEDIA_PASS_STATUSES } from "@/lib/media-security";
+import { MEDIA_PASS_STATUSES, PROFILE_IMAGE_REENCODED } from "@/lib/media-security";
 import { MANUAL_DOCUMENT_PROVIDER } from "@/lib/manual-identity-policy";
 
 export type ManualMediaReviewInput = {
@@ -33,7 +33,7 @@ export function manualMediaReviewBlockers(input: ManualMediaReviewInput) {
   const isProfileVideo = input.category === "video" && input.folder.startsWith("profile-videos");
   if (!isProfileImage && !isProfileVideo) blockers.push("NOT_PROFILE_MEDIA");
   if (!input.uploadCompletedAt) blockers.push("UPLOAD_INCOMPLETE");
-  if (!passed(input.malwareStatus)) blockers.push("MALWARE_SCAN");
+  if (!passed(input.malwareStatus) && !(isProfileImage && input.malwareStatus === PROFILE_IMAGE_REENCODED)) blockers.push("MALWARE_SCAN");
   if (!passed(input.ageIdentityStatus)) blockers.push("AGE_IDENTITY");
   if (!passed(input.consentStatus)) blockers.push("CONSENT");
   if (input.takedownStatus !== "CLEAR") blockers.push("TAKEDOWN");

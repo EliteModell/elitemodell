@@ -6,6 +6,7 @@ import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import { prisma } from "@/lib/prisma";
 import { KYC_LEGAL_KEYS, PUBLICATION_LEGAL_KEYS, recordUserAcceptances } from "@/lib/legal-acceptance";
 import { requiresContentAuthorizationDeclaration } from "@/lib/legal-document-catalog";
+import { ProfileImageValidationError } from "@/lib/profile-image-normalization";
 import { processUploadAsset, quarantineUpload } from "@/lib/upload-quarantine";
 import { isAgeOfMajority } from "@/lib/age-validation";
 import { inspectServerVideoDuration } from "@/lib/server-video-duration";
@@ -369,6 +370,7 @@ export async function POST(req: NextRequest) {
       { status: 202 },
     );
   } catch (cause) {
+    if (cause instanceof ProfileImageValidationError) return NextResponse.json({ error: cause.message }, { status: 422 });
     console.error("[upload] falha no fluxo de quarentena", cause);
     return NextResponse.json(
       { error: "Nao foi possivel processar o arquivo com seguranca." },

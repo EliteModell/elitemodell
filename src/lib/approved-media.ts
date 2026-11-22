@@ -51,6 +51,7 @@ export async function assertApprovedMediaUrls(input: {
       id: true,
       userId: true,
       folder: true,
+      category: true,
       status: true,
       uploadCompletedAt: true,
       malwareStatus: true,
@@ -67,6 +68,7 @@ export async function assertApprovedMediaUrls(input: {
   for (const entry of controlled) {
     const asset = byId.get(entry.id);
     const gates = asset ? evaluateMediaPublicationGates({
+      category: asset.category, folder: asset.folder,
       uploadComplete: Boolean(asset.uploadCompletedAt),
       malwareStatus: asset.malwareStatus,
       moderationStatus: asset.moderationStatus,
@@ -114,6 +116,7 @@ export async function assertOwnedUploadMediaUrls(input: {
       id: true,
       userId: true,
       folder: true,
+      category: true,
       status: true,
       uploadCompletedAt: true,
       malwareStatus: true,

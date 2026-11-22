@@ -218,6 +218,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     const asset = item.asset;
     if (!asset || asset.userId !== professional.userId || asset.status !== "APPROVED" || !asset.approvedBucket || !asset.approvedPath) return [];
     const publishable = evaluateMediaPublicationGates({
+      category: asset.category, folder: asset.folder,
       uploadComplete: Boolean(asset.uploadCompletedAt), malwareStatus: asset.malwareStatus,
       moderationStatus: asset.moderationStatus, ageIdentityStatus: asset.ageIdentityStatus,
       publicationDecisionType: asset.publicationDecisionType,

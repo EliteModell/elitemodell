@@ -3,10 +3,11 @@ import "server-only";
 import { createHash } from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import { manualMediaReviewBlockers } from "@/lib/manual-media-review";
-import { evaluateMediaPublicationGates } from "@/lib/media-security";
+import { evaluateMediaPublicationGates, PROFILE_IMAGE_REENCODED } from "@/lib/media-security";
 import { getMediaStorageProvider, type MediaStorageName } from "@/lib/media-storage";
 import { moderateFileContent, scanFileForVirus, type SecurityResult } from "@/lib/moderation";
-import { claimMalwareScan, completeMalwareScan, enqueueMalwareScan, failMalwareScan, retryMalwareScan } from "@/lib/clamav-scan-queue";
+import { enqueueMalwareScan } from "@/lib/clamav-scan-queue";
+import { normalizeProfileImage, ProfileImageValidationError } from "@/lib/profile-image-normalization";
 import { confirmedAdult, MANUAL_DOCUMENT_PROVIDER, manualAttemptAllowsPublication } from "@/lib/manual-identity-policy";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
@@ -117,6 +118,8 @@ async function downloadAssetForProcessing(asset: StoredAsset) {
 }
 
 function publicationGate(asset: {
+  category: string;
+  folder: string;
   userId: string;
   uploadCompletedAt: Date | null;
   malwareStatus: string;
@@ -129,6 +132,7 @@ function publicationGate(asset: {
   takedownStatus: string;
 }) {
   return evaluateMediaPublicationGates({
+    category: asset.category, folder: asset.folder,
     uploadComplete: Boolean(asset.uploadCompletedAt),
     malwareStatus: asset.malwareStatus,
     moderationStatus: asset.moderationStatus,
@@ -379,7 +383,7 @@ async function promoteAsset(
     },
   });
   await ensureProfessionalPhotoReference(asset, controlledUrl);
-  if (asset.category === "image" && asset.folder.startsWith("profiles")) {
+  if (current.malwareStatus !== PROFILE_IMAGE_REENCODED && asset.category === "image" && asset.folder.startsWith("profiles")) {
     const professional = await prisma.professional.findUnique({
       where: { userId: asset.userId },
       select: { id: true },
@@ -400,6 +404,13 @@ async function promoteAsset(
 }
 
 export async function quarantineUpload(input: QuarantineInput) {
+  const profileImage = input.category === "image" && input.folder.startsWith("profiles");
+  if (profileImage) {
+    const buffer = await normalizeProfileImage(input.buffer).catch(() => {
+      throw new ProfileImageValidationError("Envie uma imagem válida que possa ser aberta e regravada.");
+    });
+    input = { ...input, buffer, detectedMimeType: "image/jpeg", extension: "jpg", adminReviewRequired: true };
+  }
   const quarantineBucket = process.env.UPLOAD_QUARANTINE_BUCKET?.trim() || DEFAULT_QUARANTINE_BUCKET;
   await ensurePrivateBucket(quarantineBucket);
   const id = globalThis.crypto.randomUUID();
@@ -413,7 +424,7 @@ export async function quarantineUpload(input: QuarantineInput) {
       where: { id: "default" },
       select: { uploadSecurityEnabled: true },
     });
-    const createAsyncMalwareJob = process.env.UPLOAD_AV_ASYNC_ENABLED === "true"
+    const createAsyncMalwareJob = !profileImage && process.env.UPLOAD_AV_ASYNC_ENABLED === "true"
       && settings?.uploadSecurityEnabled !== false;
     const asset = await prisma.uploadAsset.create({
       data: {
@@ -431,6 +442,12 @@ export async function quarantineUpload(input: QuarantineInput) {
         quarantinePath,
         storageProvider: provider.name,
         uploadCompletedAt: new Date(),
+        ...(profileImage ? {
+          status: "PENDING_REVIEW",
+          malwareStatus: PROFILE_IMAGE_REENCODED,
+          malwareProvider: "LOCAL_IMAGE_REENCODE",
+          publicationDecisionType: "EXCEPTION_PENDING",
+        } : {}),
         contentRating: input.contentRating,
         visibility: input.visibility,
         ageIdentityStatus: input.ageIdentityStatus,
@@ -468,11 +485,18 @@ export async function quarantineUpload(input: QuarantineInput) {
 export async function processUploadAsset(
   assetId: string,
   suppliedBuffer?: Buffer,
-  options: { enqueueRetry?: boolean; runInlineScan?: boolean } = {},
+  options: { enqueueRetry?: boolean } = {},
 ) {
   let asset = await prisma.uploadAsset.findUnique({ where: { id: assetId } });
   if (!asset) throw new Error("Ativo de upload nao encontrado.");
   if (asset.status === "REJECTED") return asset;
+  if (asset.category === "image" && asset.folder.startsWith("profiles") && asset.status !== "APPROVED") {
+    if (asset.malwareStatus !== PROFILE_IMAGE_REENCODED || asset.moderationStatus !== "APPROVED" || asset.adminReviewStatus !== "PASS") {
+      return reprocessProfileImage(assetId);
+    }
+    // Only resume promotion after a recorded human approval, using the sanitized private object.
+    suppliedBuffer = undefined;
+  }
   if (asset.status === "APPROVED" && publicationGate(asset).publishable) {
     if (asset.controlledUrl) await ensureProfessionalPhotoReference(asset, asset.controlledUrl);
     return asset;
@@ -510,7 +534,7 @@ export async function processUploadAsset(
     select: { uploadSecurityEnabled: true, uploadAvProvider: true, uploadModerationProvider: true },
   });
   const existingMalwarePassed = asset.malwareStatus === "CLEAN" || asset.malwareStatus === "APPROVED";
-  if (!existingMalwarePassed && !options.runInlineScan && process.env.UPLOAD_AV_ASYNC_ENABLED === "true" && settings?.uploadSecurityEnabled !== false) {
+  if (!existingMalwarePassed && process.env.UPLOAD_AV_ASYNC_ENABLED === "true" && settings?.uploadSecurityEnabled !== false) {
     await enqueueMalwareScan(asset.id);
     return prisma.uploadAsset.update({
       where: { id: asset.id },
@@ -795,41 +819,60 @@ async function syncReviewedProfileImageOwnerAge(assetId: string) {
 }
 
 export async function reprocessProfileImage(assetId: string) {
-  const asset = await prisma.uploadAsset.findFirst({
-    where: { id: assetId, category: "image", folder: { startsWith: "profiles" }, uploadCompletedAt: { not: null } },
-    select: { id: true, status: true, malwareStatus: true, malwareScanJob: { select: { status: true } } },
-  });
-  if (!asset || asset.status === "REJECTED" || asset.status === "APPROVED") return;
+  const asset = await prisma.uploadAsset.findUniqueOrThrow({ where: { id: assetId } });
+  if (asset.category !== "image" || !asset.folder.startsWith("profiles") || !asset.uploadCompletedAt ||
+      ["REJECTED", "APPROVED"].includes(asset.status) ||
+      ["INFECTED", "REJECTED"].includes(asset.malwareStatus) || asset.moderationStatus === "REJECTED") return asset;
   await syncReviewedProfileImageOwnerAge(assetId);
-  if (asset.malwareStatus === "CLEAN" || asset.malwareStatus === "APPROVED") {
-    await processUploadAsset(assetId);
-    return;
-  }
-  if (!asset.malwareScanJob) {
-    await prisma.malwareScanJob.createMany({ data: [{ assetId, status: "QUEUED" }], skipDuplicates: true });
-  } else if (asset.malwareScanJob.status === "FAILED") {
-    await prisma.malwareScanJob.updateMany({
-      where: { assetId, status: "FAILED", completedAt: null, leaseToken: null },
-      data: { status: "RETRY", availableAt: new Date() },
-    });
-  }
-  const job = await claimMalwareScan(assetId);
-  if (!job?.leaseToken) return;
+  if (asset.malwareStatus === PROFILE_IMAGE_REENCODED) return prisma.uploadAsset.findUniqueOrThrow({ where: { id: assetId } });
 
+  const provider = getMediaStorageProvider((asset.storageProvider || "SUPABASE") as MediaStorageName);
+  const original = await provider.download(asset.quarantineBucket, asset.quarantinePath);
+  if (createHash("sha256").update(original).digest("hex") !== asset.fileHash) throw new Error("A integridade da imagem original não foi confirmada.");
+  let sanitized: Buffer;
   try {
-    const result = await processUploadAsset(assetId, undefined, { runInlineScan: true, enqueueRetry: false });
-    if (["CLEAN", "APPROVED", "INFECTED", "REJECTED"].includes(result.malwareStatus)) {
-      await completeMalwareScan(assetId, job.leaseToken);
-      return;
-    }
-    const reason = result.failureReason ?? "O scanner não retornou um resultado conclusivo.";
-    if (job.attempts >= job.maxAttempts) await failMalwareScan(assetId, job.leaseToken, reason);
-    else await retryMalwareScan(assetId, job.leaseToken, job.attempts, reason);
+    sanitized = await normalizeProfileImage(original);
   } catch {
-    const reason = "Não foi possível ler a imagem privada ou concluir a varredura.";
-    if (job.attempts >= job.maxAttempts) await failMalwareScan(assetId, job.leaseToken, reason);
-    else await retryMalwareScan(assetId, job.leaseToken, job.attempts, reason);
+    await prisma.uploadAsset.updateMany({
+      where: { id: asset.id, fileHash: asset.fileHash, status: asset.status },
+      data: { status: "REJECTED", failureReason: "A imagem falhou na decodificação ou regravação local.", rejectedAt: new Date() },
+    });
+    return prisma.uploadAsset.findUniqueOrThrow({ where: { id: assetId } });
   }
+
+  const hash = createHash("sha256").update(sanitized).digest("hex");
+  const path = asset.quarantinePath + "." + hash.slice(0, 16) + ".jpg";
+  await ensurePrivateBucket(asset.quarantineBucket);
+  await provider.upload({ bucket: asset.quarantineBucket, path, contents: sanitized, contentType: "image/jpeg", overwrite: false });
+  await prisma.$transaction(async (tx) => {
+    const job = await tx.malwareScanJob.findUnique({ where: { assetId }, select: { status: true } });
+    if (job && ["QUEUED", "RETRY", "FAILED"].includes(job.status)) {
+      const retired = await tx.malwareScanJob.updateMany({
+        where: { assetId, status: job.status, leaseToken: null },
+        data: { status: "SKIPPED", completedAt: new Date() },
+      });
+      if (!retired.count) throw new Error("A imagem está sendo processada. Tente novamente.");
+    } else if (job?.status === "PROCESSING") {
+      throw new Error("A imagem está sendo processada. Tente novamente.");
+    }
+    const updated = await tx.uploadAsset.updateMany({
+      where: { id: assetId, fileHash: asset.fileHash, quarantinePath: asset.quarantinePath, status: asset.status,
+        malwareStatus: asset.malwareStatus, moderationStatus: asset.moderationStatus },
+      data: {
+        quarantinePath: path, fileHash: hash, sizeBytes: sanitized.length, detectedMimeType: "image/jpeg", extension: "jpg",
+        malwareStatus: PROFILE_IMAGE_REENCODED, malwareProvider: "LOCAL_IMAGE_REENCODE",
+        status: "PENDING_REVIEW", publicationDecisionType: "EXCEPTION_PENDING", adminReviewRequired: true, adminReviewStatus: "PENDING",
+        failureReason: null, lastProcessedAt: new Date(),
+      },
+    });
+    if (!updated.count) throw new Error("O estado da imagem mudou. Atualize a página.");
+    await tx.auditLog.create({ data: {
+      actorIdentifier: "profile-image-normalization", action: "SETTINGS_CHANGED", targetType: "CONTENT", targetId: assetId,
+      reason: "Imagem de perfil decodificada e regravada para revisão administrativa.",
+      changes: { originalHash: asset.fileHash, normalizedHash: hash, technicalValidation: PROFILE_IMAGE_REENCODED },
+    } });
+  });
+  return prisma.uploadAsset.findUniqueOrThrow({ where: { id: assetId } });
 }
 
 export async function approveUploadAsset(assetId: string, reviewerId: string, reason: string) {
@@ -840,7 +883,10 @@ export async function approveUploadAsset(assetId: string, reviewerId: string, re
       depictedPeople: { select: { ageStatus: true, consentStatus: true, revokedAt: true } },
     },
   });
-  if (asset.status === "REJECTED") throw new Error("A mídia foi rejeitada e precisa ser substituída.");
+  if (asset.status === "REJECTED" || asset.moderationStatus === "REJECTED") throw new Error("A mídia foi rejeitada e precisa ser substituída.");
+  if (asset.status !== "APPROVED" && asset.category === "image" && asset.folder.startsWith("profiles") && asset.malwareStatus !== PROFILE_IMAGE_REENCODED) {
+    throw new Error("Valide e regrave a imagem antes de aprová-la.");
+  }
   const professional = asset.owner.professional;
   const openReport = await prisma.report.findFirst({
     where: {
