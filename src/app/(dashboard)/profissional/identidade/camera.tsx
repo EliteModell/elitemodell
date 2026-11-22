@@ -49,7 +49,7 @@ export default function Camera({ facing, onPhoto, close }: {
   }
 
   return <div className={styles.cameraPanel}>
-    {error ? <p role="alert">Câmera indisponível. Feche a prévia e use a câmera nativa.</p> : <>
+    {error ? <p role="alert">Câmera indisponível. Confira as permissões do navegador e tente novamente.</p> : <>
       <div className={styles.liveFrame}>
         <video ref={video} autoPlay muted playsInline onPlaying={() => setReady(true)} aria-label="Prévia da câmera" />
         <div aria-hidden="true" />

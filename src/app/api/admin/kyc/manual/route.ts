@@ -79,6 +79,15 @@ export async function PATCH(req: Request) {
         reason: reason.trim(), changes: { method: "MANUAL_DOCUMENT", attemptId: id, status,
           reviewedEvidence: identityParts(active.backUnavailable), checks: status === "APPROVED" ? { document: true, portrait: true, challenge: true, adult: true } : undefined },
       } });
+      await tx.notification.create({ data: {
+        userId: active.userId,
+        type: "SYSTEM",
+        title: "Atualização na verificação de identidade",
+        body: status === "APPROVED" ? "Sua identidade foi verificada." : status === "REJECTED"
+          ? "A análise da sua identidade foi concluída. Consulte o resultado."
+          : "Precisamos que você envie novas fotos para confirmar sua identidade.",
+        link: "/profissional/identidade",
+      } });
       return true;
     }, { timeout: 15_000 });
     if (updated && status === "APPROVED") {

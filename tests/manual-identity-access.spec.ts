@@ -135,6 +135,7 @@ test("aprovação manual atualiza apenas identidade e encaminha as outras travas
   const updates: unknown[] = [];
   const audits: unknown[] = [];
   const reevaluations: unknown[] = [];
+  const notifications: unknown[] = [];
   const attempt = {
     id: attemptId, userId: "owner", reviewVersion: 0, status: "PENDING_REVIEW",
     purgeAfter: new Date(Date.now() + 60_000), purgedAt: null,
@@ -148,6 +149,7 @@ test("aprovação manual atualiza apenas identidade e encaminha as outras travas
     },
     professional: { updateMany: async ({ data }: { data: unknown }) => { updates.push(data); } },
     user: { findUnique: async () => ({ blocked: false }) },
+    notification: { create: async ({ data }: { data: unknown }) => { notifications.push(data); } },
     auditLog: { create: async ({ data }: { data: unknown }) => { audits.push(data); } },
   };
   const manual = route("admin/kyc/manual", {
@@ -184,5 +186,6 @@ test("aprovação manual atualiza apenas identidade e encaminha as outras travas
   expect((await approve(0)).status).toBe(200);
   expect(updates).toEqual([{ kycStatus: "APPROVED", docStatus: "APPROVED", verifStatus: "APPROVED" }]);
   expect(audits).toHaveLength(1);
+  expect(notifications).toEqual([expect.objectContaining({ userId: "owner", link: "/profissional/identidade" })]);
   expect(reevaluations).toEqual([["profile", "manual-document-approved"]]);
 });

@@ -2299,7 +2299,7 @@ export default function ProfissionalNovoPage() {
       )}
       {(step === 7 || step === 8) && manualIdentityAvailable && (
         <div className="model-didit-alert" role="status">
-          <strong>Verificação documental manual</strong>
+          <strong>Verificação de identidade</strong>
           <p>{manualIdentityReady ? "Documentos recebidos. Você já pode finalizar o cadastro. O perfil fica privado enquanto a identidade e os demais requisitos estiverem em análise." : "Envie as imagens do documento e a foto segurando o documento para nossa equipe analisar."}</p>
           <div className="model-didit-alert-actions"><a href="/profissional/identidade">{manualIdentityReady ? "Consultar análise documental" : "Enviar documentos"}</a></div>
         </div>
