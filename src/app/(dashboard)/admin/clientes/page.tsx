@@ -29,9 +29,10 @@ async function deleteTestAccount(formData: FormData) {
 
   const userId = String(formData.get("userId") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const phone = normalizedPhone(String(formData.get("phone") ?? ""));
+  const submittedPhone = String(formData.get("phone") ?? "").trim();
+  const phone = normalizedPhone(submittedPhone);
   const confirmation = String(formData.get("confirmation") ?? "").trim();
-  if (!userId || !email || !phone || confirmation !== `EXCLUIR ${userId}`) {
+  if (!userId || !email || !formData.has("phone") || confirmation !== `EXCLUIR ${userId}`) {
     redirect(`/admin/clientes?q=${encodeURIComponent(email || phone)}&deleteError=confirmation`);
   }
 
@@ -45,7 +46,8 @@ async function deleteTestAccount(formData: FormData) {
       adminAssignments: { where: { active: true, revokedAt: null }, select: { id: true } },
     },
   });
-  const identifiersMatch = user?.email.toLowerCase() === email && normalizedPhone(user.phone) === phone;
+  const identifiersMatch = user?.email.toLowerCase() === email &&
+    (phone ? normalizedPhone(user.phone) === phone : (user.phone ?? "").trim() === submittedPhone);
   if (!user || !identifiersMatch || user.role === "ADMIN" || user.adminAssignments.length > 0 || user.id === session.user.id) {
     await logAudit({
       adminId: session.user.id,
@@ -220,7 +222,7 @@ export default async function AdminClientesPage({ searchParams }: { searchParams
         </form>
         {query && !exactLookup ? <p style={{ color: "#f59e0b" }}>Informe um e-mail completo ou telefone com DDD.</p> : null}
         {query && exactLookup && clients.length === 0 ? <p style={{ color: "#f59e0b" }}>Nenhuma conta encontrada com o identificador exato.</p> : null}
-        {params?.deleteError === "confirmation" ? <p style={{ color: "#ef4444" }}>Exclusao recusada: confirme exatamente o ID exibido.</p> : null}
+        {params?.deleteError === "confirmation" ? <p role="alert" style={{ color: "#ef4444" }}>A conta continua intacta. Copie a frase completa no formulário abaixo, incluindo EXCLUIR e o ID da conta.</p> : null}
         {params?.deleteError === "identity" ? <p style={{ color: "#ef4444" }}>Exclusao recusada: ID, e-mail e telefone nao pertencem ao mesmo registro ou a conta e privilegiada.</p> : null}
         {params?.deleteJob ? <p style={{ color: params.deleteStatus?.startsWith("COMPLETED") ? "#22c55e" : "#f59e0b" }}>Job de exclusao: {params.deleteJob}. Status: {params.deleteStatus ?? "em processamento"}.</p> : null}
       </AdminPanel>
@@ -269,7 +271,7 @@ export default async function AdminClientesPage({ searchParams }: { searchParams
                     </button>
                   </form>
                   {query && deletionPlan && adminRole === "ADMIN_MASTER" ? (
-                    <details style={{ marginTop: 14 }}>
+                    <details open={params?.deleteError === "confirmation" ? true : undefined} style={{ marginTop: 14 }}>
                       <summary style={{ cursor: "pointer", color: "#ef4444", fontWeight: 800 }}>Exclusao LGPD de conta de teste</summary>
                       <div style={{ marginTop: 10, lineHeight: 1.55, maxWidth: 480 }}>
                         <strong>Previa somente leitura</strong><br />
@@ -283,8 +285,9 @@ export default async function AdminClientesPage({ searchParams }: { searchParams
                         <input type="hidden" name="email" value={client.email} />
                         <input type="hidden" name="phone" value={client.phone ?? ""} />
                         <label style={{ color: "#fca5a5" }}>
-                          Para executar, digite <code>EXCLUIR {client.id}</code>
-                          <input name="confirmation" autoComplete="off" required style={{ width: "100%", marginTop: 6, background: "#050506", border: "1px solid #ef4444", borderRadius: 8, color: "#fff", padding: 8 }} />
+                          Copie a frase completa abaixo e cole no campo de confirmação. Digitar só EXCLUIR não confirma a exclusão.<br />
+                          <code style={{ display: "inline-block", margin: "6px 0", userSelect: "all" }}>EXCLUIR {client.id}</code>
+                          <input name="confirmation" placeholder="Cole a frase completa aqui" autoComplete="off" spellCheck={false} required style={{ width: "100%", marginTop: 6, background: "#050506", border: "1px solid #ef4444", borderRadius: 8, color: "#fff", padding: 8 }} />
                         </label>
                         <button type="submit" style={{ ...buttonStyle, color: "#fff", background: "#991b1b" }}>Excluir esta conta de teste</button>
                       </form>
