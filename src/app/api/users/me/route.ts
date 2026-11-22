@@ -42,6 +42,7 @@ export async function GET() {
           status: true,
           verified: true,
           kycStatus: true,
+          kycProvider: true,
           docStatus: true,
           verifStatus: true,
           displayName: true,

@@ -1,5 +1,5 @@
 import "server-only";
-import { professionalApprovalEmailIdempotencyKey, professionalPublicationEmailIdempotencyKey, professionalSubmissionReceiptIdempotencyKey } from "@/lib/email-idempotency";
+import { manualIdentityEmailIdempotencyKey, professionalApprovalEmailIdempotencyKey, professionalPublicationEmailIdempotencyKey, professionalSubmissionReceiptIdempotencyKey } from "@/lib/email-idempotency";
 import { realAccountEmail } from "@/lib/account-email";
 import { beginEmailDelivery, markEmailAccepted, markEmailFailed } from "@/lib/email-delivery-tracking";
 
@@ -279,6 +279,7 @@ export async function sendManualIdentityEmail(input: {
   event: "received" | "approved" | "rejected" | "resubmission";
   reviewVersion?: number;
   correctionReason?: string;
+  retryForDeliveryId?: string;
 }) {
   const messages = {
     received: {
@@ -286,8 +287,8 @@ export async function sendManualIdentityEmail(input: {
       body: "Olá! Recebemos seus documentos com sucesso. Sua identidade está em análise pela nossa equipe. Você receberá uma atualização quando a análise for concluída.",
     },
     approved: {
-      subject: "Identidade verificada",
-      body: "Sua verificação de identidade foi aprovada. Você já pode continuar as próximas etapas do seu cadastro.",
+      subject: "Sua identidade foi aprovada",
+      body: "Olá! Sua verificação de identidade foi aprovada pela equipe ELITE MODELL. Você já pode acompanhar a situação do seu perfil pela sua conta.",
     },
     rejected: {
       subject: "Resultado da verificação de identidade",
@@ -304,7 +305,8 @@ export async function sendManualIdentityEmail(input: {
     subject: "ELITE MODELL — " + subject,
     html: `<h1>ELITE MODELL</h1><p>${body}</p>${input.correctionReason ? `<p>${escapeHtml(input.correctionReason)}</p>` : ""}<p><a href="${DEFAULT_SITE_URL}${path}">Acessar minha conta</a></p>`,
   }, {
-    idempotencyKey: `manual-identity:${input.attemptId}:${input.event}:${input.reviewVersion ?? 0}`,
+        idempotencyKey: manualIdentityEmailIdempotencyKey(input.attemptId, input.event, input.reviewVersion)
+      + (input.retryForDeliveryId ? `:retry:${input.retryForDeliveryId}` : ""),
     professionalId: input.professionalId,
     category: "IDENTITY_" + input.event.toUpperCase(),
     retryTransient: true,

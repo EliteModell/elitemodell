@@ -382,7 +382,8 @@ export default function ProfissionalNovoPage() {
   const [identityMethod, setIdentityMethod] = useState<"loading" | "manual" | "external" | "unavailable">("loading");
   const manualIdentityAvailable = identityMethod === "manual";
   const externalIdentityAvailable = identityMethod === "external";
-  const [manualIdentityReady, setManualIdentityReady] = useState(false);
+  const [manualIdentityStatus, setManualIdentityStatus] = useState<string | null>(null);
+  const manualIdentityReady = manualIdentityStatus === "PENDING_REVIEW" || manualIdentityStatus === "APPROVED";
   const [identityRetry, setIdentityRetry] = useState(0);
   useEffect(() => {
     if (step < 7) return;
@@ -392,7 +393,7 @@ export default function ProfissionalNovoPage() {
       const data = await response.json();
       if (controller.signal.aborted) return;
       setIdentityMethod(data.manualDefault === true ? "manual" : data.manualDefault === false ? "external" : "unavailable");
-      setManualIdentityReady(["PENDING_REVIEW", "APPROVED"].includes(data.attempt?.status));
+      setManualIdentityStatus(data.attempt?.status ?? null);
     }).catch(() => {
       if (!controller.signal.aborted) setIdentityMethod("unavailable");
     });
@@ -432,7 +433,7 @@ export default function ProfissionalNovoPage() {
   const [onboardingVideos, setOnboardingVideos] = useState<OnboardingVideo[]>([]);
   const [pendingVideos, setPendingVideos] = useState<PendingVideo[]>([]);
   const videoInputRef = useRef<HTMLInputElement>(null);
-  const [serverHydration, setServerHydration] = useState<{ ready: boolean; updatedAt: string | null }>({ ready: false, updatedAt: null });
+  const [serverHydration, setServerHydration] = useState<{ ready: boolean; updatedAt: string | null; resumeAtConfirmation?: boolean }>({ ready: false, updatedAt: null });
   const [registrationContext, setRegistrationContext] = useState<{ status: string; submittedAt: string | null; slug: string | null }>({ status: "DRAFT", submittedAt: null, slug: null });
   const [birthParts, setBirthParts] = useState({ day: "", month: "", year: "" });
   const birthMonthRef = useRef<HTMLInputElement>(null);
@@ -533,7 +534,8 @@ export default function ProfissionalNovoPage() {
       localStorage.removeItem(draftKey);
     } finally {
       draftLoadedRef.current = true;
-      if (new URLSearchParams(window.location.search).get("didit") === "returned") setStep(7);
+      if (serverHydration.resumeAtConfirmation) setStep(8);
+      else if (new URLSearchParams(window.location.search).get("didit") === "returned") setStep(7);
     }
     }, 0);
 
@@ -788,7 +790,15 @@ export default function ProfissionalNovoPage() {
           }
         }
       }
-      if (active) setServerHydration({ ready: true, updatedAt: professional?.updatedAt ?? null });
+      if (active) setServerHydration({
+        ready: true,
+        updatedAt: professional?.updatedAt ?? null,
+        resumeAtConfirmation: professional?.status === "DRAFT"
+          && professional.kycProvider === "MANUAL_DOCUMENT"
+          && canRestoreCurrentSelections
+          && draftState?.completion?.readyToSubmit === true
+          && draftState.completion.kycApproved,
+      });
     }
 
     loadUserDefaults().catch(() => {});
@@ -2299,8 +2309,8 @@ export default function ProfissionalNovoPage() {
       )}
       {(step === 7 || step === 8) && manualIdentityAvailable && (
         <div className="model-didit-alert" role="status">
-          <strong>Verificação de identidade</strong>
-          <p>{manualIdentityReady ? "Documentos recebidos. Você já pode finalizar o cadastro. O perfil fica privado enquanto a identidade e os demais requisitos estiverem em análise." : "Envie as imagens do documento e a foto segurando o documento para nossa equipe analisar."}</p>
+          <strong>{manualIdentityStatus === "APPROVED" ? "Identidade aprovada" : "Verificação de identidade"}</strong>
+          <p>{manualIdentityStatus === "APPROVED" ? "Seus dados estão salvos. Confirme o envio do cadastro para análise. A publicação depende das demais verificações." : manualIdentityReady ? "Documentos recebidos. Você já pode finalizar o cadastro. O perfil fica privado enquanto a identidade e os demais requisitos estiverem em análise." : "Envie as imagens do documento e a foto segurando o documento para nossa equipe analisar."}</p>
           <div className="model-didit-alert-actions"><a href="/profissional/identidade">{manualIdentityReady ? "Consultar análise documental" : "Enviar documentos"}</a></div>
         </div>
       )}
@@ -2343,7 +2353,7 @@ export default function ProfissionalNovoPage() {
         ) : (
           <button onClick={submit} disabled={loading || !canFinalizeIdentity}
             style={{ padding: "12px 32px", background: loading ? "#65009b" : GOLD, border: "none", borderRadius: 10, color: "#080808", fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer" }}>
-            {loading ? "Enviando..." : "Confirmar e enviar cadastro"}
+            {loading ? "Enviando..." : manualIdentityStatus === "APPROVED" ? "Finalizar meu cadastro" : "Confirmar e enviar cadastro"}
           </button>
         )}
       </div>

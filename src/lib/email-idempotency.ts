@@ -9,3 +9,7 @@ export function professionalPublicationEmailIdempotencyKey(professionalId: strin
 export function professionalApprovalEmailIdempotencyKey(professionalId: string) {
   return `professional-approval/${professionalId}`;
 }
+
+export function manualIdentityEmailIdempotencyKey(attemptId: string, event: string, version = 0) {
+  return `manual-identity:${attemptId}:${event}:${version}`;
+}

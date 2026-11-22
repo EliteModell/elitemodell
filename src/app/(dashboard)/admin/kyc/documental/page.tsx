@@ -1,6 +1,7 @@
 import { identityRuntimeEnabled } from "@/lib/manual-identity-runtime";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { checkManualIdentityApprovalEmail } from "@/lib/manual-identity-email-recovery";
 import { requireAdmin } from "@/lib/admin-access";
 import { identityParts } from "@/lib/manual-identity-policy";
 import { prisma } from "@/lib/prisma";
@@ -12,7 +13,28 @@ const statuses: Record<string, string> = {
   PENDING_REVIEW: "Em análise", APPROVED: "Aprovado", REJECTED: "Reprovado", RESUBMISSION_REQUESTED: "Novo envio solicitado",
 };
 
-export default async function Page({ searchParams }: { searchParams: Promise<{ profissional?: string; pagina?: string }> }) {
+const emailResults: Record<string, string> = {
+  delivered: "O provedor confirmou a entrega ao servidor de e-mail do destinatário.",
+  unconfirmed: "Entrega não confirmada. O reenvio fica bloqueado para evitar duplicidade.",
+  rejected: "O provedor rejeitou a entrega. Confira o endereço antes de tentar novamente.",
+  resent: "Reenvio solicitado ao provedor. A entrega ainda depende da confirmação.",
+  failed: "O reenvio não foi confirmado. Consulte o registro de comunicação do cadastro.",
+  unavailable: "A tentativa vigente ou o e-mail confirmado estão indisponíveis.",
+};
+
+async function checkApprovalEmail(form: FormData) {
+  "use server";
+  await requireAdmin("kyc:review");
+  const id = String(form.get("attemptId") ?? "");
+  if (!/^[a-f0-9]{64}$/.test(id) || !(await identityRuntimeEnabled())) notFound();
+  const result = await checkManualIdentityApprovalEmail(id).catch(() => "unavailable");
+  const query = new URLSearchParams({ emailResult: result, emailAttempt: id });
+  const owner = await prisma.manualIdentityAttempt.findUnique({ where: { id }, select: { userId: true } });
+  if (owner) query.set("profissional", owner.userId);
+  redirect("/admin/kyc/documental?" + query + "#tentativa-" + id);
+}
+
+export default async function Page({ searchParams }: { searchParams: Promise<{ profissional?: string; pagina?: string; emailResult?: string; emailAttempt?: string }> }) {
   if (!(await identityRuntimeEnabled())) notFound();
   await requireAdmin("kyc:review");
   const query = await searchParams;
@@ -65,6 +87,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
             </a>;
           })}
         </div> : <p>Evidências indisponíveis pelo prazo de retenção.</p>}
+        {attempt.status === "APPROVED" && <form action={checkApprovalEmail} className="my-3">
+          <input type="hidden" name="attemptId" value={attempt.id} />
+          <button type="submit" className="min-h-11 rounded border px-4">Verificar entrega e reenviar se falhou</button>
+          {query.emailAttempt === attempt.id && query.emailResult && Object.hasOwn(emailResults, query.emailResult) &&
+            <p role="status">{emailResults[query.emailResult]}</p>}
+        </form>}
         {attemptNotes.length > 0 && <details><summary>Histórico de decisões</summary><ul>{attemptNotes.map((note) => <li key={note.id}>
           {date.format(note.timestamp)} · {note.adminId ?? "Administrador removido"} · {note.reason}
         </li>)}</ul></details>}

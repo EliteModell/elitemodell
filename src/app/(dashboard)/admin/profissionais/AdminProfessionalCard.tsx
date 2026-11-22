@@ -6,7 +6,7 @@ import { StatusPill, buttonStyle } from "../_components/AdminPrimitives";
 import { AdminKycEvidence } from "./AdminKycEvidence";
 import { professionalCompletion } from "@/lib/professional-completeness";
 import { resolveProfessionalAccess } from "@/lib/professional-access-policy";
-import { adminControlledMediaPreviewUrl } from "@/lib/public-professional-media";
+import { adminControlledMediaPreviewUrl, controlledMediaAssetId } from "@/lib/public-professional-media";
 import { accountEmailLabel, isTechnicalPhoneEmail } from "@/lib/account-email";
 import { PROFESSIONAL_PROFILE_VISIBILITY_LABELS, normalizeProfessionalProfileVisibility } from "@/lib/professional-profile-visibility";
 
@@ -185,7 +185,7 @@ export function AdminProfessionalCard({
   const identityLabel = manualAttempt?.status === "PENDING_REVIEW"
     ? manualExpired ? "Prazo vencido · aguarda novo envio" : "Em análise"
     : manualAttempt?.status === "RESUBMISSION_REQUESTED" ? "Novo envio solicitado" : technicalStatus(manualAttempt?.status ?? pro.kycStatus);
-  const canApprove = pro.status === "PENDING_REVIEW" && approvalIssues.length === 0 && (!isManual || manualAttempt?.status === "APPROVED");
+
   const accent = pro.status === "ACTIVE" ? "#16a34a" : pro.status === "REJECTED" || pro.status === "SUSPENDED" ? "#dc2626" : pro.status === "PENDING_REVIEW" || pro.status === "CORRECTION_REQUIRED" ? "#9a25cf" : "#786f7e";
   const tone = pro.status === "ACTIVE" ? "success" : pro.status === "REJECTED" || pro.status === "SUSPENDED" ? "danger" : pro.status === "PENDING_REVIEW" || pro.status === "CORRECTION_REQUIRED" ? "warning" : "neutral";
   const cover = adminControlledMediaPreviewUrl(
@@ -212,8 +212,15 @@ export function AdminProfessionalCard({
     return value.includes("EMAIL_SENT") || value.includes("EMAIL_FAILED");
   });
   const currentIssues = pro.status === "PENDING_REVIEW" ? approvalIssues : profileIssues;
+  const photoIds = new Set(pro.photos.map((photo) => controlledMediaAssetId(photo.url)));
+  const profilePhotoAssets = pro.user.uploadedAssets.filter((asset) => photoIds.has(asset.id));
+  const mediaUnderReview = isManual && profilePhotoAssets.length > 0 &&
+    profilePhotoAssets.every((asset) => asset.status === "QUARANTINED");
+  const canApprove = pro.status === "PENDING_REVIEW" && approvalIssues.length === 0 &&
+    (!isManual || manualAttempt?.status === "APPROVED" && !mediaUnderReview);
   const profileApprovalBlockers = [...new Set([
     ...(!registrationSubmitted ? ["A profissional precisa voltar ao cadastro e clicar em Finalizar meu cadastro."] : []),
+    ...(mediaUnderReview ? ["A foto do perfil ainda aguarda as verificações de segurança e conteúdo para publicação."] : []),
     ...(isManual && manualAttempt?.status !== "APPROVED" ? ["A identidade ainda não foi aprovada na revisão documental."] : []),
     ...approvalIssues.filter((issue) => !/cadastro ainda não enviado para análise/i.test(issue)),
   ])];
