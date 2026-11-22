@@ -16,6 +16,7 @@ export async function GET() {
     commitSha: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
     manualIdentityEnabled,
     manualIdentityStorageReady,
+    profilePhotoInlineScannerBuildResult: process.env.NEXT_PUBLIC_PROFILE_AV_BUILD_RESULT ?? "not-run",
     profilePhotoInlineScannerConfigured: process.env.AV_ENABLED !== "false" && Boolean(process.env.AV_HTTP_ENDPOINT?.trim()),
   }, {
     headers: {
