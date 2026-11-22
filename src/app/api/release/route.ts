@@ -1,3 +1,5 @@
+import { identityEnabled } from "@/lib/manual-identity-policy";
+
 export const dynamic = "force-dynamic";
 
 export async function GET() {
@@ -9,6 +11,7 @@ export async function GET() {
     production: environment === "production",
     branch: process.env.VERCEL_GIT_COMMIT_REF ?? null,
     commitSha: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
+    manualIdentityEnabled: identityEnabled(),
   }, {
     headers: {
       "Cache-Control": "public, max-age=0, must-revalidate, no-transform",

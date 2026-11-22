@@ -79,12 +79,12 @@ test("publicação documental exige a decisão positiva da tentativa vigente", (
 test("modo de produção exige banco e Storage exclusivos da ELITE MODELL", () => {
   const id = "jgvmpbrsxegwkrgjncsv";
   const api = "https://" + id + ".supabase.co";
-  const direct = "postgresql://postgres@db." + id + ".supabase.co:5432/postgres";
+  const wrongDB = "postgresql://test@127.0.0.1/test";
   const pool = "postgresql://postgres." + id + "@aws-0-sa-east-1.pooler.supabase.com:6543/postgres";
-  expect(identityTargetsProduction(api, pool, direct)).toBe(true);
-  expect(identityTargetsProduction(api, pool, "postgresql://test@127.0.0.1/test")).toBe(false);
-  expect(identityTargetsProduction("https://jbdshpbtqspzfzjngqbg.supabase.co", pool, direct)).toBe(false);
-  expect(identityTargetsProduction(api, pool)).toBe(false);
+  expect(identityTargetsProduction(api, pool)).toBe(true);
+  expect(identityTargetsProduction(api, wrongDB)).toBe(false);
+  expect(identityTargetsProduction("https://jbdshpbtqspzfzjngqbg.supabase.co", pool)).toBe(false);
+  expect(identityTargetsProduction(api)).toBe(false);
 });
 
 test("reserva da Didit sem sessão usa o fluxo manual e preserva sessões históricas", () => {
@@ -104,6 +104,8 @@ test("reserva da Didit sem sessão usa o fluxo manual e preserva sessões histó
     expect(shouldReviewRegistrationManually({ ...reservation, kycStatus: "APPROVED" })).toBe(false);
     expect(shouldReviewRegistrationManually({ ...reservation, verified: true })).toBe(false);
     delete process.env.DIRECT_URL;
+    expect(identityEnabled()).toBe(true);
+    delete process.env.DATABASE_URL;
     expect(identityEnabled()).toBe(false);
     expect(manualIdentitySelected()).toBe(true);
   } finally {

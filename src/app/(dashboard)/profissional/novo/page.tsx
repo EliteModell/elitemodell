@@ -383,10 +383,11 @@ export default function ProfissionalNovoPage() {
   const manualIdentityAvailable = identityMethod === "manual";
   const externalIdentityAvailable = identityMethod === "external";
   const [manualIdentityReady, setManualIdentityReady] = useState(false);
+  const [identityRetry, setIdentityRetry] = useState(0);
   useEffect(() => {
     if (step < 7) return;
     const controller = new AbortController();
-    const refresh = () => void fetch("/api/kyc/manual", { signal: controller.signal }).then(async (response) => {
+    const refresh = () => void fetch("/api/kyc/manual", { cache: "no-store", signal: controller.signal }).then(async (response) => {
       if (!response.ok) throw new Error("Identity method unavailable");
       const data = await response.json();
       if (controller.signal.aborted) return;
@@ -398,7 +399,7 @@ export default function ProfissionalNovoPage() {
     refresh();
     window.addEventListener("focus", refresh);
     return () => { controller.abort(); window.removeEventListener("focus", refresh); };
-  }, [step]);
+  }, [step, identityRetry]);
   const [loading, setLoading] = useState(false);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const [mainPhotoPreview, setMainPhotoPreview] = useState<string | null>(null);
@@ -2304,7 +2305,12 @@ export default function ProfissionalNovoPage() {
         </div>
       )}
       {(step === 7 || step === 8) && !manualIdentityAvailable && !externalIdentityAvailable && (
-        <p role="status">{identityMethod === "loading" ? "Carregando a verificação de identidade…" : "Não foi possível carregar a verificação. Atualize a página para tentar novamente."}</p>
+        <div className="model-didit-alert">
+          <p role="status">{identityMethod === "loading" ? "Carregando a verificação de identidade…" : "Não foi possível carregar a verificação. Seu cadastro está salvo."}</p>
+          {identityMethod === "unavailable" && <div className="model-didit-alert-actions">
+            <button type="button" onClick={() => { setIdentityMethod("loading"); setIdentityRetry((value) => value + 1); }}>Tentar novamente</button>
+          </div>}
+        </div>
       )}
       {step === 7 && externalIdentityAvailable && diditStartFailed && (
         <div className="model-didit-alert" role="status">

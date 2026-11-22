@@ -37,14 +37,19 @@ export function manualAttemptAllowsPublication(sessionId: string | null, current
   return Boolean(sessionId && current?.id === sessionId && manualRegistrationStatus(current) === "APPROVED");
 }
 
+function productionDeployment() {
+  return process.env.VERCEL_ENV === "production" || process.env.VERCEL_TARGET_ENV === "production";
+}
+
 export function manualIdentitySelected() {
-  return process.env.VERCEL_ENV === "production" || identityEnabled();
+  return productionDeployment() || identityEnabled();
 }
 
 export function identityEnabled() {
   if (process.env.NODE_ENV === "production") {
-    return process.env.VERCEL_ENV === "production" && process.env.VERCEL_GIT_COMMIT_REF === "main" &&
-      identityTargetsProduction(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.DATABASE_URL, process.env.DIRECT_URL);
+    // Prisma uses DATABASE_URL for requests. DIRECT_URL is reserved for migrations.
+    return productionDeployment() && process.env.VERCEL_GIT_COMMIT_REF === "main" &&
+      identityTargetsProduction(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.DATABASE_URL);
   }
   return process.env.NODE_ENV === "development" && process.env.MANUAL_IDENTITY_LOCAL === "1" &&
     process.env.MANUAL_IDENTITY_DEMO !== "1" && identityTargetsAreIsolated(
@@ -52,18 +57,23 @@ export function identityEnabled() {
     );
 }
 
-export function identityTargetsProduction(storage?: string, database?: string, direct?: string) {
-  return identityTargetsMatchProject("jgvmpbrsxegwkrgjncsv", storage, database, direct);
+export function identityTargetsProduction(storage?: string, database?: string) {
+  return identityTargetsMatchProject("jgvmpbrsxegwkrgjncsv", storage, [database]);
 }
 
-function identityTargetsMatchProject(ref: string, storage?: string, database?: string, direct?: string) {
-  if (!storage || !database || !direct) return false;
+function identityTargetsMatchProject(ref: string, storage: string | undefined, connections: Array<string | undefined>) {
+  if (!storage) return false;
   try {
     const storageUrl = new URL(storage);
     if (storageUrl.origin !== "https://" + ref + ".supabase.co") return false;
-    return [new URL(database), new URL(direct)].every((url) => /^postgres(ql)?:$/.test(url.protocol) &&
-      (url.hostname === "db." + ref + ".supabase.co" ||
-        (url.hostname.endsWith(".pooler.supabase.com") && url.username === "postgres." + ref)));
+    return connections.every((connection) => {
+      if (!connection) return false;
+      const url = new URL(connection);
+      return /^postgres(ql)?:$/.test(url.protocol) && (
+        url.hostname === "db." + ref + ".supabase.co" ||
+        (url.hostname.endsWith(".pooler.supabase.com") && decodeURIComponent(url.username) === "postgres." + ref)
+      );
+    });
   } catch {
     return false;
   }
@@ -77,7 +87,7 @@ export function identityTargetsAreIsolated(storage?: string, database?: string, 
     const loopback = (url: URL) => ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
     if (!/^https?:$/.test(storageUrl.protocol) || !targets.every((url) => /^postgres(ql)?:$/.test(url.protocol))) return false;
     if (loopback(storageUrl)) return targets.every(loopback);
-    return identityTargetsMatchProject("jbdshpbtqspzfzjngqbg", storage, database, direct);
+    return identityTargetsMatchProject("jbdshpbtqspzfzjngqbg", storage, [database, direct]);
   } catch {
     return false;
   }
