@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 
 type BatchAsset = {
   id: string;
+  revision: string;
   kind: "IMAGE" | "VIDEO";
   originalName: string;
   professionalName: string;
@@ -13,6 +15,16 @@ type BatchAsset = {
   ageIdentityStatus: string;
   consentStatus: string;
 };
+
+export function MediaReviewFields({ children }: { children: ReactNode }) {
+  const { pending } = useFormStatus();
+  return (
+    <fieldset disabled={pending} style={{ border: 0, margin: 0, padding: 0, display: "grid", gap: 9 }}>
+      {children}
+      {pending ? <span role="status">Confirmando decisão…</span> : null}
+    </fieldset>
+  );
+}
 
 function ApprovalButton({ selectedCount }: { selectedCount: number }) {
   const { pending } = useFormStatus();
@@ -51,7 +63,9 @@ export function CohortBatchApproval({
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const selectedSet = useMemo(() => new Set(selected), [selected]);
-  const allSelected = assets.length > 0 && selected.length === assets.length;
+  const selectedCount = assets.filter((asset) => selectedSet.has(asset.id)).length;
+  const selectionLimit = Math.min(assets.length, 50);
+  const allSelected = selectionLimit > 0 && selectedCount === selectionLimit;
 
   if (!assets.length) {
     return (
@@ -69,15 +83,16 @@ export function CohortBatchApproval({
         </p>
         <button
           type="button"
-          onClick={() => setSelected(allSelected ? [] : assets.map((asset) => asset.id))}
+          onClick={() => setSelected(allSelected ? [] : assets.slice(0, selectionLimit).map((asset) => asset.id))}
           style={{ border: "1px solid rgba(255,255,255,.18)", borderRadius: 8, background: "transparent", color: "#fff", padding: "8px 11px", fontWeight: 800 }}
         >
-          {allSelected ? "Limpar seleção" : "Selecionar todas as elegíveis"}
+          {allSelected ? "Limpar seleção" : assets.length > selectionLimit ? "Selecionar as primeiras 50" : "Selecionar todas as elegíveis"}
         </button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
         {assets.map((asset) => (
           <label key={asset.id} style={{ display: "grid", gap: 8, padding: 10, border: "1px solid rgba(183,44,255,.35)", borderRadius: 10, background: "#09080a", cursor: "pointer" }}>
+            <input type="hidden" name={`revision:${asset.id}`} value={asset.revision} />
             {asset.kind === "VIDEO" ? (
               <video src={asset.previewUrl} controls preload="metadata" style={{ width: "100%", height: 190, objectFit: "contain", background: "#050506", borderRadius: 7 }} />
             ) : (
@@ -95,6 +110,7 @@ export function CohortBatchApproval({
                 name="assetIds"
                 value={asset.id}
                 checked={selectedSet.has(asset.id)}
+                disabled={selectedCount >= selectionLimit && !selectedSet.has(asset.id)}
                 onChange={(event) => setSelected((current) => event.target.checked
                   ? [...current, asset.id]
                   : current.filter((id) => id !== asset.id))}
@@ -104,7 +120,7 @@ export function CohortBatchApproval({
           </label>
         ))}
       </div>
-      <ApprovalButton selectedCount={selected.length} />
+      <ApprovalButton selectedCount={selectedCount} />
     </form>
   );
 }

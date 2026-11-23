@@ -14,6 +14,7 @@ const actionSchema = z.object({
   assetId: z.string().min(1),
   action: z.enum(["APPROVE", "REJECT", "REPROCESS"]),
   reason: z.string().trim().min(4).max(1000),
+  revision: z.string().datetime().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
   }
   const status = new URL(req.url).searchParams.get("status");
   const assets = await prisma.uploadAsset.findMany({
-    where: status ? { status } : { status: { not: "APPROVED" } },
+    where: status ? { status } : { status: { in: ["QUARANTINED", "PROCESSING"] } },
     orderBy: { createdAt: "asc" },
     take: 100,
     select: {
@@ -44,9 +45,10 @@ export async function GET(req: NextRequest) {
       moderationAttempts: true,
       createdAt: true,
       lastProcessedAt: true,
+      updatedAt: true,
     },
   });
-  return NextResponse.json({ assets });
+  return NextResponse.json({ assets }, { headers: { "Cache-Control": "private, no-store" } });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -65,12 +67,14 @@ export async function PATCH(req: NextRequest) {
           parsed.data.assetId,
           access.session.user.id,
           parsed.data.reason,
+          parsed.data.revision,
         )
       : parsed.data.action === "REJECT"
         ? await rejectUploadAsset(
             parsed.data.assetId,
             access.session.user.id,
             parsed.data.reason,
+            parsed.data.revision,
           )
         : await processUploadAsset(parsed.data.assetId);
     return NextResponse.json({
@@ -80,6 +84,7 @@ export async function PATCH(req: NextRequest) {
         status: asset.status,
         malwareStatus: asset.malwareStatus,
         moderationStatus: asset.moderationStatus,
+        updatedAt: asset.updatedAt,
       },
     });
   } catch (cause) {

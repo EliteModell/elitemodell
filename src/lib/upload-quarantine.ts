@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import { manualMediaReviewBlockers } from "@/lib/manual-media-review";
 import { evaluateMediaPublicationGates, PROFILE_IMAGE_REENCODED } from "@/lib/media-security";
@@ -311,27 +311,27 @@ async function clearRedundantAdminReviewForApprovedDecision(asset: {
   });
 }
 
-async function ensureProfessionalPhotoReference(asset: { userId: string; folder: string; category: string }, controlledUrl: string) {
+async function ensureProfessionalPhotoReference(asset: { userId: string; folder: string; category: string }, controlledUrl: string, db: Prisma.TransactionClient = prisma) {
   if (asset.category !== "image" || !asset.folder.startsWith("profiles")) return;
-  const professional = await prisma.professional.findUnique({
+  const professional = await db.professional.findUnique({
     where: { userId: asset.userId },
     select: { id: true },
   });
   if (!professional) return;
-  const existing = await prisma.professionalPhoto.findFirst({
+  const existing = await db.professionalPhoto.findFirst({
     where: { professionalId: professional.id, url: controlledUrl },
     select: { id: true },
   });
   if (existing) return;
   const [visibleCount, lastPhoto] = await Promise.all([
-    prisma.professionalPhoto.count({ where: { professionalId: professional.id, hiddenAt: null } }),
-    prisma.professionalPhoto.findFirst({
+    db.professionalPhoto.count({ where: { professionalId: professional.id, hiddenAt: null } }),
+    db.professionalPhoto.findFirst({
       where: { professionalId: professional.id },
       orderBy: { order: "desc" },
       select: { order: true },
     }),
   ]);
-  await prisma.professionalPhoto.create({
+  await db.professionalPhoto.create({
     data: {
       professionalId: professional.id,
       url: controlledUrl,
@@ -875,8 +875,8 @@ export async function reprocessProfileImage(assetId: string) {
   return prisma.uploadAsset.findUniqueOrThrow({ where: { id: assetId } });
 }
 
-export async function approveUploadAsset(assetId: string, reviewerId: string, reason: string) {
-  const asset = await prisma.uploadAsset.findUniqueOrThrow({
+async function loadReviewableAsset(db: Prisma.TransactionClient, assetId: string, revision?: string) {
+  const asset = await db.uploadAsset.findUniqueOrThrow({
     where: { id: assetId },
     include: {
       owner: { select: { blocked: true, professional: { select: { id: true, status: true, verified: true, kycStatus: true, kycProvider: true, registrationSubmittedAt: true } } } },
@@ -884,11 +884,13 @@ export async function approveUploadAsset(assetId: string, reviewerId: string, re
     },
   });
   if (asset.status === "REJECTED" || asset.moderationStatus === "REJECTED") throw new Error("A mídia foi rejeitada e precisa ser substituída.");
-  if (asset.status !== "APPROVED" && asset.category === "image" && asset.folder.startsWith("profiles") && asset.malwareStatus !== PROFILE_IMAGE_REENCODED) {
+  if (asset.status === "APPROVED") return asset;
+  checkReviewRevision(asset.updatedAt, revision);
+  if (asset.category === "image" && asset.folder.startsWith("profiles") && asset.malwareStatus !== PROFILE_IMAGE_REENCODED) {
     throw new Error("Valide e regrave a imagem antes de aprová-la.");
   }
   const professional = asset.owner.professional;
-  const openReport = await prisma.report.findFirst({
+  const openReport = await db.report.findFirst({
     where: {
       status: { in: ["PENDING", "REVIEWING"] },
       OR: [
@@ -917,66 +919,108 @@ export async function approveUploadAsset(assetId: string, reviewerId: string, re
     hasOpenReport: Boolean(openReport),
   });
   if (blockers.length) throw new Error(`Aprovacao humana bloqueada: ${blockers.join(", ")}.`);
-  if (asset.status === "APPROVED" && publicationGate(asset).publishable) return asset;
-
-  const reviewed = await prisma.uploadAsset.update({
-    where: { id: asset.id },
-    data: {
-      moderationStatus: "APPROVED",
-      moderationProvider: "MANUAL",
-      moderationProviderVersion: "human-review-v2",
-      moderationResult: { status: "APPROVED", reason },
-      adminReviewStatus: "PASS",
-      reviewedById: reviewerId,
-      reviewReason: reason,
-      status: "PROCESSING",
-      failureReason: null,
-      lastProcessedAt: new Date(),
-    },
-  });
-  await promoteAsset(reviewed);
-  await auditAsset(reviewerId, asset.id, "Conteudo aprovado em revisao humana.", { reason });
-  return prisma.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
-}
-
-export async function rejectUploadAsset(assetId: string, reviewerId: string, reason: string) {
-  const asset = await prisma.uploadAsset.update({
-    where: { id: assetId },
-    data: {
-      status: "REJECTED",
-      moderationStatus: "REJECTED",
-      moderationProvider: "MANUAL",
-      moderationProviderVersion: "human-review-v2",
-      moderationResult: { status: "REJECTED", reason },
-      adminReviewStatus: "REJECTED",
-      reviewedById: reviewerId,
-      reviewReason: reason,
-      failureReason: reason,
-      rejectedAt: new Date(),
-      lastProcessedAt: new Date(),
-    },
-  });
-  await auditAsset(reviewerId, asset.id, "Conteudo rejeitado em revisao humana.", { reason });
   return asset;
 }
 
-export async function escalateUploadAsset(assetId: string, reviewerId: string, reason: string) {
-  const asset = await prisma.uploadAsset.update({
-    where: { id: assetId },
+function checkReviewRevision(updatedAt: Date, revision?: string) {
+  if (revision !== undefined && updatedAt.toISOString() !== revision) {
+    throw new Error("A mídia mudou. Revise o estado atual antes de decidir.");
+  }
+}
+
+async function persistReview(
+  tx: Prisma.TransactionClient,
+  asset: { id: string; updatedAt: Date; status: string },
+  reviewerId: string,
+  reason: string,
+  decision: "APPROVED" | "REJECTED" | "ESCALATED",
+  fields: Prisma.UploadAssetUpdateManyMutationInput,
+) {
+  const changed = await tx.uploadAsset.updateMany({
+    where: { id: asset.id, updatedAt: asset.updatedAt, status: asset.status },
     data: {
-      status: "QUARANTINED",
-      moderationStatus: "ESCALATED",
+      ...fields,
+      moderationStatus: decision,
       moderationProvider: "MANUAL",
       moderationProviderVersion: "human-review-v2",
-      moderationResult: { status: "ESCALATED", reason },
-      adminReviewStatus: "ESCALATED",
+      moderationResult: { status: decision, reason },
+      adminReviewStatus: decision === "APPROVED" ? "PASS" : decision,
       reviewedById: reviewerId,
       reviewReason: reason,
+      lastProcessedAt: new Date(),
+    },
+  });
+  if (!changed.count) throw new Error("Outra operação alterou a mídia. Consulte o estado atual.");
+  await tx.auditLog.create({ data: {
+    adminId: reviewerId, actorIdentifier: reviewerId, action: "CONTENT_FLAGGED",
+    targetType: "CONTENT", targetId: asset.id, reason: "Decisão de revisão humana de mídia.",
+    changes: { decision, reason },
+  } });
+  return tx.uploadAsset.findUniqueOrThrow({ where: { id: asset.id } });
+}
+
+export async function approveUploadAsset(assetId: string, reviewerId: string, reason: string, revision?: string) {
+  const asset = await loadReviewableAsset(prisma, assetId, revision);
+  if (asset.status === "APPROVED") return asset;
+  if (!publicationGate({ ...asset, moderationStatus: "APPROVED", adminReviewStatus: "PASS" }).publishable) {
+    throw new Error("A mídia possui controles obrigatórios pendentes.");
+  }
+
+  const approvedBucket = process.env.APPROVED_MEDIA_BUCKET?.trim() || DEFAULT_APPROVED_BUCKET;
+  await ensurePrivateBucket(approvedBucket);
+  const provider = getMediaStorageProvider(asset.storageProvider as MediaStorageName);
+  const approvedPath = `${asset.folder}/${asset.userId}/${asset.id}-${randomUUID()}.${asset.extension}`;
+  const controlledUrl = `/api/media/${asset.id}`;
+
+  try {
+    const contents = await downloadAssetForProcessing(asset);
+    await provider.upload({ bucket: approvedBucket, path: approvedPath, contents, contentType: asset.detectedMimeType, overwrite: false });
+    const result = await prisma.$transaction(async (tx) => {
+      const current = await loadReviewableAsset(tx, assetId, asset.updatedAt.toISOString());
+      if (current.status === "APPROVED") return current;
+      const approved = await persistReview(tx, current, reviewerId, reason, "APPROVED", {
+        status: "APPROVED", approvedBucket, approvedPath, controlledUrl, storageProvider: provider.name,
+        approvedAt: new Date(), failureReason: null,
+      });
+      await ensureProfessionalPhotoReference(asset, controlledUrl, tx);
+      return approved;
+    }, { isolationLevel: "Serializable" });
+    if (result.approvedPath !== approvedPath) {
+      await provider.delete(approvedBucket, approvedPath).catch(() => undefined);
+    } else {
+      await provider.delete(asset.quarantineBucket, asset.quarantinePath).catch(() => undefined);
+    }
+    return result;
+  } catch (cause) {
+    const current = await prisma.uploadAsset.findUnique({ where: { id: assetId } }).catch(() => undefined);
+    // A lost connection can conceal a committed transaction. Keep the private copy if the database is unreachable.
+    if (current !== undefined && current?.approvedPath !== approvedPath) {
+      await provider.delete(approvedBucket, approvedPath).catch(() => undefined);
+    }
+    if (current?.status === "APPROVED" && current.moderationStatus !== "REJECTED") return current;
+    throw cause;
+  }
+}
+
+async function recordNegativeReview(assetId: string, reviewerId: string, reason: string, decision: "REJECTED" | "ESCALATED", revision?: string) {
+  return prisma.$transaction(async (tx) => {
+    const asset = await tx.uploadAsset.findUniqueOrThrow({ where: { id: assetId } });
+    if (asset.moderationStatus === decision && asset.adminReviewStatus === decision) return asset;
+    checkReviewRevision(asset.updatedAt, revision);
+    if (asset.status === "REJECTED") throw new Error("A mídia já foi rejeitada.");
+    return persistReview(tx, asset, reviewerId, reason, decision, {
+      status: decision === "REJECTED" ? "REJECTED" : "QUARANTINED",
       failureReason: reason,
       approvedAt: null,
-      lastProcessedAt: new Date(),
-    },
+      ...(decision === "REJECTED" ? { rejectedAt: new Date() } : {}),
+    });
   });
-  await auditAsset(reviewerId, asset.id, "Conteudo escalado em revisao humana.", { reason });
-  return asset;
+}
+
+export async function rejectUploadAsset(assetId: string, reviewerId: string, reason: string, revision?: string) {
+  return recordNegativeReview(assetId, reviewerId, reason, "REJECTED", revision);
+}
+
+export async function escalateUploadAsset(assetId: string, reviewerId: string, reason: string, revision?: string) {
+  return recordNegativeReview(assetId, reviewerId, reason, "ESCALATED", revision);
 }

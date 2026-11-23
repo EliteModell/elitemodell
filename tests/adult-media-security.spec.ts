@@ -197,7 +197,7 @@ test.describe("seguranca fail-closed de midia adulta", () => {
   test("fluxo oficial vincula foto promovida ao perfil sem substituir capa existente", async () => {
     const source = await import("node:fs/promises").then((fs) => fs.readFile("src/lib/upload-quarantine.ts", "utf8"));
     expect(source).toContain('asset.folder.startsWith("profiles")');
-    expect(source).toContain("prisma.professionalPhoto.create");
+    expect(source).toContain("db.professionalPhoto.create");
     expect(source).toContain("cover: visibleCount === 0");
   });
 

@@ -157,6 +157,8 @@ async function toggleClientBlock(formData: FormData) {
     reason: reason || action,
   });
   revalidatePath("/admin/clientes");
+  revalidatePath("/admin/moderacao/uploads");
+  revalidatePath("/admin/profissionais");
 }
 
 export default async function AdminClientesPage({ searchParams }: { searchParams?: Promise<{ page?: string; q?: string; deleteError?: string; deleteJob?: string; deleteStatus?: string }> }) {

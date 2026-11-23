@@ -85,6 +85,7 @@ async function updateReport(formData: FormData) {
   await prisma.report.update({ where: { id }, data: { status } });
   await logAudit({ adminId: session.user.id, action: "CONTENT_FLAGGED", targetType: "CONTENT", targetId: id, reason: reason || `report:${status}` });
   revalidatePath("/admin/denuncias");
+  revalidatePath("/admin/moderacao/uploads");
 }
 
 export default async function AdminDenunciasPage() {

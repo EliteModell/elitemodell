@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-access";
 import { reconcileProfessionalDidit } from "@/lib/didit-reconciliation";
 import { prisma } from "@/lib/prisma";
@@ -16,12 +17,13 @@ import {
   rejectUploadAsset,
 } from "@/lib/upload-quarantine";
 import { AdminHeader, AdminPanel, StatusPill } from "../../_components/AdminPrimitives";
-import { CohortBatchApproval } from "./CohortBatchApproval";
+import { CohortBatchApproval, MediaReviewFields } from "./CohortBatchApproval";
 
 export const dynamic = "force-dynamic";
 
 const OPERATIONAL_DAY_START = new Date("2026-10-21T03:00:00.000Z");
 const OPERATIONAL_DAY_END = new Date("2026-10-22T03:00:00.000Z");
+const pendingMediaStatuses = ["QUARANTINED", "PROCESSING"];
 
 async function reviewUpload(formData: FormData) {
   "use server";
@@ -29,8 +31,10 @@ async function reviewUpload(formData: FormData) {
   const assetId = String(formData.get("assetId") || "");
   const action = String(formData.get("action") || "");
   const reason = String(formData.get("reason") || "").trim();
-  if (!assetId || !["APPROVE", "REJECT", "REPROCESS", "ESCALATE"].includes(action)) return;
-  if (["REJECT", "ESCALATE"].includes(action) && reason.length < 4) return;
+  const revision = String(formData.get("revision") || "");
+  const detail = `/admin/moderacao/uploads?assetId=${encodeURIComponent(assetId)}`;
+  if (!assetId || !revision || !["APPROVE", "REJECT", "REPROCESS", "ESCALATE"].includes(action)) redirect(`${detail}&result=error`);
+  if (["REJECT", "ESCALATE"].includes(action) && reason.length < 4) redirect(`${detail}&result=reason`);
   const effectiveReason = reason || (action === "APPROVE"
     ? "Revisao visual administrativa concluida: conteudo aprovado."
     : "Reprocessamento administrativo solicitado.");
@@ -42,29 +46,39 @@ async function reviewUpload(formData: FormData) {
         { category: "video", folder: { startsWith: "profile-videos" } },
       ],
     },
-    select: { id: true, category: true },
+    select: { id: true, category: true, updatedAt: true, status: true },
   });
-  if (!scopedAsset) throw new Error("A mídia não pertence a um perfil profissional.");
+  if (!scopedAsset) redirect("/admin/moderacao/uploads?result=scope");
 
-  if (action === "APPROVE") {
-    await approveUploadAsset(assetId, session.user.id, effectiveReason);
-  } else if (action === "REJECT") {
-    await rejectUploadAsset(assetId, session.user.id, effectiveReason);
-  } else if (action === "REPROCESS") {
-    if (scopedAsset.category === "image") await reprocessProfileImage(assetId);
-    else await processUploadAsset(assetId);
-  } else if (action === "ESCALATE") {
-    await escalateUploadAsset(assetId, session.user.id, effectiveReason);
+  let result = "saved";
+  try {
+    if (action === "APPROVE") {
+      await approveUploadAsset(assetId, session.user.id, effectiveReason, revision);
+    } else if (action === "REJECT") {
+      await rejectUploadAsset(assetId, session.user.id, effectiveReason, revision);
+    } else if (action === "REPROCESS") {
+      if (scopedAsset.updatedAt.toISOString() !== revision) throw new Error("A mídia mudou.");
+      if (scopedAsset.status === "APPROVED" || scopedAsset.status === "REJECTED") throw new Error("A revisão desta mídia já foi encerrada.");
+      if (scopedAsset.category === "image") await reprocessProfileImage(assetId);
+      else await processUploadAsset(assetId);
+    } else {
+      await escalateUploadAsset(assetId, session.user.id, effectiveReason, revision);
+    }
+  } catch (cause) {
+    console.error("[media-review] falha", assetId, cause);
+    result = "error";
   }
   revalidateModerationPaths();
+  redirect(`${detail}&result=${result}#foto-${encodeURIComponent(assetId)}`);
 }
 
 async function batchApproveUploads(formData: FormData) {
   "use server";
   const { session } = await requireAdmin("reports:manage");
   const reason = "Revisao visual administrativa em lote concluida: conteudo aprovado.";
-  const assetIds = Array.from(new Set(formData.getAll("assetIds").map(String).filter(Boolean))).slice(0, 50);
-  if (!assetIds.length) return;
+  const assetIds = Array.from(new Set(formData.getAll("assetIds").map(String).filter(Boolean)));
+  if (!assetIds.length) redirect("/admin/moderacao/uploads?result=error");
+  if (assetIds.length > 50) redirect("/admin/moderacao/uploads?result=limit");
 
   const ownedAssets = await prisma.uploadAsset.findMany({
     where: {
@@ -77,20 +91,25 @@ async function batchApproveUploads(formData: FormData) {
     select: { id: true },
   });
   if (ownedAssets.length !== assetIds.length) {
-    throw new Error("O lote deve conter somente fotos ou vídeos de perfis profissionais.");
+    redirect("/admin/moderacao/uploads?result=error");
   }
 
+  let confirmed = 0;
   for (const assetId of assetIds) {
     try {
-      await approveUploadAsset(assetId, session.user.id, reason);
+      const revision = String(formData.get(`revision:${assetId}`) || "");
+      if (!revision) throw new Error("A revisão da mídia é obrigatória.");
+      await approveUploadAsset(assetId, session.user.id, reason, revision);
+      confirmed++;
     } catch (cause) {
-      console.error("[batch-media-review] ativo permaneceu privado", {
+      console.error("[batch-media-review] aprovação não confirmada", {
         assetId,
         error: cause instanceof Error ? cause.message : "Falha desconhecida",
       });
     }
   }
   revalidateModerationPaths();
+  redirect(`/admin/moderacao/uploads?confirmed=${confirmed}&failed=${assetIds.length - confirmed}`);
 }
 
 async function synchronizeDiditAge(formData: FormData) {
@@ -124,7 +143,7 @@ function revalidateModerationPaths() {
   revalidatePath("/");
   revalidatePath("/profissionais");
   revalidatePath("/buscar");
-  revalidatePath("/cidade/[slug]", "page");
+  revalidatePath("/cidade/[state]/[city]", "page");
   revalidatePath("/profissionais/[slug]", "page");
   revalidatePath("/admin/moderacao/uploads");
   revalidatePath("/admin/profissionais");
@@ -186,12 +205,13 @@ function blockerReason(code: string, asset: {
   return reasons[code] ?? "controle obrigatório pendente";
 }
 
-export default async function AdminUploadModerationPage({ searchParams }: { searchParams: Promise<{ assetId?: string }> }) {
+export default async function AdminUploadModerationPage({ searchParams }: { searchParams: Promise<{ assetId?: string; result?: string; confirmed?: string; failed?: string }> }) {
   const { permissions } = await requireAdmin("reports:manage");
-  const assetId = (await searchParams).assetId?.trim();
+  const params = await searchParams;
+  const assetId = params.assetId?.trim();
   const assets = await prisma.uploadAsset.findMany({
     where: {
-      ...(assetId ? { id: assetId } : { status: { not: "APPROVED" } }),
+      ...(assetId ? { id: assetId } : { status: { in: pendingMediaStatuses } }),
       OR: [
         { category: "image", folder: { startsWith: "profiles" } },
         { category: "video", folder: { startsWith: "profile-videos" } },
@@ -269,7 +289,11 @@ export default async function AdminUploadModerationPage({ searchParams }: { sear
     const rightName = right.items[0]?.asset.owner.professional?.displayName ?? right.items[0]?.asset.owner.name ?? "";
     return leftName.localeCompare(rightName, "pt-BR");
   });
-  const reviewableCount = reviewedAssets.filter(({ blockers }) => blockers.length === 0).length;
+  const pending = reviewedAssets.filter(({ asset }) => pendingMediaStatuses.includes(asset.status));
+  const eligible = pending.filter(({ asset, blockers }) => blockers.length === 0
+    && asset.moderationStatus !== "REJECTED"
+    && (asset.category !== "image" || asset.malwareStatus === PROFILE_IMAGE_REENCODED));
+  const pendingGroups = new Set(pending.map(({ asset }) => asset.owner.professional?.id ?? asset.owner.id)).size;
   const now = new Date();
   const overdueQueueCutoff = new Date(now.getTime() - 5 * 60_000);
   const stuckAssets = assets.filter((asset) => asset.status === "QUARANTINED" && (
@@ -285,9 +309,20 @@ export default async function AdminUploadModerationPage({ searchParams }: { sear
   return (
     <div>
       <AdminHeader
-        title="Fila de mídias profissionais"
-        subtitle="Fotos e vídeos aguardando verificações ou decisão visual. Nenhuma mídia é liberada sem todos os controles obrigatórios."
+        title={assetId ? "Detalhes da mídia profissional" : "Fila de mídias profissionais"}
+        subtitle={assetId ? "Consulte o estado registrado e as decisões disponíveis para esta mídia." : "Fotos e vídeos aguardando verificações ou decisão visual. Nenhuma mídia é liberada sem todos os controles obrigatórios."}
       />
+      {assetId ? <Link href="/admin/moderacao/uploads">Voltar à fila de mídias</Link> : null}
+      {params.result === "saved" ? <p role="status">Operação registrada.</p> : null}
+      {params.result === "error" ? <p role="alert">Não foi possível confirmar a operação. Confira o estado atual da mídia antes de tentar novamente.</p> : null}
+      {params.result === "scope" ? <p role="alert">A mídia não pertence a um perfil profissional.</p> : null}
+      {params.result === "limit" ? <p role="alert">Selecione até 50 mídias por vez.</p> : null}
+      {params.result === "reason" ? <p role="alert">Informe uma justificativa com pelo menos quatro caracteres.</p> : null}
+      {params.confirmed !== undefined && params.failed !== undefined ? (
+        <p role={Number(params.failed) > 0 ? "alert" : "status"}>
+          {Number(params.confirmed) || 0} aprovação(ões) confirmada(s). {Number(params.failed) || 0} não confirmada(s). Confira o estado atual na fila.
+        </p>
+      ) : null}
       {stuckAssets.length > 0 ? (
         <AdminPanel>
           <p role="alert" style={{ margin: 0, color: "#fde68a", fontWeight: 800 }}>
@@ -296,17 +331,18 @@ export default async function AdminUploadModerationPage({ searchParams }: { sear
         </AdminPanel>
       ) : null}
       <AdminPanel>
-        <h2 style={{ margin: "0 0 8px", color: "#fff", fontSize: 20 }}>Resumo da fila</h2>
+        <h2 style={{ margin: "0 0 8px", color: "#fff", fontSize: 20 }}>{assetId ? "Pendências desta mídia" : "Resumo da fila"}</h2>
         <p style={{ margin: 0, color: "#b4adb0", lineHeight: 1.6 }}>
-          {assets.length} mídia(s) pendente(s), agrupadas em {groups.length} profissional(is). {reviewableCount} mídia(s) dependem somente de revisão visual.
+          {pending.length} mídia(s) pendente(s), agrupadas em {pendingGroups} profissional(is). {eligible.length} mídia(s) dependem somente de revisão visual.
         </p>
       </AdminPanel>
       <AdminPanel>
         <h2 style={{ margin: "0 0 10px", color: "#fff", fontSize: 20 }}>Revisão visual das mídias elegíveis</h2>
         <CohortBatchApproval
           action={batchApproveUploads}
-          assets={reviewedAssets.filter(({ blockers }) => blockers.length === 0).map(({ asset }) => ({
+          assets={eligible.map(({ asset }) => ({
             id: asset.id,
+            revision: asset.updatedAt.toISOString(),
             kind: asset.category === "video" ? "VIDEO" as const : "IMAGE" as const,
             originalName: asset.originalName,
             professionalName: asset.owner.professional?.displayName ?? asset.owner.name ?? "Sem nome profissional",
@@ -365,7 +401,7 @@ export default async function AdminUploadModerationPage({ searchParams }: { sear
                   </div>
                   <div style={{ display: "grid", gap: 8, minWidth: 260 }}>
                     <StatusPill tone={tone(professional?.status ?? "SEM CADASTRO")}>Cadastro: {professional?.status ?? "SEM CADASTRO"}</StatusPill>
-                    <StatusPill tone={tone(professional?.kycStatus ?? "NOT_STARTED")}>Didit: {professional?.kycStatus ?? "SEM CADASTRO"}</StatusPill>
+                    <StatusPill tone={tone(professional?.kycStatus ?? "NOT_STARTED")}>Identidade: {professional?.kycStatus ?? "SEM CADASTRO"}</StatusPill>
                     <span style={{ color: "#b4adb0", fontSize: 13 }}>Antivírus: {summarizeStatuses(photos.map(({ asset }) => asset.malwareStatus))}</span>
                     <span style={{ color: "#b4adb0", fontSize: 13 }}>Maioridade: {summarizeStatuses(photos.map(({ asset }) => asset.ageIdentityStatus))}</span>
                   </div>
@@ -388,11 +424,11 @@ export default async function AdminUploadModerationPage({ searchParams }: { sear
                       Não altera consentimento, outras pessoas retratadas nem o status de moderação.
                     </span>
                   </form>
-                ) : (
+                ) : professional?.kycProvider === "DIDIT" ? (
                   <p style={{ margin: 0, color: "#fde68a", fontSize: 13 }}>
                     Sincronização Didit indisponível: cadastro sem sessão Didit ativa vinculada.
                   </p>
-                )}
+                ) : null}
 
                 {dateSections.map((section) => (
                   <section key={section.key} aria-labelledby={`${key}-${section.key}`} style={{ display: "grid", gap: 12 }}>
@@ -431,7 +467,13 @@ export default async function AdminUploadModerationPage({ searchParams }: { sear
                             Fila AV: {asset.malwareScanJob?.status ?? "sem job"} · tentativas {asset.malwareScanJob?.attempts ?? 0}/{asset.malwareScanJob?.maxAttempts ?? 5}
                           </p>
                           <div role={blockers.length ? "alert" : undefined} style={{ padding: 10, borderRadius: 8, background: blockers.length ? "rgba(239,68,68,.1)" : "rgba(34,197,94,.1)", color: blockers.length ? "#fca5a5" : "#86efac", fontSize: 13, lineHeight: 1.55 }}>
-                            {blockers.length ? (
+                            {asset.status === "APPROVED" ? (
+                              <strong>Aprovação registrada.</strong>
+                            ) : asset.status === "REJECTED" ? (
+                              <strong>Rejeição registrada. A mídia precisa ser substituída.</strong>
+                            ) : asset.moderationStatus === "ESCALATED" && !blockers.length ? (
+                              <strong>Mídia escalada. A decisão de conteúdo continua pendente.</strong>
+                            ) : blockers.length ? (
                               <>
                                 <strong>Bloqueada por:</strong>
                                 <ul style={{ margin: "6px 0 0", paddingLeft: 20 }}>
@@ -444,8 +486,10 @@ export default async function AdminUploadModerationPage({ searchParams }: { sear
                           </div>
                           {asset.reviewReason ? <p style={{ color: "#e9d5ff", fontSize: 13 }}>Motivo da revisão: {asset.reviewReason}</p> : null}
                           {asset.failureReason ? <p style={{ color: "#fca5a5", fontSize: 13 }}>Falha registrada: {asset.failureReason}</p> : null}
-                          <form action={reviewUpload} style={{ display: "grid", gap: 9, marginTop: 12 }}>
+                          {asset.status !== "REJECTED" ? <form action={reviewUpload} style={{ display: "grid", gap: 9, marginTop: 12 }}>
+                            <MediaReviewFields>
                             <input type="hidden" name="assetId" value={asset.id} />
+                            <input type="hidden" name="revision" value={asset.updatedAt.toISOString()} />
                             <input
                               name="reason"
                               minLength={4}
@@ -453,28 +497,29 @@ export default async function AdminUploadModerationPage({ searchParams }: { sear
                               style={{ border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, background: "#050506", color: "#fff", padding: 10 }}
                             />
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                              <button name="action" value="REPROCESS" title="Executa novamente os controles automáticos; não publica sem todos os gates." style={{ border: "1px solid rgba(255,255,255,.16)", borderRadius: 8, background: "transparent", color: "#fff", padding: "9px 12px", fontWeight: 800 }}>
+                              {asset.status !== "APPROVED" ? <button name="action" value="REPROCESS" title="Executa novamente os controles automáticos; não publica sem todos os gates." style={{ border: "1px solid rgba(255,255,255,.16)", borderRadius: 8, background: "transparent", color: "#fff", padding: "9px 12px", fontWeight: 800 }}>
                                 {asset.category === "image" ? "Validar e regravar foto" : "Reprocessar"}
-                              </button>
+                              </button> : null}
                               <button name="action" value="REJECT" title="Requer justificativa e mantém o arquivo fora de publicação." style={{ border: "1px solid rgba(239,68,68,.4)", borderRadius: 8, background: "rgba(239,68,68,.12)", color: "#fca5a5", padding: "9px 12px", fontWeight: 800 }}>
                                 Rejeitar
                               </button>
-                              <button name="action" value="ESCALATE" title="Requer justificativa e mantém o arquivo em quarentena." style={{ border: "1px solid rgba(250,204,21,.4)", borderRadius: 8, background: "rgba(250,204,21,.12)", color: "#fde68a", padding: "9px 12px", fontWeight: 800 }}>
+                              {asset.moderationStatus !== "ESCALATED" ? <button name="action" value="ESCALATE" title="Requer justificativa e mantém o arquivo em quarentena." style={{ border: "1px solid rgba(250,204,21,.4)", borderRadius: 8, background: "rgba(250,204,21,.12)", color: "#fde68a", padding: "9px 12px", fontWeight: 800 }}>
                                 Escalar
-                              </button>
-                              <button
+                              </button> : null}
+                              {asset.status !== "APPROVED" ? <button
                                 name="action"
                                 value="APPROVE"
-                                disabled={blockers.length > 0 || asset.status === "APPROVED" || asset.status === "REJECTED" || asset.category === "image" && asset.malwareStatus !== PROFILE_IMAGE_REENCODED}
+                                disabled={blockers.length > 0 || asset.category === "image" && asset.malwareStatus !== PROFILE_IMAGE_REENCODED}
                                 title={blockers.length
                                   ? `Aprovação desabilitada: ${blockers.map((blocker) => blockerReason(blocker, asset)).join("; ")}`
                                   : "Habilitada após todos os gates; o clique registra a decisão humana."}
                                 style={{ border: 0, borderRadius: 8, background: "#b72cff", color: "#080704", padding: "9px 12px", fontWeight: 950, opacity: blockers.length === 0 ? 1 : 0.45, cursor: blockers.length === 0 ? "pointer" : "not-allowed" }}
                               >
                                 Aprovar
-                              </button>
+                              </button> : null}
                             </div>
-                          </form>
+                            </MediaReviewFields>
+                          </form> : null}
                         </div>
                       </div>
                     ))}
