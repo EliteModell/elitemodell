@@ -114,8 +114,7 @@ test.describe("juridico e seguranca - visitante", () => {
     await context.addCookies([{
       name: "elite_modell_age_declaration",
       value: "confirmed",
-      domain: "127.0.0.1",
-      path: "/",
+      url: new URL("/", page.url()).toString(),
       sameSite: "Lax",
     }]);
 
