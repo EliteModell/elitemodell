@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createHash, randomBytes } from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -8,6 +9,7 @@ import { logAudit } from "@/lib/audit";
 import { buildDeletionPlan, processDataDeletionJob } from "@/lib/data-deletion-worker";
 import { brazilianPhoneStorageVariants, normalizeBrazilianPhone } from "@/lib/phone-otp";
 import { accountEmailLabel, isTechnicalPhoneEmail } from "@/lib/account-email";
+import { clientNameSearchQuery } from "@/lib/admin-client-name-search";
 import { AdminHeader, AdminPagination, AdminPanel, AdminTable, StatusPill, buttonStyle, tdStyle, thStyle } from "../_components/AdminPrimitives";
 
 export const dynamic = "force-dynamic";
@@ -127,6 +129,7 @@ function exactAccountLookup(query: string): Prisma.UserWhereInput | null {
   const value = query.trim();
   if (!value) return null;
   if (value.includes("@")) return { email: { equals: value.toLowerCase(), mode: "insensitive" } };
+  if (!/^[+\d().\s-]+$/.test(value)) return null;
   const digits = value.replace(/\D/g, "");
   if (digits.length < 10 || digits.length > 13) return null;
   return { phone: { in: brazilianPhoneStorageVariants(value) } };
@@ -167,12 +170,18 @@ export default async function AdminClientesPage({ searchParams }: { searchParams
   const query = params?.q?.trim().slice(0, 160) ?? "";
   const exactLookup = exactAccountLookup(query);
   const parsedPage = Number(params?.page ?? "1");
-  const page = Number.isFinite(parsedPage) ? Math.max(1, Math.floor(parsedPage)) : 1;
-  const where: Prisma.UserWhereInput = exactLookup ?? { role: "GUEST", accountType: { not: "host" } };
-  const [total, clients] = await Promise.all([prisma.user.count({ where }), prisma.user.findMany({
+  const page = Number.isSafeInteger(parsedPage) && parsedPage > 0 && parsedPage <= 1_000_000 ? parsedPage : 1;
+  const offset = (page - 1) * PAGE_SIZE;
+  const [nameResults] = query && !exactLookup
+    ? await prisma.$queryRaw<{ total: number; ids: string[] }[]>(clientNameSearchQuery(query, offset, PAGE_SIZE))
+    : [];
+  const clientScope: Prisma.UserWhereInput = { role: "GUEST", accountType: { not: "host" } };
+  const where: Prisma.UserWhereInput = nameResults ? { ...clientScope, id: { in: nameResults.ids } }
+    : exactLookup ?? clientScope;
+  const [total, clients] = await Promise.all([nameResults?.total ?? prisma.user.count({ where }), prisma.user.findMany({
     where,
-    orderBy: { createdAt: "desc" },
-    skip: (page - 1) * PAGE_SIZE,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    skip: nameResults ? 0 : offset,
     take: PAGE_SIZE,
     select: {
       id: true,
@@ -198,7 +207,7 @@ export default async function AdminClientesPage({ searchParams }: { searchParams
       _count: { select: { favorites: true, reportsCreated: true, uploadedAssets: true } },
     },
   })]);
-  const deletionPlan = exactLookup && clients.length === 1 && adminRole === "ADMIN_MASTER"
+  const deletionPlan = exactLookup && total === 1 && clients.length === 1 && adminRole === "ADMIN_MASTER"
     ? await buildDeletionPlan(clients[0].id)
     : null;
 
@@ -209,8 +218,8 @@ export default async function AdminClientesPage({ searchParams }: { searchParams
       action: "ADMIN_ACCESS",
       targetType: clients.length === 1 ? "USER" : "SYSTEM",
       targetId: clients.length === 1 ? clients[0].id : `account-lookup:${lookupHash}`,
-      reason: "Consulta administrativa exata de conta por identificador.",
-      changes: { lookupKind: query.includes("@") ? "email" : "phone", resultCount: clients.length },
+      reason: exactLookup ? "Consulta administrativa exata de conta por identificador." : "Pesquisa administrativa de clientes por nome.",
+      changes: { lookupKind: exactLookup ? (query.includes("@") ? "email" : "phone") : "name", resultCount: total },
     });
   }
 
@@ -219,11 +228,11 @@ export default async function AdminClientesPage({ searchParams }: { searchParams
       <AdminHeader title="Clientes" subtitle="Lista operacional de clientes, verificação, favoritos e denúncias relacionadas." />
       <AdminPanel>
         <form method="get" action="/admin/clientes" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <input name="q" defaultValue={query} aria-label="E-mail ou telefone exato" placeholder="E-mail ou telefone exato" style={{ flex: "1 1 280px", minWidth: 0, background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 10 }} />
-          <button type="submit" style={buttonStyle}>Localizar conta</button>
+          <input key={query} name="q" type="search" maxLength={160} defaultValue={query} aria-label="Pesquisar por nome, e-mail ou telefone" placeholder="Pesquisar por nome, e-mail ou telefone" style={{ flex: "1 1 280px", minWidth: 0, background: "#050506", border: "1px solid rgba(255,255,255,.14)", borderRadius: 8, color: "#fff", padding: 10 }} />
+          <button type="submit" style={buttonStyle}>Pesquisar</button>
+          {query ? <Link prefetch={false} href="/admin/clientes" style={buttonStyle}>Limpar busca</Link> : null}
         </form>
-        {query && !exactLookup ? <p style={{ color: "#f59e0b" }}>Informe um e-mail completo ou telefone com DDD.</p> : null}
-        {query && exactLookup && clients.length === 0 ? <p style={{ color: "#f59e0b" }}>Nenhuma conta encontrada com o identificador exato.</p> : null}
+        {query ? <p role="status">{total === 0 ? "Nenhuma conta encontrada." : `${total.toLocaleString("pt-BR")} resultado(s).`}</p> : null}
         {params?.deleteError === "confirmation" ? <p role="alert" style={{ color: "#ef4444" }}>A conta continua intacta. Copie a frase completa no formulário abaixo, incluindo EXCLUIR e o ID da conta.</p> : null}
         {params?.deleteError === "identity" ? <p style={{ color: "#ef4444" }}>Exclusao recusada: ID, e-mail e telefone nao pertencem ao mesmo registro ou a conta e privilegiada.</p> : null}
         {params?.deleteJob ? <p style={{ color: params.deleteStatus?.startsWith("COMPLETED") ? "#22c55e" : "#f59e0b" }}>Job de exclusao: {params.deleteJob}. Status: {params.deleteStatus ?? "em processamento"}.</p> : null}
@@ -248,7 +257,7 @@ export default async function AdminClientesPage({ searchParams }: { searchParams
                     {client.blocked ? "BLOQUEADO" : client.clientStatus}
                   </StatusPill>
                   {client.blockReason ? <p style={{ color: "#ef4444", margin: "8px 0 0" }}>{client.blockReason}</p> : null}
-                  {query ? <p style={{ margin: "8px 0 0", lineHeight: 1.55 }}>
+                  {exactLookup ? <p style={{ margin: "8px 0 0", lineHeight: 1.55 }}>
                     Telefone confirmado: {client.phoneVerified ? "sim" : "não"}<br />
                     E-mail confirmado: {client.emailVerified && !isTechnicalPhoneEmail(client.email) ? "sim" : "não"}<br />
                     Perfil: {client.professional?.status ?? "não criado"}<br />
@@ -300,7 +309,7 @@ export default async function AdminClientesPage({ searchParams }: { searchParams
             ))}
           </tbody>
         </AdminTable>
-        {!query ? <AdminPagination basePath="/admin/clientes" page={page} pageSize={PAGE_SIZE} total={total} /> : null}
+        <AdminPagination basePath="/admin/clientes" page={page} pageSize={PAGE_SIZE} total={total} query={{ q: query }} />
       </AdminPanel>
     </div>
   );
