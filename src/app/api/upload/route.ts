@@ -6,6 +6,7 @@ import { enforceRateLimitAsync, getClientIP } from "@/lib/security";
 import { prisma } from "@/lib/prisma";
 import { KYC_LEGAL_KEYS, PUBLICATION_LEGAL_KEYS, recordUserAcceptances } from "@/lib/legal-acceptance";
 import { requiresContentAuthorizationDeclaration } from "@/lib/legal-document-catalog";
+import { detectUploadImage, imageMimeMatches } from "@/lib/upload-image-format";
 import { ProfileImageValidationError } from "@/lib/profile-image-normalization";
 import { processUploadAsset, quarantineUpload } from "@/lib/upload-quarantine";
 import { isAgeOfMajority } from "@/lib/age-validation";
@@ -36,10 +37,6 @@ function headerText(bytes: Uint8Array, start: number, length: number) {
   return String.fromCharCode(...bytes.slice(start, start + length));
 }
 
-function isHeicHeifBrand(brand: string) {
-  return ["heic", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs", "heif", "mif1", "msf1"].includes(brand);
-}
-
 type FileKind = {
   mime: string;
   ext: string;
@@ -48,23 +45,13 @@ type FileKind = {
 
 async function detectFileKind(file: File): Promise<FileKind | null> {
   const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
-  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
-    return { mime: "image/jpeg", ext: "jpg", category: "image" };
-  }
-  if (bytes[0] === 0x89 && headerText(bytes, 1, 3) === "PNG") {
-    return { mime: "image/png", ext: "png", category: "image" };
-  }
-  if (headerText(bytes, 0, 4) === "RIFF" && headerText(bytes, 8, 4) === "WEBP") {
-    return { mime: "image/webp", ext: "webp", category: "image" };
-  }
+  const image = detectUploadImage(bytes);
+  if (image) return { ...image, category: "image" };
   if (headerText(bytes, 0, 4) === "%PDF") {
     return { mime: "application/pdf", ext: "pdf", category: "document" };
   }
   if (headerText(bytes, 4, 4) === "ftyp") {
     const brand = headerText(bytes, 8, 4).toLowerCase();
-    if (isHeicHeifBrand(brand)) {
-      return { mime: brand === "heif" || brand === "mif1" ? "image/heif" : "image/heic", ext: "heic", category: "image" };
-    }
     const mime = brand.includes("qt") ? "video/quicktime" : "video/mp4";
     return { mime, ext: mime === "video/quicktime" ? "mov" : "mp4", category: "video" };
   }
@@ -143,7 +130,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const formData = await req.formData();
+  const formData = await req.formData().catch(() => null);
+  if (!formData) return NextResponse.json({ error: "O formulário de upload é inválido ou incompleto." }, { status: 400 });
   const contentDeclarationAccepted = formData.get("contentDeclarationAccepted") === "true";
   if (requiresContentAuthorizationDeclaration(folder) && !contentDeclarationAccepted) {
     return NextResponse.json(
@@ -152,7 +140,7 @@ export async function POST(req: NextRequest) {
     );
   }
   const file = formData.get("file") as File | null;
-  if (!file) return NextResponse.json({ error: "Nenhum arquivo enviado." }, { status: 400 });
+  if (!(file instanceof File)) return NextResponse.json({ error: "Nenhum arquivo enviado." }, { status: 400 });
 
   const contentRatingInput = String(formData.get("contentRating") ?? "STANDARD").toUpperCase();
   const contentRating = (["STANDARD", "ADULT_SUGGESTIVE", "ADULT_EXPLICIT"] as const)
@@ -196,6 +184,9 @@ export async function POST(req: NextRequest) {
 
   const detectedKind = await detectFileKind(file);
   const effectiveMime = detectedKind?.mime ?? file.type;
+  if (detectedKind?.category === "image" && !imageMimeMatches(file.type, detectedKind.mime)) {
+    return NextResponse.json({ error: "O tipo informado não corresponde ao conteúdo da imagem." }, { status: 415 });
+  }
   const isGenericMobileMime = !file.type || file.type === "application/octet-stream";
 
   // Valida tipo MIME com fallback por assinatura para fotos reais de celular.

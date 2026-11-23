@@ -1,6 +1,8 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- Imagens sao previews locais ou URLs publicas enviadas pela propria profissional. */
 
+import { prepareProfileImageUpload, profileImageSelectionError } from "@/lib/prepare-profile-upload";
+import { PROFILE_IMAGE_ACCEPT } from "@/lib/upload-image-format";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, ReactNode, RefObject } from "react";
 import toast from "react-hot-toast";
@@ -50,7 +52,7 @@ type MeResponse = {
   } | null;
 };
 
-const IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_GALLERY = 12;
 const MAX_VIDEOS = 10;
@@ -60,10 +62,7 @@ function formatSize(bytes: number) {
 }
 
 function validateImage(file: File) {
-  if (!file) return "Escolha uma imagem válida.";
-  if (!IMAGE_TYPES.includes(file.type)) return "Escolha uma imagem JPG, PNG ou WebP.";
-  if (file.size > MAX_IMAGE_BYTES) return `O arquivo é muito grande. Use uma imagem de até ${formatSize(MAX_IMAGE_BYTES)}.`;
-  return null;
+  return profileImageSelectionError(file, MAX_IMAGE_BYTES);
 }
 
 function normalizeMedia(data: MeResponse) {
@@ -107,6 +106,7 @@ export default function ProfissionalFotosPage() {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const previewUrls = useRef(new Set<string>());
 
   const galleryTotal = useMemo(() => gallery.length + galleryPending.length, [gallery.length, galleryPending.length]);
 
@@ -141,13 +141,21 @@ export default function ProfissionalFotosPage() {
   }, []);
 
   useEffect(() => {
-    return () => {
-      if (profilePending) URL.revokeObjectURL(profilePending.preview);
-      if (coverPending) URL.revokeObjectURL(coverPending.preview);
-      galleryPending.forEach((item) => URL.revokeObjectURL(item.preview));
-      videoPending.forEach((item) => URL.revokeObjectURL(item.preview));
-    };
+    const active = new Set([
+      ...(profilePending ? [profilePending.preview] : []),
+      ...(coverPending ? [coverPending.preview] : []),
+      ...galleryPending.map((item) => item.preview),
+      ...videoPending.map((item) => item.preview),
+    ]);
+    for (const url of previewUrls.current) {
+      if (!active.has(url)) URL.revokeObjectURL(url);
+    }
+    previewUrls.current = active;
   }, [coverPending, galleryPending, profilePending, videoPending]);
+
+  useEffect(() => () => {
+    for (const url of previewUrls.current) URL.revokeObjectURL(url);
+  }, []);
 
   function setSinglePending(kind: "profile" | "cover", file: File) {
     const error = validateImage(file);
@@ -219,7 +227,7 @@ export default function ProfissionalFotosPage() {
     if (!profileId) throw new Error("Perfil profissional não encontrado.");
     const formData = new FormData();
     if (!contentDeclarationAccepted) throw new Error("Confirme a declaracao de autoria e autorizacao antes do upload.");
-    formData.append("file", file);
+    formData.append("file", await prepareProfileImageUpload(file, MAX_IMAGE_BYTES));
     formData.append("contentDeclarationAccepted", "true");
     formData.append("contentRating", contentRating);
     const res = await fetch(`/api/upload?folder=profiles/${profileId}`, { method: "POST", body: formData });
@@ -570,7 +578,7 @@ export default function ProfissionalFotosPage() {
           primaryLabel={profilePhoto ? "Trocar foto" : "Adicionar foto"}
           removeLabel="Remover foto"
           inputRef={profileInputRef}
-          accept="image/jpeg,image/png,image/webp"
+          accept={PROFILE_IMAGE_ACCEPT}
           onPick={() => profileInputRef.current?.click()}
           onInput={(event) => handleSingleInput("profile", event)}
           onPublish={publishProfilePhoto}
@@ -588,7 +596,7 @@ export default function ProfissionalFotosPage() {
           primaryLabel={coverPhoto ? "Trocar capa" : "Adicionar capa"}
           removeLabel="Remover capa"
           inputRef={coverInputRef}
-          accept="image/jpeg,image/png,image/webp"
+          accept={PROFILE_IMAGE_ACCEPT}
           onPick={() => coverInputRef.current?.click()}
           onInput={(event) => handleSingleInput("cover", event)}
           onPublish={publishCoverPhoto}
@@ -601,11 +609,11 @@ export default function ProfissionalFotosPage() {
       <PremiumSection eyebrow="Portfólio" title="Galeria de fotos" description="Adicione fotos recentes para aumentar a confiança dos clientes.">
         <section className="premium-card" style={{ padding: 18 }}>
           <div className="premium-upload-zone" style={{ padding: 22, cursor: "pointer" }} onClick={() => galleryInputRef.current?.click()}>
-            <input ref={galleryInputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={handleGalleryInput} />
+            <input ref={galleryInputRef} type="file" accept={PROFILE_IMAGE_ACCEPT} multiple hidden onChange={handleGalleryInput} />
             <div style={{ display: "grid", placeItems: "center", gap: 10, textAlign: "center" }}>
               <Images size={36} color="var(--elite-gold-light)" />
               <strong style={{ color: "#fff" }}>Postar fotos</strong>
-              <span style={{ color: "var(--elite-text-muted)", fontSize: 13 }}>JPG, PNG ou WebP. Até {MAX_GALLERY} fotos, {formatSize(MAX_IMAGE_BYTES)} cada.</span>
+              <span style={{ color: "var(--elite-text-muted)", fontSize: 13 }}>JPG, PNG, WebP ou HEIC/HEIF. Até {MAX_GALLERY} fotos, {formatSize(MAX_IMAGE_BYTES)} cada.</span>
             </div>
           </div>
 

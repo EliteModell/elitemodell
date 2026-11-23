@@ -2,6 +2,8 @@
 
 import { REGISTRATION_EMAIL_CONFLICT, REGISTRATION_EMAIL_CONFLICT_MESSAGE } from "@/lib/registration-email-conflict";
 
+import { prepareProfileImageUpload, profileImageSelectionError } from "@/lib/prepare-profile-upload";
+import { PROFILE_IMAGE_ACCEPT as IMAGE_ACCEPT } from "@/lib/upload-image-format";
 import { canFinalizeProfessionalIdentity } from "@/lib/professional-identity-readiness";
 /* eslint-disable @next/next/no-img-element -- Upload previews can be blob/data/private URLs before the final hosted image is available. */
 import { useEffect, useRef, useState } from "react";
@@ -131,10 +133,6 @@ const CATEGORIAS = [
 ];
 
 const STEPS = ["Dados", "Aparência", "Atendimento", "Serviços", "Valores", "Contato", "Fotos", "Verificação", "Enviar"];
-const IMAGE_ACCEPT = "image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,.heic,.heif";
-const IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif"]);
-const IMAGE_EXTENSION_RE = /\.(jpe?g|png|webp|heic|heif)$/i;
-const GENERIC_MOBILE_MIME_TYPES = new Set(["", "application/octet-stream"]);
 const MAX_PROFILE_IMAGE_BYTES = 20 * 1024 * 1024;
 const MAX_ONBOARDING_GALLERY_PHOTOS = 20;
 const VIDEO_ACCEPT = "video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov";
@@ -926,28 +924,19 @@ export default function ProfissionalNovoPage() {
   }
 
   function validateImageFile(file: File) {
-    const hasAllowedMime = IMAGE_MIME_TYPES.has(file.type);
-    const hasAllowedGenericMobileMime = GENERIC_MOBILE_MIME_TYPES.has(file.type) && IMAGE_EXTENSION_RE.test(file.name);
-
-    if (!hasAllowedMime && !hasAllowedGenericMobileMime) {
-      return "Use uma imagem em JPG, PNG, WebP ou HEIC.";
-    }
-    if (file.size > MAX_PROFILE_IMAGE_BYTES) {
-      return "A imagem deve ter no maximo 20MB.";
-    }
-    return null;
+    return profileImageSelectionError(file, MAX_PROFILE_IMAGE_BYTES);
   }
 
   /* ── upload helper ────────────────────────────────────── */
   async function uploadFile(file: File, folder: string): Promise<UploadResult> {
     const fd = new FormData();
-    fd.append("file", file);
+    fd.append("file", await prepareProfileImageUpload(file, MAX_PROFILE_IMAGE_BYTES));
     if (["profiles", "profile-videos", "stories", "properties"].some((prefix) => folder.startsWith(prefix))) {
       fd.append("contentDeclarationAccepted", "true");
     }
     const res = await fetch(`/api/upload?folder=${folder}`, { method: "POST", body: fd });
     if (!res.ok) {
-      const d = await res.json();
+      const d = await res.json().catch(() => ({}));
       throw new Error(d.error ?? "Erro no upload");
     }
     const d = await res.json();
