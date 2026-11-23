@@ -200,7 +200,7 @@ export default async function AdminClientesPage({ searchParams }: { searchParams
       sessions: { orderBy: { expires: "desc" }, take: 1, select: { expires: true } },
       phoneVerificationCodes: { orderBy: { createdAt: "desc" }, take: 1, select: { usedAt: true, sentAt: true, accountType: true } },
       professional: { select: {
-        id: true, status: true, kycStatus: true, registrationSubmittedAt: true, lastOnlineAt: true,
+        id: true, displayName: true, status: true, kycStatus: true, registrationSubmittedAt: true, lastOnlineAt: true,
         rejectReason: true, submissionReceipt: { select: { status: true, createdAt: true, sentAt: true } },
         _count: { select: { photos: true, profileEvents: true } },
       } },
@@ -251,7 +251,12 @@ export default async function AdminClientesPage({ searchParams }: { searchParams
           <tbody>
             {clients.map((client) => (
               <tr key={client.id}>
-                <td style={tdStyle}><strong>{client.name ?? "Sem nome"}</strong><br />{accountEmailLabel(client.email)}<br />{client.phone ?? "-"}</td>
+                <td style={tdStyle}>
+                  <strong>{client.name?.trim() || client.professional?.displayName?.trim() || "Sem nome"}</strong><br />
+                  {client.name?.trim() && client.professional?.displayName?.trim() && client.name.trim() !== client.professional.displayName.trim()
+                    ? <>Nome profissional: {client.professional.displayName}<br /></> : null}
+                  {accountEmailLabel(client.email)}<br />{client.phone ?? "-"}
+                </td>
                 <td style={tdStyle}>
                   <StatusPill tone={client.blocked ? "danger" : client.clientStatus === "VERIFIED" ? "success" : "warning"}>
                     {client.blocked ? "BLOQUEADO" : client.clientStatus}
@@ -286,6 +291,7 @@ export default async function AdminClientesPage({ searchParams }: { searchParams
                       <summary style={{ cursor: "pointer", color: "#ef4444", fontWeight: 800 }}>Exclusao LGPD de conta de teste</summary>
                       <div style={{ marginTop: 10, lineHeight: 1.55, maxWidth: 480 }}>
                         <strong>Previa somente leitura</strong><br />
+                        {client.professional?.displayName?.trim() ? <>Nome profissional: <strong>{client.professional.displayName}</strong><br /></> : null}
                         User.id: {client.id}<br />
                         Remover: {Object.entries(deletionPlan.remove).map(([key, value]) => `${key}=${value}`).join(", ")}<br />
                         Anonimizar: {Object.entries(deletionPlan.anonymize).map(([key, value]) => `${key}=${value}`).join(", ")}<br />
