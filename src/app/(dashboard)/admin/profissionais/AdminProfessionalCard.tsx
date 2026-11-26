@@ -204,7 +204,7 @@ export function AdminProfessionalCard({
   ].filter(([, value]) => value != null) as Array<[string, number]>;
   const submissionAudit = audits.find((entry) => ["Enviou para análise", "Reenviou após correção"].includes(moderationAction(entry)));
   const submittedAt = pro.registrationSubmittedAt ?? submissionAudit?.timestamp ?? pro.submissionReceipt?.createdAt ?? null;
-  const registrationSubmitted = Boolean(pro.registrationSubmittedAt ?? submittedAt);
+  const registrationSubmitted = Boolean(pro.registrationSubmittedAt);
   const completion = professionalCompletion({
     ...pro,
     emailVerified: Boolean(pro.user.emailVerified) && !isTechnicalPhoneEmail(pro.user.email),
@@ -217,13 +217,10 @@ export function AdminProfessionalCard({
   const photoIds = new Set(pro.photos.map((photo) => controlledMediaAssetId(photo.url)));
   const profilePhotoAssets = pro.user.uploadedAssets.filter((asset) => photoIds.has(asset.id));
   const pendingPhoto = profilePhotoAssets.find((asset) => asset.status !== "APPROVED");
-  const mediaUnderReview = isManual && profilePhotoAssets.length > 0 &&
-    profilePhotoAssets.every((asset) => asset.status !== "APPROVED");
   const canApprove = pro.status === "PENDING_REVIEW" && approvalIssues.length === 0 &&
-    (!isManual || manualAttempt?.status === "APPROVED" && !mediaUnderReview);
+    (!isManual || manualAttempt?.status === "APPROVED");
   const profileApprovalBlockers = [...new Set([
-    ...(!registrationSubmitted ? ["A profissional precisa voltar ao cadastro e clicar em Finalizar meu cadastro."] : []),
-    ...(mediaUnderReview ? ["A foto do perfil ainda aguarda as verificações de segurança e conteúdo para publicação."] : []),
+    ...(!registrationSubmitted ? ["Ainda faltam requisitos para encaminhar o cadastro à análise."] : []),
     ...(isManual && manualAttempt?.status !== "APPROVED" ? ["A identidade ainda não foi aprovada na revisão documental."] : []),
     ...approvalIssues.filter((issue) => !/cadastro ainda não enviado para análise/i.test(issue)),
   ])];
@@ -283,7 +280,7 @@ export function AdminProfessionalCard({
               <Row label="WhatsApp" value={pro.whatsapp} />
               <Row label="E-mail" value={accountEmailLabel(pro.user.email)} />
               <Row label="Conta criada" value={date(pro.user.createdAt, true)} />
-              <Row label="Cadastro enviado para análise" value={submittedAt ? date(submittedAt, true) : pro.status === "DRAFT" ? "Aguarda finalização pela profissional" : "Data não registrada (cadastro legado)"} />
+              <Row label="Cadastro enviado para análise" value={submittedAt ? date(submittedAt, true) : pro.status === "DRAFT" ? "Aguardando requisitos do cadastro" : "Data não registrada (cadastro legado)"} />
               <Row label="Última atualização" value={date(pro.updatedAt, true)} />
             </Section>
 
@@ -293,7 +290,7 @@ export function AdminProfessionalCard({
               <Row label="Cadastro profissional" value={completion.profileComplete ? "Completo" : completion.profileIssues.length + " pendência(s)"} />
               <Row label="E-mail da conta" value={completion.emailVerified ? "Confirmado" : "Pendente"} />
               <Row label="Identidade" value={identityLabel} />
-              <Row label="Cadastro para análise" value={registrationSubmitted ? "Enviado" : "Aguarda finalização pela profissional"} />
+              <Row label="Cadastro para análise" value={registrationSubmitted ? "Enviado" : "Aguardando requisitos do cadastro"} />
               <Row label="Análise administrativa" value={STATUS_LABEL[pro.status] ?? pro.status} />
               <Row label="Autorização de publicação" value={pro.status === "ACTIVE" && pro.verified ? "Autorizada" : "Não autorizada"} />
               <Row label="Visibilidade pública" value={PROFESSIONAL_PROFILE_VISIBILITY_LABELS[profileVisibility]} />

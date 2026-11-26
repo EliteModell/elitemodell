@@ -117,3 +117,47 @@ test("reserva da Didit sem sessão usa o fluxo manual e preserva sessões histó
     }
   }
 });
+
+import { finalizeProfessionalRegistration } from "../src/lib/finalize-professional-registration";
+import type { Prisma } from "@prisma/client";
+
+test("finaliza cadastro completo em análise uma vez e preserva as pendências de verificação", async () => {
+  const submittedAt = new Date("2026-11-26T12:00:00Z");
+  const identity = { provider: "MANUAL_DOCUMENT", sessionId: "attempt", submittedAt };
+  const draft = {
+    id: "professional", status: "DRAFT", verified: false, registrationSubmittedAt: null as Date | null,
+    kycProvider: identity.provider, kycSessionId: identity.sessionId, kycStatus: "PENDING",
+    displayName: "Nome Profissional", bio: "Apresentação profissional com detalhes sobre o perfil e as modalidades disponíveis.",
+    city: "São Paulo", state: "SP", escortCategory: "MULHER", birthDate: new Date("1990-01-01"),
+    attendanceTypes: ["presencial"], servesGenders: ["todos"], diasDisponiveis: ["segunda"], services: ["serviço"],
+    pricePerHour: 100, paymentMethods: ["pix"], whatsapp: "11999999999",
+    photos: [{ url: "/api/media/asset123456789", cover: true }], specialties: [],
+    user: { blocked: false, emailVerified: true, phoneVerified: true, termsConsent: true, lgpdConsent: true },
+  };
+  let ownedPhoto = false;
+  let writes = 0;
+  let audits = 0;
+  const tx = {
+    professional: {
+      findUnique: async () => draft,
+      updateMany: async ({ data }: { data: Record<string, unknown> }) => {
+        Object.assign(draft, data);
+        writes++;
+        return { count: 1 };
+      },
+    },
+    uploadAsset: { findFirst: async () => ownedPhoto ? { id: "asset123456789" } : null },
+    auditLog: { create: async () => { audits++; } },
+  } as unknown as Prisma.TransactionClient;
+
+  expect(await finalizeProfessionalRegistration(tx, "owner", identity)).toBe(false);
+  ownedPhoto = true;
+  expect(await finalizeProfessionalRegistration(tx, "owner", { ...identity, sessionId: "previous" })).toBe(false);
+  expect(await finalizeProfessionalRegistration(tx, "owner", identity, false)).toBe(true);
+  expect(writes).toBe(0);
+  expect(await finalizeProfessionalRegistration(tx, "owner", identity)).toBe(true);
+  expect(await finalizeProfessionalRegistration(tx, "owner", identity)).toBe(true);
+  expect(draft).toMatchObject({ status: "PENDING_REVIEW", registrationSubmittedAt: submittedAt, verified: false, kycStatus: "PENDING" });
+  expect(writes).toBe(1);
+  expect(audits).toBe(1);
+});

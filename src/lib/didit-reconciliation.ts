@@ -3,6 +3,7 @@ import { normalizeBrazilianPhone } from "@/lib/brazilian-phone";
 import { prisma } from "@/lib/prisma";
 import { digitVendorDataBelongsToUser, fetchDigitSessionDecision, isResumableDigitStatus, isSafeDigitVerificationUrl, isSubmittedDigitStatus } from "@/lib/didit";
 import { assessProfessionalDiditDecision } from "@/lib/professional-didit";
+import { finalizeProfessionalRegistration } from "@/lib/finalize-professional-registration";
 import { logAudit } from "@/lib/audit";
 
 /** Serialize decision reads and writes with session creation for this account.
@@ -60,6 +61,10 @@ export async function reconcileProfessionalDidit(userId: string, sessionId: stri
         status: moveToReview ? "PENDING_REVIEW" : undefined,
       },
     });
+    const needsSubmission = professional.status === "DRAFT" || (professional.status === "PENDING_REVIEW" && !professional.registrationSubmittedAt);
+    if (needsSubmission && !rejected && isSubmittedDigitStatus(decision.status)) {
+      await finalizeProfessionalRegistration(tx, userId, { provider: "DIDIT", sessionId, submittedAt: new Date() });
+    }
     let synchronizedMediaAgeCount = 0;
     let synchronizedOwnerDepictionCount = 0;
     if (approved) {

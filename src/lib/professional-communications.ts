@@ -156,6 +156,11 @@ export async function deliverProfileApprovalCommunication(input: {
   email: string | null | undefined;
   adminId?: string;
 }) {
+  const profile = await prisma.professional.findFirst({
+    where: { id: input.professionalId, userId: input.userId, status: "ACTIVE", verified: true },
+    select: { displayName: true },
+  });
+  if (!profile) return;
   const previous = await prisma.emailDelivery.findFirst({
     where: { idempotencyKey: { in: profileApprovalEmailKeys(input.professionalId) } },
     select: { id: true },
@@ -168,14 +173,14 @@ export async function deliverProfileApprovalCommunication(input: {
     notificationBody: "Seu perfil está disponível conforme suas configurações de visibilidade.",
     link: "/profissional",
     dedupeReason: "professional:profile-published-email:v1",
-    send: () => sendProfessionalPublishedEmail(input.email!, input.professionalId),
+    send: () => sendProfessionalPublishedEmail(input.email!, input.professionalId, undefined, profile.displayName),
   });
 }
 
 export async function recoverProfileApprovalEmail(professionalId: string) {
   const profile = await prisma.professional.findUnique({
     where: { id: professionalId },
-    select: { status: true, verified: true, user: { select: { blocked: true, email: true, emailVerified: true } } },
+    select: { status: true, verified: true, displayName: true, user: { select: { blocked: true, email: true, emailVerified: true } } },
   });
   const email = profile?.user.emailVerified && !profile.user.blocked ? realAccountEmail(profile.user.email) : null;
   if (profile?.status !== "ACTIVE" || !profile.verified || !email) return "unavailable";
@@ -192,6 +197,6 @@ export async function recoverProfileApprovalEmail(professionalId: string) {
     retryKey: canonical,
     professionalId,
     email,
-    send: (id) => sendProfessionalPublishedEmail(email, professionalId, id),
+    send: (id) => sendProfessionalPublishedEmail(email, professionalId, id, profile.displayName),
   });
 }

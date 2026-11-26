@@ -7,13 +7,14 @@ import { prisma } from "@/lib/prisma";
 import { hasAdminPermission, requireAdmin } from "@/lib/admin-access";
 import { logAudit } from "@/lib/audit";
 import { getProfessionalBillingSettings, professionalApprovalAccessData } from "@/lib/professional-access";
-import { type PublicProfileAsset } from "@/lib/public-professional-media";
+import { controlledMediaAssetId, type PublicProfileAsset } from "@/lib/public-professional-media";
 
 import { sendProfessionalCorrectionEmail, sendProfessionalRejectionEmail } from "@/lib/professional-review-email";
 import { digitVendorDataBelongsToUser, fetchDigitSessionDecision } from "@/lib/didit";
 import { assessProfessionalDiditDecision } from "@/lib/professional-didit";
 import { AdminHeader, buttonStyle } from "../_components/AdminPrimitives";
 import { AdminProfessionalsInfiniteList, type AdminProfessionalListItem } from "./AdminProfessionalsInfiniteList";
+import { mediaIsPublishable } from "@/lib/media-security";
 import { professionalAdministrativeApprovalIssues, professionalCompletion } from "@/lib/professional-completeness";
 import { deliverProfessionalApprovalSms, deliverProfessionalCommunication, deliverProfileApprovalCommunication, recoverProfileApprovalEmail } from "@/lib/professional-communications";
 import { sendLegacyOnboardingRecoveryEmail, sendProfessionalLocationEmail, sendProfessionalReminderEmail } from "@/lib/professional-extra-email";
@@ -103,8 +104,8 @@ type ProfessionalApprovalReview = {
   services: string[]; price15min: number | null; pricePerHour: number | null; price30min: number | null; price2h: number | null;
   priceOvernight: number | null; priceWebcam: number | null; paymentMethods: string[]; whatsapp: string | null;
   kycSessionId: string | null; kycProvider?: string | null; kycStatus: string; verifStatus: string;
-  photos: Array<{ id?: string; url: string; cover?: boolean; order?: number }>; specialties: unknown[];
-  user: { blocked: boolean; email: string | null; emailVerified: Date | null; termsConsent: boolean; lgpdConsent: boolean; uploadedAssets: PublicProfileAsset[] };
+  photos: Array<{ id?: string; url: string; cover?: boolean; order?: number; hiddenAt?: Date | null }>; specialties: unknown[];
+  user: { blocked: boolean; email: string | null; emailVerified: Date | null; termsConsent: boolean; lgpdConsent: boolean; uploadedAssets: (PublicProfileAsset & Parameters<typeof mediaIsPublishable>[0])[] };
 };
 
 function professionalProfileIssues(professional: ProfessionalApprovalReview) {
@@ -119,6 +120,14 @@ function professionalApprovalIssues(professional: ProfessionalApprovalReview) {
   }).map((issue) => issue.label);
   if (professional.status === "DRAFT") issues.unshift("cadastro ainda não enviado para análise");
   else if (professional.status !== "PENDING_REVIEW") issues.unshift(`status ${statusLabel[professional.status] ?? professional.status} não permite aprovação`);
+  if (!professional.user.emailVerified) issues.push("e-mail da conta ainda não confirmado");
+  const photoIds = new Set(professional.photos.filter((photo) => !photo.hiddenAt).map((photo) => controlledMediaAssetId(photo.url)));
+  if (!professional.user.uploadedAssets.some((asset) => asset.userId === professional.userId && photoIds.has(asset.id) && mediaIsPublishable(asset))) {
+    issues.push("Nenhuma foto do perfil está liberada pelas verificações obrigatórias de segurança e conteúdo.");
+  }
+  if (professional.kycProvider === MANUAL_DOCUMENT_PROVIDER) {
+    issues.push(...professionalCompletion(professional).profileIssues.map((issue) => issue.label));
+  }
   if (professional.user.blocked) issues.push("conta bloqueada");
   const kycInitiated = Boolean(professional.kycSessionId) ||
     !["NOT_STARTED", "NOT_SENT", ""].includes((professional.kycStatus ?? "").trim().toUpperCase()) ||
@@ -294,11 +303,12 @@ async function reviewProfessional(formData: FormData) {
   }
   const professional = action === "approve"
     ? await prisma.$transaction(async (tx) => {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`professional-approval:${id}`}))`;
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`professional-auto-publication:${id}`}))`;
         const current = await tx.professional.findUniqueOrThrow({
           where: { id },
           select: {
             userId: true,
+            updatedAt: true,
             displayName: true,
             status: true,
             image: true,
@@ -324,7 +334,7 @@ async function reviewProfessional(formData: FormData) {
             kycProvider: true,
             kycStatus: true,
             verifStatus: true,
-            photos: { select: { id: true, url: true, cover: true, order: true } },
+            photos: { select: { id: true, url: true, cover: true, order: true, hiddenAt: true } },
             specialties: { take: 1, select: { id: true } },
             user: {
               select: {
@@ -339,6 +349,8 @@ async function reviewProfessional(formData: FormData) {
                   select: {
                     id: true, userId: true, folder: true, category: true, status: true, visibility: true,
                     moderationStatus: true, approvedBucket: true, approvedPath: true,
+                    uploadCompletedAt: true, malwareStatus: true, publicationDecisionType: true, ageIdentityStatus: true,
+                    consentStatus: true, adminReviewRequired: true, adminReviewStatus: true, takedownStatus: true,
                   },
                 },
               },
@@ -363,7 +375,7 @@ async function reviewProfessional(formData: FormData) {
         }
         const accessData = await professionalApprovalAccessData(tx, current);
         const approved = await tx.professional.update({
-          where: { id },
+          where: { id, status: current.status, updatedAt: current.updatedAt },
           data: {
             status: "ACTIVE",
             verified: true,
@@ -498,11 +510,13 @@ async function professionalListItems(where: Prisma.ProfessionalWhereInput, offse
             select: {
               id: true, userId: true, folder: true, category: true, status: true, visibility: true,
               moderationStatus: true, approvedBucket: true, approvedPath: true,
+                    uploadCompletedAt: true, malwareStatus: true, publicationDecisionType: true, ageIdentityStatus: true,
+                    consentStatus: true, adminReviewRequired: true, adminReviewStatus: true, takedownStatus: true,
             },
           },
         },
       },
-      photos: { orderBy: { order: "asc" }, select: { id: true, url: true, cover: true, order: true, caption: true, createdAt: true } },
+      photos: { orderBy: { order: "asc" }, select: { id: true, url: true, cover: true, order: true, hiddenAt: true, caption: true, createdAt: true } },
       specialties: { select: { id: true, name: true } },
       locationChanges: { orderBy: { createdAt: "desc" }, take: 3, select: {
         id: true, fromCity: true, fromState: true, fromNeighborhood: true, toCity: true, toState: true,

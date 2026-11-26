@@ -3,7 +3,7 @@ import "server-only";
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { evaluateMediaPublicationGates, PROFILE_IMAGE_REENCODED } from "@/lib/media-security";
+import { mediaIsPublishable } from "@/lib/media-security";
 import { professionalApprovalAccessData } from "@/lib/professional-access";
 import { professionalCompletion } from "@/lib/professional-completeness";
 import { deliverProfessionalApprovalSms, deliverProfileApprovalCommunication } from "@/lib/professional-communications";
@@ -27,43 +27,6 @@ function uniqueBlockers(blockers: ProfessionalPublicationBlocker[]) {
   return blockers.filter((blocker, index, values) => (
     values.findIndex((candidate) => candidate.code === blocker.code) === index
   ));
-}
-
-function mediaIsPublishable(asset: {
-  id: string;
-  userId: string;
-  folder: string;
-  category: string;
-  status: string;
-  approvedBucket: string | null;
-  approvedPath: string | null;
-  uploadCompletedAt: Date | null;
-  malwareStatus: string;
-  moderationStatus: string;
-  publicationDecisionType: string;
-  ageIdentityStatus: string;
-  consentStatus: string;
-  adminReviewRequired: boolean;
-  adminReviewStatus: string;
-  takedownStatus: string;
-}) {
-  return asset.status === "APPROVED"
-    && asset.category === "image"
-    && asset.folder.startsWith("profiles")
-    && Boolean(asset.approvedBucket && asset.approvedPath)
-    && evaluateMediaPublicationGates({
-      category: asset.category, folder: asset.folder,
-      uploadComplete: Boolean(asset.uploadCompletedAt),
-      malwareStatus: asset.malwareStatus,
-      moderationStatus: asset.moderationStatus,
-      publicationDecisionType: asset.publicationDecisionType,
-      ageIdentityStatus: asset.ageIdentityStatus,
-      consentStatus: asset.consentStatus,
-      adminReviewRequired: asset.adminReviewRequired,
-      adminReviewStatus: asset.adminReviewStatus,
-      takedownStatus: asset.takedownStatus,
-      ownerId: asset.userId,
-    }).publishable;
 }
 
 function refreshPublicProfessionalPages() {
@@ -131,7 +94,7 @@ export async function attemptAutomaticProfessionalPublication(
     }
 
     const blockers: ProfessionalPublicationBlocker[] = [];
-    if (professional.kycProvider === MANUAL_DOCUMENT_PROVIDER && (!adminId || professional.status !== "PENDING_REVIEW")) {
+    if (!adminId || professional.status !== "PENDING_REVIEW") {
       blockers.push({ code: "administrative_approval", label: "O perfil aguarda aprovação administrativa." });
     }
     if (!["DRAFT", "PENDING_REVIEW", "CORRECTION_REQUIRED"].includes(professional.status)) {
@@ -190,12 +153,6 @@ export async function attemptAutomaticProfessionalPublication(
       });
     }
 
-    if (!adminId && publishablePhotos.some((photo) =>
-      assetsById.get(controlledMediaAssetId(photo.url) ?? "")?.malwareStatus === PROFILE_IMAGE_REENCODED,
-    )) {
-      blockers.push({ code: "administrative_approval", label: "O perfil aguarda aprovação administrativa." });
-    }
-
     const finalBlockers = uniqueBlockers(blockers);
     if (finalBlockers.length) {
       return {
@@ -221,7 +178,7 @@ export async function attemptAutomaticProfessionalPublication(
       await tx.professionalPhoto.update({ where: { id: cover.id }, data: { cover: true } });
     }
     await tx.professional.update({
-      where: { id: professionalId },
+      where: { id: professionalId, status: professional.status, updatedAt: professional.updatedAt },
       data: {
         status: "ACTIVE",
         verified: true,
@@ -282,7 +239,7 @@ export async function attemptAutomaticProfessionalPublication(
       professionalId,
       userId: communication.userId,
       dedupeReason: "professional:publication-sms",
-      body: "Elite Modell: seu perfil está no ar! Acesse sua conta para conferir: www.elitemodell.com.br/profissional",
+      body: "Elite Modell: seu perfil foi aprovado! Acesse sua conta em www.elitemodell.com.br/profissional",
     }).catch((cause) => {
       console.error("[professional-auto-publication] falha no SMS", {
         professionalId,

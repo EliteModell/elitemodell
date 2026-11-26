@@ -351,21 +351,21 @@ export async function sendProfessionalSubmissionReceipt(
   });
 }
 
-export async function sendProfessionalPublishedEmail(to: string, professionalId: string, retryForDeliveryId?: string) {
+export async function sendProfessionalPublishedEmail(to: string, professionalId: string, retryForDeliveryId?: string, name?: string | null) {
   const key = professionalPublicationEmailIdempotencyKey(professionalId);
   await sendAuthEmail(to, {
-    subject: "ELITE MODELL — Seu perfil foi aprovado!",
+    subject: "Seu perfil foi aprovado!",
     html: `
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;color:#21172b;border:1px solid #e8def0;border-radius:16px;overflow:hidden">
         <div style="height:4px;background:#7615ab"></div>
         <div style="padding:32px">
           <h1 style="font-size:22px;margin:0 0 20px;color:#7615ab">ELITE MODELL</h1>
-          <p>Olá!</p>
-          <p>Temos uma ótima notícia! Seu perfil na ELITE MODELL foi aprovado pela nossa equipe.</p>
-          <p>Seu cadastro foi concluído com sucesso e seu perfil está disponível na plataforma, conforme suas configurações de visibilidade.</p>
-          <p>Acesse sua conta para acompanhar seu anúncio.</p>
-          <p><a href="${DEFAULT_SITE_URL}/profissional">Acessar minha conta</a></p>
-          <p>Equipe ELITE MODELL</p>
+          <p>Olá${name?.trim() ? ", " + escapeHtml(name.trim()) : ""}!</p>
+          <p>Temos uma ótima notícia: seu cadastro no Elite Modell foi aprovado com sucesso.</p>
+          <p>Seu acesso à plataforma está liberado. Agora você pode entrar na sua conta, gerenciar seu perfil e utilizar as funcionalidades disponíveis.</p>
+          <p>Seja bem-vinda ao Elite Modell!</p>
+          <p><a style="display:inline-block;background:#7615ab;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700" href="${DEFAULT_SITE_URL}/profissional">Acessar minha conta</a></p>
+          <p>Equipe Elite Modell.</p>
         </div>
       </div>
     `,

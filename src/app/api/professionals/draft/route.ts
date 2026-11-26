@@ -1,4 +1,6 @@
 import { monitorRegistration, registrationIdentity } from "@/lib/registration-monitor";
+import { finalizeProfessionalRegistration } from "@/lib/finalize-professional-registration";
+import { MANUAL_DOCUMENT_PROVIDER, manualRegistrationStatus } from "@/lib/manual-identity-policy";
 import { normalizeBrazilianPhone } from "@/lib/brazilian-phone";
 export const dynamic = "force-dynamic";
 
@@ -283,8 +285,18 @@ export const PATCH = monitorRegistration("DRAFT", async (req, trace) => {
 
     const saved = await loadProfessional(session.user.id);
     const savedCompletion = professionalSubmissionCompletion({ ...saved!, specialties: saved!.specialties, emailVerified: saved!.user.emailVerified });
-    trace.outcome = "STEP_SAVED";
-    return NextResponse.json({ ok: true, savedStep: step, completion: savedCompletion });
+    const registrationSubmitted = saved?.status === "DRAFT" && saved.kycProvider === MANUAL_DOCUMENT_PROVIDER && savedCompletion.readyToSubmit
+      ? await prisma.$transaction(async (tx) => {
+        const userId = session.user.id;
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"manual-identity:" + userId}))`;
+        const attempt = await tx.manualIdentityAttempt.findFirst({
+          where: { userId, submittedAt: { not: null } }, orderBy: { submittedAt: "desc" },
+        });
+        if (!attempt?.submittedAt || !["APPROVED", "PENDING"].includes(manualRegistrationStatus(attempt))) return false;
+        return finalizeProfessionalRegistration(tx, userId, { provider: MANUAL_DOCUMENT_PROVIDER, sessionId: attempt.id, submittedAt: attempt.submittedAt });
+      }) : false;
+    trace.outcome = registrationSubmitted ? "PROFILE_SUBMITTED" : "STEP_SAVED";
+    return NextResponse.json({ ok: true, savedStep: step, completion: savedCompletion, registrationSubmitted });
   } catch (error) {
     if (error instanceof z.ZodError) return NextResponse.json({ error: "Dados da etapa inválidos.", issues: error.issues }, { status: 400 });
     if (error instanceof Error && error.message.toLowerCase().includes("midia")) return NextResponse.json({ error: error.message }, { status: 409 });

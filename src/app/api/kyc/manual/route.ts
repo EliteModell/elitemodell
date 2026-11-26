@@ -1,4 +1,5 @@
 import { identityRuntimeEnabled } from "@/lib/manual-identity-runtime";
+import { finalizeProfessionalRegistration } from "@/lib/finalize-professional-registration";
 import { createHash } from "node:crypto";
 import { after } from "next/server";
 import { sendManualIdentityEmail } from "@/lib/auth-email";
@@ -8,7 +9,7 @@ import { isProfessionalCategory } from "@/lib/account-routes";
 import { prisma } from "@/lib/prisma";
 import { enforceRateLimitAsync } from "@/lib/security";
 import { assertPrivateIdentityBucket, identityBucket, identityPath, identityStorage, normalizeIdentityImage, privateIdentityHeaders, sameIdentityOrigin } from "@/lib/manual-identity";
-import { brazilDate, identityParts, IDENTITY_DOCUMENTS, IDENTITY_NOTICE_VERSION, IDENTITY_RETENTION_DAYS, MANUAL_DOCUMENT_PROVIDER, manualIdentitySelected, shouldReviewRegistrationManually } from "@/lib/manual-identity-policy";
+import { brazilDate, identityParts, IDENTITY_DOCUMENTS, IDENTITY_NOTICE_VERSION, IDENTITY_RETENTION_DAYS, MANUAL_DOCUMENT_PROVIDER, manualIdentitySelected, manualRegistrationStatus, shouldReviewRegistrationManually } from "@/lib/manual-identity-policy";
 
 const json = (data: unknown, status = 200) => Response.json(data, { status, headers: privateIdentityHeaders });
 const select = { id: true, status: true, documentType: true, submittedAt: true, purgeAfter: true } as const;
@@ -18,10 +19,10 @@ async function professionalAccount() {
   if (!session?.user?.id) return null;
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, email: true, blocked: true, emailVerified: true, phoneVerified: true, accountType: true, category: true, kycSessionId: true, professional: { select: { id: true, kycStatus: true, verified: true, kycProvider: true, kycSessionId: true, verificationUrl: true } } },
+    select: { id: true, email: true, blocked: true, emailVerified: true, phoneVerified: true, accountType: true, category: true, kycSessionId: true, professional: { select: { id: true, registrationSubmittedAt: true, kycStatus: true, verified: true, kycProvider: true, kycSessionId: true, verificationUrl: true } } },
   });
   if (!user || user.blocked || (!user.professional && !["model", "professional"].includes(user.accountType) && !isProfessionalCategory(user.category))) return null;
-  return { canSubmit: Boolean(user.emailVerified && user.phoneVerified), manual: shouldReviewRegistrationManually(user.professional, user.kycSessionId), userId: user.id, email: user.email, profileId: user.professional?.id, verified: user.professional?.verified ?? false, kycStatus: user.professional?.kycStatus };
+  return { canSubmit: Boolean(user.emailVerified && user.phoneVerified), manual: shouldReviewRegistrationManually(user.professional, user.kycSessionId), userId: user.id, email: user.email, profileId: user.professional?.id, registrationSubmitted: Boolean(user.professional?.registrationSubmittedAt), verified: user.professional?.verified ?? false, kycStatus: user.professional?.kycStatus };
 }
 
 export async function GET() {
@@ -35,7 +36,7 @@ export async function GET() {
     select,
     orderBy: { submittedAt: "desc" },
   });
-  return json({ manualDefault: professional.manual, attempt: attempt && { id: attempt.id, documentType: attempt.documentType, submittedAt: attempt.submittedAt, status: attempt.status === "PENDING_REVIEW" && attempt.purgeAfter <= new Date() ? "RESUBMISSION_REQUESTED" : attempt.status }, verified: professional.verified || professional.kycStatus === "APPROVED", challengeDate: brazilDate() });
+  return json({ registrationSubmitted: professional.registrationSubmitted, manualDefault: professional.manual, attempt: attempt && { id: attempt.id, documentType: attempt.documentType, submittedAt: attempt.submittedAt, status: attempt.status === "PENDING_REVIEW" && attempt.purgeAfter <= new Date() ? "RESUBMISSION_REQUESTED" : attempt.status }, verified: professional.verified || professional.kycStatus === "APPROVED", challengeDate: brazilDate() });
 }
 
 export async function POST(req: Request) {
@@ -98,10 +99,16 @@ export async function POST(req: Request) {
       });
     });
     if (!reservation) return json({ error: "Já existe uma verificação em andamento ou concluída." }, 409);
-    const attempt = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
       const current = await tx.manualIdentityAttempt.findUniqueOrThrow({ where: { id } });
-      if (current.submittedAt) return { id, status: current.status };
+      const finalize = (submittedAt: Date) => finalizeProfessionalRegistration(tx, userId, {
+        provider: MANUAL_DOCUMENT_PROVIDER, sessionId: id, submittedAt,
+      });
+      if (current.submittedAt) return {
+        attempt: { id, status: current.status },
+        registrationSubmitted: manualRegistrationStatus(current) !== "REJECTED" && await finalize(current.submittedAt),
+      };
       const [latest, account] = await Promise.all([
         tx.manualIdentityAttempt.findFirst({ where: { userId, submittedAt: { not: null } }, orderBy: { submittedAt: "desc" } }),
         tx.user.findUnique({ where: { id: userId }, select: { blocked: true, emailVerified: true, phoneVerified: true, kycSessionId: true, professional: { select: { verified: true, kycStatus: true, kycProvider: true, kycSessionId: true, verificationUrl: true } } } }),
@@ -117,17 +124,19 @@ export async function POST(req: Request) {
         where: { userId, verified: false, status: { in: ["DRAFT", "PENDING_REVIEW", "CORRECTION_REQUIRED"] } },
         data: { kycProvider: MANUAL_DOCUMENT_PROVIDER, kycSessionId: id, kycStatus: "PENDING", docStatus: "PENDING", verifStatus: "PENDING", verificationType: "documental_manual" },
       });
-      return tx.manualIdentityAttempt.update({ where: { id }, select,
+      const attempt = await tx.manualIdentityAttempt.update({ where: { id }, select,
         data: { status: "PENDING_REVIEW", submittedAt, purgeAfter: new Date(submittedAt.getTime() + IDENTITY_RETENTION_DAYS * 86_400_000) },
       });
+      return { attempt, registrationSubmitted: await finalize(submittedAt) };
     }, { timeout: 25_000 });
+    const attempt = result?.attempt;
     const email = professional.email;
     if (attempt?.status === "PENDING_REVIEW" && email) {
       after(() => sendManualIdentityEmail({
         email, professionalId: professional.profileId, attemptId: attempt.id, event: "received",
       }).catch(() => undefined));
     }
-    return attempt ? json({ attempt }) : json({ error: "A tentativa expirou ou já existe outra verificação." }, 409);
+    return result ? json(result) : json({ error: "A tentativa expirou ou já existe outra verificação." }, 409);
   } catch {
     return json({ error: "Não foi possível enviar agora. Tente novamente com as mesmas fotos." }, 503);
   }

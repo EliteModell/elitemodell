@@ -132,16 +132,17 @@ test("aprovação legada audita somente o documento e não aprova KYC nem ativa 
   expect(updates).toEqual([{ docStatus: "APPROVED" }]);
 });
 
-test("aprovação manual atualiza apenas identidade e encaminha as outras travas ao publicador", async () => {
+test("aprovação manual sincroniza o envio e reprocessa a mídia mantendo a aprovação administrativa separada", async () => {
   const updates: unknown[] = [];
   const audits: unknown[] = [];
   const reevaluations: unknown[] = [];
+  const submissions: unknown[] = [];
   const notifications: unknown[] = [];
   const afterResponse: Array<() => Promise<void>> = [];
   const emails: unknown[] = [];
   let linkedProfile = false;
   const attempt = {
-    id: attemptId, userId: "owner", reviewVersion: 0, status: "PENDING_REVIEW",
+    id: attemptId, userId: "owner", reviewVersion: 0, status: "PENDING_REVIEW", submittedAt: new Date(),
     purgeAfter: new Date(Date.now() + 60_000), purgedAt: null,
   };
   const tx = {
@@ -171,14 +172,14 @@ test("aprovação manual atualiza apenas identidade e encaminha as outras travas
     },
     "@/lib/prisma": { prisma: {
       $transaction: (fn: (db: typeof tx) => unknown) => fn(tx),
-      professional: { findFirst: async () => ({ id: "profile" }) },
+      uploadAsset: { findMany: async () => [{ id: "photo" }] },
       user: { findUnique: async () => ({ email: "synthetic@example.invalid", emailVerified: true, professional: { id: "profile" } }) },
     } },
-    "@/lib/professional-auto-publication": {
-      attemptAutomaticProfessionalPublication: async (...args: unknown[]) => {
-        reevaluations.push(args);
-        return { published: false, blockers: [{ code: "main_photo_security" }] };
-      },
+    "@/lib/finalize-professional-registration": {
+      finalizeProfessionalRegistration: async (_db: unknown, ...args: unknown[]) => { submissions.push(args); return true; },
+    },
+    "@/lib/upload-quarantine": {
+      processUploadAsset: async (id: string) => { reevaluations.push(id); },
     },
   });
   const approve = (version: number) => manual.PATCH(new Request("http://localhost", {
@@ -200,8 +201,9 @@ test("aprovação manual atualiza apenas identidade e encaminha as outras travas
   expect(updates).toEqual([{ kycStatus: "APPROVED", docStatus: "APPROVED", verifStatus: "APPROVED" }]);
   expect(audits).toHaveLength(1);
   expect(notifications).toEqual([expect.objectContaining({ userId: "owner", link: "/profissional/identidade" })]);
-  expect(reevaluations).toEqual([["profile", "manual-document-approved"]]);
-  expect(afterResponse).toHaveLength(1);
-  await afterResponse[0]();
+  expect(submissions).toEqual([["owner", { provider: "MANUAL_DOCUMENT", sessionId: attemptId, submittedAt: attempt.submittedAt }]]);
+  expect(afterResponse).toHaveLength(2);
+  await Promise.all(afterResponse.map((callback) => callback()));
+  expect(reevaluations).toEqual(["photo"]);
   expect(emails).toEqual([expect.objectContaining({ attemptId, event: "approved", reviewVersion: 1, professionalId: "profile" })]);
 });

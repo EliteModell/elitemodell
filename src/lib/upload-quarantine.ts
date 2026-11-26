@@ -495,6 +495,8 @@ export async function processUploadAsset(
       return reprocessProfileImage(assetId);
     }
     // Only resume promotion after a recorded human approval, using the sanitized private object.
+    await syncReviewedProfileImageOwnerAge(assetId);
+    asset = await prisma.uploadAsset.findUniqueOrThrow({ where: { id: assetId } });
     suppliedBuffer = undefined;
   }
   if (asset.status === "APPROVED" && publicationGate(asset).publishable) {

@@ -27,8 +27,8 @@ function statusCopy(status: string | null | undefined) {
   }
 
   return {
-    title: "Cadastro enviado com sucesso",
-    body: "As verificacoes obrigatorias estao em andamento. Quando identidade, dados e midias forem aprovados, o perfil sera publicado automaticamente e voce sera avisada.",
+    title: "Cadastro concluído com sucesso!",
+    body: "Seu cadastro foi encaminhado para análise. A decisão será comunicada por e-mail.",
     tone: "pending" as const,
   };
 }
@@ -104,7 +104,7 @@ export default async function ProfessionalAnalysisPage() {
         <div className="mt-6 grid gap-3 rounded-[8px] border border-white/10 bg-white/[0.035] p-4 text-left">
           {[
             "Documentos enviados nao significam que a verificacao de identidade ja foi concluida.",
-            "Quando todas as verificacoes obrigatorias forem aprovadas, o perfil sera publicado automaticamente.",
+            "A equipe aprova o perfil após as verificações obrigatórias de identidade e segurança.",
             "Situacoes com inconsistencias ou risco continuam aguardando revisao ou correcao.",
             "Enquanto estiver em analise, seu perfil nao aparece na busca publica.",
           ].map((item) => (

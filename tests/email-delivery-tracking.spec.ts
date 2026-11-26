@@ -36,11 +36,11 @@ test.describe("rastreamento de entrega do Resend", () => {
     expect(resendDeliveryUpdate("email.opened", at)).toBeNull();
   });
 
-  test("painel apresenta os cinco estados e aprovacao usa o perfil publico", () => {
+  test("painel apresenta os cinco estados e a aprovação direciona para a conta profissional", () => {
     const card = fs.readFileSync(path.join(process.cwd(), "src/app/(dashboard)/admin/profissionais/AdminProfessionalCard.tsx"), "utf8");
-    const approval = fs.readFileSync(path.join(process.cwd(), "src/app/(dashboard)/admin/profissionais/page.tsx"), "utf8");
+    const approval = fs.readFileSync(path.join(process.cwd(), "src/lib/professional-communications.ts"), "utf8");
     for (const label of ["Aguardando", "Aceito", "Entregue", "Rejeitado", "Falhou"]) expect(card).toContain(label);
-    expect(approval).toContain("`/profissionais/${professional.slug}`");
+    expect(approval).toContain('link: "/profissional"');
   });
 
   test("evento antigo ou aceite atrasado nao regride estado terminal", () => {

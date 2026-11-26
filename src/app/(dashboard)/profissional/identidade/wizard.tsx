@@ -68,6 +68,7 @@ export default function ManualIdentityWizard() {
   const [notice, setNotice] = useState(false);
   const [requestId, setRequestId] = useState("");
   const [date, setDate] = useState("");
+  const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
@@ -83,6 +84,7 @@ export default function ManualIdentityWizard() {
       const data = await response.json();
       if (!controller.signal.aborted) {
         setDate(data.challengeDate);
+        setRegistrationSubmitted(Boolean(data.registrationSubmitted));
         setStatus(data.verified ? "APPROVED" : data.attempt?.status ?? "");
       }
     }).catch(() => {
@@ -161,6 +163,7 @@ export default function ManualIdentityWizard() {
       const response = await fetch(endpoint, { method: "POST", body: form });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Não foi possível enviar os documentos.");
+      setRegistrationSubmitted(Boolean(data.registrationSubmitted));
       setStatus(data.attempt.status);
       setPhotos({});
     } catch (cause) {
@@ -187,9 +190,9 @@ export default function ManualIdentityWizard() {
 
       {locked ? <div className={styles.result}>
         <span className={styles.badge}><Check size={17} aria-hidden="true" /> {labels[status]}</span>
-        <h2>{status === "PENDING_REVIEW" ? "Documentos enviados com sucesso!" : "Identidade verificada"}</h2>
-        {status === "PENDING_REVIEW" && <p>Sua identidade será analisada pela nossa equipe. Avisaremos quando houver uma atualização.</p>}
-        <a className={styles.primary} href="/profissional/novo">Voltar ao meu cadastro <ChevronRight size={18} aria-hidden="true" /></a>
+        <h2>{registrationSubmitted ? "Cadastro concluído com sucesso!" : status === "PENDING_REVIEW" ? "Documentos enviados com sucesso!" : "Identidade verificada"}</h2>
+        {registrationSubmitted ? <p>Seu cadastro foi encaminhado para análise. A decisão será comunicada por e-mail.</p> : status === "PENDING_REVIEW" && <p>Sua identidade será analisada pela nossa equipe. Avisaremos quando houver uma atualização.</p>}
+        <a className={styles.primary} href={registrationSubmitted ? "/profissional/analise" : "/profissional/novo"}>{registrationSubmitted ? "Acompanhar análise" : "Voltar ao meu cadastro"} <ChevronRight size={18} aria-hidden="true" /></a>
       </div> : !date ? <div className={styles.result}>
         {busy ? <p role="status">Carregando verificação…</p> : <>
           {message}

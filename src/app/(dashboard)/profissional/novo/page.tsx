@@ -1504,7 +1504,7 @@ export default function ProfissionalNovoPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ step, form }),
       });
-      const result = await response.json().catch(() => ({})) as { error?: string; issues?: Array<{ field: string; label: string; step: number }>; completion?: CompletionState };
+      const result = await response.json().catch(() => ({})) as { error?: string; issues?: Array<{ field: string; label: string; step: number }>; completion?: CompletionState; registrationSubmitted?: boolean };
       if (!response.ok) {
         const first = result.issues?.[0];
         if (first) showValidationIssue({ field: first.field, message: first.label });
@@ -1513,6 +1513,10 @@ export default function ProfissionalNovoPage() {
       }
       if (!result.completion) {
         toast.error("O servidor não confirmou esta etapa. Seu rascunho continua salvo.");
+        return;
+      }
+      if (result.registrationSubmitted) {
+        router.replace("/profissional/analise");
         return;
       }
       setServerCompletion(result.completion);

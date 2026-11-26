@@ -1,4 +1,5 @@
 import { identityRuntimeEnabled } from "@/lib/manual-identity-runtime";
+import { finalizeProfessionalRegistration } from "@/lib/finalize-professional-registration";
 import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { sendManualIdentityEmail } from "@/lib/auth-email";
@@ -81,6 +82,9 @@ export async function PATCH(req: Request) {
         status, reviewVersion: { increment: 1 }, reviewerId: access.session.user.id,
         reviewedAt: new Date(), birthDate: status === "APPROVED" ? new Date(birth + "T00:00:00Z") : null,
       } });
+      if (status === "APPROVED") {
+        await finalizeProfessionalRegistration(tx, active.userId, { provider: MANUAL_DOCUMENT_PROVIDER, sessionId: id, submittedAt: active.submittedAt! });
+      }
       await tx.auditLog.create({ data: {
         adminId: access.session.user.id, action: "ADMIN_ACCESS", targetType: "USER", targetId: active.userId,
         reason: reason.trim(), changes: { method: "MANUAL_DOCUMENT", attemptId: id, status,
@@ -123,14 +127,21 @@ export async function PATCH(req: Request) {
       });
     }
     if (updated && status === "APPROVED") {
-      const profile = await prisma.professional.findFirst({
-        where: { kycProvider: MANUAL_DOCUMENT_PROVIDER, kycSessionId: id, registrationSubmittedAt: { not: null } },
-        select: { id: true },
+      after(async () => {
+        const { processUploadAsset } = await import("@/lib/upload-quarantine");
+        const assets = await prisma.uploadAsset.findMany({
+          where: { userId: updated.userId, category: "image", folder: { startsWith: "profiles" },
+            uploadCompletedAt: { not: null }, status: { notIn: ["APPROVED", "REJECTED"] } },
+          orderBy: { createdAt: "desc" },
+          take: 20,
+          select: { id: true },
+        });
+        for (const asset of assets) {
+          await processUploadAsset(asset.id).catch((error) => {
+            console.warn("[manual-identity] revisão de mídia pendente", { assetId: asset.id, reason: error instanceof Error ? error.name : "unknown" });
+          });
+        }
       });
-      if (profile) {
-        const { attemptAutomaticProfessionalPublication } = await import("@/lib/professional-auto-publication");
-        await attemptAutomaticProfessionalPublication(profile.id, "manual-document-approved").catch(() => undefined);
-      }
     }
     return updated ? json({ status }) : json({ error: "A tentativa mudou, expirou ou já foi decidida. Atualize a página." }, 409);
   } catch {

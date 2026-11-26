@@ -298,7 +298,8 @@ test.describe("verificacao Didit no onboarding profissional", () => {
     expect(submission).toContain("KYC pendente impede aprovação");
     expect(submission).toContain('attemptAutomaticProfessionalPublication(professional.id, "registration-submitted")');
     expect(publication).toContain('status: "ACTIVE"');
-    expect(publication).toContain('evaluateMediaPublicationGates({');
+    expect(publication).toContain('mediaIsPublishable(asset)');
+    expect(publication).toContain('!adminId || professional.status !== "PENDING_REVIEW"');
     expect(publication).toContain('professional.kycStatus === "APPROVED"');
     expect(publication).toContain('manualAttemptAllowsPublication(professional.kycSessionId, current)');
     expect(publication).toContain('professionalApprovalAccessData(tx, professional)');
@@ -317,10 +318,10 @@ test.describe("verificacao Didit no onboarding profissional", () => {
       path.join(process.cwd(), "src/app/(dashboard)/admin/profissionais/AdminProfessionalCard.tsx"),
       "utf8",
     );
-    expect(analysis).toContain("perfil sera publicado automaticamente");
+    expect(analysis).toContain("A decisão será comunicada por e-mail.");
     expect(analysis).toContain("inconsistencias ou risco continuam aguardando revisao ou correcao");
     expect(analysis).not.toContain("A aprovacao final e manual");
-    expect(verification).toContain("Cadastros sem pendências são publicados automaticamente");
+    expect(verification).toContain("A equipe aprova o perfil após as verificações obrigatórias");
     expect(adminCard).toContain('PENDING_REVIEW: "Análise do perfil"');
     expect(adminCard).toContain('PENDING_APPROVAL: "Aguardando liberação do perfil"');
     expect(adminCard).toContain('["Cadastro em análise", pro.status === "PENDING_REVIEW"]');
@@ -381,7 +382,7 @@ test.describe("verificacao Didit no onboarding profissional", () => {
 
     expect(page).toContain("URL.createObjectURL(file)");
     expect(page).toContain("setMainPhotoPreview(previewUrl)");
-    expect(page).toContain('fd.append("file", file)');
+    expect(page).toContain('fd.append("file", await prepareProfileImageUpload(file, MAX_PROFILE_IMAGE_BYTES))');
     expect(page).toContain("Foto recebida. Você pode continuar o cadastro.");
     expect(page).toContain("Foto recebida e em análise de segurança.");
     expect(uploadRoute).toContain("/api/media/${encodeURIComponent(processed.id)}");
@@ -547,6 +548,7 @@ test.describe("reconciliacao Didit com respostas simuladas", () => {
     const tx = {
       $executeRaw: async () => 1,
       professional: {
+        findUnique: async () => null,
         findFirst: async () => active ? {
           id: "professional-test",
           userId: "user_test",

@@ -62,3 +62,40 @@ export function evaluateMediaPublicationGates(input: MediaPublicationGateInput) 
 export function isFailClosedSecurityStatus(value?: string | null) {
   return !passed(value);
 }
+
+export function mediaIsPublishable(asset: {
+  id: string;
+  userId: string;
+  folder: string;
+  category: string;
+  status: string;
+  approvedBucket: string | null;
+  approvedPath: string | null;
+  uploadCompletedAt: Date | null;
+  malwareStatus: string;
+  moderationStatus: string;
+  publicationDecisionType: string;
+  ageIdentityStatus: string;
+  consentStatus: string;
+  adminReviewRequired: boolean;
+  adminReviewStatus: string;
+  takedownStatus: string;
+}) {
+  return asset.status === "APPROVED"
+    && asset.category === "image"
+    && asset.folder.startsWith("profiles")
+    && Boolean(asset.approvedBucket && asset.approvedPath)
+    && evaluateMediaPublicationGates({
+      category: asset.category, folder: asset.folder,
+      uploadComplete: Boolean(asset.uploadCompletedAt),
+      malwareStatus: asset.malwareStatus,
+      moderationStatus: asset.moderationStatus,
+      publicationDecisionType: asset.publicationDecisionType,
+      ageIdentityStatus: asset.ageIdentityStatus,
+      consentStatus: asset.consentStatus,
+      adminReviewRequired: asset.adminReviewRequired,
+      adminReviewStatus: asset.adminReviewStatus,
+      takedownStatus: asset.takedownStatus,
+      ownerId: asset.userId,
+    }).publishable;
+}
